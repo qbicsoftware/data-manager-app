@@ -26,7 +26,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 @Entity(name = "proteomics_measurement")
 public class ProteomicsMeasurement implements MeasurementMetadata {
 
-
+  @Embedded
+  private Organisation organisation;
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
@@ -47,17 +48,20 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode,
+      Organisation organisation,
       ProteomicsMethodMetadata method, ProteomicsSamplePreparation samplePreparation) {
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
+    this.organisation = organisation;
     this.instrument = method.instrument();
     this.measurementCode = measurementCode;
   }
 
-  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode,
+  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode, Organisation organisation,
       ProteomicsMethodMetadata method) {
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
+    this.organisation = organisation;
     this.instrument = method.instrument();
     this.measurementCode = measurementCode;
   }
@@ -69,8 +73,6 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
    * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
    *                   one sample id is provided, the measurement is considered to be performed on a
    *                   pooled sample
-   * @param instrument the instrument used for the measurement, which is represented as an
-   *                   {@link OntologyTerm}
    * @return
    * @since 1.0.0
    */
@@ -86,7 +88,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
       throw new IllegalArgumentException(
           "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
-    return new ProteomicsMeasurement(sampleIds, measurementCode, method);
+    return new ProteomicsMeasurement(sampleIds, measurementCode, organisation, method);
   }
 
   public ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
