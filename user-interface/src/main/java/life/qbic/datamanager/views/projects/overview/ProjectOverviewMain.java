@@ -6,6 +6,9 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -26,6 +29,7 @@ import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Project overview {@link Main} component that shows project information and additional components to manage project
@@ -63,6 +67,9 @@ public class ProjectOverviewMain extends Main {
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.financeService,
           this.ontologyTermInformationService, this.contactRepository);
+      if(isOfferSearchAllowed()) {
+        addProjectDialog.enableOfferSearch();
+      }
       addProjectDialog.addConfirmListener(this::createProject);
       addProjectDialog.addCancelListener(it -> it.getSource().close());
       addProjectDialog.open();
@@ -73,6 +80,12 @@ public class ProjectOverviewMain extends Main {
         this.getClass().getSimpleName(), System.identityHashCode(this),
         projectCollectionComponent.getClass().getSimpleName(),
         System.identityHashCode(projectCollectionComponent)));
+  }
+
+  private boolean isOfferSearchAllowed() {
+    Set<String> allowedRoles = new HashSet<>(Arrays.asList("ROLE_ADMIN", "ROLE_PROJECT_MANAGER"));
+    return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+        .anyMatch(r -> allowedRoles.contains(r.getAuthority()));
   }
 
   private void createProject(ConfirmEvent confirmEvent) {

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.navigation;
 
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.Component;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
@@ -63,14 +65,17 @@ public class ProjectSideNavigationComponent extends Div implements
   private final Div content;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private final transient UserPermissions userPermissions;
   private Context context = new Context();
 
   public ProjectSideNavigationComponent(
       @Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired UserPermissions userPermissions) {
     content = new Div();
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
+    this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     addClassName("project-navigation-drawer");
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
@@ -95,8 +100,10 @@ public class ProjectSideNavigationComponent extends Div implements
     var project = loadProject(parsedProjectId);
     List<Experiment> experiments = loadExperimentsForProject(project);
     List<ProjectPreview> lastModifiedProjects = retrieveLastModifiedProjects();
-    content.add(generateNavigationSections(project, lastModifiedProjects, experiments).toArray(
-        Component[]::new));
+    boolean canUserAdministrate = userPermissions.changeProjectAccess(parsedProjectId);
+    content.add(
+        generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
+            .toArray(Component[]::new));
   }
 
   private Project loadProject(ProjectId id) {
@@ -116,19 +123,19 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static List<Div> generateNavigationSections(Project project,
-      List<ProjectPreview> lastModifiedProjects, List<Experiment> experiments) {
-    Div projectSection = createProjectSection(project, lastModifiedProjects);
+      List<ProjectPreview> lastModifiedProjects, List<Experiment> experiments, boolean canUserAdministrate) {
+    Div projectSection = createProjectSection(project, lastModifiedProjects, canUserAdministrate);
     Div experimentSection = createExperimentSection(project.getId().value(), experiments);
     return List.of(projectSection, experimentSection);
   }
 
   private static Div createProjectSection(Project project,
-      List<ProjectPreview> lastModifiedProjects) {
+      List<ProjectPreview> lastModifiedProjects, boolean canUserAdministrate) {
     Div projectSection = new Div();
     projectSection.add(createProjectHeader(),
         createProjectSelection(project.getProjectIntent().projectTitle().title(),
             lastModifiedProjects),
-        generateSectionDivider(), createProjectItems(project.getId().value()));
+        generateSectionDivider(), createProjectItems(project.getId().value(), canUserAdministrate));
     projectSection.addClassName("project-section");
     return projectSection;
   }
@@ -187,9 +194,12 @@ public class ProjectSideNavigationComponent extends Div implements
     return sectionDivider;
   }
 
-  private static Div createProjectItems(String projectId) {
+  private static Div createProjectItems(String projectId, boolean canUserAdministrate) {
     Div projectItems = new Div();
-    projectItems.add(createProjectSummaryLink(projectId), createProjectUsers(projectId));
+    projectItems.add(createProjectSummaryLink(projectId));
+    if(canUserAdministrate) {
+      projectItems.add(createProjectUsers(projectId));
+    }
     projectItems.addClassName("project-items");
     return projectItems;
   }
