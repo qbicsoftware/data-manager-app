@@ -56,7 +56,7 @@ public class OntologyLookupService {
   }
 
   public Optional<OntologyClass> findByCURI(String curi) {
-    return ontologyTermRepository.findByCuri(curi);
+    return ontologyTermLookup.query(curi).stream().findAny();
   }
 
   public Optional<OntologyClass> find(String id) throws IllegalArgumentException{

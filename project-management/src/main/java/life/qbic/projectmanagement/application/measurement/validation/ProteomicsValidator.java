@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -8,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +39,13 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   protected final SampleInformationService sampleInformationService;
 
+  protected final OntologyLookupService ontologyLookupService;
+
   @Autowired
-  public ProteomicsValidator(SampleInformationService sampleInformationService) {
+  public ProteomicsValidator(SampleInformationService sampleInformationService,
+      OntologyLookupService ontologyLookupService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
+    this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
   }
 
   /**
@@ -76,7 +83,8 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     // TODO implement property validation
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
-        .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId()));
+        .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
+            .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -117,6 +125,8 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
     private final String UNKNOWN_ORGANISATION_ID_MESSAGE = "The organisation ID does not seem to be a ROR ID: \"%s\"";
 
+    private final String UNKNOWN_INSTRUMENT_ID = "Unknown instrument id: \"%s\"";
+
     // The unique ROR id part of the URL is described in the official documentation:
     // https://ror.readme.io/docs/ror-identifier-pattern
     private final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
@@ -134,7 +144,10 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     }
 
     ValidationResult validateSampleId(SampleCode sampleCodes) {
+      long start = System.nanoTime();
       var queriedSampleEntry = sampleInformationService.findSampleId(sampleCodes);
+      long end = System.nanoTime();
+      System.out.println("Sample id search took: " + Duration.of(end-start, ChronoUnit.NANOS).toMillis() + "ms");
       if (queriedSampleEntry.isPresent()) {
         return ValidationResult.successful(1);
       }
@@ -148,6 +161,17 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
       }
       return ValidationResult.withFailures(1,
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
+    }
+
+    ValidationResult validateInstrument(String instrument) {
+      long start = System.nanoTime();
+      var result = ontologyLookupService.findByCURI(instrument);
+      long end = System.nanoTime();
+      System.out.println("Instrument id search took: " + Duration.of(end-start, ChronoUnit.NANOS).toMillis() + "ms");
+      if (result.isPresent()) {
+        return ValidationResult.successful(1);
+      }
+      return ValidationResult.withFailures(1, List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
     }
 
   }
