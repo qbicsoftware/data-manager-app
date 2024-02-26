@@ -38,7 +38,9 @@ import life.qbic.datamanager.views.projects.project.info.OfferListComponent.Uplo
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DeleteQualityControlEvent;
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.DownloadQualityControlEvent;
 import life.qbic.datamanager.views.projects.project.info.QualityControlListComponent.QualityControl;
+import life.qbic.datamanager.views.projects.purchase.PurchaseItemDeletionConfirmationNotification;
 import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
+import life.qbic.datamanager.views.projects.qualityControl.QCItemDeletionConfirmationNotification;
 import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -170,10 +172,17 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void onDeleteOfferClicked(DeleteOfferClickEvent deleteOfferClickEvent) {
-    projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
-        deleteOfferClickEvent.offerId());
-    deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
-    offerDownload.removeHref();
+    PurchaseItemDeletionConfirmationNotification purchaseItemDeletionConfirmationNotification = new PurchaseItemDeletionConfirmationNotification();
+    purchaseItemDeletionConfirmationNotification.open();
+    purchaseItemDeletionConfirmationNotification.addConfirmListener(event -> {
+      projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
+          deleteOfferClickEvent.offerId());
+      deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
+      offerDownload.removeHref();
+      purchaseItemDeletionConfirmationNotification.close();
+    });
+    purchaseItemDeletionConfirmationNotification.addCancelListener(
+        event -> purchaseItemDeletionConfirmationNotification.close());
   }
 
   private void onUploadOfferClicked(UploadOfferClickEvent uploadOfferClickEvent,
@@ -217,10 +226,17 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void onDeleteQualityControlClicked(DeleteQualityControlEvent deleteQualityControlEvent) {
-    qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
-        deleteQualityControlEvent.qualityControlId());
-    qualityControlDownload.removeHref();
-    refreshQualityControls();
+    QCItemDeletionConfirmationNotification qcItemDeletionConfirmationNotification = new QCItemDeletionConfirmationNotification();
+    qcItemDeletionConfirmationNotification.open();
+    qcItemDeletionConfirmationNotification.addConfirmListener(event -> {
+      qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
+          deleteQualityControlEvent.qualityControlId());
+      qualityControlDownload.removeHref();
+      refreshQualityControls();
+      qcItemDeletionConfirmationNotification.close();
+    });
+    qcItemDeletionConfirmationNotification.addCancelListener(
+        event -> qcItemDeletionConfirmationNotification.close());
   }
 
   private void onUploadQualityControlClicked() {
