@@ -127,6 +127,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
   }
 
+  private static boolean isEmptyRow(String row) {
+    return row.split("\t").length > 0;
+  }
+
   public Collection<Result<MeasurementId, ResponseCode>> registerMeasurements()
       throws ApplicationException {
     // TODO no need to do validation again, the registration service will do this again during a
@@ -185,8 +189,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   private void validatePxP(MetadataContent content, Consumer<ValidationReport> consumer) {
 
-
-
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
     var evaluatedRows = 0;
@@ -208,10 +210,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     consumer.accept(new ValidationReport(evaluatedRows, validationResult));
   }
 
-  private static boolean isEmptyRow(String row) {
-    return row.split("\t").length > 0;
-  }
-
   private ValidationResult validateRow(Map<String, Integer> propertyColumnMap, String row) {
     var validationResult = ValidationResult.successful(0);
     var metaDataValues = row.split("\t");
@@ -225,7 +223,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       metadata = new ProteomicsMeasurementMetadata(
           parseSampleCode(metaDataValues[propertyColumnMap.get(
               PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())]),
-          metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())], "");
+          metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())],
+          metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.INSTRUMENT.label())]);
       validationResult = validationResult.combine(validationService.validateProteomics(metadata));
       cachedPxPMetada.add(metadata);
     } catch (IndexOutOfBoundsException e) {
