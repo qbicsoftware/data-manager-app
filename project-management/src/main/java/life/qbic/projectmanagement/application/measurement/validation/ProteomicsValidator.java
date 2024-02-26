@@ -144,10 +144,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     }
 
     ValidationResult validateSampleId(SampleCode sampleCodes) {
-      long start = System.nanoTime();
       var queriedSampleEntry = sampleInformationService.findSampleId(sampleCodes);
-      long end = System.nanoTime();
-      System.out.println("Sample id search took: " + Duration.of(end-start, ChronoUnit.NANOS).toMillis() + "ms");
       if (queriedSampleEntry.isPresent()) {
         return ValidationResult.successful(1);
       }
@@ -164,10 +161,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     }
 
     ValidationResult validateInstrument(String instrument) {
-      long start = System.nanoTime();
       var result = ontologyLookupService.findByCURI(instrument);
-      long end = System.nanoTime();
-      System.out.println("Instrument id search took: " + Duration.of(end-start, ChronoUnit.NANOS).toMillis() + "ms");
       if (result.isPresent()) {
         return ValidationResult.successful(1);
       }

@@ -10,11 +10,13 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,10 +95,14 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), "", "", "", "", "", "", 0, "",
+        "");
+
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode,
-        instrumentQuery.get());
+        new Organisation("", ""),
+        method);
 
     var result = measurementDomainService.addProteomics(measurement);
 
