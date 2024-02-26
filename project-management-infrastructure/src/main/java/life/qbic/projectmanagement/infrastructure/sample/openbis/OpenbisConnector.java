@@ -34,6 +34,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +48,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.NGSMeasurementWrapper;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -357,22 +360,37 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     return updatedSamples.stream().map(this::createSampleUpdate).toList();
   }
 
-  @Override
-  public void addNGSMeasurements(Collection<NGSMeasurement> ngsMeasurements) {
-    // TODO implement!
-    throw new NotImplementedException("Not yet implemented!");
+  private void registerMeasurementSample(String sampleCode, String measurementTypeCode,
+      List<SampleIdentifier> parentIds, Map<String,String> metadata) {
+        SampleCreation sampleCreation = new SampleCreation();
+        sampleCreation.setCode(sampleCode);
+        sampleCreation.setParentIds(parentIds);
+        sampleCreation.setTypeId(new EntityTypePermId(measurementTypeCode));
+        sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
+        sampleCreation.setProperties(metadata);
+        createOpenbisSamples(Arrays.asList(sampleCreation));
   }
 
   @Override
-  public void addNGSMeasurement(NGSMeasurement ngsMeasurement) {
-    // TODO implement
-    throw new NotImplementedException("");
+  public void addNGSMeasurement(NGSMeasurementWrapper ngsMeasurement) {
+    NGSMeasurement measurement = ngsMeasurement.measurementMetadata();
+    String TYPE_CODE = "Q_NGS_SINGLE_SAMPLE_RUN";
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("Q_EXTERNALDB_ID", measurement.measurementId().value());
+    List<SampleIdentifier> parentIds = ngsMeasurement.measuredSamplesCodes().stream()
+        .map(code -> new SampleIdentifier(DEFAULT_SPACE_CODE, null, code.code())).toList();
+    registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
 
   @Override
-  public void addProtemicsMeasurement(ProteomicsMeasurement proteomicsMeasurement) {
-    // TODO implement
-    throw new NotImplementedException("");
+  public void addProtemicsMeasurement(ProteomicsMeasurementWrapper proteomicsMeasurement) {
+    ProteomicsMeasurement measurement = proteomicsMeasurement.measurementMetadata();
+    String TYPE_CODE = "Q_MS_RUN";
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("Q_EXTERNALDB_ID", measurement.measurementId().value());
+    List<SampleIdentifier> parentIds = proteomicsMeasurement.measuredSamplesCodes().stream()
+        .map(code -> new SampleIdentifier(DEFAULT_SPACE_CODE, null, code.code())).toList();
+    registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
 
   record VocabularyTerm(String code, String label, String description) {
