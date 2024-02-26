@@ -33,12 +33,21 @@ import org.springframework.stereotype.Component;
 public class CachedOrganisationRepository implements OrganisationRepository {
 
   private static final Logger log = logger(CachedOrganisationRepository.class);
-  private static final int CACHE_SIZE = 50;
+  private static final int DEFAULT_CACHE_SIZE = 50;
   private static final String ROR_API_URL = "https://api.ror.org/organizations/%s";
   private static final String ROR_ID_PATTERN = "0[a-z|0-9]{6}[0-9]{2}$";
   private final Map<String, String> iriToOrganisation = new HashMap<>();
+  private final int configuredCacheSize;
 
   private boolean cacheUsedForLastRequest = false;
+
+  public CachedOrganisationRepository(int cacheSize) {
+    this.configuredCacheSize = cacheSize;
+  }
+
+  public CachedOrganisationRepository() {
+    this.configuredCacheSize = DEFAULT_CACHE_SIZE;
+  }
 
   private static Optional<String> extractRorId(String text) {
     var pattern = Pattern.compile(ROR_ID_PATTERN);
@@ -85,7 +94,7 @@ public class CachedOrganisationRepository implements OrganisationRepository {
   }
 
   private void updateCache(RORentry rorEntry) {
-    if (iriToOrganisation.size() == CACHE_SIZE) {
+    if (iriToOrganisation.size() == configuredCacheSize) {
       String firstKey = iriToOrganisation.keySet().stream().toList().get(0);
       iriToOrganisation.remove(firstKey);
     }

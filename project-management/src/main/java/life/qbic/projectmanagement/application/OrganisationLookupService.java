@@ -22,7 +22,7 @@ public class OrganisationLookupService {
     this.organisationRepository = organisationRepository;
   }
 
-  Optional<Organisation> organisation(String iri) {
+  public Optional<Organisation> organisation(String iri) {
     return organisationRepository.resolve(iri);
   }
 
