@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
@@ -25,7 +26,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 @Entity(name = "proteomics_measurement")
 public class ProteomicsMeasurement implements MeasurementMetadata {
 
-
+  @Embedded
+  private Organisation organisation;
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
@@ -45,36 +47,60 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     // Needed for JPA
   }
 
-  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
+  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode,
+      Organisation organisation,
+      ProteomicsMethodMetadata method, ProteomicsSamplePreparation samplePreparation) {
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
-    this.instrument = instrument;
+    this.organisation = organisation;
+    this.instrument = method.instrument();
+    this.measurementCode = measurementCode;
+  }
+
+  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode, Organisation organisation,
+      ProteomicsMethodMetadata method) {
+    measuredSamples = new ArrayList<>();
+    measuredSamples.addAll(sampleIds);
+    this.organisation = organisation;
+    this.instrument = method.instrument();
     this.measurementCode = measurementCode;
   }
 
   /**
-   * Creates a new {@link ProteomicsMeasurement} object instance, that describes an NGS measurement entity
-   * with many describing properties about provenance and instrumentation.
+   * Creates a new {@link ProteomicsMeasurement} object instance, that describes an NGS measurement
+   * entity with many describing properties about provenance and instrumentation.
    *
    * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
    *                   one sample id is provided, the measurement is considered to be performed on a
    *                   pooled sample
-   * @param instrument the instrument used for the measurement, which is represented as an
-   *                   {@link OntologyTerm}
    * @return
    * @since 1.0.0
    */
-  public static ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
+  public static ProteomicsMeasurement create(Collection<SampleId> sampleIds,
+      MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method) {
     if (sampleIds.isEmpty()) {
       throw new IllegalArgumentException(
           "No sample ids provided. At least one sample id must provided for a measurement.");
     }
-    Objects.requireNonNull(instrument);
+    Objects.requireNonNull(method.instrument());
     Objects.requireNonNull(measurementCode);
     if (!measurementCode.isNGSDomain()) {
-      throw new IllegalArgumentException("Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
+      throw new IllegalArgumentException(
+          "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
-    return new ProteomicsMeasurement(sampleIds, measurementCode, instrument);
+    return new ProteomicsMeasurement(sampleIds, measurementCode, organisation, method);
+  }
+
+  public ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
+      Organisation organisation, ProteomicsMethodMetadata method,
+      ProteomicsSamplePreparation samplePreparation) {
+    var measurement = create(sampleIds, code, organisation, method);
+    measurement.setSamplePreparation(samplePreparation);
+    return measurement;
+  }
+
+  public void setSamplePreparation(ProteomicsSamplePreparation samplePreparation) {
+
   }
 
   /**

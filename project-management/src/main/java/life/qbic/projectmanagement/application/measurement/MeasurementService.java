@@ -7,14 +7,17 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,14 +37,17 @@ public class MeasurementService {
   private final MeasurementDomainService measurementDomainService;
   private final SampleInformationService sampleInformationService;
   private final OntologyLookupService ontologyLookupService;
+  private final OrganisationLookupService organisationLookupService;
 
   @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
       SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService) {
+      OntologyLookupService ontologyLookupService,
+      OrganisationLookupService organisationLookupService) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
+    this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
   }
 
   public Result<MeasurementId, ResponseCode> registerNGS(
@@ -96,10 +102,19 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
+    var organisationQuery = organisationLookupService.organisation(registrationRequest.metadata().organisationId());
+    if (organisationQuery.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), "", "", "", "", "", "", 0, "",
+        "");
+
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode,
-        instrumentQuery.get());
+        organisationQuery.get(),
+        method);
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
@@ -123,7 +138,7 @@ public class MeasurementService {
   }
 
   public enum ResponseCode {
-    FAILED, SUCCESSFUL, UNKNOWN_ONTOLOGY_TERM
+    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM
   }
 
   public record ProteomicsMeasurementWrapper(ProteomicsMeasurement measurementMetadata,
