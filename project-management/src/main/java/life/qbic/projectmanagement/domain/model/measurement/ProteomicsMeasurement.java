@@ -57,7 +57,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.measurementCode = measurementCode;
   }
 
-  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode, Organisation organisation,
+  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode,
+      Organisation organisation,
       ProteomicsMethodMetadata method) {
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
@@ -70,9 +71,9 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
    * Creates a new {@link ProteomicsMeasurement} object instance, that describes an NGS measurement
    * entity with many describing properties about provenance and instrumentation.
    *
-   * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
-   *                   one sample id is provided, the measurement is considered to be performed on a
-   *                   pooled sample
+   * @param sampleIds the sample ids of the samples the measurement was performed on. If more than
+   *                  one sample id is provided, the measurement is considered to be performed on a
+   *                  pooled sample
    * @return
    * @since 1.0.0
    */
@@ -84,7 +85,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     }
     Objects.requireNonNull(method.instrument());
     Objects.requireNonNull(measurementCode);
-    if (!measurementCode.isNGSDomain()) {
+    if (!measurementCode.isMSDomain()) {
       throw new IllegalArgumentException(
           "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
@@ -121,4 +122,15 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return id;
   }
 
+  public Collection<SampleId> measuredSamples() {
+    return measuredSamples;
+  }
+
+  public OntologyTerm instrument() {
+    return instrument;
+  }
+
+  public Organisation organisation() {
+    return organisation;
+  }
 }

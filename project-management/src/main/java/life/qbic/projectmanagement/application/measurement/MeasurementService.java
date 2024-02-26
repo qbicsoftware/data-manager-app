@@ -3,22 +3,26 @@ package life.qbic.projectmanagement.application.measurement;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
+import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -49,6 +53,50 @@ public class MeasurementService {
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
   }
+
+
+  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId, int offset,
+      int limit,
+      List<SortOrder> sortOrders, String filter) {
+    //return new ArrayList<>();
+    //ToDo implement Lazy Loading in Backend
+    return List.of(
+        NGSMeasurement.create(List.of(SampleId.create(), SampleId.create(), SampleId.create()),
+            MeasurementCode.createNGS("ABCDE"),
+            new
+
+                OntologyTerm("ontA1", "ontV1", "ontI1", "ontL1", "ontN1", "ontD1", "ontCI1")),
+        NGSMeasurement.create(List.of(SampleId.create(), SampleId.create()),
+            MeasurementCode.createNGS("FGHIJ"),
+            new
+
+                OntologyTerm("ontA2", "ontV2", "ontI2", "ontL2", "ontN2", "ontD2", "ontCI2")));
+  }
+
+
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(ExperimentId experimentId,
+      int offset, int limit,
+      List<SortOrder> sortOrders, String filter) {
+    //ToDo implement Lazy Loading in Backend
+    //return new ArrayList<>();
+    return List.of(
+        ProteomicsMeasurement.create(
+            List.of(SampleId.create(), SampleId.create(), SampleId.create()),
+            MeasurementCode.createMS("ABCDE"), new Organisation("ProtIri1", "ProtOrglabel1"),
+            new ProteomicsMethodMetadata(
+                new OntologyTerm("ontA1", "ontV1", "ontI1", "ontL1", "ontN1", "ontD1", "ontCI1"),
+                "ProtPSL1", "ProtFN1", "ProtFT1",
+                "ProtDM1", "ProtDE1", "ProtEM1", 1, "ProtIC1", "ProtLM1")
+        ), ProteomicsMeasurement.create(
+            List.of(SampleId.create(), SampleId.create(), SampleId.create()),
+            MeasurementCode.createMS("FGHIJ"), new Organisation("ProtIri2", "ProtOrgLabel2"),
+            new ProteomicsMethodMetadata(
+                new OntologyTerm("ontA2", "ontV2", "ontI2", "ontL2", "ontN2", "ontD2", "ontCI2"),
+                "ProtPSL2", "ProtFN2", "ProtFT2",
+                "ProtDM2", "ProtDE2", "ProtEM2", 2, "ProtIC2", "ProtLM2")
+        ));
+  }
+
 
   public Result<MeasurementId, ResponseCode> registerNGS(
       MeasurementRegistrationRequest<NGSMeasurementMetadata> registrationRequest) {
@@ -99,7 +147,8 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
-    var organisationQuery = organisationLookupService.organisation(registrationRequest.metadata().organisationId());
+    var organisationQuery = organisationLookupService.organisation(
+        registrationRequest.metadata().organisationId());
     if (organisationQuery.isEmpty()) {
       return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
     }

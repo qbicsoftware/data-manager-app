@@ -11,7 +11,6 @@ import jakarta.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -101,4 +100,11 @@ public class NGSMeasurement implements MeasurementMetadata {
     return id;
   }
 
+  public Collection<SampleId> measuredSamples() {
+    return measuredSamples;
+  }
+
+  public OntologyTerm instrument() {
+    return instrument;
+  }
 }
