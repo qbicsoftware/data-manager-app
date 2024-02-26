@@ -5,6 +5,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.Collection;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.NGSMeasurementWrapper;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
@@ -24,7 +26,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   private static final Logger log = logger(MeasurementRepositoryImplementation.class);
   private final NGSMeasurementJpaRepo measurementJpaRepo;
 
-  private final ProteomicsMeasurementJpaRepo pxpMeasurenemtJpaRepo;
+  private final ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo;
 
   private final MeasurementDataRepo measurementDataRepo;
 
@@ -32,21 +34,22 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       ProteomicsMeasurementJpaRepo pxpMeasurenemtJpaRepo,
       MeasurementDataRepo measurementDataRepo) {
     this.measurementJpaRepo = measurementJpaRepo;
-    this.pxpMeasurenemtJpaRepo = pxpMeasurenemtJpaRepo;
+    this.pxpMeasurementJpaRepo = pxpMeasurenemtJpaRepo;
     this.measurementDataRepo = measurementDataRepo;
   }
 
   @Override
-  public Result<NGSMeasurement, ResponseCode> save(NGSMeasurement measurement) {
+  public Result<NGSMeasurement, ResponseCode> save(NGSMeasurementWrapper measurementWithCodes) {
+    NGSMeasurement measurement = measurementWithCodes.measurementMetadata();
     try {
-      measurementJpaRepo.save(measurement);
+      measurementJpaRepo.save(measurementWithCodes.measurementMetadata());
     } catch (Exception e) {
       log.error("Saving ngs measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
 
     try {
-      measurementDataRepo.addNGSMeasurement(measurement);
+      measurementDataRepo.addNGSMeasurement(measurementWithCodes);
     } catch (Exception e) {
       log.error("Saving ngs measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
@@ -58,20 +61,22 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurement measurement) {
+  public Result<ProteomicsMeasurement, ResponseCode> save(
+      ProteomicsMeasurementWrapper measurementWithCodes) {
+    ProteomicsMeasurement measurement = measurementWithCodes.measurementMetadata();
     try {
-      pxpMeasurenemtJpaRepo.save(measurement);
+      pxpMeasurementJpaRepo.save(measurement);
     } catch (Exception e) {
       log.error("Saving ngs measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
 
     try {
-      measurementDataRepo.addProtemicsMeasurement(measurement);
+      measurementDataRepo.addProtemicsMeasurement(measurementWithCodes);
     } catch (Exception e) {
       log.error("Saving ngs measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
-      pxpMeasurenemtJpaRepo.delete(measurement); // Rollback JPA save
+      pxpMeasurementJpaRepo.delete(measurement); // Rollback JPA save
       return Result.fromError(ResponseCode.FAILED);
     }
 

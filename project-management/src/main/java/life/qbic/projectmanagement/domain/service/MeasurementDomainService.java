@@ -5,12 +5,12 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.NGSMeasurementWrapper;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
-import org.hibernate.annotations.Comment;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 /**
@@ -32,9 +32,10 @@ public class MeasurementDomainService {
     this.measurementRepository = Objects.requireNonNull(measurementRepository);
   }
 
-  public Result<NGSMeasurement, ResponseCode> addNGS(NGSMeasurement ngsMeasurement) {
+  public Result<NGSMeasurement, ResponseCode> addNGS(NGSMeasurementWrapper ngsMeasurementWithCodes) {
+    var ngsMeasurement = ngsMeasurementWithCodes.measurementMetadata();
     try {
-      measurementRepository.save(ngsMeasurement);
+      measurementRepository.save(ngsMeasurementWithCodes);
       return Result.fromValue(ngsMeasurement);
     } catch (Exception e) {
       log.error(
@@ -43,9 +44,12 @@ public class MeasurementDomainService {
     return Result.fromValue(ngsMeasurement);
   }
 
-  public Result<ProteomicsMeasurement, ResponseCode> addProteomics(ProteomicsMeasurement pxpMeasurement) {
+  public Result<ProteomicsMeasurement, ResponseCode> addProteomics(
+      ProteomicsMeasurementWrapper pxpMeasurementWithCodes) {
+    var pxpMeasurement = pxpMeasurementWithCodes.measurementMetadata();
+
     try {
-      measurementRepository.save(pxpMeasurement);
+      measurementRepository.save(pxpMeasurementWithCodes);
       return Result.fromValue(pxpMeasurement);
     } catch (Exception e) {
       log.error(
