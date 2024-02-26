@@ -31,7 +31,6 @@ import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.ResponseCode;
-import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
@@ -128,11 +127,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
   }
 
-  public Collection<Result<MeasurementId, ResponseCode>> registerMeasurements() throws ApplicationException {
+  public Collection<Result<MeasurementId, ResponseCode>> registerMeasurements()
+      throws ApplicationException {
     // TODO no need to do validation again, the registration service will do this again during a
     // a registration. We just create the
     return cachedPxPMetada.stream().map(measurement -> new MeasurementRegistrationRequest<>(
-        (List<SampleCode>) measurement.sampleCodes(), measurement)).map(measurementService::registerPxP).toList();
+            (List<SampleCode>) measurement.sampleCodes(), measurement))
+        .map(measurementService::registerPxP).toList();
   }
 
   private void onUploadFailed(FailedEvent failedEvent) {
@@ -183,24 +184,32 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   private void validatePxP(MetadataContent content, Consumer<ValidationReport> consumer) {
+
+
+
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
     var evaluatedRows = 0;
     // we check if there are any rows provided or if we have only rows with empty content
     if (content.rows().isEmpty() || content.rows().stream()
-        .noneMatch(row -> row.split("\t").length > 0)) {
+        .noneMatch(MeasurementMetadataUploadDialog::isEmptyRow)) {
       validationResult = validationResult.combine(
           ValidationResult.withFailures(1, List.of("The metadata sheet seems to be empty")));
       consumer.accept(new ValidationReport(0, validationResult));
       // no need to continue
       return;
     }
-    for (String row : content.rows()) {
+    for (String row : content.rows().stream()
+        .filter(MeasurementMetadataUploadDialog::isEmptyRow).toList()) {
       ValidationResult result = validateRow(propertyColumnMap, row);
       validationResult = validationResult.combine(result);
       evaluatedRows++;
     }
     consumer.accept(new ValidationReport(evaluatedRows, validationResult));
+  }
+
+  private static boolean isEmptyRow(String row) {
+    return row.split("\t").length > 0;
   }
 
   private ValidationResult validateRow(Map<String, Integer> propertyColumnMap, String row) {
@@ -214,8 +223,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     ProteomicsMeasurementMetadata metadata;
     try {
       metadata = new ProteomicsMeasurementMetadata(
-          List.of(SampleCode.create(metaDataValues[propertyColumnMap.get(
-              PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())])),
+          parseSampleCode(metaDataValues[propertyColumnMap.get(
+              PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label())]),
           metaDataValues[propertyColumnMap.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label())], "");
       validationResult = validationResult.combine(validationService.validateProteomics(metadata));
       cachedPxPMetada.add(metadata);
@@ -224,6 +233,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
     return validationResult;
+  }
+
+  private List<SampleCode> parseSampleCode(String sampleCodeEntry) {
+    return Arrays.stream(sampleCodeEntry.split(",")).map(SampleCode::create).toList();
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
