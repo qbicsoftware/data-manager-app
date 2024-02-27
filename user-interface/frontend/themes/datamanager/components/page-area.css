@@ -78,6 +78,11 @@
   width: 100%;
 }
 
+.experiment-details-component .sample-source-display .icon-with-list vaadin-icon {
+  color: var(--lumo-primary-color);
+  margin-right: 1em;
+  margin-top: 0.5em;
+}
 
 .experiment-details-component .header {
   display: flex;
