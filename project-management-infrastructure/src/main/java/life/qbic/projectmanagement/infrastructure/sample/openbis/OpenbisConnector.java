@@ -362,13 +362,13 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private void registerMeasurementSample(String sampleCode, String measurementTypeCode,
       List<SampleIdentifier> parentIds, Map<String,String> metadata) {
-        SampleCreation sampleCreation = new SampleCreation();
-        sampleCreation.setCode(sampleCode);
-        sampleCreation.setParentIds(parentIds);
-        sampleCreation.setTypeId(new EntityTypePermId(measurementTypeCode));
-        sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
-        sampleCreation.setProperties(metadata);
-        createOpenbisSamples(Arrays.asList(sampleCreation));
+    SampleCreation sampleCreation = new SampleCreation();
+    sampleCreation.setCode(sampleCode);
+    sampleCreation.setParentIds(new ArrayList<>(parentIds));
+    sampleCreation.setTypeId(new EntityTypePermId(measurementTypeCode));
+    sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
+    sampleCreation.setProperties(metadata);
+    createOpenbisSamples(Arrays.asList(sampleCreation));
   }
 
   @Override
@@ -378,7 +378,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     Map<String, String> metadata = new HashMap<>();
     metadata.put("Q_EXTERNALDB_ID", measurement.measurementId().value());
     List<SampleIdentifier> parentIds = ngsMeasurement.measuredSamplesCodes().stream()
-        .map(code -> new SampleIdentifier(DEFAULT_SPACE_CODE, null, code.code())).toList();
+        .map(code -> new SampleIdentifier("/"+DEFAULT_SPACE_CODE+"/"+code.code())).toList();
     registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
 

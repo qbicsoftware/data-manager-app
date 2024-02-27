@@ -55,7 +55,7 @@ public class MeasurementService {
 
     var associatedSampleCodes = registrationRequest.associatedSamples();
     var selectedSampleCode = MeasurementCode.createNGS(
-        String.valueOf(registrationRequest.associatedSamples().get(0)));
+        String.valueOf(registrationRequest.associatedSamples().get(0).code()));
     var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
@@ -88,8 +88,8 @@ public class MeasurementService {
   public Result<MeasurementId, ResponseCode> registerPxP(
       MeasurementRegistrationRequest<ProteomicsMeasurementMetadata> registrationRequest) {
     var associatedSampleCodes = registrationRequest.associatedSamples();
-    var selectedSampleCode = MeasurementCode.createNGS(
-        String.valueOf(registrationRequest.associatedSamples().get(0)));
+    var selectedSampleCode = MeasurementCode.createMS(
+        String.valueOf(registrationRequest.associatedSamples().get(0).code()));
     var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {

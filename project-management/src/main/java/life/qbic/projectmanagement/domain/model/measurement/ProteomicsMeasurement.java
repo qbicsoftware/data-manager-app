@@ -76,7 +76,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     }
     Objects.requireNonNull(method.instrument());
     Objects.requireNonNull(measurementCode);
-    if (!measurementCode.isNGSDomain()) {
+    if (!measurementCode.isMSDomain()) {
       throw new IllegalArgumentException(
           "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
