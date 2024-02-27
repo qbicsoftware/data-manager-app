@@ -74,10 +74,10 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
       personalAccessTokenService.delete(deleteTokenEvent.tokenId(), details.getUserId());
       loadGeneratedPersonalAccessTokens();
       tokenDeletionConfirmationNotification.close();
-      });
+    });
     tokenDeletionConfirmationNotification.addCancelListener(
         event -> tokenDeletionConfirmationNotification.close());
-    }
+  }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {
     AddPersonalAccessTokenDialog addPersonalAccessTokenDialog = new AddPersonalAccessTokenDialog();

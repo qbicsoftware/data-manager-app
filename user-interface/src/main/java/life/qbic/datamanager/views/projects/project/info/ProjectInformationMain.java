@@ -177,13 +177,13 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     purchaseItemDeletionConfirmationNotification.addConfirmListener(event -> {
       projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
           deleteOfferClickEvent.offerId());
-        deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
-        offerDownload.removeHref();
+      deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
+      offerDownload.removeHref();
       purchaseItemDeletionConfirmationNotification.close();
-      });
+    });
     purchaseItemDeletionConfirmationNotification.addCancelListener(
-          event -> purchaseItemDeletionConfirmationNotification.close());
-    }
+        event -> purchaseItemDeletionConfirmationNotification.close());
+  }
 
   private void onUploadOfferClicked(UploadOfferClickEvent uploadOfferClickEvent,
       ProjectPurchaseService projectPurchaseService,

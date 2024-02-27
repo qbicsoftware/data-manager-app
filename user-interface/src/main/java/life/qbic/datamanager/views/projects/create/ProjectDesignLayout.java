@@ -89,7 +89,8 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   public void enableOfferSearch() {
     offerSearchField.setEnabled(true);
     offerSearchField.setVisible(true);
-    projectDesignDescription.add(" You can either select a project from the offer list or create a new one.");
+    projectDesignDescription.add(
+        " You can either select a project from the offer list or create a new one.");
   }
 
   private void initCodeGenerationButton() {

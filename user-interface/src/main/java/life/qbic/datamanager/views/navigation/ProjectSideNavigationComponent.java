@@ -21,6 +21,7 @@ import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Collections;
@@ -104,6 +105,7 @@ public class ProjectSideNavigationComponent extends Div implements
     content.add(
         generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
             .toArray(Component[]::new));
+    content.add(createOntologyLookupSideNavItem(projectId));
   }
 
   private Project loadProject(ProjectId id) {
@@ -123,7 +125,8 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static List<Div> generateNavigationSections(Project project,
-      List<ProjectPreview> lastModifiedProjects, List<Experiment> experiments, boolean canUserAdministrate) {
+      List<ProjectPreview> lastModifiedProjects, List<Experiment> experiments,
+      boolean canUserAdministrate) {
     Div projectSection = createProjectSection(project, lastModifiedProjects, canUserAdministrate);
     Div experimentSection = createExperimentSection(project.getId().value(), experiments);
     return List.of(projectSection, experimentSection);
@@ -197,7 +200,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private static Div createProjectItems(String projectId, boolean canUserAdministrate) {
     Div projectItems = new Div();
     projectItems.add(createProjectSummaryLink(projectId));
-    if(canUserAdministrate) {
+    if (canUserAdministrate) {
       projectItems.add(createProjectUsers(projectId));
     }
     projectItems.addClassName("project-items");
@@ -241,6 +244,16 @@ public class ProjectSideNavigationComponent extends Div implements
     sideNavItem.addClassName("hoverable");
     return sideNavItem;
   }
+
+  private static SideNavItem createOntologyLookupSideNavItem(String projectId) {
+    String projectOntologyPath = String.format(Projects.ONTOLOGY, projectId);
+    SideNavItem ontologySearch = new SideNavItem("Ontology Search", projectOntologyPath,
+        LumoIcon.SEARCH.create());
+    ontologySearch.addClassName("hoverable");
+    ontologySearch.addClassName("primary");
+    return ontologySearch;
+  }
+
 
   private static void addProjectNavigationListener(ProjectNavigationEvent projectNavigationEvent) {
     projectNavigationEvent.projectId().ifPresentOrElse(

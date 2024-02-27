@@ -67,7 +67,7 @@ public class ProjectOverviewMain extends Main {
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.financeService,
           this.ontologyTermInformationService, this.contactRepository);
-      if(isOfferSearchAllowed()) {
+      if (isOfferSearchAllowed()) {
         addProjectDialog.enableOfferSearch();
       }
       addProjectDialog.addConfirmListener(this::createProject);
