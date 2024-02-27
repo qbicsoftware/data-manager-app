@@ -66,7 +66,9 @@ public class OntologyLookupComponent extends PageArea {
     add(description);
     addSearchEventListener(this::updateShownResults);
     initSearchField();
-    layoutGridSection();
+    add(searchField);
+    initGridSection();
+    add(ontologyGridSection);
     addClassName("ontology-lookup-component");
   }
 
@@ -85,23 +87,23 @@ public class OntologyLookupComponent extends PageArea {
     });
   }
 
-  private void layoutGridSection() {
+  private void initGridSection() {
     Grid<OntologyClassDTO> ontologyGrid = new Grid<>();
     ontologyGrid.addComponentColumn(
         ontologyClassDTO -> new OntologyItem(ontologyClassDTO.getLabel(),
-            ontologyClassDTO.getName(),
+            ontologyClassDTO.getName().replace("_", ":"),
             ontologyClassDTO.getClassIri(), ontologyClassDTO.getDescription(),
-            ontologyClassDTO.getOntologyAbbreviation()));
+            Ontology.findOntologyByAbbreviation(ontologyClassDTO.getOntologyAbbreviation())
+                .getName()));
     ontologyGrid.addClassName("ontology-grid");
     ontologyGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     setLazyDataProviderForOntologyGrid(ontologyGrid);
     ontologyGridSection.add(foundResults, ontologyGrid);
     foundResults.addClassName("secondary");
     ontologyGridSection.addClassName("ontology-grid-section");
-    add(ontologyGridSection);
   }
 
-  private void updateShownResults(OntologySearchEvent event) {
+  private void updateShownResults(OntologySearchTermChangedEvent event) {
     searchTerm = event.searchValue();
     ontologyGridLazyDataView.refreshAll();
     foundResults.setText("%s results found".formatted(ontologyGridLazyDataView.getItems().count()));
@@ -112,8 +114,8 @@ public class OntologyLookupComponent extends PageArea {
 
   /**
    * Resets the value within the searchfield, which in turn resets the grid via the fired
-   * {@link OntologySearchEvent}. Additionally, hides the entire section so the result span is only
-   * shown when the user is actively searching for an ontology
+   * {@link OntologySearchTermChangedEvent}. Additionally, hides the entire section so the result
+   * span is only shown when the user is actively searching for an ontology
    */
   public void resetSearch() {
     searchField.setValue("");
@@ -122,13 +124,14 @@ public class OntologyLookupComponent extends PageArea {
 
   /**
    * Register an {@link ComponentEventListener} that will get informed with a
-   * {@link OntologySearchEvent}, as soon as a user searches for an ontology of interest.
+   * {@link OntologySearchTermChangedEvent}, as soon as a user searches for an ontology of
+   * interest.
    *
    * @param ontologySearchListener a listener on the search event trigger
    */
   public void addSearchEventListener(
-      ComponentEventListener<OntologySearchEvent> ontologySearchListener) {
-    addListener(OntologySearchEvent.class, ontologySearchListener);
+      ComponentEventListener<OntologySearchTermChangedEvent> ontologySearchListener) {
+    addListener(OntologySearchTermChangedEvent.class, ontologySearchListener);
   }
 
   private void initSearchField() {
@@ -141,10 +144,10 @@ public class OntologyLookupComponent extends PageArea {
     searchField.addValueChangeListener(
         event -> {
           if (event.getValue().length() >= ONTOLOGY_SEARCH_LOWER_LIMIT) {
-            fireEvent(new OntologySearchEvent(this, event.isFromClient(), event.getValue()));
+            fireEvent(
+                new OntologySearchTermChangedEvent(this, event.isFromClient(), event.getValue()));
           }
         });
-    add(searchField);
   }
 
 
@@ -156,38 +159,42 @@ public class OntologyLookupComponent extends PageArea {
    */
   private static class OntologyItem extends Div {
 
-    public OntologyItem(String label, String name, String classIri, String description,
+    public OntologyItem(String label, String curie, String classIri, String descriptionText,
         String ontologyAbbreviation) {
-      addHeader(label, name);
-      addUrl(classIri);
-      addDescription(description);
-      addOrigin(ontologyAbbreviation);
+      Span header = createHeader(label, curie);
+      add(header);
+      Span url = createUrl(classIri);
+      add(url);
+      Div description = createDescription(descriptionText);
+      add(description);
+      Span origin = createOrigin(ontologyAbbreviation);
+      add(origin);
       addClassName("ontology-item");
     }
 
-    private void addHeader(String label, String nameText) {
+    private Span createHeader(String label, String curieText) {
       Span title = new Span(label);
       title.addClassName("ontology-item-title");
-      Span name = new Tag(nameText);
-      name.addClassNames("primary", "clickable");
-      name.addClickListener(
-          event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", nameText));
-      Span header = new Span(title, name, initCopyIcon(nameText));
+      Span curie = new Tag(curieText);
+      curie.addClassNames("primary", "clickable");
+      curie.addClickListener(
+          event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", curieText));
+      Span header = new Span(title, curie, initCopyIcon(curieText));
       header.addClassName("header");
-      add(header);
+      return header;
     }
 
-    private void addUrl(String ontologyURL) {
+    private Span createUrl(String ontologyURL) {
       Span url = new Span(ontologyURL);
       url.addClassName("url");
-      add(url);
+      return url;
     }
 
-    private void addDescription(String ontologyDescription) {
+    private Div createDescription(String ontologyDescription) {
       Div description = new Div();
       description.add(ontologyDescription);
       description.addClassName("description");
-      add(description);
+      return description;
     }
 
     private Icon initCopyIcon(String copyContent) {
@@ -199,14 +206,14 @@ public class OntologyLookupComponent extends PageArea {
       return copyIcon;
     }
 
-    private void addOrigin(String origin) {
+    private Span createOrigin(String origin) {
       Tag originAbbreviation = new Tag(origin);
       originAbbreviation.addClassName("primary");
       Span originPreText = new Span("Comes from the Ontology: ");
       originPreText.addClassName("secondary");
       Span ontologyOrigin = new Span(originPreText, originAbbreviation);
       ontologyOrigin.addClassName("origin");
-      add(ontologyOrigin);
+      return ontologyOrigin;
     }
   }
 
@@ -216,20 +223,21 @@ public class OntologyLookupComponent extends PageArea {
    * <p>Indicates that an user wants to search for a list of {@link OntologyClassDTO} containing
    * the provided value within the {@link OntologyLookupComponent}</p>
    */
-  public static class OntologySearchEvent extends ComponentEvent<OntologyLookupComponent> {
+  public static class OntologySearchTermChangedEvent extends
+      ComponentEvent<OntologyLookupComponent> {
 
     @Serial
     private static final long serialVersionUID = 6244919186359669052L;
-    private final String searchValue;
+    private final String searchTerm;
 
-    public OntologySearchEvent(OntologyLookupComponent source, boolean fromClient,
-        String searchValue) {
+    public OntologySearchTermChangedEvent(OntologyLookupComponent source, boolean fromClient,
+        String searchTerm) {
       super(source, fromClient);
-      this.searchValue = searchValue;
+      this.searchTerm = searchTerm;
     }
 
     public String searchValue() {
-      return searchValue;
+      return searchTerm;
     }
   }
 }
