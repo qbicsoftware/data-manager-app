@@ -132,6 +132,78 @@
   gap: var(--lumo-space-m);
 }
 
+.ontology-lookup-component {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+}
+
+.ontology-lookup-component .search-field {
+  max-width: 33%;
+}
+
+.ontology-lookup-component .ontology-grid-section {
+  border-top: 1px solid var(--lumo-contrast-10pct);
+  margin-right: var(--lumo-space-xl);
+  row-gap: var(--lumo-space-s);
+  padding-top: var(--lumo-space-m);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ontology-lookup-component .ontology-grid-section .ontology-grid {
+  height: 100%;
+  margin-top: var(--lumo-space-s);
+}
+
+.ontology-lookup-component .ontology-grid vaadin-grid-cell-content {
+  padding: var(--lumo-space-xs);
+}
+
+.ontology-lookup-component .ontology-item {
+  background-color: var(--lumo-base-color);
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin-bottom: var(--lumo-space-s);
+  margin-top: var(--lumo-space-s);
+  overflow: hidden;
+  padding: var(--lumo-space-m);
+  row-gap: var(--lumo-space-s);
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.ontology-lookup-component .ontology-item .header {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.ontology-lookup-component .ontology-item .header .copy-icon {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.ontology-lookup-component .ontology-item .ontology-item-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+}
+
+.ontology-lookup-component .ontology-item .url {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-tertiary-text-color);
+}
 
 .personal-access-token-component {
   row-gap: var(--lumo-space-l);

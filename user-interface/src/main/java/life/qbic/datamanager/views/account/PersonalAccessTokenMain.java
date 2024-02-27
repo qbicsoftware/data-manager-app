@@ -66,10 +66,17 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void onDeleteTokenClicked(DeleteTokenEvent deleteTokenEvent) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    personalAccessTokenService.delete(deleteTokenEvent.tokenId(), details.getUserId());
-    loadGeneratedPersonalAccessTokens();
+    AccessTokenDeletionConfirmationNotification tokenDeletionConfirmationNotification = new AccessTokenDeletionConfirmationNotification();
+    tokenDeletionConfirmationNotification.open();
+    tokenDeletionConfirmationNotification.addConfirmListener(event -> {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+      personalAccessTokenService.delete(deleteTokenEvent.tokenId(), details.getUserId());
+      loadGeneratedPersonalAccessTokens();
+      tokenDeletionConfirmationNotification.close();
+    });
+    tokenDeletionConfirmationNotification.addCancelListener(
+        event -> tokenDeletionConfirmationNotification.close());
   }
 
   private void onAddTokenClicked(AddTokenEvent addTokenEvent) {

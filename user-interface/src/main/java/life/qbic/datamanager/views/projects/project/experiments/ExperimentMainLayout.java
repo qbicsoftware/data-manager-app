@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
@@ -52,15 +53,16 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
 
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
       @Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired UserPermissions userPermissions) {
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     this.dataManagerMenu = new DataManagerMenu(logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
-        projectInformationService,
-        experimentInformationService);
+        projectInformationService, experimentInformationService,
+        userPermissions);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");

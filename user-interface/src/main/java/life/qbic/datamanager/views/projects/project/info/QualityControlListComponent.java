@@ -12,6 +12,7 @@ import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.PageArea;
 
@@ -54,7 +55,12 @@ public class QualityControlListComponent extends PageArea {
   }
 
   public void setQualityControls(List<QualityControl> qualityControlList) {
-    qualityControls.setItems(qualityControlList);
+    List<QualityControl> sortedList = qualityControlList.stream()
+        .sorted(Comparator.comparing(
+                (QualityControl qualityControl) -> qualityControl.experimentName.isEmpty())
+            .thenComparing(QualityControl::experimentName)
+            .thenComparing(QualityControl::filename)).toList();
+    qualityControls.setItems(sortedList);
   }
 
   public Registration addDeleteQualityControlListener(

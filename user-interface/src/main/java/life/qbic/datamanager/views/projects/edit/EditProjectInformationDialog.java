@@ -13,6 +13,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -49,10 +50,12 @@ public class EditProjectInformationDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
 
     formLayout = new EditProjectInformationForm();
-    formLayout.setPrincipalInvestigators(contactRepository.findAll().stream()
-        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
-    formLayout.setProjectManagers(contactRepository.findAll().stream()
-        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList());
+
+    List<Contact> knownContacts = contactRepository.findAll().stream()
+        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();
+    formLayout.setPrincipalInvestigators(knownContacts);
+    formLayout.setResponsiblePersons(knownContacts);
+    formLayout.setProjectManagers(knownContacts);
 
 
     binder = formLayout.getBinder();
