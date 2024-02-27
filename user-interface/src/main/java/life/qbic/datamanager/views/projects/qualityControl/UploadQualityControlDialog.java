@@ -41,7 +41,7 @@ public class UploadQualityControlDialog extends DialogWindow {
 
   private static final Logger log = logger(UploadQualityControlDialog.class);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
-  private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 16; // 16 MiB
+  private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 16; // 17 MiB
   @Serial
   private static final long serialVersionUID = 6602134795666762831L;
   private final Upload upload;
