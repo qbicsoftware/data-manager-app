@@ -2,8 +2,6 @@ package life.qbic.datamanager.views.projects.project.ontology;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.grid.Grid;
@@ -64,7 +62,6 @@ public class OntologyLookupComponent extends PageArea {
     Span description = new Span(
         "You can search here for ontology terms from over 20 different ontologies.");
     add(description);
-    addSearchEventListener(this::updateShownResults);
     initSearchField();
     add(searchField);
     initGridSection();
@@ -103,35 +100,14 @@ public class OntologyLookupComponent extends PageArea {
     ontologyGridSection.addClassName("ontology-grid-section");
   }
 
-  private void updateShownResults(OntologySearchTermChangedEvent event) {
-    searchTerm = event.searchValue();
-    ontologyGridLazyDataView.refreshAll();
-    foundResults.setText("%s results found".formatted(ontologyGridLazyDataView.getItems().count()));
-    if (!ontologyGridSection.isVisible()) {
-      ontologyGridSection.setVisible(true);
-    }
-  }
-
   /**
-   * Resets the value within the searchfield, which in turn resets the grid via the fired
-   * {@link OntologySearchTermChangedEvent}. Additionally, hides the entire section so the result
-   * span is only shown when the user is actively searching for an ontology
+   * Resets the value within the searchField, which in turn resets the grid. Additionally, hides the
+   * entire section so the result span is only shown when the user is actively searching for an
+   * ontology
    */
   public void resetSearch() {
     searchField.setValue("");
-    ontologyGridSection.setVisible(false);
-  }
-
-  /**
-   * Register an {@link ComponentEventListener} that will get informed with a
-   * {@link OntologySearchTermChangedEvent}, as soon as a user searches for an ontology of
-   * interest.
-   *
-   * @param ontologySearchListener a listener on the search event trigger
-   */
-  public void addSearchEventListener(
-      ComponentEventListener<OntologySearchTermChangedEvent> ontologySearchListener) {
-    addListener(OntologySearchTermChangedEvent.class, ontologySearchListener);
+    showResultSection(false);
   }
 
   private void initSearchField() {
@@ -143,13 +119,20 @@ public class OntologyLookupComponent extends PageArea {
     searchField.setValueChangeMode(ValueChangeMode.LAZY);
     searchField.addValueChangeListener(
         event -> {
-          if (event.getValue().length() >= ONTOLOGY_SEARCH_LOWER_LIMIT) {
-            fireEvent(
-                new OntologySearchTermChangedEvent(this, event.isFromClient(), event.getValue()));
-          }
+          searchTerm = event.getValue();
+          ontologyGridLazyDataView.refreshAll();
+          boolean searchTermLowerLimitReached =
+              event.getValue().length() >= ONTOLOGY_SEARCH_LOWER_LIMIT;
+          showResultSection(searchTermLowerLimitReached);
         });
   }
 
+  private void showResultSection(boolean isVisible) {
+    foundResults.setVisible(isVisible);
+    foundResults.setText(
+        "%s results found".formatted(ontologyGridLazyDataView.getItems().count()));
+    ontologyGridSection.setVisible(isVisible);
+  }
 
   /**
    * Ontology Item
@@ -214,30 +197,6 @@ public class OntologyLookupComponent extends PageArea {
       Span ontologyOrigin = new Span(originPreText, originAbbreviation);
       ontologyOrigin.addClassName("origin");
       return ontologyOrigin;
-    }
-  }
-
-  /**
-   * <b>Ontology Search Event</b>
-   *
-   * <p>Indicates that an user wants to search for a list of {@link OntologyClassDTO} containing
-   * the provided value within the {@link OntologyLookupComponent}</p>
-   */
-  public static class OntologySearchTermChangedEvent extends
-      ComponentEvent<OntologyLookupComponent> {
-
-    @Serial
-    private static final long serialVersionUID = 6244919186359669052L;
-    private final String searchTerm;
-
-    public OntologySearchTermChangedEvent(OntologyLookupComponent source, boolean fromClient,
-        String searchTerm) {
-      super(source, fromClient);
-      this.searchTerm = searchTerm;
-    }
-
-    public String searchValue() {
-      return searchTerm;
     }
   }
 }
