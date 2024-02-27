@@ -32,6 +32,14 @@ public class MeasurementCode {
 
   private final Long nanoTimeStamp;
 
+  private MeasurementCode() {
+
+    nanoTimeStamp = null;
+    measurementCode = null;
+    sampleCode = null;
+    prefix = null;
+  }
+
   private MeasurementCode(MEASUREMENT_PREFIX prefix, String sampleCode, Long nanoTimeStamp) {
     this.prefix = prefix;
     this.sampleCode = sampleCode;
