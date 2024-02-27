@@ -9,6 +9,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.upload.FailedEvent;
+import com.vaadin.flow.component.upload.FileRejectedEvent;
 import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.DomEvent;
@@ -20,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
@@ -35,14 +39,15 @@ public class UploadPurchaseDialog extends DialogWindow {
 
   private static final Logger log = logger(UploadPurchaseDialog.class);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
-  private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 5; // 14 MiB
+  private static final int MAX_FILE_SIZE_BYTES = 1024 * 1024 * 16; // 16 MiB
   @Serial
   private static final long serialVersionUID = 6602134795666762831L;
   private final Upload upload;
-  private EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
+  private final EditableMultiFileMemoryBuffer multiFileMemoryBuffer;
   private final Div uploadedPurchaseItems;
   private final List<PurchaseItem> purchaseItemsCache = new ArrayList<>();
   private final Div uploadedItemsSectionContent;
+
   public UploadPurchaseDialog() {
     // Vaadin's upload component setup
     multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
@@ -66,7 +71,6 @@ public class UploadPurchaseDialog extends DialogWindow {
     Div uploadSection = new Div();
     uploadSection.add(uploadSectionTitle, upload, restrictions);
 
-
     // Uploaded purchase items display configuration
     uploadedPurchaseItems = new Div();
     uploadedPurchaseItems.addClassName("uploaded-purchase-items");
@@ -84,6 +88,10 @@ public class UploadPurchaseDialog extends DialogWindow {
 
     // Add upload offers to the purchase item section, where users can set the signed flag
     upload.addSucceededListener(this::onUploadSucceeded);
+
+    // Show notification if user provides invalid file
+    upload.addFailedListener(this::onUploadFailure);
+    upload.addFileRejectedListener(this::onUploadFailure);
 
     // Synchronise the Vaadin upload component with the purchase list display
     // When a file is removed  from the upload component, we also want to remove it properly from memory
@@ -104,6 +112,20 @@ public class UploadPurchaseDialog extends DialogWindow {
     uploadedPurchaseItems.add(purchase);
     purchaseItemsCache.add(purchase);
     toggleFileSectionIfEmpty();
+  }
+
+  private void onUploadFailure(ComponentEvent<Upload> event) {
+    ErrorMessage errorMessage = new ErrorMessage("Offer upload failed",
+        "An unknown exception has occurred");
+    if (event instanceof FileRejectedEvent) {
+      errorMessage.descriptionTextSpan.setText(
+          "Please provide a file within the file limit of %s MB".formatted(
+              MAX_FILE_SIZE_BYTES / (1024 * 1024)));
+    } else if (event instanceof FailedEvent) {
+      errorMessage.descriptionTextSpan.setText("Offer upload was interrupted, please try again");
+    }
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
   }
 
   @Override
