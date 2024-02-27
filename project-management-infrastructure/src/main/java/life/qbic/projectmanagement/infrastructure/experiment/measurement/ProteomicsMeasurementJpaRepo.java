@@ -2,7 +2,8 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
  * <b><interface short description - 1 Line!></b>
@@ -12,6 +13,7 @@ import org.springframework.data.repository.CrudRepository;
  * @since <version tag>
  */
 public interface ProteomicsMeasurementJpaRepo extends
-    CrudRepository<ProteomicsMeasurement, MeasurementId> {
+    JpaRepository<ProteomicsMeasurement, MeasurementId>,
+    JpaSpecificationExecutor<ProteomicsMeasurement> {
 
 }

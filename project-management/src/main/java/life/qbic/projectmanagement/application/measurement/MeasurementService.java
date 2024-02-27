@@ -13,7 +13,6 @@ import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
@@ -21,8 +20,8 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,6 +38,7 @@ public class MeasurementService {
 
   private static final Logger log = logger(MeasurementService.class);
   private final MeasurementDomainService measurementDomainService;
+  private final MeasurementLookupService measurementLookupService;
   private final SampleInformationService sampleInformationService;
   private final OntologyLookupService ontologyLookupService;
   private final OrganisationLookupService organisationLookupService;
@@ -47,54 +47,35 @@ public class MeasurementService {
   public MeasurementService(MeasurementDomainService measurementDomainService,
       SampleInformationService sampleInformationService,
       OntologyLookupService ontologyLookupService,
-      OrganisationLookupService organisationLookupService) {
+      OrganisationLookupService organisationLookupService,
+      MeasurementLookupService measurementLookupService) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
+    this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
   }
 
 
-  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId, int offset,
+  public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
+      int offset,
       int limit,
-      List<SortOrder> sortOrders, String filter) {
-    //return new ArrayList<>();
-    //ToDo implement Lazy Loading in Backend
-    return List.of(
-        NGSMeasurement.create(List.of(SampleId.create(), SampleId.create(), SampleId.create()),
-            MeasurementCode.createNGS("ABCDE"),
-            new
-
-                OntologyTerm("ontA1", "ontV1", "ontI1", "ontL1", "ontN1", "ontD1", "ontCI1")),
-        NGSMeasurement.create(List.of(SampleId.create(), SampleId.create()),
-            MeasurementCode.createNGS("FGHIJ"),
-            new
-
-                OntologyTerm("ontA2", "ontV2", "ontI2", "ontL2", "ontN2", "ontD2", "ontCI2")));
+      List<SortOrder> sortOrders) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
+        offset, limit, sortOrders);
   }
 
 
-  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(ExperimentId experimentId,
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(String filter,
+      ExperimentId experimentId,
       int offset, int limit,
-      List<SortOrder> sortOrders, String filter) {
-    //ToDo implement Lazy Loading in Backend
-    //return new ArrayList<>();
-    return List.of(
-        ProteomicsMeasurement.create(
-            List.of(SampleId.create(), SampleId.create(), SampleId.create()),
-            MeasurementCode.createMS("ABCDE"), new Organisation("ProtIri1", "ProtOrglabel1"),
-            new ProteomicsMethodMetadata(
-                new OntologyTerm("ontA1", "ontV1", "ontI1", "ontL1", "ontN1", "ontD1", "ontCI1"),
-                "ProtPSL1", "ProtFN1", "ProtFT1",
-                "ProtDM1", "ProtDE1", "ProtEM1", 1, "ProtIC1", "ProtLM1")
-        ), ProteomicsMeasurement.create(
-            List.of(SampleId.create(), SampleId.create(), SampleId.create()),
-            MeasurementCode.createMS("FGHIJ"), new Organisation("ProtIri2", "ProtOrgLabel2"),
-            new ProteomicsMethodMetadata(
-                new OntologyTerm("ontA2", "ontV2", "ontI2", "ontL2", "ontN2", "ontD2", "ontCI2"),
-                "ProtPSL2", "ProtFN2", "ProtFT2",
-                "ProtDM2", "ProtDE2", "ProtEM2", 2, "ProtIC2", "ProtLM2")
-        ));
+      List<SortOrder> sortOrder) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
+        samplesInExperiment, offset, limit, sortOrder);
   }
 
 
@@ -120,7 +101,6 @@ public class MeasurementService {
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode,
         instrumentQuery.get());
-
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 

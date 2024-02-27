@@ -81,6 +81,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     /*If none of the measurement types have items show default state with noMeasurement Disclaimer*/
     if (dataViewsWithItems.isEmpty()) {
       noMeasurementDisclaimer.setVisible(true);
+      registerMeasurementTabSheet.setVisible(false);
       return;
     }
     noMeasurementDisclaimer.setVisible(false);
@@ -135,8 +136,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("measurementCode").ascending());
-      return measurementService.findNGSMeasurements(context.experimentId().orElseThrow(),
-          query.getOffset(), query.getLimit(), sortOrders, searchTerm).stream();
+      return measurementService.findNGSMeasurements(searchTerm,
+          context.experimentId().orElseThrow(),
+          query.getOffset(), query.getLimit(), sortOrders).stream();
     });
     measurementsGridDataViews.add(ngsGridDataView);
   }
@@ -146,9 +148,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setHeader("Measurement Code");
-    proteomicsMeasurementGrid.addComponentColumn(
+    //ToDo figure out how to best load this
+   /* proteomicsMeasurementGrid.addComponentColumn(
         proteomicsMeasurement -> renderSampleCodes().createComponent(
             proteomicsMeasurement.measuredSamples())).setHeader("Sample Codes");
+    */
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.organisation().label())
         .setHeader("Organisation");
@@ -170,8 +174,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               .collect(Collectors.toList());
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementCode").ascending());
-          return measurementService.findProteomicsMeasurement(context.experimentId().orElseThrow(),
-              query.getOffset(), query.getLimit(), sortOrders, searchTerm).stream();
+          return measurementService.findProteomicsMeasurement(searchTerm,
+              context.experimentId().orElseThrow(),
+              query.getOffset(), query.getLimit(), sortOrders).stream();
         });
     measurementsGridDataViews.add(proteomicsGridDataView);
   }

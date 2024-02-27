@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -11,6 +12,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
  *
  * @since <version tag>
  */
-public interface NGSMeasurementJpaRepo extends JpaRepository<NGSMeasurement, MeasurementId> {
+public interface NGSMeasurementJpaRepo
+    extends JpaRepository<NGSMeasurement, MeasurementId>,
+    JpaSpecificationExecutor<NGSMeasurement> {
 
 }
