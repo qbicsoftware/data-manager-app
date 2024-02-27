@@ -47,21 +47,12 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     // Needed for JPA
   }
 
-  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode,
+  private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds, MeasurementCode measurementCode,
       Organisation organisation,
       ProteomicsMethodMetadata method, ProteomicsSamplePreparation samplePreparation) {
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
-    this.organisation = organisation;
-    this.instrument = method.instrument();
-    this.measurementCode = measurementCode;
-  }
-
-  private ProteomicsMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode,
-      Organisation organisation,
-      ProteomicsMethodMetadata method) {
-    measuredSamples = new ArrayList<>();
-    measuredSamples.addAll(sampleIds);
+    this.id = id;
     this.organisation = organisation;
     this.instrument = method.instrument();
     this.measurementCode = measurementCode;
@@ -89,7 +80,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
       throw new IllegalArgumentException(
           "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
-    return new ProteomicsMeasurement(sampleIds, measurementCode, organisation, method);
+    var measurementId = MeasurementId.create();
+    return new ProteomicsMeasurement(measurementId, sampleIds, measurementCode, organisation, method, null);
   }
 
   public ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,

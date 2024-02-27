@@ -67,7 +67,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
     try {
       pxpMeasurementJpaRepo.save(measurement);
     } catch (Exception e) {
-      log.error("Saving ngs measurement failed", e);
+      log.error("Saving proteomics measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
 
