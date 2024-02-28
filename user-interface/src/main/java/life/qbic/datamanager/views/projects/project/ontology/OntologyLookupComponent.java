@@ -70,16 +70,15 @@ public class OntologyLookupComponent extends PageArea {
   }
 
   private void setLazyDataProviderForOntologyGrid(Grid<OntologyClassDTO> ontologyGrid) {
-    List<Ontology> ontologies = Arrays.stream(Ontology.values()).toList();
-    List<String> ontologyAbbreviations = ontologies.stream()
-        .map(Ontology::getAbbreviation)
-        .toList();
     ontologyGridLazyDataView = ontologyGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .toList();
-      return ontologyTermInformationService.queryOntologyTerm(searchTerm, ontologyAbbreviations,
-          query.getOffset(), query.getLimit(),
+      var allOntologyAbbreviations = Arrays.stream(Ontology.values()).map(Ontology::getAbbreviation)
+          .toList();
+      return ontologyTermInformationService.queryOntologyTerm(searchTerm, allOntologyAbbreviations,
+          query.getOffset(),
+          query.getLimit(),
           List.copyOf(sortOrders)).stream().map(OntologyClassDTO::from);
     });
   }
