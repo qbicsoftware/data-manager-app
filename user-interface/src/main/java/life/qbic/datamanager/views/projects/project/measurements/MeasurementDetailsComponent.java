@@ -72,6 +72,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     addClassName("measurement-details-component");
   }
 
+  /**
+   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to query the
+   * {@link MeasurementMetadata} shown in the grids of this component
+   *
+   * @param experimentId ExperimentId of the experiment containing the samples for which
+   *                     measurements could be registered
+   */
   public void setExperimentId(ExperimentId experimentId) {
     resetTabsInTabsheet();
     context = new Context().with(experimentId);
@@ -89,11 +96,28 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     registerMeasurementTabSheet.setVisible(true);
   }
 
-  public void setSearchedMeasurementValue(String value) {
-    searchTerm = value;
+  /**
+   * Propagates the search Term provided by the user
+   * <p>
+   * The string based search term is used to filter the {@link MeasurementMetadata} shown in the
+   * grid of each individual tab of the Tabsheet within this component
+   *
+   * @param searchTerm String based searchTerm for which the properties of each measurement should
+   *                   be filtered for
+   */
+  public void setSearchedMeasurementValue(String searchTerm) {
+    this.searchTerm = searchTerm;
     measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
   }
 
+
+  /**
+   * Informs the listener that a {@link MeasurementAddClickEvent} has occurred within the disclaimer
+   * of this component
+   *
+   * @param addMeasurementListener listener which will be informed if a
+   *                               {@link MeasurementAddClickEvent} has been fired
+   */
   public void addRegisterMeasurementClickedListener(
       ComponentEventListener<MeasurementAddClickEvent> addMeasurementListener) {
     addListener(MeasurementAddClickEvent.class, addMeasurementListener);
@@ -216,6 +240,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
   }
 
+
+  /**
+   * Measurement Add Click Event
+   * <p></p>
+   * ComponentEvent which informs the system that {@link MeasurementMetadata} is intended to be
+   * added to the system
+   */
   public static class MeasurementAddClickEvent extends
       ComponentEvent<MeasurementDetailsComponent> {
 

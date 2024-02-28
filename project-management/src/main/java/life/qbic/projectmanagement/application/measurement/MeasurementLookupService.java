@@ -6,7 +6,6 @@ import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Service;
 /**
  * MeasurementLookupService
  * <p>
- * Service that provides an API to query measurement information
+ * Service that provides an API to query and filter measurement information
  */
 @Service
 public class MeasurementLookupService {
@@ -33,14 +32,13 @@ public class MeasurementLookupService {
   }
 
   /**
-   * Queries {@link OntologyClass}s with a provided offset and limit that supports pagination.
+   * Queries {@link ProteomicsMeasurement}s with a provided offset and limit that supports pagination.
    *
    * @param termFilter the user's input will be applied to filter results
    * @param offset     the offset for the search result to start
    * @param limit      the maximum number of results that should be returned
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
-   * @since 1.0.0
    */
   public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {
@@ -53,14 +51,13 @@ public class MeasurementLookupService {
   }
 
   /**
-   * Queries {@link OntologyClass}s with a provided offset and limit that supports pagination.
+   * Queries {@link NGSMeasurement}s with a provided offset and limit that supports pagination.
    *
    * @param termFilter the user's input will be applied to filter results
    * @param offset     the offset for the search result to start
    * @param limit      the maximum number of results that should be returned
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
-   * @since 1.0.0
    */
   public List<NGSMeasurement> queryNGSMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {

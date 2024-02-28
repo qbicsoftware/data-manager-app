@@ -26,12 +26,11 @@ import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * Measurement Service
+ * <p>
+ * Service that provides an API to manage and query measurement information
  */
 @Service
 public class MeasurementService {

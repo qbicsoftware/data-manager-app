@@ -7,6 +7,7 @@ import java.util.List;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -17,11 +18,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * Basic implementation to query measurement information
+ * <p></p>
+ * Employs JPA based {@link Specification} to provide the ability to filter each
+ * {@link MeasurementMetadata} with the provided string based searchTerm
  */
 @Repository
 public class MeasurementLookupImplementation implements MeasurementLookup {
@@ -106,7 +106,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         sampleIds);
     Specification<NGSMeasurement> measurementCodeContains = NgsMeasurementSpec.isMeasurementCode(
         filter);
-    //ToDo Extend with ngs property specs
+    //ToDo Extend with required ngs property specs
     Specification<NGSMeasurement> filterSpecification = Specification.anyOf(
         measurementCodeContains);
     return Specification.where(isBlankSpec).and(containsSampleId).and(filterSpecification)
@@ -137,7 +137,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       };
     }
 
-    //If no filter was provided return all SamplePreviews
+    //If no filter was provided return all proteomicsMeasurement
     public static Specification<ProteomicsMeasurement> isBlank(String filter) {
       return (root, query, builder) -> {
         if (filter != null && filter.isBlank()) {
@@ -170,7 +170,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
   private static class NgsMeasurementSpec {
 
-    //We need to ensure that we only count and retrieve unique samplePreviews
+    //We need to ensure that we only count and retrieve unique ngsMeasurements
     public static Specification<NGSMeasurement> isDistinct() {
       return (root, query, builder) -> {
         query.distinct(true);
@@ -191,7 +191,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       };
     }
 
-    //If no filter was provided return all SamplePreviews
+    //If no filter was provided return all proteomicsMeasurement
     public static Specification<NGSMeasurement> isBlank(String filter) {
       return (root, query, builder) -> {
         if (filter != null && filter.isBlank()) {
@@ -205,6 +205,6 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       return (root, query, builder) ->
           builder.like(root.get("measurementCode").get("measurementCode"), "%" + filter + "%");
     }
-    //ToDo extend with more property filters
+    //ToDo extend with required property filters
   }
 }

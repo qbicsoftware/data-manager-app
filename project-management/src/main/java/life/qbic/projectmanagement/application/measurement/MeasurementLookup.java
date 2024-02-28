@@ -7,13 +7,6 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
-/**
- * <class short description - One Line!>
- * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
- */
 public interface MeasurementLookup {
 
   /**

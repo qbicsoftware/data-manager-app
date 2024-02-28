@@ -6,11 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
- * <b><interface short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * Simple proteomics measurement JPA repository to query and filter concise
+ * {@link ProteomicsMeasurement} information
  */
 public interface ProteomicsMeasurementJpaRepo extends
     JpaRepository<ProteomicsMeasurement, MeasurementId>,
