@@ -15,8 +15,8 @@
 }
 
 .main.measurement {
-  grid-template-columns: minmax(min-content, 70%) minmax(min-content, 30%);
-  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
+  grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
+  grid-template-rows: minmax(max-content, 20%) minmax(max-content, 75%);
   grid-template-areas:
     ". measurementtemplatelist"
     "measurementdetails measurementdetails";
@@ -24,6 +24,33 @@
 
 .main.measurement .measurement-template-list-component {
   grid-area: measurementtemplatelist;
+}
+
+
+.main.measurement .measurement-details-component {
+  grid-area: measurementdetails
+}
+
+.main.measurement .measurement-main-content {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+}
+
+
+.main.measurement .measurement-main-content .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.main.measurement .measurement-main-content .buttonAndField {
+  display: inline-flex;
+  justify-content: space-between;
+  /*Moves this bar to end of container*/
+  margin-top: auto;
 }
 
 .main.project {

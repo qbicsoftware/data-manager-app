@@ -9,3 +9,7 @@ vaadin-icon.error {
 vaadin-icon.clickable {
   cursor: pointer;
 }
+
+vaadin-icon.small {
+  width: var(--lumo-icon-size-s);
+}

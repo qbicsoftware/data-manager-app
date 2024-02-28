@@ -62,9 +62,9 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
    * Creates a new {@link ProteomicsMeasurement} object instance, that describes an NGS measurement
    * entity with many describing properties about provenance and instrumentation.
    *
-   * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
-   *                   one sample id is provided, the measurement is considered to be performed on a
-   *                   pooled sample
+   * @param sampleIds the sample ids of the samples the measurement was performed on. If more than
+   *                  one sample id is provided, the measurement is considered to be performed on a
+   *                  pooled sample
    * @return
    * @since 1.0.0
    */
@@ -114,4 +114,15 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return id;
   }
 
+  public Collection<SampleId> measuredSamples() {
+    return measuredSamples;
+  }
+
+  public OntologyTerm instrument() {
+    return instrument;
+  }
+
+  public Organisation organisation() {
+    return organisation;
+  }
 }

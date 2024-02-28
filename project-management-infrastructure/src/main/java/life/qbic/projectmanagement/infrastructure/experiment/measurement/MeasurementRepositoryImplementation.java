@@ -25,9 +25,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
 
   private static final Logger log = logger(MeasurementRepositoryImplementation.class);
   private final NGSMeasurementJpaRepo measurementJpaRepo;
-
   private final ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo;
-
   private final MeasurementDataRepo measurementDataRepo;
 
   public MeasurementRepositoryImplementation(NGSMeasurementJpaRepo measurementJpaRepo,

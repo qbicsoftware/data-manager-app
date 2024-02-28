@@ -3,38 +3,41 @@ package life.qbic.projectmanagement.application.measurement;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
+import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * Measurement Service
+ * <p>
+ * Service that provides an API to manage and query measurement information
  */
 @Service
 public class MeasurementService {
 
   private static final Logger log = logger(MeasurementService.class);
   private final MeasurementDomainService measurementDomainService;
+  private final MeasurementLookupService measurementLookupService;
   private final SampleInformationService sampleInformationService;
   private final OntologyLookupService ontologyLookupService;
   private final OrganisationLookupService organisationLookupService;
@@ -43,12 +46,37 @@ public class MeasurementService {
   public MeasurementService(MeasurementDomainService measurementDomainService,
       SampleInformationService sampleInformationService,
       OntologyLookupService ontologyLookupService,
-      OrganisationLookupService organisationLookupService) {
+      OrganisationLookupService organisationLookupService,
+      MeasurementLookupService measurementLookupService) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
+    this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
   }
+
+
+  public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
+      int offset,
+      int limit,
+      List<SortOrder> sortOrders) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
+        offset, limit, sortOrders);
+  }
+
+
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(String filter,
+      ExperimentId experimentId,
+      int offset, int limit,
+      List<SortOrder> sortOrder) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
+        samplesInExperiment, offset, limit, sortOrder);
+  }
+
 
   public Result<MeasurementId, ResponseCode> registerNGS(
       MeasurementRegistrationRequest<NGSMeasurementMetadata> registrationRequest) {
@@ -72,7 +100,6 @@ public class MeasurementService {
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode,
         instrumentQuery.get());
-
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
@@ -102,7 +129,8 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
-    var organisationQuery = organisationLookupService.organisation(registrationRequest.metadata().organisationId());
+    var organisationQuery = organisationLookupService.organisation(
+        registrationRequest.metadata().organisationId());
     if (organisationQuery.isEmpty()) {
       return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
