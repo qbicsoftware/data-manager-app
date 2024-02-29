@@ -71,7 +71,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     this.measurementFileItems = new ArrayList<>();
 
     var upload = new Upload(uploadBuffer);
-    upload.setMaxFiles(1);
     upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
@@ -341,8 +340,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    //TODO
-//    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
+    if (measurementFileItems.stream()
+        .map(MeasurementFileItem::validationReport)
+        .map(ValidationReport::validationResult)
+        .anyMatch(ValidationResult::containsFailures)) {
+      return; //only when all are valid
+    }
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), measurementMetadataUploads));
   }
 
   @Override
@@ -387,8 +391,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       fileIcon.addClassName("file-icon");
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
       fileNameLabel.addClassName("file-name");
-      createDisplayBox(measurementFileItem.validationReport());
-      add(fileNameLabel);
+      Component displayBox = createDisplayBox(measurementFileItem.validationReport());
+      add(fileNameLabel, displayBox);
       addClassName("measurement");
     }
 
