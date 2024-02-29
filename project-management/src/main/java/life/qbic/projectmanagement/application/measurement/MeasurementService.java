@@ -155,6 +155,21 @@ public class MeasurementService {
     }
   }
 
+  public Result<MeasurementId, ResponseCode> register(
+      MeasurementRegistrationRequest<? extends MeasurementMetadata> registrationRequest) {
+    if (registrationRequest.metadata() instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
+      return registerPxP(
+          new MeasurementRegistrationRequest<>(registrationRequest.associatedSamples(),
+              proteomicsMeasurementMetadata));
+    }
+    if (registrationRequest.metadata() instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
+      return registerNGS(
+          new MeasurementRegistrationRequest<>(registrationRequest.associatedSamples(),
+              ngsMeasurementMetadata));
+    }
+    return Result.fromError(ResponseCode.FAILED);
+  }
+
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
     return ontologyLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);
   }
