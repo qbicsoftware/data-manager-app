@@ -1,8 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
-import static life.qbic.openbis.openbisclient.helper.OpenBisClientHelper.fetchSamplesCompletely;
-
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
@@ -33,6 +31,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.UpdateSamplesOpera
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
+import ch.ethz.sis.openbis.generic.dssapi.v3.IDataStoreServerApi;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +45,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
-import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -67,13 +65,29 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private static final Logger log = logger(OpenbisConnector.class);
 
-  private final OpenBisClient openBisClient;
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
   private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
   private static final String DEFAULT_ANALYTE_TYPE = "OTHER";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
+  private final OpenbisSessionFactory sessionFactory;
+  private final IApplicationServerApi applicationServer;
 
+  public OpenBisConnector(
+      String applicationServerUrl,
+      List<String> dataStoreUrls,
+      SessionFactory sessionFactory) {
+    if (dataStoreUrls.size() < 1) {
+      throw new IllegalArgumentException("At least one data store is required.");
+    }
+    this.sessionFactory = requireNonNull(sessionFactory, "sessionFactory must not be null");
+    this.applicationServer = ApiV3.applicationServer(
+        requireNonNull(applicationServerUrl, "applicationServerUrl must not be null"));
+    this.dataStoreServers = dataStoreUrls.stream()
+        .map(dataStoreUrl -> dataStoreUrl + IDataStoreServerApi.SERVICE_URL)
+        .map(ApiV3::dataStoreServer)
+        .collect(Collectors.toList());
+  }
   private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
 
   // used by spring to wire it up
@@ -143,7 +157,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       String code) {
     ProjectSearchCriteria criteria = new ProjectSearchCriteria();
     criteria.withCode().thatEquals(code);
-
     ProjectFetchOptions options = new ProjectFetchOptions();
     SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project> searchResult =
         openBisClient.getV3().searchProjects(openBisClient.getSessionToken(), criteria, options);
