@@ -188,7 +188,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     var registrationRequests = switch (domain) {
       case PROTEOMICS -> generatePxPRequests(content);
-      case NGS -> null;
+      case NGS -> generateNgsRequests();
     };
     var validationReport = switch (domain) {
       case PROTEOMICS -> validatePxP(content);
@@ -200,6 +200,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         finishedEvent.getFileName(), registrationRequests);
 
     addFile(measurementFileItem, metadataUpload);
+  }
+
+  private List<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>> generateNgsRequests() {
+    return null;
   }
 
   private void addFile(MeasurementFileItem measurementFileItem,
