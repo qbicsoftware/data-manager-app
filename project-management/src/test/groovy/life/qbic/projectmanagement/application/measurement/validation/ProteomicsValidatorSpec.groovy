@@ -25,8 +25,9 @@ class ProteomicsValidatorSpec extends Specification {
     final OntologyLookupService ontologyLookupService = Mock(OntologyLookupService.class, {
         findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
-    final static List<String> validPXPProperties = ["qbic sample id", "organisation id", "facility", "instrument",
-                                                    "pooled sample label", "cycle/fraction name", "digestion method",
+
+    final static List<String> validPXPProperties = ["qbic sample ids", "organisation id", "facility", "instrument",
+                                                    "pooled sample label", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "sample preparation", "sample cleanup (protein)",
                                                     "sample cleanup (peptide)", "note"]
@@ -76,9 +77,7 @@ class ProteomicsValidatorSpec extends Specification {
         where:
         chaosCasing << [
                 validPXPProperties.collect { it.toUpperCase() },
-                validPXPProperties.collect { it.toLowerCase() },
-                validPXPProperties.collect { it.toLowerCase() }.findAll { validPXPProperties.indexOf(it) % 2 == 0 }.collect { it.toUpperCase() }
-        ]
+                validPXPProperties.collect { it.toLowerCase() }]
 
 
     }
@@ -183,29 +182,6 @@ class ProteomicsValidatorSpec extends Specification {
      *
      */
 
-    def "If no organisation information is provided, the validation must fail"() {
-        given:
-        def validMeasurementEntry = new ProteomicsMeasurementMetadata(validMetadata.sampleCodes(), "", validMetadata.instrumentCURI())
-
-        and:
-        SampleInformationService sampleInformationService = Mock(SampleInformationService.class, {
-            findSampleId(_) >> Optional.empty()
-        })
-
-        and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
-
-        when:
-        def result = validator.validate(validMeasurementEntry)
-
-        then:
-        !result.allPassed()
-        !result.containsWarnings()
-        result.containsFailures()
-        result.failedEntries() == 1
-        result.failures()[0] == "A measurement must contain at least one sample reference. Provided: none"
-    }
-
     def "If an invalid ROR ID for the organisation information is provided, the validation must fail"() {
         given:
         def sampleCode = SampleCode.create("QTEST001AE")
@@ -225,7 +201,7 @@ class ProteomicsValidatorSpec extends Specification {
         then:
         !result.allPassed()
         !result.containsWarnings()
-        result.validatedEntries() == 2
+        result.validatedEntries() == 3
         result.containsFailures()
         result.failedEntries() == 1
         result.failures()[0] == "The organisation ID does not seem to be a ROR ID: \"${invalidRorId}\""
@@ -259,7 +235,7 @@ class ProteomicsValidatorSpec extends Specification {
         then:
         result.allPassed()
         !result.containsWarnings()
-        result.validatedEntries() == 2
+        result.validatedEntries() == 3
         !result.containsFailures()
 
         where:

@@ -26,17 +26,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetadata> {
 
-  private static final Set<String> PROTEOMICS_PROPERTIES = new HashSet<>();
-
-  static {
-    PROTEOMICS_PROPERTIES.addAll(
-        Arrays.asList("qbic sample ids", "organisation id", "facility", "instrument",
-            "pooled sample label", "cycle/fraction name", "fractionation type", "digestion method",
-            "digestion enzyme", "enrichment method", "injection volume (ul)", "lc column",
-            "lcms method", "sample preparation", "sample cleanup (protein)",
-            "sample cleanup (peptide)", "note"));
-  }
-
   protected final SampleInformationService sampleInformationService;
 
   protected final OntologyLookupService ontologyLookupService;
@@ -94,7 +83,6 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     INSTRUMENT("instrument"),
     POOLED_SAMPLE_LABEL("pooled sample label"),
     CYCLE_FRACTION_NAME("cycle/fraction name"),
-    FRACTIONATION_TYPE("fractionation type"),
     DIGESTION_METHOD("digestion method"),
     DIGESTION_ENZYME("digestion enzyme"),
     ENRICHMENT_METHOD("enrichment method"),
