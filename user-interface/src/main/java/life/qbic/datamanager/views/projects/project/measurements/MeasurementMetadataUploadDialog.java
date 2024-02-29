@@ -403,6 +403,9 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     private Component createDisplayBox(ValidationReport validationReport) {
       Div displayBox = new Div(); //TODO
       displayBox.addClassName("display-box");
+      for (String failure : validationReport.validationResult().failures()) {
+        displayBox.add(new Div(new Span(failure)));
+      }
       return displayBox;
     }
 
