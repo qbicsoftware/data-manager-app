@@ -26,16 +26,18 @@ public class InfoBox extends Span {
     addClassName("info-box");
   }
 
-  public void setInfoText(String text) {
+  public InfoBox setInfoText(String text) {
     infoText.setText(text);
+    return this;
   }
 
-  public void setClosable(boolean isClosable) {
+  public InfoBox setClosable(boolean isClosable) {
     if (isClosable && !getChildren().toList().contains(removeInfoIcon)) {
       add(removeInfoIcon);
     }
     if (!isClosable && getChildren().toList().contains(removeInfoIcon)) {
       remove(removeInfoIcon);
     }
+    return this;
   }
 }
