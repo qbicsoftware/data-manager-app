@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -147,18 +146,17 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private void onUploadFinished(FinishedEvent finishedEvent) {
     MetadataContent content = read(
         uploadBuffer.inputStream(finishedEvent.getFileName()).orElseThrow());
-    if (content.theHeader().isEmpty()) {
-      throw new RuntimeException("No header row found");
-    }
-    var domain = validationService.inferDomainByPropertyTypes(
-            parseHeaderContent(content.theHeader().get()))
+    var contentHeader = content.theHeader()
+        .orElseThrow(() -> new RuntimeException("No header row found"));
+    var domain = validationService
+        .inferDomainByPropertyTypes(parseHeaderContent(contentHeader))
         .orElseThrow();
 
-    switch (domain) {
-      case PROTEOMICS -> validatePxP(content, this::display);
+    var validationReport = switch (domain) {
+      case PROTEOMICS -> validatePxP(content);
       case NGS -> validateNGS();
-    }
-
+    };
+    display(validationReport);
   }
 
   /**
@@ -183,11 +181,11 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     return content.isEmpty() ? Optional.empty() : Optional.ofNullable(content.get(0));
   }
 
-  private void validateNGS() {
-
+  private ValidationReport validateNGS() {
+    return new ValidationReport(0, ValidationResult.successful(0));
   }
 
-  private void validatePxP(MetadataContent content, Consumer<ValidationReport> consumer) {
+  private ValidationReport validatePxP(MetadataContent content) {
 
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
@@ -196,10 +194,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     if (content.rows().isEmpty() || content.rows().stream()
         .noneMatch(MeasurementMetadataUploadDialog::isEmptyRow)) {
       validationResult = validationResult.combine(
-          ValidationResult.withFailures(1, List.of("The metadata sheet seems to be empty")));
-      consumer.accept(new ValidationReport(0, validationResult));
-      // no need to continue
-      return;
+          ValidationResult.withFailures(0, List.of("The metadata sheet seems to be empty")));
+      return new ValidationReport(0, validationResult);
     }
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isEmptyRow).toList()) {
@@ -207,7 +203,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       validationResult = validationResult.combine(result);
       evaluatedRows++;
     }
-    consumer.accept(new ValidationReport(evaluatedRows, validationResult));
+    return new ValidationReport(evaluatedRows, validationResult);
   }
 
   private ValidationResult validateRow(Map<String, Integer> propertyColumnMap, String row) {
