@@ -1,13 +1,9 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.regex.Pattern;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
@@ -49,7 +45,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     if (properties.isEmpty()) {
       return false;
     }
-    if (properties.size() != PROTEOMICS_PROPERTY.values().length) {
+    if (properties.size() < PROTEOMICS_PROPERTY.values().length) {
       return false;
     }
     for (PROTEOMICS_PROPERTY pxpProperty : PROTEOMICS_PROPERTY.values()) {
@@ -83,6 +79,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     INSTRUMENT("instrument"),
     POOLED_SAMPLE_LABEL("pooled sample label"),
     CYCLE_FRACTION_NAME("cycle/fraction name"),
+    FRACTIONATION_TYPE("fractionation type"),
     DIGESTION_METHOD("digestion method"),
     DIGESTION_ENZYME("digestion enzyme"),
     ENRICHMENT_METHOD("enrichment method"),
