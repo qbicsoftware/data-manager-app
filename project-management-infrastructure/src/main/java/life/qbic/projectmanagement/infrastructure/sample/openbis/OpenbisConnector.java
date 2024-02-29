@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
@@ -25,13 +26,13 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.CreateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.create.SampleCreation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.delete.SampleDeletionOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.id.SampleIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.SampleUpdate;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.UpdateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
-import ch.ethz.sis.openbis.generic.dssapi.v3.IDataStoreServerApi;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,6 +51,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
+import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSessionFactory.ApiV3;
 import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
 import life.qbic.projectmanagement.infrastructure.sample.translation.VocabularyCode;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,60 +74,21 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
   private final OpenbisSessionFactory sessionFactory;
   private final IApplicationServerApi applicationServer;
-
-  public OpenBisConnector(
-      String applicationServerUrl,
-      List<String> dataStoreUrls,
-      SessionFactory sessionFactory) {
-    if (dataStoreUrls.size() < 1) {
-      throw new IllegalArgumentException("At least one data store is required.");
-    }
-    this.sessionFactory = requireNonNull(sessionFactory, "sessionFactory must not be null");
-    this.applicationServer = ApiV3.applicationServer(
-        requireNonNull(applicationServerUrl, "applicationServerUrl must not be null"));
-    this.dataStoreServers = dataStoreUrls.stream()
-        .map(dataStoreUrl -> dataStoreUrl + IDataStoreServerApi.SERVICE_URL)
-        .map(ApiV3::dataStoreServer)
-        .collect(Collectors.toList());
-  }
   private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
       @Value("${openbis.user.password}") String password,
       @Value("${openbis.datasource.url}") String url) {
-    openBisClient = new OpenBisClient(
-        userName, password, url);
-    try {
-      login();
-    } catch (RuntimeException e) {
-      if (!(e instanceof ConnectionException)) {
-        log.error("Unexpected runtime exception", e);
-      }
-      throw new RuntimeException("Could not establish a connection to a data connector.");
-    }
-  }
 
-  private void login() throws RuntimeException {
-    try {
-      openBisClient.login();
-    } catch (Exception e) {
-      // login must not throw any exceptions.
-      // so if we log it and return a more generic exception to not expose
-      // implementation details
-      log.error("Connection to openBIS was not established", e);
-      throw new ConnectionException();
-    }
-    // If the connection is not active, fail early
-    if (isNotConnected()) {
-      log.error("Login to openBIS was not successful, correct credentials?");
-      throw new ConnectionException();
-    }
-  }
+    String OPENBIS_APPLICATION_URL=url + IApplicationServerApi.SERVICE_URL;
 
-  private boolean isNotConnected() {
-    return Objects.isNull(openBisClient.getSessionToken()) || openBisClient.getSessionToken()
-        .isEmpty();
+    this.sessionFactory =  new OpenbisSessionFactory(
+        OPENBIS_APPLICATION_URL,
+        userName,
+        password);
+    this.applicationServer = ApiV3.applicationServer(
+        requireNonNull(OPENBIS_APPLICATION_URL, "applicationServerUrl must not be null"));
   }
 
   private List<VocabularyTerm> getVocabularyTermsForCode(VocabularyCode vocabularyCode) {
@@ -134,8 +97,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
     VocabularyTermFetchOptions options = new VocabularyTermFetchOptions();
     SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm> searchResult =
-        openBisClient.getV3()
-            .searchVocabularyTerms(openBisClient.getSessionToken(), criteria, options);
+        applicationServer.searchVocabularyTerms(sessionFactory.getSession().getToken(), criteria, options);
 
     return searchResult.getObjects().stream()
         .map(it -> new VocabularyTerm(it.getCode(), it.getLabel(), it.getDescription()))
@@ -148,7 +110,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     criteria.withProject().withCode().thatEquals(projectCode);
 
     SearchResult<Experiment> searchResult =
-        openBisClient.getV3().searchExperiments(openBisClient.getSessionToken(), criteria, fetchOptions);
+        applicationServer.searchExperiments(sessionFactory.getSession().getToken(), criteria, fetchOptions);
 
     return searchResult.getObjects();
   }
@@ -159,7 +121,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     criteria.withCode().thatEquals(code);
     ProjectFetchOptions options = new ProjectFetchOptions();
     SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project> searchResult =
-        openBisClient.getV3().searchProjects(openBisClient.getSessionToken(), criteria, options);
+        applicationServer.searchProjects(sessionFactory.getSession().getToken(), criteria, options);
 
     return searchResult.getObjects();
   }
@@ -411,10 +373,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     openBisSampleIds.add(sampleIdentifier);
 
     // we need to handle this deletion operation differently in order to confirm deletion
-    IApplicationServerApi api = openBisClient.getV3();
-    IDeletionId deletionId = api.deleteSamples(openBisClient.getSessionToken(), openBisSampleIds,
+    IDeletionId deletionId = applicationServer.deleteSamples(sessionFactory.getSession().getToken(), openBisSampleIds,
         deletionOptions);
-    api.confirmDeletions(openBisClient.getSessionToken(), Collections.singletonList(deletionId));
+    applicationServer.confirmDeletions(sessionFactory.getSession().getToken(), Collections.singletonList(deletionId));
   }
 
   private void deleteOpenbisExperiment(ExperimentIdentifier experimentIdentifier) {
@@ -423,18 +384,16 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     List<ExperimentIdentifier> openBisIds = new ArrayList<>();
     openBisIds.add(experimentIdentifier);
     // we need to handle this deletion operation differently in order to confirm deletion
-    IApplicationServerApi api = openBisClient.getV3();
-    IDeletionId deletionId = api.deleteExperiments(openBisClient.getSessionToken(), openBisIds,
+    IDeletionId deletionId = applicationServer.deleteExperiments(sessionFactory.getSession().getToken(), openBisIds,
         deletionOptions);
-    api.confirmDeletions(openBisClient.getSessionToken(), Collections.singletonList(deletionId));
+    applicationServer.confirmDeletions(sessionFactory.getSession().getToken(), Collections.singletonList(deletionId));
   }
 
   private void handleOperations(IOperation operation) {
-    IApplicationServerApi api = openBisClient.getV3();
     SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();
     List<IOperation> operationOptions = Collections.singletonList(operation);
     try {
-      api.executeOperations(openBisClient.getSessionToken(), operationOptions, executionOptions);
+      applicationServer.executeOperations(sessionFactory.getSession().getToken(), operationOptions, executionOptions);
     } catch (Exception e) {
       log.error("Unexpected exception during openBIS operation.", e);
       throw e;
@@ -477,5 +436,26 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     public SampleNotUpdatedException(String s) {
       super(s);
     }
+  }
+
+  public static SampleFetchOptions fetchSamplesCompletely() {
+    SampleFetchOptions sampleFetchOptions = new SampleFetchOptions();
+    sampleFetchOptions.withExperiment();
+    sampleFetchOptions.withAttachments();
+    sampleFetchOptions.withComponents();
+    sampleFetchOptions.withContainer();
+    sampleFetchOptions.withDataSets();
+    sampleFetchOptions.withHistory();
+    sampleFetchOptions.withMaterialProperties();
+    sampleFetchOptions.withModifier();
+    sampleFetchOptions.withProperties();
+    sampleFetchOptions.withRegistrator();
+    sampleFetchOptions.withSpace();
+    sampleFetchOptions.withTags();
+    sampleFetchOptions.withType();
+    sampleFetchOptions.withParentsUsing(sampleFetchOptions);
+    sampleFetchOptions.withChildrenUsing(sampleFetchOptions);
+
+    return sampleFetchOptions;
   }
 }
