@@ -25,6 +25,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -103,7 +104,8 @@ public class MeasurementService {
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
-    var result = measurementDomainService.addNGS(new NGSMeasurementWrapper(measurement, parentCodes));
+    var result = measurementDomainService.addNGS(
+        new NGSMeasurementWrapper(measurement, parentCodes));
 
     if (result.isError()) {
       return Result.fromError(ResponseCode.FAILED);
@@ -146,7 +148,8 @@ public class MeasurementService {
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
-    var result = measurementDomainService.addProteomics(new ProteomicsMeasurementWrapper(measurement, parentCodes));
+    var result = measurementDomainService.addProteomics(
+        new ProteomicsMeasurementWrapper(measurement, parentCodes));
 
     if (result.isError()) {
       return Result.fromError(ResponseCode.FAILED);
@@ -169,6 +172,64 @@ public class MeasurementService {
     }
     return Result.fromError(ResponseCode.FAILED);
   }
+//MAIN
+  // open dialog
+  // user enters information
+  // user clicks register
+  // get all files from dialog
+  //  for each file from dialog
+  //    register all measurements in the file
+  /*
+  try {
+    measurementService.register(measurementRequestsFromFile)
+  } catch (MeasurementRegistrationException e) {
+    mark dirty;
+    continue;
+  }
+   */
+  //    case registration failed ->
+  // -> dialog.mark failed (file)
+  //    case registration succeeded <->,
+  // <-> dialog.mark succeeded (file is removed from dialog)
+  //    continue
+  // ---
+
+
+  @Transactional
+  public void registerMultiple(
+      List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> requests) {
+    for (MeasurementRegistrationRequest<? extends MeasurementMetadata> request : requests) {
+      register(request)
+          .onError(error -> {
+            throw new MeasurementRegistrationException(
+                "Could not register %s. Reason: %s".formatted(request, error));
+          });
+    }
+  }
+
+  private static final class MeasurementRegistrationException extends RuntimeException {
+
+    public MeasurementRegistrationException() {
+    }
+
+    public MeasurementRegistrationException(String message) {
+      super(message);
+    }
+
+    public MeasurementRegistrationException(String message, Throwable cause) {
+      super(message, cause);
+    }
+
+    public MeasurementRegistrationException(Throwable cause) {
+      super(cause);
+    }
+
+    public MeasurementRegistrationException(String message, Throwable cause,
+        boolean enableSuppression,
+        boolean writableStackTrace) {
+      super(message, cause, enableSuppression, writableStackTrace);
+    }
+  }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
     return ontologyLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);
@@ -185,8 +246,17 @@ public class MeasurementService {
   }
 
   public record ProteomicsMeasurementWrapper(ProteomicsMeasurement measurementMetadata,
-                                             Collection<SampleCode> measuredSamplesCodes){};
+                                             Collection<SampleCode> measuredSamplesCodes) {
+
+  }
+
+  ;
+
   public record NGSMeasurementWrapper(NGSMeasurement measurementMetadata,
-                                      Collection<SampleCode> measuredSamplesCodes){};
+                                      Collection<SampleCode> measuredSamplesCodes) {
+
+  }
+
+  ;
 
 }
