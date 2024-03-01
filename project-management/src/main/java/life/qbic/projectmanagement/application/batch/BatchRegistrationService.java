@@ -4,6 +4,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Random;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -19,6 +20,7 @@ import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,13 +35,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BatchRegistrationService {
 
+  private static final Logger log = getLogger(BatchRegistrationService.class);
   private final BatchRepository batchRepository;
   private final BatchDomainService batchDomainService;
   private final ProjectInformationService projectInformationService;
   private final SampleInformationService sampleInformationService;
   private final SampleRegistrationService sampleRegistrationService;
   private final DeletionService deletionService;
-  private static final Logger log = getLogger(BatchRegistrationService.class);
 
   @Autowired
   public BatchRegistrationService(BatchRepository batchRepository,
@@ -84,8 +86,27 @@ public class BatchRegistrationService {
   }
 
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
+    while (true) {
+      try {
+        return tryToUpdateBatch(sampleId, batchId);
+      } catch (ObjectOptimisticLockingFailureException e) {
+        log.debug(
+            "Batch with id \"%s\" was already updated in between, try to read the batch again".formatted(
+                batchId.value()));
+      }
+      try {
+        Thread.sleep(new Random().nextInt(500));
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private Result<BatchId, ResponseCode> tryToUpdateBatch(SampleId sampleId,
+      BatchId batchId) {
     var searchResult = batchRepository.find(batchId);
     if (searchResult.isEmpty()) {
+      log.error("cannot find batch with id " + batchId.value());
       return Result.fromError(ResponseCode.BATCHES_COULD_NOT_BE_RETRIEVED);
     } else {
       Batch batch = searchResult.get();
