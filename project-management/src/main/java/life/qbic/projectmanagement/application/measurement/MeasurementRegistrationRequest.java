@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
  * <b>Measurement Registration Request</b>

@@ -172,27 +172,6 @@ public class MeasurementService {
     }
     return Result.fromError(ResponseCode.FAILED);
   }
-//MAIN
-  // open dialog
-  // user enters information
-  // user clicks register
-  // get all files from dialog
-  //  for each file from dialog
-  //    register all measurements in the file
-  /*
-  try {
-    measurementService.register(measurementRequestsFromFile)
-  } catch (MeasurementRegistrationException e) {
-    mark dirty;
-    continue;
-  }
-   */
-  //    case registration failed ->
-  // -> dialog.mark failed (file)
-  //    case registration succeeded <->,
-  // <-> dialog.mark succeeded (file is removed from dialog)
-  //    continue
-  // ---
 
 
   @Transactional
@@ -207,7 +186,7 @@ public class MeasurementService {
     }
   }
 
-  private static final class MeasurementRegistrationException extends RuntimeException {
+  public static final class MeasurementRegistrationException extends RuntimeException {
 
     public MeasurementRegistrationException() {
     }

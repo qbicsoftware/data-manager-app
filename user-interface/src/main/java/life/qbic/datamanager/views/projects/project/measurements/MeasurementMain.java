@@ -28,13 +28,13 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-
 
 
 /**
@@ -50,6 +50,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
 public class MeasurementMain extends Main implements BeforeEnterObserver {
+
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
@@ -57,10 +58,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private final MeasurementDetailsComponent measurementDetailsComponent;
-  private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final TextField measurementSearchField = new TextField();
-  private final MeasurementService measurementService;
-  private final ValidationService validationService;
+  private final transient MeasurementService measurementService;
+  private final transient ValidationService validationService;
   private transient Context context;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
@@ -74,7 +74,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(validationService);
-    this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementService = measurementService;
     this.validationService = validationService;
@@ -162,12 +161,24 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var dialog = new MeasurementMetadataUploadDialog(validationService);
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
-      confirmEvent.uploads().stream().map(MeasurementMetadataUploadDialog.MeasurementMetadataUpload::measurementRegistrationRequests)
-                      .forEach(measurementService::registerMultiple);
-      //Todo Trigger reload more smoothly
-      measurementDetailsComponent.setExperimentId(context.experimentId().orElseThrow());
-      confirmEvent.getSource().close();
-      });
+      var uploads = confirmEvent.uploads();
+      boolean allSuccessfull = true;
+      for (var upload : uploads) {
+        try {
+          measurementService.registerMultiple(upload.measurementRegistrationRequests());
+        } catch (MeasurementRegistrationException measurementRegistrationException) {
+          allSuccessfull = false;
+          confirmEvent.getSource()
+              .showError(upload.fileName(), "Registration failed. Please try again.");
+          continue;
+        }
+        confirmEvent.getSource().markSuccessful(upload.fileName());
+      }
+      if (allSuccessfull) {
+        measurementDetailsComponent.setExperimentId(context.experimentId().orElseThrow());
+        confirmEvent.getSource().close();
+      }
+    });
     dialog.open();
   }
 

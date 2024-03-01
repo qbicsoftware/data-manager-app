@@ -91,8 +91,8 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     SAMPLE_CLEANUP_PEPTIDE("sample cleanup (peptide)"),
     NOTE("note");
 
-
     private final String label;
+
 
     PROTEOMICS_PROPERTY(String propertyLabel) {
       this.label = propertyLabel;
