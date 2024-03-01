@@ -26,6 +26,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 @Entity(name = "proteomics_measurement")
 public class ProteomicsMeasurement implements MeasurementMetadata {
 
+  //FIXME do not implement MeasurementMetadata, you are not metadata but the measurement
   @Embedded
   private Organisation organisation;
   @EmbeddedId
