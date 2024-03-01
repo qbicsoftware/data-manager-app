@@ -52,7 +52,7 @@ public class UserRegistrationHandler
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
     userRegistrationLayout.username.setHelperText("Your unique username, visible to other users");
-    userRegistrationLayout.username.setErrorMessage("Username already in use, please try another one");
+    userRegistrationLayout.username.setErrorMessage("Please provide a username");
   }
 
   private void addListener() {
