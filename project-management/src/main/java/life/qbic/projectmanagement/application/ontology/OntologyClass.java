@@ -20,7 +20,7 @@ public class OntologyClass {
   @Column(name = "label")
   String classLabel;
   @Column(name = "name")
-  String curi;
+  String curie;
   @Column(name = "description", length = 2000)
   String description;
   @Column(name = "classIri")
@@ -35,12 +35,12 @@ public class OntologyClass {
 
   public OntologyClass(String ontologyAbbreviation, String ontologyVersion,
       String ontologyIri,
-      String classLabel, String curi, String description, String classIri) {
+      String classLabel, String curie, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
     this.ontologyIri = ontologyIri;
     this.classLabel = classLabel;
-    this.curi = curi;
+    this.curie = curie;
     this.description = description;
     this.classIri = classIri;
   }
@@ -77,12 +77,12 @@ public class OntologyClass {
     this.classLabel = label;
   }
 
-  public String getCuri() {
-    return curi;
+  public String getCurie() {
+    return curie;
   }
 
-  public void setCuri(String name) {
-    this.curi = name;
+  public void setCurie(String name) {
+    this.curie = name;
   }
 
   public String getDescription() {
@@ -113,13 +113,13 @@ public class OntologyClass {
     return Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation) && Objects.equals(
         ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
         that.ontologyIri) && Objects.equals(classLabel, that.classLabel) && Objects.equals(
-        curi, that.curi) && Objects.equals(description, that.description)
+        curie, that.curie) && Objects.equals(description, that.description)
         && Objects.equals(classIri, that.classIri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, classLabel, curi,
+    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, classLabel, curie,
         description, classIri);
   }
 

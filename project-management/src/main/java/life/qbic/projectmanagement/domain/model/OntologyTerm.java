@@ -19,15 +19,15 @@ public class OntologyTerm implements Serializable {
   @Serial
   private static final long serialVersionUID = 1459801951948902353L;
 
-  @JsonProperty("ontology") //FIXME should be ontologyAbbreviation in the database and here
+  @JsonProperty("ontology")
   private String ontologyAbbreviation;
   @JsonProperty("ontologyVersion")
   private String ontologyVersion;
   @JsonProperty("ontologyIri")
   private String ontologyIri;
-  @JsonProperty("label") //FIXME should be classLabel in the database and here
+  @JsonProperty("label")
   private String classLabel;
-  @JsonProperty("name") //FIXME should be className in the database and here
+  @JsonProperty("name")
   private String className;
   @JsonProperty("description")
   private String description;
@@ -62,7 +62,7 @@ public class OntologyTerm implements Serializable {
   public static OntologyTerm from(OntologyClass lookupEntity) {
     return new OntologyTerm(lookupEntity.getOntologyAbbreviation(),
         lookupEntity.getOntologyVersion(),
-        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getCuri(),
+        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getCurie(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
   }
 

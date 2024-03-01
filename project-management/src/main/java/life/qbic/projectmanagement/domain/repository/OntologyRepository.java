@@ -13,20 +13,6 @@ import life.qbic.projectmanagement.application.ontology.OntologyClass;
  */
 public interface OntologyRepository {
 
-  Optional<OntologyClass> find(Long ontologyClassId);
+  Optional<OntologyClass> findByCuri(String curie);
 
-  Optional<OntologyClass> findByCuri(String curi);
-
-  /**
-   * Thrown when a term is expected to exist but cannot be found.
-   */
-  class OntologyNotFoundException extends RuntimeException {
-
-    public OntologyNotFoundException() {
-    }
-
-    public OntologyNotFoundException(Throwable cause) {
-      super(cause);
-    }
-  }
 }

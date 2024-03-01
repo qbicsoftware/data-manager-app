@@ -11,20 +11,18 @@ import life.qbic.projectmanagement.application.SortOrder;
  */
 public interface OntologyLookupInterface {
 
-  /**
-   * Queries ontology classes with a provided offset and limit that supports pagination.
-   *
-   * @param offset the offset for the search result to start
-   * @param limit  the maximum number of results that should be returned
-   * @return the results in the provided range
-   * @since 1.0.0
-   */
-  List<OntologyClass> query(int offset, int limit);
+  record OntologyCurie(String curie) {
+
+  }
+
+  record FilterTerm(String term) {
+
+  }
 
   /**
    * Queries ontology classes with a provided offset and limit that supports pagination.
    *
-   * @param termFilter            the user's input will be applied to filter results
+   * @param term            the user's input will be applied to filter results
    * @param ontologyAbbreviations a List of ontology abbreviations denoting the ontology to search
    *                              in
    * @param offset                the offset for the search result to start
@@ -33,20 +31,20 @@ public interface OntologyLookupInterface {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  List<OntologyClass> query(String termFilter, List<String> ontologyAbbreviations, int offset,
+  List<OntologyClass> query(FilterTerm term, List<String> ontologyAbbreviations, int offset,
       int limit,
       List<SortOrder> sortOrders);
 
   /**
-   * Provides all matching {@link OntologyClass}es for ontologies with the provided CURI.
+   * Provides all matching {@link OntologyClass}es for ontologies with the provided CURIE.
    * <p>
-   * CURI: compact uniform resource identifier
+   * CURIE: compact uniform resource identifier (<a href="https://cthoyt.com/2021/09/14/curies.html">What's a CURIE, and Why You Should be Using Them</a>)
    * <p>
-   * Expected CURI format: [prefix][delimiter][local identifier]
+   * Expected CURIE format: [prefix][delimiter][local identifier]
    * <p>
    * Supported delimiter: <code>":"</code> (colon) or <code>"_"</code> (underscore)
    * <p>
-   * CURI examples:
+   * CURIE examples:
    *
    * <ul>
    *   <li>
@@ -58,10 +56,9 @@ public interface OntologyLookupInterface {
    * </ul>
    * <strong>The search must be performed case-insensitive!</strong>
    *
-   * @param ontologyCURI the CURI to find the corresponding ontology class
+   * @param ontologyCURI the CURIE to find the corresponding ontology class
    * @return
    * @since 1.0.0
    */
-  Collection<OntologyClass> query(String ontologyCURI);
-
+  Collection<OntologyClass> query(OntologyCurie ontologyCURI);
 }
