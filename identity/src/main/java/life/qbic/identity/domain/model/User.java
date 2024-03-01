@@ -50,6 +50,14 @@ public class User implements Serializable {
   protected User() {
   }
 
+  private User(UserId id, FullName fullName, EmailAddress emailAddress,
+      String userName, EncryptedPassword encryptedPassword) {
+    this.id = id;
+    this.fullName = fullName;
+    this.emailAddress = emailAddress;
+    this.encryptedPassword = encryptedPassword;
+  }
+
   /**
    * Creates a new user account, with a unique identifier to unambiguously match the user within
    * QBiC's organisation.
@@ -62,25 +70,18 @@ public class User implements Serializable {
    *
    * @param fullName          the full name of the user
    * @param emailAddress      the email address value of the user
+   * @param userName          the desired username
    * @param encryptedPassword the encrypted password of the new user
    * @return the new user
    * @since 1.0.0
    */
   public static User create(FullName fullName, EmailAddress emailAddress,
-      EncryptedPassword encryptedPassword) {
+      String userName, EncryptedPassword encryptedPassword) {
     UserId id = UserId.create();
-    var user = new User(id, fullName, emailAddress, encryptedPassword);
+    var user = new User(id, fullName, emailAddress, userName, encryptedPassword);
     user.active = false;
 
     return user;
-  }
-
-  private User(UserId id, FullName fullName, EmailAddress emailAddress,
-      EncryptedPassword encryptedPassword) {
-    this.id = id;
-    this.fullName = fullName;
-    this.emailAddress = emailAddress;
-    this.encryptedPassword = encryptedPassword;
   }
 
   @Override
@@ -94,10 +95,6 @@ public class User implements Serializable {
         '}';
   }
 
-  private void setEncryptedPassword(EncryptedPassword encryptedPassword) {
-    this.encryptedPassword = encryptedPassword;
-  }
-
   /**
    * Get access to the encrypted password
    *
@@ -106,6 +103,10 @@ public class User implements Serializable {
    */
   public EncryptedPassword getEncryptedPassword() {
     return this.encryptedPassword;
+  }
+
+  private void setEncryptedPassword(EncryptedPassword encryptedPassword) {
+    this.encryptedPassword = encryptedPassword;
   }
 
   public UserId id() {

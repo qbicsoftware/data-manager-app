@@ -62,7 +62,7 @@ public class UserRegistrationHandler
           registrationUseCase.register(
               userRegistrationLayout.fullName.getValue(),
               userRegistrationLayout.email.getValue(),
-              userRegistrationLayout.password.getValue().toCharArray());
+              userRegistrationLayout.password.getValue().toCharArray(), );
         });
   }
 

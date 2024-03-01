@@ -35,7 +35,7 @@ public class Registration implements RegisterUserInput {
    *
    * <p>The default output implementation just prints to std out on success and std err on failure,
    * after the use case has been executed via
-   * {@link Registration#register(String, String, char[])}.
+   * {@link RegisterUserInput#register(String, String, char[], String)}.
    *
    * @param identityService the user registration service to save the new user to.
    * @since 1.0.0
@@ -59,13 +59,13 @@ public class Registration implements RegisterUserInput {
    * @inheritDocs
    */
   @Override
-  public void register(String fullName, String email, char[] rawPassword) {
+  public void register(String fullName, String email, char[] rawPassword, String userName) {
     if (registerUserOutput == null) {
       log.error("No use case output set.");
       return;
     }
     try {
-      identityService.registerUser(fullName, email, rawPassword)
+      identityService.registerUser(fullName, userName, email, rawPassword)
           .ifSuccessOrElse(this::reportSuccess,
               response -> registerUserOutput.onUnexpectedFailure(build(response)));
     } catch (Exception e) {
