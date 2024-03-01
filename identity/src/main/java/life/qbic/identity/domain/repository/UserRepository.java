@@ -22,6 +22,10 @@ public class UserRepository implements Serializable {
 
   private final UserDataStorage dataStorage;
 
+  protected UserRepository(UserDataStorage dataStorage) {
+    this.dataStorage = dataStorage;
+  }
+
   /**
    * Retrieves a Singleton instance of a user {@link UserRepository}. In case this method is called
    * the first time, a new instance is created.
@@ -36,10 +40,6 @@ public class UserRepository implements Serializable {
       instance = new UserRepository(dataStorage);
     }
     return instance;
-  }
-
-  protected UserRepository(UserDataStorage dataStorage) {
-    this.dataStorage = dataStorage;
   }
 
   /**
@@ -68,6 +68,10 @@ public class UserRepository implements Serializable {
     } else {
       return Optional.of(matchingUsers.get(0));
     }
+  }
+
+  public Optional<User> findByUserName(String userName) {
+    return dataStorage.findUserByUserName(userName);
   }
 
   /**

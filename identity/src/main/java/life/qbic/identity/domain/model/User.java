@@ -35,6 +35,9 @@ public class User implements Serializable {
   @Convert(converter = FullNameConverter.class)
   private FullName fullName;
 
+  @Column(name = "userName")
+  private String userName;
+
   @Column(name = "email")
   @Convert(converter = EmailConverter.class)
   private EmailAddress emailAddress;
@@ -111,6 +114,10 @@ public class User implements Serializable {
 
   public EmailAddress emailAddress() {
     return this.emailAddress;
+  }
+
+  public String userName() {
+    return userName;
   }
 
   public FullName fullName() {
