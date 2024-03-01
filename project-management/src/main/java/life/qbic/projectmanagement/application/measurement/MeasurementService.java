@@ -197,8 +197,8 @@ public class MeasurementService {
 
   @Transactional
   public void registerMultiple(
-      List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> requests) {
-    for (MeasurementRegistrationRequest<? extends MeasurementMetadata> request : requests) {
+      List<MeasurementRegistrationRequest<MeasurementMetadata>> requests) {
+    for (MeasurementRegistrationRequest<MeasurementMetadata> request : requests) {
       register(request)
           .onError(error -> {
             throw new MeasurementRegistrationException(
@@ -250,13 +250,13 @@ public class MeasurementService {
 
   }
 
-  ;
+
 
   public record NGSMeasurementWrapper(NGSMeasurement measurementMetadata,
                                       Collection<SampleCode> measuredSamplesCodes) {
 
   }
 
-  ;
+
 
 }

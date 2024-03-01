@@ -2,19 +2,15 @@ package life.qbic.datamanager.views.projects.project.measurements;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.upload.FailedEvent;
-import com.vaadin.flow.component.upload.FileRejectedEvent;
-import com.vaadin.flow.component.upload.FinishedEvent;
-import com.vaadin.flow.component.upload.SucceededEvent;
-import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.*;
 import com.vaadin.flow.dom.DomEvent;
 import com.vaadin.flow.shared.Registration;
 import elemental.json.JsonObject;
@@ -22,18 +18,13 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.InfoBox;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementRegistrationRequest;
@@ -55,13 +46,14 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
-  public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 5);
+  public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private final transient ValidationService validationService;
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final List<MeasurementFileItem> measurementFileItems;
   private final Div uploadedItemsSection;
+  private final Div uploadedItemsDisplays;
 
   public MeasurementMetadataUploadDialog(ValidationService validationService) {
     this.validationService = requireNonNull(validationService,
@@ -71,7 +63,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     this.measurementFileItems = new ArrayList<>();
 
     var upload = new Upload(uploadBuffer);
-    upload.setMaxFiles(1);
     upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
@@ -92,51 +83,54 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     var uploadSection = new Div();
     uploadSection.add(uploadSectionTitle, saveYourFileInfo, upload, restrictions);
+    uploadSection.addClassName("upload-section");
 
     uploadedItemsSection = new Div();
-    uploadedItemsSection.addClassName("uploaded-items-section"); //TODO CSS
+    uploadedItemsSection.addClassName("uploaded-items-section");
 
     var uploadedItemsSectionTitle = new Span("Uploaded files");
     uploadedItemsSectionTitle.addClassName("section-title");
-    var uploadedItemDisplays = new Div();
-    uploadedItemDisplays.addClassName("uploaded-items");
 
-    uploadedItemsSection.add(uploadedItemsSectionTitle, uploadedItemDisplays);
+    uploadedItemsDisplays = new Div();
+    uploadedItemsDisplays.addClassName("uploaded-measurement-items");
+
+    uploadedItemsSection.add(uploadedItemsSectionTitle, uploadedItemsDisplays);
 
     add(uploadSection, uploadedItemsSection);
 
     upload.addSucceededListener(this::onUploadSucceeded);
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
-    upload.addFinishedListener(this::onUploadFinished);
 
     // Synchronise the Vaadin upload component with the purchase list display
     // When a file is removed from the upload component, we also want to remove it properly from memory
     // and from any additional display
     upload.getElement().addEventListener("file-remove", this::onFileRemoved)
         .addEventData(VAADIN_FILENAME_EVENT);
+    addClassName("measurement-upload-dialog");
   }
 
   private void onFileRemoved(DomEvent domEvent) {
     JsonObject jsonObject = domEvent.getEventData();
     var fileName = jsonObject.getString(VAADIN_FILENAME_EVENT);
     removeFile(fileName);
+
   }
 
   private void showFile(MeasurementFileItem measurementFileItem) {
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
-    uploadedItemsSection.add(measurementFileDisplay);
+    uploadedItemsDisplays.add(measurementFileDisplay);
   }
 
 
   private void removeFile(String fileName) {
-    MeasurementFileDisplay[] fileDisplays = uploadedItemsSection.getChildren()
+    MeasurementFileDisplay[] fileDisplays = uploadedItemsDisplays.getChildren()
         .filter(it -> it instanceof MeasurementFileDisplay)
         .map(child -> (MeasurementFileDisplay) child)
         .filter(measurementFileDisplay -> measurementFileDisplay.measurementFileItem().fileName()
             .equals(fileName))
         .toArray(MeasurementFileDisplay[]::new);
-    uploadedItemsSection.remove(fileDisplays);
+    uploadedItemsDisplays.remove(fileDisplays);
     measurementMetadataUploads.removeIf(
         metadataUpload -> metadataUpload.fileName().equals(fileName));
     measurementFileItems.removeIf(
@@ -174,32 +168,40 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   private void onUploadFailed(FailedEvent failedEvent) {
-    //TODO what happens if the upload failed
+    //Todo should this be propagated to the user
+    showErrorNotification("File upload was interrupted", failedEvent.getReason().getMessage());
   }
 
-  private void onUploadFinished(FinishedEvent finishedEvent) {
+  private void onUploadSucceeded(SucceededEvent succeededEvent) {
     MetadataContent content = read(
-        uploadBuffer.inputStream(finishedEvent.getFileName()).orElseThrow());
+        uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     var contentHeader = content.theHeader()
         .orElseThrow(() -> new RuntimeException("No header row found"));
     var domain = validationService
         .inferDomainByPropertyTypes(parseHeaderContent(contentHeader))
         .orElseThrow();
 
-    var registrationRequests = switch (domain) {
-      case PROTEOMICS -> generatePxPRequests(content);
-      case NGS -> null;
-    };
     var validationReport = switch (domain) {
       case PROTEOMICS -> validatePxP(content);
       case NGS -> validateNGS();
     };
-    MeasurementFileItem measurementFileItem = new MeasurementFileItem(finishedEvent.getFileName(),
-        validationReport);
-    MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload(
-        finishedEvent.getFileName(), registrationRequests);
-
-    addFile(measurementFileItem, metadataUpload);
+    MeasurementFileItem measurementFileItem = new MeasurementFileItem(succeededEvent.getFileName(),
+            validationReport);
+    //We don't want to upload any invalid measurements in spreadsheet
+    if(validationReport.validationResult.containsFailures()){
+      MeasurementMetadataUpload metadataUpload = new MeasurementMetadataUpload<>(
+              succeededEvent.getFileName(), Collections.emptyList());
+      addFile(measurementFileItem, metadataUpload);
+    }
+    else {
+      var registrationRequests = switch (domain) {
+        case PROTEOMICS -> generatePxPRequests(content);
+        case NGS -> null;
+      };
+      MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload(
+              succeededEvent.getFileName(), registrationRequests);
+      addFile(measurementFileItem, metadataUpload);
+    }
   }
 
   private void addFile(MeasurementFileItem measurementFileItem,
@@ -207,6 +209,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     measurementMetadataUploads.add(metadataUpload);
     measurementFileItems.add(measurementFileItem);
     showFile(measurementFileItem);
+    toggleFileSectionIfEmpty();
   }
 
   private static Result<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>, String> generatePxPRequest(
@@ -292,12 +295,12 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     Integer sampleCodeColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
-    Integer oranisationColumnIndex = propertyColumnMap.get(
+    Integer organisationsColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
     Integer instrumentColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.INSTRUMENT.label());
 
-    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, oranisationColumnIndex,
+    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
       return validationResult.combine(ValidationResult.withFailures(1,
@@ -305,7 +308,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     }
 
     List<SampleCode> sampleCodes = parseSampleCode(metaDataValues[sampleCodeColumnIndex]);
-    String organisationRoRId = metaDataValues[oranisationColumnIndex];
+    String organisationRoRId = metaDataValues[organisationsColumnIndex];
     String instrumentCURIE = metaDataValues[instrumentColumnIndex];
 
     ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
@@ -320,11 +323,9 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
-    //TODO the uploaded file does not match the mime type or the file size is wrong
-  }
-
-  private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    //TODO successfully received the file, now what?
+    //Todo Replace with error message below file if possible as outlined in https://vaadin.com/docs/latest/components/upload#best-practices
+    String errorMessage = fileRejectedEvent.getErrorMessage();
+    showErrorNotification("File upload failed", errorMessage);
   }
 
   public Registration addCancelListener(ComponentEventListener<CancelEvent> listener) {
@@ -337,8 +338,20 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    //TODO
-//    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
+    //ToDo should this filtering be done somewhere else
+    var validUploads = measurementMetadataUploads.stream().filter(upload -> !upload.measurementRegistrationRequests().isEmpty()).toList();
+    if(!validUploads.isEmpty()) {
+      fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), validUploads));
+    }
+    else {
+      showErrorNotification("Measurement registration failed", "Please provide at least one valid measurement file");
+    }
+  }
+
+  private void showErrorNotification(String title, String description){
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
   }
 
   @Override
@@ -358,8 +371,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   public record MeasurementMetadataUpload<T extends MeasurementMetadata>(String fileName,
-                                                                         List<MeasurementRegistrationRequest<T>> measurementRegistrationRequests) {
-    // wir nur hinzugefügt wenn vorher validiert wurde
+                                                                         List<MeasurementRegistrationRequest<MeasurementMetadata>> measurementRegistrationRequests) {
   }
 
   public record MeasurementFileItem(String fileName, ValidationReport validationReport) {
@@ -372,8 +384,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
    */
   public static class MeasurementFileDisplay extends Div {
 
+    @Serial
     private static final long serialVersionUID = -9075627206992036067L;
     private final MeasurementFileItem measurementFileItem;
+    private Div displayBox;
 
 
     public MeasurementFileDisplay(MeasurementFileItem measurementFileItem) {
@@ -383,23 +397,66 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       fileIcon.addClassName("file-icon");
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
       fileNameLabel.addClassName("file-name");
-      createDisplayBox(measurementFileItem.validationReport());
       add(fileNameLabel);
-      addClassName("measurement");
+      createDisplayBox(measurementFileItem.validationReport());
+      add(displayBox);
+      displayBox.addClassName("validation-display-box");
+      addClassName("measurement-item");
     }
 
     public MeasurementFileItem measurementFileItem() {
       return measurementFileItem;
     }
 
-    private Component createDisplayBox(ValidationReport validationReport) {
-      Div displayBox = new Div(); //TODO
-      displayBox.addClassName("display-box");
+    private void createDisplayBox(ValidationReport validationReport) {
+      if(validationReport.validationResult().allPassed()){
+        displayBox = createApprovedDisplayBox(validationReport.validatedRows());
+      }
+      else {
+        displayBox = createInvalidDisplayBox(validationReport.validationResult().failures());
+    }}
+
+    //Todo Should this be moved into it's own component?
+    private Div createApprovedDisplayBox(int validMeasurementCount){
+      Div displayBox = new Div();
+      Span approvedTitle = new Span("Your data has been approved");
+      Icon validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
+      validIcon.addClassName("valid");
+      Span header = new Span(validIcon, approvedTitle);
+      header.addClassName("header");
+      displayBox.add(header);
+      Span instruction = new Span("Please click on Register to record the sample measurement data");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+      Span approvedMeasurements = new Span(String.format("%s measurements", validMeasurementCount));
+      approvedMeasurements.addClassName("bold");
+      validationDetails.add(new Span("Measurement data for "), approvedMeasurements, new Span(" is now ready to be registered"));
+      displayBox.add(header, validationDetails, instruction);
+      return displayBox;
+    }
+
+    private Div createInvalidDisplayBox(Collection<String> invalidMeasurements){
+      Div displayBox = new Div();
+      Span approvedTitle = new Span("Invalid measurement data");
+      Icon invalidIcon = VaadinIcon.CLOSE_CIRCLE_O.create();
+      invalidIcon.addClassName("error");
+      Span header = new Span(invalidIcon, approvedTitle);
+      header.addClassName("header");
+      displayBox.add(header);
+      Span instruction = new Span("Please correct the entries and re-upload the excel sheet");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+      OrderedList invalidMeasurementsList = new OrderedList(invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
+      invalidMeasurementsList.addClassName("invalid-measurement-list");
+      invalidMeasurementsList.setType(OrderedList.NumberingType.NUMBER);
+      validationDetails.add(invalidMeasurementsList);
+      displayBox.add(header, validationDetails, instruction);
       return displayBox;
     }
 
   }
-
+  // Todo Decide if this can be removed since we validate
+  // before triggering storage into persistence and if upload fails user can try again with excel sheet
   public void markSuccessful(String filename) {
     //remove MeasurementFileItem
     //remove MeasurementMetadataUpload
@@ -411,6 +468,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<MeasurementMetadataUploadDialog> {
 
+    private final List<MeasurementMetadataUpload<MeasurementMetadata>> uploads;
+
     /**
      * Creates a new event using the given source and indicator whether the event originated from
      * the client side or the server side.
@@ -418,9 +477,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
      * @param source     the source component
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
+     * @param uploads    the valid {@link MeasurementMetadataUpload}s to be registered
      */
-    private final List<MeasurementMetadataUpload<MeasurementMetadata>> uploads;
-
     public ConfirmEvent(MeasurementMetadataUploadDialog source, boolean fromClient,
         List<MeasurementMetadataUpload<MeasurementMetadata>> uploads) {
       super(source, fromClient);

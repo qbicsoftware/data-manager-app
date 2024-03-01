@@ -423,6 +423,97 @@ vaadin-dialog-overlay::part(title) {
   align-items: baseline;
 }
 
+
+.measurement-upload-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .restrictions {
+  font-size: smaller;
+  display: inline-flex;
+  justify-content: space-between;
+  color: var(--lumo-contrast-60pct);
+  column-gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+}
+
+.measurement-upload-dialog.uploaded-items-description {
+  font-size: var(--lumo-font-size-s);
+}
+
+.measurement-upload-dialog .uploaded-measurement-items {
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-l);
+  display: flex;
+  flex-direction: column;
+}
+
+.measurement-upload-dialog .uploaded-measurement-items .measurement-item {
+  border-bottom-color: var(--lumo-contrast-20pct);
+  border-bottom-style: solid;
+  border-width: 1px;
+  font-size: var(--lumo-font-size-s);
+  display: flex;
+  padding-top: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-s);
+  margin-inline: var(--lumo-space-m);
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+}
+
+.measurement-upload-dialog .uploaded-measurement-items  .measurement-item .file-name {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .uploaded-measurement-items  .measurement-item .file-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: smaller;
+  color: var(--lumo-tertiary-text-color);
+}
+
+.measurement-upload-dialog .uploaded-measurement-items .measurement-item .validation-display-box {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  background-color: var(--lumo-contrast-5pct);
+  padding-inline: var(--lumo-space-m);
+  padding-top: var(--lumo-space-xs);
+  padding-bottom: var(--lumo-space-xs);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.measurement-upload-dialog .uploaded-measurement-items .measurement-item .validation-display-box .header {
+  font-size: small;
+  align-items: center;
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  font-weight: bold;
+}
+
+.measurement-upload-dialog .uploaded-measurement-items .measurement-item .validation-display-box .invalid-measurement-list {
+  padding-left: var(--lumo-space-m);
+}
+
+.measurement-upload-dialog .uploaded-measurement-items .measurement-item:last-child {
+  border-style: none;
+}
+
 .project-information-dialog::part(overlay) {
   width: 66vw;
 }

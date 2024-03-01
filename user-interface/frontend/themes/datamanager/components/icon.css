@@ -13,3 +13,7 @@ vaadin-icon.clickable {
 vaadin-icon.small {
   width: var(--lumo-icon-size-s);
 }
+
+vaadin-icon.valid {
+  color: var(--lumo-success-color);
+}

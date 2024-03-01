@@ -15,13 +15,15 @@
 
 .info-box {
   display: inline-flex;
-  column-gap: var(--lumo-space-m);
-  background-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  column-gap: var(--lumo-space-s);
+  background-color: var(--lumo-contrast-5pct);
   align-items: center;
   width: fit-content;
   padding-inline: var(--lumo-space-m);
-  padding-top: var(--lumo-space-xs);
-  padding-bottom: var(--lumo-space-xs);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+  font-size: small;
 }
 /* ontology-link styling */
 .ontology-link {

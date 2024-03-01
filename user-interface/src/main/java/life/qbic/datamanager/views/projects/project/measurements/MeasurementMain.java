@@ -35,7 +35,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
-;
+
 
 /**
  * Measurement Main Component
@@ -161,7 +161,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void openRegisterMeasurementDialog() {
     var dialog = new MeasurementMetadataUploadDialog(validationService);
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent -> confirmEvent.getSource().close());
+    dialog.addConfirmListener(confirmEvent -> {
+      confirmEvent.uploads().stream().map(MeasurementMetadataUploadDialog.MeasurementMetadataUpload::measurementRegistrationRequests)
+                      .forEach(measurementService::registerMultiple);
+      //Todo Trigger reload more smoothly
+      measurementDetailsComponent.setExperimentId(context.experimentId().orElseThrow());
+      confirmEvent.getSource().close();
+      });
     dialog.open();
   }
 
