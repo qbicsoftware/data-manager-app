@@ -13,9 +13,9 @@ import java.util.Objects;
  */
 public class MSMeasurementTemplate extends Template {
 
-  private static final String MS_MEASUREMENT_TEMPLATE_PATH = "templates/ms_measurement_registration_sheet.xlsx";
+  private static final String MS_MEASUREMENT_TEMPLATE_PATH = "templates/proteomics_measurement_registration_sheet.xlsx";
 
-  private static final String MS_MEASUREMENT_TEMPLATE_FILENAME = "ms_measurement_registration_sheet.xlsx";
+  private static final String MS_MEASUREMENT_TEMPLATE_FILENAME = "proteomics_measurement_registration_sheet.xlsx";
 
   private static final String MS_MEASUREMENT_TEMPLATE_DOMAIN_NAME = "Proteomics Template";
 

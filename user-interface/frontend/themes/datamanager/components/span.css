@@ -44,6 +44,10 @@ span.bold {
   font-weight: bold;
 }
 
+span.clickable {
+  cursor: pointer;
+}
+
 span.primary {
   color: var(--lumo-primary-text-color);
 }

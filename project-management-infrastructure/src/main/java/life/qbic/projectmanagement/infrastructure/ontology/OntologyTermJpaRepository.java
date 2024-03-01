@@ -1,9 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
+import life.qbic.projectmanagement.application.OntologyClassEntity;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface;
@@ -25,7 +26,7 @@ public class OntologyTermJpaRepository implements OntologyLookupInterface {
   private final OntologyTermRepository ontologyTermRepository;
 
   public OntologyTermJpaRepository(OntologyTermRepository ontologyTermRepository) {
-    Objects.requireNonNull(ontologyTermRepository);
+    requireNonNull(ontologyTermRepository);
     this.ontologyTermRepository = ontologyTermRepository;
   }
 
@@ -53,33 +54,24 @@ public class OntologyTermJpaRepository implements OntologyLookupInterface {
       List<String> ontologyAbbreviations,
       int offset,
       int limit, List<SortOrder> sortOrders) {
-    List<Order> orders = sortOrders.stream().map(it -> {
-      Order order;
-      if (it.isDescending()) {
-        order = Order.desc(it.propertyName());
-      } else {
-        order = Order.asc(it.propertyName());
-      }
-      return order;
-    }).toList();
+
     searchString = searchString.trim();
     if(searchString.length() < 2) {
       return new ArrayList<>();
     }
     // otherwise create a more complex search term for fulltext search
     String searchTerm = buildSearchTerm(searchString);
-    return ontologyTermRepository.findByLabelFulltextMatching(
-            searchTerm, ontologyAbbreviations, new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+    OffsetBasedRequest pageable = new OffsetBasedRequest(offset, limit, sortByOrders(sortOrders));
+    return ontologyTermRepository.findByLabelFulltextMatching(searchTerm, ontologyAbbreviations,
+            pageable)
         .getContent();
   }
 
-  @Override
-  public Collection<OntologyClass> query(String ontologyCURI) {
-    // The CURI (aka "name" in the database) is currently formatted with an "_" (underscore) as delimiter
-    var delimiterCorrectedCURI = ontologyCURI.trim().replace(":", "_");
-    // And the prefix is in capitalised form
-    var capitalizedCURI = delimiterCorrectedCURI.toUpperCase();
-
-    return ontologyTermRepository.findByCuriFulltextMatching(capitalizedCURI);
+  private static Sort sortByOrders(List<SortOrder> sortOrders) {
+    return Sort.by(sortOrders.stream()
+        .map(sortOrder -> sortOrder.isDescending()
+            ? Order.desc(sortOrder.propertyName())
+            : Order.asc(sortOrder.propertyName()))
+        .toList());
   }
 }
