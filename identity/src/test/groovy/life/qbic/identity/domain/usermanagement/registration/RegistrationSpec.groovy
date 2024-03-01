@@ -66,7 +66,7 @@ class RegistrationSpec extends Specification {
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
-        def newUser = User.create(FullName.from("Mr Nobody"), EmailAddress.from("no@body.com"), "svenipopenni", EncryptedPassword.from("test1234".toCharArray()))
+        def newUser = User.create(FullName.from("Mr Nobody"), EmailAddress.from("no@body.com"), "svenipopenni2", EncryptedPassword.from("test1234".toCharArray()))
 
         and: "a the use case with output"
         def registration = new Registration(new IdentityService(UserRepository.getInstance(Mock(UserDataStorage))))
@@ -112,7 +112,7 @@ class RegistrationSpec extends Specification {
 
         @Override
         Optional<User> findUserByUserName(String userName) {
-            return Optional.ofNullable(users.find { it.userName() })
+            return Optional.ofNullable(users.find { it.userName() == userName })
         }
     }
 
