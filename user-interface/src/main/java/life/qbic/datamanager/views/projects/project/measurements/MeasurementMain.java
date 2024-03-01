@@ -158,7 +158,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(validationService);
+    var dialog = new MeasurementMetadataUploadDialog(validationService,
+        context.experimentId().orElseThrow());
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
       var uploads = confirmEvent.uploads();
@@ -168,8 +169,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           measurementService.registerMultiple(upload.measurementRegistrationRequests());
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
-          confirmEvent.getSource()
-              .showError(upload.fileName(), "Registration failed. Please try again.");
+          String errorMessage = switch (measurementRegistrationException.reason()) {
+            case FAILED, SUCCESSFUL -> "Registration failed. Please try again.";
+            case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
+            case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
+            case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
+          };
+          confirmEvent.getSource().showError(upload.fileName(), errorMessage);
           continue;
         }
         confirmEvent.getSource().markSuccessful(upload.fileName());

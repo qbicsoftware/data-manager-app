@@ -45,6 +45,7 @@ import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurement
 import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 public class MeasurementMetadataUploadDialog extends DialogWindow {
@@ -59,10 +60,14 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private final List<MeasurementFileItem> measurementFileItems;
   private final Div uploadedItemsSection;
   private final Div uploadedItemsDisplays;
+  private final ExperimentId experimentId;
 
-  public MeasurementMetadataUploadDialog(ValidationService validationService) {
+  public MeasurementMetadataUploadDialog(ValidationService validationService,
+      ExperimentId experimentId) {
     this.validationService = requireNonNull(validationService,
         "validationService must not be null");
+    this.experimentId = requireNonNull(experimentId, "experimentId must not be null");
+    ;
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
@@ -224,7 +229,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   private static Result<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>, String> generatePxPRequest(
-      String row, Map<String, Integer> columns) {
+      String row, Map<String, Integer> columns, ExperimentId experimentId) {
     var columnValues = row.split("\t"); // tab separated values
     // we consider an empty row as a reason to warn, not to fail
     if (columnValues.length == 0) {
@@ -249,15 +254,16 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
         organisationRoRId, instrumentCURIE);
     MeasurementRegistrationRequest<ProteomicsMeasurementMetadata> registrationRequest = new MeasurementRegistrationRequest<>(
-        sampleCodes, metadata);
+        sampleCodes, metadata, experimentId);
     return Result.fromValue(registrationRequest);
   }
 
   private List<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>> generatePxPRequests(
       MetadataContent content) {
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
+
     var results = content.rows().stream()
-        .map(row -> generatePxPRequest(row, propertyColumnMap))
+        .map(row -> generatePxPRequest(row, propertyColumnMap, experimentId))
         .toList();
     if (results.stream().anyMatch(Result::isError)) {
       return new ArrayList<>();

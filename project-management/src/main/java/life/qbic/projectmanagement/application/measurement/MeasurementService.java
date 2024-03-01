@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
@@ -79,7 +80,7 @@ public class MeasurementService {
   }
 
 
-  public Result<MeasurementId, ResponseCode> registerNGS(
+  private Result<MeasurementId, ResponseCode> registerNGS(
       MeasurementRegistrationRequest<NGSMeasurementMetadata> registrationRequest) {
 
     var associatedSampleCodes = registrationRequest.associatedSamples();
@@ -114,7 +115,7 @@ public class MeasurementService {
     }
   }
 
-  public Result<MeasurementId, ResponseCode> registerPxP(
+  private Result<MeasurementId, ResponseCode> registerPxP(
       MeasurementRegistrationRequest<ProteomicsMeasurementMetadata> registrationRequest) {
     var associatedSampleCodes = registrationRequest.associatedSamples();
     var selectedSampleCode = MeasurementCode.createMS(
@@ -160,15 +161,27 @@ public class MeasurementService {
 
   public Result<MeasurementId, ResponseCode> register(
       MeasurementRegistrationRequest<? extends MeasurementMetadata> registrationRequest) {
+
+    var associatedSampleCodes = registrationRequest.associatedSamples();
+    boolean allSamplesAreOfExperiment = sampleInformationService.retrieveSamplesForExperiment(
+            registrationRequest.experimentId())
+        .map(samples -> (samples.stream().map(Sample::sampleCode).collect(
+            Collectors.toSet())))
+        .map(sampleCodes -> sampleCodes.containsAll(associatedSampleCodes))
+        .fold(value -> value, error -> false);
+    if (!allSamplesAreOfExperiment) {
+      return Result.fromError(ResponseCode.WRONG_EXPERIMENT);
+    }
+
     if (registrationRequest.metadata() instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(
           new MeasurementRegistrationRequest<>(registrationRequest.associatedSamples(),
-              proteomicsMeasurementMetadata));
+              proteomicsMeasurementMetadata, registrationRequest.experimentId()));
     }
     if (registrationRequest.metadata() instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
       return registerNGS(
           new MeasurementRegistrationRequest<>(registrationRequest.associatedSamples(),
-              ngsMeasurementMetadata));
+              ngsMeasurementMetadata, registrationRequest.experimentId()));
     }
     return Result.fromError(ResponseCode.FAILED);
   }
@@ -180,33 +193,22 @@ public class MeasurementService {
     for (MeasurementRegistrationRequest<MeasurementMetadata> request : requests) {
       register(request)
           .onError(error -> {
-            throw new MeasurementRegistrationException(
-                "Could not register %s. Reason: %s".formatted(request, error));
+            throw new MeasurementRegistrationException(error);
           });
+
     }
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {
 
-    public MeasurementRegistrationException() {
+    private final MeasurementService.ResponseCode reason;
+
+    public MeasurementRegistrationException(ResponseCode reason) {
+      this.reason = reason;
     }
 
-    public MeasurementRegistrationException(String message) {
-      super(message);
-    }
-
-    public MeasurementRegistrationException(String message, Throwable cause) {
-      super(message, cause);
-    }
-
-    public MeasurementRegistrationException(Throwable cause) {
-      super(cause);
-    }
-
-    public MeasurementRegistrationException(String message, Throwable cause,
-        boolean enableSuppression,
-        boolean writableStackTrace) {
-      super(message, cause, enableSuppression, writableStackTrace);
+    public ResponseCode reason() {
+      return reason;
     }
   }
 
@@ -221,7 +223,7 @@ public class MeasurementService {
   }
 
   public enum ResponseCode {
-    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM
+    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT
   }
 
   public record ProteomicsMeasurementWrapper(ProteomicsMeasurement measurementMetadata,

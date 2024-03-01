@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.application.measurement;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -17,15 +17,13 @@ public class MeasurementRegistrationRequest<T extends MeasurementMetadata> {
   private final T measurementMetadata;
   private final List<SampleCode> sampleCodes;
 
-  public MeasurementRegistrationRequest(List<SampleCode> sampleCodes, T measurementMetadata) {
+  private final ExperimentId experimentId;
+
+  public MeasurementRegistrationRequest(List<SampleCode> sampleCodes, T measurementMetadata,
+      ExperimentId experimentId) {
     this.measurementMetadata = Objects.requireNonNull(measurementMetadata);
     this.sampleCodes = sampleCodes.stream().toList();
-  }
-
-  public MeasurementRegistrationRequest(SampleCode sampleCode, T measurementMetadata) {
-    this.measurementMetadata = Objects.requireNonNull(measurementMetadata);
-    this.sampleCodes = new ArrayList<>();
-    this.sampleCodes.add(sampleCode);
+    this.experimentId = experimentId;
   }
 
   public List<SampleCode> associatedSamples() {
@@ -36,4 +34,7 @@ public class MeasurementRegistrationRequest<T extends MeasurementMetadata> {
     return this.measurementMetadata;
   }
 
+  public ExperimentId experimentId() {
+    return experimentId;
+  }
 }
