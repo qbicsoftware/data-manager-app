@@ -86,6 +86,7 @@ public class BatchRegistrationService {
   }
 
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
+    var random = new Random();
     while (true) {
       try {
         return tryToUpdateBatch(sampleId, batchId);
@@ -95,7 +96,7 @@ public class BatchRegistrationService {
                 batchId.value()));
       }
       try {
-        Thread.sleep(new Random().nextInt(500));
+        Thread.sleep(random.nextInt(500));
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
