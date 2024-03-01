@@ -32,9 +32,12 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -58,11 +61,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Grid<ProteomicsMeasurement> proteomicsMeasurementGrid = new Grid<>();
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
   private final transient MeasurementService measurementService;
+  private final transient SampleInformationService sampleInformationService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
   private transient Context context;
 
-  public MeasurementDetailsComponent(@Autowired MeasurementService measurementService) {
+  public MeasurementDetailsComponent(@Autowired MeasurementService measurementService, @Autowired SampleInformationService sampleInformationService) {
     this.measurementService = Objects.requireNonNull(measurementService);
+    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     initNoMeasurementDisclaimer();
     createProteomicsGrid();
     createNGSMeasurementGrid();
@@ -172,11 +177,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setHeader("Measurement Code");
-    //ToDo figure out how to best load this
-   /* proteomicsMeasurementGrid.addComponentColumn(
+    proteomicsMeasurementGrid.addComponentColumn(
         proteomicsMeasurement -> renderSampleCodes().createComponent(
             proteomicsMeasurement.measuredSamples())).setHeader("Sample Codes");
-    */
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.organisation().label())
         .setHeader("Organisation");
@@ -205,13 +208,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     measurementsGridDataViews.add(proteomicsGridDataView);
   }
 
-  //ToDo Replace with SampleCode
-  private static ComponentRenderer<Div, Collection<SampleId>> renderSampleCodes() {
-    return new ComponentRenderer<>(sampleCodes -> {
+  private ComponentRenderer<Div, Collection<SampleId>> renderSampleCodes() {
+    return new ComponentRenderer<>(sampleIds-> {
       Div showSampleCodes = new Div();
-      showSampleCodes.addClassName("sample-code-column");
-      sampleCodes.forEach(sampleId -> showSampleCodes.add(new Span(sampleId.value())));
-      return showSampleCodes;
+        List<SampleCode> sampleCodes = sampleInformationService.retrieveSamplesByIds(sampleIds).stream().map(Sample::sampleCode).toList();
+        showSampleCodes.addClassName("sample-code-column");
+        sampleCodes.forEach(sampleCode -> showSampleCodes.add(new Span(sampleCode.code())));
+        return showSampleCodes;
     });
   }
 

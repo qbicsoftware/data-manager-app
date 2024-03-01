@@ -33,7 +33,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @Embedded
   private MeasurementCode measurementCode;
 
-  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.LAZY)
+  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;
 

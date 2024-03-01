@@ -1,10 +1,7 @@
 package life.qbic.projectmanagement.application.sample;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -13,6 +10,7 @@ import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,6 +43,10 @@ public class SampleInformationService {
 
   public List<SamplePreview> retrieveSamplePreviewsForExperiment(ExperimentId experimentId) {
     return samplePreviewLookup.queryByExperimentId(experimentId);
+  }
+
+  public List<Sample> retrieveSamplesByIds(Collection<SampleId> sampleIds) {
+    return sampleRepository.findSamplesBySampleId(sampleIds.stream().toList());
   }
 
   public List<Sample> retrieveSamplesForBatch(BatchId batchId) {
