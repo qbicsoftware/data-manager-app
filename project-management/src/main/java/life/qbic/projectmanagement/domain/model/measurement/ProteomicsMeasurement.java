@@ -1,13 +1,7 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -39,9 +33,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @Embedded
   private MeasurementCode measurementCode;
 
-  @ElementCollection
+  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.LAZY)
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
-  @Column(name = "measured_sample")
   private Collection<SampleId> measuredSamples;
 
   protected ProteomicsMeasurement() {

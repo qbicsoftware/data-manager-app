@@ -62,8 +62,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       Collection<SampleId> sampleIds, String filter) {
     Specification<ProteomicsMeasurement> isBlankSpec = ProteomicsMeasurementSpec.isBlank(filter);
     Specification<ProteomicsMeasurement> isDistinctSpec = ProteomicsMeasurementSpec.isDistinct();
-//    Specification<ProteomicsMeasurement> containsSampleId = ProteomicsMeasurementSpec.containsSampleId(
-//        sampleIds);
+    Specification<ProteomicsMeasurement> containsSampleId = ProteomicsMeasurementSpec.containsSampleId(
+       sampleIds);
     Specification<ProteomicsMeasurement> measurementCodeContains = ProteomicsMeasurementSpec.isMeasurementCode(
         filter);
     Specification<ProteomicsMeasurement> organisationLabelContains = ProteomicsMeasurementSpec.isOrganisationLabel(
@@ -76,7 +76,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         measurementCodeContains,
         organisationLabelContains, ontologyNameContains, ontologyDescriptionContains);
     return Specification.where(isBlankSpec)
-//        .and(containsSampleId)
+            .and(containsSampleId)
         .and(filterSpecification)
         .and(isDistinctSpec);
   }
@@ -118,7 +118,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
   private static class ProteomicsMeasurementSpec {
 
-    //We need to ensure that we only count and retrieve unique samplePreviews
+    //We need to ensure that we only count and retrieve unique ProteomicsMeasuerements
     public static Specification<ProteomicsMeasurement> isDistinct() {
       return (root, query, builder) -> {
         query.distinct(true);
@@ -127,15 +127,14 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     //We are only interested in measurements which contain at least one of the provided sampleIds
-    public static Specification<ProteomicsMeasurement> containsSampleId(
+    public static Specification<ProteomicsMeasurement> containsSampleId (
         Collection<SampleId> sampleIds) {
       return (root, query, builder) -> {
         if (sampleIds.isEmpty()) {
           //If no sampleId is in the experiment then there can also be no measurement
           return builder.disjunction();
-        } else {
-          return root.join("measuredSamples").in(sampleIds);
         }
+       return root.join("measuredSamples").in(sampleIds);
       };
     }
 
