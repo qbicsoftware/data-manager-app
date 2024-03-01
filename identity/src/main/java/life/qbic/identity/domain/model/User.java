@@ -56,6 +56,7 @@ public class User implements Serializable {
     this.fullName = fullName;
     this.emailAddress = emailAddress;
     this.encryptedPassword = encryptedPassword;
+    this.userName = userName;
   }
 
   /**

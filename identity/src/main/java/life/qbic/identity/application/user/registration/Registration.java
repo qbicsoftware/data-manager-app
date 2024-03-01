@@ -3,6 +3,7 @@ package life.qbic.identity.application.user.registration;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
+import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.EncryptedPassword.PasswordValidationException;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;
@@ -90,6 +91,8 @@ public class Registration implements RegisterUserInput {
         builder.withFullNameException((FullNameValidationException) e);
       } else if (e instanceof UserExistsException) {
         builder.withUserExistsException((UserExistsException) e);
+      } else if (e instanceof UserNameNotAvailableException) {
+        builder.withUserNameNotAvailableException((UserNameNotAvailableException) e);
       } else {
         builder.withUnexpectedException(e);
       }
