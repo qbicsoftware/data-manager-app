@@ -7,6 +7,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +29,9 @@ public class Batch {
   @EmbeddedId
   @Column(name = "id")
   private BatchId id;
+
+  @Version
+  private int version;
 
   @Column(name = "batchLabel")
   private String label;

@@ -58,7 +58,7 @@ public class BatchJpaRepository implements BatchRepository {
 
   @Override
   public Result<Batch, ResponseCode> update(Batch batch) {
-    return Result.fromValue(this.qbicBatchRepo.save(batch));
+    return Result.fromValue(this.qbicBatchRepo.saveAndFlush(batch));
   }
 
   @Override
