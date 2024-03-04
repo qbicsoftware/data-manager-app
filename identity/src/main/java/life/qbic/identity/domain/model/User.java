@@ -35,6 +35,9 @@ public class User implements Serializable {
   @Convert(converter = FullNameConverter.class)
   private FullName fullName;
 
+  @Column(name = "userName")
+  private String userName;
+
   @Column(name = "email")
   @Convert(converter = EmailConverter.class)
   private EmailAddress emailAddress;
@@ -45,6 +48,15 @@ public class User implements Serializable {
   private boolean active = false;
 
   protected User() {
+  }
+
+  private User(UserId id, FullName fullName, EmailAddress emailAddress,
+      String userName, EncryptedPassword encryptedPassword) {
+    this.id = id;
+    this.fullName = fullName;
+    this.emailAddress = emailAddress;
+    this.encryptedPassword = encryptedPassword;
+    this.userName = userName;
   }
 
   /**
@@ -59,25 +71,18 @@ public class User implements Serializable {
    *
    * @param fullName          the full name of the user
    * @param emailAddress      the email address value of the user
+   * @param userName          the desired username
    * @param encryptedPassword the encrypted password of the new user
    * @return the new user
    * @since 1.0.0
    */
   public static User create(FullName fullName, EmailAddress emailAddress,
-      EncryptedPassword encryptedPassword) {
+      String userName, EncryptedPassword encryptedPassword) {
     UserId id = UserId.create();
-    var user = new User(id, fullName, emailAddress, encryptedPassword);
+    var user = new User(id, fullName, emailAddress, userName, encryptedPassword);
     user.active = false;
 
     return user;
-  }
-
-  private User(UserId id, FullName fullName, EmailAddress emailAddress,
-      EncryptedPassword encryptedPassword) {
-    this.id = id;
-    this.fullName = fullName;
-    this.emailAddress = emailAddress;
-    this.encryptedPassword = encryptedPassword;
   }
 
   @Override
@@ -91,10 +96,6 @@ public class User implements Serializable {
         '}';
   }
 
-  private void setEncryptedPassword(EncryptedPassword encryptedPassword) {
-    this.encryptedPassword = encryptedPassword;
-  }
-
   /**
    * Get access to the encrypted password
    *
@@ -105,12 +106,20 @@ public class User implements Serializable {
     return this.encryptedPassword;
   }
 
+  private void setEncryptedPassword(EncryptedPassword encryptedPassword) {
+    this.encryptedPassword = encryptedPassword;
+  }
+
   public UserId id() {
     return this.id;
   }
 
   public EmailAddress emailAddress() {
     return this.emailAddress;
+  }
+
+  public String userName() {
+    return userName;
   }
 
   public FullName fullName() {

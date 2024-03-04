@@ -25,8 +25,8 @@ public class UserRegistrationHandler
 
   private static final Logger log =
       LoggerFactory.logger(UserRegistrationHandler.class.getName());
-  private UserRegistrationLayout userRegistrationLayout;
   private final RegisterUserInput registrationUseCase;
+  private UserRegistrationLayout userRegistrationLayout;
 
   @Autowired
   UserRegistrationHandler(RegisterUserInput registrationUseCase) {
@@ -51,6 +51,8 @@ public class UserRegistrationHandler
     userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
     userRegistrationLayout.password.setPattern(".{8,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
+    userRegistrationLayout.username.setHelperText("Your unique username, visible to other users");
+    userRegistrationLayout.username.setErrorMessage("Please provide a username");
   }
 
   private void addListener() {
@@ -62,7 +64,8 @@ public class UserRegistrationHandler
           registrationUseCase.register(
               userRegistrationLayout.fullName.getValue(),
               userRegistrationLayout.email.getValue(),
-              userRegistrationLayout.password.getValue().toCharArray());
+              userRegistrationLayout.password.getValue().toCharArray(),
+              userRegistrationLayout.username.getValue());
         });
   }
 
@@ -114,8 +117,15 @@ public class UserRegistrationHandler
     if (userRegistrationException.userExistsException().isPresent()) {
       showAlreadyUsedEmailError();
     }
+    if (userRegistrationException.userNameNotAvailableException().isPresent()) {
+      showUserNameNotAvailableError();
+    }
     if (userRegistrationException.unexpectedException().isPresent()) {
       showUnexpectedError();
     }
+  }
+
+  private void showUserNameNotAvailableError() {
+    showError("Username already in use", "Please try another username");
   }
 }
