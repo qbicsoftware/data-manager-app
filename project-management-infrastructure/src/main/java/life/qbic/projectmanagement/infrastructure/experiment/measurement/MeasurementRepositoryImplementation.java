@@ -14,11 +14,11 @@ import life.qbic.projectmanagement.domain.service.MeasurementDomainService.Respo
 import org.springframework.stereotype.Repository;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement Repository Implementation</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link MeasurementRepository} interface</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Repository
 public class MeasurementRepositoryImplementation implements MeasurementRepository {

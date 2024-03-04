@@ -23,11 +23,17 @@ import life.qbic.projectmanagement.domain.Organisation;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Cached Organisation Repository</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link OrganisationRepository} interface.</p>
+ * <p>
+ * This implementation allows for caching of organisation lookups via their ROR-ID.
+ * <p>
+ * The caching enables faster lookups for frequent organisation requests, which we assume will be
+ * the most likely case. ROR-IDs are stable and persistent by definition, so locally caching them is
+ * a valid strategy.
  *
- * @since <version tag>
+ * @since 1.0.0s
  */
 @Component
 public class CachedOrganisationRepository implements OrganisationRepository {
