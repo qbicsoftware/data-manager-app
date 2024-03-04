@@ -51,8 +51,6 @@ public class ProjectAccessComponent extends PageArea {
   private final SidRepository sidRepository;
   private final UserInformationService userInformationService;
   private static final Logger log = logger(ProjectAccessMain.class);
-  private final Div content;
-  private final Div header;
   private final Grid<UserProjectAccess> userProjectAccessGrid;
   private final Grid<RoleProjectAccess> roleProjectAccessGrid;
   private final AccessDomainService accessDomainService;
@@ -78,8 +76,8 @@ public class ProjectAccessComponent extends PageArea {
     userProjectAccessGrid = new Grid<>(UserProjectAccess.class);
     roleProjectAccessGrid = new Grid<>(RoleProjectAccess.class);
 
-    this.header = initHeader();
-    this.content = initContent();
+    var header = initHeader();
+    var content = initContent();
     add(header, content);
     this.addClassName("project-access-component");
     log.debug(String.format(
