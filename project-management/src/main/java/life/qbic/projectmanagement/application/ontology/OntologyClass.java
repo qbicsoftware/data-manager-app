@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.projectmanagement.application.ontology;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,7 +9,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "ontology_classes")
-public class OntologyClassEntity {
+public class OntologyClass {
 
   @Column(name = "ontology")
   String ontologyAbbreviation;
@@ -20,7 +20,7 @@ public class OntologyClassEntity {
   @Column(name = "label")
   String classLabel;
   @Column(name = "name")
-  String className;
+  String curie;
   @Column(name = "description", length = 2000)
   String description;
   @Column(name = "classIri")
@@ -30,17 +30,17 @@ public class OntologyClassEntity {
   @GeneratedValue
   private Long id;
 
-  public OntologyClassEntity() {
+  public OntologyClass() {
   }
 
-  public OntologyClassEntity(String ontologyAbbreviation, String ontologyVersion,
+  public OntologyClass(String ontologyAbbreviation, String ontologyVersion,
       String ontologyIri,
-      String classLabel, String className, String description, String classIri) {
+      String classLabel, String curie, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
     this.ontologyIri = ontologyIri;
     this.classLabel = classLabel;
-    this.className = className;
+    this.curie = curie;
     this.description = description;
     this.classIri = classIri;
   }
@@ -77,12 +77,12 @@ public class OntologyClassEntity {
     this.classLabel = label;
   }
 
-  public String getClassName() {
-    return className;
+  public String getCurie() {
+    return curie;
   }
 
-  public void setClassName(String name) {
-    this.className = name;
+  public void setCurie(String name) {
+    this.curie = name;
   }
 
   public String getDescription() {
@@ -109,17 +109,17 @@ public class OntologyClassEntity {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    OntologyClassEntity that = (OntologyClassEntity) o;
+    OntologyClass that = (OntologyClass) o;
     return Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation) && Objects.equals(
         ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
         that.ontologyIri) && Objects.equals(classLabel, that.classLabel) && Objects.equals(
-        className, that.className) && Objects.equals(description, that.description)
+        curie, that.curie) && Objects.equals(description, that.description)
         && Objects.equals(classIri, that.classIri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, classLabel, className,
+    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, classLabel, curie,
         description, classIri);
   }
 

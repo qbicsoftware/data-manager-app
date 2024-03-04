@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.batch;
 
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
@@ -31,8 +31,8 @@ public record SampleUpdateRequest(SampleId sampleId, SampleInformation sampleInf
   public record SampleInformation(String sampleLabel, String organismId,
                                   AnalysisMethod analysisMethod,
                                   BiologicalReplicate biologicalReplicate,
-                                  ExperimentalGroup experimentalGroup, OntologyClassDTO species,
-                                  OntologyClassDTO specimen, OntologyClassDTO analyte,
+                                  ExperimentalGroup experimentalGroup, OntologyTerm species,
+                                  OntologyTerm specimen, OntologyTerm analyte,
                                   String comment) {
 
   }

@@ -2,12 +2,14 @@ package life.qbic.projectmanagement.domain.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.SampleDomainService.ResponseCode;
 
@@ -39,6 +41,8 @@ public interface SampleRepository {
   void updateAll(Project project, Collection<Sample> updatedSamples);
 
   List<Sample> findSamplesBySampleId(List<SampleId> sampleId);
+
+  Optional<Sample> findSample(SampleCode sampleCode);
 
   boolean isSampleRemovable(Project project, SampleId sampleId);
 }

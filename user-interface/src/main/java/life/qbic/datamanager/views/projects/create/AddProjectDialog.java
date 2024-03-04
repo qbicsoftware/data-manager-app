@@ -31,7 +31,7 @@ import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ContactRepository;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Project;
 
 /**
@@ -67,18 +67,18 @@ public class AddProjectDialog extends Dialog {
   }
 
   public AddProjectDialog(FinanceService financeService,
-      OntologyTermInformationService ontologyTermInformationService,
+      OntologyLookupService ontologyLookupService,
       ContactRepository contactRepository) {
     super();
     addClassName("add-project-dialog");
     requireNonNull(financeService, "financeService must not be null");
-    requireNonNull(ontologyTermInformationService,
+    requireNonNull(ontologyLookupService,
         "ontologyTermInformationService must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
     this.collaboratorsLayout = new CollaboratorsLayout();
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
-        ontologyTermInformationService);
+        ontologyLookupService);
 
     List<Contact> knownContacts = contactRepository.findAll().stream()
         .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();

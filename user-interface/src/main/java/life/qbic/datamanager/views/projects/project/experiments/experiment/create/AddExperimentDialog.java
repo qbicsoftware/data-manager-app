@@ -21,8 +21,8 @@ import java.util.Objects;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * <b>AddExperimentDialog</b>
@@ -41,7 +41,7 @@ public class AddExperimentDialog extends DialogWindow {
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public AddExperimentDialog(
-      OntologyTermInformationService ontologyTermInformationService) {
+      OntologyLookupService ontologyTermInformationService) {
     requireNonNull(ontologyTermInformationService,
         "ontologyTermInformationService must not be null");
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
@@ -59,19 +59,19 @@ public class AddExperimentDialog extends DialogWindow {
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
 
-    MultiSelectComboBox<OntologyClassDTO> speciesBox = ontologyComboboxFactory.speciesBox();
+    MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
-    MultiSelectComboBox<OntologyClassDTO> specimenBox = ontologyComboboxFactory.specimenBox();
+    MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
 
-    MultiSelectComboBox<OntologyClassDTO> analyteBox = ontologyComboboxFactory.analyteBox();
+    MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
@@ -167,9 +167,9 @@ public class AddExperimentDialog extends DialogWindow {
     private static final long serialVersionUID = -2259332255266132217L;
 
     private String experimentName;
-    private final List<OntologyClassDTO> species;
-    private final List<OntologyClassDTO> specimen;
-    private final List<OntologyClassDTO> analytes;
+    private final List<OntologyTerm> species;
+    private final List<OntologyTerm> specimen;
+    private final List<OntologyTerm> analytes;
 
     public ExperimentDraft() {
       species = new ArrayList<>();
@@ -185,29 +185,29 @@ public class AddExperimentDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public List<OntologyClassDTO> getSpecies() {
+    public List<OntologyTerm> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<OntologyClassDTO> species) {
+    public void setSpecies(Collection<OntologyTerm> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<OntologyClassDTO> getSpecimens() {
+    public List<OntologyTerm> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<OntologyClassDTO> specimen) {
+    public void setSpecimens(Collection<OntologyTerm> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<OntologyClassDTO> getAnalytes() {
+    public List<OntologyTerm> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<OntologyClassDTO> analytes) {
+    public void setAnalytes(Collection<OntologyTerm> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }
