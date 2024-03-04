@@ -37,16 +37,17 @@ public class UserDomainService {
    * will be created.
    *
    * @param fullName     the full name of the user
+   * @param userName
    * @param emailAddress a valid mail address
    * @param password     the password desired by the user
    * @since 1.0.0
    */
-  public void createUser(FullName fullName, EmailAddress emailAddress, EncryptedPassword password) {
+  public void createUser(FullName fullName, String userName, EmailAddress emailAddress, EncryptedPassword password) {
     // Ensure idempotent behaviour of the service
     if (userRepository.findByEmail(emailAddress).isPresent()) {
       return;
     }
-    var user = User.create(fullName, emailAddress, password);
+    var user = User.create(fullName, emailAddress, userName, password);
     userRepository.addUser(user);
     var userCreatedEvent = UserRegistered.create(user.id().get(), user.fullName().get(),
         user.emailAddress().get());
