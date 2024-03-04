@@ -27,7 +27,7 @@ class ProteomicsValidatorSpec extends Specification {
     })
 
     final static List<String> validPXPProperties = ["qbic sample ids", "organisation id", "facility", "instrument",
-                                                    "pooled sample label", "cycle/fraction name", "digestion method", "digestion enzyme",
+                                                    "pooled sample label", "cycle/fraction name", "fractionation type", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "sample preparation", "sample cleanup (protein)",
                                                     "sample cleanup (peptide)", "note"]
@@ -41,6 +41,19 @@ class ProteomicsValidatorSpec extends Specification {
         then:
         isPXPmetadata
 
+    }
+
+    def "A complete property set must be valid no matter the letter casing style"() {
+
+        when:
+        def isPxPmetadata = ProteomicsValidator.isProteomics(chaosCasing)
+
+        then:
+        isPxPmetadata
+        where:
+        chaosCasing << [
+                validPXPProperties.collect { it.toUpperCase() },
+                validPXPProperties.collect { it.toLowerCase() }]
     }
 
     def "Missing properties for the proteomics metadata collection must result in an unsuccessful validation"() {
@@ -65,21 +78,6 @@ class ProteomicsValidatorSpec extends Specification {
 
         then:
         !isPxPmetadata
-    }
-
-    def "A complete property set must be valid no matter the letter casing style"() {
-
-        when:
-        def isPxPmetadata = ProteomicsValidator.isProteomics(chaosCasing)
-
-        then:
-        isPxPmetadata
-        where:
-        chaosCasing << [
-                validPXPProperties.collect { it.toUpperCase() },
-                validPXPProperties.collect { it.toLowerCase() }]
-
-
     }
 
     def "Valid entries in a proteomics measurement metadata object must return a successful validation "() {
