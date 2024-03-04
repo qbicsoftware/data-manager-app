@@ -354,8 +354,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     if (containsInvalidMeasurementData()) {
-      showErrorNotification("All measurement files need to be approved",
-          "Please remove invalid measurement data and try again.");
+      showErrorNotification("Metadata still invalid",
+          "Please correct your metadata first and upload it again.");
       return;
     }
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), measurementMetadataUploads));
