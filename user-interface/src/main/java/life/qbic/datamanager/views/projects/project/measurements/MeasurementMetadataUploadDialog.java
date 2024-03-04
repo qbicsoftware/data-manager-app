@@ -56,8 +56,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private final transient ValidationService validationService;
   private final EditableMultiFileMemoryBuffer uploadBuffer;
-  private final List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
-  private final List<MeasurementFileItem> measurementFileItems;
+  private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
+  private final transient List<MeasurementFileItem> measurementFileItems;
   private final Div uploadedItemsSection;
   private final Div uploadedItemsDisplays;
   private final ExperimentId experimentId;
@@ -67,7 +67,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     this.validationService = requireNonNull(validationService,
         "validationService must not be null");
     this.experimentId = requireNonNull(experimentId, "experimentId must not be null");
-    ;
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
@@ -204,7 +203,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
             validationReport);
     //We don't want to upload any invalid measurements in spreadsheet
     if (validationReport.validationResult.containsFailures()) {
-      MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload(
+      MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload<>(
           succeededEvent.getFileName(), Collections.emptyList());
       addFile(measurementFileItem, metadataUpload);
     } else {
@@ -220,8 +219,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   private void addFile(MeasurementFileItem measurementFileItem,
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload) {
-//    removeFile(measurementFileItem.fileName()); // same name -> overwrite
-    //TODO figure out how to remove the added component from the vaadin uplaod component.... file name conflicts
     measurementMetadataUploads.add(metadataUpload);
     measurementFileItems.add(measurementFileItem);
     showFile(measurementFileItem);
@@ -395,7 +392,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   public record MeasurementMetadataUpload<T extends MeasurementMetadata>(String fileName,
-                                                                         List<MeasurementRegistrationRequest<MeasurementMetadata>> measurementRegistrationRequests) {
+                                                                                                                                               List<MeasurementRegistrationRequest<MeasurementMetadata>> measurementRegistrationRequests) {
 
   }
 
@@ -411,7 +408,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     @Serial
     private static final long serialVersionUID = -9075627206992036067L;
-    private final MeasurementFileItem measurementFileItem;
+    private final transient MeasurementFileItem measurementFileItem;
     private Div displayBox;
 
 
@@ -528,7 +525,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<MeasurementMetadataUploadDialog> {
 
-    private final List<MeasurementMetadataUpload<MeasurementMetadata>> uploads;
+    private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> uploads;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from

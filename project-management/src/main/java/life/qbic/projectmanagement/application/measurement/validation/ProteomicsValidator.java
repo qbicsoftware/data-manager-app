@@ -106,15 +106,15 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   private class ValidationPolicy {
 
-    private final String UNKNOWN_SAMPLE_MESSAGE = "Unknown sample with sample id \"%s\"";
+    private final static String UNKNOWN_SAMPLE_MESSAGE = "Unknown sample with sample id \"%s\"";
 
-    private final String UNKNOWN_ORGANISATION_ID_MESSAGE = "The organisation ID does not seem to be a ROR ID: \"%s\"";
+    private final static String UNKNOWN_ORGANISATION_ID_MESSAGE = "The organisation ID does not seem to be a ROR ID: \"%s\"";
 
-    private final String UNKNOWN_INSTRUMENT_ID = "Unknown instrument id: \"%s\"";
+    private final static String UNKNOWN_INSTRUMENT_ID = "Unknown instrument id: \"%s\"";
 
     // The unique ROR id part of the URL is described in the official documentation:
     // https://ror.readme.io/docs/ror-identifier-pattern
-    private final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
+    private final static String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
       if (sampleCodes.isEmpty()) {

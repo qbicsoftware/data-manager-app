@@ -41,9 +41,12 @@ public class CachedOrganisationRepository implements OrganisationRepository {
 
   private boolean cacheUsedForLastRequest = false;
 
+
+
   public CachedOrganisationRepository(int cacheSize) {
     this.configuredCacheSize = cacheSize;
   }
+
 
   public CachedOrganisationRepository() {
     this.configuredCacheSize = DEFAULT_CACHE_SIZE;
@@ -89,6 +92,8 @@ public class CachedOrganisationRepository implements OrganisationRepository {
       return new Organisation(rorEntry.getId(), rorEntry.getName());
     } catch (IOException | InterruptedException e) {
       log.error("Finding ROR entry failed for organisation: %s".formatted(rorId), e);
+      /* Clean up whatever needs to be handled before interrupting  */
+      Thread.currentThread().interrupt();
       return null;
     }
   }

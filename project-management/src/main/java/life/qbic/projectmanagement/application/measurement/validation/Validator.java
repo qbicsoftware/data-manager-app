@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
-import java.util.Collection;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 
 /**

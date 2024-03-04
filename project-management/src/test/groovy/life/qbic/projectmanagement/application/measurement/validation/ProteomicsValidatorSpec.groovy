@@ -27,10 +27,24 @@ class ProteomicsValidatorSpec extends Specification {
     })
 
     final static List<String> validPXPProperties = ["qbic sample ids", "organisation id", "facility", "instrument",
-                                                    "pooled sample label", "cycle/fraction name", "digestion method", "digestion enzyme",
+                                                    "pooled sample label", "cycle/fraction name", "fractionation type", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "sample preparation", "sample cleanup (protein)",
                                                     "sample cleanup (peptide)", "note"]
+
+    def "A complete property set must be valid no matter the letter casing style"() {
+
+        when:
+        def isPxPmetadata = ProteomicsValidator.isProteomics(chaosCasing)
+
+        then:
+        isPxPmetadata
+        where:
+        chaosCasing << [
+                validPXPProperties.collect { it.toUpperCase() },
+                validPXPProperties.collect { it.toLowerCase() }]
+    }
+
 
     def "Given a valid proteomics measurement metadata property collection, pass the validation"() {
         given:
@@ -67,20 +81,6 @@ class ProteomicsValidatorSpec extends Specification {
         !isPxPmetadata
     }
 
-    def "A complete property set must be valid no matter the letter casing style"() {
-
-        when:
-        def isPxPmetadata = ProteomicsValidator.isProteomics(chaosCasing)
-
-        then:
-        isPxPmetadata
-        where:
-        chaosCasing << [
-                validPXPProperties.collect { it.toUpperCase() },
-                validPXPProperties.collect { it.toLowerCase() }]
-
-
-    }
 
     def "Valid entries in a proteomics measurement metadata object must return a successful validation "() {
         given:

@@ -87,7 +87,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public void setSamplePreparation(ProteomicsSamplePreparation samplePreparation) {
-
+    //ToDo extend
   }
 
   /**
