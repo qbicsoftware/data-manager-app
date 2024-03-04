@@ -52,7 +52,6 @@ public class ProjectAccessComponent extends PageArea {
   private final UserInformationService userInformationService;
   private static final Logger log = logger(ProjectAccessMain.class);
   private final Grid<UserProjectAccess> userProjectAccessGrid;
-  private final Grid<RoleProjectAccess> roleProjectAccessGrid;
   private final AccessDomainService accessDomainService;
   private Context context;
 
@@ -74,7 +73,6 @@ public class ProjectAccessComponent extends PageArea {
     requireNonNull(accessDomainService, "accessDomainService must not be null");
 
     userProjectAccessGrid = new Grid<>(UserProjectAccess.class);
-    roleProjectAccessGrid = new Grid<>(RoleProjectAccess.class);
 
     var header = initHeader();
     var content = initContent();
@@ -112,8 +110,6 @@ public class ProjectAccessComponent extends PageArea {
     contentDiv.addClassName("content");
     var projectAccess = layoutUserProjectAccessGrid();
     contentDiv.add(projectAccess);
-    var roleAccess = layoutRoleProjectAccessGrid();
-    contentDiv.add(roleAccess);
     return contentDiv;
   }
 
@@ -125,14 +121,6 @@ public class ProjectAccessComponent extends PageArea {
     Div userProjectAccess = new Div(userProjectAccessDescription, userProjectAccessGrid);
     userProjectAccess.addClassName("user-access");
     return userProjectAccess;
-  }
-
-  private Div layoutRoleProjectAccessGrid() {
-    Span roleProjectAccessDescription = new Span("Roles with access to this project");
-    roleProjectAccessGrid.addColumn(RoleProjectAccess::projectRole).setHeader("User Role");
-    Div roleProjectAccess = new Div(roleProjectAccessDescription, roleProjectAccessGrid);
-    roleProjectAccess.addClassName("role-access");
-    return roleProjectAccess;
   }
 
   private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
@@ -147,7 +135,6 @@ public class ProjectAccessComponent extends PageArea {
 
   private void loadInformationForProject(ProjectId projectId) {
     loadProjectAccessibleUsers(projectId);
-    loadProjectAccessibleRoles(projectId);
   }
 
   //shows active users in the UI
@@ -184,21 +171,6 @@ public class ProjectAccessComponent extends PageArea {
 
   private void setUserProjectAccessGridData(List<UserProjectAccess> userProjectAccesses) {
     userProjectAccessGrid.setItems(userProjectAccesses);
-  }
-
-  private void loadProjectAccessibleRoles(ProjectId projectId) {
-    List<String> authorities = projectAccessService.listAuthoritiesForPermission(projectId,
-            BasePermission.READ).stream()
-        .distinct()
-        .toList();
-    List<RoleProjectAccess> roleProjectAccesses = authorities.stream()
-        .map(this::formatAuthorityToReadableString).map(RoleProjectAccess::new).toList();
-    setRoleProjectAccessGridData(roleProjectAccesses);
-  }
-
-  private void setRoleProjectAccessGridData(List<
-      RoleProjectAccess> roleProjectAccesses) {
-    roleProjectAccessGrid.setItems(roleProjectAccesses);
   }
 
   private void openEditUserAccessToProjectDialog() {
