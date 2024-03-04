@@ -2,8 +2,8 @@ package life.qbic.projectmanagement.application.policy.directive;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.identity.api.UserInformationService;
@@ -11,6 +11,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.Messages;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.communication.Content;
 import life.qbic.projectmanagement.application.communication.EmailService;
 import life.qbic.projectmanagement.application.communication.Recipient;
@@ -77,13 +78,13 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
   }
 
   private List<RecipientDTO> getRecipients(ProjectId projectId) {
-    List<RecipientDTO> users = new ArrayList<>();
-    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
-    for (String id : userIds) {
-      userInformationService.findById(id)
-          .ifPresent(userInfo -> users.add(new RecipientDTO(userInfo)));
-    }
-    return users;
+    return projectAccessService.listCollaborators(projectId).stream()
+        .map(ProjectCollaborator::userId)
+        .map(userInformationService::findById)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(RecipientDTO::new)
+        .toList();
   }
 
   private void notifyRecipient(RecipientDTO recipient, String projectTitle, String batchName,

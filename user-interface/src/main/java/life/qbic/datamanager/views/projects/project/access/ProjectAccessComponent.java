@@ -3,18 +3,24 @@ package life.qbic.datamanager.views.projects.project.access;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.Column;
+import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.identity.api.UserInfo;
@@ -22,13 +28,14 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.service.AccessDomainService;
 import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.BasePermission;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
  * Project Access Component
@@ -47,32 +54,33 @@ public class ProjectAccessComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = 6832688939965353201L;
   private final ProjectAccessService projectAccessService;
-  private final UserDetailsService userDetailsService;
+  private final UserPermissions userPermissions;
   private final SidRepository sidRepository;
   private final UserInformationService userInformationService;
   private static final Logger log = logger(ProjectAccessMain.class);
   private final Grid<UserProjectAccess> userProjectAccessGrid;
   private final AccessDomainService accessDomainService;
   private Context context;
+  private Button editButton;
+  private Span controlsContainer;
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
-      @Autowired UserDetailsService userDetailsService,
+      @Autowired UserPermissions userPermissions,
       @Autowired UserInformationService userInformationService,
       @Autowired SidRepository sidRepository,
       @Autowired AccessDomainService accessDomainService) {
     this.projectAccessService = projectAccessService;
-    this.userDetailsService = userDetailsService;
     this.userInformationService = userInformationService;
     this.sidRepository = sidRepository;
     this.accessDomainService = accessDomainService;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
-    requireNonNull(userDetailsService, "userDetailsService must not be null");
     requireNonNull(userInformationService, "userRepository must not be null");
     requireNonNull(sidRepository, "sidRepository must not be null");
     requireNonNull(accessDomainService, "accessDomainService must not be null");
+    this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
 
-    userProjectAccessGrid = new Grid<>(UserProjectAccess.class);
+    userProjectAccessGrid = new Grid<>();
 
     var header = initHeader();
     var content = initContent();
@@ -88,21 +96,39 @@ public class ProjectAccessComponent extends PageArea {
     ProjectId projectId = context.projectId()
         .orElseThrow(() -> new ApplicationException("no project id in context " + context));
     this.context = context;
+    if (!userPermissions.changeProjectAccess(projectId)) {
+      removeControls();
+    } else {
+      addControls();
+    }
     loadInformationForProject(projectId);
+  }
+
+  private void addControls() {
+    controlsContainer.add(createControls());
+  }
+
+  private Span createControls() {
+    var controls = new Span();
+    var editButton = new Button("Edit");
+    editButton.addClickListener(event -> openEditUserAccessToProjectDialog());
+    controls.add(editButton);
+    return controls;
+  }
+
+  private void removeControls() {
+    controlsContainer.removeAll();
   }
 
   private Div initHeader() {
     Span titleField = new Span();
-    Div headerDiv = new Div();
-    headerDiv.addClassName("header");
+    var header = new Div();
+    header.addClassName("header");
     titleField.setText("Project Access Management");
     titleField.addClassName("title");
-    var buttonBar = new Span();
-    Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openEditUserAccessToProjectDialog());
-    buttonBar.add(editButton);
-    headerDiv.add(titleField, buttonBar);
-    return headerDiv;
+    this.controlsContainer = new Span();
+    header.add(titleField, controlsContainer);
+    return header;
   }
 
   private Div initContent() {
@@ -115,12 +141,45 @@ public class ProjectAccessComponent extends PageArea {
 
   private Div layoutUserProjectAccessGrid() {
     Span userProjectAccessDescription = new Span("Users with access to this project");
-    userProjectAccessGrid.addColumn(UserProjectAccess::fullName).setHeader("User Name");
-    userProjectAccessGrid.addColumn(UserProjectAccess::emailAddress).setHeader("Email Address");
-    userProjectAccessGrid.addColumn(UserProjectAccess::projectRole).setHeader("User Role");
+    Column<UserProjectAccess> usernameColumn = userProjectAccessGrid.addColumn(
+            userProjectAccess -> userProjectAccess.userInfo().userName())
+        .setHeader("username");
+    Column<UserProjectAccess> projectRoleColumn = userProjectAccessGrid.addColumn(
+            UserProjectAccess::projectRole)
+        .setRenderer(new ComponentRenderer<>(projectAccess -> {
+          if (projectAccess.projectRole() == ProjectRole.OWNER) {
+            return new Span("owner");
+          }
+          if (userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+            Select<ProjectRole> roleSelect = new Select<>();
+            roleSelect.setItemLabelGenerator(item -> item.name().toLowerCase());
+            roleSelect.setItems(
+                ProjectRole.READER,
+                ProjectRole.EDITOR,
+                ProjectRole.ADMIN
+            );
+            roleSelect.setValue(projectAccess.projectRole());
+            roleSelect.addValueChangeListener(
+                valueChanged -> onProjectRoleSelectionChanged(projectAccess, valueChanged));
+            return roleSelect;
+          } else {
+            return new Span(projectAccess.projectRole().name().toLowerCase());
+          }
+        }))
+        .setHeader("role");
+    userProjectAccessGrid.setMultiSort(false);
+    userProjectAccessGrid.sort(
+        List.of(new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING),
+            new GridSortOrder<>(usernameColumn, SortDirection.ASCENDING)));
     Div userProjectAccess = new Div(userProjectAccessDescription, userProjectAccessGrid);
     userProjectAccess.addClassName("user-access");
     return userProjectAccess;
+  }
+
+  private void onProjectRoleSelectionChanged(UserProjectAccess projectAccess,
+      ComponentValueChangeEvent<Select<ProjectRole>, ProjectRole> valueChanged) {
+    projectAccessService.addProjectRole(context.projectId().orElseThrow(),
+        projectAccess.userInfo.id(), valueChanged.getValue());
   }
 
   private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
@@ -137,30 +196,30 @@ public class ProjectAccessComponent extends PageArea {
     loadProjectAccessibleUsers(projectId);
   }
 
+  private Optional<UserProjectAccess> userProjectAccessFromCollaborator(
+      ProjectCollaborator collaborator) {
+    Optional<UserInfo> optionalUserInfo = userInformationService.findById(collaborator.userId());
+    if (optionalUserInfo.isEmpty()) {
+      // user not found -> no longer in the system?
+      log.warn("User %s could not be found but has access to a project".formatted(
+          collaborator.userId()));
+      return Optional.empty();
+    }
+    UserInfo userInfo = optionalUserInfo.get();
+    return Optional.of(new UserProjectAccess(userInfo, collaborator.projectRole()));
+  }
+
   //shows active users in the UI
   private void loadProjectAccessibleUsers(ProjectId projectId) {
-    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
-    List<QbicUserDetails> users = new ArrayList<>();
-    for(String id : userIds) {
-      Optional<UserInfo> optionalInfo = userInformationService.findById(id);
-      if(optionalInfo.isPresent()) {
-        QbicUserDetails userDetails = (QbicUserDetails) userDetailsService.
-            loadUserByUsername(optionalInfo.get().emailAddress());
-        users.add(userDetails);
-      }
-    }
-    List<String> authorities = projectAccessService.listAuthorities(projectId).stream().distinct()
+    List<ProjectCollaborator> collaborators = projectAccessService.listCollaborators(projectId);
+
+    List<UserProjectAccess> accessList = collaborators.stream()
+        .map(this::userProjectAccessFromCollaborator)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .toList();
-    var entries = users.stream().map(userDetail -> {
-      var roles = getProjectRoles(authorities, userDetail);
-      roles = roles.stream()
-          .map(this::formatAuthorityToReadableString)
-          .toList();
-      String fullName = userInformationService.findById(userDetail.getUserId()).get().fullName();
-      return new UserProjectAccess(fullName, userDetail.getEmailAddress(), String.join(", ", roles));
-    }).toList();
-    List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
-    setUserProjectAccessGridData(userProjectAccesses.stream().distinct().collect(Collectors.toList()));
+
+    setUserProjectAccessGridData(accessList);
   }
 
   private String formatAuthorityToReadableString(String authority) {
@@ -218,11 +277,7 @@ public class ProjectAccessComponent extends PageArea {
     }
   }
 
-  private record UserProjectAccess(String fullName, String emailAddress, String projectRole) {
-
-  }
-
-  private record RoleProjectAccess(String projectRole) {
+  record UserProjectAccess(UserInfo userInfo, ProjectRole projectRole) {
 
   }
 

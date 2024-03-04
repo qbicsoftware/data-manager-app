@@ -5,7 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
@@ -63,12 +62,12 @@ public class ProjectAccessMain extends Main implements BeforeEnterObserver {
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
     this.context = new Context().with(parsedProjectId);
-    if (userPermissions.changeProjectAccess(parsedProjectId)) {
+//    if (userPermissions.changeProjectAccess(parsedProjectId)) {
       initializeComponentsWithContext();
-    } else {
-      event.rerouteToError(NotFoundException.class);
-    }
-    initializeComponentsWithContext();
+//    } else {
+//      event.rerouteToError(NotFoundException.class);
+//    }
+//    initializeComponentsWithContext();
 
   }
 

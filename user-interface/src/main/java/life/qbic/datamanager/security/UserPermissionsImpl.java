@@ -3,6 +3,7 @@ package life.qbic.datamanager.security;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.AclPermissionEvaluator;
+import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -23,18 +24,18 @@ public class UserPermissionsImpl implements UserPermissions {
   public boolean readProject(ProjectId projectId) {
     return aclPermissionEvaluator.hasPermission(
         SecurityContextHolder.getContext().getAuthentication(), projectId,
-        PROJECT_TARGET_TYPE, "READ");
+        PROJECT_TARGET_TYPE, BasePermission.READ);
   }
 
   @Override
   public boolean changeProjectAccess(ProjectId projectId) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     boolean hasReadPermission = aclPermissionEvaluator.hasPermission(authentication, projectId,
-        PROJECT_TARGET_TYPE, "READ");
-    boolean hasCreatedProject = aclPermissionEvaluator.hasPermission(authentication, projectId,
-        PROJECT_TARGET_TYPE, "ADMINISTRATION");
+        PROJECT_TARGET_TYPE, BasePermission.READ);
+    boolean hasAdminPermission = aclPermissionEvaluator.hasPermission(authentication, projectId,
+        PROJECT_TARGET_TYPE, BasePermission.ADMINISTRATION);
     boolean canChangeAclAccess = authentication.getAuthorities().stream()
         .anyMatch(it -> it.getAuthority().equals("acl:change-access"));
-    return (hasReadPermission && (canChangeAclAccess || hasCreatedProject));
+    return (hasReadPermission && (canChangeAclAccess || hasAdminPermission));
   }
 }

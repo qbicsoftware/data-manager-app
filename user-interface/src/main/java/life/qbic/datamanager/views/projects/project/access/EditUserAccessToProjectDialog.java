@@ -22,6 +22,7 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.infrastructure.project.access.QBiCSid;
 import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
@@ -88,9 +89,11 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
 
   private void setPreselectedUsers() {
     userGrid.deselectAll();
-    List<String> addedUserIdsInProject = projectAccessService.listUserIds(projectId);
-    originalUsersInProject = addedUserIdsInProject.stream().map(userInformationService::findById)
-        .filter(Optional::isPresent).map(Optional::get)
+    originalUsersInProject = projectAccessService.listCollaborators(projectId).stream()
+        .map(ProjectCollaborator::userId)
+        .map(userInformationService::findById)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .collect(Collectors.toUnmodifiableSet());
     originalUsersInProject.forEach(userGrid::select);
   }

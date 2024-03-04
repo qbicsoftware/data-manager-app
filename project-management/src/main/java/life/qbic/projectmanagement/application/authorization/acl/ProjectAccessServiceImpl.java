@@ -2,8 +2,13 @@ package life.qbic.projectmanagement.application.authorization.acl;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,22 +36,87 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     this.aclService = aclService;
   }
 
-  @Transactional
   @Override
-  public List<String> listUserIds(ProjectId projectId) {
-    Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
-    return acl.getEntries().stream()
-        .map(AccessControlEntry::getSid)
-        .filter(sid -> sid instanceof PrincipalSid)
-        .map(sid -> (PrincipalSid) sid)
-        .map(PrincipalSid::getPrincipal)
-        .toList();
+  @Transactional
+  public void addProjectCollaborator(ProjectId projectId, String userId, ProjectRole projectRole) {
+    addProjectRole(projectId, userId, projectRole);
   }
 
-  @Transactional
   @Override
-  public List<String> listActiveUserIds(ProjectId projectId) {
-    return listUserIds(projectId).stream().distinct().toList();
+  @Transactional
+  public void addProjectRole(ProjectId projectId, String userId, ProjectRole projectRole) {
+    for (Permission permission : ProjectAccessService.getPermissions(projectRole)) {
+      grant(userId, projectId, permission);
+    }
+  }
+
+  @Override
+  @Transactional
+  public void replaceProjectRole(ProjectId projectId, String userId, ProjectRole oldRole,
+      ProjectRole replacement) {
+    for (Permission permission : ProjectAccessService.getPermissions(oldRole)) {
+      deny(userId, projectId, permission);
+    }
+    for (Permission permission : ProjectAccessService.getPermissions(replacement)) {
+      grant(userId, projectId, permission);
+    }
+  }
+
+  @Override
+  public void removeProjectRole(ProjectId projectId, String userId, ProjectRole projectRole) {
+    for (Permission permission : ProjectAccessService.getPermissions(projectRole)) {
+      deny(userId, projectId, permission);
+    }
+    throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public void removeCollaborator(ProjectId projectId, String userId) {
+    denyAll(userId, projectId);
+  }
+//
+//  @Transactional
+//  @Override
+//  public List<String> listUserIds(ProjectId projectId) {
+//    Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
+//    return acl.getEntries().stream()
+//        .map(AccessControlEntry::getSid)
+//        .filter(sid -> sid instanceof PrincipalSid)
+//        .map(sid -> (PrincipalSid) sid)
+//        .map(PrincipalSid::getPrincipal)
+//        .toList();
+//  }
+
+  @Override
+  public List<ProjectCollaborator> listCollaborators(ProjectId projectId) {
+    Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
+
+    var collaborators = new ArrayList<ProjectCollaborator>();
+    if (acl.getOwner() instanceof PrincipalSid principalSid) {
+      ProjectCollaborator owner = new ProjectCollaborator(principalSid.getPrincipal(),
+          ProjectRole.OWNER);
+      collaborators.add(owner);
+    }
+    Map<Sid, List<AccessControlEntry>> entriesBySid = acl.getEntries().stream()
+        .collect(Collectors.groupingBy(AccessControlEntry::getSid));
+    // skip the owner as it is handled explicitly
+    Set<ProjectCollaborator> otherCollaborators = entriesBySid.entrySet().stream()
+        // skip the owner as it is handled explicitly
+        .filter(sidListEntry -> !acl.getOwner().equals(sidListEntry.getKey()))
+        .filter(sidListEntry -> sidListEntry.getKey() instanceof PrincipalSid)
+        .map(sidListEntry -> {
+          Set<Permission> permissions = sidListEntry.getValue().stream()
+              .map(AccessControlEntry::getPermission).collect(Collectors.toSet());
+          ProjectRole projectRole = ProjectAccessService.getRole(permissions);
+          if (sidListEntry.getKey() instanceof PrincipalSid principalSid) {
+            return new ProjectCollaborator(principalSid.getPrincipal(), projectRole);
+          }
+          return null;
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
+    collaborators.addAll(otherCollaborators);
+    return collaborators;
   }
 
   @Transactional
@@ -120,8 +190,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
     return acl.getEntries().stream()
         .map(AccessControlEntry::getSid)
-        .filter(sid -> sid instanceof GrantedAuthoritySid)
-        .map(sid -> (GrantedAuthoritySid) sid)
+        .filter(GrantedAuthoritySid.class::isInstance)
+        .map(GrantedAuthoritySid.class::cast)
         .map(GrantedAuthoritySid::getGrantedAuthority)
         .toList();
   }
