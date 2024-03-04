@@ -3,18 +3,22 @@ package life.qbic.projectmanagement.application.sample;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.SamplePropertiesAttributeConverter;
 import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -42,7 +46,6 @@ public class SamplePreview {
   private String bioReplicateLabel;
   @Column(name = "label")
   private String sampleLabel;
-
   @Column(name = "organism_id")
   private String organismId;
   private String comment;
@@ -54,6 +57,8 @@ public class SamplePreview {
   private OntologyClassDTO species;
   private OntologyClassDTO specimen;
   private OntologyClassDTO analyte;
+  @Convert(converter = SamplePropertiesAttributeConverter.class)
+  private HashMap<String, String> properties;
 
   protected SamplePreview() {
     //needed by JPA
@@ -177,6 +182,17 @@ public class SamplePreview {
     return experimentalGroup;
   }
 
+  public HashMap<String, String> sampleProperties() {
+    return properties;
+  }
+
+  public void addSampleProperties(Map<String, String> sampleProperties) {
+    if (sampleProperties.isEmpty()) {
+      return;
+    }
+    this.properties.putAll(sampleProperties);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -194,14 +210,15 @@ public class SamplePreview {
         && Objects.equals(species, that.species) && Objects.equals(specimen,
         that.specimen) && Objects.equals(analyte, that.analyte) && Objects.equals(
         experimentalGroup, that.experimentalGroup) && Objects.equals(analysisMethod,
-        that.analysisMethod) && Objects.equals(comment, that.comment);
+        that.analysisMethod) && Objects.equals(comment, that.comment) && Objects.equals(properties,
+        that.properties);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(experimentId, sampleCode, sampleId, batchLabel, bioReplicateLabel,
         sampleLabel, organismId,
-        species, specimen, analyte, experimentalGroup, analysisMethod, comment);
+        species, specimen, analyte, experimentalGroup, analysisMethod, comment, properties);
   }
 
   @Override
@@ -220,6 +237,7 @@ public class SamplePreview {
         ", analysisMethod='" + analysisMethod + '\'' +
         ", comment='" + comment + '\'' +
         ", conditions=" + experimentalGroup +
+        ", properties=" + properties +
         '}';
   }
 }
