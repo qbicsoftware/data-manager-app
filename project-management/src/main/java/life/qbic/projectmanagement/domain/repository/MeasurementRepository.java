@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.repository;
 
-import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
@@ -21,8 +20,5 @@ public interface MeasurementRepository {
   Result<NGSMeasurement, ResponseCode> save(NGSMeasurement measurement, List<SampleCode> sampleCodes);
 
   Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurement measurement, List<SampleCode> sampleCodes);
-
-  Result<Collection<NGSMeasurement>, ResponseCode> saveAll(
-      Collection<NGSMeasurement> ngsMeasurements);
 
 }
