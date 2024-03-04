@@ -9,9 +9,10 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasuremen
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 
 /**
- * <b><interface short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <b>Measurement Repository</b>
+ * <p>
+ * Persistent repository for different
+ * {@link life.qbic.projectmanagement.application.measurement.MeasurementMetadata} implementations
  *
  * @since <version tag>
  */
@@ -21,6 +22,7 @@ public interface MeasurementRepository {
 
   Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurementWrapper measurement);
 
-  Result<Collection<NGSMeasurement>, ResponseCode> saveAll(Collection<NGSMeasurement> ngsMeasurements);
+  Result<Collection<NGSMeasurement>, ResponseCode> saveAll(
+      Collection<NGSMeasurement> ngsMeasurements);
 
 }

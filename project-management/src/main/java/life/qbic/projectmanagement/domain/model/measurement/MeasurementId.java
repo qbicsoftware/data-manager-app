@@ -17,6 +17,8 @@ import org.springframework.lang.NonNull;
  *
  * <p>Unique identifier for measurements within QBiC's data management platform.</p>
  *
+ * This identifier is usually not exposed to the user, but a technical identifier.
+ *
  * @since 1.0.0
  */
 @Embeddable

@@ -1,11 +1,12 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Proteomics Sample Preparation</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Another proteomics measurement metadata container, that aggregates business concepts that
+ * belong to sample preparation</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record ProteomicsSamplePreparation(String preparation, String cleanupProtein,
                                           String cleanupPeptide, String note) {

@@ -1,7 +1,14 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
-import jakarta.persistence.*;
-
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -11,11 +18,12 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Proteomics measurement</b>
+ * <p>
+ * Proteomics implementation for the {@link MeasurementMetadata} interface, our aggregate for
+ * proteomics measurement metadata.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Entity(name = "proteomics_measurement")
 public class ProteomicsMeasurement implements MeasurementMetadata {
@@ -41,7 +49,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     // Needed for JPA
   }
 
-  private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds, MeasurementCode measurementCode,
+  private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds,
+      MeasurementCode measurementCode,
       Organisation organisation,
       ProteomicsMethodMetadata method, ProteomicsSamplePreparation samplePreparation) {
     measuredSamples = new ArrayList<>();
@@ -75,7 +84,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
           "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
     var measurementId = MeasurementId.create();
-    return new ProteomicsMeasurement(measurementId, sampleIds, measurementCode, organisation, method, null);
+    return new ProteomicsMeasurement(measurementId, sampleIds, measurementCode, organisation,
+        method, null);
   }
 
   public ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
