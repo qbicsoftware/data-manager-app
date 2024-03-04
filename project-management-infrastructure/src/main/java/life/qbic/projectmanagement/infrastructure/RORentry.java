@@ -3,11 +3,11 @@ package life.qbic.projectmanagement.infrastructure;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Research Organisation Registry Entry</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>A ROR entry that is returned by the ROR API.</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class RORentry {
 
@@ -17,15 +17,15 @@ public class RORentry {
   @JsonProperty("name")
   String name;
 
+  public String getName() {
+    return this.name;
+  }
+
   public void setName(String name) {
     if (name == null) {
       name = "";
     }
     this.name = name.trim();
-  }
-
-  public String getName() {
-    return this.name;
   }
 
   public String getId() {

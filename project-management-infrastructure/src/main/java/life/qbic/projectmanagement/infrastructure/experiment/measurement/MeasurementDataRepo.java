@@ -4,11 +4,11 @@ import life.qbic.projectmanagement.application.measurement.MeasurementService.NG
 import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement Data Repo</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Interface for the actual data registration preparation</p>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public interface MeasurementDataRepo {
 
