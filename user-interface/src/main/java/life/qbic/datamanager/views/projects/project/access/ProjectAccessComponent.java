@@ -51,14 +51,10 @@ public class ProjectAccessComponent extends PageArea {
   private final SidRepository sidRepository;
   private final UserInformationService userInformationService;
   private static final Logger log = logger(ProjectAccessMain.class);
-  private final Div content = new Div();
-  private final Div header = new Div();
-  private final Span buttonBar = new Span();
-  private final Span titleField = new Span();
-  private final Grid<UserProjectAccess> userProjectAccessGrid = new Grid<>(
-      UserProjectAccess.class);
-  private final Grid<RoleProjectAccess> roleProjectAccessGrid = new Grid<>(
-      RoleProjectAccess.class);
+  private final Div content;
+  private final Div header;
+  private final Grid<UserProjectAccess> userProjectAccessGrid;
+  private final Grid<RoleProjectAccess> roleProjectAccessGrid;
   private final AccessDomainService accessDomainService;
   private Context context;
 
@@ -77,11 +73,19 @@ public class ProjectAccessComponent extends PageArea {
     requireNonNull(userDetailsService, "userDetailsService must not be null");
     requireNonNull(userInformationService, "userRepository must not be null");
     requireNonNull(sidRepository, "sidRepository must not be null");
-    layoutComponent();
+    requireNonNull(accessDomainService, "accessDomainService must not be null");
+
+    userProjectAccessGrid = new Grid<>(UserProjectAccess.class);
+    roleProjectAccessGrid = new Grid<>(RoleProjectAccess.class);
+
+    this.header = initHeader();
+    this.content = initContent();
+    add(header, content);
     this.addClassName("project-access-component");
     log.debug(String.format(
         "New instance for ProjectAccessMain(#%s)",
         System.identityHashCode(this)));
+
   }
 
   public void setContext(Context context) {
@@ -91,49 +95,46 @@ public class ProjectAccessComponent extends PageArea {
     loadInformationForProject(projectId);
   }
 
-  private void layoutComponent() {
-    initHeader();
-    initContent();
-  }
-
-  private void initHeader() {
-    header.addClassName("header");
+  private Div initHeader() {
+    Span titleField = new Span();
+    Div headerDiv = new Div();
+    headerDiv.addClassName("header");
     titleField.setText("Project Access Management");
     titleField.addClassName("title");
-    initButtonBar();
-    header.add(titleField, buttonBar);
-    add(header);
-  }
-
-  private void initButtonBar() {
+    var buttonBar = new Span();
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> openEditUserAccessToProjectDialog());
     buttonBar.add(editButton);
+    headerDiv.add(titleField, buttonBar);
+    return headerDiv;
   }
 
-  private void initContent() {
-    content.addClassName("content");
-    layoutUserProjectAccessGrid();
-    layoutRoleProjectAccessGrid();
-    add(content);
+  private Div initContent() {
+    Div contentDiv = new Div();
+    contentDiv.addClassName("content");
+    var projectAccess = layoutUserProjectAccessGrid();
+    contentDiv.add(projectAccess);
+    var roleAccess = layoutRoleProjectAccessGrid();
+    contentDiv.add(roleAccess);
+    return contentDiv;
   }
 
-  private void layoutUserProjectAccessGrid() {
+  private Div layoutUserProjectAccessGrid() {
     Span userProjectAccessDescription = new Span("Users with access to this project");
     userProjectAccessGrid.addColumn(UserProjectAccess::fullName).setHeader("User Name");
     userProjectAccessGrid.addColumn(UserProjectAccess::emailAddress).setHeader("Email Address");
     userProjectAccessGrid.addColumn(UserProjectAccess::projectRole).setHeader("User Role");
     Div userProjectAccess = new Div(userProjectAccessDescription, userProjectAccessGrid);
     userProjectAccess.addClassName("user-access");
-    content.add(userProjectAccess);
+    return userProjectAccess;
   }
 
-  private void layoutRoleProjectAccessGrid() {
+  private Div layoutRoleProjectAccessGrid() {
     Span roleProjectAccessDescription = new Span("Roles with access to this project");
     roleProjectAccessGrid.addColumn(RoleProjectAccess::projectRole).setHeader("User Role");
     Div roleProjectAccess = new Div(roleProjectAccessDescription, roleProjectAccessGrid);
     roleProjectAccess.addClassName("role-access");
-    content.add(roleProjectAccess);
+    return roleProjectAccess;
   }
 
   private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
