@@ -391,13 +391,11 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     }
   }
 
-  public record MeasurementMetadataUpload<T extends MeasurementMetadata>(String fileName,
-                                                                                                                                               List<MeasurementRegistrationRequest<MeasurementMetadata>> measurementRegistrationRequests) {
+  public record MeasurementMetadataUpload<T extends MeasurementMetadata>(String fileName, List<MeasurementRegistrationRequest<MeasurementMetadata>> measurementRegistrationRequests) {
 
   }
 
   public record MeasurementFileItem(String fileName, ValidationReport validationReport) {
-    //used to display uploaded files
 
   }
 
@@ -409,7 +407,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     @Serial
     private static final long serialVersionUID = -9075627206992036067L;
     private final transient MeasurementFileItem measurementFileItem;
-    private Div displayBox;
+    private final Div displayBox = new Div();
 
 
     public MeasurementFileDisplay(MeasurementFileItem measurementFileItem) {
@@ -421,8 +419,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       fileNameLabel.addClassName("file-name");
       add(fileNameLabel);
       createDisplayBox(measurementFileItem.validationReport());
-      add(displayBox);
       displayBox.addClassName("validation-display-box");
+      add(displayBox);
       addClassName("measurement-item");
     }
 
@@ -431,17 +429,17 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     }
 
     public void addError(String error) {
-      Div invalidDisplayBox = createAdditionalErrorBox(error);
-      invalidDisplayBox.addClassName("validation-display-box");
-      add(invalidDisplayBox);
+      displayBox.removeAll();
+      displayBox.add(createInvalidDisplayBox(List.of(error)));
     }
 
     private void createDisplayBox(ValidationReport validationReport) {
+      displayBox.removeAll();
       if(validationReport.validationResult().allPassed()){
-        displayBox = createApprovedDisplayBox(validationReport.validatedRows());
+        displayBox.add(createApprovedDisplayBox(validationReport.validatedRows()));
       }
       else {
-        displayBox = createInvalidDisplayBox(validationReport.validationResult().failures());
+        displayBox.add(createInvalidDisplayBox(validationReport.validationResult().failures()));
     }}
 
     private Div createApprovedDisplayBox(int validMeasurementCount){
@@ -477,25 +475,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       invalidMeasurementsList.addClassName("invalid-measurement-list");
       invalidMeasurementsList.setType(OrderedList.NumberingType.NUMBER);
       validationDetails.add(invalidMeasurementsList);
-      box.add(header, validationDetails, instruction);
-      return box;
-    }
-
-    private Div createAdditionalErrorBox(String additionalError) {
-      Div box = new Div();
-      Span approvedTitle = new Span("Measurement registration failed");
-      Icon invalidIcon = VaadinIcon.CLOSE_CIRCLE_O.create();
-      invalidIcon.addClassName("error");
-      Span header = new Span(invalidIcon, approvedTitle);
-      header.addClassName("header");
-      box.add(header);
-      Span instruction = new Span("Please correct the entries and re-upload the excel sheet");
-      instruction.addClassName("secondary");
-      Div validationDetails = new Div();
-      Div measurementRegistrationFailureError = new Div();
-      measurementRegistrationFailureError.addClassName("invalid-measurement-list");
-      measurementRegistrationFailureError.setText(additionalError);
-      validationDetails.add(measurementRegistrationFailureError);
       box.add(header, validationDetails, instruction);
       return box;
     }

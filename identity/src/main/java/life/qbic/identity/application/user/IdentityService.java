@@ -45,13 +45,14 @@ public final class IdentityService {
    * client's responsibility to handle the raw password.
    *
    * @param fullName    the full name of the user
+   * @param userName
    * @param email       the mail address of the user
    * @param rawPassword the raw password provided by the user
    * @return a registration response with information about if the registration was successful or
    * not.
    * @since 1.0.0
    */
-  public ApplicationResponse registerUser(final String fullName, final String email,
+  public ApplicationResponse registerUser(final String fullName, String userName, final String email,
       final char[] rawPassword) {
 
     var registrationResponse = validateInput(fullName, email, rawPassword);
@@ -72,8 +73,12 @@ public final class IdentityService {
       return ApplicationResponse.failureResponse(new UserExistsException());
     }
 
+    if (userRepository.findByUserName(userName).isPresent()) {
+      return ApplicationResponse.failureResponse(new UserNameNotAvailableException());
+    }
+
     // Trigger the user creation in the domain service
-    userDomainService.get().createUser(userFullName, userEmail, userPassword);
+    userDomainService.get().createUser(userFullName, userName, userEmail, userPassword);
 
     // Overwrite the password
     Arrays.fill(rawPassword, '-');
@@ -187,6 +192,16 @@ public final class IdentityService {
 
     public UserExistsException() {
       super();
+    }
+  }
+
+  public static class UserNameNotAvailableException extends ApplicationException {
+
+
+    @Serial
+    private static final long serialVersionUID = 4409722243047442583L;
+
+    public UserNameNotAvailableException() {
     }
   }
 

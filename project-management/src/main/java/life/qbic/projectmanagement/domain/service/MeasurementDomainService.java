@@ -2,13 +2,13 @@ package life.qbic.projectmanagement.domain.service;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.NGSMeasurementWrapper;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,30 +32,28 @@ public class MeasurementDomainService {
     this.measurementRepository = Objects.requireNonNull(measurementRepository);
   }
 
-  public Result<NGSMeasurement, ResponseCode> addNGS(NGSMeasurementWrapper ngsMeasurementWithCodes) {
-    var ngsMeasurement = ngsMeasurementWithCodes.measurementMetadata();
+  public Result<NGSMeasurement, ResponseCode> addNGS(NGSMeasurement measurement,
+      List<SampleCode> sampleCodes) {
     try {
-      measurementRepository.save(ngsMeasurementWithCodes);
-      return Result.fromValue(ngsMeasurement);
+      measurementRepository.save(measurement, sampleCodes);
+      return Result.fromValue(measurement);
     } catch (Exception e) {
       log.error(
-          "Saving the NGS measurement failed for id: " + ngsMeasurement.measurementCode().value());
+          "Saving the NGS measurement failed for id: " + measurement.measurementCode().value());
     }
-    return Result.fromValue(ngsMeasurement);
+    return Result.fromValue(measurement);
   }
 
   public Result<ProteomicsMeasurement, ResponseCode> addProteomics(
-      ProteomicsMeasurementWrapper pxpMeasurementWithCodes) {
-    var pxpMeasurement = pxpMeasurementWithCodes.measurementMetadata();
-
+      ProteomicsMeasurement measurement, List<SampleCode> sampleCodes) {
     try {
-      measurementRepository.save(pxpMeasurementWithCodes);
-      return Result.fromValue(pxpMeasurement);
+      measurementRepository.save(measurement, sampleCodes);
+      return Result.fromValue(measurement);
     } catch (Exception e) {
       log.error(
-          "Saving the NGS measurement failed for id: " + pxpMeasurement.measurementCode().value());
+          "Saving the NGS measurement failed for id: " + measurement.measurementCode().value());
     }
-    return Result.fromValue(pxpMeasurement);
+    return Result.fromValue(measurement);
   }
 
   public enum ResponseCode {

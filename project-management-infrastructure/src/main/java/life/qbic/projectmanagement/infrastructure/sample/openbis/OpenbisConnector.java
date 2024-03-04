@@ -48,8 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.NGSMeasurementWrapper;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -60,7 +59,6 @@ import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
 import life.qbic.projectmanagement.infrastructure.sample.translation.VocabularyCode;
-import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -372,24 +370,22 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   }
 
   @Override
-  public void addNGSMeasurement(NGSMeasurementWrapper ngsMeasurement) {
-    NGSMeasurement measurement = ngsMeasurement.measurementMetadata();
+  public void addNGSMeasurement(NGSMeasurement measurement, List<SampleCode> sampleCodes) {
     String TYPE_CODE = "Q_NGS_SINGLE_SAMPLE_RUN";
     Map<String, String> metadata = new HashMap<>();
     metadata.put("Q_EXTERNALDB_ID", measurement.measurementId().value());
-    List<SampleIdentifier> parentIds = ngsMeasurement.measuredSamplesCodes().stream()
+    List<SampleIdentifier> parentIds = sampleCodes.stream()
         .map(code -> new SampleIdentifier("/"+DEFAULT_SPACE_CODE+"/"+code.code())).toList();
     registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
 
   @Override
-  public void addProtemicsMeasurement(ProteomicsMeasurementWrapper proteomicsMeasurement) {
-    ProteomicsMeasurement measurement = proteomicsMeasurement.measurementMetadata();
+  public void addProtemicsMeasurement(ProteomicsMeasurement measurement, List<SampleCode> sampleCodes) {
     String TYPE_CODE = "Q_MS_RUN";
     Map<String, String> metadata = new HashMap<>();
     metadata.put("Q_EXTERNALDB_ID", measurement.measurementId().value());
-    List<SampleIdentifier> parentIds = proteomicsMeasurement.measuredSamplesCodes().stream()
-        .map(code -> new SampleIdentifier(DEFAULT_SPACE_CODE, null, code.code())).toList();
+    List<SampleIdentifier> parentIds = sampleCodes.stream()
+        .map(code -> new SampleIdentifier("/"+DEFAULT_SPACE_CODE+"/"+code.code())).toList();
     registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
 
