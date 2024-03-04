@@ -105,8 +105,7 @@ public class MeasurementService {
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
-    var result = measurementDomainService.addNGS(
-        new NGSMeasurementWrapper(measurement, parentCodes));
+    var result = measurementDomainService.addNGS(measurement, parentCodes);
 
     if (result.isError()) {
       return Result.fromError(ResponseCode.FAILED);
@@ -149,8 +148,7 @@ public class MeasurementService {
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
-    var result = measurementDomainService.addProteomics(
-        new ProteomicsMeasurementWrapper(measurement, parentCodes));
+    var result = measurementDomainService.addProteomics(measurement, parentCodes);
 
     if (result.isError()) {
       return Result.fromError(ResponseCode.FAILED);
@@ -225,19 +223,5 @@ public class MeasurementService {
   public enum ResponseCode {
     FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT
   }
-
-  public record ProteomicsMeasurementWrapper(ProteomicsMeasurement measurementMetadata,
-                                             Collection<SampleCode> measuredSamplesCodes) {
-
-  }
-
-
-
-  public record NGSMeasurementWrapper(NGSMeasurement measurementMetadata,
-                                      Collection<SampleCode> measuredSamplesCodes) {
-
-  }
-
-
 
 }

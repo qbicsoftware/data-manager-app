@@ -1,7 +1,9 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
-import life.qbic.projectmanagement.application.measurement.MeasurementService.NGSMeasurementWrapper;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
+import java.util.List;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
  * <b>Measurement Data Repo</b>
@@ -12,8 +14,8 @@ import life.qbic.projectmanagement.application.measurement.MeasurementService.Pr
  */
 public interface MeasurementDataRepo {
 
-  void addNGSMeasurement(NGSMeasurementWrapper ngsMeasurement);
+  void addNGSMeasurement(NGSMeasurement ngsMeasurement, List<SampleCode> sampleCodes);
 
-  void addProtemicsMeasurement(ProteomicsMeasurementWrapper proteomicsMeasurement);
+  void addProtemicsMeasurement(ProteomicsMeasurement proteomicsMeasurement, List<SampleCode> sampleCodes);
 
 }

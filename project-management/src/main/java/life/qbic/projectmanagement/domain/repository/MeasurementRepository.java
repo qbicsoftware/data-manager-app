@@ -1,11 +1,11 @@
 package life.qbic.projectmanagement.domain.repository;
 
 import java.util.Collection;
+import java.util.List;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.NGSMeasurementWrapper;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.ProteomicsMeasurementWrapper;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 
 /**
@@ -18,9 +18,9 @@ import life.qbic.projectmanagement.domain.service.MeasurementDomainService.Respo
  */
 public interface MeasurementRepository {
 
-  Result<NGSMeasurement, ResponseCode> save(NGSMeasurementWrapper measurement);
+  Result<NGSMeasurement, ResponseCode> save(NGSMeasurement measurement, List<SampleCode> sampleCodes);
 
-  Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurementWrapper measurement);
+  Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurement measurement, List<SampleCode> sampleCodes);
 
   Result<Collection<NGSMeasurement>, ResponseCode> saveAll(
       Collection<NGSMeasurement> ngsMeasurements);
