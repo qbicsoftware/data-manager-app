@@ -12,7 +12,7 @@ public class UserPermissionsImpl implements UserPermissions {
 
   final AclPermissionEvaluator aclPermissionEvaluator;
 
-  private static final String projectTargetType = "life.qbic.projectmanagement.domain.model.project.Project";
+  private static final String PROJECT_TARGET_TYPE = "life.qbic.projectmanagement.domain.model.project.Project";
 
   public UserPermissionsImpl(@Autowired
   AclPermissionEvaluator aclPermissionEvaluator) {
@@ -23,16 +23,16 @@ public class UserPermissionsImpl implements UserPermissions {
   public boolean readProject(ProjectId projectId) {
     return aclPermissionEvaluator.hasPermission(
         SecurityContextHolder.getContext().getAuthentication(), projectId,
-        projectTargetType, "READ");
+        PROJECT_TARGET_TYPE, "READ");
   }
 
   @Override
   public boolean changeProjectAccess(ProjectId projectId) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     boolean hasReadPermission = aclPermissionEvaluator.hasPermission(authentication, projectId,
-        projectTargetType, "READ");
+        PROJECT_TARGET_TYPE, "READ");
     boolean hasCreatedProject = aclPermissionEvaluator.hasPermission(authentication, projectId,
-        projectTargetType, "ADMINISTRATION");
+        PROJECT_TARGET_TYPE, "ADMINISTRATION");
     boolean canChangeAclAccess = authentication.getAuthorities().stream()
         .anyMatch(it -> it.getAuthority().equals("acl:change-access"));
     return (hasReadPermission && (canChangeAclAccess || hasCreatedProject));
