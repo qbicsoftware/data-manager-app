@@ -76,5 +76,4 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
 
     return Result.fromValue(measurement);
   }
-
 }
