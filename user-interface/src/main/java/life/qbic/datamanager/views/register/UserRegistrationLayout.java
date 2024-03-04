@@ -16,6 +16,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.io.Serial;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
@@ -34,11 +35,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 @AnonymousAllowed
 public class UserRegistrationLayout extends VerticalLayout {
 
+  @Serial
+  private static final long serialVersionUID = 6995209728843801219L;
+
   public EmailField email;
 
   public PasswordField password;
 
   public TextField fullName;
+
+  public TextField username;
 
   public Button registerButton;
 
@@ -92,8 +98,13 @@ public class UserRegistrationLayout extends VerticalLayout {
     fieldLayout = new VerticalLayout();
     createEmailField();
     createNameField();
+    createUsernameField();
     createPasswordField();
-    fieldLayout.add(fullName, email, password);
+    fieldLayout.add(fullName, email, username, password);
+  }
+
+  private void createUsernameField() {
+    username = new TextField("Username");
   }
 
   private void createSpans() {
@@ -136,7 +147,8 @@ public class UserRegistrationLayout extends VerticalLayout {
     password.setWidthFull();
     email.setWidthFull();
     fullName.setWidthFull();
-    setRequiredIndicatorVisible(fullName, email, password);
+    username.setWidthFull();
+    setRequiredIndicatorVisible(fullName, email, username, password);
     fieldLayout.setSpacing(false);
     fieldLayout.setMargin(false);
     fieldLayout.setPadding(false);

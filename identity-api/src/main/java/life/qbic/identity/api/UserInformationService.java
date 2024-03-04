@@ -33,4 +33,13 @@ public interface UserInformationService {
    */
   Optional<UserInfo> findById(String userId);
 
+  /**
+   * Queries if a desired username is still available and not in use by another user already.
+   *
+   * @param userName the desired username
+   * @return true, if the username is still available, false if not
+   * @since 1.0.0
+   */
+  boolean userNameAvailable(String userName);
+
 }

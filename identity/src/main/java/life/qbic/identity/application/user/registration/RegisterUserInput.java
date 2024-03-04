@@ -15,9 +15,10 @@ public interface RegisterUserInput {
    * @param fullName    the full name of the user
    * @param email       the user's mail address
    * @param rawPassword the user selected raw password for authentication
+   * @param userName
    * @since 1.0.0
    */
-  void register(String fullName, String email, char[] rawPassword);
+  void register(String fullName, String email, char[] rawPassword, String userName);
 
   /**
    * Set the output the use case shall call, when finished.

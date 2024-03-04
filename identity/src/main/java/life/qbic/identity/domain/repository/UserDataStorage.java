@@ -55,5 +55,6 @@ public interface UserDataStorage {
    */
   List<User> findAllActiveUsers();
 
+  Optional<User> findUserByUserName(String userName);
 
 }

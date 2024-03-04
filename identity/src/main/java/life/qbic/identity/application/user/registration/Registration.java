@@ -3,6 +3,7 @@ package life.qbic.identity.application.user.registration;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
+import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.EncryptedPassword.PasswordValidationException;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;
@@ -35,7 +36,7 @@ public class Registration implements RegisterUserInput {
    *
    * <p>The default output implementation just prints to std out on success and std err on failure,
    * after the use case has been executed via
-   * {@link Registration#register(String, String, char[])}.
+   * {@link RegisterUserInput#register(String, String, char[], String)}.
    *
    * @param identityService the user registration service to save the new user to.
    * @since 1.0.0
@@ -59,13 +60,13 @@ public class Registration implements RegisterUserInput {
    * @inheritDocs
    */
   @Override
-  public void register(String fullName, String email, char[] rawPassword) {
+  public void register(String fullName, String email, char[] rawPassword, String userName) {
     if (registerUserOutput == null) {
       log.error("No use case output set.");
       return;
     }
     try {
-      identityService.registerUser(fullName, email, rawPassword)
+      identityService.registerUser(fullName, userName, email, rawPassword)
           .ifSuccessOrElse(this::reportSuccess,
               response -> registerUserOutput.onUnexpectedFailure(build(response)));
     } catch (Exception e) {
@@ -90,6 +91,8 @@ public class Registration implements RegisterUserInput {
         builder.withFullNameException((FullNameValidationException) e);
       } else if (e instanceof UserExistsException) {
         builder.withUserExistsException((UserExistsException) e);
+      } else if (e instanceof UserNameNotAvailableException) {
+        builder.withUserNameNotAvailableException((UserNameNotAvailableException) e);
       } else {
         builder.withUnexpectedException(e);
       }

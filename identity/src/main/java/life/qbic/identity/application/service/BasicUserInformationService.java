@@ -17,8 +17,7 @@ import life.qbic.logging.api.Logger;
  * <b>Basic user information service</b>
  *
  * <p>Implementation of the {@link UserInformationService}, provides a OHS via a Java interface to
- * query
- * user information</p>
+ * query user information</p>
  *
  * @since 1.0.0
  */
@@ -54,8 +53,14 @@ public class BasicUserInformationService implements UserInformationService {
     }
   }
 
+  @Override
+  public boolean userNameAvailable(String userName) {
+    return userRepository.findByUserName(userName).isEmpty();
+  }
+
   private UserInfo convert(User user) {
     return new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
+        user.userName(),
         user.getEncryptedPassword().get(),
         user.isActive());
   }
