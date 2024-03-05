@@ -10,12 +10,10 @@ import ch.systemsx.cisd.common.exceptions.UserFailureException;
 import org.slf4j.Logger;
 
 /**
- * TODO!
- * <b>short description</b>
  *
- * <p>detailed description</p>
+ * <b>Handles openBIS login and session</b>
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class OpenbisSessionFactory {
 
