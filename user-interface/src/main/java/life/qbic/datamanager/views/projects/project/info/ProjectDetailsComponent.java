@@ -11,6 +11,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
@@ -108,10 +109,17 @@ public class ProjectDetailsComponent extends PageArea {
         + "species", specimen));
     var analyte = new Div();
     analyte.addClassName(TAG_COLLECTION_CSS_CLASS);
-    createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()))
-        .forEach(analyte::add);
+    analyte.add(experiments.stream().map(experiment -> experiment.getAnalytes().forEach(ProjectDetailsComponent::createOntologyEntryFrom))).stream().toArray();
     entries.add(new Entry("Analyte", "", analyte));
     return entries;
+  }
+
+  private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm){
+    String ontologyLinkName = ontologyTerm.getName().replace("_", ":");
+    Tag ontologyNameTag = new Tag(ontologyLinkName);
+    Span ontologyEntry = new Span(new Span(ontologyTerm.getLabel()), ontologyNameTag);
+    ontologyEntry.addClassName("ontology-entry");
+    return ontologyEntry;
   }
 
   private static List<Entry> extractFundingInfo(Project project) {
@@ -175,16 +183,6 @@ public class ProjectDetailsComponent extends PageArea {
     Span noPersonAssignedSpan = new Span("-");
     noPersonAssignedSpan.addClassName("no-person-assigned");
     return noPersonAssignedSpan;
-  }
-
-  /**
-   * Creates tags for a list of ontology terms. Each tag display the term label and contains a tooltip
-   * which is built from ontology term name (e.g. NCBITaxon_9606) and the ontology it is taken from
-   */
-  private static List<Tag> createTagsFrom(Stream<OntologyTerm> entries) {
-    return entries.distinct()
-        .map(entry -> new Tag(entry.getLabel(), entry.formatted()))
-        .toList();
   }
 
   public void setContext(Context context) {

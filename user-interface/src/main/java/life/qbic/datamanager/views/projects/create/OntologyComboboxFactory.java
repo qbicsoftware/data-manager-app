@@ -71,8 +71,15 @@ public class OntologyComboboxFactory {
     box.setRequired(true);
     box.setHelperText("Please provide at least two letters to search for entries.");
     box.setRenderer(new ComponentRenderer<>(OntologyComponent::new));
-    box.setItemLabelGenerator(OntologyTerm::getLabel);
+    box.setItemLabelGenerator(OntologyComboboxFactory::ontologyItemFormatted);
     box.addClassNames(BOX_CLASSES);
     return box;
   }
+
+  private static String ontologyItemFormatted(OntologyTerm ontologyTerm) {
+    String ontologyLinkName = ontologyTerm.getName().replace("_", ":");
+    return String.format("%s (%s)", ontologyTerm.getLabel(), ontologyLinkName);
+  }
+
 }
+
