@@ -170,7 +170,7 @@ public class MeasurementService {
     }
   }
 
-  @PreAuthorize("hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
 
@@ -185,7 +185,7 @@ public class MeasurementService {
 
   @Transactional
   @PreAuthorize(
-      "hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void registerMultiple(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedRequests = mergeBySamplePoolGroup(measurementMetadataList);
