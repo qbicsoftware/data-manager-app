@@ -203,7 +203,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           sortOrders.add(SortOrder.of("measurementCode").ascending());
           return measurementService.findProteomicsMeasurement(searchTerm,
               context.experimentId().orElseThrow(),
-              query.getOffset(), query.getLimit(), sortOrders).stream();
+              query.getOffset(), query.getLimit(), sortOrders, context.projectId().get()).stream();
         });
     measurementsGridDataViews.add(proteomicsGridDataView);
   }

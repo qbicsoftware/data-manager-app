@@ -21,10 +21,13 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,6 +70,8 @@ public class MeasurementService {
         firstEntry.samplePoolGroup());
   }
 
+  @PostAuthorize(
+      "hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
       int offset,
       int limit,
@@ -77,10 +82,12 @@ public class MeasurementService {
         offset, limit, sortOrders);
   }
 
+  @PostAuthorize(
+      "hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<ProteomicsMeasurement> findProteomicsMeasurement(String filter,
       ExperimentId experimentId,
       int offset, int limit,
-      List<SortOrder> sortOrder) {
+      List<SortOrder> sortOrder, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
@@ -163,7 +170,9 @@ public class MeasurementService {
     }
   }
 
-  public Result<MeasurementId, ResponseCode> register(MeasurementMetadata measurementMetadata) {
+  @PreAuthorize("hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
+      MeasurementMetadata measurementMetadata) {
 
     var associatedSampleCodes = measurementMetadata.associatedSamples();
     boolean allSamplesAreOfExperiment = associatedSampleCodes.stream()
@@ -182,11 +191,13 @@ public class MeasurementService {
   }
 
   @Transactional
+  @PreAuthorize(
+      "hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void registerMultiple(
-      List<MeasurementMetadata> measurementMetadataList) {
+      List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedRequests = mergeBySamplePoolGroup(measurementMetadataList);
     for (MeasurementMetadata measurementMetadata : mergedRequests) {
-      register(measurementMetadata)
+      register(projectId, measurementMetadata)
           .onError(error -> {
             throw new MeasurementRegistrationException(error);
           });
@@ -194,7 +205,7 @@ public class MeasurementService {
   }
 
   private List<? extends MeasurementMetadata> mergeBySamplePoolGroup(
-      List<MeasurementMetadata> measurementMetadataList) {
+      List<? extends MeasurementMetadata> measurementMetadataList) {
     if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(
         0) instanceof ProteomicsMeasurementMetadata) {
       var proteomicsMeasurementMetadataList = measurementMetadataList.stream()

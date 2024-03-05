@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.measurement;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
@@ -18,6 +19,11 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
   @Override
   public Optional<String> assignedSamplePoolGroup() {
     return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
+  }
+
+  @Override
+  public List<SampleCode> associatedSamples() {
+    return sampleCodes.stream().toList();
   }
 
 }
