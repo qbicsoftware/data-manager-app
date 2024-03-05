@@ -148,6 +148,9 @@ public class OpenbisSessionFactory {
   }
   public class ApiV3 {
 
+    private ApiV3() {
+    }
+
     public static IApplicationServerApi applicationServer(String url) {
       return HttpInvokerUtils.createServiceStub(IApplicationServerApi.class, url, 100_000L);
     }

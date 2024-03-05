@@ -68,6 +68,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
   private static final String DEFAULT_SAMPLE_TYPE = "Q_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
+  private static final String EXTERNAL_ID_CODE = "Q_EXTERNAL_ID";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
   private final OpenbisSessionFactory sessionFactory;
   private final IApplicationServerApi applicationServer;
@@ -79,12 +80,8 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
     String OPENBIS_APPLICATION_URL=url + IApplicationServerApi.SERVICE_URL;
 
-    this.sessionFactory =  new OpenbisSessionFactory(
-        OPENBIS_APPLICATION_URL,
-        userName,
-        password);
-    this.applicationServer = ApiV3.applicationServer(
-        requireNonNull(OPENBIS_APPLICATION_URL, "applicationServerUrl must not be null"));
+    this.sessionFactory =  new OpenbisSessionFactory(OPENBIS_APPLICATION_URL, userName, password);
+    this.applicationServer = ApiV3.applicationServer(OPENBIS_APPLICATION_URL);
   }
 
   private List<Sample> searchSamplesByCodes(Collection<SampleCode> sampleCodes) {
@@ -143,7 +140,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
         Map<String, String> props = new HashMap<>();
 
         props.put("Q_LABEL", sample.label());
-        props.put("Q_EXTERNAL_ID", sample.sampleId().value());
+        props.put(EXTERNAL_ID_CODE, sample.sampleId().value());
         sampleCreation.setProperties(props);
 
         sampleCreation.setExperimentId(newExperimentID);
@@ -267,7 +264,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     sampleUpdate.setSampleId(new SampleIdentifier(DEFAULT_SPACE_CODE, projectCode,
         null, sample.sampleCode().code()));
     sampleUpdate.setProperty("Q_LABEL", sample.label());
-    sampleUpdate.setProperty("Q_EXTERNAL_ID", sample.sampleId().value());
+    sampleUpdate.setProperty(EXTERNAL_ID_CODE, sample.sampleId().value());
 
     return sampleUpdate;
   }
@@ -292,7 +289,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   public void addNGSMeasurement(NGSMeasurement measurement, List<SampleCode> parentCodes) {
     String TYPE_CODE = "Q_NGS_MEASUREMENT";
     Map<String, String> metadata = new HashMap<>();
-    metadata.put("Q_EXTERNAL_ID", measurement.measurementId().value());
+    metadata.put(EXTERNAL_ID_CODE, measurement.measurementId().value());
     List<SampleIdentifier> parentIds = fetchSampleIdentifiers(parentCodes.stream().map(SampleCode::code).toList());
     registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
@@ -301,14 +298,14 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   public void addProtemicsMeasurement(ProteomicsMeasurement measurement, List<SampleCode> parentCodes) {
     String TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
     Map<String, String> metadata = new HashMap<>();
-    metadata.put("Q_EXTERNAL_ID", measurement.measurementId().value());
+    metadata.put(EXTERNAL_ID_CODE, measurement.measurementId().value());
     List<SampleIdentifier> parentIds = fetchSampleIdentifiers(parentCodes.stream().map(SampleCode::code).toList());
     registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
 
-  private List<SampleIdentifier> fetchSampleIdentifiers(List<String> parentCodes) {
+  private List<SampleIdentifier> fetchSampleIdentifiers(List<String> sampleCodes) {
     SampleSearchCriteria criteria = new SampleSearchCriteria();
-    criteria.withCodes().thatIn(new ArrayList<>(parentCodes));
+    criteria.withCodes().thatIn(new ArrayList<>(sampleCodes));
     criteria.withAndOperator();
     criteria.withSpace().withCode().thatEquals(DEFAULT_SPACE_CODE);
     List<Sample> searchResult = applicationServer.searchSamples(
