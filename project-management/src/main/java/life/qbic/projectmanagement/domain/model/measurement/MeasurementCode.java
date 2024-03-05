@@ -28,7 +28,6 @@ import jakarta.persistence.Embeddable;
  *
  * @since 1.0.0
  */
-@Embeddable
 public class MeasurementCode {
 
   private final MEASUREMENT_PREFIX prefix;
@@ -94,8 +93,6 @@ public class MeasurementCode {
   public enum MEASUREMENT_PREFIX {
     NGS, MS, IMG
   }
-
-  @Converter
   static class MeasurementCodeConverter implements AttributeConverter<MeasurementCode, String> {
 
     @Override
