@@ -23,10 +23,10 @@ import java.util.List;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.Ontology;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -46,14 +46,14 @@ public class OntologyLookupComponent extends PageArea {
   private static final long serialVersionUID = -1777819501917841723L;
   private final TextField searchField = new TextField();
   private final Div ontologyGridSection = new Div();
-  private GridLazyDataView<OntologyClassDTO> ontologyGridLazyDataView;
+  private GridLazyDataView<OntologyClass> ontologyGridLazyDataView;
   private String searchTerm = "";
   private final Span foundResults = new Span();
-  private final transient OntologyTermInformationService ontologyTermInformationService;
+  private final transient OntologyLookupService ontologyTermInformationService;
   private static final int ONTOLOGY_SEARCH_LOWER_LIMIT = 2;
 
   public OntologyLookupComponent(
-      @Autowired OntologyTermInformationService ontologyTermInformationService) {
+      @Autowired OntologyLookupService ontologyTermInformationService) {
     requireNonNull(ontologyTermInformationService);
     this.ontologyTermInformationService = ontologyTermInformationService;
     Span title = new Span("Ontology Search/Lookup");
@@ -69,7 +69,7 @@ public class OntologyLookupComponent extends PageArea {
     addClassName("ontology-lookup-component");
   }
 
-  private void setLazyDataProviderForOntologyGrid(Grid<OntologyClassDTO> ontologyGrid) {
+  private void setLazyDataProviderForOntologyGrid(Grid<OntologyClass> ontologyGrid) {
     ontologyGridLazyDataView = ontologyGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
@@ -79,17 +79,17 @@ public class OntologyLookupComponent extends PageArea {
       return ontologyTermInformationService.queryOntologyTerm(searchTerm, allOntologyAbbreviations,
           query.getOffset(),
           query.getLimit(),
-          List.copyOf(sortOrders)).stream().map(OntologyClassDTO::from);
+          List.copyOf(sortOrders)).stream();
     });
   }
 
   private void initGridSection() {
-    Grid<OntologyClassDTO> ontologyGrid = new Grid<>();
+    Grid<OntologyClass> ontologyGrid = new Grid<>();
     ontologyGrid.addComponentColumn(
-        ontologyClassDTO -> new OntologyItem(ontologyClassDTO.getLabel(),
-            ontologyClassDTO.getName().replace("_", ":"),
-            ontologyClassDTO.getClassIri(), ontologyClassDTO.getDescription(),
-            Ontology.findOntologyByAbbreviation(ontologyClassDTO.getOntologyAbbreviation())
+        ontologyClass -> new OntologyItem(ontologyClass.getClassLabel(),
+            ontologyClass.getCurie().replace("_", ":"),
+            ontologyClass.getClassIri(), ontologyClass.getDescription(),
+            Ontology.findOntologyByAbbreviation(ontologyClass.getOntologyAbbreviation())
                 .getName()));
     ontologyGrid.addClassName("ontology-grid");
     ontologyGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
@@ -137,7 +137,7 @@ public class OntologyLookupComponent extends PageArea {
    * Ontology Item
    * <p>
    * The ontology Item is a Div container styled similiar to the {@link Card} component, hosting the
-   * ontology information of interest provided by a {@link OntologyClassDTO}
+   * ontology information of interest provided by a {@link OntologyClass}
    */
   private static class OntologyItem extends Div {
 

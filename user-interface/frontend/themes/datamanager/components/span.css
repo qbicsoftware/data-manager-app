@@ -13,6 +13,18 @@
   color: var(--lumo-error-text-color);
 }
 
+.info-box {
+  display: inline-flex;
+  border-radius: var(--lumo-border-radius-m);
+  column-gap: var(--lumo-space-s);
+  background-color: var(--lumo-contrast-5pct);
+  align-items: center;
+  width: fit-content;
+  padding-inline: var(--lumo-space-m);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+  font-size: small;
+}
 /* ontology-link styling */
 .ontology-link {
   display: inline-flex;
