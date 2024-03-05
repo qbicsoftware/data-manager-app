@@ -203,7 +203,10 @@ public class MeasurementService {
         0) instanceof ProteomicsMeasurementMetadata) {
       var proteomicsMeasurementMetadataList = measurementMetadataList.stream()
           .map(measurementMetadata -> (ProteomicsMeasurementMetadata) measurementMetadata).toList();
-      return mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
+      //Todo comment in once sample pools are implemented
+      /*
+        return mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
+       */
     }
     return measurementMetadataList;
   }

@@ -203,7 +203,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
     public static Specification<NGSMeasurement> isMeasurementCode(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("measurementCode").get("measurementCode").as(String.class), "%" + filter + "%");
+          builder.like(root.get("measurementCode").as(String.class), "%" + filter + "%");
     }
     //ToDo extend with required property filters
   }
