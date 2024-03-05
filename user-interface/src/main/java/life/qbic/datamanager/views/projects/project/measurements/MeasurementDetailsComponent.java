@@ -81,12 +81,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to query the
    * {@link MeasurementMetadata} shown in the grids of this component
    *
-   * @param experimentId ExperimentId of the experiment containing the samples for which
+   * @param context Context with the projectId and experimentId containing the samples for which
    *                     measurements could be registered
    */
-  public void setExperimentId(ExperimentId experimentId) {
+  public void setContext(Context context) {
     resetTabsInTabsheet();
-    context = new Context().with(experimentId);
+    this.context = context;
     List<GridLazyDataView<?>> dataViewsWithItems = measurementsGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();

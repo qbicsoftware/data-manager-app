@@ -143,7 +143,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    measurementDetailsComponent.setExperimentId(parsedExperimentId);
+    measurementDetailsComponent.setContext(context);
     isRawDataAvailable();
   }
 
@@ -181,7 +181,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         confirmEvent.getSource().markSuccessful(upload.fileName());
       }
       if (allSuccessfull) {
-        measurementDetailsComponent.setExperimentId(context.experimentId().orElseThrow());
+        measurementDetailsComponent.setContext(context);
         confirmEvent.getSource().close();
       }
     });

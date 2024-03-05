@@ -176,8 +176,8 @@ public class MeasurementService {
 
     var associatedSampleCodes = measurementMetadata.associatedSamples();
     boolean allSamplesAreOfExperiment = associatedSampleCodes.stream()
-        .map(sampleInformationService::findSampleId).anyMatch(Optional::isEmpty);
-    if (!allSamplesAreOfExperiment) {
+        .map(sampleInformationService::findSampleId).noneMatch(Optional::isEmpty);
+    if (allSamplesAreOfExperiment) {
       return Result.fromError(ResponseCode.WRONG_EXPERIMENT);
     }
 
