@@ -79,11 +79,23 @@
   color: white;
 }
 
-
-
 .stepper .step > vaadin-avatar {
   background-color: var(--lumo-contrast-60pct);
   color: white;
+}
+
+.ontology-entry-collection {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+  width: 100%;
+  white-space: nowrap;
+}
+
+.ontology-entry-collection .ontology-entry {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  width: 100%;
 }
 
 .tag-collection {
