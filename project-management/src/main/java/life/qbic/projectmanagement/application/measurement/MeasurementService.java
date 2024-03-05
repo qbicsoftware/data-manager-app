@@ -177,7 +177,7 @@ public class MeasurementService {
   public void registerMultiple(
       List<MeasurementMetadata> measurementMetadataList) {
     var mergedRequests = mergeBySamplePoolGroup(measurementMetadataList);
-    for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
+    for (MeasurementMetadata measurementMetadata : mergedRequests) {
       register(measurementMetadata)
           .onError(error -> {
             throw new MeasurementRegistrationException(error);
@@ -186,7 +186,7 @@ public class MeasurementService {
     }
   }
 
-  private List<MeasurementMetadata> mergeBySamplePoolGroup(
+  private List<? extends MeasurementMetadata> mergeBySamplePoolGroup(
       List<MeasurementMetadata> measurementMetadataList) {
     if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
       var proteomicsMeasurementMetadataList = measurementMetadataList.stream().map(measurementMetadata -> (ProteomicsMeasurementMetadata) measurementMetadata).toList();
@@ -195,14 +195,14 @@ public class MeasurementService {
     return measurementMetadataList;
   }
 
-  private List<MeasurementMetadata> mergeBySamplePoolGroupProteomics(
+  private List<ProteomicsMeasurementMetadata> mergeBySamplePoolGroupProteomics(
       List<ProteomicsMeasurementMetadata> proteomicsMeasurementMetadataList) {
-    var result = proteomicsMeasurementMetadataList.stream().filter(
+    var map = proteomicsMeasurementMetadataList.stream().filter(
         proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
             .isPresent()).collect(Collectors.groupingBy(
         metadata -> metadata.assignedSamplePoolGroup().get()));
-    // TODO continue implementation
-    return null;
+    var result = map.values().stream().map(MeasurementService::merge).toList();
+    return result;
   }
 
   private static ProteomicsMeasurementMetadata merge(

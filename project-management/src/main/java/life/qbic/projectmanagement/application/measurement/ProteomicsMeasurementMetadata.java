@@ -15,6 +15,9 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
                                             String organisationId, String instrumentCURI,
                                             String samplePoolGroup) implements MeasurementMetadata {
 
-
+  @Override
+  public Optional<String> assignedSamplePoolGroup() {
+    return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
+  }
 
 }
