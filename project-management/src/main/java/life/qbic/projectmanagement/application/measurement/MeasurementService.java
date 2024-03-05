@@ -174,13 +174,6 @@ public class MeasurementService {
   public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
 
-    var associatedSampleCodes = measurementMetadata.associatedSamples();
-    boolean allSamplesAreOfExperiment = associatedSampleCodes.stream()
-        .map(sampleInformationService::findSampleId).anyMatch(Optional::isEmpty);
-    if (!allSamplesAreOfExperiment) {
-      return Result.fromError(ResponseCode.WRONG_EXPERIMENT);
-    }
-
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(proteomicsMeasurementMetadata);
     }
