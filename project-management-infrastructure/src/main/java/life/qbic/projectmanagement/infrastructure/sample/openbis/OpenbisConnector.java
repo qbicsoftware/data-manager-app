@@ -67,7 +67,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
   private static final String DEFAULT_SAMPLE_TYPE = "Q_SAMPLE";
-  private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
+  private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_BATCH";
   private static final String EXTERNAL_ID_CODE = "Q_EXTERNAL_ID";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
   private final OpenbisSessionFactory sessionFactory;
