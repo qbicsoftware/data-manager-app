@@ -167,7 +167,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       sortOrders.add(SortOrder.of("measurementCode").ascending());
       return measurementService.findNGSMeasurements(searchTerm,
           context.experimentId().orElseThrow(),
-          query.getOffset(), query.getLimit(), sortOrders).stream();
+          query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow()).stream();
     });
     measurementsGridDataViews.add(ngsGridDataView);
   }

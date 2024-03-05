@@ -71,11 +71,11 @@ public class MeasurementService {
   }
 
   @PostAuthorize(
-      "hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
       int offset,
       int limit,
-      List<SortOrder> sortOrders) {
+      List<SortOrder> sortOrders, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
@@ -83,7 +83,7 @@ public class MeasurementService {
   }
 
   @PostAuthorize(
-      "hasPermission(#project.id, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<ProteomicsMeasurement> findProteomicsMeasurement(String filter,
       ExperimentId experimentId,
       int offset, int limit,
