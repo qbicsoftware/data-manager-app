@@ -65,7 +65,6 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   @Override
   public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
-    // TODO implement property validation
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
@@ -74,12 +73,12 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   public enum PROTEOMICS_PROPERTY {
     QBIC_SAMPLE_ID("qbic sample ids"),
+    SAMPLE_LABEL("sample label"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),
     INSTRUMENT("instrument"),
-    POOLED_SAMPLE_LABEL("pooled sample label"),
+    SAMPLE_POOL_GROUP("sample pool group"),
     CYCLE_FRACTION_NAME("cycle/fraction name"),
-    FRACTIONATION_TYPE("fractionation type"),
     DIGESTION_METHOD("digestion method"),
     DIGESTION_ENZYME("digestion enzyme"),
     ENRICHMENT_METHOD("enrichment method"),
