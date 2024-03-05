@@ -188,8 +188,8 @@ public class MeasurementService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void registerMultiple(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    var mergedRequests = mergeBySamplePoolGroup(measurementMetadataList);
-    for (MeasurementMetadata measurementMetadata : mergedRequests) {
+    var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
+    for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
       register(projectId, measurementMetadata)
           .onError(error -> {
             throw new MeasurementRegistrationException(error);
