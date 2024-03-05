@@ -35,7 +35,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
 
-  @Embedded
+  @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
   private OntologyTerm instrument;
 
   @Embedded

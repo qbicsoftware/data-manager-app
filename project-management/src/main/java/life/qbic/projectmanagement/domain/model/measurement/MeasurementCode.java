@@ -1,5 +1,9 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
+import jakarta.persistence.Embeddable;
+
 /**
  * <b>NGSMeasurementMetadata Code</b>
  *
@@ -24,26 +28,19 @@ package life.qbic.projectmanagement.domain.model.measurement;
  *
  * @since 1.0.0
  */
+@Embeddable
 public class MeasurementCode {
 
   private final MEASUREMENT_PREFIX prefix;
-  private final String sampleCode;
   private final String measurementCode;
 
-  private final Long nanoTimeStamp;
-
-  private MeasurementCode() {
-
-    nanoTimeStamp = null;
+  protected MeasurementCode() {
     measurementCode = null;
-    sampleCode = null;
     prefix = null;
   }
 
   private MeasurementCode(MEASUREMENT_PREFIX prefix, String sampleCode, Long nanoTimeStamp) {
     this.prefix = prefix;
-    this.sampleCode = sampleCode;
-    this.nanoTimeStamp = nanoTimeStamp;
     this.measurementCode = "%s-%s".formatted((prefix + sampleCode), nanoTimeStamp);
   }
 
@@ -96,6 +93,20 @@ public class MeasurementCode {
 
   public enum MEASUREMENT_PREFIX {
     NGS, MS, IMG
+  }
+
+  @Converter
+  static class MeasurementCodeConverter implements AttributeConverter<MeasurementCode, String> {
+
+    @Override
+    public String convertToDatabaseColumn(MeasurementCode measurementCode) {
+      return measurementCode.value();
+    }
+
+    @Override
+    public MeasurementCode convertToEntityAttribute(String s) {
+      return MeasurementCode.parse(s);
+    }
   }
 
 
