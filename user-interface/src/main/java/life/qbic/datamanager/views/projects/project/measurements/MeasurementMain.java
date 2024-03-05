@@ -166,7 +166,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       boolean allSuccessfull = true;
       for (var upload : uploads) {
         try {
-          measurementService.registerMultiple(upload.measurementRegistrationRequests());
+          measurementService.registerMultiple(upload.measurementMetadata());
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
           String errorMessage = switch (measurementRegistrationException.reason()) {

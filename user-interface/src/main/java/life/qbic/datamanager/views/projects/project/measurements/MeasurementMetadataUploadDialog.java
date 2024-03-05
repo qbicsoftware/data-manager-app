@@ -40,7 +40,6 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
@@ -145,8 +144,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     return row.split("\t").length > 0;
   }
 
-  private static Result<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>, String> generatePxPRequest(
-      String row, Map<String, Integer> columns, ExperimentId experimentId) {
+  private static Result<ProteomicsMeasurementMetadata, String> generatePxPRequest(
+      String row, Map<String, Integer> columns) {
     var columnValues = row.split("\t"); // tab separated values
     // we consider an empty row as a reason to warn, not to fail
     if (columnValues.length == 0) {
@@ -173,9 +172,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
         organisationRoRId, instrumentCURIE, samplePoolGroup);
-    MeasurementRegistrationRequest<ProteomicsMeasurementMetadata> registrationRequest = new MeasurementRegistrationRequest<>(
-        metadata, experimentId);
-    return Result.fromValue(registrationRequest);
+    return Result.fromValue(metadata);
   }
 
   private static List<SampleCode> parseSampleCode(String sampleCodeEntry) {
@@ -243,12 +240,12 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
           succeededEvent.getFileName(), Collections.emptyList());
       addFile(measurementFileItem, metadataUpload);
     } else {
-      var registrationRequests = switch (domain) {
-        case PROTEOMICS -> generatePxPRequests(content);
+      var measurementMetadata = switch (domain) {
+        case PROTEOMICS -> generatePxPMetadata(content);
         case NGS -> null;
       };
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload(
-          succeededEvent.getFileName(), registrationRequests);
+          succeededEvent.getFileName(), measurementMetadata);
       addFile(measurementFileItem, metadataUpload);
     }
   }
@@ -261,12 +258,12 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     toggleFileSectionIfEmpty();
   }
 
-  private List<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>> generatePxPRequests(
+  private List<ProteomicsMeasurementMetadata> generatePxPMetadata(
       MetadataContent content) {
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
 
     var results = content.rows().stream()
-        .map(row -> generatePxPRequest(row, propertyColumnMap, experimentId))
+        .map(row -> generatePxPRequest(row, propertyColumnMap))
         .toList();
     if (results.stream().anyMatch(Result::isError)) {
       return new ArrayList<>();
@@ -417,7 +414,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   public record MeasurementMetadataUpload<T extends MeasurementMetadata>(String fileName,
-                                                                         List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> measurementRegistrationRequests) {
+                                                                         List<MeasurementMetadata> measurementMetadata) {
 
   }
 
