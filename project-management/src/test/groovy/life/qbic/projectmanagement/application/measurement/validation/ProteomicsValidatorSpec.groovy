@@ -11,7 +11,7 @@ class ProteomicsValidatorSpec extends Specification {
 
     final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata([SampleCode.create("QTEST001AE")],
             "https://ror.org/03a1kwz48", //Universität Tübingen,
-            "EFO:0004205" //Illumina MiSeq
+            "EFO:0004205", //Illumina MiSeq
     )
     final static OntologyClass illuminaMiSeq = new OntologyClass(
             "efo",
@@ -26,8 +26,8 @@ class ProteomicsValidatorSpec extends Specification {
         findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
 
-    final static List<String> validPXPProperties = ["qbic sample ids", "organisation id", "facility", "instrument",
-                                                    "pooled sample label", "cycle/fraction name", "fractionation type", "digestion method", "digestion enzyme",
+    final static List<String> validPXPProperties = ["qbic sample ids", "sample label", "organisation id", "facility", "instrument",
+                                                    "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "sample preparation", "sample cleanup (protein)",
                                                     "sample cleanup (peptide)", "note"]
@@ -109,7 +109,7 @@ class ProteomicsValidatorSpec extends Specification {
 
     def "An unknown sample code in a proteomics measurement metadata object must return a failed validation "() {
         given:
-        def validMeasurementEntry = new ProteomicsMeasurementMetadata([SampleCode.create("QNKWN001AE")], validMetadata.organisationId(), validMetadata.instrumentCURI())
+        def validMeasurementEntry = new ProteomicsMeasurementMetadata([SampleCode.create("QNKWN001AE")], validMetadata.organisationId(), validMetadata.instrumentCURI(),)
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
@@ -135,7 +135,7 @@ class ProteomicsValidatorSpec extends Specification {
         def unknownSample = SampleCode.create("QNKWN001AE")
 
         and:
-        def validMeasurementEntry = new ProteomicsMeasurementMetadata([unknownSample, sampleToBeFound], validMetadata.organisationId(), validMetadata.instrumentCURI())
+        def validMeasurementEntry = new ProteomicsMeasurementMetadata([unknownSample, sampleToBeFound], validMetadata.organisationId(), validMetadata.instrumentCURI(),)
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
@@ -158,7 +158,7 @@ class ProteomicsValidatorSpec extends Specification {
 
     def "If no sample code is provided, the validation must fail"() {
         given:
-        def validMeasurementEntry = new ProteomicsMeasurementMetadata([], validMetadata.organisationId(), validMetadata.instrumentCURI())
+        def validMeasurementEntry = new ProteomicsMeasurementMetadata([], validMetadata.organisationId(), validMetadata.instrumentCURI(),)
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
@@ -185,7 +185,7 @@ class ProteomicsValidatorSpec extends Specification {
     def "If an invalid ROR ID for the organisation information is provided, the validation must fail"() {
         given:
         def sampleCode = SampleCode.create("QTEST001AE")
-        def pxpMetadata = new ProteomicsMeasurementMetadata(List.of(sampleCode), invalidRorId, validMetadata.instrumentCURI())
+        def pxpMetadata = new ProteomicsMeasurementMetadata(List.of(sampleCode), invalidRorId, validMetadata.instrumentCURI(),)
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
@@ -219,7 +219,7 @@ class ProteomicsValidatorSpec extends Specification {
     def "If an valid ROR ID for the organisation information is provided, the validation must pass"() {
         given:
         def sampleCode = SampleCode.create("QTEST001AE")
-        def pxpMetadata = new ProteomicsMeasurementMetadata(validMetadata.sampleCodes(), validRorId, validMetadata.instrumentCURI())
+        def pxpMetadata = new ProteomicsMeasurementMetadata(validMetadata.sampleCodes(), validRorId, validMetadata.instrumentCURI(),)
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)

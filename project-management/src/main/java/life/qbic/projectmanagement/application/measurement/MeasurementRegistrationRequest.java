@@ -15,19 +15,17 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 public class MeasurementRegistrationRequest<T extends MeasurementMetadata> {
 
   private final T measurementMetadata;
-  private final List<SampleCode> sampleCodes;
 
   private final ExperimentId experimentId;
 
-  public MeasurementRegistrationRequest(List<SampleCode> sampleCodes, T measurementMetadata,
+  public MeasurementRegistrationRequest(T measurementMetadata,
       ExperimentId experimentId) {
     this.measurementMetadata = Objects.requireNonNull(measurementMetadata);
-    this.sampleCodes = sampleCodes.stream().toList();
     this.experimentId = experimentId;
   }
 
   public List<SampleCode> associatedSamples() {
-    return this.sampleCodes;
+    return this.measurementMetadata.associatedSamples();
   }
 
   public T metadata() {

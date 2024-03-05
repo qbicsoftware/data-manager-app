@@ -50,9 +50,9 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 public class MeasurementMetadataUploadDialog extends DialogWindow {
 
+  public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
-  public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private final transient ValidationService validationService;
   private final EditableMultiFileMemoryBuffer uploadBuffer;
@@ -120,43 +120,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     toggleFileSectionIfEmpty();
   }
 
-  private void onFileRemoved(DomEvent domEvent) {
-    JsonObject jsonObject = domEvent.getEventData();
-    var fileName = jsonObject.getString(VAADIN_FILENAME_EVENT);
-    removeFile(fileName);
-
-  }
-
-  private void showFile(MeasurementFileItem measurementFileItem) {
-    MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
-    uploadedItemsDisplays.add(measurementFileDisplay);
-  }
-
-
-  private void removeFile(String fileName) {
-    uploadBuffer.remove(fileName);
-    MeasurementFileDisplay[] fileDisplays = fileDisplaysWithFileName(fileName);
-    uploadedItemsDisplays.remove(fileDisplays);
-    measurementMetadataUploads.removeIf(
-        metadataUpload -> metadataUpload.fileName().equals(fileName));
-    measurementFileItems.removeIf(
-        measurementFileItem -> measurementFileItem.fileName().equals(fileName));
-    toggleFileSectionIfEmpty();
-  }
-
-  private MeasurementFileDisplay[] fileDisplaysWithFileName(String fileName) {
-    return uploadedItemsDisplays.getChildren()
-        .filter(MeasurementFileDisplay.class::isInstance)
-        .map(MeasurementFileDisplay.class::cast)
-        .filter(measurementFileDisplay -> measurementFileDisplay.measurementFileItem().fileName()
-            .equals(fileName))
-        .toArray(MeasurementFileDisplay[]::new);
-  }
-
-  private void toggleFileSectionIfEmpty() {
-    uploadedItemsSection.setVisible(!measurementFileItems.isEmpty());
-  }
-
   private static List<String> parseHeaderContent(String header) {
     return Arrays.stream(header.strip().split("\t")).map(String::strip).toList();
   }
@@ -182,6 +145,79 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     return row.split("\t").length > 0;
   }
 
+  private static Result<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>, String> generatePxPRequest(
+      String row, Map<String, Integer> columns, ExperimentId experimentId) {
+    var columnValues = row.split("\t"); // tab separated values
+    // we consider an empty row as a reason to warn, not to fail
+    if (columnValues.length == 0) {
+      return Result.fromValue(null);
+    }
+
+    Integer sampleCodeColumnIndex = columns.get(PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
+    Integer oranisationColumnIndex = columns.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
+    Integer instrumentColumnIndex = columns.get(PROTEOMICS_PROPERTY.INSTRUMENT.label());
+    Integer samplePoolGroupIndex = columns.get(PROTEOMICS_PROPERTY.SAMPLE_POOL_GROUP.label());
+
+    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex,
+            oranisationColumnIndex,
+            instrumentColumnIndex)
+        .max().orElseThrow();
+    if (columns.size() <= maxPropertyIndex) {
+      return Result.fromError("Not enough columns provided for row: %s".formatted(row));
+    }
+
+    List<SampleCode> sampleCodes = parseSampleCode(columnValues[sampleCodeColumnIndex]);
+    String organisationRoRId = columnValues[oranisationColumnIndex];
+    String instrumentCURIE = columnValues[instrumentColumnIndex];
+    String samplePoolGroup = columnValues[samplePoolGroupIndex];
+
+    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
+        organisationRoRId, instrumentCURIE, samplePoolGroup);
+    MeasurementRegistrationRequest<ProteomicsMeasurementMetadata> registrationRequest = new MeasurementRegistrationRequest<>(
+        metadata, experimentId);
+    return Result.fromValue(registrationRequest);
+  }
+
+  private static List<SampleCode> parseSampleCode(String sampleCodeEntry) {
+    return Arrays.stream(sampleCodeEntry.split(",")).map(SampleCode::create).toList();
+  }
+
+  private void onFileRemoved(DomEvent domEvent) {
+    JsonObject jsonObject = domEvent.getEventData();
+    var fileName = jsonObject.getString(VAADIN_FILENAME_EVENT);
+    removeFile(fileName);
+
+  }
+
+  private void showFile(MeasurementFileItem measurementFileItem) {
+    MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
+    uploadedItemsDisplays.add(measurementFileDisplay);
+  }
+
+  private void removeFile(String fileName) {
+    uploadBuffer.remove(fileName);
+    MeasurementFileDisplay[] fileDisplays = fileDisplaysWithFileName(fileName);
+    uploadedItemsDisplays.remove(fileDisplays);
+    measurementMetadataUploads.removeIf(
+        metadataUpload -> metadataUpload.fileName().equals(fileName));
+    measurementFileItems.removeIf(
+        measurementFileItem -> measurementFileItem.fileName().equals(fileName));
+    toggleFileSectionIfEmpty();
+  }
+
+  private MeasurementFileDisplay[] fileDisplaysWithFileName(String fileName) {
+    return uploadedItemsDisplays.getChildren()
+        .filter(MeasurementFileDisplay.class::isInstance)
+        .map(MeasurementFileDisplay.class::cast)
+        .filter(measurementFileDisplay -> measurementFileDisplay.measurementFileItem().fileName()
+            .equals(fileName))
+        .toArray(MeasurementFileDisplay[]::new);
+  }
+
+  private void toggleFileSectionIfEmpty() {
+    uploadedItemsSection.setVisible(!measurementFileItems.isEmpty());
+  }
+
   private void onUploadFailed(FailedEvent failedEvent) {
     showErrorNotification("File upload was interrupted", failedEvent.getReason().getMessage());
   }
@@ -200,7 +236,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       case NGS -> validateNGS();
     };
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(succeededEvent.getFileName(),
-            validationReport);
+        validationReport);
     //We don't want to upload any invalid measurements in spreadsheet
     if (validationReport.validationResult.containsFailures()) {
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload<>(
@@ -223,36 +259,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     measurementFileItems.add(measurementFileItem);
     showFile(measurementFileItem);
     toggleFileSectionIfEmpty();
-  }
-
-  private static Result<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>, String> generatePxPRequest(
-      String row, Map<String, Integer> columns, ExperimentId experimentId) {
-    var columnValues = row.split("\t"); // tab separated values
-    // we consider an empty row as a reason to warn, not to fail
-    if (columnValues.length == 0) {
-      return Result.fromValue(null);
-    }
-
-    Integer sampleCodeColumnIndex = columns.get(PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
-    Integer oranisationColumnIndex = columns.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
-    Integer instrumentColumnIndex = columns.get(PROTEOMICS_PROPERTY.INSTRUMENT.label());
-    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex,
-            oranisationColumnIndex,
-            instrumentColumnIndex)
-        .max().orElseThrow();
-    if (columns.size() <= maxPropertyIndex) {
-      return Result.fromError("Not enough columns provided for row: %s".formatted(row));
-    }
-
-    List<SampleCode> sampleCodes = parseSampleCode(columnValues[sampleCodeColumnIndex]);
-    String organisationRoRId = columnValues[oranisationColumnIndex];
-    String instrumentCURIE = columnValues[instrumentColumnIndex];
-
-    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
-        organisationRoRId, instrumentCURIE);
-    MeasurementRegistrationRequest<ProteomicsMeasurementMetadata> registrationRequest = new MeasurementRegistrationRequest<>(
-        sampleCodes, metadata, experimentId);
-    return Result.fromValue(registrationRequest);
   }
 
   private List<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>> generatePxPRequests(
@@ -297,7 +303,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     return new ValidationReport(evaluatedRows, validationResult);
   }
 
-
   private ValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap, String row) {
     var validationResult = ValidationResult.successful(0);
     var metaDataValues = row.split("\t"); // tab separated values
@@ -307,12 +312,14 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return validationResult;
     }
 
-    Integer sampleCodeColumnIndex = propertyColumnMap.get(
+    var sampleCodeColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
-    Integer organisationsColumnIndex = propertyColumnMap.get(
+    var organisationsColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
-    Integer instrumentColumnIndex = propertyColumnMap.get(
+    var instrumentColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.INSTRUMENT.label());
+    var samplePoolGroupIndex = propertyColumnMap.get(
+        PROTEOMICS_PROPERTY.SAMPLE_POOL_GROUP.label());
 
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
@@ -321,19 +328,16 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
 
-    List<SampleCode> sampleCodes = parseSampleCode(metaDataValues[sampleCodeColumnIndex]);
-    String organisationRoRId = metaDataValues[organisationsColumnIndex];
-    String instrumentCURIE = metaDataValues[instrumentColumnIndex];
+    var sampleCodes = parseSampleCode(metaDataValues[sampleCodeColumnIndex]);
+    var organisationRoRId = metaDataValues[organisationsColumnIndex];
+    var instrumentCURIE = metaDataValues[instrumentColumnIndex];
+    var samplePoolGroup = metaDataValues[samplePoolGroupIndex];
 
-    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
-        organisationRoRId, instrumentCURIE);
+    var metadata = new ProteomicsMeasurementMetadata(sampleCodes,
+        organisationRoRId, instrumentCURIE, samplePoolGroup);
 
     validationResult = validationResult.combine(validationService.validateProteomics(metadata));
     return validationResult;
-  }
-
-  private static List<SampleCode> parseSampleCode(String sampleCodeEntry) {
-    return Arrays.stream(sampleCodeEntry.split(",")).map(SampleCode::create).toList();
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
@@ -369,7 +373,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
 
-  private void showErrorNotification(String title, String description){
+  private void showErrorNotification(String title, String description) {
     ErrorMessage errorMessage = new ErrorMessage(title, description);
     StyledNotification notification = new StyledNotification(errorMessage);
     notification.open();
@@ -378,6 +382,27 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+  }
+
+  /**
+   * modifies the dialog in a way to show that all measurements of a file were registered.
+   *
+   * @param filename
+   */
+  public void markSuccessful(String filename) {
+    removeFile(filename);
+  }
+
+  /**
+   * shows an error for a given measurement file
+   *
+   * @param filename
+   * @param error
+   */
+  public void showError(String filename, String error) {
+    for (MeasurementFileDisplay measurementFileDisplay : fileDisplaysWithFileName(filename)) {
+      measurementFileDisplay.addError(error);
+    }
   }
 
   record ValidationReport(int validatedRows, ValidationResult validationResult) {
@@ -391,7 +416,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     }
   }
 
-  public record MeasurementMetadataUpload<T extends MeasurementMetadata>(String fileName, List<MeasurementRegistrationRequest<MeasurementMetadata>> measurementRegistrationRequests) {
+  public record MeasurementMetadataUpload<T extends MeasurementMetadata>(String fileName,
+                                                                         List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> measurementRegistrationRequests) {
 
   }
 
@@ -435,14 +461,14 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     private void createDisplayBox(ValidationReport validationReport) {
       displayBox.removeAll();
-      if(validationReport.validationResult().allPassed()){
+      if (validationReport.validationResult().allPassed()) {
         displayBox.add(createApprovedDisplayBox(validationReport.validatedRows()));
-      }
-      else {
+      } else {
         displayBox.add(createInvalidDisplayBox(validationReport.validationResult().failures()));
-    }}
+      }
+    }
 
-    private Div createApprovedDisplayBox(int validMeasurementCount){
+    private Div createApprovedDisplayBox(int validMeasurementCount) {
       Div box = new Div();
       Span approvedTitle = new Span("Your data has been approved");
       Icon validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
@@ -455,12 +481,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       Div validationDetails = new Div();
       Span approvedMeasurements = new Span(String.format("%s measurements", validMeasurementCount));
       approvedMeasurements.addClassName("bold");
-      validationDetails.add(new Span("Measurement data for "), approvedMeasurements, new Span(" is now ready to be registered"));
+      validationDetails.add(new Span("Measurement data for "), approvedMeasurements,
+          new Span(" is now ready to be registered"));
       box.add(header, validationDetails, instruction);
       return box;
     }
 
-    private Div createInvalidDisplayBox(Collection<String> invalidMeasurements){
+    private Div createInvalidDisplayBox(Collection<String> invalidMeasurements) {
       Div box = new Div();
       Span approvedTitle = new Span("Invalid measurement data");
       Icon invalidIcon = VaadinIcon.CLOSE_CIRCLE_O.create();
@@ -471,7 +498,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       Span instruction = new Span("Please correct the entries and re-upload the excel sheet");
       instruction.addClassName("secondary");
       Div validationDetails = new Div();
-      OrderedList invalidMeasurementsList = new OrderedList(invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
+      OrderedList invalidMeasurementsList = new OrderedList(
+          invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
       invalidMeasurementsList.addClassName("invalid-measurement-list");
       invalidMeasurementsList.setType(OrderedList.NumberingType.NUMBER);
       validationDetails.add(invalidMeasurementsList);
@@ -479,27 +507,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return box;
     }
 
-  }
-
-  /**
-   * modifies the dialog in a way to show that all measurements of a file were registered.
-   *
-   * @param filename
-   */
-  public void markSuccessful(String filename) {
-    removeFile(filename);
-  }
-
-  /**
-   * shows an error for a given measurement file
-   *
-   * @param filename
-   * @param error
-   */
-  public void showError(String filename, String error) {
-    for (MeasurementFileDisplay measurementFileDisplay : fileDisplaysWithFileName(filename)) {
-      measurementFileDisplay.addError(error);
-    }
   }
 
   public static class ConfirmEvent extends ComponentEvent<MeasurementMetadataUploadDialog> {

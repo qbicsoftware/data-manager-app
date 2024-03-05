@@ -68,7 +68,8 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
-            .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
+            .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())))
+        .combine(validationPolicy.validateSamplePoolGroup(measurementMetadata.samplePoolGroup()));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -115,6 +116,8 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     // https://ror.readme.io/docs/ror-identifier-pattern
     private final static String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
+    private final static String NOT_A_NUMBER_SAMPLE_POOL = "Sample pool group was not a number: \"%s\"";
+
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
       if (sampleCodes.isEmpty()) {
         return ValidationResult.withFailures(1,
@@ -150,6 +153,19 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
         return ValidationResult.successful(1);
       }
       return ValidationResult.withFailures(1, List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
+    }
+
+    ValidationResult validateSamplePoolGroup(String samplePoolGroup) {
+      if (samplePoolGroup.isBlank()) {
+        return ValidationResult.successful(1);
+      }
+      try {
+        Integer.parseInt(samplePoolGroup);
+      } catch (NumberFormatException e) {
+        return ValidationResult.withFailures(1,
+            List.of(NOT_A_NUMBER_SAMPLE_POOL.formatted(samplePoolGroup)));
+      }
+      return ValidationResult.successful(1);
     }
 
   }

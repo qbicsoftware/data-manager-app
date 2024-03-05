@@ -137,8 +137,7 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
-    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), "", "", "", "", "", "", 0, "",
-        "");
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), "", "", "", "", 0, "", "");
 
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
@@ -173,13 +172,13 @@ public class MeasurementService {
 
     if (registrationRequest.metadata() instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(
-          new MeasurementRegistrationRequest<>(registrationRequest.associatedSamples(),
-              proteomicsMeasurementMetadata, registrationRequest.experimentId()));
+          new MeasurementRegistrationRequest<>(proteomicsMeasurementMetadata,
+              registrationRequest.experimentId()));
     }
     if (registrationRequest.metadata() instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
       return registerNGS(
-          new MeasurementRegistrationRequest<>(registrationRequest.associatedSamples(),
-              ngsMeasurementMetadata, registrationRequest.experimentId()));
+          new MeasurementRegistrationRequest<>(ngsMeasurementMetadata,
+              registrationRequest.experimentId()));
     }
     return Result.fromError(ResponseCode.FAILED);
   }
@@ -187,8 +186,9 @@ public class MeasurementService {
 
   @Transactional
   public void registerMultiple(
-      List<MeasurementRegistrationRequest<MeasurementMetadata>> requests) {
-    for (MeasurementRegistrationRequest<MeasurementMetadata> request : requests) {
+      List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> requests) {
+    var mergedRequests = mergeBySamplePoolGroup(requests);
+    for (MeasurementRegistrationRequest<? extends MeasurementMetadata> request : requests) {
       register(request)
           .onError(error -> {
             throw new MeasurementRegistrationException(error);
@@ -197,17 +197,35 @@ public class MeasurementService {
     }
   }
 
-  public static final class MeasurementRegistrationException extends RuntimeException {
-
-    private final MeasurementService.ResponseCode reason;
-
-    public MeasurementRegistrationException(ResponseCode reason) {
-      this.reason = reason;
+  private List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> mergeBySamplePoolGroup(
+      List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> requests) {
+    if (!requests.isEmpty() && requests.get(0)
+        .metadata() instanceof ProteomicsMeasurementMetadata) {
+      return mergeBySamplePoolGroupProteomics(requests.stream().map(
+              request -> new MeasurementRegistrationRequest<>(
+                  (ProteomicsMeasurementMetadata) request.metadata(), request.experimentId()))
+          .toList());
     }
+    return requests;
+  }
 
-    public ResponseCode reason() {
-      return reason;
-    }
+  private List<MeasurementRegistrationRequest<? extends MeasurementMetadata>> mergeBySamplePoolGroupProteomics(
+      List<MeasurementRegistrationRequest<ProteomicsMeasurementMetadata>> requests) {
+    var result = requests.stream().map(MeasurementRegistrationRequest::metadata).filter(
+        proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
+            .isPresent()).collect(Collectors.groupingBy(
+        metadata -> metadata.assignedSamplePoolGroup().get()));
+    // TODO continue implementation
+    return null;
+  }
+
+  private static ProteomicsMeasurementMetadata merge(
+      List<ProteomicsMeasurementMetadata> measurementMetadataList) {
+    List<SampleCode> associatedSamples = measurementMetadataList.stream().map(
+        ProteomicsMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
+    var firstEntry = measurementMetadataList.get(0);
+    return new ProteomicsMeasurementMetadata(associatedSamples, firstEntry.organisationId(), firstEntry.instrumentCURI(),
+        firstEntry.samplePoolGroup());
   }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
@@ -224,4 +242,18 @@ public class MeasurementService {
     FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT
   }
 
+  public static final class MeasurementRegistrationException extends RuntimeException {
+
+    private final MeasurementService.ResponseCode reason;
+
+    public MeasurementRegistrationException(ResponseCode reason) {
+      this.reason = reason;
+    }
+
+    public ResponseCode reason() {
+      return reason;
+    }
+  }
+
 }
+
