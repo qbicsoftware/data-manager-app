@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.model.measurement;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
@@ -15,6 +16,8 @@ import java.util.Objects;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
+import life.qbic.projectmanagement.domain.model.project.translation.OfferIdentifierConverter;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -35,10 +38,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
 
-  @Embedded
+  @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
   private OntologyTerm instrument;
 
-  @Embedded
+  @Convert(converter = MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
 
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
