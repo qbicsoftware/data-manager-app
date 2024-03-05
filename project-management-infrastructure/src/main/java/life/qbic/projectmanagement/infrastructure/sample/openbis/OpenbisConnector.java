@@ -51,8 +51,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSessionFactory.ApiV3;
-import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
-import life.qbic.projectmanagement.infrastructure.sample.translation.VocabularyCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -67,13 +65,11 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   private static final Logger log = logger(OpenbisConnector.class);
 
   private static final String DEFAULT_SPACE_CODE = "DATA_MANAGER_SPACE";
-  private static final String DEFAULT_SAMPLE_TYPE = "Q_TEST_SAMPLE";
+  private static final String DEFAULT_SAMPLE_TYPE = "Q_SAMPLE";
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_PREPARATION";
-  private static final String DEFAULT_ANALYTE_TYPE = "OTHER";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
   private final OpenbisSessionFactory sessionFactory;
   private final IApplicationServerApi applicationServer;
-  private final AnalyteTermMapper analyteMapper = new SimpleOpenBisTermMapper();
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
@@ -90,9 +86,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
         requireNonNull(OPENBIS_APPLICATION_URL, "applicationServerUrl must not be null"));
   }
 
-  private List<VocabularyTerm> getVocabularyTermsForCode(VocabularyCode vocabularyCode) {
+  private List<VocabularyTerm> getVocabularyTermsForCode(String vocabularyCode) {
     VocabularyTermSearchCriteria criteria = new VocabularyTermSearchCriteria();
-    criteria.withVocabulary().withCode().thatEquals(vocabularyCode.openbisCode());
+    criteria.withVocabulary().withCode().thatEquals(vocabularyCode);
 
     VocabularyTermFetchOptions options = new VocabularyTermFetchOptions();
     SearchResult<ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm> searchResult =
@@ -151,17 +147,8 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
         sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
         Map<String, String> props = new HashMap<>();
 
-        props.put("Q_SECONDARY_NAME", sample.label());
-        props.put("Q_EXTERNALDB_ID", sample.sampleId().value());
-        String analyteValue = sample.sampleOrigin().getAnalyte().getLabel();
-        String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-                () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
-        props.put("Q_SAMPLE_TYPE", openBisSampleType);
-        if(openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
-          logger("No mapping was found for " + analyteValue);
-          logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
-          props.put("Q_DETAILED_ANALYTE_TYPE", analyteValue);
-        }
+        props.put("Q_LABEL", sample.label());
+        props.put("Q_EXTERNAL_ID", sample.sampleId().value());
         sampleCreation.setProperties(props);
 
         sampleCreation.setExperimentId(newExperimentID);
@@ -174,9 +161,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     }
   }
 
-  private Optional<String> retrieveOpenBisAnalyteCode(String analyteLabel) {
-    return getVocabularyTermsForCode(VocabularyCode.ANALYTE).stream()
-        .filter(vocabularyTerm -> analyteLabel.equals(vocabularyTerm.label))
+  private Optional<String> retrieveOpenBisVocabularyCodeForLabel(String vocabularyNameCode, String label) {
+    return getVocabularyTermsForCode(vocabularyNameCode).stream()
+        .filter(vocabularyTerm -> label.equals(vocabularyTerm.label))
         .map(vocabularyTerm -> vocabularyTerm.code).findFirst();
   }
 
@@ -305,19 +292,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     SampleUpdate sampleUpdate = new SampleUpdate();
     String sampleId = "/" + DEFAULT_SPACE_CODE + "/" + sample.sampleCode().code();
     sampleUpdate.setSampleId(new SampleIdentifier(sampleId));
-    sampleUpdate.setProperty("Q_SECONDARY_NAME", sample.label());
-    sampleUpdate.setProperty("Q_EXTERNALDB_ID", sample.sampleId().value());
+    sampleUpdate.setProperty("Q_LABEL", sample.label());
+    sampleUpdate.setProperty("Q_EXTERNAL_ID", sample.sampleId().value());
 
-    String analyteValue = sample.sampleOrigin().getAnalyte().getLabel();
-
-    String openBisSampleType = retrieveOpenBisAnalyteCode(analyteValue).or(
-        () -> analyteMapper.mapFrom(analyteValue)).orElse(DEFAULT_ANALYTE_TYPE);
-    sampleUpdate.setProperty("Q_SAMPLE_TYPE", openBisSampleType);
-    if (openBisSampleType.equals(DEFAULT_ANALYTE_TYPE)) {
-      logger("No mapping was found for " + analyteValue + " when updating sample.");
-      logger("Using default value and adding " + analyteValue + " to Q_DETAILED_ANALYTE_TYPE.");
-      sampleUpdate.setProperty("Q_DETAILED_ANALYTE_TYPE", analyteValue);
-    }
     return sampleUpdate;
   }
 
