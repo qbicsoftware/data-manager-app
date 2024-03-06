@@ -13,11 +13,11 @@ import jakarta.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
-import life.qbic.projectmanagement.domain.model.project.translation.OfferIdentifierConverter;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -40,6 +40,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
+
+  private String samplePool = "";
 
   @Convert(converter = MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
@@ -131,5 +133,13 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   public Organisation organisation() {
     return organisation;
+  }
+
+  public void setSamplePoolGroup(String group) {
+    this.samplePool = group;
+  }
+
+  public Optional<String> samplePoolGroup() {
+    return samplePool.isBlank() ? Optional.empty() : Optional.of(samplePool);
   }
 }

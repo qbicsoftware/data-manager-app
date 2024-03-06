@@ -160,6 +160,9 @@ public class MeasurementService {
         organisationQuery.get(),
         method);
 
+    proteomicsMeasurementMetadata.assignedSamplePoolGroup()
+        .ifPresent(measurement::setSamplePoolGroup);
+
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
     var result = measurementDomainService.addProteomics(measurement, parentCodes);
