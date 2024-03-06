@@ -156,7 +156,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
     ValidationResult validateInstrument(String instrument) {
       var result = ontologyLookupService.findByCURI(instrument);
-      if (result != null && result.isPresent()) {
+      if (result.isPresent()) {
         return ValidationResult.successful(1);
       }
       return ValidationResult.withFailures(1, List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
