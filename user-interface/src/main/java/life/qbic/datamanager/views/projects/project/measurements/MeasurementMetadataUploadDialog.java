@@ -120,7 +120,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   private static List<String> parseHeaderContent(String header) {
-    return Arrays.stream(header.strip().split("\t")).map(String::strip).toList();
+    return Arrays.stream(header.replace("*", "").strip().split("\t")).map(String::strip).toList();
   }
 
   private static Map<String, Integer> propertyColumnMap(List<String> properties) {
