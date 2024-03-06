@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
-import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
