@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
@@ -203,10 +204,10 @@ public class MeasurementService {
         0) instanceof ProteomicsMeasurementMetadata) {
       var proteomicsMeasurementMetadataList = measurementMetadataList.stream()
           .map(measurementMetadata -> (ProteomicsMeasurementMetadata) measurementMetadata).toList();
-      //Todo comment in once sample pools are implemented
-      /*
-        return mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
-       */
+
+      var choredList = mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
+      return choredList;
+
     }
     return measurementMetadataList;
   }
@@ -217,8 +218,11 @@ public class MeasurementService {
         proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
             .isPresent()).collect(Collectors.groupingBy(
         metadata -> metadata.assignedSamplePoolGroup().get()));
-    var result = map.values().stream().map(MeasurementService::merge).toList();
-    return result;
+    var mergedMetadata = map.values().stream().map(MeasurementService::merge).toList();
+
+    return Stream.concat(proteomicsMeasurementMetadataList.stream()
+            .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList().stream(),
+        mergedMetadata.stream()).toList();
   }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {

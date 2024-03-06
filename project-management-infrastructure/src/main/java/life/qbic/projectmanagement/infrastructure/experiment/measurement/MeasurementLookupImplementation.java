@@ -69,11 +69,14 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     Specification<ProteomicsMeasurement> organisationLabelContains = ProteomicsMeasurementSpec.isOrganisationLabel(
         filter);
 
+    /*
     Specification<ProteomicsMeasurement> ontologyNameContains = ProteomicsMeasurementSpec.isOntologyTermName(
         filter);
     Specification<ProteomicsMeasurement> ontologyDescriptionContains = ProteomicsMeasurementSpec.isOntologyTermDescription(
         filter);
-    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(measurementCodeContains, organisationLabelContains, ontologyNameContains, ontologyDescriptionContains);
+        */
+
+    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(measurementCodeContains, organisationLabelContainsomm);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)

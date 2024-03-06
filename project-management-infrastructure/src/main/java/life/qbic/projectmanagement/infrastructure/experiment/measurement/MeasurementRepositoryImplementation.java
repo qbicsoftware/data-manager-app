@@ -10,6 +10,8 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasuremen
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.NGSMeasurementJpaRepo;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.ProteomicsMeasurementJpaRepo;
 import org.springframework.stereotype.Repository;
 
 /**
