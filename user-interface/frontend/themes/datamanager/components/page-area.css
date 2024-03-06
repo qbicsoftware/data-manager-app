@@ -154,6 +154,18 @@
   row-gap: var(--lumo-space-s);
 }
 
+.measurement-details-component .measurement-grid .organisation-column-entry {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.measurement-details-component .measurement-grid .instrument-column {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
 
 .measurement-details-component .no-measurements-registered-disclaimer {
   display: flex;

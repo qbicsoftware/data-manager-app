@@ -4,6 +4,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
 import java.util.List;
+
+import jakarta.persistence.criteria.Expression;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
@@ -68,15 +70,13 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         filter);
     Specification<ProteomicsMeasurement> organisationLabelContains = ProteomicsMeasurementSpec.isOrganisationLabel(
         filter);
-
-    /*
     Specification<ProteomicsMeasurement> ontologyNameContains = ProteomicsMeasurementSpec.isOntologyTermName(
         filter);
-    Specification<ProteomicsMeasurement> ontologyDescriptionContains = ProteomicsMeasurementSpec.isOntologyTermDescription(
+    Specification<ProteomicsMeasurement> ontologyLabelContains = ProteomicsMeasurementSpec.isOntologyTermLabel(
         filter);
-        */
 
-    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(measurementCodeContains, organisationLabelContains);
+
+    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(measurementCodeContains, organisationLabelContains, ontologyNameContains, ontologyLabelContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)
@@ -156,13 +156,21 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     public static Specification<ProteomicsMeasurement> isOntologyTermName(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("instrument").get("className"), "%" + filter + "%");
+      return (root, query, builder) -> {
+        Expression<String> function = builder.function("JSON_EXTRACT", String.class, root.get("instrument"),
+                builder.literal("$.name"));
+        return builder.like(function,
+                "%" + filter + "%");
+      };
     }
 
-    public static Specification<ProteomicsMeasurement> isOntologyTermDescription(String filter) {
+    public static Specification<ProteomicsMeasurement> isOntologyTermLabel(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("instrument").get("description"), "%" + filter + "%");
+      {
+        Expression<String> function = builder.function("JSON_EXTRACT", String.class, root.get("instrument"), builder.literal("$.label"));
+        return builder.like(function,
+                "%" + filter + "%");
+      };
     }
 
     public static Specification<ProteomicsMeasurement> isMeasurementCode(String filter) {
