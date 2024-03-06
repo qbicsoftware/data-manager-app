@@ -76,7 +76,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         filter);
         */
 
-    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(measurementCodeContains, organisationLabelContainsomm);
+    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(measurementCodeContains, organisationLabelContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)
