@@ -51,7 +51,7 @@ public class MeasurementDomainService {
       return Result.fromValue(measurement);
     } catch (Exception e) {
       log.error(
-          "Saving the NGS measurement failed for id: " + measurement.measurementCode().value());
+          "Saving the Proteomics measurement failed for id: " + measurement.measurementCode().value());
     }
     return Result.fromValue(measurement);
   }
