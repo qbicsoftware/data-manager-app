@@ -232,8 +232,7 @@ public class MeasurementService {
       var proteomicsMeasurementMetadataList = measurementMetadataList.stream()
           .map(measurementMetadata -> (ProteomicsMeasurementMetadata) measurementMetadata).toList();
 
-      var choredList = mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
-      return choredList;
+        return mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
 
     }
     return measurementMetadataList;
@@ -244,7 +243,7 @@ public class MeasurementService {
     var map = proteomicsMeasurementMetadataList.stream().filter(
         proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
             .isPresent()).collect(Collectors.groupingBy(
-        metadata -> metadata.assignedSamplePoolGroup().get()));
+        metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
     var mergedMetadata = map.values().stream().map(MeasurementService::merge).toList();
 
     return Stream.concat(proteomicsMeasurementMetadataList.stream()
