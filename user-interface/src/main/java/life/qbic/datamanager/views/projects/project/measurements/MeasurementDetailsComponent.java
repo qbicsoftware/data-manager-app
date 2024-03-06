@@ -9,6 +9,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -31,7 +32,6 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.Tag;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -217,6 +217,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Span organisationLabel = new Span(organisation.label());
       String organisationUrl = organisation.IRI();
       Anchor organisationAnchor = new Anchor(organisationUrl, organisationLabel, svgIcon);
+      organisationAnchor.setTarget(AnchorTarget.BLANK);
       organisationAnchor.addClassName("organisation-column-entry");
       return organisationAnchor;
     });
@@ -225,8 +226,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
     return new ComponentRenderer<>(instrument -> {
       Span instrumentLabel = new Span(instrument.getLabel());
-      Tag instrumentNameTag = new Tag(instrument.getName().replace("_", ":"));
-      Anchor instrumentNameAnchor = new Anchor(instrument.getClassIri(), instrumentNameTag);
+      Span instrumentOntologyLink = new Span(instrument.getName().replace("_", ":"));
+      instrumentOntologyLink.addClassName("ontology-link");
+      Anchor instrumentNameAnchor = new Anchor(instrument.getClassIri(), instrumentOntologyLink);
+      instrumentNameAnchor.setTarget(AnchorTarget.BLANK);
       Span organisationSpan = new Span(instrumentLabel, instrumentNameAnchor);
       organisationSpan.addClassName("instrument-column");
       return organisationSpan;
