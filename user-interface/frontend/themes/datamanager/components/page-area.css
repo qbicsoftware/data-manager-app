@@ -155,17 +155,21 @@
 }
 
 .measurement-details-component .measurement-grid .organisation-column-entry {
-  display: inline-flex;
-  column-gap: var(--lumo-space-s);
   align-items: center;
+  column-gap: var(--lumo-space-s);
+  display: flex;
+}
+
+.measurement-details-component .measurement-grid .organisation-column-entry .organisation-icon {
+  min-width: var(--lumo-icon-size-m);
+  min-height: var(--lumo-icon-size-m);
 }
 
 .measurement-details-component .measurement-grid .instrument-column {
-  display: inline-flex;
   column-gap: var(--lumo-space-s);
   align-items: center;
+  display: inline-flex;
 }
-
 
 .measurement-details-component .no-measurements-registered-disclaimer {
   display: flex;

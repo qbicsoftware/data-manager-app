@@ -74,9 +74,29 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         filter);
     Specification<ProteomicsMeasurement> ontologyLabelContains = ProteomicsMeasurementSpec.isOntologyTermLabel(
         filter);
+    Specification<ProteomicsMeasurement> facilityContains = ProteomicsMeasurementSpec.isFacility(
+            filter);
+    Specification<ProteomicsMeasurement> digestionMethodContains = ProteomicsMeasurementSpec.isDigestionMethod(
+            filter);
+    Specification<ProteomicsMeasurement> digestionEnzymeContains = ProteomicsMeasurementSpec.isDigestionEnzyme(
+            filter);
+    Specification<ProteomicsMeasurement> enrichmentMethodContains= ProteomicsMeasurementSpec.isEnrichmentMethod(
+            filter);
+    Specification<ProteomicsMeasurement> injectionVolumeContains = ProteomicsMeasurementSpec.isInjectionVolume(
+            filter);
+    Specification<ProteomicsMeasurement> lcColumnContains = ProteomicsMeasurementSpec.isLcColumn(
+            filter);
+    Specification<ProteomicsMeasurement> lcmsMethodContains = ProteomicsMeasurementSpec.isLcmsMethod(
+            filter);
+    Specification<ProteomicsMeasurement> noteContains = ProteomicsMeasurementSpec.isNote(
+            filter);
 
 
-    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(measurementCodeContains, organisationLabelContains, ontologyNameContains, ontologyLabelContains);
+
+    Specification<ProteomicsMeasurement> filterSpecification =
+            Specification.anyOf(measurementCodeContains, organisationLabelContains, ontologyNameContains, ontologyLabelContains,
+                    facilityContains, digestionMethodContains, digestionEnzymeContains, enrichmentMethodContains,
+                    injectionVolumeContains, lcColumnContains, lcmsMethodContains, noteContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)
@@ -177,6 +197,47 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       return (root, query, builder) ->
               builder.like(root.get("measurementCode").as(String.class), "%" + filter + "%");
     }
+
+    public static Specification<ProteomicsMeasurement> isFacility(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("facility"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isDigestionMethod(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("digestionMethod"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isDigestionEnzyme(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("digestionEnzyme"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isEnrichmentMethod(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("enrichmentMethod"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isInjectionVolume(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("injectionVolume").as(String.class), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isLcColumn(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("lcColumn"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isLcmsMethod(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("lcmsMethod"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isNote(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("note"), "%" + filter + "%");
+    }
+
   }
 
   private static class NgsMeasurementSpec {

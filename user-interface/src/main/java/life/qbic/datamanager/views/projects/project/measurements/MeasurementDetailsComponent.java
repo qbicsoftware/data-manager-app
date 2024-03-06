@@ -182,17 +182,26 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addClassName("measurement-grid");
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
-        .setHeader("Measurement Code");
+        .setHeader("Measurement Code").setAutoWidth(true).setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value());
+    //Todo Should the sampleCodes be retrieved via a service or from column?
     proteomicsMeasurementGrid.addComponentColumn(
         proteomicsMeasurement -> renderSampleCodes().createComponent(
-            proteomicsMeasurement.measuredSamples())).setHeader("Sample Codes");
+            proteomicsMeasurement.measuredSamples())).setHeader("Sample Codes").setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderOrganisation().createComponent(proteomicsMeasurement.organisation()))
-        .setHeader("Organisation");
+        .setHeader("Organisation").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.organisation().label()).setAutoWidth(true).setFlexGrow(0);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility).setHeader("Facility").setTooltipGenerator(ProteomicsMeasurement::facility).setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
-            proteomicsMeasurement -> renderInstrument().createComponent(proteomicsMeasurement.instrument()))
-        .setHeader("Instrument");
-    proteomicsMeasurementGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
+                    proteomicsMeasurement -> renderInstrument().createComponent(proteomicsMeasurement.instrument()))
+            .setHeader("Instrument").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted()).setAutoWidth(true).setFlexGrow(0);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod).setHeader("Digestion Method").setTooltipGenerator(ProteomicsMeasurement::digestionMethod).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme).setHeader("Digestion Enzyme").setTooltipGenerator(ProteomicsMeasurement::digestionEnzyme).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::enrichmentMethod).setHeader("Enrichment Method").setTooltipGenerator(ProteomicsMeasurement::enrichmentMethod).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::injectionVolume).setHeader("Injection Volume").setTooltipGenerator(proteomicsMeasurement -> String.valueOf(proteomicsMeasurement.injectionVolume())).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn).setHeader("LC Column").setTooltipGenerator(ProteomicsMeasurement::lcColumn).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod).setHeader("LCMS Method").setTooltipGenerator(ProteomicsMeasurement::lcmsMethod).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setHeader("Sample Pool Group").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::note).setHeader("Note").setTooltipGenerator(ProteomicsMeasurement::note).setAutoWidth(true);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -210,10 +219,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private ComponentRenderer<Anchor, Organisation> renderOrganisation() {
     return new ComponentRenderer<>(organisation-> {
-
       StreamResource iconResource = new StreamResource("RoR_logo.svg",
               () -> getClass().getResourceAsStream("/icons/RoR_logo.svg"));
       SvgIcon svgIcon = new SvgIcon(iconResource);
+      svgIcon.addClassName("organisation-icon");
       Span organisationLabel = new Span(organisation.label());
       String organisationUrl = organisation.IRI();
       Anchor organisationAnchor = new Anchor(organisationUrl, organisationLabel, svgIcon);

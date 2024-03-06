@@ -202,6 +202,51 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return organisation;
   }
 
+  public String facility() {
+    return facility;
+  }
+
+  public String digestionMethod() {
+    return digestionMethod;
+  }
+
+  public String digestionEnzyme() {
+    return digestionEnzyme;
+  }
+
+  public String enrichmentMethod() {
+    return enrichmentMethod;
+  }
+
+  public int injectionVolume() {
+    return injectionVolume;
+  }
+
+  public String lcColumn() {
+    return lcColumn;
+  }
+  public String lcmsMethod() {
+    return lcmsMethod;
+  }
+
+  public String samplePreparation() {
+    return samplePreparation;
+  }
+
+  public String sampleCleanupPeptide() {
+    return sampleCleanupPeptide;
+  }
+
+  public String sampleCleanupProtein() {
+    return sampleCleanupProtein;
+  }
+
+  public String note() {
+    return note;
+  }
+
+
+
   public void setSamplePoolGroup(String group) {
     this.samplePool = group;
   }
