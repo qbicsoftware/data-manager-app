@@ -70,7 +70,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
     try {
       measurementDataRepo.addProtemicsMeasurement(measurement, sampleCodes);
     } catch (Exception e) {
-      log.error("Saving ngs measurement in data repo failed for measurement "
+      log.error("Saving proteomics measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
       pxpMeasurementJpaRepo.delete(measurement); // Rollback JPA save
       return Result.fromError(ResponseCode.FAILED);
