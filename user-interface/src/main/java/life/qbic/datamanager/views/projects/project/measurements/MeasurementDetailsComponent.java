@@ -8,13 +8,16 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -28,11 +31,14 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.Tag;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.Organisation;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -180,18 +186,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addComponentColumn(
         proteomicsMeasurement -> renderSampleCodes().createComponent(
             proteomicsMeasurement.measuredSamples())).setHeader("Sample Codes");
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.organisation().label())
+    proteomicsMeasurementGrid.addComponentColumn(
+            proteomicsMeasurement -> renderOrganisation().createComponent(proteomicsMeasurement.organisation()))
         .setHeader("Organisation");
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.instrument().getLabel())
+    proteomicsMeasurementGrid.addComponentColumn(
+            proteomicsMeasurement -> renderInstrument().createComponent(proteomicsMeasurement.instrument()))
         .setHeader("Instrument");
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.instrument().getDescription())
-        .setHeader("Description");
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.instrument().getName())
-        .setHeader("Name");
     proteomicsMeasurementGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
@@ -206,6 +206,31 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().get()).stream();
         });
     measurementsGridDataViews.add(proteomicsGridDataView);
+  }
+
+  private ComponentRenderer<Anchor, Organisation> renderOrganisation() {
+    return new ComponentRenderer<>(organisation-> {
+
+      StreamResource iconResource = new StreamResource("RoR_logo.svg",
+              () -> getClass().getResourceAsStream("/icons/RoR_logo.svg"));
+      SvgIcon svgIcon = new SvgIcon(iconResource);
+      Span organisationLabel = new Span(organisation.label());
+      String organisationUrl = organisation.IRI();
+      Anchor organisationAnchor = new Anchor(organisationUrl, organisationLabel, svgIcon);
+      organisationAnchor.addClassName("organisation-column-entry");
+      return organisationAnchor;
+    });
+  }
+
+  private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
+    return new ComponentRenderer<>(instrument -> {
+      Span instrumentLabel = new Span(instrument.getLabel());
+      Tag instrumentNameTag = new Tag(instrument.getName().replace("_", ":"));
+      Anchor instrumentNameAnchor = new Anchor(instrument.getClassIri(), instrumentNameTag);
+      Span organisationSpan = new Span(instrumentLabel, instrumentNameAnchor);
+      organisationSpan.addClassName("instrument-column");
+      return organisationSpan;
+    });
   }
 
   private ComponentRenderer<Div, Collection<SampleId>> renderSampleCodes() {
