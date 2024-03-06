@@ -66,11 +66,17 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
   @Override
   public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
     var validationPolicy = new ValidationPolicy();
+    //We want to fail early so we check first if all the mandatory fields were filled
+    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(measurementMetadata);
+    if(mandatoryValidationResult.containsFailures()) {
+      return mandatoryValidationResult;
+    }
+    //If all fields were filled then we can validate the entries individually
     return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
+            .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())))
-        .combine(validationPolicy.validateSamplePoolGroup(measurementMetadata.samplePoolGroup()))
-        .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata));
+        .combine(validationPolicy.validateSamplePoolGroup(measurementMetadata.samplePoolGroup()));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -150,7 +156,7 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
     ValidationResult validateInstrument(String instrument) {
       var result = ontologyLookupService.findByCURI(instrument);
-      if (result.isPresent()) {
+      if (result != null && result.isPresent()) {
         return ValidationResult.successful(1);
       }
       return ValidationResult.withFailures(1, List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
@@ -174,7 +180,11 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
       var validation = ValidationResult.successful(0);
       if (measurementMetadata.organisationId().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+            ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+      }
+      if (measurementMetadata.instrumentCURI().isBlank()) {
+        validation = validation.combine(
+                ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
       }
       if (measurementMetadata.facility().isBlank()) {
         validation = validation.combine(

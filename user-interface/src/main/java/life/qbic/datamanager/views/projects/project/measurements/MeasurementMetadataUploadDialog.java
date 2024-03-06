@@ -266,7 +266,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         .orElseThrow(() -> new RuntimeException("No header row found"));
     var domain = validationService
         .inferDomainByPropertyTypes(parseHeaderContent(contentHeader))
-        .orElseThrow();
+            .orElseThrow(() -> new RuntimeException("Header row could not be recognized, Please provide a valid template file"));
 
     var validationReport = switch (domain) {
       case PROTEOMICS -> validatePxP(content);
