@@ -31,6 +31,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 @Entity(name = "proteomics_measurement")
 public class ProteomicsMeasurement implements MeasurementMetadata {
 
+  private String lcmsMethod = "";
   //FIXME do not implement MeasurementMetadata, you are not metadata but the measurement
   @Embedded
   private Organisation organisation;
@@ -76,8 +77,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds,
       MeasurementCode measurementCode,
-      Organisation organisation,
-      ProteomicsMethodMetadata method, ProteomicsSamplePreparation samplePreparation) {
+      Organisation organisation, ProteomicsMethodMetadata method,
+      ProteomicsSamplePreparation samplePreparation) {
     evaluateMandatorMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
@@ -86,12 +87,22 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.organisation = organisation;
     this.instrument = method.instrument();
     this.measurementCode = measurementCode;
+    this.facility = method.facility();
+    this.digestionMethod = method.digestionMethod();
+    this.digestionEnzyme = method.digestionEnzyme();
+    this.enrichmentMethod = method.enrichmentMethod();
+    this.injectionVolume = method.injectionVolume();
+    this.lcColumn = method.lcColumn();
+    this.lcmsMethod = method.lcmsMethod();
   }
 
   private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
       throws IllegalArgumentException {
     if (method.instrument() == null) {
       throw new IllegalArgumentException("Instrument: Missing metadata.");
+    }
+    if (method.facility().isBlank()) {
+      throw new IllegalArgumentException("Facility: Missing metadata");
     }
     if (method.fractionName().isBlank()) {
       throw new IllegalArgumentException("Cycle/Fraction Name: Missing metadata");
@@ -146,7 +157,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
         method, null);
   }
 
-  public ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
+  public static ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
       Organisation organisation, ProteomicsMethodMetadata method,
       ProteomicsSamplePreparation samplePreparation) {
     var measurement = create(sampleIds, code, organisation, method);
@@ -155,7 +166,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public void setSamplePreparation(ProteomicsSamplePreparation samplePreparation) {
-    //ToDo extend
+    this.samplePreparation = samplePreparation.preparation();
+    this.sampleCleanupProtein = samplePreparation.cleanupProtein();
+    this.sampleCleanupPeptide = samplePreparation.cleanupPeptide();
+    this.note = samplePreparation.note();
   }
 
   /**
@@ -194,5 +208,21 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   public Optional<String> samplePoolGroup() {
     return samplePool.isBlank() ? Optional.empty() : Optional.of(samplePool);
+  }
+
+  public void setSamplePreparation(String samplePreparation) {
+    this.samplePreparation = samplePreparation;
+  }
+
+  public void setSampleCleanupPeptide(String sampleCleanupPeptide) {
+    this.sampleCleanupPeptide = sampleCleanupPeptide;
+  }
+
+  public void setSampleCleanupProtein(String sampleCleanupProtein) {
+    this.sampleCleanupProtein = sampleCleanupProtein;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 }

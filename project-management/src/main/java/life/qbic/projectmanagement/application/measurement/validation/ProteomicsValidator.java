@@ -69,7 +69,8 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())))
-        .combine(validationPolicy.validateSamplePoolGroup(measurementMetadata.samplePoolGroup()));
+        .combine(validationPolicy.validateSamplePoolGroup(measurementMetadata.samplePoolGroup()))
+        .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -166,6 +167,44 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
             List.of(NOT_A_NUMBER_SAMPLE_POOL.formatted(samplePoolGroup)));
       }
       return ValidationResult.successful(1);
+    }
+
+    ValidationResult validateMandatoryDataProvided(
+        ProteomicsMeasurementMetadata measurementMetadata) {
+      var validation = ValidationResult.successful(0);
+      if (measurementMetadata.organisationId().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+      }
+      if (measurementMetadata.facility().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+      }
+      if (measurementMetadata.digestionEnzyme().isBlank()) {
+        validation = validation.combine(ValidationResult.withFailures(1,
+            List.of("Digestion Enzyme: missing mandatory metadata")));
+      }
+      if (measurementMetadata.digestionMethod().isBlank()) {
+        validation = validation.combine(ValidationResult.withFailures(1,
+            List.of("Digestion Method: missing mandatory metadata")));
+      }
+      if (measurementMetadata.enrichmentMethod().isBlank()) {
+        validation = validation.combine(ValidationResult.withFailures(1,
+            List.of("Enrichment Method: missing mandatory metadata")));
+      }
+      if (measurementMetadata.injectionVolume().isBlank()) {
+        validation = validation.combine(ValidationResult.withFailures(1,
+            List.of("Injection Volume: missing mandatory metadata")));
+      }
+      if (measurementMetadata.lcColumn().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("LC Column: missing mandatory metadata")));
+      }
+      if (measurementMetadata.lcmsMethod().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("LCMS Method: missing mandatory metadata")));
+      }
+      return validation;
     }
 
   }

@@ -156,6 +156,20 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     Integer oranisationColumnIndex = columns.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
     Integer instrumentColumnIndex = columns.get(PROTEOMICS_PROPERTY.INSTRUMENT.label());
     Integer samplePoolGroupIndex = columns.get(PROTEOMICS_PROPERTY.SAMPLE_POOL_GROUP.label());
+    Integer facilityIndex = columns.get(PROTEOMICS_PROPERTY.FACILITY.label());
+    Integer fractionNameIndex = columns.get(PROTEOMICS_PROPERTY.CYCLE_FRACTION_NAME.label());
+    Integer digestionEnzymeIndex = columns.get(PROTEOMICS_PROPERTY.DIGESTION_ENZYME.label());
+    Integer digestionMethodIndex = columns.get(PROTEOMICS_PROPERTY.DIGESTION_METHOD.label());
+    Integer enrichmentMethodIndex = columns.get(PROTEOMICS_PROPERTY.ENRICHMENT_METHOD.label());
+    Integer injectionVolumeIndex = columns.get(PROTEOMICS_PROPERTY.INJECTION_VOLUME.label());
+    Integer lcColumnIndex = columns.get(PROTEOMICS_PROPERTY.LC_COLUMN.label());
+    Integer lcmsMethodIndex = columns.get(PROTEOMICS_PROPERTY.LCMS_METHOD.label());
+    Integer samplePreparationIndex = columns.get(PROTEOMICS_PROPERTY.SAMPLE_PREPARATION.label());
+    Integer sampleCleanupProteinIndex = columns.get(
+        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PROTEIN.label());
+    Integer sampleCleanupPeptideIndex = columns.get(
+        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PEPTIDE.label());
+    Integer noteIndex = columns.get(PROTEOMICS_PROPERTY.NOTE.label());
 
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex,
             oranisationColumnIndex,
@@ -165,18 +179,44 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return Result.fromError("Not enough columns provided for row: %s".formatted(row));
     }
 
-    List<SampleCode> sampleCodes = parseSampleCode(columnValues[sampleCodeColumnIndex]);
-    String organisationRoRId = columnValues[oranisationColumnIndex];
-    String instrumentCURIE = columnValues[instrumentColumnIndex];
-    String samplePoolGroup = columnValues[samplePoolGroupIndex];
+    List<SampleCode> sampleCodes = List.of(
+        SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
+    String organisationRoRId = safeArrayAccess(columnValues, oranisationColumnIndex).orElse("");
+    String instrumentCURIE = safeArrayAccess(columnValues, instrumentColumnIndex).orElse("");
+    String samplePoolGroup = safeArrayAccess(columnValues, samplePoolGroupIndex).orElse("");
+    String facility = safeArrayAccess(columnValues, facilityIndex).orElse("");
+    String fractionName = safeArrayAccess(columnValues, fractionNameIndex).orElse("");
+    String digestionEnzyme = safeArrayAccess(columnValues, digestionEnzymeIndex).orElse("");
+    String digestionMethod = safeArrayAccess(columnValues, digestionMethodIndex).orElse("");
+    String enrichmentMethod = safeArrayAccess(columnValues, enrichmentMethodIndex).orElse("");
+    String injectionVolume = safeArrayAccess(columnValues, injectionVolumeIndex).orElse("");
+    String lcColumn = safeArrayAccess(columnValues, lcColumnIndex).orElse("");
+    String lcmsMethod = safeArrayAccess(columnValues, lcmsMethodIndex).orElse("");
+    String samplePreparation = safeArrayAccess(columnValues, samplePreparationIndex).orElse("");
+    String sampleCleanupProtein = safeArrayAccess(columnValues, sampleCleanupProteinIndex).orElse(
+        "");
+    String sampleCleanupPeptide = safeArrayAccess(columnValues, sampleCleanupPeptideIndex).orElse(
+        "");
+    String note = safeArrayAccess(columnValues, noteIndex).orElse("");
 
     ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
-        organisationRoRId, instrumentCURIE, samplePoolGroup);
+        organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
+        digestionEnzyme,
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, samplePreparation,
+        sampleCleanupProtein, sampleCleanupPeptide, note);
     return Result.fromValue(metadata);
   }
 
   private static List<SampleCode> parseSampleCode(String sampleCodeEntry) {
     return Arrays.stream(sampleCodeEntry.split(",")).map(SampleCode::create).toList();
+  }
+
+  private static Optional<String> safeArrayAccess(String[] array, int index) {
+    try {
+      return Optional.of(array[index]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      return Optional.empty();
+    }
   }
 
   private void onFileRemoved(DomEvent domEvent) {
@@ -320,6 +360,23 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         PROTEOMICS_PROPERTY.INSTRUMENT.label());
     var samplePoolGroupIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.SAMPLE_POOL_GROUP.label());
+    var facilityIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.FACILITY.label());
+    var fractionNameIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.CYCLE_FRACTION_NAME.label());
+    var digestionEnzymeIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.DIGESTION_ENZYME.label());
+    var digestionMethodIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.DIGESTION_METHOD.label());
+    Integer enrichmentMethodIndex = propertyColumnMap.get(
+        PROTEOMICS_PROPERTY.ENRICHMENT_METHOD.label());
+    Integer injectionVolumeIndex = propertyColumnMap.get(
+        PROTEOMICS_PROPERTY.INJECTION_VOLUME.label());
+    Integer lcColumnIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LC_COLUMN.label());
+    Integer lcmsMethodIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LCMS_METHOD.label());
+    Integer samplePreparationIndex = propertyColumnMap.get(
+        PROTEOMICS_PROPERTY.SAMPLE_PREPARATION.label());
+    Integer sampleCleanupProteinIndex = propertyColumnMap.get(
+        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PROTEIN.label());
+    Integer sampleCleanupPeptideIndex = propertyColumnMap.get(
+        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PEPTIDE.label());
+    Integer noteIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.NOTE.label());
 
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
@@ -328,24 +385,34 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
 
-    var sampleCodes = SampleCode.create(safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
+    var sampleCodes = SampleCode.create(
+        safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
     var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
     var instrumentCURIE = safeArrayAccess(metaDataValues, instrumentColumnIndex).orElse("");
     var samplePoolGroup = safeArrayAccess(metaDataValues, samplePoolGroupIndex).orElse("");
+    var facility = safeArrayAccess(metaDataValues, facilityIndex).orElse("");
+    var fractionName = safeArrayAccess(metaDataValues, fractionNameIndex).orElse("");
+    var digestionEnzyme = safeArrayAccess(metaDataValues, digestionEnzymeIndex).orElse("");
+    var digestionMethod = safeArrayAccess(metaDataValues, digestionMethodIndex).orElse("");
+    var enrichmentMethod = safeArrayAccess(metaDataValues, enrichmentMethodIndex).orElse("");
+    var injectionVolume = safeArrayAccess(metaDataValues, injectionVolumeIndex).orElse("");
+    var lcColumn = safeArrayAccess(metaDataValues, lcColumnIndex).orElse("");
+    var lcmsMethod = safeArrayAccess(metaDataValues, lcmsMethodIndex).orElse("");
+    var samplePreparation = safeArrayAccess(metaDataValues, samplePreparationIndex).orElse("");
+    var sampleCleanupProtein = safeArrayAccess(metaDataValues, sampleCleanupProteinIndex).orElse(
+        "");
+    var sampleCleanupPeptide = safeArrayAccess(metaDataValues, sampleCleanupPeptideIndex).orElse(
+        "");
+    var note = safeArrayAccess(metaDataValues, noteIndex).orElse("");
 
     var metadata = new ProteomicsMeasurementMetadata(List.of(sampleCodes),
-        organisationRoRId, instrumentCURIE, samplePoolGroup);
+        organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
+        digestionEnzyme,
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, samplePreparation,
+        sampleCleanupProtein, sampleCleanupPeptide, note);
 
     validationResult = validationResult.combine(validationService.validateProteomics(metadata));
     return validationResult;
-  }
-
-  private static Optional<String> safeArrayAccess(String[] array, int index) {
-    try {
-      return Optional.of(array[index]);
-    } catch (ArrayIndexOutOfBoundsException e) {
-      return Optional.empty();
-    }
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {

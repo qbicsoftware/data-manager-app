@@ -22,6 +22,7 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSamplePreparation;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -66,9 +67,24 @@ public class MeasurementService {
     List<SampleCode> associatedSamples = measurementMetadataList.stream().map(
         ProteomicsMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
     var firstEntry = measurementMetadataList.get(0);
-    return new ProteomicsMeasurementMetadata(associatedSamples, firstEntry.organisationId(),
+    return new ProteomicsMeasurementMetadata(
+        associatedSamples,
+        firstEntry.organisationId(),
         firstEntry.instrumentCURI(),
-        firstEntry.samplePoolGroup());
+        firstEntry.samplePoolGroup(),
+        firstEntry.facility(),
+        firstEntry.fractionName(),
+        firstEntry.digestionEnzyme(),
+        firstEntry.digestionMethod(),
+        firstEntry.enrichmentMethod(),
+        firstEntry.injectionVolume(),
+        firstEntry.lcColumn(),
+        firstEntry.lcmsMethod(),
+        firstEntry.samplePreparation(),
+        firstEntry.sampleCleanupProtein(),
+        firstEntry.sampleCleanupPeptide(),
+        firstEntry.note()
+    );
   }
 
   @PostAuthorize(
@@ -130,10 +146,10 @@ public class MeasurementService {
   }
 
   private Result<MeasurementId, ResponseCode> registerPxP(
-      ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
-    var associatedSampleCodes = proteomicsMeasurementMetadata.associatedSamples();
+      ProteomicsMeasurementMetadata metadata) {
+    var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createMS(
-        String.valueOf(proteomicsMeasurementMetadata.associatedSamples().get(0).code()));
+        String.valueOf(metadata.associatedSamples().get(0).code()));
     var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
@@ -141,26 +157,34 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.FAILED);
     }
 
-    var instrumentQuery = resolveOntologyCURI(proteomicsMeasurementMetadata.instrumentCURI());
+    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
     if (instrumentQuery.isEmpty()) {
       return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
     var organisationQuery = organisationLookupService.organisation(
-        proteomicsMeasurementMetadata.organisationId());
+        metadata.organisationId());
     if (organisationQuery.isEmpty()) {
       return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
-    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), "", "", "", "", 0, "", "");
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
+        metadata.fractionName(),
+        metadata.digestionMethod(), metadata.digestionEnzyme(),
+        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
+        metadata.lcColumn(), metadata.lcmsMethod());
+
+    var samplePreparation = new ProteomicsSamplePreparation(metadata.samplePreparation(),
+        metadata.sampleCleanupProtein(),
+        metadata.sampleCleanupPeptide(), metadata.note());
 
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode,
         organisationQuery.get(),
-        method);
+        method, samplePreparation);
 
-    proteomicsMeasurementMetadata.assignedSamplePoolGroup()
+    metadata.assignedSamplePoolGroup()
         .ifPresent(measurement::setSamplePoolGroup);
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();

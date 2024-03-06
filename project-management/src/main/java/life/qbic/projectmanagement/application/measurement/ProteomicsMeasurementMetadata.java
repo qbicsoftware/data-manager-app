@@ -14,7 +14,15 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  */
 public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
                                             String organisationId, String instrumentCURI,
-                                            String samplePoolGroup) implements MeasurementMetadata {
+                                            String samplePoolGroup, String facility,
+                                            String fractionName,
+                                            String digestionEnzyme,
+                                            String digestionMethod, String enrichmentMethod,
+                                            String injectionVolume, String lcColumn,
+                                            String lcmsMethod, String samplePreparation,
+                                            String sampleCleanupProtein,
+                                            String sampleCleanupPeptide,
+                                            String note) implements MeasurementMetadata {
 
   @Override
   public Optional<String> assignedSamplePoolGroup() {
@@ -25,5 +33,4 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
   public List<SampleCode> associatedSamples() {
     return sampleCodes.stream().toList();
   }
-
 }
