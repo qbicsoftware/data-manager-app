@@ -1,8 +1,6 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
 import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Converter;
-import jakarta.persistence.Embeddable;
 
 /**
  * <b>NGSMeasurementMetadata Code</b>

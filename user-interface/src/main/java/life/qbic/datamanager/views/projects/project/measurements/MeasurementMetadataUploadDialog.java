@@ -308,6 +308,9 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       validationResult.combine(ValidationResult.successful(1, List.of("Empty row provided.")));
       return validationResult;
     }
+    if (metaDataValues.length != propertyColumnMap.keySet().size()) {
+      validationResult.combine(ValidationResult.withFailures(1, List.of("")));
+    }
 
     var sampleCodeColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
@@ -325,16 +328,24 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
 
-    var sampleCodes = parseSampleCode(metaDataValues[sampleCodeColumnIndex]);
-    var organisationRoRId = metaDataValues[organisationsColumnIndex];
-    var instrumentCURIE = metaDataValues[instrumentColumnIndex];
-    var samplePoolGroup = metaDataValues[samplePoolGroupIndex];
+    var sampleCodes = SampleCode.create(safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
+    var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
+    var instrumentCURIE = safeArrayAccess(metaDataValues, instrumentColumnIndex).orElse("");
+    var samplePoolGroup = safeArrayAccess(metaDataValues, samplePoolGroupIndex).orElse("");
 
-    var metadata = new ProteomicsMeasurementMetadata(sampleCodes,
+    var metadata = new ProteomicsMeasurementMetadata(List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, samplePoolGroup);
 
     validationResult = validationResult.combine(validationService.validateProteomics(metadata));
     return validationResult;
+  }
+
+  private static Optional<String> safeArrayAccess(String[] array, int index) {
+    try {
+      return Optional.of(array[index]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      return Optional.empty();
+    }
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
