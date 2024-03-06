@@ -46,6 +46,26 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @Convert(converter = MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
 
+  private String facility = "";
+
+  private String digestionMethod = "";
+
+  private String digestionEnzyme = "";
+
+  private String enrichmentMethod = "";
+
+  private int injectionVolume = 0;
+
+  private String lcColumn = "";
+
+  private String samplePreparation = "";
+
+  private String sampleCleanupPeptide = "";
+
+  private String sampleCleanupProtein = "";
+
+  private String note = "";
+
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;
@@ -58,12 +78,43 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
       MeasurementCode measurementCode,
       Organisation organisation,
       ProteomicsMethodMetadata method, ProteomicsSamplePreparation samplePreparation) {
+    evaluateMandatorMetadata(
+        method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
     this.id = id;
     this.organisation = organisation;
     this.instrument = method.instrument();
     this.measurementCode = measurementCode;
+  }
+
+  private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
+      throws IllegalArgumentException {
+    if (method.instrument() == null) {
+      throw new IllegalArgumentException("Instrument: Missing metadata.");
+    }
+    if (method.fractionName().isBlank()) {
+      throw new IllegalArgumentException("Cycle/Fraction Name: Missing metadata");
+    }
+    if (method.digestionMethod().isBlank()) {
+      throw new IllegalArgumentException("Digestion Method: Missing metadata");
+    }
+    if (method.digestionEnzyme().isBlank()) {
+      throw new IllegalArgumentException("Digestion Enzyme: Missing metadata");
+    }
+    if (method.enrichmentMethod().isBlank()) {
+      throw new IllegalArgumentException("Enrichment Method: Missing metadata");
+    }
+    if (method.injectionVolume() <= 0) {
+      throw new IllegalArgumentException(
+          "Injection Volume: smaller / equal to zero: %s".formatted(method.injectionVolume()));
+    }
+    if (method.lcColumn().isBlank()) {
+      throw new IllegalArgumentException("LC column: Missing metadata");
+    }
+    if (method.lcmsMethod().isBlank()) {
+      throw new IllegalArgumentException("LCMS method: Missing metadata");
+    }
   }
 
   /**
@@ -74,10 +125,12 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
    *                  one sample id is provided, the measurement is considered to be performed on a
    *                  pooled sample
    * @return
+   * @throws IllegalArgumentException in case there are missing required metadata.
    * @since 1.0.0
    */
   public static ProteomicsMeasurement create(Collection<SampleId> sampleIds,
-      MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method) {
+      MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method)
+      throws IllegalArgumentException {
     if (sampleIds.isEmpty()) {
       throw new IllegalArgumentException(
           "No sample ids provided. At least one sample id must provided for a measurement.");
