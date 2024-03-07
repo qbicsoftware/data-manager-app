@@ -80,9 +80,8 @@ public class MeasurementService {
         firstEntry.injectionVolume(),
         firstEntry.lcColumn(),
         firstEntry.lcmsMethod(),
-        firstEntry.samplePreparation(),
-        firstEntry.sampleCleanupProtein(),
-        firstEntry.sampleCleanupPeptide(),
+        firstEntry.labelingType(),
+        firstEntry.label(),
         firstEntry.note()
     );
   }
@@ -174,9 +173,7 @@ public class MeasurementService {
         metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
         metadata.lcColumn(), metadata.lcmsMethod());
 
-    var samplePreparation = new ProteomicsSamplePreparation(metadata.samplePreparation(),
-        metadata.sampleCleanupProtein(),
-        metadata.sampleCleanupPeptide(), metadata.note());
+    var samplePreparation = new ProteomicsSamplePreparation(metadata.note());
 
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),

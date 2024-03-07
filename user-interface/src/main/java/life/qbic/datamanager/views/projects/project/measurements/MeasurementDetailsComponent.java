@@ -201,7 +201,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn).setHeader("LC Column").setTooltipGenerator(ProteomicsMeasurement::lcColumn).setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod).setHeader("LCMS Method").setTooltipGenerator(ProteomicsMeasurement::lcmsMethod).setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setHeader("Sample Pool Group").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::note).setHeader("Note").setTooltipGenerator(ProteomicsMeasurement::note).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(measurement -> measurement.note().orElse("")).setHeader("Comment").setTooltipGenerator(measurement -> measurement.note().orElse("")).setAutoWidth(true);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(

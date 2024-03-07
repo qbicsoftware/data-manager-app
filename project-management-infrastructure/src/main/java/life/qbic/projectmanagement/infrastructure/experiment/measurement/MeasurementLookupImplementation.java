@@ -235,7 +235,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
     public static Specification<ProteomicsMeasurement> isNote(String filter) {
       return (root, query, builder) ->
-              builder.like(root.get("note"), "%" + filter + "%");
+              builder.like(root.get("comment"), "%" + filter + "%");
     }
 
   }

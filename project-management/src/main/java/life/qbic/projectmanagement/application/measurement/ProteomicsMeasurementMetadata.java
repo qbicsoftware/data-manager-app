@@ -19,9 +19,7 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
                                             String digestionEnzyme,
                                             String digestionMethod, String enrichmentMethod,
                                             String injectionVolume, String lcColumn,
-                                            String lcmsMethod, String samplePreparation,
-                                            String sampleCleanupProtein,
-                                            String sampleCleanupPeptide,
+                                            String lcmsMethod, String labelingType, String label,
                                             String note) implements MeasurementMetadata {
 
   @Override

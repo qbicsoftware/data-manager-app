@@ -58,14 +58,13 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   private int injectionVolume = 0;
 
   private String lcColumn = "";
+  private String comment = "";
 
-  private String samplePreparation = "";
+  @Column(name = "measurementLabelingType")
+  private String labelingType = "";
 
-  private String sampleCleanupPeptide = "";
-
-  private String sampleCleanupProtein = "";
-
-  private String note = "";
+  @Column(name = "measurementLabel")
+  private String label = "";
 
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
@@ -77,8 +76,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds,
       MeasurementCode measurementCode,
-      Organisation organisation, ProteomicsMethodMetadata method,
-      ProteomicsSamplePreparation samplePreparation) {
+      Organisation organisation, ProteomicsMethodMetadata method) {
     evaluateMandatorMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
@@ -154,7 +152,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     }
     var measurementId = MeasurementId.create();
     return new ProteomicsMeasurement(measurementId, sampleIds, measurementCode, organisation,
-        method, null);
+        method);
   }
 
   public static ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
@@ -166,10 +164,12 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public void setSamplePreparation(ProteomicsSamplePreparation samplePreparation) {
-    this.samplePreparation = samplePreparation.preparation();
-    this.sampleCleanupProtein = samplePreparation.cleanupProtein();
-    this.sampleCleanupPeptide = samplePreparation.cleanupPeptide();
-    this.note = samplePreparation.note();
+    this.comment = samplePreparation.comment();
+  }
+
+  public void setLabeling(ProteomicsLabeling labeling) {
+    this.labelingType = labeling.labelType();
+    this.label = labeling.label();
   }
 
   /**
@@ -225,26 +225,22 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   public String lcColumn() {
     return lcColumn;
   }
+
   public String lcmsMethod() {
     return lcmsMethod;
   }
 
-  public String samplePreparation() {
-    return samplePreparation;
+  public Optional<String> note() {
+    return Optional.ofNullable(comment.isBlank() ? null : comment);
   }
 
-  public String sampleCleanupPeptide() {
-    return sampleCleanupPeptide;
+  public Optional<String> labelingType() {
+    return Optional.ofNullable(labelingType.isBlank() ? null : labelingType);
   }
 
-  public String sampleCleanupProtein() {
-    return sampleCleanupProtein;
+  public Optional<String> label() {
+    return Optional.ofNullable(label.isBlank() ? null : label);
   }
-
-  public String note() {
-    return note;
-  }
-
 
 
   public void setSamplePoolGroup(String group) {
@@ -255,19 +251,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return samplePool.isBlank() ? Optional.empty() : Optional.of(samplePool);
   }
 
-  public void setSamplePreparation(String samplePreparation) {
-    this.samplePreparation = samplePreparation;
-  }
-
-  public void setSampleCleanupPeptide(String sampleCleanupPeptide) {
-    this.sampleCleanupPeptide = sampleCleanupPeptide;
-  }
-
-  public void setSampleCleanupProtein(String sampleCleanupProtein) {
-    this.sampleCleanupProtein = sampleCleanupProtein;
-  }
-
-  public void setNote(String note) {
-    this.note = note;
+  public void setComment(String note) {
+    this.comment = note;
   }
 }

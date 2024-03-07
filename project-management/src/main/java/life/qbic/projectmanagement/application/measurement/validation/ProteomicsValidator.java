@@ -93,10 +93,11 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     INJECTION_VOLUME("injection volume (ul)"),
     LC_COLUMN("lc column"),
     LCMS_METHOD("lcms method"),
-    SAMPLE_PREPARATION("sample preparation"),
-    SAMPLE_CLEANUP_PROTEIN("sample cleanup (protein)"),
-    SAMPLE_CLEANUP_PEPTIDE("sample cleanup (peptide)"),
-    NOTE("note");
+
+    LABELING_TYPE("labeling type"),
+
+    LABEL("label"),
+    COMMENT("comment");
 
     private final String label;
 

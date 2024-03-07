@@ -164,12 +164,9 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     Integer injectionVolumeIndex = columns.get(PROTEOMICS_PROPERTY.INJECTION_VOLUME.label());
     Integer lcColumnIndex = columns.get(PROTEOMICS_PROPERTY.LC_COLUMN.label());
     Integer lcmsMethodIndex = columns.get(PROTEOMICS_PROPERTY.LCMS_METHOD.label());
-    Integer samplePreparationIndex = columns.get(PROTEOMICS_PROPERTY.SAMPLE_PREPARATION.label());
-    Integer sampleCleanupProteinIndex = columns.get(
-        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PROTEIN.label());
-    Integer sampleCleanupPeptideIndex = columns.get(
-        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PEPTIDE.label());
-    Integer noteIndex = columns.get(PROTEOMICS_PROPERTY.NOTE.label());
+    Integer labelingTypeIndex = columns.get(PROTEOMICS_PROPERTY.LABELING_TYPE.label());
+    Integer labelIndex = columns.get(PROTEOMICS_PROPERTY.LABEL.label());
+    Integer noteIndex = columns.get(PROTEOMICS_PROPERTY.COMMENT.label());
 
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex,
             oranisationColumnIndex,
@@ -192,18 +189,15 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     String injectionVolume = safeArrayAccess(columnValues, injectionVolumeIndex).orElse("");
     String lcColumn = safeArrayAccess(columnValues, lcColumnIndex).orElse("");
     String lcmsMethod = safeArrayAccess(columnValues, lcmsMethodIndex).orElse("");
-    String samplePreparation = safeArrayAccess(columnValues, samplePreparationIndex).orElse("");
-    String sampleCleanupProtein = safeArrayAccess(columnValues, sampleCleanupProteinIndex).orElse(
-        "");
-    String sampleCleanupPeptide = safeArrayAccess(columnValues, sampleCleanupPeptideIndex).orElse(
-        "");
+    String labelingType = safeArrayAccess(columnValues, labelingTypeIndex).orElse("");
+    String label = safeArrayAccess(columnValues, labelIndex).orElse("");
     String note = safeArrayAccess(columnValues, noteIndex).orElse("");
 
     ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, samplePreparation,
-        sampleCleanupProtein, sampleCleanupPeptide, note);
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, labelingType,
+        label, note);
     return Result.fromValue(metadata);
   }
 
@@ -266,7 +260,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         .orElseThrow(() -> new RuntimeException("No header row found"));
     var domain = validationService
         .inferDomainByPropertyTypes(parseHeaderContent(contentHeader))
-            .orElseThrow(() -> new RuntimeException("Header row could not be recognized, Please provide a valid template file"));
+        .orElseThrow(() -> new RuntimeException(
+            "Header row could not be recognized, Please provide a valid template file"));
 
     var validationReport = switch (domain) {
       case PROTEOMICS -> validatePxP(content);
@@ -370,13 +365,9 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         PROTEOMICS_PROPERTY.INJECTION_VOLUME.label());
     Integer lcColumnIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LC_COLUMN.label());
     Integer lcmsMethodIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LCMS_METHOD.label());
-    Integer samplePreparationIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.SAMPLE_PREPARATION.label());
-    Integer sampleCleanupProteinIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PROTEIN.label());
-    Integer sampleCleanupPeptideIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.SAMPLE_CLEANUP_PEPTIDE.label());
-    Integer noteIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.NOTE.label());
+    Integer labelingTypeIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LABELING_TYPE.label());
+    Integer labelIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LABEL.label());
+    Integer noteIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.COMMENT.label());
 
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
@@ -398,18 +389,16 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     var injectionVolume = safeArrayAccess(metaDataValues, injectionVolumeIndex).orElse("");
     var lcColumn = safeArrayAccess(metaDataValues, lcColumnIndex).orElse("");
     var lcmsMethod = safeArrayAccess(metaDataValues, lcmsMethodIndex).orElse("");
-    var samplePreparation = safeArrayAccess(metaDataValues, samplePreparationIndex).orElse("");
-    var sampleCleanupProtein = safeArrayAccess(metaDataValues, sampleCleanupProteinIndex).orElse(
-        "");
-    var sampleCleanupPeptide = safeArrayAccess(metaDataValues, sampleCleanupPeptideIndex).orElse(
-        "");
+    var labelingType = safeArrayAccess(metaDataValues, labelingTypeIndex).orElse("");
+    var label = safeArrayAccess(metaDataValues, labelIndex).orElse("");
+
     var note = safeArrayAccess(metaDataValues, noteIndex).orElse("");
 
     var metadata = new ProteomicsMeasurementMetadata(List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, samplePreparation,
-        sampleCleanupProtein, sampleCleanupPeptide, note);
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, labelingType,
+        label, note);
 
     validationResult = validationResult.combine(validationService.validateProteomics(metadata));
     return validationResult;
