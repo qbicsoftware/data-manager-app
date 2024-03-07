@@ -220,7 +220,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private ComponentRenderer<Anchor, Organisation> renderOrganisation() {
     return new ComponentRenderer<>(organisation-> {
       StreamResource iconResource = new StreamResource("RoR_logo.svg",
-              () -> getClass().getResourceAsStream("/icons/RoR_logo.svg"));
+              () -> getClass().getClassLoader().getResourceAsStream("icons/RoR_logo.svg"));
       SvgIcon svgIcon = new SvgIcon(iconResource);
       svgIcon.addClassName("organisation-icon");
       Span organisationLabel = new Span(organisation.label());
