@@ -16,17 +16,22 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.PageArea;
@@ -66,12 +71,15 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient SampleInformationService sampleInformationService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
   private transient Context context;
-  private StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
+  private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
 
-  public MeasurementDetailsComponent(@Autowired MeasurementService measurementService, @Autowired SampleInformationService sampleInformationService) {
+  private final ClientDetailsProvider clientDetailsProvider;
+
+  public MeasurementDetailsComponent(@Autowired MeasurementService measurementService, @Autowired SampleInformationService sampleInformationService, ClientDetailsProvider clientDetailsProvider) {
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
+    this.clientDetailsProvider = clientDetailsProvider;
     initNoMeasurementDisclaimer();
     createProteomicsGrid();
     createNGSMeasurementGrid();
@@ -182,6 +190,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setHeader("Measurement Code").setAutoWidth(true).setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value());
     //Todo Should the sampleCodes be retrieved via a service or from column?
+    proteomicsMeasurementGrid.addColumn(proteomicsMeasurement -> proteomicsMeasurement.label().orElse("")).setHeader("Measurement Label").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.label().orElse("")).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse("")).setHeader("Measurement Label Type").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse("")).setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
         proteomicsMeasurement -> renderSampleCodes().createComponent(
             proteomicsMeasurement.measuredSamples())).setHeader("Sample Codes").setAutoWidth(true);
@@ -199,7 +209,17 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn).setHeader("LC Column").setTooltipGenerator(ProteomicsMeasurement::lcColumn).setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod).setHeader("LCMS Method").setTooltipGenerator(ProteomicsMeasurement::lcmsMethod).setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setHeader("Sample Pool Group").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(measurement -> measurement.note().orElse("")).setHeader("Comment").setTooltipGenerator(measurement -> measurement.note().orElse("")).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(new LocalDateTimeRenderer<>(
+                    proteomicsMeasurement -> asClientLocalDateTime(proteomicsMeasurement.registrationDate()),
+                    "yyyy-MM-dd"))
+            .setKey("registrationDate")
+            .setHeader("Registration Date")
+            .setTooltipGenerator(proteomicsMeasurement -> {
+              LocalDateTime dateTime = asClientLocalDateTime(proteomicsMeasurement.registrationDate());
+              return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
+            })
+            .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse("")).setHeader("Comment").setTooltipGenerator(measurement -> measurement.comment().orElse("")).setAutoWidth(true);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -210,9 +230,15 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           sortOrders.add(SortOrder.of("measurementCode").ascending());
           return measurementService.findProteomicsMeasurement(searchTerm,
               context.experimentId().orElseThrow(),
-              query.getOffset(), query.getLimit(), sortOrders, context.projectId().get()).stream();
+              query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow()).stream();
         });
     measurementsGridDataViews.add(proteomicsGridDataView);
+  }
+
+  private LocalDateTime asClientLocalDateTime(Instant instant) {
+    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(
+            this.clientDetailsProvider.latestDetails().map(ClientDetailsProvider.ClientDetails::timeZoneId).orElse("UTC")));
+    return zonedDateTime.toLocalDateTime();
   }
 
   private ComponentRenderer<Anchor, Organisation> renderOrganisation() {
