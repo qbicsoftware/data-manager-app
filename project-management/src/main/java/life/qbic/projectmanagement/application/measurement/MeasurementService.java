@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsLabeling;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSamplePreparation;
@@ -174,6 +175,7 @@ public class MeasurementService {
         metadata.lcColumn(), metadata.lcmsMethod());
 
     var samplePreparation = new ProteomicsSamplePreparation(metadata.note());
+    var labelingMethod = new ProteomicsLabeling(metadata.labelingType(), metadata.label());
 
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
@@ -183,6 +185,8 @@ public class MeasurementService {
 
     metadata.assignedSamplePoolGroup()
         .ifPresent(measurement::setSamplePoolGroup);
+
+    measurement.setLabeling(labelingMethod);
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
