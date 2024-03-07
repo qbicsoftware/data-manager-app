@@ -268,7 +268,7 @@ class ProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.validatedEntries() == 4
+        result.validatedEntries() == 3
         result.failedEntries() == 1
         result.failures()[0] == "The organisation ID does not seem to be a ROR ID: \"${invalidRorId}\""
 
@@ -352,7 +352,7 @@ class ProteomicsValidatorSpec extends Specification {
         then:
         result.allPassed()
         !result.containsWarnings()
-        result.validatedEntries() == 4
+        result.validatedEntries() == 3
         !result.containsFailures()
 
         where:
