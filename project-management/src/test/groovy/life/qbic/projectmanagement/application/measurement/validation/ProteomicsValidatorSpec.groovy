@@ -21,9 +21,7 @@ class ProteomicsValidatorSpec extends Specification {
             "1337",
             "12",
             "LCMS Method 1",
-            "Sample Preparation 1",
-            "Cleanup Protein",
-            "Cleanup Peptide",
+            "isotope", "N15",
             "Don't tell anyone this is a test"
     )
     final static OntologyClass illuminaMiSeq = new OntologyClass(
@@ -42,8 +40,7 @@ class ProteomicsValidatorSpec extends Specification {
     final static List<String> validPXPProperties = ["qbic sample ids", "sample label", "organisation id", "facility", "instrument",
                                                     "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
-                                                    "lcms method", "sample preparation", "sample cleanup (protein)",
-                                                    "sample cleanup (peptide)", "note"]
+                                                    "lcms method", "labeling type", "label", "comment"]
 
     def "A complete property set must be valid no matter the letter casing style"() {
 
@@ -134,9 +131,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "Sample Preparation 1",
-                "Cleanup Protein",
-                "Cleanup Peptide",
+                "isotope", "N15",
                 "Don't tell anyone this is a test"
         )
 
@@ -176,9 +171,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "Sample Preparation 1",
-                "Cleanup Protein",
-                "Cleanup Peptide",
+                "isotope", "N15",
                 "Don't tell anyone this is a test"
         )
 
@@ -215,9 +208,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "Sample Preparation 1",
-                "Cleanup Protein",
-                "Cleanup Peptide",
+                "isotope", "N15",
                 "Don't tell anyone this is a test"
         )
 
@@ -258,9 +249,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "Sample Preparation 1",
-                "Cleanup Protein",
-                "Cleanup Peptide",
+                "isotope", "N15",
                 "Don't tell anyone this is a test"
         )
 
@@ -307,9 +296,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "Sample Preparation 1",
-                "Cleanup Protein",
-                "Cleanup Peptide",
+                "isotope", "N15",
                 "Don't tell anyone this is a test"
         )
 
@@ -347,9 +334,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "Sample Preparation 1",
-                "Cleanup Protein",
-                "Cleanup Peptide",
+                "isotope", "N15",
                 "Don't tell anyone this is a test"
         )
 
