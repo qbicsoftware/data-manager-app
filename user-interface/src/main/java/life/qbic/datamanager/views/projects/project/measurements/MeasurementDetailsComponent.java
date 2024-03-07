@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -32,7 +30,6 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -59,7 +56,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
-  private static final Logger log = logger(MeasurementDetailsComponent.class);
   private final TabSheet registerMeasurementTabSheet = new TabSheet();
   private final Div noMeasurementDisclaimer = new Div();
   private String searchTerm = "";
@@ -70,6 +66,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient SampleInformationService sampleInformationService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
   private transient Context context;
+  private StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
+      () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService, @Autowired SampleInformationService sampleInformationService) {
     this.measurementService = Objects.requireNonNull(measurementService);
@@ -219,9 +217,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private ComponentRenderer<Anchor, Organisation> renderOrganisation() {
     return new ComponentRenderer<>(organisation-> {
-      StreamResource iconResource = new StreamResource("RoR_logo.svg",
-              () -> getClass().getClassLoader().getResourceAsStream("icons/RoR_logo.svg"));
-      SvgIcon svgIcon = new SvgIcon(iconResource);
+      SvgIcon svgIcon = new SvgIcon(rorIconResource);
       svgIcon.addClassName("organisation-icon");
       Span organisationLabel = new Span(organisation.label());
       String organisationUrl = organisation.IRI();
