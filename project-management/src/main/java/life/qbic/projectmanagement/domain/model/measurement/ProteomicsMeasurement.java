@@ -10,6 +10,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -47,6 +48,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @Convert(converter = MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
 
+  private Instant registration;
+
   private String facility = "";
 
   private String digestionMethod = "";
@@ -76,7 +79,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds,
       MeasurementCode measurementCode,
-      Organisation organisation, ProteomicsMethodMetadata method) {
+      Organisation organisation, ProteomicsMethodMetadata method, Instant registration) {
     evaluateMandatorMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
@@ -92,6 +95,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.injectionVolume = method.injectionVolume();
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
+    this.registration = registration;
   }
 
   private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
@@ -152,7 +156,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     }
     var measurementId = MeasurementId.create();
     return new ProteomicsMeasurement(measurementId, sampleIds, measurementCode, organisation,
-        method);
+        method, Instant.now());
   }
 
   public static ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
@@ -240,6 +244,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   public Optional<String> label() {
     return Optional.ofNullable(label.isBlank() ? null : label);
+  }
+
+  public Instant registrationDate() {
+    return registration;
   }
 
 
