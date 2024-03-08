@@ -174,6 +174,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
             case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
             case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
+            case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
           };
           confirmEvent.getSource().showError(upload.fileName(), errorMessage);
           continue;
