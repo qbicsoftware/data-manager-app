@@ -404,6 +404,14 @@
   align-items: baseline;
 }
 
+.project-details-component .ontology-entry-collection {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-xs);
+  width: 100%;
+  white-space: nowrap;
+}
+
 .sample-details-component .button-and-search-bar {
   display: flex;
   justify-content: space-between;
