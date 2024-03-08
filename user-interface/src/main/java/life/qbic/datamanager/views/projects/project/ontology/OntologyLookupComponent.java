@@ -56,11 +56,12 @@ public class OntologyLookupComponent extends PageArea {
       @Autowired OntologyLookupService ontologyTermInformationService) {
     requireNonNull(ontologyTermInformationService);
     this.ontologyTermInformationService = ontologyTermInformationService;
-    Span title = new Span("Ontology Search/Lookup");
+    Span title = new Span("Ontology Search");
     title.addClassName("title");
     add(title);
-    Span description = new Span(
-        "You can search here for ontology terms from over 20 different ontologies.");
+    int numOfOntologies = ontologyTermInformationService.findNumberOfOntologies().size();
+    Span description = new Span(String.format(
+        "Here you can search our database for ontology terms from %d different ontologies.", numOfOntologies));
     add(description);
     initSearchField();
     add(searchField);

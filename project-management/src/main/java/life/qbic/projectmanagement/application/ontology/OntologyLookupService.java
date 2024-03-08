@@ -51,4 +51,8 @@ public class OntologyLookupService {
     return ontologyTermLookup.query(new OntologyCurie(curie)).stream().findAny();
   }
 
+  public List<String> findNumberOfOntologies() {
+    return ontologyTermLookup.findUniqueOntologies();
+  }
+
 }

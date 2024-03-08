@@ -93,4 +93,8 @@ public class OntologyTermRepository implements OntologyRepository, OntologyLooku
             : Order.asc(sortOrder.propertyName()))
         .toList());
   }
+
+  public List<String> findUniqueOntologies() {
+    return jpaRepository.findUniqueOntologies();
+  }
 }

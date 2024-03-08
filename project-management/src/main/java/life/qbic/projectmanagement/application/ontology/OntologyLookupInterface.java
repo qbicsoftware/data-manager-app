@@ -61,4 +61,10 @@ public interface OntologyLookupInterface {
    * @since 1.0.0
    */
   Collection<OntologyClass> query(OntologyCurie ontologyCURI);
+
+  /**
+   * Returns a list of unique ontology identifiers in the database
+   * @return
+   */
+  List<String> findUniqueOntologies();
 }
