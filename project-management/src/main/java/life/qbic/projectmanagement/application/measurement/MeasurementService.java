@@ -228,15 +228,18 @@ public class MeasurementService {
 
   private List<? extends MeasurementMetadata> mergeBySamplePoolGroup(
       List<? extends MeasurementMetadata> measurementMetadataList) {
-    if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(
-        0) instanceof ProteomicsMeasurementMetadata) {
-      var proteomicsMeasurementMetadataList = measurementMetadataList.stream()
-          .map(measurementMetadata -> (ProteomicsMeasurementMetadata) measurementMetadata).toList();
-
-        return mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
-
+    if (measurementMetadataList.isEmpty()) {
+      return measurementMetadataList;
     }
-    return measurementMetadataList;
+    if (measurementMetadataList.stream()
+        .allMatch(ProteomicsMeasurementMetadata.class::isInstance)) {
+      var proteomicsMeasurementMetadataList = measurementMetadataList.stream()
+          .map(ProteomicsMeasurementMetadata.class::cast).toList();
+      return mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
+    } else {
+      throw new RuntimeException(
+          "Merging measurement metadata: expected proteomics metadata only.");
+    }
   }
 
   private List<ProteomicsMeasurementMetadata> mergeBySamplePoolGroupProteomics(
