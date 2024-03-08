@@ -259,7 +259,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return samplePool.isBlank() ? Optional.empty() : Optional.of(samplePool);
   }
 
-  public void setComment(String note) {
-    this.comment = note;
+  public void setComment(String comment) {
+    this.comment = comment;
   }
 }

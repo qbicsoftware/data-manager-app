@@ -1,11 +1,13 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Proteomics Labeling Method</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Describes a proteomics labeling method applied to prepare for a measurement</p>
+ * <p>
+ * Example: SILAC with N15 label.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record ProteomicsLabeling(String labelType, String label) {
 
