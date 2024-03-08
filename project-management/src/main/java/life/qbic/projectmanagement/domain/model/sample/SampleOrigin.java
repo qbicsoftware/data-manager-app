@@ -2,12 +2,12 @@ package life.qbic.projectmanagement.domain.model.sample;
 
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * <b>Sample Origin</b>
  * <p>
- * The sample origin contains the species, specimen and analyte as {@link OntologyClassDTO} that
+ * The sample origin contains the species, specimen and analyte as {@link OntologyTerm} that
  * are associated with the {@link Sample}. They are a subset of the classes that have been selected
  * for the respective {@link Experiment}.
  * <p>
@@ -16,35 +16,35 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
  */
 public class SampleOrigin {
 
-  private OntologyClassDTO species;
-  private OntologyClassDTO specimen;
-  private OntologyClassDTO analyte;
+  private OntologyTerm species;
+  private OntologyTerm specimen;
+  private OntologyTerm analyte;
 
   protected SampleOrigin() {
     //needed for JPA
   }
 
-  private SampleOrigin(OntologyClassDTO species, OntologyClassDTO specimen,
-      OntologyClassDTO analyte) {
+  private SampleOrigin(OntologyTerm species, OntologyTerm specimen,
+      OntologyTerm analyte) {
     this.species = Objects.requireNonNull(species);
     this.specimen = Objects.requireNonNull(specimen);
     this.analyte = Objects.requireNonNull(analyte);
   }
 
-  public static SampleOrigin create(OntologyClassDTO species, OntologyClassDTO specimen,
-      OntologyClassDTO analytes) {
+  public static SampleOrigin create(OntologyTerm species, OntologyTerm specimen,
+      OntologyTerm analytes) {
     return new SampleOrigin(species, specimen, analytes);
   }
 
-  public OntologyClassDTO getSpecies() {
+  public OntologyTerm getSpecies() {
     return species;
   }
 
-  public OntologyClassDTO getSpecimen() {
+  public OntologyTerm getSpecimen() {
     return specimen;
   }
 
-  public OntologyClassDTO getAnalyte() {
+  public OntologyTerm getAnalyte() {
     return analyte;
   }
 

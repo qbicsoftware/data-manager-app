@@ -10,6 +10,7 @@ import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * <b>Editable multi-file memory buffer</b>
@@ -55,5 +56,9 @@ public class EditableMultiFileMemoryBuffer implements MultiFileReceiver {
    */
   public void clear() {
     files.clear();
+  }
+
+  public Stream<String> fileNames() {
+    return this.files.keySet().stream();
   }
 }

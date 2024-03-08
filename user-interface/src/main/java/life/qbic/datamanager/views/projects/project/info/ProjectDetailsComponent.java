@@ -25,7 +25,7 @@ import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -181,7 +181,7 @@ public class ProjectDetailsComponent extends PageArea {
    * Creates tags for a list of ontology terms. Each tag display the term label and contains a tooltip
    * which is built from ontology term name (e.g. NCBITaxon_9606) and the ontology it is taken from
    */
-  private static List<Tag> createTagsFrom(Stream<OntologyClassDTO> entries) {
+  private static List<Tag> createTagsFrom(Stream<OntologyTerm> entries) {
     return entries.distinct()
         .map(entry -> new Tag(entry.getLabel(), entry.formatted()))
         .toList();

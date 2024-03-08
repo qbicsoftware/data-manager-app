@@ -1,41 +1,40 @@
-package life.qbic.projectmanagement.domain.model.experiment.vocabulary;
+package life.qbic.projectmanagement.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
-import life.qbic.projectmanagement.domain.model.Ontology;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
 
 /**
  * Describes Ontology Class objects and is used to store and display species, specimen, analyte etc.
- * when creating or editing experiments and samples. Other than {@link OntologyClassEntity}, which
+ * when creating or editing experiments and samples. Other than {@link OntologyClass}, which
  * is used for lookup in the non-persistent ontology table, OntologyClassDTO objects
  * with ontology versions are stored persistently with experiments and samples. Storage
  * is facilitated by {@link OntologyClassAttributeConverter}.
  */
-public class OntologyClassDTO implements Serializable {
+public class OntologyTerm implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 1459801951948902353L;
 
-  @JsonProperty("ontology") //FIXME should be ontologyAbbreviation in the database and here
+  @JsonProperty("ontology")
   private String ontologyAbbreviation;
   @JsonProperty("ontologyVersion")
   private String ontologyVersion;
   @JsonProperty("ontologyIri")
   private String ontologyIri;
-  @JsonProperty("label") //FIXME should be classLabel in the database and here
+  @JsonProperty("label")
   private String classLabel;
-  @JsonProperty("name") //FIXME should be className in the database and here
+  @JsonProperty("name")
   private String className;
   @JsonProperty("description")
   private String description;
   @JsonProperty("classIri")
   private String classIri;
 
-  public OntologyClassDTO() {
+  public OntologyTerm() {
   }
 
   /**
@@ -49,7 +48,7 @@ public class OntologyClassDTO implements Serializable {
    * @param description          - an optional description of the term
    * @param classIri             - the iri where this specific class is found/described
    */
-  public OntologyClassDTO(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
+  public OntologyTerm(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
       String classLabel, String className, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
@@ -60,10 +59,10 @@ public class OntologyClassDTO implements Serializable {
     this.classIri = classIri;
   }
 
-  public static OntologyClassDTO from(OntologyClassEntity lookupEntity) {
-    return new OntologyClassDTO(lookupEntity.getOntologyAbbreviation(),
+  public static OntologyTerm from(OntologyClass lookupEntity) {
+    return new OntologyTerm(lookupEntity.getOntologyAbbreviation(),
         lookupEntity.getOntologyVersion(),
-        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getClassName(),
+        lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getCurie(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
   }
 
@@ -146,7 +145,7 @@ public class OntologyClassDTO implements Serializable {
       return false;
     }
 
-    OntologyClassDTO that = (OntologyClassDTO) object;
+    OntologyTerm that = (OntologyTerm) object;
 
     if (!Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation)) {
       return false;

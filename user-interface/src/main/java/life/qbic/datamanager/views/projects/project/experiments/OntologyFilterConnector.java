@@ -4,15 +4,15 @@ import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.provider.SortDirection;
 import java.util.List;
 import java.util.stream.Stream;
-import life.qbic.projectmanagement.application.OntologyClassEntity;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.Ontology;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * Connects the OntologyTermInformationService to a Combobox of variable type, setting up a user-
- * provided filter converter between OntologyClassEntity and the Combobox type
+ * provided filter converter between OntologyClass and the Combobox type
  */
 public class OntologyFilterConnector {
 
@@ -20,9 +20,9 @@ public class OntologyFilterConnector {
 
   }
 
-  public static Stream<OntologyClassDTO> loadOntologyTerms(List<Ontology> ontologies,
-      Query<OntologyClassDTO, String> query,
-      OntologyTermInformationService ontologyTermInformationService) {
+  public static Stream<OntologyTerm> loadOntologyTerms(List<Ontology> ontologies,
+      Query<OntologyTerm, String> query,
+      OntologyLookupService ontologyTermInformationService) {
     List<String> ontologyAbbreviations = ontologies.stream()
         .map(Ontology::getAbbreviation)
         .toList();
@@ -30,13 +30,13 @@ public class OntologyFilterConnector {
         .map(querySortOrder -> new SortOrder(querySortOrder.getSorted(),
             querySortOrder.getDirection().equals(SortDirection.DESCENDING)))
         .toList();
-    List<OntologyClassEntity> ontologyClassEntities = ontologyTermInformationService
+    List<OntologyClass> ontologyClassEntities = ontologyTermInformationService
         .queryOntologyTerm(query.getFilter().orElse(""),
             ontologyAbbreviations,
             query.getOffset(),
             query.getLimit(),
             sortOrders);
-    return ontologyClassEntities.stream().map(OntologyClassDTO::from).distinct();
+    return ontologyClassEntities.stream().map(OntologyTerm::from).distinct();
   }
 
 }

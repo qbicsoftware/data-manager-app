@@ -8,9 +8,9 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.List;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
-import life.qbic.projectmanagement.application.OntologyTermInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.Ontology;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * Factory class for creating MultiSelectComboBox instances for different ontology types. It
@@ -18,18 +18,18 @@ import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyCl
  */
 public class OntologyComboboxFactory {
 
-  private final OntologyTermInformationService ontologyTermInformationService;
+  private final OntologyLookupService ontologyLookupService;
   private static final String[] BOX_CLASSES = {"chip-badge", "full-width-input"};
 
-  public OntologyComboboxFactory(OntologyTermInformationService ontologyTermInformationService) {
-    this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
+  public OntologyComboboxFactory(OntologyLookupService ontologyLookupService) {
+    this.ontologyLookupService = requireNonNull(ontologyLookupService,
         "ontologyTermInformationService must not be null");
   }
 
-  public MultiSelectComboBox<OntologyClassDTO> analyteBox() {
+  public MultiSelectComboBox<OntologyTerm> analyteBox() {
     List<Ontology> analyteOntologies = List.of(Ontology.BIOASSAY_ONTOLOGY);
 
-    MultiSelectComboBox<OntologyClassDTO> box = newBox();
+    MultiSelectComboBox<OntologyTerm> box = newBox();
     box.setItems(ontologyFetchCallback(analyteOntologies));
 
     box.setPlaceholder("Please select one or more analytes for your samples");
@@ -37,16 +37,16 @@ public class OntologyComboboxFactory {
     return box;
   }
 
-  private FetchCallback<OntologyClassDTO, String> ontologyFetchCallback(
+  private FetchCallback<OntologyTerm, String> ontologyFetchCallback(
       List<Ontology> ontologies) {
     return query -> OntologyFilterConnector.loadOntologyTerms(ontologies, query,
-        ontologyTermInformationService);
+        ontologyLookupService);
   }
 
-  public MultiSelectComboBox<OntologyClassDTO> speciesBox() {
+  public MultiSelectComboBox<OntologyTerm> speciesBox() {
     List<Ontology> speciesOntologies = List.of(Ontology.NCBI_TAXONOMY);
 
-    MultiSelectComboBox<OntologyClassDTO> box = newBox();
+    MultiSelectComboBox<OntologyTerm> box = newBox();
     box.setItems(ontologyFetchCallback(speciesOntologies));
 
     box.setPlaceholder("Please select one or more species for your samples");
@@ -54,11 +54,11 @@ public class OntologyComboboxFactory {
     return box;
   }
 
-  public MultiSelectComboBox<OntologyClassDTO> specimenBox() {
+  public MultiSelectComboBox<OntologyTerm> specimenBox() {
     List<Ontology> specimenOntologies = List.of(Ontology.PLANT_ONTOLOGY,
         Ontology.BRENDA_TISSUE_ONTOLOGY);
 
-    MultiSelectComboBox<OntologyClassDTO> box = newBox();
+    MultiSelectComboBox<OntologyTerm> box = newBox();
     box.setItems(ontologyFetchCallback(specimenOntologies));
 
     box.setPlaceholder("Please select one or more specimen for your samples");
@@ -66,12 +66,12 @@ public class OntologyComboboxFactory {
     return box;
   }
 
-  private static MultiSelectComboBox<OntologyClassDTO> newBox() {
-    MultiSelectComboBox<OntologyClassDTO> box = new MultiSelectComboBox<>();
+  private static MultiSelectComboBox<OntologyTerm> newBox() {
+    MultiSelectComboBox<OntologyTerm> box = new MultiSelectComboBox<>();
     box.setRequired(true);
     box.setHelperText("Please provide at least two letters to search for entries.");
     box.setRenderer(new ComponentRenderer<>(OntologyComponent::new));
-    box.setItemLabelGenerator(OntologyClassDTO::getLabel);
+    box.setItemLabelGenerator(OntologyTerm::getLabel);
     box.addClassNames(BOX_CLASSES);
     return box;
   }

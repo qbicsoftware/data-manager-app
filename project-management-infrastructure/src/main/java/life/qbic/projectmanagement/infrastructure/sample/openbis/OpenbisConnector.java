@@ -34,6 +34,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,9 +48,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.openbis.openbisclient.OpenBisClient;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.infrastructure.experiment.measurement.MeasurementDataRepo;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.translation.SimpleOpenBisTermMapper;
@@ -63,7 +67,8 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo {
+public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo,
+    MeasurementDataRepo {
 
   private static final Logger log = logger(OpenbisConnector.class);
 
@@ -350,6 +355,37 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   private List<SampleUpdate> convertSamplesToSampleUpdates(
       Collection<life.qbic.projectmanagement.domain.model.sample.Sample> updatedSamples) {
     return updatedSamples.stream().map(this::createSampleUpdate).toList();
+  }
+
+  private void registerMeasurementSample(String sampleCode, String measurementTypeCode,
+      List<SampleIdentifier> parentIds, Map<String,String> metadata) {
+    SampleCreation sampleCreation = new SampleCreation();
+    sampleCreation.setCode(sampleCode);
+    sampleCreation.setParentIds(new ArrayList<>(parentIds));
+    sampleCreation.setTypeId(new EntityTypePermId(measurementTypeCode));
+    sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
+    sampleCreation.setProperties(metadata);
+    createOpenbisSamples(Arrays.asList(sampleCreation));
+  }
+
+  @Override
+  public void addNGSMeasurement(NGSMeasurement measurement, List<SampleCode> sampleCodes) {
+    String TYPE_CODE = "Q_NGS_SINGLE_SAMPLE_RUN";
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("Q_EXTERNALDB_ID", measurement.measurementId().value());
+    List<SampleIdentifier> parentIds = sampleCodes.stream()
+        .map(code -> new SampleIdentifier("/"+DEFAULT_SPACE_CODE+"/"+code.code())).toList();
+    registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
+  }
+
+  @Override
+  public void addProtemicsMeasurement(ProteomicsMeasurement measurement, List<SampleCode> sampleCodes) {
+    String TYPE_CODE = "Q_MS_RUN";
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("Q_EXTERNALDB_ID", measurement.measurementId().value());
+    List<SampleIdentifier> parentIds = sampleCodes.stream()
+        .map(code -> new SampleIdentifier("/"+DEFAULT_SPACE_CODE+"/"+code.code())).toList();
+    registerMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds, metadata);
   }
 
   record VocabularyTerm(String code, String label, String description) {

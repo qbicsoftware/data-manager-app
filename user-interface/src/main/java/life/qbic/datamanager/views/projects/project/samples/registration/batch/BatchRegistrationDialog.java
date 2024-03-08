@@ -17,7 +17,7 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.B
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * A dialog used for sample batch registration.
@@ -27,15 +27,15 @@ public class BatchRegistrationDialog extends DialogWindow {
   private final TextField batchNameField;
 
   private final List<ExperimentalGroup> experimentalGroups;
-  private final List<OntologyClassDTO> species;
-  private final List<OntologyClassDTO> specimen;
-  private final List<OntologyClassDTO> analytes;
+  private final List<OntologyTerm> species;
+  private final List<OntologyTerm> specimen;
+  private final List<OntologyTerm> analytes;
   private final SampleBatchInformationSpreadsheet spreadsheet;
 
   public BatchRegistrationDialog(String experimentName,
-      List<OntologyClassDTO> species,
-      List<OntologyClassDTO> specimen,
-      List<OntologyClassDTO> analytes,
+      List<OntologyTerm> species,
+      List<OntologyTerm> specimen,
+      List<OntologyTerm> analytes,
       List<ExperimentalGroup> experimentalGroups) {
 
     addClassName("batch-registration-dialog");
@@ -132,8 +132,8 @@ public class BatchRegistrationDialog extends DialogWindow {
     return prefilledSampleInfos(species, specimen, analytes, experimentalGroups);
   }
 
-  private static List<SampleInfo> prefilledSampleInfos(List<OntologyClassDTO> species,
-      List<OntologyClassDTO> specimen, List<OntologyClassDTO> analytes,
+  private static List<SampleInfo> prefilledSampleInfos(List<OntologyTerm> species,
+      List<OntologyTerm> specimen, List<OntologyTerm> analytes,
       List<ExperimentalGroup> experimentalGroups) {
 
     List<SampleInfo> sampleInfos = new ArrayList<>();

@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.domain.experiment
+package life.qbic.projectmanagement.domain.model.experiment
 
 import life.qbic.projectmanagement.domain.model.experiment.*
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException

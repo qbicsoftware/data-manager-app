@@ -4,11 +4,11 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Span;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 @Tag(Tag.DIV)
 public class OntologyComponent extends Component implements HasComponents {
-  public OntologyComponent(OntologyClassDTO contentDTO) {
+  public OntologyComponent(OntologyTerm contentDTO) {
     Span ontologyLabel = new Span(contentDTO.getLabel());
     ontologyLabel.addClassName("bold");
     /* Ontology terms are delimited by a column, the underscore is only used in the web environment*/

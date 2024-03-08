@@ -21,7 +21,7 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.E
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -39,9 +39,9 @@ public class EditBatchDialog extends DialogWindow {
   private final SampleDeletionChecker deletionChecker;
 
   public EditBatchDialog(String experimentName,
-      List<OntologyClassDTO> species,
-      List<OntologyClassDTO> specimen,
-      List<OntologyClassDTO> analytes,
+      List<OntologyTerm> species,
+      List<OntologyTerm> specimen,
+      List<OntologyTerm> analytes,
       List<ExperimentalGroup> experimentalGroups,
       BatchId batchId,
       String batchName,

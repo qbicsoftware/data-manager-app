@@ -17,7 +17,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableNotDefinedException;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 
 /**
@@ -40,17 +40,17 @@ public class Experiment {
   @Embedded
   private ExperimentalDesign experimentalDesign;
 
-  @ElementCollection(targetClass = OntologyClassDTO.class)
+  @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
   //FIXME should be `analyte`in the database and here
-  private List<OntologyClassDTO> analytes = new ArrayList<>();
-  @ElementCollection(targetClass = OntologyClassDTO.class)
+  private List<OntologyTerm> analytes = new ArrayList<>();
+  @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "species", columnDefinition = "longtext CHECK (json_valid(`species`))")
-  private List<OntologyClassDTO> species = new ArrayList<>();
-  @ElementCollection(targetClass = OntologyClassDTO.class)
+  private List<OntologyTerm> species = new ArrayList<>();
+  @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
   //FIXME should be `specimen`in the database and here
-  private List<OntologyClassDTO> specimens = new ArrayList<>();
+  private List<OntologyTerm> specimens = new ArrayList<>();
 
 
   /**
@@ -127,21 +127,21 @@ public class Experiment {
   /**
    * @return the collection of species in this experiment
    */
-  public Collection<OntologyClassDTO> getSpecies() {
+  public Collection<OntologyTerm> getSpecies() {
     return species.stream().toList();
   }
 
   /**
    * @return the collection of specimens in this experiment
    */
-  public Collection<OntologyClassDTO> getSpecimens() {
+  public Collection<OntologyTerm> getSpecimens() {
     return specimens.stream().toList();
   }
 
   /**
    * @return the collection of analytes in this experiment
    */
-  public Collection<OntologyClassDTO> getAnalytes() {
+  public Collection<OntologyTerm> getAnalytes() {
     return analytes.stream().toList();
   }
 
@@ -150,11 +150,11 @@ public class Experiment {
    *
    * @param specimens The specimens to add to the experiment
    */
-  public void addSpecimens(Collection<OntologyClassDTO> specimens) {
+  public void addSpecimens(Collection<OntologyTerm> specimens) {
     if (specimens.isEmpty()) {
       return;
     }
-    List<OntologyClassDTO> missingSpecimens = specimens.stream()
+    List<OntologyTerm> missingSpecimens = specimens.stream()
         .filter(specimen -> !this.specimens.contains(specimen))
         .distinct()
         .toList();
@@ -196,13 +196,13 @@ public class Experiment {
    *
    * @param analytes The analytes to add to the experiment
    */
-  public void addAnalytes(Collection<OntologyClassDTO> analytes) {
+  public void addAnalytes(Collection<OntologyTerm> analytes) {
     if (analytes.isEmpty()) {
       return;
     }
 
     // only add analytes that are not present already
-    List<OntologyClassDTO> missingAnalytes = analytes.stream()
+    List<OntologyTerm> missingAnalytes = analytes.stream()
         .filter(analyte -> !this.analytes.contains(analyte))
         .distinct()
         .toList();
@@ -214,12 +214,12 @@ public class Experiment {
    *
    * @param species The species to add to the experiment
    */
-  public void addSpecies(Collection<OntologyClassDTO> species) {
+  public void addSpecies(Collection<OntologyTerm> species) {
     if (species.isEmpty()) {
       return;
     }
     // only add species that are not present already
-    List<OntologyClassDTO> missingSpecies = species.stream()
+    List<OntologyTerm> missingSpecies = species.stream()
         .filter(speci -> !this.species.contains(speci))
         .distinct()
         .toList();
@@ -310,7 +310,7 @@ public class Experiment {
    * Sets the list of species for an experiment.
    */
   public void setSpecies(
-      List<OntologyClassDTO> species) {
+      List<OntologyTerm> species) {
     if (species == null || species.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
           ErrorParameters.of(species));
@@ -322,7 +322,7 @@ public class Experiment {
    * Sets the list of specimen for an experiment.
    */
   public void setSpecimens(
-      List<OntologyClassDTO> specimens) {
+      List<OntologyTerm> specimens) {
     if (specimens == null || specimens.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
           ErrorParameters.of(specimens));
@@ -334,7 +334,7 @@ public class Experiment {
    * Sets the list of analytes for an experiment.
    */
   public void setAnalytes(
-      List<OntologyClassDTO> analytes) {
+      List<OntologyTerm> analytes) {
     if (analytes == null || analytes.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
           ErrorParameters.of(analytes));
