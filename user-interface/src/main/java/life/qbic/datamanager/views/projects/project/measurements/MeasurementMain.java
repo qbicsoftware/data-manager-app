@@ -55,7 +55,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
-  private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
+  private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private final MeasurementDetailsComponent measurementDetailsComponent;
   private final TextField measurementSearchField = new TextField();

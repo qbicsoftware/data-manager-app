@@ -99,6 +99,46 @@
   grid-area: projectcollection;
 }
 
+
+.main.raw-data {
+  grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
+  grid-template-rows: minmax(max-content, 20%) minmax(max-content, 75%);
+  grid-template-areas:
+    ". rawdatadownloadinformation"
+    "rawdatadetails rawdatadownloadinformation";
+}
+
+.main.raw-data .raw-data-download-information-component {
+  grid-area: rawdatadownloadinformation;
+}
+
+
+.main.raw-data .raw-data-details-component {
+  grid-area: rawdatadetails
+}
+
+.main.raw-data .raw-data-main-content {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+}
+
+
+.main.raw-data .raw-data-main-content .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.main.raw-data .raw-data-main-content .buttonAndField {
+  display: inline-flex;
+  justify-content: space-between;
+  /*Moves this bar to end of container*/
+  margin-top: auto;
+}
+
 .main.sample {
   grid-template-columns: minmax(min-content, 60%) minmax(min-content, 50%);
   grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
