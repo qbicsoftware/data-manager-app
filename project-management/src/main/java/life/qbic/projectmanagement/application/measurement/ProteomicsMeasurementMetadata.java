@@ -20,7 +20,7 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
                                             String digestionMethod, String enrichmentMethod,
                                             String injectionVolume, String lcColumn,
                                             String lcmsMethod, String labelingType, String label,
-                                            String note) implements MeasurementMetadata {
+                                            String comment) implements MeasurementMetadata {
 
   @Override
   public Optional<String> assignedSamplePoolGroup() {
@@ -30,5 +30,25 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
   @Override
   public List<SampleCode> associatedSamples() {
     return sampleCodes.stream().toList();
+  }
+
+  public static ProteomicsMeasurementMetadata copyWithNewSamples(Collection<SampleCode> associatedSamples,
+      ProteomicsMeasurementMetadata metadata) {
+    return new ProteomicsMeasurementMetadata(
+        associatedSamples.stream().toList(),
+        metadata.organisationId(),
+        metadata.instrumentCURI(),
+        metadata.samplePoolGroup(),
+        metadata.facility(),
+        metadata.fractionName(),
+        metadata.digestionEnzyme(),
+        metadata.digestionMethod(),
+        metadata.enrichmentMethod(),
+        metadata.injectionVolume(),
+        metadata.lcColumn(),
+        metadata.lcmsMethod(),
+        metadata.labelingType(),
+        metadata.label(),
+        metadata.comment());
   }
 }

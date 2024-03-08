@@ -68,23 +68,7 @@ public class MeasurementService {
     List<SampleCode> associatedSamples = measurementMetadataList.stream().map(
         ProteomicsMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
     var firstEntry = measurementMetadataList.get(0);
-    return new ProteomicsMeasurementMetadata(
-        associatedSamples,
-        firstEntry.organisationId(),
-        firstEntry.instrumentCURI(),
-        firstEntry.samplePoolGroup(),
-        firstEntry.facility(),
-        firstEntry.fractionName(),
-        firstEntry.digestionEnzyme(),
-        firstEntry.digestionMethod(),
-        firstEntry.enrichmentMethod(),
-        firstEntry.injectionVolume(),
-        firstEntry.lcColumn(),
-        firstEntry.lcmsMethod(),
-        firstEntry.labelingType(),
-        firstEntry.label(),
-        firstEntry.note()
-    );
+    return ProteomicsMeasurementMetadata.copyWithNewSamples(associatedSamples, firstEntry);
   }
 
   @PostAuthorize(
@@ -174,7 +158,7 @@ public class MeasurementService {
         metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
         metadata.lcColumn(), metadata.lcmsMethod());
 
-    var samplePreparation = new ProteomicsSamplePreparation(metadata.note());
+    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
     var labelingMethod = new ProteomicsLabeling(metadata.labelingType(), metadata.label());
 
     var measurement = ProteomicsMeasurement.create(
@@ -202,7 +186,9 @@ public class MeasurementService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
-
+    if (measurementMetadata.associatedSamples().isEmpty()) {
+      return Result.fromError(ResponseCode.MISSING_ASSOCIATED_SAMPLES);
+    }
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(proteomicsMeasurementMetadata);
     }
@@ -248,11 +234,13 @@ public class MeasurementService {
         proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
             .isPresent()).collect(Collectors.groupingBy(
         metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
-    var mergedMetadata = map.values().stream().map(MeasurementService::merge).toList();
+    var mergedPooledMeasurements = map.values().stream().map(MeasurementService::merge).toList();
 
-    return Stream.concat(proteomicsMeasurementMetadataList.stream()
-            .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList().stream(),
-        mergedMetadata.stream()).toList();
+    var singleMeasurements = proteomicsMeasurementMetadataList.stream()
+        .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
+
+    return Stream.concat(singleMeasurements.stream(),
+        mergedPooledMeasurements.stream()).toList();
   }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
@@ -266,7 +254,7 @@ public class MeasurementService {
   }
 
   public enum ResponseCode {
-    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT
+    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {

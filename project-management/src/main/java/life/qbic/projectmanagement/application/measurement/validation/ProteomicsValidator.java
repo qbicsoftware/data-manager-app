@@ -67,13 +67,14 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
   public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(measurementMetadata);
-    if(mandatoryValidationResult.containsFailures()) {
+    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
+        measurementMetadata);
+    if (mandatoryValidationResult.containsFailures()) {
       return mandatoryValidationResult;
     }
     //If all fields were filled then we can validate the entries individually
     return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
-            .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
+        .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
   }
@@ -166,38 +167,56 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
       if (measurementMetadata.organisationId().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.instrumentCURI().isBlank()) {
         validation = validation.combine(
-                ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.facility().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.digestionEnzyme().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Digestion Enzyme: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.digestionMethod().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Digestion Method: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.enrichmentMethod().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Enrichment Method: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.injectionVolume().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Injection Volume: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.lcColumn().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1, List.of("LC Column: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.lcmsMethod().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1, List.of("LCMS Method: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
       }
       return validation;
     }
