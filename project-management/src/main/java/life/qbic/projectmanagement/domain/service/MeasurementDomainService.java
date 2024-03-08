@@ -49,7 +49,7 @@ public class MeasurementDomainService {
     try {
       measurementRepository.save(measurement, sampleCodes);
       return Result.fromValue(measurement);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error(
           "Saving the Proteomics measurement failed for id: " + measurement.measurementCode().value());
     }
