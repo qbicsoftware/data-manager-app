@@ -63,7 +63,7 @@ public class MeasurementCode {
           return new MeasurementCode(prefix,
               value.split("-")[0].substring(prefix.toString().length()),
               Long.parseLong(value.split("-")[1]));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
           throw new IllegalArgumentException(
               "Unknown value for a measurement code for: \"" + value + "\"");
         }
