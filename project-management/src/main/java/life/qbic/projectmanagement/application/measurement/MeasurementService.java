@@ -63,12 +63,16 @@ public class MeasurementService {
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
   }
 
-  private static ProteomicsMeasurementMetadata merge(
+  private static Optional<ProteomicsMeasurementMetadata> merge(
       List<ProteomicsMeasurementMetadata> measurementMetadataList) {
+    if (measurementMetadataList.isEmpty()) {
+      return Optional.empty();
+    }
     List<SampleCode> associatedSamples = measurementMetadataList.stream().map(
         ProteomicsMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
     var firstEntry = measurementMetadataList.get(0);
-    return ProteomicsMeasurementMetadata.copyWithNewSamples(associatedSamples, firstEntry);
+    return Optional.of(
+        ProteomicsMeasurementMetadata.copyWithNewSamples(associatedSamples, firstEntry));
   }
 
   @PostAuthorize(
@@ -234,7 +238,8 @@ public class MeasurementService {
         proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
             .isPresent()).collect(Collectors.groupingBy(
         metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
-    var mergedPooledMeasurements = map.values().stream().map(MeasurementService::merge).toList();
+    List<ProteomicsMeasurementMetadata> mergedPooledMeasurements = map.values().stream()
+        .map(MeasurementService::merge).filter(Optional::isPresent).map(Optional::get).toList();
 
     var singleMeasurements = proteomicsMeasurementMetadataList.stream()
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
