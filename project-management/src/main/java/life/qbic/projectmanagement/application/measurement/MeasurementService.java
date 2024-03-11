@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
@@ -238,12 +239,14 @@ public class MeasurementService {
         proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
             .isPresent()).collect(Collectors.groupingBy(
         metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
-    return poolingGroups.values().stream()
-        .map(containedMetadata -> containedMetadata
-            .stream()
-            .reduce((p1, p2) -> ProteomicsMeasurementMetadata.merge(p1, p2))
-            .orElseThrow())
-        .toList();
+    List<ProteomicsMeasurementMetadata> mergedPooledMeasurements = poolingGroups.values().stream()
+        .map(MeasurementService::merge).filter(Optional::isPresent).map(Optional::get).toList();
+
+    var singleMeasurements = proteomicsMeasurementMetadataList.stream()
+        .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
+
+    return Stream.concat(singleMeasurements.stream(),
+        mergedPooledMeasurements.stream()).toList();
   }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
