@@ -56,7 +56,7 @@ public class OntologyLookupComponent extends PageArea {
       @Autowired OntologyLookupService ontologyTermInformationService) {
     requireNonNull(ontologyTermInformationService);
     this.ontologyTermInformationService = ontologyTermInformationService;
-    Span title = new Span("Ontology Search");
+    Span title = new Span("Ontology Lookup");
     title.addClassName("title");
     add(title);
     int numOfOntologies = ontologyTermInformationService.findNumberOfOntologies().size();
@@ -160,11 +160,34 @@ public class OntologyLookupComponent extends PageArea {
       title.addClassName("ontology-item-title");
       Span curie = new Tag(curieText);
       curie.addClassNames("primary", "clickable");
+
+      Icon copyIcon = initCopyIcon();
+      Span header = new Span(title, curie, copyIcon);
+
       curie.addClickListener(
-          event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", curieText));
-      Span header = new Span(title, curie, initCopyIcon(curieText));
+          event -> handleCopyClicked(header, curieText));
+      copyIcon.addClickListener(
+          event -> handleCopyClicked(header, curieText));
+
       header.addClassName("header");
       return header;
+    }
+
+    private void handleCopyClicked(Span header, String curieText) {
+      UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", curieText);
+      Icon oldIcon = (Icon) header.getChildren().filter(c -> c instanceof Icon).toList().get(0);
+      Icon newIcon = VaadinIcon.CHECK.create();
+      newIcon.addClassName(IconSize.SMALL);
+      newIcon.addClassNames("copy-icon-success");
+      header.remove(oldIcon);
+      header.add(newIcon);
+    }
+
+    private Icon initCopyIcon() {
+      Icon copyIcon = VaadinIcon.COPY_O.create();
+      copyIcon.addClassName(IconSize.SMALL);
+      copyIcon.addClassNames("clickable", "copy-icon");
+      return copyIcon;
     }
 
     private Span createUrl(String ontologyURL) {
@@ -178,15 +201,6 @@ public class OntologyLookupComponent extends PageArea {
       description.add(ontologyDescription);
       description.addClassName("description");
       return description;
-    }
-
-    private Icon initCopyIcon(String copyContent) {
-      Icon copyIcon = VaadinIcon.COPY_O.create();
-      copyIcon.addClassName(IconSize.SMALL);
-      copyIcon.addClassNames("clickable", "copy-icon");
-      copyIcon.addClickListener(
-          event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", copyContent));
-      return copyIcon;
     }
 
     private Span createOrigin(String origin) {

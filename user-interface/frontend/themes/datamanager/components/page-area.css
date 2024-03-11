@@ -234,6 +234,17 @@
   color: var(--lumo-tertiary-text-color);
 }
 
+.copy-icon-success {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-success-color);
+}
+
+.success-background-hue {
+  background-color: var(--lumo-success-color-10pct);
+}
+
 .ontology-lookup-component .ontology-item .ontology-item-title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);

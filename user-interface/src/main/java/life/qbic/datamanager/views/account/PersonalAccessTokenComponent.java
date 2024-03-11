@@ -120,11 +120,15 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     Icon copyIcon = VaadinIcon.COPY_O.create();
     copyIcon.addClassName(IconSize.SMALL);
     copyIcon.addClassName("clickable");
-    copyIcon.addClickListener(
-        event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", rawTokenText));
+
     Span rawToken = new Span(rawTokenText);
     Span personalAccessTokenWithIcon = new Span(rawToken, copyIcon);
     personalAccessTokenWithIcon.addClassName("token-text");
+
+    copyIcon.addClickListener(
+        event -> handleCopyClicked(createdPersonalAccessTokenDetails, personalAccessTokenWithIcon,
+            rawTokenText));
+
     Icon disclaimerIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
     disclaimerIcon.addClassName(IconSize.SMALL);
     Span copyDisclaimer = new Span(disclaimerIcon,
@@ -136,6 +140,34 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     createdTokenLayout.add(createdPersonalAccessTokenDetails);
     updateUI();
   }
+
+private void handleCopyClicked(Div tokenDiv, Span tokenSpan, String rawTokenText) {
+  UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", rawTokenText);
+
+  createdTokenLayout.removeAll();
+  Div createdPersonalAccessTokenDetails = new Div();
+  createdPersonalAccessTokenDetails.addClassName("success-background-hue");
+
+  Span rawToken = new Span(rawTokenText);
+
+  Icon copiedIcon = VaadinIcon.CHECK.create();
+  copiedIcon.addClassName(IconSize.SMALL);
+  copiedIcon.addClassNames("copy-icon-success");
+
+  Span personalAccessTokenWithIcon = new Span(rawToken, copiedIcon);
+  personalAccessTokenWithIcon.addClassName("token-text");
+
+  Icon disclaimerIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
+  disclaimerIcon.addClassName(IconSize.SMALL);
+  Span copyDisclaimer = new Span(disclaimerIcon,
+      new Text("Token successfully copied."));
+  copyDisclaimer.addClassName("copy-disclaimer");
+  copyDisclaimer.addClassName("primary");
+  createdPersonalAccessTokenDetails.add(personalAccessTokenWithIcon, copyDisclaimer);
+  createdPersonalAccessTokenDetails.addClassName("show-created-personal-access-token-details");
+  createdTokenLayout.add(createdPersonalAccessTokenDetails);
+  updateUI();
+}
 
   private Span generateHeader() {
     Span title = new Span(TITLE);
