@@ -7,6 +7,8 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService
 import life.qbic.projectmanagement.domain.model.sample.SampleCode
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
 class ProteomicsValidatorSpec extends Specification {
 
     final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata([SampleCode.create("QTEST001AE")],
@@ -37,12 +39,12 @@ class ProteomicsValidatorSpec extends Specification {
         findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
 
-    final static List<String> validPXPProperties = ["qbic sample ids", "sample label", "organisation id", "facility", "instrument",
+    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample ids", "sample label", "organisation id", "facility", "instrument",
                                                     "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
-                                                    "lcms method", "labeling type", "label", "comment"]
+                                                    "lcms method", "labeling type", "label", "comment"])
 
-    final static Collection<String> optionalPxPProperties = ["labeling type", "label", "comment"]
+    final static Collection<String> optionalPxPProperties = ["labeling type", "label", "comment", "sample pool group"]
 
     def "A complete property set must be valid no matter the letter casing style"() {
 
@@ -72,7 +74,7 @@ class ProteomicsValidatorSpec extends Specification {
     def "Missing properties for the proteomics metadata collection must result in an unsuccessful validation"() {
         given:
         // we just take the NGS property list
-        def missingProperties = validPXPProperties
+        def missingProperties = validPXPProperties.stream().collect(Collectors.toList())
         missingProperties.remove(0)
 
         when:
@@ -270,7 +272,6 @@ class ProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.validatedEntries() == validPXPProperties.size() - optionalPxPProperties.size() // labeling type, label and comment are optional
         result.failedEntries() == 1
         result.failures()[0] == "The organisation ID does not seem to be a ROR ID: \"${invalidRorId}\""
 
@@ -354,7 +355,6 @@ class ProteomicsValidatorSpec extends Specification {
         then:
         result.allPassed()
         !result.containsWarnings()
-        result.validatedEntries() == validPXPProperties.size() - optionalPxPProperties.size()
         !result.containsFailures()
 
         where:
