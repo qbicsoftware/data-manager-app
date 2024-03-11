@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.info;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -11,11 +12,9 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
@@ -45,7 +44,6 @@ public class ProjectDetailsComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
-  private static final String TAG_COLLECTION_CSS_CLASS = "tag-collection";
   private final Div header = new Div();
   private final Span titleField = new Span();
   private final Span buttonBar = new Span();
@@ -62,7 +60,6 @@ public class ProjectDetailsComponent extends PageArea {
       "Project Collaborators", "Important contacts for this project");
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
-
   private final transient ContactRepository contactRepository;
   private Context context;
 
@@ -96,22 +93,28 @@ public class ProjectDetailsComponent extends PageArea {
     entries.add(new Entry("Objective", "The objective of the project", objective));
 
     var species = new Div();
-    species.addClassName(TAG_COLLECTION_CSS_CLASS);
-    createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()))
-        .forEach(species::add);
+    species.addClassName("ontology-entry-collection");
+    experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).forEach(ontologyClassDTO -> species.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Species", "", species));
     var specimen = new Div();
-    specimen.addClassName(TAG_COLLECTION_CSS_CLASS);
-    createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()))
-        .forEach(specimen::add);
+    specimen.addClassName("ontology-entry-collection");
+    experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).forEach(ontologyClassDTO -> specimen.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Specimen", "Tissue, cells or other matrix extracted from the "
         + "species", specimen));
     var analyte = new Div();
-    analyte.addClassName(TAG_COLLECTION_CSS_CLASS);
-    createTagsFrom(experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()))
-        .forEach(analyte::add);
+    analyte.addClassName("ontology-entry-collection");
+    experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).forEach(ontologyClassDTO -> analyte.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Analyte", "", analyte));
     return entries;
+  }
+
+  private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm){
+    String ontologyLinkName = ontologyTerm.getName().replace("_", ":");
+    Span ontologyEntryLink = new Span(new Anchor(ontologyTerm.getClassIri(), ontologyLinkName));
+    ontologyEntryLink.addClassName("ontology-link");
+    Span ontologyEntry = new Span(new Span(ontologyTerm.getLabel()), ontologyEntryLink);
+    ontologyEntry.addClassName("ontology-entry");
+    return ontologyEntry;
   }
 
   private static List<Entry> extractFundingInfo(Project project) {
@@ -175,16 +178,6 @@ public class ProjectDetailsComponent extends PageArea {
     Span noPersonAssignedSpan = new Span("-");
     noPersonAssignedSpan.addClassName("no-person-assigned");
     return noPersonAssignedSpan;
-  }
-
-  /**
-   * Creates tags for a list of ontology terms. Each tag display the term label and contains a tooltip
-   * which is built from ontology term name (e.g. NCBITaxon_9606) and the ontology it is taken from
-   */
-  private static List<Tag> createTagsFrom(Stream<OntologyTerm> entries) {
-    return entries.distinct()
-        .map(entry -> new Tag(entry.getLabel(), entry.formatted()))
-        .toList();
   }
 
   public void setContext(Context context) {
