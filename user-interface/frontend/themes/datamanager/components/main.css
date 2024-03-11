@@ -101,8 +101,8 @@
 
 
 .main.raw-data {
-  grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
-  grid-template-rows: minmax(max-content, 20%) minmax(max-content, 75%);
+  grid-template-columns: minmax(max-content, 70%) minmax(auto, 30%);
+  grid-template-rows: minmax(max-content, 20%) minmax(auto, 75%);
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";
