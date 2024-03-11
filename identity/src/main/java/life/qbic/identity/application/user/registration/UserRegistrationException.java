@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
+import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.EncryptedPassword.PasswordValidationException;
 import life.qbic.identity.domain.model.FullName.FullNameValidationException;
@@ -30,6 +31,8 @@ public class UserRegistrationException extends ApplicationException {
   private final transient PasswordValidationException invalidPasswordException;
   private final transient FullNameValidationException fullNameException;
 
+  private final transient UserNameNotAvailableException userNameNotAvailableException;
+
   private final transient UserExistsException userExistsException;
   private final transient RuntimeException unexpectedException;
 
@@ -47,6 +50,7 @@ public class UserRegistrationException extends ApplicationException {
 
     private UserExistsException userExistsException;
     private RuntimeException unexpectedException;
+    private UserNameNotAvailableException userNameNotAvailableException;
 
     protected Builder() {
 
@@ -80,6 +84,11 @@ public class UserRegistrationException extends ApplicationException {
     public UserRegistrationException build() {
       return new UserRegistrationException(this);
     }
+
+    public Builder withUserNameNotAvailableException(UserNameNotAvailableException e) {
+      this.userNameNotAvailableException = e;
+      return this;
+    }
   }
 
   private UserRegistrationException(Builder builder) {
@@ -88,6 +97,7 @@ public class UserRegistrationException extends ApplicationException {
     invalidPasswordException = builder.invalidPasswordException;
     userExistsException = builder.userExistsException;
     unexpectedException = builder.unexpectedException;
+    userNameNotAvailableException = builder.userNameNotAvailableException;
   }
 
   public Optional<EmailValidationException> emailFormatException() {
@@ -104,6 +114,10 @@ public class UserRegistrationException extends ApplicationException {
 
   public Optional<UserExistsException> userExistsException() {
     return Optional.ofNullable(userExistsException);
+  }
+
+  public Optional<UserNameNotAvailableException> userNameNotAvailableException() {
+    return Optional.ofNullable(userNameNotAvailableException);
   }
 
   public Optional<RuntimeException> unexpectedException() {

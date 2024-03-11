@@ -4,17 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 @Converter(autoApply = true)
 
 public class OntologyClassAttributeConverter implements
-    AttributeConverter<OntologyClassDTO, String> {
+    AttributeConverter<OntologyTerm, String> {
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
-  public String convertToDatabaseColumn(OntologyClassDTO attribute) {
+  public String convertToDatabaseColumn(OntologyTerm attribute) {
     try {
       return objectMapper.writeValueAsString(attribute);
     } catch (JsonProcessingException e) {
@@ -23,9 +23,9 @@ public class OntologyClassAttributeConverter implements
   }
 
   @Override
-  public OntologyClassDTO convertToEntityAttribute(String dbData) {
+  public OntologyTerm convertToEntityAttribute(String dbData) {
     try {
-      return objectMapper.readValue(dbData, OntologyClassDTO.class);
+      return objectMapper.readValue(dbData, OntologyTerm.class);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

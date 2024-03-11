@@ -132,6 +132,64 @@
   gap: var(--lumo-space-m);
 }
 
+.measurement-details-component {
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.measurement-details-component .measurement-tabsheet {
+  height: 100%;
+  width: 100%;
+}
+
+.measurement-details-component .measurement-grid {
+  height: 100%;
+  width: 100%;
+}
+
+.measurement-details-component .measurement-grid .sample-code-column {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.measurement-details-component .measurement-grid .organisation-column-entry {
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+  display: flex;
+}
+
+.measurement-details-component .measurement-grid .organisation-column-entry .organisation-icon {
+  min-width: var(--lumo-icon-size-m);
+  min-height: var(--lumo-icon-size-m);
+}
+
+.measurement-details-component .measurement-grid .instrument-column {
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+  display: inline-flex;
+}
+
+.measurement-details-component .no-measurements-registered-disclaimer {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+  align-items: center;
+}
+
+.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: 0.5rem;
+}
+
+.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .ontology-lookup-component {
   display: flex;
   flex-direction: column;
@@ -344,6 +402,14 @@
   display: inline-flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.project-details-component .ontology-entry-collection {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-xs);
+  width: 100%;
+  white-space: nowrap;
 }
 
 .sample-details-component .button-and-search-bar {

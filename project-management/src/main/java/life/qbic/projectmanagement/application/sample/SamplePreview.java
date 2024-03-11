@@ -15,7 +15,7 @@ import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.vocabulary.OntologyClassDTO;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -51,9 +51,9 @@ public class SamplePreview {
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private ExperimentalGroup experimentalGroup;
-  private OntologyClassDTO species;
-  private OntologyClassDTO specimen;
-  private OntologyClassDTO analyte;
+  private OntologyTerm species;
+  private OntologyTerm specimen;
+  private OntologyTerm analyte;
 
   protected SamplePreview() {
     //needed by JPA
@@ -61,8 +61,8 @@ public class SamplePreview {
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
       String batchLabel, String bioReplicateLabel, String sampleLabel, String organismId,
-      ExperimentalGroup experimentalGroup, OntologyClassDTO species,
-      OntologyClassDTO specimen, OntologyClassDTO analyte, String analysisMethod, String comment) {
+      ExperimentalGroup experimentalGroup, OntologyTerm species,
+      OntologyTerm specimen, OntologyTerm analyte, String analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
@@ -104,11 +104,11 @@ public class SamplePreview {
    * @param organismId        optional identifier of the patient or organism a {@link Sample} was taken of
    * @param experimentalGroup the {@link ExperimentalGroup} for the {@link Sample} associated with
    *                          this preview
-   * @param species           the {@link OntologyClassDTO} for the species of this {@link Sample}
+   * @param species           the {@link OntologyTerm} for the species of this {@link Sample}
    *                          associated with this preview
-   * @param specimen          the {@link OntologyClassDTO} for the specimen of this {@link Sample}
+   * @param specimen          the {@link OntologyTerm} for the specimen of this {@link Sample}
    *                          associated with this preview
-   * @param analyte           the {@link OntologyClassDTO} for the analyte of this {@link Sample}
+   * @param analyte           the {@link OntologyTerm} for the analyte of this {@link Sample}
    *                          associated with this preview
    * @param analysisMethod    the analysis method to be performed for this {@link Sample}
    * @param comment           an optional comment pertaining to the associated {@link Sample}
@@ -118,7 +118,7 @@ public class SamplePreview {
       String sampleCode,
       String batchLabel, String bioReplicateLabel,
       String sampleLabel, String organismId, ExperimentalGroup experimentalGroup,
-      OntologyClassDTO species, OntologyClassDTO specimen, OntologyClassDTO analyte,
+      OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
       String analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel, bioReplicateLabel,
         sampleLabel, organismId, experimentalGroup, species, specimen, analyte, analysisMethod,
@@ -149,15 +149,15 @@ public class SamplePreview {
     return sampleLabel;
   }
 
-  public OntologyClassDTO species() {
+  public OntologyTerm species() {
     return species;
   }
 
-  public OntologyClassDTO specimen() {
+  public OntologyTerm specimen() {
     return specimen;
   }
 
-  public OntologyClassDTO analyte() {
+  public OntologyTerm analyte() {
     return analyte;
   }
 
