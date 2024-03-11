@@ -23,7 +23,7 @@ public class CodeBlock extends Span {
         .collect(
             Collectors.joining());
     String codeToBeCopied = String.format("%s %s", command, collectedParameters);
-    String codeBlockText = "$" + codeToBeCopied;
+    String codeBlockText = "$ " + codeToBeCopied;
     Span codeBlockTextSpan = new Span(codeBlockText);
     add(codeBlockTextSpan, generateCopyIcon(codeToBeCopied));
     addClassName("code-block");

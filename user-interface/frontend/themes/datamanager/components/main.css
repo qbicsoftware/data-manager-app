@@ -63,6 +63,7 @@
 .main.ontology-lookup-component {
   grid-area: ontologylookupcomponent;
 }
+
 .main.project {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
   grid-template-rows: auto;
@@ -99,10 +100,9 @@
   grid-area: projectcollection;
 }
 
-
 .main.raw-data {
-  grid-template-columns: minmax(max-content, 70%) minmax(auto, 30%);
-  grid-template-rows: minmax(max-content, 20%) minmax(auto, 75%);
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
+  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 80%);
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";
@@ -180,5 +180,23 @@
     "batchdetails"
     "sampledetails";
     grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
+  }
+
+  .main.measurement {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "."
+    "measurementtemplatelist"
+    "measurementdetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+  }
+
+  .main.raw-data {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "."
+    "rawdatadownloadinformation"
+    "rawdatadetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
   }
 }

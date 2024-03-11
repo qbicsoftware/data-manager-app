@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -12,8 +13,11 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
+import java.io.Serial;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
@@ -21,12 +25,8 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.Serial;
-import java.util.Objects;
 
 
 /**
@@ -62,6 +62,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     initContent();
     add(rawDataDetailsComponent);
     add(rawDataDownloadInformationComponent);
+    addListeners();
     addClassName("raw-data");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
@@ -80,6 +81,13 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     content.addClassName("raw-data-main-content");
   }
 
+  private void addListeners() {
+    rawDataDownloadInformationComponent.addDownloadUrlListener(event -> handleUrlDownload());
+    rawDataDownloadInformationComponent.addPersonalAccessTokenNavigationListener(
+        event -> UI.getCurrent().navigate(
+            PersonalAccessTokenMain.class));
+  }
+
   private void initSearchFieldAndButtonBar() {
     rawDataSearchField.setPlaceholder("Search");
     rawDataSearchField.setClearButtonVisible(true);
@@ -90,14 +98,13 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
         event -> rawdataDetailsComponent.setSearchedRawDataValue((event.getValue())));
     Button downloadRawDataUrl = new Button("Download RAW data URL");
     downloadRawDataUrl.addClassName("primary");
-    downloadRawDataUrl.addClickListener(
-            //ToDo Implement
-        event -> handleUrlDownload());
+    downloadRawDataUrl.addClickListener(event -> handleUrlDownload());
     Span buttonAndField = new Span(rawDataSearchField, downloadRawDataUrl);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
   }
 
+  //ToDo Implement
   private void handleUrlDownload(){}
 
   /**

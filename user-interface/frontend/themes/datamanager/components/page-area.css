@@ -413,8 +413,7 @@
 .raw-data-download-information-component .section .section-title {
   display: inline-flex;
   align-items: center;
-  column-gap: var(--lumo-space-s);
-  font-size: var(--lumo-font-size-s);
+  column-gap: var(--lumo-space-m);
   font-weight: bold;
 }
 

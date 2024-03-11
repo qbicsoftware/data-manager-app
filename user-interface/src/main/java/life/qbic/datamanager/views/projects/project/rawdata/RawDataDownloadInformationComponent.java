@@ -2,7 +2,9 @@ package life.qbic.datamanager.views.projects.project.rawdata;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
@@ -39,14 +41,14 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
   private static final Logger log = logger(RawDataDownloadInformationComponent.class);
   private Context context;
   private static int sectionNumber = 0;
+  private final Button navigateToPatPageButton = new Button("Go to Personal Access Token");
+  private final Button generateDownloadUrlsButton = new Button("Download URL list");
+
 
   public RawDataDownloadInformationComponent() {
     Span title = new Span("Data Download");
     title.addClassName("title");
     addComponentAsFirst(title);
-    //ToDo move button logic to main component
-    Button navigateToPatPageButton = new Button("Go to Personal Access Token");
-    Button generateDownloadUrlsButton = new Button("Download URL list");
     CodeBlock codeBlock = new CodeBlock("curl", "<token>", "<URL>");
     Div generateTokenSection = generateSection("Generate Token",
         "Generate a Personal Access Token (PAT)",
@@ -76,5 +78,14 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     section.add(paragraph);
     section.add(components);
     return section;
+  }
+
+  public void addPersonalAccessTokenNavigationListener(
+      ComponentEventListener<ClickEvent<Button>> listener) {
+    navigateToPatPageButton.addClickListener(listener);
+  }
+
+  public void addDownloadUrlListener(ComponentEventListener<ClickEvent<Button>> listener) {
+    generateDownloadUrlsButton.addClickListener(listener);
   }
 }
