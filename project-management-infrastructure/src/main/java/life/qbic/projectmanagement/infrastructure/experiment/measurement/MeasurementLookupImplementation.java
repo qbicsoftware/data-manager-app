@@ -4,6 +4,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
 import java.util.List;
+
+import jakarta.persistence.criteria.Expression;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
@@ -66,15 +68,44 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
        sampleIds);
     Specification<ProteomicsMeasurement> measurementCodeContains = ProteomicsMeasurementSpec.isMeasurementCode(
         filter);
+    Specification<ProteomicsMeasurement> measurementLabelContains= ProteomicsMeasurementSpec.isMeasurementLabel(
+            filter);
+    Specification<ProteomicsMeasurement> measurementLabelingTypeContains= ProteomicsMeasurementSpec.isMeasurementLabelingType(
+            filter);
+    Specification<ProteomicsMeasurement> samplePoolGroupContains= ProteomicsMeasurementSpec.isSamplePoolGroup(
+            filter);
     Specification<ProteomicsMeasurement> organisationLabelContains = ProteomicsMeasurementSpec.isOrganisationLabel(
         filter);
     Specification<ProteomicsMeasurement> ontologyNameContains = ProteomicsMeasurementSpec.isOntologyTermName(
         filter);
-    Specification<ProteomicsMeasurement> ontologyDescriptionContains = ProteomicsMeasurementSpec.isOntologyTermDescription(
+    Specification<ProteomicsMeasurement> ontologyLabelContains = ProteomicsMeasurementSpec.isOntologyTermLabel(
         filter);
-    Specification<ProteomicsMeasurement> filterSpecification = Specification.anyOf(
-        measurementCodeContains,
-        organisationLabelContains, ontologyNameContains, ontologyDescriptionContains);
+    Specification<ProteomicsMeasurement> facilityContains = ProteomicsMeasurementSpec.isFacility(
+            filter);
+    Specification<ProteomicsMeasurement> digestionMethodContains = ProteomicsMeasurementSpec.isDigestionMethod(
+            filter);
+    Specification<ProteomicsMeasurement> digestionEnzymeContains = ProteomicsMeasurementSpec.isDigestionEnzyme(
+            filter);
+    Specification<ProteomicsMeasurement> enrichmentMethodContains= ProteomicsMeasurementSpec.isEnrichmentMethod(
+            filter);
+    Specification<ProteomicsMeasurement> injectionVolumeContains = ProteomicsMeasurementSpec.isInjectionVolume(
+            filter);
+    Specification<ProteomicsMeasurement> lcColumnContains = ProteomicsMeasurementSpec.isLcColumn(
+            filter);
+    Specification<ProteomicsMeasurement> lcmsMethodContains = ProteomicsMeasurementSpec.isLcmsMethod(
+            filter);
+    Specification<ProteomicsMeasurement> registrationDateContains = ProteomicsMeasurementSpec.isRegistrationDate(
+            filter);
+    Specification<ProteomicsMeasurement> commentContains = ProteomicsMeasurementSpec.isComment(
+            filter);
+
+
+
+    Specification<ProteomicsMeasurement> filterSpecification =
+            Specification.anyOf(measurementCodeContains, measurementLabelContains, measurementLabelingTypeContains, organisationLabelContains,
+                    samplePoolGroupContains, ontologyNameContains, ontologyLabelContains, facilityContains,
+                    digestionMethodContains, digestionEnzymeContains, enrichmentMethodContains,
+                    injectionVolumeContains, lcColumnContains, lcmsMethodContains, registrationDateContains, commentContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)
@@ -154,18 +185,86 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     public static Specification<ProteomicsMeasurement> isOntologyTermName(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("instrument").get("className"), "%" + filter + "%");
+      return (root, query, builder) -> {
+        Expression<String> function = builder.function("JSON_EXTRACT", String.class, root.get("instrument"),
+                builder.literal("$.name"));
+        return builder.like(function,
+                "%" + filter + "%");
+      };
     }
 
-    public static Specification<ProteomicsMeasurement> isOntologyTermDescription(String filter) {
+    public static Specification<ProteomicsMeasurement> isOntologyTermLabel(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("instrument").get("description"), "%" + filter + "%");
+      {
+        Expression<String> function = builder.function("JSON_EXTRACT", String.class, root.get("instrument"), builder.literal("$.label"));
+        return builder.like(function,
+                "%" + filter + "%");
+      };
     }
 
     public static Specification<ProteomicsMeasurement> isMeasurementCode(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("measurementCode").get("measurementCode"), "%" + filter + "%");
+              builder.like(root.get("measurementCode").as(String.class), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isFacility(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("facility"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isDigestionMethod(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("digestionMethod"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isDigestionEnzyme(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("digestionEnzyme"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isEnrichmentMethod(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("enrichmentMethod"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isInjectionVolume(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("injectionVolume").as(String.class), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isLcColumn(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("lcColumn"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isLcmsMethod(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("lcmsMethod"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isComment(String filter) {
+      return (root, query, builder) ->
+              builder.like(root.get("comment"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isMeasurementLabel(String filter){
+      return (root, query, builder) ->
+              builder.like(root.get("comment"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isMeasurementLabelingType(String filter){
+      return (root, query, builder) ->
+              builder.like(root.get("labelingType"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isSamplePoolGroup(String filter){
+      return (root, query, builder) ->
+              builder.like(root.get("samplePool"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isRegistrationDate(String filter){
+      return (root, query, builder) ->
+              builder.like(root.get("registration"), "%" + filter + "%");
     }
   }
 
@@ -204,7 +303,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
     public static Specification<NGSMeasurement> isMeasurementCode(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("measurementCode").get("measurementCode"), "%" + filter + "%");
+          builder.like(root.get("measurementCode").as(String.class), "%" + filter + "%");
     }
     //ToDo extend with required property filters
   }

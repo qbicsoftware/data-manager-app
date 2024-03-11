@@ -7,11 +7,24 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService
 import life.qbic.projectmanagement.domain.model.sample.SampleCode
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
 class ProteomicsValidatorSpec extends Specification {
 
     final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata([SampleCode.create("QTEST001AE")],
             "https://ror.org/03a1kwz48", //Universität Tübingen,
-            "EFO:0004205" //Illumina MiSeq
+            "EFO:0004205", //Illumina MiSeq
+            "1",
+            "The geniuses of ITSS",
+            "4 Nations lived in harmony",
+            "CASPASE6",
+            "in solition",
+            "Enrichment Index",
+            "1337",
+            "12",
+            "LCMS Method 1",
+            "isotope", "N15",
+            "Don't tell anyone this is a test"
     )
     final static OntologyClass illuminaMiSeq = new OntologyClass(
             "efo",
@@ -26,11 +39,12 @@ class ProteomicsValidatorSpec extends Specification {
         findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
 
-    final static List<String> validPXPProperties = ["qbic sample ids", "organisation id", "facility", "instrument",
-                                                    "pooled sample label", "cycle/fraction name", "fractionation type", "digestion method", "digestion enzyme",
+    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample ids", "sample label", "organisation id", "facility", "instrument",
+                                                    "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
-                                                    "lcms method", "sample preparation", "sample cleanup (protein)",
-                                                    "sample cleanup (peptide)", "note"]
+                                                    "lcms method", "labeling type", "label", "comment"])
+
+    final static Collection<String> optionalPxPProperties = ["labeling type", "label", "comment", "sample pool group"]
 
     def "A complete property set must be valid no matter the letter casing style"() {
 
@@ -60,7 +74,7 @@ class ProteomicsValidatorSpec extends Specification {
     def "Missing properties for the proteomics metadata collection must result in an unsuccessful validation"() {
         given:
         // we just take the NGS property list
-        def missingProperties = validPXPProperties
+        def missingProperties = validPXPProperties.stream().collect(Collectors.toList())
         missingProperties.remove(0)
 
         when:
@@ -109,7 +123,21 @@ class ProteomicsValidatorSpec extends Specification {
 
     def "An unknown sample code in a proteomics measurement metadata object must return a failed validation "() {
         given:
-        def validMeasurementEntry = new ProteomicsMeasurementMetadata([SampleCode.create("QNKWN001AE")], validMetadata.organisationId(), validMetadata.instrumentCURI())
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata([SampleCode.create("QNKWN001AE")],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                "isotope", "N15",
+                "Don't tell anyone this is a test"
+        )
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
@@ -119,7 +147,7 @@ class ProteomicsValidatorSpec extends Specification {
         def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
-        def result = validator.validate(validMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry)
 
         then:
         !result.allPassed()
@@ -135,7 +163,21 @@ class ProteomicsValidatorSpec extends Specification {
         def unknownSample = SampleCode.create("QNKWN001AE")
 
         and:
-        def validMeasurementEntry = new ProteomicsMeasurementMetadata([unknownSample, sampleToBeFound], validMetadata.organisationId(), validMetadata.instrumentCURI())
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata([sampleToBeFound, unknownSample],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                "isotope", "N15",
+                "Don't tell anyone this is a test"
+        )
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
@@ -146,7 +188,7 @@ class ProteomicsValidatorSpec extends Specification {
         def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
-        def result = validator.validate(validMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry)
 
         then:
         !result.allPassed()
@@ -158,7 +200,21 @@ class ProteomicsValidatorSpec extends Specification {
 
     def "If no sample code is provided, the validation must fail"() {
         given:
-        def validMeasurementEntry = new ProteomicsMeasurementMetadata([], validMetadata.organisationId(), validMetadata.instrumentCURI())
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata([],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                "isotope", "N15",
+                "Don't tell anyone this is a test"
+        )
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
@@ -167,14 +223,14 @@ class ProteomicsValidatorSpec extends Specification {
         def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
-        def result = validator.validate(validMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry)
 
         then:
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
         result.failedEntries() == 1
-        result.failures()[0] == "A measurement must contain at least one sample reference. Provided: none"
+        result.failures()[0] == "Sample id: missing sample id reference"
     }
 
     /*
@@ -184,31 +240,43 @@ class ProteomicsValidatorSpec extends Specification {
 
     def "If an invalid ROR ID for the organisation information is provided, the validation must fail"() {
         given:
-        def sampleCode = SampleCode.create("QTEST001AE")
-        def pxpMetadata = new ProteomicsMeasurementMetadata(List.of(sampleCode), invalidRorId, validMetadata.instrumentCURI())
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                 invalidRorId, //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                "isotope", "N15",
+                "Don't tell anyone this is a test"
+        )
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
-        sampleInformationService.findSampleId(sampleCode) >> Optional.of(sampleCode)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
         def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
 
 
         when:
-        def result = validator.validate(pxpMetadata)
+        def result = validator.validate(invalidMetadata)
 
         then:
         !result.allPassed()
         !result.containsWarnings()
-        result.validatedEntries() == 3
         result.containsFailures()
         result.failedEntries() == 1
         result.failures()[0] == "The organisation ID does not seem to be a ROR ID: \"${invalidRorId}\""
 
         where:
         invalidRorId << [
-                "", // missing entry
                 "https://ror.org/1234", // invalid unique id pattern
                 "https://ror/1243", // missing domain
                 "03a1kwz48", // missing url part
@@ -216,26 +284,77 @@ class ProteomicsValidatorSpec extends Specification {
         ]
     }
 
-    def "If an valid ROR ID for the organisation information is provided, the validation must pass"() {
+    def "If no RoRId was provided for the organisation information the validation will fail"() {
         given:
-        def sampleCode = SampleCode.create("QTEST001AE")
-        def pxpMetadata = new ProteomicsMeasurementMetadata(validMetadata.sampleCodes(), validRorId, validMetadata.instrumentCURI())
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "", // missing entry
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                "isotope", "N15",
+                "Don't tell anyone this is a test"
+        )
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
-        sampleInformationService.findSampleId(sampleCode) >> Optional.of(sampleCode)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
         def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
 
 
         when:
-        def result = validator.validate(pxpMetadata)
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Organisation: missing mandatory metadata"
+    }
+
+    def "If an valid ROR ID for the organisation information is provided, the validation must pass"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                validRorId, //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                "isotope", "N15",
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(validMetadata)
 
         then:
         result.allPassed()
         !result.containsWarnings()
-        result.validatedEntries() == 3
         !result.containsFailures()
 
         where:
@@ -244,4 +363,6 @@ class ProteomicsValidatorSpec extends Specification {
                 "https://ror.org/00v34f693" // QBiC
         ]
     }
+
+    //Todo Extend test for the other mandatory metadata
 }

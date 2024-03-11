@@ -8,7 +8,6 @@ package life.qbic.projectmanagement.domain.model.measurement;
  *
  * @since 1.0.0
  */
-public record ProteomicsSamplePreparation(String preparation, String cleanupProtein,
-                                          String cleanupPeptide, String note) {
+public record ProteomicsSamplePreparation(String comment) {
 
 }
