@@ -32,6 +32,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 @Entity(name = "proteomics_measurement")
 public class ProteomicsMeasurement implements MeasurementMetadata {
 
+  @Column(name = "lcmsMethod")
   private String lcmsMethod = "";
   //FIXME do not implement MeasurementMetadata, you are not metadata but the measurement
   @Embedded
@@ -43,24 +44,34 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
 
+  @Column(name = "samplePool")
   private String samplePool = "";
 
+  @Column(name = "measurementCode")
   @Convert(converter = MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
 
+  @Column(name = "registration")
   private Instant registration;
 
+  @Column(name = "facility")
   private String facility = "";
 
+  @Column(name = "digestionMethod")
   private String digestionMethod = "";
 
+  @Column(name = "digestionEnzyme")
   private String digestionEnzyme = "";
 
+  @Column(name = "enrichmentMethod")
   private String enrichmentMethod = "";
 
+  @Column(name = "injectionVolume")
   private int injectionVolume = 0;
 
+  @Column(name = "lcColumn")
   private String lcColumn = "";
+  @Column(name = "comment")
   private String comment = "";
 
   @Column(name = "measurementLabelingType")
