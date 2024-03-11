@@ -96,7 +96,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     rawDataSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     rawDataSearchField.addValueChangeListener(
         event -> rawdataDetailsComponent.setSearchedRawDataValue((event.getValue())));
-    Button downloadRawDataUrl = new Button("Download RAW data URL");
+    Button downloadRawDataUrl = new Button("Download URL list");
     downloadRawDataUrl.addClassName("primary");
     downloadRawDataUrl.addClickListener(event -> handleUrlDownload());
     Span buttonAndField = new Span(rawDataSearchField, downloadRawDataUrl);

@@ -40,29 +40,31 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
   private static final long serialVersionUID = 7161304802207319605L;
   private static final Logger log = logger(RawDataDownloadInformationComponent.class);
   private Context context;
-  private static int sectionNumber = 0;
+  private static int sectionNumber;
   private final Button navigateToPatPageButton = new Button("Go to Personal Access Token");
   private final Button generateDownloadUrlsButton = new Button("Download URL list");
-
 
   public RawDataDownloadInformationComponent() {
     Span title = new Span("Data Download");
     title.addClassName("title");
     addComponentAsFirst(title);
-    CodeBlock codeBlock = new CodeBlock("curl", "<token>", "<URL>");
+    initializeSections();
+    addClassName("raw-data-download-information-component");
+  }
+
+  private void initializeSections() {
+    sectionNumber = 0;
     Div generateTokenSection = generateSection("Generate Token",
         "Generate a Personal Access Token (PAT)",
         navigateToPatPageButton);
     Div downloadRawDataSection = generateSection("Download RAW data URLs",
         "Download the file with a list of URLs corresponding to the measurement you want to download.",
         generateDownloadUrlsButton);
+    CodeBlock codeBlock = new CodeBlock("curl", "<token>", "<URL>");
     Div runCurlCommandSection = generateSection("Run cURL command",
         "Install cURL on your system, open it and enter the following command once for each file you want to download",
         codeBlock);
-    add(generateTokenSection);
-    add(downloadRawDataSection);
-    add(runCurlCommandSection);
-    addClassName("raw-data-download-information-component");
+    add(generateTokenSection, downloadRawDataSection, runCurlCommandSection);
   }
 
   private static Div generateSection(String title, String text, Component... components) {
