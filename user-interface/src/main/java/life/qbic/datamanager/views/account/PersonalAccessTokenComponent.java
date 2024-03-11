@@ -126,8 +126,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     personalAccessTokenWithIcon.addClassName("token-text");
 
     copyIcon.addClickListener(
-        event -> handleCopyClicked(createdPersonalAccessTokenDetails, personalAccessTokenWithIcon,
-            rawTokenText));
+        event -> handleCopyClicked(rawTokenText));
 
     Icon disclaimerIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
     disclaimerIcon.addClassName(IconSize.SMALL);
@@ -141,7 +140,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     updateUI();
   }
 
-private void handleCopyClicked(Div tokenDiv, Span tokenSpan, String rawTokenText) {
+private void handleCopyClicked(String rawTokenText) {
   UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", rawTokenText);
 
   createdTokenLayout.removeAll();
