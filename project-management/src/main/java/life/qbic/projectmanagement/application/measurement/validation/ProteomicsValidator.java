@@ -164,6 +164,12 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     ValidationResult validateMandatoryDataProvided(
         ProteomicsMeasurementMetadata measurementMetadata) {
       var validation = ValidationResult.successful(0);
+      if (measurementMetadata.sampleCodes().isEmpty()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Sample id: missing sample id reference")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
       if (measurementMetadata.organisationId().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));

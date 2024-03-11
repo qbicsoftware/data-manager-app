@@ -42,6 +42,8 @@ class ProteomicsValidatorSpec extends Specification {
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "labeling type", "label", "comment"]
 
+    final static Collection<String> optionalPxPProperties = ["labeling type", "label", "comment"]
+
     def "A complete property set must be valid no matter the letter casing style"() {
 
         when:
@@ -226,7 +228,7 @@ class ProteomicsValidatorSpec extends Specification {
         !result.containsWarnings()
         result.containsFailures()
         result.failedEntries() == 1
-        result.failures()[0] == "A measurement must contain at least one sample reference. Provided: none"
+        result.failures()[0] == "Sample id: missing sample id reference"
     }
 
     /*
@@ -268,7 +270,7 @@ class ProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.validatedEntries() == 3
+        result.validatedEntries() == validPXPProperties.size() - optionalPxPProperties.size() // labeling type, label and comment are optional
         result.failedEntries() == 1
         result.failures()[0] == "The organisation ID does not seem to be a ROR ID: \"${invalidRorId}\""
 
@@ -352,7 +354,7 @@ class ProteomicsValidatorSpec extends Specification {
         then:
         result.allPassed()
         !result.containsWarnings()
-        result.validatedEntries() == 3
+        result.validatedEntries() == validPXPProperties.size() - optionalPxPProperties.size()
         !result.containsFailures()
 
         where:
