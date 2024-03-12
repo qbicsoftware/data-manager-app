@@ -12,6 +12,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectRegisteredEvent;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectExistsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -55,9 +56,12 @@ public class ProjectDomainService {
         projectManager, principalInvestigator,
         responsiblePerson);
     project.setFunding(funding);
-
     try {
       projectRepository.add(project);
+    } catch (ProjectExistsException projectExistsException) {
+      log.error("Project with code " + project.getProjectCode() + "already exists",
+          projectExistsException);
+      return Result.fromError(ResponseCode.PROJECT_ALREADY_EXISTS);
     } catch (Exception e) {
       log.error("Project with code " + project.getProjectCode() + " registration failed.", e);
       return Result.fromError(ResponseCode.PROJECT_REGISTRATION_FAILED);
@@ -70,7 +74,8 @@ public class ProjectDomainService {
   }
 
   public enum ResponseCode {
-    PROJECT_REGISTRATION_FAILED
+    PROJECT_REGISTRATION_FAILED,
+    PROJECT_ALREADY_EXISTS
   }
 
 }

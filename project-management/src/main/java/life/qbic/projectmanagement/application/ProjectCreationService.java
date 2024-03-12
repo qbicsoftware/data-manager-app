@@ -97,10 +97,15 @@ public class ProjectCreationService {
 
     var registrationResult = projectDomainService.registerProject(intent, projectCode, projectManager, principalInvestigator, responsiblePerson, funding);
 
-    if (registrationResult.isError() && registrationResult.getError().equals(ResponseCode.PROJECT_REGISTRATION_FAILED)) {
-      throw new ApplicationException("Project registration failed.", ErrorCode.GENERAL, ErrorParameters.of(code));
-    }
-
+    registrationResult.onError(responseCode -> {
+      if (responseCode.equals(ResponseCode.PROJECT_ALREADY_EXISTS)) {
+        throw new ApplicationException("Project code is already in use.",
+            ErrorCode.DUPLICATE_PROJECT_CODE, ErrorParameters.of(code));
+      } else {
+        throw new ApplicationException("Project registration failed.", ErrorCode.GENERAL,
+            ErrorParameters.of(code));
+      }
+    });
     return registrationResult.getValue();
   }
 
