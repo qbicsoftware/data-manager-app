@@ -21,7 +21,7 @@ class ProjectCreationServiceSpec extends Specification {
   ProjectRepository projectRepositoryStub = Stub()
   AddExperimentToProjectService addExperimentToProjectServiceStub = Stub()
     ProjectDomainService projectDomainServiceStub = new ProjectDomainService(projectRepositoryStub)
-  ProjectCreationService projectCreationServiceWithStubs = new ProjectCreationService(projectRepositoryStub, projectDomainServiceStub)
+  ProjectCreationService projectCreationServiceWithStubs = new ProjectCreationService(projectDomainServiceStub)
 
   def "invalid project title leads to INVALID_PROJECT_TITLE code"() {
     given:

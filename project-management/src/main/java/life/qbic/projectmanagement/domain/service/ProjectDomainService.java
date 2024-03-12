@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.domain.service;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -12,6 +12,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectRegisteredEvent;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectExistsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +27,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectDomainService {
 
-  private static final Logger log = logger(ProjectDomainService.class);
   private final ProjectRepository projectRepository;
 
   @Autowired
@@ -47,7 +47,7 @@ public class ProjectDomainService {
    * @return a {@link Result} of the registration
    * @since 1.0.0
    */
-  public Result<Project, ResponseCode> registerProject(
+  public Project registerProject(
       ProjectIntent projectIntent, ProjectCode projectCode,
       Contact projectManager, Contact principalInvestigator,
       Contact responsiblePerson, Funding funding) {
@@ -55,22 +55,18 @@ public class ProjectDomainService {
         projectManager, principalInvestigator,
         responsiblePerson);
     project.setFunding(funding);
-
     try {
       projectRepository.add(project);
-    } catch (Exception e) {
-      log.error("Project with code " + project.getProjectCode() + " registration failed.", e);
-      return Result.fromError(ResponseCode.PROJECT_REGISTRATION_FAILED);
+    } catch (ProjectExistsException projectExistsException) {
+      throw new ApplicationException("Project code is " + projectCode + " already in use.",
+          projectExistsException,
+          ErrorCode.DUPLICATE_PROJECT_CODE, ErrorParameters.of(projectCode.value()));
+    } catch (RuntimeException exception) {
+      throw new ApplicationException("Registration of project with code "
+          + projectCode + " failed.", exception);
     }
-
     // In case of a successful registration, we dispatch the registration event
     DomainEventDispatcher.instance().dispatch(ProjectRegisteredEvent.create(project.getId()));
-
-    return Result.fromValue(project);
+    return project;
   }
-
-  public enum ResponseCode {
-    PROJECT_REGISTRATION_FAILED
-  }
-
 }

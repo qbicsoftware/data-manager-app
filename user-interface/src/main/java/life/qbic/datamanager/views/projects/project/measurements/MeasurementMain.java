@@ -143,7 +143,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    measurementDetailsComponent.setExperimentId(parsedExperimentId);
+    measurementDetailsComponent.setContext(context);
     isRawDataAvailable();
   }
 
@@ -166,7 +166,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       boolean allSuccessfull = true;
       for (var upload : uploads) {
         try {
-          measurementService.registerMultiple(upload.measurementRegistrationRequests());
+          measurementService.registerMultiple(upload.measurementMetadata(), context.projectId().orElseThrow());
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
           String errorMessage = switch (measurementRegistrationException.reason()) {
@@ -174,6 +174,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
             case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
             case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
+            case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
           };
           confirmEvent.getSource().showError(upload.fileName(), errorMessage);
           continue;
@@ -181,7 +182,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         confirmEvent.getSource().markSuccessful(upload.fileName());
       }
       if (allSuccessfull) {
-        measurementDetailsComponent.setExperimentId(context.experimentId().orElseThrow());
+        measurementDetailsComponent.setContext(context);
         confirmEvent.getSource().close();
       }
     });

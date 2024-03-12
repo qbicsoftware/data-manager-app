@@ -1,13 +1,7 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -38,7 +32,7 @@ public class NGSMeasurement implements MeasurementMetadata {
   @Embedded
   private OntologyTerm instrument;
 
-  @Embedded
+  @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
 
   @ElementCollection

@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
+import jakarta.persistence.AttributeConverter;
+
 /**
  * <b>NGSMeasurementMetadata Code</b>
  *
@@ -27,23 +29,15 @@ package life.qbic.projectmanagement.domain.model.measurement;
 public class MeasurementCode {
 
   private final MEASUREMENT_PREFIX prefix;
-  private final String sampleCode;
   private final String measurementCode;
 
-  private final Long nanoTimeStamp;
-
-  private MeasurementCode() {
-
-    nanoTimeStamp = null;
+  protected MeasurementCode() {
     measurementCode = null;
-    sampleCode = null;
     prefix = null;
   }
 
   private MeasurementCode(MEASUREMENT_PREFIX prefix, String sampleCode, Long nanoTimeStamp) {
     this.prefix = prefix;
-    this.sampleCode = sampleCode;
-    this.nanoTimeStamp = nanoTimeStamp;
     this.measurementCode = "%s-%s".formatted((prefix + sampleCode), nanoTimeStamp);
   }
 
@@ -69,7 +63,7 @@ public class MeasurementCode {
           return new MeasurementCode(prefix,
               value.split("-")[0].substring(prefix.toString().length()),
               Long.parseLong(value.split("-")[1]));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
           throw new IllegalArgumentException(
               "Unknown value for a measurement code for: \"" + value + "\"");
         }
@@ -96,6 +90,18 @@ public class MeasurementCode {
 
   public enum MEASUREMENT_PREFIX {
     NGS, MS, IMG
+  }
+  static class MeasurementCodeConverter implements AttributeConverter<MeasurementCode, String> {
+
+    @Override
+    public String convertToDatabaseColumn(MeasurementCode measurementCode) {
+      return measurementCode.value();
+    }
+
+    @Override
+    public MeasurementCode convertToEntityAttribute(String s) {
+      return MeasurementCode.parse(s);
+    }
   }
 
 
