@@ -52,7 +52,7 @@ public class OntologyLookupService {
   }
 
   public List<String> findUniqueOntologies() {
-    return ontologyTermLookup.findUniqueOntologies();
+    return ontologyTermLookup.findUniqueOntologyAbbreviations();
   }
 
 }

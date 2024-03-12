@@ -66,5 +66,5 @@ public interface OntologyLookupInterface {
    * Returns a list of unique ontology identifiers in the database
    * @return
    */
-  List<String> findUniqueOntologies();
+  List<String> findUniqueOntologyAbbreviations();
 }

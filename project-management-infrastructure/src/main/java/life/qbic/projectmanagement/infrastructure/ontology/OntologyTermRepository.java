@@ -94,7 +94,7 @@ public class OntologyTermRepository implements OntologyRepository, OntologyLooku
         .toList());
   }
 
-  public List<String> findUniqueOntologies() {
+  public List<String> findUniqueOntologyAbbreviations() {
     return jpaRepository.findUniqueOntologies();
   }
 }
