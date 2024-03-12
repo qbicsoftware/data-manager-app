@@ -17,9 +17,11 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -58,18 +60,24 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private final MeasurementDetailsComponent measurementDetailsComponent;
+
+  private final MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
   private final transient MeasurementService measurementService;
   private final transient ValidationService validationService;
-  private transient Context context;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
+  private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
+
+  private final DownloadProvider downloadProvider;
+  private transient Context context;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired MeasurementService measurementService,
-      @Autowired ValidationService validationService) {
+      @Autowired ValidationService validationService,
+      @Autowired MeasurementPresenter measurementPresenter) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
@@ -77,6 +85,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementService = measurementService;
     this.validationService = validationService;
+    this.measurementPresenter = measurementPresenter;
+    this.proteomicsMeasurementContentProvider = new ProteomicsMeasurementContentProvider();
+    this.downloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
@@ -84,6 +95,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
+    add(downloadProvider);
     addClassName("measurement");
     measurementDetailsComponent.addRegisterMeasurementClickedListener(
         event -> openRegisterMeasurementDialog());
@@ -113,13 +125,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     measurementSearchField.addValueChangeListener(
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
+    Button export = new Button("Download Metadata");
+    export.addClickListener(event -> downloadMetadata());
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
         event -> openRegisterMeasurementDialog());
-    Span buttonAndField = new Span(measurementSearchField, registerMeasurementButton);
+    Span buttonAndField = new Span(measurementSearchField, export, registerMeasurementButton);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
+  }
+
+  private void downloadMetadata() {
+    var proteomicsMeasurements = measurementService.findProteomicsMeasurement(context.experimentId().orElseThrow(() -> new ApplicationException(
+        ErrorCode.GENERAL, null)), context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+    proteomicsMeasurements.size();
+    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools).flatMap(items -> items.stream()).toList();
+    result.size();
+    proteomicsMeasurementContentProvider.setMeasurements(result);
+    downloadProvider.trigger();
   }
 
   /**
@@ -166,7 +190,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       boolean allSuccessfull = true;
       for (var upload : uploads) {
         try {
-          measurementService.registerMultiple(upload.measurementMetadata(), context.projectId().orElseThrow());
+          measurementService.registerMultiple(upload.measurementMetadata(),
+              context.projectId().orElseThrow());
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
           String errorMessage = switch (measurementRegistrationException.reason()) {

@@ -6,6 +6,8 @@ import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -67,6 +69,10 @@ public class MeasurementLookupService {
         limit, sortOrders);
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(termList);
+  }
+
+  public List<ProteomicsMeasurement> queryAllProteomicsMeasurement(List<SampleId> sampleIds) {
+    return measurementLookup.queryProteomicsMeasurementsBySampleIds(sampleIds);
   }
 
 }

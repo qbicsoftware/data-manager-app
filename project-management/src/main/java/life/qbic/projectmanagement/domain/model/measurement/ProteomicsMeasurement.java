@@ -80,6 +80,9 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @Column(name = "measurementLabel")
   private String label = "";
 
+  @Column(name = "fraction")
+  private String fraction = "";
+
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;
@@ -107,6 +110,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
     this.registration = registration;
+    this.fraction = method.fractionName();
   }
 
   private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
@@ -243,6 +247,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   public String lcmsMethod() {
     return lcmsMethod;
+  }
+
+  public String fraction() {
+    return fraction;
   }
 
   public Optional<String> comment() {
