@@ -220,7 +220,6 @@
 }
 
 .ontology-lookup-component .ontology-item {
-  background-color: var(--lumo-base-color);
   border: black;
   border-radius: var(--lumo-border-radius-m);
   box-shadow: var(--lumo-box-shadow-s);
@@ -259,6 +258,10 @@
 
 .success-background-hue {
   background-color: var(--lumo-success-color-10pct);
+}
+
+.base-background {
+  background-color: var(--lumo-base-color);
 }
 
 .ontology-lookup-component .ontology-item .ontology-item-title {
