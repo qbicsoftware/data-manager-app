@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.access.EditUserAccessToProjectDialog.ProjectCollaborator;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
@@ -216,12 +217,15 @@ public class ProjectAccessComponent extends PageArea {
     editUserAccessToProjectDialog.addCancelEventListener(
         addUserToProjectDialogCancelEvent -> editUserAccessToProjectDialog.close());
     editUserAccessToProjectDialog.addConfirmEventListener(addUserToProjectDialogConfirmEvent -> {
-      List<UserInfo> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
+      List<String> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
           .stream()
+          .map(ProjectCollaborator::userId)
           .toList();
-      List<UserInfo> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
+      List<String> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
           .removedUsers()
-          .stream().toList();
+          .stream()
+          .map(ProjectCollaborator::userId)
+          .toList();
       if (!addedUsers.isEmpty()) {
         addUsersToProject(addedUsers);
       }
@@ -233,17 +237,17 @@ public class ProjectAccessComponent extends PageArea {
     });
   }
 
-  private void addUsersToProject(List<UserInfo> users) {
-    for (UserInfo user : users) {
-      projectAccessService.grant(user.id(), context.projectId().orElseThrow(), BasePermission.READ);
+  private void addUsersToProject(List<String> userIDs) {
+    for (String userId : userIDs) {
+      projectAccessService.grant(userId, context.projectId().orElseThrow(), BasePermission.READ);
       accessDomainService.grantProjectAccessFor(context.projectId().orElseThrow().value(),
-          user.id());
+          userId);
     }
   }
 
-  private void removeUsersFromProject(List<UserInfo> users) {
-    for (UserInfo user : users) {
-      projectAccessService.denyAll(user.id(), context.projectId().orElseThrow());
+  private void removeUsersFromProject(List<String> userIDs) {
+    for (String userId : userIDs) {
+      projectAccessService.denyAll(userId, context.projectId().orElseThrow());
     }
   }
 

@@ -38,7 +38,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = -7896582476882842608L;
   private static final String TITLE = "Edit User Access to Project";
-  private final Grid<UserInfo> userGrid = new Grid<>();
+  private final Grid<ProjectCollaborator> userGrid = new Grid<>();
   private final TextField searchField = new TextField();
   private final List<ComponentEventListener<CancelEvent<EditUserAccessToProjectDialog>>> cancelEventListeners = new ArrayList<>();
   private final List<ComponentEventListener<ConfirmEvent<EditUserAccessToProjectDialog>>> confirmEventListeners = new ArrayList<>();
@@ -47,7 +47,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
   private final transient ProjectAccessService projectAccessService;
   private final ProjectId projectId;
   private UserSelectionContent userSelectionContent;
-  private Set<UserInfo> originalUsersInProject;
+  private Set<ProjectCollaborator> originalUsersInProject;
 
   public EditUserAccessToProjectDialog(@Autowired ProjectAccessService projectAccessService,
       @Autowired ProjectId projectId,
@@ -80,8 +80,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
   }
 
   private void layoutGrid() {
-    userGrid.addColumn(UserInfo::fullName).setHeader("User Name");
-    userGrid.addColumn(UserInfo::emailAddress).setHeader("User Email");
+    userGrid.addColumn(ProjectCollaborator::userName).setHeader("username");
     userGrid.setSelectionMode(SelectionMode.MULTI);
     add(userGrid);
   }
@@ -91,6 +90,7 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
     List<String> addedUserIdsInProject = projectAccessService.listUserIds(projectId);
     originalUsersInProject = addedUserIdsInProject.stream().map(userInformationService::findById)
         .filter(Optional::isPresent).map(Optional::get)
+        .map(userInfo -> new ProjectCollaborator(userInfo.id(), userInfo.userName()))
         .collect(Collectors.toUnmodifiableSet());
     originalUsersInProject.forEach(userGrid::select);
   }
@@ -109,10 +109,11 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
     List<String> userSids = sidRepository.findAllByPrincipalIsTrue().stream()
         .map(QBiCSid::getSid)
         .toList();
-    List<UserInfo> users = userSids.stream()
+    List<ProjectCollaborator> users = userSids.stream()
         .map(userInformationService::findById)
         .filter(Optional::isPresent)
         .map(Optional::get)
+        .map(userInfo -> new ProjectCollaborator(userInfo.id(), userInfo.userName()))
         .toList();
     userGrid.setItems(users);
   }
@@ -136,10 +137,8 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
       if (userGrid.getSelectedItems().contains(user)) {
         return true;
       }
-      boolean matchesFullName = matchesTerm(user.fullName(),
+      return matchesTerm(user.userName(),
           searchTerm);
-      boolean matchesEmail = matchesTerm(user.emailAddress(), searchTerm);
-      return matchesFullName || matchesEmail;
     });
   }
 
@@ -194,14 +193,19 @@ public class EditUserAccessToProjectDialog extends DialogWindow {
   }
 
   private void determineChangedUsers() {
-    Set<UserInfo> selectedUsers = new HashSet<>(userGrid.getSelectedItems());
-    Set<UserInfo> preSelectedUsers = new HashSet<>(originalUsersInProject);
+    Set<ProjectCollaborator> selectedUsers = new HashSet<>(userGrid.getSelectedItems());
+    Set<ProjectCollaborator> preSelectedUsers = new HashSet<>(originalUsersInProject);
     preSelectedUsers.removeAll(userGrid.getSelectedItems());
     selectedUsers.removeAll(originalUsersInProject);
     userSelectionContent = new UserSelectionContent(selectedUsers, preSelectedUsers);
   }
 
-  public record UserSelectionContent(Set<UserInfo> addedUsers, Set<UserInfo> removedUsers) {
+  public record UserSelectionContent(Set<ProjectCollaborator> addedUsers,
+                                     Set<ProjectCollaborator> removedUsers) {
+
+  }
+
+  public record ProjectCollaborator(String userId, String userName) {
 
   }
 }
