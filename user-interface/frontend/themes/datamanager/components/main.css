@@ -22,6 +22,42 @@
     "measurementdetails measurementdetails";
 }
 
+/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
+.main.measurement .no-samples-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
+.main.measurement .no-measurements-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+.main.measurement .no-measurements-registered-disclaimer {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+  align-items: center;
+  justify-content: center;
+}
+
+.main.measurement .no-measurements-registered-disclaimer .no-measurement-registered-title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: 0.5rem;
+}
+
+.main.measurement .no-measurements-registered-disclaimer .no-measurement-registered-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .main.measurement .measurement-template-list-component {
   grid-area: measurementtemplatelist;
 }
@@ -37,7 +73,6 @@
   row-gap: var(--lumo-space-m);
   padding: var(--lumo-space-m);
 }
-
 
 .main.measurement .measurement-main-content .title {
   font-weight: bold;
@@ -106,6 +141,20 @@
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";
+}
+
+.main.raw-data .no-measurements-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+.main.raw-data .no-raw-data-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
 }
 
 .main.raw-data .raw-data-download-information-component {

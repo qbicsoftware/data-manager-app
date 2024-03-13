@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -14,17 +15,23 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.Collection;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
+import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.rawdata.RawDataService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -32,8 +39,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Raw Data Main Component
  * <p>
- * This component hosts the components necessary to show and download the raw data
- * associated with the {@link MeasurementMetadata} within an {@link Experiment} via the provided
+ * This component hosts the components necessary to show and download the raw data associated with
+ * the {@link MeasurementMetadata} within an {@link Experiment} via the provided
  * {@link ExperimentId} and {@link ProjectId} in the URL
  */
 
@@ -53,22 +60,38 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final TextField rawDataSearchField = new TextField();
   private transient Context context;
   private final Div content = new Div();
+  private final transient MeasurementService measurementService;
+  private final transient RawDataService rawDataService;
+  private static Disclaimer registerMeasurementsDisclaimer;
+  private static Disclaimer noRawDataRegisteredDisclaimer;
 
   public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
-                     @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent) {
-
+      @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
+      @Autowired MeasurementService measurementService,
+      @Autowired RawDataService rawDataService) {
     this.rawdataDetailsComponent = Objects.requireNonNull(rawDataDetailsComponent);
-    this.rawDataDownloadInformationComponent = Objects.requireNonNull(rawDataDownloadInformationComponent);
+    this.rawDataDownloadInformationComponent = Objects.requireNonNull(
+        rawDataDownloadInformationComponent);
+    this.measurementService = Objects.requireNonNull(measurementService);
+    this.rawDataService = Objects.requireNonNull(rawDataService);
+    registerMeasurementsDisclaimer = createNoMeasurementsRegisteredDisclaimer();
+    registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
+    noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();
+    noRawDataRegisteredDisclaimer.addClassName("no-raw-data-registered-disclaimer");
     initContent();
+    add(registerMeasurementsDisclaimer);
+    add(noRawDataRegisteredDisclaimer);
     add(rawDataDetailsComponent);
     add(rawDataDownloadInformationComponent);
     addListeners();
     addClassName("raw-data");
     log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s)",
+        "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
         getClass().getSimpleName(), System.identityHashCode(this),
         rawdataDetailsComponent.getClass().getSimpleName(),
-        System.identityHashCode(rawDataDetailsComponent)));
+        System.identityHashCode(rawDataDetailsComponent),
+        rawDataDownloadInformationComponent.getClass().getSimpleName(),
+        System.identityHashCode(rawDataDownloadInformationComponent)));
   }
 
   private void initContent() {
@@ -82,7 +105,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   }
 
   private void addListeners() {
-    rawDataDownloadInformationComponent.addDownloadUrlListener(event -> handleUrlDownload());
+    rawDataDownloadInformationComponent.addDownloadUrlListener(this::handleUrlDownload);
     rawDataDownloadInformationComponent.addPersonalAccessTokenNavigationListener(
         event -> UI.getCurrent().navigate(
             PersonalAccessTokenMain.class));
@@ -98,14 +121,25 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
         event -> rawdataDetailsComponent.setSearchedRawDataValue((event.getValue())));
     Button downloadRawDataUrl = new Button("Download URL list");
     downloadRawDataUrl.addClassName("primary");
-    downloadRawDataUrl.addClickListener(event -> handleUrlDownload());
+    downloadRawDataUrl.addClickListener(this::handleUrlDownload);
     Span buttonAndField = new Span(rawDataSearchField, downloadRawDataUrl);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
   }
 
-  //ToDo Implement
-  private void handleUrlDownload(){}
+
+  private void handleUrlDownload(ComponentEvent<?> event) {
+    //ToDo Implement
+    Collection<MeasurementId> selectedMeasurements = rawdataDetailsComponent.getSelectedMeasurements();
+    generateUrls(selectedMeasurements);
+  }
+
+  private static void generateUrls(Collection<MeasurementId> measurementIdCollection) {
+    if (measurementIdCollection.isEmpty()) {
+      return;
+    }
+    //Todo implement URL generation and file download
+  }
 
   /**
    * Callback executed before navigation to attaching Component chain is made.
@@ -128,7 +162,80 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    rawdataDetailsComponent.setContext(context);
-    //Todo Handle empty state
+    setRawDataInformation();
   }
+
+  private void setRawDataInformation() {
+    //Check if measurements exist
+    ExperimentId currentExperimentId = context.experimentId().orElseThrow();
+    if (!measurementService.hasMeasurements(currentExperimentId)) {
+      showRegisterMeasurementDisclaimer();
+      return;
+    }
+    if (!rawDataService.hasRawData(currentExperimentId)) {
+      showNoRawDataRegisteredDisclaimer();
+    } else {
+      showRawDataForRegisteredMeasurements();
+    }
+  }
+
+  private void showRegisterMeasurementDisclaimer() {
+    noRawDataRegisteredDisclaimer.setVisible(false);
+    content.setVisible(false);
+    rawdataDetailsComponent.setVisible(false);
+    rawDataDownloadInformationComponent.setVisible(false);
+    registerMeasurementsDisclaimer.setVisible(true);
+  }
+
+  private void showNoRawDataRegisteredDisclaimer() {
+    registerMeasurementsDisclaimer.setVisible(false);
+    content.setVisible(false);
+    rawdataDetailsComponent.setVisible(false);
+    rawDataDownloadInformationComponent.setVisible(false);
+    noRawDataRegisteredDisclaimer.setVisible(true);
+  }
+
+  private void showRawDataForRegisteredMeasurements() {
+    noRawDataRegisteredDisclaimer.setVisible(false);
+    registerMeasurementsDisclaimer.setVisible(false);
+    content.setVisible(true);
+    rawdataDetailsComponent.setContext(context);
+    rawDataDownloadInformationComponent.setVisible(true);
+    rawdataDetailsComponent.setVisible(true);
+  }
+
+  private Disclaimer createNoMeasurementsRegisteredDisclaimer() {
+    Disclaimer noMeasurementsRegisteredDisclaimer = Disclaimer.createWithTitle(
+        "Register your measurements first",
+        "You have to register measurements before raw data download is possible",
+        "Register Measurements");
+    noMeasurementsRegisteredDisclaimer.addDisclaimerConfirmedListener(
+        this::routeToMeasurementCreation);
+    return noMeasurementsRegisteredDisclaimer;
+  }
+
+  private Disclaimer createNoRawDataRegisteredDisclaimer() {
+    Disclaimer noRawDataRegistered = Disclaimer.createWithTitle(
+        "No Raw Data available",
+        "There is currently no raw data registered for the measurements within this experiment",
+        "Register Measurements");
+    noRawDataRegistered.addDisclaimerConfirmedListener(
+        this::routeToMeasurementCreation);
+    return noRawDataRegistered;
+  }
+
+  private void routeToMeasurementCreation(ComponentEvent<?> componentEvent) {
+    if (componentEvent.isFromClient()) {
+      String currentExperimentId = context.experimentId().orElseThrow().value();
+      String currentProjectId = context.projectId().orElseThrow().value();
+      String routeToMeasurementPage = String.format(Projects.MEASUREMENTS,
+          currentProjectId,
+          currentExperimentId);
+      log.debug(String.format(
+          "Rerouting to measurement page for experiment %s of project %s: %s",
+          currentExperimentId, currentProjectId, routeToMeasurementPage));
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
+    }
+  }
+
 }

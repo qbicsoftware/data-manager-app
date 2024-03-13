@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
@@ -28,12 +25,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -62,7 +60,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
   private final TabSheet registerMeasurementTabSheet = new TabSheet();
-  private final Div noMeasurementDisclaimer = new Div();
   private String searchTerm = "";
   private final Grid<NGSMeasurement> ngsMeasurementGrid = new Grid<>();
   private final Grid<ProteomicsMeasurement> proteomicsMeasurementGrid = new Grid<>();
@@ -80,10 +77,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
-    initNoMeasurementDisclaimer();
     createProteomicsGrid();
     createNGSMeasurementGrid();
-    add(noMeasurementDisclaimer);
     add(registerMeasurementTabSheet);
     registerMeasurementTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
@@ -102,15 +97,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     List<GridLazyDataView<?>> dataViewsWithItems = measurementsGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();
-    /*If none of the measurement types have items show default state with noMeasurement Disclaimer*/
-    if (dataViewsWithItems.isEmpty()) {
-      noMeasurementDisclaimer.setVisible(true);
-      registerMeasurementTabSheet.setVisible(false);
-      return;
-    }
-    noMeasurementDisclaimer.setVisible(false);
     dataViewsWithItems.forEach(this::addMeasurementTab);
-    registerMeasurementTabSheet.setVisible(true);
   }
 
   /**
@@ -125,19 +112,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   public void setSearchedMeasurementValue(String searchTerm) {
     this.searchTerm = searchTerm;
     measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
-  }
-
-
-  /**
-   * Informs the listener that a {@link MeasurementAddClickEvent} has occurred within the disclaimer
-   * of this component
-   *
-   * @param addMeasurementListener listener which will be informed if a
-   *                               {@link MeasurementAddClickEvent} has been fired
-   */
-  public void addRegisterMeasurementClickedListener(
-      ComponentEventListener<MeasurementAddClickEvent> addMeasurementListener) {
-    addListener(MeasurementAddClickEvent.class, addMeasurementListener);
   }
 
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
@@ -275,53 +249,5 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         sampleCodes.forEach(sampleCode -> showSampleCodes.add(new Span(sampleCode.code())));
         return showSampleCodes;
     });
-  }
-
-  private void initNoMeasurementDisclaimer() {
-    Span disclaimerTitle = new Span("Manage your measurement metadata");
-    disclaimerTitle.addClassName("no-measurement-registered-title");
-    noMeasurementDisclaimer.add(disclaimerTitle);
-    Div noMeasurementDisclaimerContent = new Div();
-    noMeasurementDisclaimerContent.addClassName("no-measurement-registered-content");
-    Span noMeasurementText1 = new Span("Start by downloading the required metadata template");
-    Span noMeasurementText2 = new Span(
-        "Fill the metadata sheet and register your measurement metadata.");
-    noMeasurementDisclaimerContent.add(noMeasurementText1);
-    noMeasurementDisclaimerContent.add(noMeasurementText2);
-    noMeasurementDisclaimer.add(noMeasurementDisclaimerContent);
-    InfoBox availableTemplatesInfo = new InfoBox();
-    availableTemplatesInfo.setInfoText(
-        "You can download the measurement metadata template from the Templates component above");
-    availableTemplatesInfo.setClosable(false);
-    noMeasurementDisclaimer.add(availableTemplatesInfo);
-    Button registerMeasurements = new Button("Register Measurements");
-    registerMeasurements.addClassName("primary");
-    noMeasurementDisclaimer.add(registerMeasurements);
-    registerMeasurements.addClickListener(
-        event -> fireEvent(new MeasurementAddClickEvent(this, event.isFromClient())));
-    noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
-  }
-
-
-  /**
-   * Measurement Add Click Event
-   * <p></p>
-   * ComponentEvent which informs the system that {@link MeasurementMetadata} is intended to be
-   * added to the system
-   */
-  public static class MeasurementAddClickEvent extends
-      ComponentEvent<MeasurementDetailsComponent> {
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public MeasurementAddClickEvent(MeasurementDetailsComponent source, boolean fromClient) {
-      super(source, fromClient);
-    }
   }
 }

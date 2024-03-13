@@ -171,25 +171,6 @@
   display: inline-flex;
 }
 
-.measurement-details-component .no-measurements-registered-disclaimer {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-m);
-  align-items: center;
-}
-
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-title {
-  font-weight: bold;
-  font-size: var(--lumo-font-size-m);
-  margin-bottom: 0.5rem;
-}
-
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 .ontology-lookup-component {
   display: flex;
   flex-direction: column;

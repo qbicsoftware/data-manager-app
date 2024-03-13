@@ -2,10 +2,9 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import jakarta.persistence.criteria.Expression;
 import java.util.Collection;
 import java.util.List;
-
-import jakarta.persistence.criteria.Expression;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
@@ -39,6 +38,16 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     this.ngsMeasurementJpaRepo = ngsMeasurementJpaRepo;
     this.pxpMeasurementJpaRepo = pxpMeasurementJpaRepo;
     this.measurementDataRepo = measurementDataRepo;
+  }
+
+  @Override
+  public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return pxpMeasurementJpaRepo.count(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public long countNgsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return ngsMeasurementJpaRepo.count(NgsMeasurementSpec.containsSampleId(sampleIds));
   }
 
   @Override

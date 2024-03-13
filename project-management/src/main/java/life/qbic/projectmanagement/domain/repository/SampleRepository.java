@@ -45,4 +45,6 @@ public interface SampleRepository {
   Optional<Sample> findSample(SampleCode sampleCode);
 
   boolean isSampleRemovable(Project project, SampleId sampleId);
+
+  long countSamplesWithExperimentId(ExperimentId experimentId);
 }

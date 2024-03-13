@@ -87,6 +87,11 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     navigateToPatPageButton.addClickListener(listener);
   }
 
+  /**
+   * Informs the listener that the user intends to download the urls for the selected measurements
+   *
+   * @param listener listener which will be informed if the triggering component has been clicked
+   */
   public void addDownloadUrlListener(ComponentEventListener<ClickEvent<Button>> listener) {
     generateDownloadUrlsButton.addClickListener(listener);
   }
