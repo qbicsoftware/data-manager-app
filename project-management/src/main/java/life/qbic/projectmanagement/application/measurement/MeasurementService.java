@@ -90,7 +90,7 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(String filter,
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
@@ -102,10 +102,14 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(ExperimentId experimentId, ProjectId projectId) {
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(ExperimentId experimentId, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryAllProteomicsMeasurement(samplesInExperiment);
+  }
+
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
+    return measurementLookupService.findProteomicsMeasurement(measurementId);
   }
 
   private Result<MeasurementId, ResponseCode> registerNGS(

@@ -3,8 +3,10 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -75,5 +77,10 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
     }
 
     return Result.fromValue(measurement);
+  }
+
+  @Override
+  public Optional<ProteomicsMeasurement> find(MeasurementCode measurementCode) {
+    return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(measurementCode);
   }
 }

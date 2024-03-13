@@ -35,8 +35,25 @@ public class ValidationService {
     return ngsValidator.validate(ngsMeasurementMetadata);
   }
 
+  /**
+   * This method validates a proteomic measurement metadata object in the case of a new measurement
+   * that is going to be registered.
+   *
+   * It will validate all properties exhaustive, but also is not aware of any present measurement id, which
+   * also will not get validated.
+   *
+   * If you want to validate a measurement update, please use
+   *
+   * @param pxMeasurementMetadata
+   * @return
+   * @since
+   */
   public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
     return pxValidator.validate(pxMeasurementMetadata);
+  }
+
+  public ValidationResult validateProteomicsUpdate(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
+    return pxValidator.validateUpdate(pxMeasurementMetadata);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {

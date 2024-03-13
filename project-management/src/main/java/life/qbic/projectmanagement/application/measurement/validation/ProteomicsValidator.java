@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -24,13 +25,17 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   protected final SampleInformationService sampleInformationService;
 
+  protected final MeasurementLookupService measurementLookupService;
+
   protected final OntologyLookupService ontologyLookupService;
 
   @Autowired
   public ProteomicsValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService) {
+      OntologyLookupService ontologyLookupService,
+      MeasurementLookupService measurementLookupService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
+    this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
   }
 
   /**
@@ -77,6 +82,17 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
         .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
+  }
+
+  /**
+   * Ignores sample ids but validates measurement ids.
+   *
+   * @param pxMeasurementMetadata
+   * @return
+   * @since
+   */
+  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
+    return null;
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -151,6 +167,10 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
       }
       return ValidationResult.withFailures(1,
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
+    }
+
+    ValidationResult validateMeasurementId(String measurementId) {
+      var queryMeasurement = measurementLookupService.
     }
 
     ValidationResult validateInstrument(String instrument) {

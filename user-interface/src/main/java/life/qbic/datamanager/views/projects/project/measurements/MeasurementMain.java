@@ -125,19 +125,26 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     measurementSearchField.addValueChangeListener(
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
-    Button export = new Button("Download Metadata");
-    export.addClickListener(event -> downloadMetadata());
+    Button downloadButton = new Button("Download Metadata");
+    downloadButton.addClickListener(event -> downloadMetadata());
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
         event -> openRegisterMeasurementDialog());
-    Span buttonAndField = new Span(measurementSearchField, export, registerMeasurementButton);
+
+    Button editButton = new Button("Edit");
+    editButton.addClickListener(event -> openEditMeasurementDialog());
+    Span buttonAndField = new Span(measurementSearchField, downloadButton, registerMeasurementButton);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
   }
 
+  private void openEditMeasurementDialog() {
+
+  }
+
   private void downloadMetadata() {
-    var proteomicsMeasurements = measurementService.findProteomicsMeasurement(context.experimentId().orElseThrow(() -> new ApplicationException(
+    var proteomicsMeasurements = measurementService.findProteomicsMeasurements(context.experimentId().orElseThrow(() -> new ApplicationException(
         ErrorCode.GENERAL, null)), context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
     proteomicsMeasurements.size();
     var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools).flatMap(items -> items.stream()).toList();
