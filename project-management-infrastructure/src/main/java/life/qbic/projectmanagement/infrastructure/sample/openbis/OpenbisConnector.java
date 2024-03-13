@@ -192,7 +192,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
    * @param samplesToUpdate List of SampleUpdate objects containing changes to one or more samples
    */
   private void updateOpenbisSamples(List<SampleUpdate> samplesToUpdate) {
-    try(OpenBisSession session =sessionFactory.getSession()) {
+    try(OpenBisSession session = sessionFactory.getSession()) {
       List<SampleUpdate> mutableUpdates = new ArrayList<>(samplesToUpdate);
       IOperation operation = new UpdateSamplesOperation(mutableUpdates);
       handleOperations(session, operation);
@@ -264,7 +264,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       throws SampleNotUpdatedException {
     try {
       String projectCode = project.getProjectCode().value();
-      updateOpenbisSamples(convertSamplesToSampleUpdates(projectCode, samples));//TODO
+      updateOpenbisSamples(convertSamplesToSampleUpdates(projectCode, samples));
     } catch (RuntimeException e) {
       throw new SampleNotUpdatedException(
           "Samples could not be updated due to " + e.getCause() + " with " + e.getMessage());
