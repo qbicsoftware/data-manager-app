@@ -115,26 +115,15 @@ public class ProjectAccessComponent extends PageArea {
   private void initContent() {
     content.addClassName("content");
     layoutUserProjectAccessGrid();
-    layoutRoleProjectAccessGrid();
     add(content);
   }
 
   private void layoutUserProjectAccessGrid() {
     Span userProjectAccessDescription = new Span("Users with access to this project");
-    userProjectAccessGrid.addColumn(UserProjectAccess::fullName).setHeader("User Name");
-    userProjectAccessGrid.addColumn(UserProjectAccess::emailAddress).setHeader("Email Address");
-    userProjectAccessGrid.addColumn(UserProjectAccess::projectRole).setHeader("User Role");
+    userProjectAccessGrid.addColumn(UserProjectAccess::userName).setHeader("username");
     Div userProjectAccess = new Div(userProjectAccessDescription, userProjectAccessGrid);
     userProjectAccess.addClassName("user-access");
     content.add(userProjectAccess);
-  }
-
-  private void layoutRoleProjectAccessGrid() {
-    Span roleProjectAccessDescription = new Span("Roles with access to this project");
-    roleProjectAccessGrid.addColumn(RoleProjectAccess::projectRole).setHeader("User Role");
-    Div roleProjectAccess = new Div(roleProjectAccessDescription, roleProjectAccessGrid);
-    roleProjectAccess.addClassName("role-access");
-    content.add(roleProjectAccess);
   }
 
   private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
@@ -149,58 +138,26 @@ public class ProjectAccessComponent extends PageArea {
 
   private void loadInformationForProject(ProjectId projectId) {
     loadProjectAccessibleUsers(projectId);
-    loadProjectAccessibleRoles(projectId);
   }
 
   //shows active users in the UI
   private void loadProjectAccessibleUsers(ProjectId projectId) {
     List<String> userIds = projectAccessService.listUserIds(projectId);
-    List<QbicUserDetails> users = new ArrayList<>();
-    for(String id : userIds) {
-      Optional<UserInfo> optionalInfo = userInformationService.findById(id);
-      if(optionalInfo.isPresent()) {
-        QbicUserDetails userDetails = (QbicUserDetails) userDetailsService.
-            loadUserByUsername(optionalInfo.get().emailAddress());
-        users.add(userDetails);
-      }
-    }
-    List<String> authorities = projectAccessService.listAuthorities(projectId).stream().distinct()
+    var entries = userIds.stream()
+        .map(userInformationService::findById)
+        .filter(Optional::isPresent)
+        .map(it -> it.map(UserInfo::userName)
+            .map(userName -> userName.isBlank() ? "no username" : userName)
+            .orElseThrow())
+        .map(UserProjectAccess::new)
         .toList();
-    var entries = users.stream().map(userDetail -> {
-      var roles = getProjectRoles(authorities, userDetail);
-      roles = roles.stream()
-          .map(this::formatAuthorityToReadableString)
-          .toList();
-      String fullName = userInformationService.findById(userDetail.getUserId()).get().fullName();
-      return new UserProjectAccess(fullName, userDetail.getEmailAddress(), String.join(", ", roles));
-    }).toList();
+
     List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
     setUserProjectAccessGridData(userProjectAccesses.stream().distinct().collect(Collectors.toList()));
   }
 
-  private String formatAuthorityToReadableString(String authority) {
-    return authority.replaceFirst("ROLE_", "")
-        .replaceAll("_", " ")
-        .toLowerCase();
-  }
-
   private void setUserProjectAccessGridData(List<UserProjectAccess> userProjectAccesses) {
     userProjectAccessGrid.setItems(userProjectAccesses);
-  }
-
-  private void loadProjectAccessibleRoles(ProjectId projectId) {
-    List<String> authorities = projectAccessService.listAuthoritiesForPermission(projectId,
-            BasePermission.READ).stream()
-        .distinct()
-        .toList();
-    List<RoleProjectAccess> roleProjectAccesses = authorities.stream()
-        .map(this::formatAuthorityToReadableString).map(RoleProjectAccess::new).toList();
-    setRoleProjectAccessGridData(roleProjectAccesses);
-  }
-
-  private void setRoleProjectAccessGridData(List<
-      RoleProjectAccess> roleProjectAccesses) {
-    roleProjectAccessGrid.setItems(roleProjectAccesses);
   }
 
   private void openEditUserAccessToProjectDialog() {
@@ -251,7 +208,7 @@ public class ProjectAccessComponent extends PageArea {
     }
   }
 
-  private record UserProjectAccess(String fullName, String emailAddress, String projectRole) {
+  private record UserProjectAccess(String userName) {
 
   }
 
