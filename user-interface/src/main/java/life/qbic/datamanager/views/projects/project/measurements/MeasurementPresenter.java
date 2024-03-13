@@ -29,8 +29,8 @@ public class MeasurementPresenter {
       SampleInformation sampleInfo) {
     return new ProteomicsMeasurementEntry(measurement.measurementCode().value(),
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
-        measurement.instrument().getLabel(),
         measurement.instrument().getName().replace("_", ":"),
+        measurement.instrument().getLabel(),
         measurement.samplePoolGroup().orElse(""), measurement.facility(), measurement.fraction(),
         measurement.digestionEnzyme(), measurement.digestionMethod(),
         measurement.enrichmentMethod(), String.valueOf(measurement.injectionVolume()),
