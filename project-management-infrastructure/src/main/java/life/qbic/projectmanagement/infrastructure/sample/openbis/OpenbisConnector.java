@@ -227,7 +227,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   public boolean canDeleteSample(ProjectCode projectCode, SampleCode codeToDelete) {
     try (OpenBisSession session = sessionFactory.getSession()) {
       List<Sample> samplesToDelete = searchSamplesByCodes(session,
-          new ArrayList<>(Arrays.asList(codeToDelete)));
+          List.of(codeToDelete));
       for (Sample sample : samplesToDelete) {
         if (isSampleWithData(List.of(sample))) {
           return false;
@@ -413,7 +413,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       applicationServer.executeOperations(session.getToken(), operationOptions, executionOptions);
     } catch (Exception e) {
       log.error("Unexpected exception during openBIS operation.", e);
-      throw e;
+      throw new RuntimeException(e);
     }
   }
 
