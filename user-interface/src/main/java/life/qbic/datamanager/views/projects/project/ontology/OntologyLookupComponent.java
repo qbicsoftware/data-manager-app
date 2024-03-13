@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Div;
@@ -14,12 +15,14 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
@@ -56,11 +59,12 @@ public class OntologyLookupComponent extends PageArea {
       @Autowired OntologyLookupService ontologyTermInformationService) {
     requireNonNull(ontologyTermInformationService);
     this.ontologyTermInformationService = ontologyTermInformationService;
-    Span title = new Span("Ontology Search/Lookup");
+    Span title = new Span("Ontology Lookup");
     title.addClassName("title");
     add(title);
-    Span description = new Span(
-        "You can search here for ontology terms from over 20 different ontologies.");
+    int numOfOntologies = ontologyTermInformationService.findUniqueOntologies().size();
+    Span description = new Span(String.format(
+        "Here you can search our database for ontology terms from %d different ontologies.", numOfOntologies));
     add(description);
     initSearchField();
     add(searchField);
@@ -85,6 +89,7 @@ public class OntologyLookupComponent extends PageArea {
 
   private void initGridSection() {
     Grid<OntologyClass> ontologyGrid = new Grid<>();
+    ontologyGrid.setSelectionMode(SelectionMode.NONE);
     ontologyGrid.addComponentColumn(
         ontologyClass -> new OntologyItem(ontologyClass.getClassLabel(),
             ontologyClass.getCurie().replace("_", ":"),
@@ -159,11 +164,54 @@ public class OntologyLookupComponent extends PageArea {
       title.addClassName("ontology-item-title");
       Span curie = new Tag(curieText);
       curie.addClassNames("primary", "clickable");
+
+      Icon copyIcon = initCopyIcon();
+      Span header = new Span(title, curie, copyIcon);
+
       curie.addClickListener(
-          event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", curieText));
-      Span header = new Span(title, curie, initCopyIcon(curieText));
+          event -> handleCopyClicked(header, curieText));
+      copyIcon.addClickListener(
+          event -> handleCopyClicked(header, curieText));
+
       header.addClassName("header");
       return header;
+    }
+
+    private void handleCopyClicked(Span header, String curieText) {
+      UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", curieText);
+      Icon copyIcon = (Icon) header.getChildren().filter(c -> c instanceof Icon).toList().get(0);
+      Icon checkIcon = VaadinIcon.CHECK.create();
+      checkIcon.addClassName(IconSize.SMALL);
+      checkIcon.addClassNames("copy-icon-success");
+      removeClassName("base-background");
+      addClassName("success-background-hue");
+      header.remove(copyIcon);
+      header.add(checkIcon);
+
+      // reset copy view after one second
+      UI ui = UI.getCurrent();
+      ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
+      new Thread(() -> {
+        try {
+          TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        ui.access(() -> {
+          removeClassName("success-background-hue");
+          addClassName("base-background");
+          header.remove(checkIcon);
+          header.add(copyIcon);
+          ui.push();
+        });
+      }).start();
+    }
+
+    private Icon initCopyIcon() {
+      Icon copyIcon = VaadinIcon.COPY_O.create();
+      copyIcon.addClassName(IconSize.SMALL);
+      copyIcon.addClassNames("clickable", "copy-icon");
+      return copyIcon;
     }
 
     private Span createUrl(String ontologyURL) {
@@ -177,15 +225,6 @@ public class OntologyLookupComponent extends PageArea {
       description.add(ontologyDescription);
       description.addClassName("description");
       return description;
-    }
-
-    private Icon initCopyIcon(String copyContent) {
-      Icon copyIcon = VaadinIcon.COPY_O.create();
-      copyIcon.addClassName(IconSize.SMALL);
-      copyIcon.addClassNames("clickable", "copy-icon");
-      copyIcon.addClickListener(
-          event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", copyContent));
-      return copyIcon;
     }
 
     private Span createOrigin(String origin) {
