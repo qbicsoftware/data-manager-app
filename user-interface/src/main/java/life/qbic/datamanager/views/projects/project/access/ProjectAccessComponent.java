@@ -153,7 +153,7 @@ public class ProjectAccessComponent extends PageArea {
 
   //shows active users in the UI
   private void loadProjectAccessibleUsers(ProjectId projectId) {
-    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
+    List<String> userIds = projectAccessService.listUserIds(projectId);
     List<QbicUserDetails> users = new ArrayList<>();
     for(String id : userIds) {
       Optional<UserInfo> optionalInfo = userInformationService.findById(id);
