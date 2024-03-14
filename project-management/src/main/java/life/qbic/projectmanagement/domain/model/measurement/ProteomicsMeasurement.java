@@ -269,6 +269,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return registration;
   }
 
+  public void setMethod(ProteomicsMethodMetadata method) {
+
+  }
+
 
   public void setSamplePoolGroup(String group) {
     this.samplePool = group;

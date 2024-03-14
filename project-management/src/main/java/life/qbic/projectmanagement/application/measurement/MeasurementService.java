@@ -28,6 +28,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
+import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -201,6 +202,75 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<MeasurementId, ResponseCode> update(ProjectId projectId, MeasurementMetadata metadata) {
+    if (metadata.measurementIdentifier().isEmpty()) {
+      return Result.fromError(ResponseCode.MISSING_MEASUREMENT_ID);
+    }
+
+    if (metadata instanceof ProteomicsMeasurementMetadata pxpMetadata) {
+      return updatePxP(pxpMetadata);
+    }
+    if (metadata instanceof NGSMeasurementMetadata) {
+      return updateNGS(metadata);
+    }
+    return Result.fromError(ResponseCode.FAILED);
+  }
+
+  private Result<MeasurementId, ResponseCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
+
+    var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
+    if (result.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_MEASUREMENT);
+    }
+    var measurementToUpdate = result.get();
+
+    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
+    if (instrumentQuery.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var organisationQuery = organisationLookupService.organisation(
+        metadata.organisationId());
+    if (organisationQuery.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
+        metadata.fractionName(),
+        metadata.digestionMethod(), metadata.digestionEnzyme(),
+        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
+        metadata.lcColumn(), metadata.lcmsMethod());
+
+    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
+    var labelingMethod = new ProteomicsLabeling(metadata.labelingType(), metadata.label());
+
+    measurementToUpdate.setSamplePreparation(samplePreparation);
+    measurementToUpdate.setLabeling(labelingMethod);
+
+
+    // TODO continue:
+
+    metadata.assignedSamplePoolGroup()
+        .ifPresent(measurement::setSamplePoolGroup);
+
+    measurement.setLabeling(labelingMethod);
+
+    var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
+
+    var result = measurementDomainService.addProteomics(measurement, parentCodes);
+
+    if (result.isError()) {
+      return Result.fromError(ResponseCode.FAILED);
+    } else {
+      return Result.fromValue(result.getValue().measurementId());
+    }
+  }
+
+  private Result<MeasurementId, ResponseCode> updateNGS(MeasurementMetadata metadata) {
+    return Result.fromError(ResponseCode.FAILED);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
     if (measurementMetadata.associatedSamples().isEmpty()) {
@@ -223,6 +293,20 @@ public class MeasurementService {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
     for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
       register(projectId, measurementMetadata)
+          .onError(error -> {
+            throw new MeasurementRegistrationException(error);
+          });
+    }
+  }
+
+  @Transactional
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void updateMultiple(
+      List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
+    var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
+    for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
+      update(projectId, measurementMetadata)
           .onError(error -> {
             throw new MeasurementRegistrationException(error);
           });
@@ -272,7 +356,7 @@ public class MeasurementService {
   }
 
   public enum ResponseCode {
-    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES
+    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {
