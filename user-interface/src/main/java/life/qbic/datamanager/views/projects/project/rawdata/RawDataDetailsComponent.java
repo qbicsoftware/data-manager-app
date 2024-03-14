@@ -62,7 +62,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final transient SampleInformationService sampleInformationService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
   private transient Context context;
-  private final ClientDetailsProvider clientDetailsProvider;
+  private final transient ClientDetailsProvider clientDetailsProvider;
 
   public RawDataDetailsComponent(@Autowired RawDataService rawDataService,
       @Autowired SampleInformationService sampleInformationService,

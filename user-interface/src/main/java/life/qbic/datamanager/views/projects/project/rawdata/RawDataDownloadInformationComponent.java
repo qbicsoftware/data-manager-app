@@ -40,7 +40,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
   private static final long serialVersionUID = 7161304802207319605L;
   private static final Logger log = logger(RawDataDownloadInformationComponent.class);
   private Context context;
-  private static int sectionNumber;
+  private int sectionNumber;
   private final Button navigateToPatPageButton = new Button("Go to Personal Access Token");
   private final Button generateDownloadUrlsButton = new Button("Download URL list");
 
@@ -67,7 +67,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     add(generateTokenSection, downloadRawDataSection, runCurlCommandSection);
   }
 
-  private static Div generateSection(String title, String text, Component... components) {
+  private Div generateSection(String title, String text, Component... components) {
     Div section = new Div();
     section.addClassName("section");
     Span sectionTitle = new Span(title);

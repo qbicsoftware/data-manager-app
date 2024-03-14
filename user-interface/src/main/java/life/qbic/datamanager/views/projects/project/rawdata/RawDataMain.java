@@ -62,8 +62,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final Div content = new Div();
   private final transient MeasurementService measurementService;
   private final transient RawDataService rawDataService;
-  private static Disclaimer registerMeasurementsDisclaimer;
-  private static Disclaimer noRawDataRegisteredDisclaimer;
+  private final Disclaimer registerMeasurementsDisclaimer;
+  private final Disclaimer noRawDataRegisteredDisclaimer;
 
   public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
       @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
