@@ -27,4 +27,6 @@ public interface OntologyTermRepositoryJpaInterface extends
 
   List<OntologyClass> findOntologyClassEntitiesByCurie(String name);
 
+  @Query(value = "SELECT DISTINCT ontology from ontology_classes;", nativeQuery = true)
+  List<String> findUniqueOntologies();
 }
