@@ -182,9 +182,15 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
+      if (measurementMetadata.fractionName().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Fraction: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
       if (measurementMetadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+            ValidationResult.withFailures(1, List.of("Facility: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }

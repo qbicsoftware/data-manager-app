@@ -2,10 +2,9 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import jakarta.persistence.criteria.Expression;
 import java.util.Collection;
 import java.util.List;
-
-import jakarta.persistence.criteria.Expression;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
@@ -82,6 +81,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         filter);
     Specification<ProteomicsMeasurement> facilityContains = ProteomicsMeasurementSpec.isFacility(
             filter);
+    Specification<ProteomicsMeasurement> fractionContains = ProteomicsMeasurementSpec.isFraction(
+        filter);
     Specification<ProteomicsMeasurement> digestionMethodContains = ProteomicsMeasurementSpec.isDigestionMethod(
             filter);
     Specification<ProteomicsMeasurement> digestionEnzymeContains = ProteomicsMeasurementSpec.isDigestionEnzyme(
@@ -104,7 +105,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     Specification<ProteomicsMeasurement> filterSpecification =
             Specification.anyOf(measurementCodeContains, measurementLabelContains, measurementLabelingTypeContains, organisationLabelContains,
                     samplePoolGroupContains, ontologyNameContains, ontologyLabelContains, facilityContains,
-                    digestionMethodContains, digestionEnzymeContains, enrichmentMethodContains,
+                digestionMethodContains, digestionEnzymeContains, fractionContains,
+                enrichmentMethodContains,
                     injectionVolumeContains, lcColumnContains, lcmsMethodContains, registrationDateContains, commentContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
@@ -210,6 +212,11 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     public static Specification<ProteomicsMeasurement> isFacility(String filter) {
       return (root, query, builder) ->
               builder.like(root.get("facility"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isFraction(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("fraction"), "%" + filter + "%");
     }
 
     public static Specification<ProteomicsMeasurement> isDigestionMethod(String filter) {

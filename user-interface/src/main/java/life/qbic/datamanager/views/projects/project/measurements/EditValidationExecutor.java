@@ -42,7 +42,7 @@ public class EditValidationExecutor implements ValidationExecutor {
 
   @Override
   public Optional<Domain> inferDomainByProperties(Collection<String> properties) {
-    // TODO call the edit infer domain method one we have it
+    // TODO call the edit infer domain method once we have it
     return validationService.inferDomainByPropertyTypes(properties);
   }
 

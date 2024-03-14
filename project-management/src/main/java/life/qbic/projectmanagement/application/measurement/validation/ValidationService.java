@@ -23,12 +23,12 @@ public class ValidationService {
 
   private final NGSValidator ngsValidator;
 
-  private final ProteomicsValidator pxValidator;
+  private final ProteomicsValidator pxpValidator;
 
   @Autowired
-  public ValidationService(NGSValidator ngsValidator, ProteomicsValidator pxValidator) {
+  public ValidationService(NGSValidator ngsValidator, ProteomicsValidator pxpValidator) {
     this.ngsValidator = ngsValidator;
-    this.pxValidator = pxValidator;
+    this.pxpValidator = pxpValidator;
   }
 
   public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
@@ -36,7 +36,7 @@ public class ValidationService {
   }
 
   public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxValidator.validate(pxMeasurementMetadata);
+    return pxpValidator.validate(pxMeasurementMetadata);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {

@@ -43,8 +43,6 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 public class MeasurementMetadataUploadDialog extends DialogWindow {
@@ -53,19 +51,16 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
-  private final transient ValidationService validationService;
+  private final ValidationExecutor validationExecutor;
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final transient List<MeasurementFileItem> measurementFileItems;
   private final Div uploadedItemsSection;
   private final Div uploadedItemsDisplays;
-  private final ExperimentId experimentId;
 
-  public MeasurementMetadataUploadDialog(ValidationService validationService,
-      ExperimentId experimentId) {
-    this.validationService = requireNonNull(validationService,
-        "validationService must not be null");
-    this.experimentId = requireNonNull(experimentId, "experimentId must not be null");
+  public MeasurementMetadataUploadDialog(ValidationExecutor validationExecutor) {
+    this.validationExecutor = requireNonNull(validationExecutor,
+        "validationExecutor must not be null");
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
@@ -258,8 +253,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     var contentHeader = content.theHeader()
         .orElseThrow(() -> new RuntimeException("No header row found"));
-    var domain = validationService
-        .inferDomainByPropertyTypes(parseHeaderContent(contentHeader))
+    var domain = validationExecutor.inferDomainByProperties(parseHeaderContent(contentHeader))
         .orElseThrow(() -> new RuntimeException(
             "Header row could not be recognized, Please provide a valid template file"));
 
@@ -400,7 +394,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, labelingType,
         label, note);
 
-    validationResult = validationResult.combine(validationService.validateProteomics(metadata));
+    validationResult = validationResult.combine(validationExecutor.validateProteomics(metadata));
     return validationResult;
   }
 

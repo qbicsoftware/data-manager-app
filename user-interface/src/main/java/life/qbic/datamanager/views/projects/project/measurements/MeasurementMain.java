@@ -158,8 +158,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(validationService,
-        context.experimentId().orElseThrow());
+    var dialog = new MeasurementMetadataUploadDialog(
+        new RegistrationValidationExecutor(validationService));
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
       var uploads = confirmEvent.uploads();

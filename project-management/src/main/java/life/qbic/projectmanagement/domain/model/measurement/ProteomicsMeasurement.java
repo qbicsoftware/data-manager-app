@@ -190,6 +190,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.label = labeling.label();
   }
 
+  public void setFraction(String fraction) {
+    this.fraction = fraction;
+  }
+
   /**
    * Convenience method to query if the measurement was derived from a pooled sample.
    *
@@ -234,6 +238,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   public String enrichmentMethod() {
     return enrichmentMethod;
+  }
+
+  public String fraction() {
+    return fraction;
   }
 
   public int injectionVolume() {
