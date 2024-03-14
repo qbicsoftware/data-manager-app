@@ -193,7 +193,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     String label = safeArrayAccess(columnValues, labelIndex).orElse("");
     String note = safeArrayAccess(columnValues, noteIndex).orElse("");
 
-    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
+    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata("", sampleCodes,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, labelingType,
@@ -394,7 +394,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     var note = safeArrayAccess(metaDataValues, noteIndex).orElse("");
 
-    var metadata = new ProteomicsMeasurementMetadata(List.of(sampleCodes),
+    var metadata = new ProteomicsMeasurementMetadata("", List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, labelingType,
