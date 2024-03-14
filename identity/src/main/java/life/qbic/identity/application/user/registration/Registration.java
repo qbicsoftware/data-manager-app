@@ -2,6 +2,7 @@ package life.qbic.identity.application.user.registration;
 
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.identity.application.user.IdentityService;
+import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
@@ -83,16 +84,19 @@ public class Registration implements RegisterUserInput {
     var builder = UserRegistrationException.builder();
 
     for (RuntimeException e : applicationResponse.failures()) {
-      if (e instanceof EmailValidationException) {
-        builder.withEmailFormatException((EmailValidationException) e);
-      } else if (e instanceof PasswordValidationException) {
-        builder.withInvalidPasswordException((PasswordValidationException) e);
-      } else if (e instanceof FullNameValidationException) {
-        builder.withFullNameException((FullNameValidationException) e);
-      } else if (e instanceof UserExistsException) {
-        builder.withUserExistsException((UserExistsException) e);
-      } else if (e instanceof UserNameNotAvailableException) {
-        builder.withUserNameNotAvailableException((UserNameNotAvailableException) e);
+
+      if (e instanceof EmailValidationException emailValidationException) {
+        builder.withEmailFormatException(emailValidationException);
+      } else if (e instanceof PasswordValidationException passwordValidationException) {
+        builder.withInvalidPasswordException(passwordValidationException);
+      } else if (e instanceof FullNameValidationException fullNameValidationException) {
+        builder.withFullNameException(fullNameValidationException);
+      } else if (e instanceof UserExistsException userExistsException) {
+        builder.withUserExistsException(userExistsException);
+      } else if (e instanceof UserNameNotAvailableException userNameNotAvailableException) {
+        builder.withUserNameNotAvailableException(userNameNotAvailableException);
+      } else if (e instanceof EmptyUserNameException emptyUserNameException) {
+        builder.withEmptyUserNameException(emptyUserNameException);
       } else {
         builder.withUnexpectedException(e);
       }

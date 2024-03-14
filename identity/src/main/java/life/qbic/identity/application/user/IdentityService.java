@@ -1,5 +1,7 @@
 package life.qbic.identity.application.user;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +57,7 @@ public final class IdentityService {
   public ApplicationResponse registerUser(final String fullName, String userName, final String email,
       final char[] rawPassword) {
 
-    var registrationResponse = validateInput(fullName, email, rawPassword);
+    var registrationResponse = validateInput(fullName, userName, email, rawPassword);
     if (registrationResponse.hasFailures()) {
       return registrationResponse;
     }
@@ -86,7 +88,8 @@ public final class IdentityService {
     return ApplicationResponse.successResponse();
   }
 
-  private ApplicationResponse validateInput(String fullName, String email, char[] rawPassword) {
+  private ApplicationResponse validateInput(String fullName, String userName, String email,
+      char[] rawPassword) {
     List<RuntimeException> failures = new ArrayList<>();
 
     try {
@@ -98,6 +101,9 @@ public final class IdentityService {
       FullName.from(fullName);
     } catch (FullNameValidationException e) {
       failures.add(e);
+    }
+    if (isNull(userName) || userName.isBlank()) {
+      failures.add(new EmptyUserNameException());
     }
     try {
       EncryptedPassword.from(rawPassword);
@@ -182,6 +188,16 @@ public final class IdentityService {
       return Result.fromValue(EncryptedPassword.from(newPassword));
     } catch (PasswordValidationException e) {
       return Result.fromError(e);
+    }
+  }
+
+  public static class EmptyUserNameException extends ApplicationException {
+
+    @Serial
+    private static final long serialVersionUID = -150902871229730428L;
+
+    public EmptyUserNameException() {
+      super();
     }
   }
 
