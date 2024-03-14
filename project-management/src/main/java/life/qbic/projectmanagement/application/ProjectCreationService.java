@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -9,7 +8,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
@@ -18,9 +16,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
-import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.service.ProjectDomainService;
-import life.qbic.projectmanagement.domain.service.ProjectDomainService.ResponseCode;
 import org.springframework.stereotype.Service;
 
 /**
@@ -29,14 +25,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectCreationService {
 
-  private static final Logger log = logger(ProjectCreationService.class);
-
-  private final ProjectRepository projectRepository;
   private final ProjectDomainService projectDomainService;
 
-  public ProjectCreationService(ProjectRepository projectRepository,
-      ProjectDomainService projectDomainService) {
-    this.projectRepository = requireNonNull(projectRepository);
+  public ProjectCreationService(ProjectDomainService projectDomainService) {
     this.projectDomainService = requireNonNull(projectDomainService);
   }
 
@@ -64,7 +55,6 @@ public class ProjectCreationService {
     if (Objects.isNull(projectManager)) {
       return Result.fromError(new ApplicationException("project manager is null"));
     }
-
     try {
       Project project = createProject(code, title, objective, projectManager,
           principalInvestigator, responsiblePerson, funding);
@@ -84,24 +74,13 @@ public class ProjectCreationService {
     ProjectCode projectCode;
     try {
       projectCode = ProjectCode.parse(code);
-      if (!projectRepository.find(projectCode).isEmpty()) {
-        throw new ApplicationException("Project code: " + code + " is already in use.",
-            ErrorCode.DUPLICATE_PROJECT_CODE,
-            ErrorParameters.of(code));
-      }
     } catch (IllegalArgumentException exception) {
       throw new ApplicationException("Project code: " + code + " is invalid.", exception,
           ErrorCode.INVALID_PROJECT_CODE,
           ErrorParameters.of(code, ProjectCode.getPREFIX(), ProjectCode.getLENGTH()));
     }
-
-    var registrationResult = projectDomainService.registerProject(intent, projectCode, projectManager, principalInvestigator, responsiblePerson, funding);
-
-    if (registrationResult.isError() && registrationResult.getError().equals(ResponseCode.PROJECT_REGISTRATION_FAILED)) {
-      throw new ApplicationException("Project registration failed.", ErrorCode.GENERAL, ErrorParameters.of(code));
-    }
-
-    return registrationResult.getValue();
+    return projectDomainService.registerProject(intent, projectCode,
+        projectManager, principalInvestigator, responsiblePerson, funding);
   }
 
   private static ProjectIntent getProjectIntent(String title, String objective) {

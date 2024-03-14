@@ -35,7 +35,7 @@ public interface QbicSampleDataRepo {
    */
   void deleteAll(ProjectCode projectCode, Collection<SampleCode> samples);
 
-  void updateAll(Collection<Sample> samples);
+  void updateAll(Project project, Collection<Sample> samples);
 
   boolean canDeleteSample(ProjectCode projectCode, SampleCode sampleCode);
 }

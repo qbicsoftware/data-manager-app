@@ -6,7 +6,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>0.37.0</version>
+    <version>0.38.2</version>
   </parent>
 
   <groupId>life.qbic.identity</groupId>
@@ -29,19 +29,14 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>project-management</artifactId>
-      <version>0.37.0</version>
+      <version>0.38.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>openbis-api</artifactId>
-      <version>19.06.5</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>life.qbic</groupId>
-      <artifactId>openbis-client-lib</artifactId>
-      <version>1.6.0</version>
+      <version>20.10.7.3</version>
+      <classifier>r1700646105</classifier>
       <scope>compile</scope>
     </dependency>
     <dependency>
