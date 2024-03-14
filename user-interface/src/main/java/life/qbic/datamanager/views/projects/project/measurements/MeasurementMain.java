@@ -23,6 +23,7 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
@@ -159,7 +160,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void openRegisterMeasurementDialog() {
     var dialog = new MeasurementMetadataUploadDialog(
-        new RegistrationValidationExecutor(validationService));
+        new RegistrationValidationExecutor(validationService), MODE.ADD);
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
       var uploads = confirmEvent.uploads();

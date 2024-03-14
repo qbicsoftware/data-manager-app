@@ -45,6 +45,15 @@ import life.qbic.projectmanagement.application.measurement.validation.Proteomics
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
+
+/**
+ * <b>Upload Measurement Metadata Dialog</b>
+ *
+ * <p>Component that provides the user with a dialog to upload files to edit or add {@link MeasurementMetadata}</p>
+ * to an {@link life.qbic.projectmanagement.domain.model.experiment.Experiment}
+ *
+ * @since 1.0.0
+ */
 public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
@@ -57,10 +66,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private final transient List<MeasurementFileItem> measurementFileItems;
   private final Div uploadedItemsSection;
   private final Div uploadedItemsDisplays;
+  private final MODE mode;
 
-  public MeasurementMetadataUploadDialog(ValidationExecutor validationExecutor) {
+  public MeasurementMetadataUploadDialog(ValidationExecutor validationExecutor, MODE mode) {
     this.validationExecutor = requireNonNull(validationExecutor,
         "validationExecutor must not be null");
+    this.mode = requireNonNull(mode,
+        "The dialog mode needs to be defined");
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
@@ -69,8 +81,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
 
-    setHeaderTitle("Register measurements");
-    confirmButton.setText("Register");
+    setModeBasedLabels();
 
     var uploadSectionTitle = new Span("Upload the measurement data");
     uploadSectionTitle.addClassName("section-title");
@@ -112,6 +123,26 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         .addEventData(VAADIN_FILENAME_EVENT);
     addClassName("measurement-upload-dialog");
     toggleFileSectionIfEmpty();
+  }
+
+  private void setModeBasedLabels() {
+    switch (mode) {
+      case ADD -> {
+        setHeaderTitle("Register measurements");
+        confirmButton.setText("Register");
+      }
+      case EDIT -> {
+        setHeaderTitle("Edit measurements");
+        confirmButton.setText("Save");
+      }
+    }
+  }
+
+  /**
+   * Returns the {@link MODE} with which this dialog was initialized
+   */
+  public MODE getMode() {
+    return mode;
   }
 
   private static List<String> parseHeaderContent(String header) {
@@ -605,5 +636,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     public CancelEvent(MeasurementMetadataUploadDialog source, boolean fromClient) {
       super(source, fromClient);
     }
+  }
+
+  public enum MODE {
+    ADD, EDIT
+
   }
 }
