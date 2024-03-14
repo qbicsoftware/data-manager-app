@@ -40,13 +40,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
         .filter(sid -> sid instanceof PrincipalSid)
         .map(sid -> (PrincipalSid) sid)
         .map(PrincipalSid::getPrincipal)
+        .distinct()
         .toList();
-  }
-
-  @Transactional
-  @Override
-  public List<String> listActiveUserIds(ProjectId projectId) {
-    return listUserIds(projectId).stream().distinct().toList();
   }
 
   @Transactional

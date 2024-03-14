@@ -22,14 +22,6 @@ public interface ProjectAccessService {
   List<String> listUserIds(ProjectId projectId);
 
   /**
-   * Lists all active users which have a permission within the specific project
-   *
-   * @param projectId the identifier of the project
-   * @return a list of user ids of active users that are associated with the project
-   */
-  List<String> listActiveUserIds(ProjectId projectId);
-
-  /**
    * Grant a specific permission on a project for a user
    *
    * @param userId   the id of the user for which to grant the permission

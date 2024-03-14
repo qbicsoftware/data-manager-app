@@ -80,6 +80,9 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @Column(name = "measurementLabel")
   private String label = "";
 
+  @Column(name = "fraction")
+  private String fraction = "";
+
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;

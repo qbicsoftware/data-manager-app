@@ -131,7 +131,7 @@ public class SampleRepositoryImpl implements SampleRepository {
   public void updateAll(Project project,
       Collection<Sample> updatedSamples) {
     qbicSampleRepository.saveAll(updatedSamples);
-    sampleDataRepo.updateAll(updatedSamples);
+    sampleDataRepo.updateAll(project, updatedSamples);
   }
 
   @Override
