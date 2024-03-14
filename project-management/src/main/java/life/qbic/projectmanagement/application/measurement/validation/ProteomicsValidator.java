@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
-import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -25,17 +25,17 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   protected final SampleInformationService sampleInformationService;
 
-  protected final MeasurementLookupService measurementLookupService;
+  protected final MeasurementService measurementService;
 
   protected final OntologyLookupService ontologyLookupService;
 
   @Autowired
   public ProteomicsValidator(SampleInformationService sampleInformationService,
       OntologyLookupService ontologyLookupService,
-      MeasurementLookupService measurementLookupService) {
+      MeasurementService measurementService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
-    this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
+    this.measurementService = Objects.requireNonNull(measurementService);
   }
 
   /**
@@ -170,7 +170,10 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     }
 
     ValidationResult validateMeasurementId(String measurementId) {
-      var queryMeasurement = measurementLookupService.
+      var queryMeasurement = measurementService.findProteomicsMeasurement(measurementId);
+      return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
+          ValidationResult.withFailures(1,
+              List.of("Measurement ID: Unknown measurement " + measurementId)));
     }
 
     ValidationResult validateInstrument(String instrument) {
