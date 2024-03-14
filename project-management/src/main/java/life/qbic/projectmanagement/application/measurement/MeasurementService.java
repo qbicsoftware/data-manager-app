@@ -70,9 +70,23 @@ public class MeasurementService {
     }
     List<SampleCode> associatedSamples = measurementMetadataList.stream().map(
         ProteomicsMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
+    List<Labeling> labels = measurementMetadataList.stream().map(
+        metadata -> {
+          Labeling labeling;
+          try {
+            labeling = metadata.labeling().iterator().next();
+          } catch (Exception e) {
+            log.warn(
+                "Proteomics label: No label information found for pooling %s".formatted(
+                    metadata.sampleCodes().iterator().next().code()));
+            labeling = new Labeling(metadata.sampleCodes().iterator().next().code(), "", "");
+          }
+          return labeling;
+        }).toList();
     var firstEntry = measurementMetadataList.get(0);
     return Optional.of(
-        ProteomicsMeasurementMetadata.copyWithNewSamples(associatedSamples, firstEntry));
+        ProteomicsMeasurementMetadata.copyWithNewProperties(associatedSamples, labels,
+            firstEntry));
   }
 
 
@@ -164,7 +178,8 @@ public class MeasurementService {
         metadata.lcColumn(), metadata.lcmsMethod());
 
     var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
-    var labelingMethod = new ProteomicsLabeling(metadata.labelingType(), metadata.label());
+    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
+        label.sampleCode(), label.labelType(), label.label())).toList();
 
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
