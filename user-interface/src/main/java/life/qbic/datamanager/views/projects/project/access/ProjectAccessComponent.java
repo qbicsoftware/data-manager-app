@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.access.EditUserAccessToProjectDialog.ProjectCollaborator;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
@@ -114,26 +115,15 @@ public class ProjectAccessComponent extends PageArea {
   private void initContent() {
     content.addClassName("content");
     layoutUserProjectAccessGrid();
-    layoutRoleProjectAccessGrid();
     add(content);
   }
 
   private void layoutUserProjectAccessGrid() {
     Span userProjectAccessDescription = new Span("Users with access to this project");
-    userProjectAccessGrid.addColumn(UserProjectAccess::fullName).setHeader("User Name");
-    userProjectAccessGrid.addColumn(UserProjectAccess::emailAddress).setHeader("Email Address");
-    userProjectAccessGrid.addColumn(UserProjectAccess::projectRole).setHeader("User Role");
+    userProjectAccessGrid.addColumn(UserProjectAccess::userName).setHeader("username");
     Div userProjectAccess = new Div(userProjectAccessDescription, userProjectAccessGrid);
     userProjectAccess.addClassName("user-access");
     content.add(userProjectAccess);
-  }
-
-  private void layoutRoleProjectAccessGrid() {
-    Span roleProjectAccessDescription = new Span("Roles with access to this project");
-    roleProjectAccessGrid.addColumn(RoleProjectAccess::projectRole).setHeader("User Role");
-    Div roleProjectAccess = new Div(roleProjectAccessDescription, roleProjectAccessGrid);
-    roleProjectAccess.addClassName("role-access");
-    content.add(roleProjectAccess);
   }
 
   private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
@@ -148,58 +138,26 @@ public class ProjectAccessComponent extends PageArea {
 
   private void loadInformationForProject(ProjectId projectId) {
     loadProjectAccessibleUsers(projectId);
-    loadProjectAccessibleRoles(projectId);
   }
 
   //shows active users in the UI
   private void loadProjectAccessibleUsers(ProjectId projectId) {
-    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
-    List<QbicUserDetails> users = new ArrayList<>();
-    for(String id : userIds) {
-      Optional<UserInfo> optionalInfo = userInformationService.findById(id);
-      if(optionalInfo.isPresent()) {
-        QbicUserDetails userDetails = (QbicUserDetails) userDetailsService.
-            loadUserByUsername(optionalInfo.get().emailAddress());
-        users.add(userDetails);
-      }
-    }
-    List<String> authorities = projectAccessService.listAuthorities(projectId).stream().distinct()
+    List<String> userIds = projectAccessService.listUserIds(projectId);
+    var entries = userIds.stream()
+        .map(userInformationService::findById)
+        .filter(Optional::isPresent)
+        .map(it -> it.map(UserInfo::userName)
+            .map(userName -> userName.isBlank() ? "no username" : userName)
+            .orElseThrow())
+        .map(UserProjectAccess::new)
         .toList();
-    var entries = users.stream().map(userDetail -> {
-      var roles = getProjectRoles(authorities, userDetail);
-      roles = roles.stream()
-          .map(this::formatAuthorityToReadableString)
-          .toList();
-      String fullName = userInformationService.findById(userDetail.getUserId()).get().fullName();
-      return new UserProjectAccess(fullName, userDetail.getEmailAddress(), String.join(", ", roles));
-    }).toList();
+
     List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
     setUserProjectAccessGridData(userProjectAccesses.stream().distinct().collect(Collectors.toList()));
   }
 
-  private String formatAuthorityToReadableString(String authority) {
-    return authority.replaceFirst("ROLE_", "")
-        .replaceAll("_", " ")
-        .toLowerCase();
-  }
-
   private void setUserProjectAccessGridData(List<UserProjectAccess> userProjectAccesses) {
     userProjectAccessGrid.setItems(userProjectAccesses);
-  }
-
-  private void loadProjectAccessibleRoles(ProjectId projectId) {
-    List<String> authorities = projectAccessService.listAuthoritiesForPermission(projectId,
-            BasePermission.READ).stream()
-        .distinct()
-        .toList();
-    List<RoleProjectAccess> roleProjectAccesses = authorities.stream()
-        .map(this::formatAuthorityToReadableString).map(RoleProjectAccess::new).toList();
-    setRoleProjectAccessGridData(roleProjectAccesses);
-  }
-
-  private void setRoleProjectAccessGridData(List<
-      RoleProjectAccess> roleProjectAccesses) {
-    roleProjectAccessGrid.setItems(roleProjectAccesses);
   }
 
   private void openEditUserAccessToProjectDialog() {
@@ -216,12 +174,15 @@ public class ProjectAccessComponent extends PageArea {
     editUserAccessToProjectDialog.addCancelEventListener(
         addUserToProjectDialogCancelEvent -> editUserAccessToProjectDialog.close());
     editUserAccessToProjectDialog.addConfirmEventListener(addUserToProjectDialogConfirmEvent -> {
-      List<UserInfo> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
+      List<String> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
           .stream()
+          .map(ProjectCollaborator::userId)
           .toList();
-      List<UserInfo> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
+      List<String> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
           .removedUsers()
-          .stream().toList();
+          .stream()
+          .map(ProjectCollaborator::userId)
+          .toList();
       if (!addedUsers.isEmpty()) {
         addUsersToProject(addedUsers);
       }
@@ -233,21 +194,21 @@ public class ProjectAccessComponent extends PageArea {
     });
   }
 
-  private void addUsersToProject(List<UserInfo> users) {
-    for (UserInfo user : users) {
-      projectAccessService.grant(user.id(), context.projectId().orElseThrow(), BasePermission.READ);
+  private void addUsersToProject(List<String> userIDs) {
+    for (String userId : userIDs) {
+      projectAccessService.grant(userId, context.projectId().orElseThrow(), BasePermission.READ);
       accessDomainService.grantProjectAccessFor(context.projectId().orElseThrow().value(),
-          user.id());
+          userId);
     }
   }
 
-  private void removeUsersFromProject(List<UserInfo> users) {
-    for (UserInfo user : users) {
-      projectAccessService.denyAll(user.id(), context.projectId().orElseThrow());
+  private void removeUsersFromProject(List<String> userIDs) {
+    for (String userId : userIDs) {
+      projectAccessService.denyAll(userId, context.projectId().orElseThrow());
     }
   }
 
-  private record UserProjectAccess(String fullName, String emailAddress, String projectRole) {
+  private record UserProjectAccess(String userName) {
 
   }
 
