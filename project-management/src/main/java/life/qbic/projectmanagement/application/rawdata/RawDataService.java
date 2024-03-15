@@ -15,7 +15,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
@@ -49,7 +49,6 @@ public class RawDataService {
     //Todo Implement
     return true;
   }
-
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<NGSRawData> findNGSRawData(String filter, ExperimentId experimentId,
@@ -58,13 +57,27 @@ public class RawDataService {
       List<SortOrder> sortOrders, ProjectId projectId) {
     List<NGSRawData> dummyNGSData = new ArrayList<>(List.of(
         new NGSRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now()),
+            List.of(new RawDataSampleInformation(SampleCode.create("Q1234"), "My awesome sample 1"),
+                new RawDataSampleInformation(SampleCode.create("Q2345"),
+                    "My awesome sample again 1")),
+            Instant.now(), "Genomics Dataset", "Q1234_primary_results.zip", "12GB", "5",
+            "120EA8A25E5D487BF68B5F7096440019"),
         new NGSRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now()),
+            List.of(
+                new RawDataSampleInformation(SampleCode.create("Q4567"), "My awesome sample 2")),
+            Instant.now(), "Genomics Dataset", "Q4567_primary_results.zip", "34GB", "10",
+            "120EA8A25E5D487BF68B5F7096440019"),
         new NGSRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now()),
+            List.of(new RawDataSampleInformation(SampleCode.create("Q7890"), "My awesome sample 3"),
+                new RawDataSampleInformation(SampleCode.create("Q9345"),
+                    "My awesome sample again 3")),
+            Instant.now(), "Genomics Dataset", "Q7890_primary_results.zip", "56GB", "15",
+            "120EA8A25E5D487BF68B5F7096440019"),
         new NGSRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now())));
+            List.of(
+                new RawDataSampleInformation(SampleCode.create("Q0000"), "My awesome sample 4")),
+            Instant.now(), "Genomics Dataset", "Q0000_primary_results.zip", "78GB", "20",
+            "120EA8A25E5D487BF68B5F7096440019")));
     //Todo implement
     return dummyNGSData;
   }
@@ -78,24 +91,48 @@ public class RawDataService {
     //Todo implement
     List<ProteomicsRawData> dummyProteomicsData = new ArrayList<>(List.of(
         new ProteomicsRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now()),
+            List.of(new RawDataSampleInformation(SampleCode.create("Q1234"), "My awesome sample 1"),
+                new RawDataSampleInformation(SampleCode.create("Q2345"),
+                    "My awesome sample again 1")),
+            Instant.now(), "Proteomics Dataset", "Q1234_primary_results.zip", "12GB", "5",
+            "120EA8A25E5D487BF68B5F7096440019"),
         new ProteomicsRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now()),
+            List.of(
+                new RawDataSampleInformation(SampleCode.create("Q4567"), "My awesome sample 2")),
+            Instant.now(), "Proteomics Dataset", "Q4567_primary_results.zip", "34GB", "10",
+            "120EA8A25E5D487BF68B5F7096440019"),
         new ProteomicsRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now()),
+            List.of(new RawDataSampleInformation(SampleCode.create("Q7890"), "My awesome sample 3"),
+                new RawDataSampleInformation(SampleCode.create("Q9345"),
+                    "My awesome sample again 3")),
+            Instant.now(), "Proteomics Dataset", "Q7890_primary_results.zip", "56GB", "15",
+            "120EA8A25E5D487BF68B5F7096440019"),
         new ProteomicsRawData(MeasurementId.create(),
-            List.of(SampleId.create(), SampleId.create()), Instant.now())));
+            List.of(
+                new RawDataSampleInformation(SampleCode.create("Q0000"), "My awesome sample 4")),
+            Instant.now(), "Proteomics Dataset", "Q0000_primary_results.zip", "78GB", "20",
+            "120EA8A25E5D487BF68B5F7096440019")));
     return dummyProteomicsData;
   }
 
   //Todo replace with real objects
-  public record NGSRawData(MeasurementId measurementId, Collection<SampleId> measuredSamples,
-                           Instant registrationDate) {
+  public record ProteomicsRawData(MeasurementId measurementId,
+                                  Collection<RawDataSampleInformation> measuredSamples,
+                                  Instant registrationDate, String description,
+                                  String dataSetFileName,
+                                  String fileSize, String numberOfFiles, String checksum) {
 
   }
 
-  public record ProteomicsRawData(MeasurementId measurementId, Collection<SampleId> measuredSamples,
-                                  Instant registrationDate) {
+  //Todo replace with real objects
+  public record NGSRawData(MeasurementId measurementId,
+                           Collection<RawDataSampleInformation> measuredSamples,
+                           Instant registrationDate, String description, String dataSetFileName,
+                           String fileSize, String numberOfFiles, String checksum) {
+
+  }
+
+  public record RawDataSampleInformation(SampleCode sampleCode, String sampleLabel) {
 
   }
 }

@@ -399,6 +399,32 @@
   align-items: baseline;
 }
 
+.raw-data-details-component .raw-data-details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .sample-information-column {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-details .raw-data-details-entry {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-details .raw-data-details-entry-value {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-details .sample-information {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
 .raw-data-download-information-component {
   display: flex;
   flex-direction: column;
