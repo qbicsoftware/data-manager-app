@@ -12,11 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Registration Validation Executor</b>
+ * <p>
+ * Implementation of the {@link ValidationExecutor} interface,
+ * handling the validation of newly registered {@link life.qbic.projectmanagement.application.measurement.MeasurementMetadata}
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
  */
 @Component
 public class RegistrationValidationExecutor implements ValidationExecutor {

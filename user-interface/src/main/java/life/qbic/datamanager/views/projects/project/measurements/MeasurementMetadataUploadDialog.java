@@ -43,6 +43,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 
@@ -50,7 +51,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  * <b>Upload Measurement Metadata Dialog</b>
  *
  * <p>Component that provides the user with a dialog to upload files to edit or add {@link MeasurementMetadata}</p>
- * to an {@link life.qbic.projectmanagement.domain.model.experiment.Experiment}
+ * to an {@link Experiment} dependent on the provided {@link MODE} and {@link ValidationExecutor} with which it was initialized
  *
  * @since 1.0.0
  */
