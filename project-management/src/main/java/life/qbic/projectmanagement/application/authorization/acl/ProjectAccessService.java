@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 public interface ProjectAccessService {
 
+  //TODO move to collaborators not only userids
+
   /**
    * Lists all users which have a permission within the specific project
    *
