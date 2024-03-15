@@ -2,6 +2,7 @@ package life.qbic.datamanager;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,7 +42,9 @@ public class DataManagerContextProvider implements AppContextProvider {
   @Override
   public String urlToProject(String projectId) {
     try {
-      return new URL(baseUrlApplication, projectInfoEndpoint.formatted(projectId)).toExternalForm();
+      return new URL(baseUrlApplication,
+          Paths.get(baseUrlApplication.getPath(), projectInfoEndpoint.formatted(projectId))
+              .toString()).toExternalForm();
     } catch (MalformedURLException e) {
       throw new ApplicationException("Data Manager context creation failed.", e);
     }
@@ -50,7 +53,9 @@ public class DataManagerContextProvider implements AppContextProvider {
   @Override
   public String urlToSamplePage(String projectId) {
     try {
-      return new URL(baseUrlApplication, samplesEndpoint.formatted(projectId)).toExternalForm();
+      return new URL(baseUrlApplication,
+          Paths.get(baseUrlApplication.getPath(), samplesEndpoint.formatted(projectId))
+              .toString()).toExternalForm();
     } catch (MalformedURLException e) {
       throw new ApplicationException("Data Manager context creation failed.", e);
     }
