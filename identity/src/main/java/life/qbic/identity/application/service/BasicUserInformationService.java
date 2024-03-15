@@ -12,6 +12,8 @@ import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.logging.api.Logger;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Basic user information service</b>
@@ -56,6 +58,15 @@ public class BasicUserInformationService implements UserInformationService {
   @Override
   public boolean userNameAvailable(String userName) {
     return userRepository.findByUserName(userName).isEmpty();
+  }
+
+  @Override
+  @PreAuthorize("#userId == authentication.principal.username")
+  @Transactional
+  public void updateUserInformation(String userId, UserInfo userInfo) {
+    User user = userRepository.findById(UserId.from(userId)).orElseThrow();
+    user.setUserName(userInfo.userName());
+    userRepository.updateUser(user);
   }
 
   private UserInfo convert(User user) {
