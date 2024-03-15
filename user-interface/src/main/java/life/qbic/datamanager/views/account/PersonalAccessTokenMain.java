@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.account;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -36,6 +37,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * create and delete {@link PersonalAccessToken} via the provided UI elements
  */
 
+@PageTitle("PAT - Personal Access Token")
 @Route(value = "personal-access-token", layout = UserMainLayout.class)
 @SpringComponent
 @UIScope

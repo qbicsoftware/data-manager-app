@@ -11,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.page.History;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.HttpStatusCode;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Page shown when any error occurred. Shows an appropriate user friendly message.
  */
 @AnonymousAllowed
+@PageTitle("Error Page")
 @Route("error")
 public class ExceptionErrorPage extends Div implements ErrorPage<Exception> {
 

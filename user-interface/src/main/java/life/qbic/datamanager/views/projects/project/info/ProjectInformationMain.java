@@ -6,6 +6,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
@@ -67,6 +68,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
+@PageTitle("Project Information")
 @Route(value = "projects/:projectId?/info", layout = ProjectMainLayout.class)
 @PermitAll
 public class ProjectInformationMain extends Main implements BeforeEnterObserver {

@@ -14,6 +14,7 @@ import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.NotFoundException;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.HttpStatusCode;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -23,6 +24,7 @@ import life.qbic.datamanager.exceptionhandling.routing.ErrorPage;
  * Page shown when a resource was not found.
  */
 @AnonymousAllowed
+@PageTitle("Error Page")
 @Route("not-found")
 public class NotFoundPage extends Div implements ErrorPage<NotFoundException> {
 

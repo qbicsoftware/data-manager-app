@@ -3,6 +3,7 @@ package life.qbic.datamanager.views;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -17,6 +18,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
  *
  * @since 1.0.0
  */
+@PageTitle("Data Manager")
 @Route(value = "", layout = UserMainLayout.class)
 @PermitAll
 public class MainPage extends Div implements BeforeEnterObserver {

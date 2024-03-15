@@ -5,6 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
+@PageTitle("Experiment Information")
 @Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ExperimentMainLayout.class)
 @PermitAll
 public class ExperimentInformationMain extends Main implements BeforeEnterObserver {
