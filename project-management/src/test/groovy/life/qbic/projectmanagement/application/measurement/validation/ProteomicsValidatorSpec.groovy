@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
-
-import life.qbic.projectmanagement.application.measurement.MeasurementService
+import life.qbic.projectmanagement.application.measurement.Labeling
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService
@@ -25,7 +24,7 @@ class ProteomicsValidatorSpec extends Specification {
             "1337",
             "12",
             "LCMS Method 1",
-            "isotope", "N15",
+            [new Labeling("QTEST001AE", "isotope", "N15")],
             "Don't tell anyone this is a test"
     )
     final static OntologyClass illuminaMiSeq = new OntologyClass(
@@ -139,7 +138,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -179,7 +178,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -216,7 +215,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -257,7 +256,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -303,7 +302,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -341,7 +340,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 

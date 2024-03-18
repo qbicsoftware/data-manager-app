@@ -20,11 +20,11 @@ public record ProteomicsMeasurementMetadata(String measurementId,
                                             String digestionEnzyme,
                                             String digestionMethod, String enrichmentMethod,
                                             String injectionVolume, String lcColumn,
-                                            String lcmsMethod, String labelingType, String label,
+                                            String lcmsMethod, Collection<Labeling> labeling,
                                             String comment) implements MeasurementMetadata {
 
-  public static ProteomicsMeasurementMetadata copyWithNewSamples(
-      Collection<SampleCode> associatedSamples,
+
+  public static ProteomicsMeasurementMetadata copyWithNewProperties(Collection<SampleCode> associatedSamples, Collection<Labeling> labeling,
       ProteomicsMeasurementMetadata metadata) {
     return new ProteomicsMeasurementMetadata(metadata.measurementId(),
         associatedSamples.stream().toList(),
@@ -39,8 +39,7 @@ public record ProteomicsMeasurementMetadata(String measurementId,
         metadata.injectionVolume(),
         metadata.lcColumn(),
         metadata.lcmsMethod(),
-        metadata.labelingType(),
-        metadata.label(),
+        labeling,
         metadata.comment());
   }
 

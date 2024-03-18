@@ -105,6 +105,8 @@ public class UserRegistrationLayout extends VerticalLayout {
 
   private void createUsernameField() {
     username = new TextField("Username");
+    username.setMinLength(1);
+    username.setPattern(".*\\S+.*"); //requires to contain at least one non-whitespace character
   }
 
   private void createSpans() {

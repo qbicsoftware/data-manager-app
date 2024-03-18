@@ -64,18 +64,33 @@ public class MeasurementService {
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
   }
 
+  /**
+   * Merges a collection of {@link ProteomicsMeasurementMetadata} items into one single
+   * {@link ProteomicsMeasurementMetadata} item.
+   * <p>
+   * The method currently considers labels to be distinctly preserved, as well as the sample codes.
+   * <p>
+   * For all other properties, there is no guarantee from which item they are derived.
+   *
+   * @param metadata a collection of metadata items to be merged into a single item
+   * @return
+   * @since 1.0.0
+   */
   private static Optional<ProteomicsMeasurementMetadata> merge(
-      List<ProteomicsMeasurementMetadata> measurementMetadataList) {
-    if (measurementMetadataList.isEmpty()) {
+      Collection<ProteomicsMeasurementMetadata> metadata) {
+    if (metadata.isEmpty()) {
       return Optional.empty();
     }
-    List<SampleCode> associatedSamples = measurementMetadataList.stream().map(
+    List<SampleCode> associatedSamples = metadata.stream().map(
         ProteomicsMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
-    var firstEntry = measurementMetadataList.get(0);
+    var labels = metadata.stream().flatMap(theMetadata -> theMetadata.labeling().stream())
+        .collect(
+            Collectors.toSet());
+    var firstEntry = metadata.iterator().next();
     return Optional.of(
-        ProteomicsMeasurementMetadata.copyWithNewSamples(associatedSamples, firstEntry));
+        ProteomicsMeasurementMetadata.copyWithNewProperties(associatedSamples, labels,
+            firstEntry));
   }
-
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
@@ -177,7 +192,8 @@ public class MeasurementService {
         metadata.lcColumn(), metadata.lcmsMethod());
 
     var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
-    var labelingMethod = new ProteomicsLabeling(metadata.labelingType(), metadata.label());
+    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
+        label.sampleCode(), label.labelType(), label.label())).toList();
 
     var measurement = ProteomicsMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
