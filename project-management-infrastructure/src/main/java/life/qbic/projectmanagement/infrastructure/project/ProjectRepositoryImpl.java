@@ -107,13 +107,6 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     return projectRepo.findById(projectId);
   }
 
-  @Override
-  public void deleteByProjectCode(ProjectCode projectCode) {
-    projectDataRepo.delete(projectCode);
-    List<Project> projectsByProjectCode = projectRepo.findProjectByProjectCode(projectCode);
-    projectRepo.deleteAll(projectsByProjectCode);
-  }
-
   private boolean doesProjectExistWithId(ProjectId id) {
     return projectRepo.findById(id).isPresent();
   }
