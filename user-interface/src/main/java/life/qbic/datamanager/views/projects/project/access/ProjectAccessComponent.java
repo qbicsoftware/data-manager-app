@@ -21,7 +21,6 @@ import life.qbic.datamanager.views.projects.project.access.EditUserAccessToProje
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -29,7 +28,6 @@ import life.qbic.projectmanagement.domain.service.AccessDomainService;
 import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.acls.domain.BasePermission;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
  * Project Access Component
@@ -48,7 +46,6 @@ public class ProjectAccessComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = 6832688939965353201L;
   private final ProjectAccessService projectAccessService;
-  private final UserDetailsService userDetailsService;
   private final SidRepository sidRepository;
   private final UserInformationService userInformationService;
   private static final Logger log = logger(ProjectAccessMain.class);
@@ -58,24 +55,19 @@ public class ProjectAccessComponent extends PageArea {
   private final Span titleField = new Span();
   private final Grid<UserProjectAccess> userProjectAccessGrid = new Grid<>(
       UserProjectAccess.class);
-  private final Grid<RoleProjectAccess> roleProjectAccessGrid = new Grid<>(
-      RoleProjectAccess.class);
   private final AccessDomainService accessDomainService;
   private Context context;
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
-      @Autowired UserDetailsService userDetailsService,
       @Autowired UserInformationService userInformationService,
       @Autowired SidRepository sidRepository,
       @Autowired AccessDomainService accessDomainService) {
     this.projectAccessService = projectAccessService;
-    this.userDetailsService = userDetailsService;
     this.userInformationService = userInformationService;
     this.sidRepository = sidRepository;
     this.accessDomainService = accessDomainService;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
-    requireNonNull(userDetailsService, "userDetailsService must not be null");
     requireNonNull(userInformationService, "userRepository must not be null");
     requireNonNull(sidRepository, "sidRepository must not be null");
     layoutComponent();
@@ -124,16 +116,6 @@ public class ProjectAccessComponent extends PageArea {
     Div userProjectAccess = new Div(userProjectAccessDescription, userProjectAccessGrid);
     userProjectAccess.addClassName("user-access");
     content.add(userProjectAccess);
-  }
-
-  private List<String> getProjectRoles(List<String> projectRoles, QbicUserDetails userDetails) {
-    List<String> roles = new ArrayList<>();
-    for (String projectRole : projectRoles) {
-      if (userDetails.hasAuthority(projectRole)) {
-        roles.add(projectRole);
-      }
-    }
-    return roles.stream().sorted().toList();
   }
 
   private void loadInformationForProject(ProjectId projectId) {
@@ -209,10 +191,6 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private record UserProjectAccess(String userName) {
-
-  }
-
-  private record RoleProjectAccess(String projectRole) {
 
   }
 
