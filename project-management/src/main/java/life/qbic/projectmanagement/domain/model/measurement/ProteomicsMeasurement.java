@@ -13,8 +13,11 @@ import jakarta.persistence.JoinColumn;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -87,6 +90,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;
 
+  @ElementCollection(targetClass = ProteomicsLabeling.class, fetch = FetchType.EAGER)
+  @CollectionTable(name = "measurement_labeling_pxp", joinColumns = @JoinColumn(name = "measurement_id"))
+  private Set<ProteomicsLabeling> labeling;
+
   protected ProteomicsMeasurement() {
     // Needed for JPA
   }
@@ -97,6 +104,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     evaluateMandatorMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
+    labeling = new HashSet<>();
     measuredSamples.addAll(sampleIds);
     this.id = id;
     this.organisation = organisation;
@@ -185,9 +193,8 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.comment = samplePreparation.comment();
   }
 
-  public void setLabeling(ProteomicsLabeling labeling) {
-    this.labelingType = labeling.labelType();
-    this.label = labeling.label();
+  public void setLabeling(Collection<ProteomicsLabeling> labeling) {
+    this.labeling = Set.copyOf(labeling.stream().toList());
   }
 
   public void setFraction(String fraction) {

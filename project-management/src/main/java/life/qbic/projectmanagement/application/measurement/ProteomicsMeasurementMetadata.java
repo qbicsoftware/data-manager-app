@@ -2,9 +2,7 @@ package life.qbic.projectmanagement.application.measurement;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -21,7 +19,7 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
                                             String digestionEnzyme,
                                             String digestionMethod, String enrichmentMethod,
                                             String injectionVolume, String lcColumn,
-                                            String lcmsMethod, String labelingType, String label,
+                                            String lcmsMethod, Collection<Labeling> labeling,
                                             String comment) implements MeasurementMetadata {
 
   @Override
@@ -34,7 +32,7 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
     return sampleCodes.stream().toList();
   }
 
-  public static ProteomicsMeasurementMetadata copyWithNewSamples(Collection<SampleCode> associatedSamples,
+  public static ProteomicsMeasurementMetadata copyWithNewProperties(Collection<SampleCode> associatedSamples, Collection<Labeling> labeling,
       ProteomicsMeasurementMetadata metadata) {
     return new ProteomicsMeasurementMetadata(
         associatedSamples.stream().toList(),
@@ -49,8 +47,7 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
         metadata.injectionVolume(),
         metadata.lcColumn(),
         metadata.lcmsMethod(),
-        metadata.labelingType(),
-        metadata.label(),
+        labeling,
         metadata.comment());
   }
 }
