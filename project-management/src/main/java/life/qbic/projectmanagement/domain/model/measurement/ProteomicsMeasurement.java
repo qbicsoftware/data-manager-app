@@ -194,7 +194,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public void setLabeling(Collection<ProteomicsLabeling> labeling) {
-    this.labeling = new HashSet<>(labeling.stream().toList());
+    this.labeling = Set.copyOf(labeling.stream().toList());
   }
 
   /**
