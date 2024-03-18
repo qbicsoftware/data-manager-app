@@ -258,7 +258,8 @@ public class MeasurementService {
         metadata.lcColumn(), metadata.lcmsMethod());
 
     var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
-    var labelingMethod = new ProteomicsLabeling(metadata.labelingType(), metadata.label());
+    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
+        label.sampleCode(), label.labelType(), label.label())).collect(Collectors.toList());
 
     measurementToUpdate.setSamplePreparation(samplePreparation);
     measurementToUpdate.setLabeling(labelingMethod);

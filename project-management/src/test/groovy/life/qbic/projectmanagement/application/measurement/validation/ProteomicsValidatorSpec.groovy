@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
 import life.qbic.projectmanagement.application.measurement.Labeling
+import life.qbic.projectmanagement.application.measurement.MeasurementService
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService
