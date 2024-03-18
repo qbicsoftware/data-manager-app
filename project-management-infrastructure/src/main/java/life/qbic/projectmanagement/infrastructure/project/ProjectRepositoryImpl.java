@@ -1,19 +1,13 @@
 package life.qbic.projectmanagement.infrastructure.project;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
-import static life.qbic.projectmanagement.infrastructure.project.ProjectRepositoryImpl.ProjectRole.ADMIN;
-import static life.qbic.projectmanagement.infrastructure.project.ProjectRepositoryImpl.ProjectRole.PROJECT_MANAGER;
-import static org.springframework.security.acls.domain.BasePermission.ADMINISTRATION;
-import static org.springframework.security.acls.domain.BasePermission.CREATE;
-import static org.springframework.security.acls.domain.BasePermission.DELETE;
-import static org.springframework.security.acls.domain.BasePermission.READ;
-import static org.springframework.security.acls.domain.BasePermission.WRITE;
 
 import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.authorities.aspects.CanCreateProject;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
@@ -22,10 +16,7 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.acls.model.Permission;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,14 +61,15 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     if (doesProjectExistWithId(project.getId()) || projectDataRepo.projectExists(projectCode)) {
       throw new ProjectExistsException();
     }
-    projectRepo.save(project);
+    var savedProject = projectRepo.save(project);
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    projectAccessService.grant(details.getUserId(), project.getId(),
-        List.of(READ, WRITE, ADMINISTRATION));//administration of this project, only
-    projectAccessService.grantToAuthority(ADMIN.auth(), project.getId(), ADMIN.permissions());
-    projectAccessService.grantToAuthority(PROJECT_MANAGER.auth(), project.getId(),
-        PROJECT_MANAGER.permissions());
+    var userId = ((QbicUserDetails) authentication.getPrincipal()).getUserId();
+    projectAccessService.addCollaborator(savedProject.getId(), userId,
+        ProjectAccessService.ProjectRole.OWNER);
+    projectAccessService.addAuthorityAccess(savedProject.getId(),
+        "ROLE_ADMIN", ProjectAccessService.ProjectRole.ADMIN);
+    projectAccessService.addAuthorityAccess(savedProject.getId(), "ROLE_PROJECT_MANAGER",
+        ProjectRole.ADMIN);
     try {
       projectDataRepo.add(project);
     } catch (Exception e) {
@@ -109,30 +101,5 @@ public class ProjectRepositoryImpl implements ProjectRepository {
 
   private boolean doesProjectExistWithId(ProjectId id) {
     return projectRepo.findById(id).isPresent();
-  }
-
-  public enum ProjectRole {
-    ADMIN("ROLE_ADMIN", List.of(READ, WRITE, CREATE,
-        DELETE, ADMINISTRATION)),
-    PROJECT_MANAGER("ROLE_PROJECT_MANAGER",
-        List.of(WRITE, CREATE,
-            DELETE));
-
-    private final String roleName;
-    private final List<Permission> allowedPermissions;
-
-    public GrantedAuthority auth() {
-      return new SimpleGrantedAuthority(roleName);
-    }
-
-    public List<Permission> permissions() {
-      return allowedPermissions;
-    }
-
-    ProjectRole(String roleName,
-        List<Permission> allowedPermissions) {
-      this.roleName = roleName;
-      this.allowedPermissions = allowedPermissions;
-    }
   }
 }
