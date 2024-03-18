@@ -41,13 +41,13 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   public Result<NGSMeasurement, ResponseCode> save(NGSMeasurement measurement, List<SampleCode> sampleCodes) {
     try {
       measurementJpaRepo.save(measurement);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving ngs measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
     try {
       measurementDataRepo.addNGSMeasurement(measurement, sampleCodes);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving ngs measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
       measurementJpaRepo.delete(measurement); // Rollback JPA save
@@ -62,14 +62,14 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       ProteomicsMeasurement measurement, List<SampleCode> sampleCodes) {
     try {
       pxpMeasurementJpaRepo.save(measurement);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving proteomics measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
 
     try {
       measurementDataRepo.addProtemicsMeasurement(measurement, sampleCodes);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving proteomics measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
       pxpMeasurementJpaRepo.delete(measurement); // Rollback JPA save
@@ -82,5 +82,10 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   @Override
   public Optional<ProteomicsMeasurement> find(MeasurementCode measurementCode) {
     return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(measurementCode);
+  }
+
+  @Override
+  public void save(ProteomicsMeasurement measurement) {
+    pxpMeasurementJpaRepo.save(measurement);
   }
 }

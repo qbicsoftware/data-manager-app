@@ -248,21 +248,18 @@ public class MeasurementService {
     measurementToUpdate.setLabeling(labelingMethod);
 
 
-    // TODO continue:
-
     metadata.assignedSamplePoolGroup()
-        .ifPresent(measurement::setSamplePoolGroup);
+        .ifPresent(measurementToUpdate::setSamplePoolGroup);
 
-    measurement.setLabeling(labelingMethod);
+    measurementToUpdate.setLabeling(labelingMethod);
+    measurementToUpdate.setMethod(method);
 
-    var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
+    var updateResult = measurementDomainService.update(measurementToUpdate);
 
-    var result = measurementDomainService.addProteomics(measurement, parentCodes);
-
-    if (result.isError()) {
+    if (updateResult.isError()) {
       return Result.fromError(ResponseCode.FAILED);
     } else {
-      return Result.fromValue(result.getValue().measurementId());
+      return Result.fromValue(updateResult.getValue().measurementId());
     }
   }
 

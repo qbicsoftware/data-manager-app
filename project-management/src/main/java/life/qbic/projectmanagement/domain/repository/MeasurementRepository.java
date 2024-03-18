@@ -25,4 +25,5 @@ public interface MeasurementRepository {
 
   Optional<ProteomicsMeasurement> find(MeasurementCode measurementCode);
 
+  void save(ProteomicsMeasurement measurement);
 }
