@@ -22,7 +22,7 @@ public class ProjectRegisteredPolicy {
 
   public ProjectRegisteredPolicy(CreateNewSampleStatisticsEntry createNewSampleStatisticsEntry) {
     this.createNewSampleStatisticsEntry = Objects.requireNonNull(createNewSampleStatisticsEntry);
-    DomainEventDispatcher.instance().subscribe(createNewSampleStatisticsEntry);
+    DomainEventDispatcher.instance().subscribe(this.createNewSampleStatisticsEntry);
   }
 
 }

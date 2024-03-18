@@ -22,12 +22,11 @@ import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.service.AccessDomainService;
 import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.acls.domain.BasePermission;
 
 /**
  * Project Access Component
@@ -55,18 +54,15 @@ public class ProjectAccessComponent extends PageArea {
   private final Span titleField = new Span();
   private final Grid<UserProjectAccess> userProjectAccessGrid = new Grid<>(
       UserProjectAccess.class);
-  private final AccessDomainService accessDomainService;
   private Context context;
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserInformationService userInformationService,
-      @Autowired SidRepository sidRepository,
-      @Autowired AccessDomainService accessDomainService) {
+      @Autowired SidRepository sidRepository) {
     this.projectAccessService = projectAccessService;
     this.userInformationService = userInformationService;
     this.sidRepository = sidRepository;
-    this.accessDomainService = accessDomainService;
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     requireNonNull(userInformationService, "userRepository must not be null");
     requireNonNull(sidRepository, "sidRepository must not be null");
@@ -124,7 +120,9 @@ public class ProjectAccessComponent extends PageArea {
 
   //shows active users in the UI
   private void loadProjectAccessibleUsers(ProjectId projectId) {
-    List<String> userIds = projectAccessService.listUserIds(projectId);
+    List<String> userIds = projectAccessService.listCollaborators(projectId).stream()
+        .map(ProjectAccessService.ProjectCollaborator::userId)
+        .toList();
     var entries = userIds.stream()
         .map(userInformationService::findById)
         .filter(Optional::isPresent)
@@ -177,16 +175,16 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void addUsersToProject(List<String> userIDs) {
+    ProjectId projectId = context.projectId().orElseThrow();
     for (String userId : userIDs) {
-      projectAccessService.grant(userId, context.projectId().orElseThrow(), BasePermission.READ);
-      accessDomainService.grantProjectAccessFor(context.projectId().orElseThrow().value(),
-          userId);
+      projectAccessService.addCollaborator(projectId, userId, ProjectRole.READ);
     }
   }
 
   private void removeUsersFromProject(List<String> userIDs) {
+    ProjectId projectId = context.projectId().orElseThrow();
     for (String userId : userIDs) {
-      projectAccessService.denyAll(userId, context.projectId().orElseThrow());
+      projectAccessService.removeCollaborator(projectId, userId);
     }
   }
 

@@ -10,9 +10,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.service.event.ProjectAccessGranted;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
@@ -57,6 +59,12 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     return acl;
   }
 
+  private void fireProjectAccessGranted(String userId, ProjectId projectId) {
+    var projectAccessGranted = ProjectAccessGranted.create(userId, projectId.value());
+    DomainEventDispatcher.instance().dispatch(projectAccessGranted);
+  }
+
+
   @Override
   @Transactional
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'ADMINISTRATION')")
@@ -69,6 +77,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
           aclForProject.getOwner(), projectId));
       aclForProject.setOwner(principalSid);
       aclService.updateAcl(aclForProject);
+      fireProjectAccessGranted(userId, projectId);
       return;
     }
 
@@ -89,6 +98,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     }
     log.debug("User %s now collaborates on project %s as %s.".formatted(userId, projectId.value(),
         projectRole.label()));
+    fireProjectAccessGranted(userId, projectId);
     aclService.updateAcl(aclForProject);
   }
 

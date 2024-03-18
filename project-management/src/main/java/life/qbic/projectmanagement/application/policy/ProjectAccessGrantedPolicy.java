@@ -17,7 +17,7 @@ public class ProjectAccessGrantedPolicy {
 
   public ProjectAccessGrantedPolicy(InformUserAboutGrantedAccess informUserAboutGrantedAccess) {
     this.informUserAboutGrantedAccess = Objects.requireNonNull(informUserAboutGrantedAccess);
-    DomainEventDispatcher.instance().subscribe(informUserAboutGrantedAccess);
+    DomainEventDispatcher.instance().subscribe(this.informUserAboutGrantedAccess);
   }
 
 }
