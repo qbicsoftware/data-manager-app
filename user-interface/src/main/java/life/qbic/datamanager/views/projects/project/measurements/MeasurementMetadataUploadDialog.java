@@ -39,6 +39,7 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
+import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
@@ -196,8 +197,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(sampleCodes,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, labelingType,
-        label, note);
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
+        List.of(new Labeling(sampleCodes.get(0).code(), labelingType, label)), note);
     return Result.fromValue(metadata);
   }
 
@@ -397,8 +398,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     var metadata = new ProteomicsMeasurementMetadata(List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, labelingType,
-        label, note);
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, List.of(new Labeling(sampleCodes.code(), labelingType, label)), note);
 
     validationResult = validationResult.combine(validationService.validateProteomics(metadata));
     return validationResult;
