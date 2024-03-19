@@ -23,8 +23,15 @@ public class UserPermissionsImpl implements UserPermissions {
   @Override
   public boolean readProject(ProjectId projectId) {
     return aclPermissionEvaluator.hasPermission(
-        SecurityContextHolder.getContext().getAuthentication(), projectId,
-        PROJECT_TARGET_TYPE, BasePermission.READ);
+        SecurityContextHolder.getContext().getAuthentication(), projectId, PROJECT_TARGET_TYPE,
+        BasePermission.READ);
+  }
+
+  @Override
+  public boolean editProject(ProjectId projectId) {
+    return aclPermissionEvaluator.hasPermission(
+        SecurityContextHolder.getContext().getAuthentication(), projectId, PROJECT_TARGET_TYPE,
+        BasePermission.WRITE);
   }
 
   @Override
