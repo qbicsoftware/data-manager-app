@@ -73,7 +73,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     MutableAcl aclForProject = getAclForProject(projectId, List.of(principalSid), aclService);
 
     if (ProjectRole.OWNER.equals(projectRole)) {
-      log.debug("Project %s owner changed from %s to %s".formatted(projectId.value(),
+      log.debug("Project %s owner changed from %s to user %s".formatted(projectId.value(),
           aclForProject.getOwner(), projectId));
       aclForProject.setOwner(principalSid);
       aclService.updateAcl(aclForProject);
@@ -130,7 +130,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
     if (ProjectRole.OWNER.equals(projectRole)) {
       Sid previousOwner = aclForProject.getOwner();
-      log.debug("Project %s owner changed from %s to %s".formatted(projectId.value(),
+      log.debug("Project %s owner changed from %s to user %s".formatted(projectId.value(),
           previousOwner, projectId));
       aclForProject.setOwner(principalSid);
       requiredPermissions = List.of();
@@ -176,7 +176,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     MutableAcl aclForProject = getAclForProject(projectId, List.of(authoritySid), aclService);
 
     if (ProjectRole.OWNER.equals(projectRole)) {
-      log.debug("Project %s owner changed from %s to %s".formatted(projectId.value(),
+      log.debug("Project %s owner changed from %s to authority %s".formatted(projectId.value(),
           aclForProject.getOwner(), projectId));
       aclForProject.setOwner(authoritySid);
       aclService.updateAcl(aclForProject);
@@ -237,7 +237,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
     if (ProjectRole.OWNER.equals(projectRole)) {
       Sid previousOwner = aclForProject.getOwner();
-      log.debug("Project %s owner changed from %s to %s".formatted(projectId.value(),
+      log.debug("Project %s owner changed from %s to authority %s".formatted(projectId.value(),
           previousOwner, projectId));
       aclForProject.setOwner(authoritySid);
       requiredPermissions = List.of();

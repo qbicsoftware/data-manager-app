@@ -57,18 +57,18 @@ public class InformUserAboutGrantedAccess implements DomainEventSubscriber<Proje
 
   @Override
   public void handleEvent(ProjectAccessGranted event) {
-    jobScheduler.enqueue(() -> notifyUser(event.forUserId(), event.forProjectId()));
-  }
-
-  @Job(name = "Notify user about granted project access")
-  public void notifyUser(String userId, String projectId)
-      throws RuntimeException {
-    var recipient = userInformationService.findById(userId).orElseThrow();
-    var projectUrl = appContextProvider.urlToProject(projectId);
-    String projectTitle = projectInformationService.find(projectId)
+    String projectTitle = projectInformationService.find(event.forProjectId())
         .map(Project::getProjectIntent)
         .map(ProjectIntent::projectTitle)
         .map(ProjectTitle::title).orElseThrow();
+    jobScheduler.enqueue(() -> notifyUser(event.forUserId(), event.forProjectId(), projectTitle));
+  }
+
+  @Job(name = "Notify user %0 about granted access to project %1")
+  public void notifyUser(String userId, String projectId, String projectTitle)
+      throws RuntimeException {
+    var recipient = userInformationService.findById(userId).orElseThrow();
+    var projectUrl = appContextProvider.urlToProject(projectId);
     var message = Messages.projectAccessToUser(recipient.fullName(), projectTitle, projectUrl);
     emailService.send(new Subject("Project access granted"),
         new Recipient(recipient.emailAddress(), recipient.fullName()), new Content(message));

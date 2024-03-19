@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.policy;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
+
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 
@@ -13,11 +14,9 @@ import life.qbic.projectmanagement.application.policy.directive.InformUserAboutG
  */
 public class ProjectAccessGrantedPolicy {
 
-  private InformUserAboutGrantedAccess informUserAboutGrantedAccess;
-
   public ProjectAccessGrantedPolicy(InformUserAboutGrantedAccess informUserAboutGrantedAccess) {
-    this.informUserAboutGrantedAccess = Objects.requireNonNull(informUserAboutGrantedAccess);
-    DomainEventDispatcher.instance().subscribe(this.informUserAboutGrantedAccess);
+    DomainEventDispatcher.instance().subscribe(requireNonNull(informUserAboutGrantedAccess,
+        "informUserAboutGrantedAccess must not be null"));
   }
 
 }

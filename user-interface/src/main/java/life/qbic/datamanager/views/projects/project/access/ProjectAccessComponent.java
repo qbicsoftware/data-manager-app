@@ -44,9 +44,9 @@ public class ProjectAccessComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = 6832688939965353201L;
-  private final ProjectAccessService projectAccessService;
-  private final SidRepository sidRepository;
-  private final UserInformationService userInformationService;
+  private final transient ProjectAccessService projectAccessService;
+  private final transient SidRepository sidRepository;
+  private final transient UserInformationService userInformationService;
   private static final Logger log = logger(ProjectAccessMain.class);
   private final Div content = new Div();
   private final Div header = new Div();
@@ -133,7 +133,9 @@ public class ProjectAccessComponent extends PageArea {
         .toList();
 
     List<UserProjectAccess> userProjectAccesses = new ArrayList<>(entries);
-    setUserProjectAccessGridData(userProjectAccesses.stream().distinct().collect(Collectors.toList()));
+    setUserProjectAccessGridData(userProjectAccesses.stream()
+        .distinct()
+        .collect(Collectors.toCollection(ArrayList::new)));
   }
 
   private void setUserProjectAccessGridData(List<UserProjectAccess> userProjectAccesses) {
