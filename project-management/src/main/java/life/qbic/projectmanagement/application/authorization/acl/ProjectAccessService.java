@@ -2,6 +2,9 @@ package life.qbic.projectmanagement.application.authorization.acl;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.acls.model.Permission;
@@ -37,6 +40,37 @@ public interface ProjectAccessService {
     public String description() {
       return description;
     }
+
+    static Optional<ProjectRole> fromPermissions(Collection<Permission> permissions) {
+      ProjectRole[] projectRoles = ProjectRole.values();
+      for (int roleIdx = projectRoles.length - 1; roleIdx >= 0; roleIdx--) {
+        ProjectRole role = projectRoles[roleIdx];
+        if (permissions.containsAll(toPermissions(role))) {
+          return Optional.of(role);
+        }
+      }
+      return Optional.empty();
+    }
+
+    public Collection<Permission> toPermissions() {
+      return toPermissions(this);
+    }
+
+    private static Collection<Permission> toPermissions(ProjectRole projectRole) {
+      return switch (projectRole) {
+        case READ -> List.of(BasePermission.READ);
+        case WRITE -> roleExtendedWith(ProjectRole.READ, BasePermission.WRITE);
+        case ADMIN -> roleExtendedWith(ProjectRole.WRITE, BasePermission.ADMINISTRATION);
+        case OWNER -> List.of(BasePermission.READ, BasePermission.WRITE, BasePermission.CREATE,
+            BasePermission.DELETE, BasePermission.ADMINISTRATION);
+      };
+    }
+
+    static Collection<Permission> roleExtendedWith(ProjectRole projectRole,
+        Permission... permissions) {
+      return Stream.concat(toPermissions(projectRole).stream(), Stream.of(permissions)).collect(
+          Collectors.toUnmodifiableSet());
+    }
   }
 
   /**
@@ -71,27 +105,6 @@ public interface ProjectAccessService {
    */
   record ProjectCollaborator(String userId, ProjectId projectId, ProjectRole projectRole) {
 
-  }
-
-  static ProjectRole toProjectRole(Collection<Permission> permissions) {
-    ProjectRole[] projectRoles = ProjectRole.values();
-    for (int roleIdx = projectRoles.length - 1; roleIdx >= 0; roleIdx--) {
-      ProjectRole role = projectRoles[roleIdx];
-      if (permissions.containsAll(toPermissions(role))) {
-        return role;
-      }
-    }
-    return null;
-  }
-
-  static Collection<Permission> toPermissions(ProjectRole projectRole) {
-    return switch (projectRole) {
-      case READ -> List.of(BasePermission.READ);
-      case WRITE -> List.of(BasePermission.READ, BasePermission.WRITE);
-      case ADMIN -> List.of(BasePermission.ADMINISTRATION);
-      case OWNER -> List.of(BasePermission.READ, BasePermission.WRITE, BasePermission.CREATE,
-          BasePermission.DELETE, BasePermission.ADMINISTRATION);
-    };
   }
 
   /**

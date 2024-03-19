@@ -81,7 +81,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
       return;
     }
 
-    Collection<Permission> permissions = ProjectAccessService.toPermissions(projectRole);
+    Collection<Permission> permissions = projectRole.toPermissions();
     boolean userHasAccess = aclForProject.getEntries().stream()
         .filter(accessControlEntry -> accessControlEntry.getSid() instanceof PrincipalSid)
         .anyMatch(accessControlEntry -> accessControlEntry.getSid().equals(principalSid));
@@ -91,7 +91,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
        * This leads to redundant access control entries.
        */
       throw new ApplicationException(
-          "User %s already collaborates on %s. Please change the project role instead");
+          "User %s already collaborates on %s. Please change the project role instead".formatted(
+              userId, projectId));
     }
     for (Permission permission : permissions) {
       aclForProject.insertAce(aclForProject.getEntries().size(), permission, principalSid, true);
@@ -126,7 +127,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     PrincipalSid principalSid = new PrincipalSid(userId);
     MutableAcl aclForProject = getAclForProject(projectId, List.of(principalSid), aclService);
 
-    Collection<Permission> requiredPermissions = ProjectAccessService.toPermissions(projectRole);
+    Collection<Permission> requiredPermissions = projectRole.toPermissions();
 
     if (ProjectRole.OWNER.equals(projectRole)) {
       Sid previousOwner = aclForProject.getOwner();
@@ -183,7 +184,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
       return;
     }
 
-    Collection<Permission> permissions = ProjectAccessService.toPermissions(projectRole);
+    Collection<Permission> permissions = projectRole.toPermissions();
     boolean authorityHasAccess = aclForProject.getEntries().stream()
         .filter(accessControlEntry -> accessControlEntry.getSid() instanceof GrantedAuthoritySid)
         .anyMatch(
@@ -233,7 +234,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     GrantedAuthoritySid authoritySid = new GrantedAuthoritySid(authority);
     MutableAcl aclForProject = getAclForProject(projectId, List.of(authoritySid), aclService);
 
-    Collection<Permission> requiredPermissions = ProjectAccessService.toPermissions(projectRole);
+    Collection<Permission> requiredPermissions = projectRole.toPermissions();
 
     if (ProjectRole.OWNER.equals(projectRole)) {
       Sid previousOwner = aclForProject.getOwner();
@@ -300,7 +301,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
           Set<Permission> permissions = sidListEntry.getValue().stream()
               .map(AccessControlEntry::getPermission)
               .collect(Collectors.toSet());
-          ProjectRole projectRole = ProjectAccessService.toProjectRole(permissions);
+          ProjectRole projectRole = ProjectRole.fromPermissions(permissions).orElseThrow();
           return new ProjectCollaborator(((PrincipalSid) sidListEntry.getKey()).getPrincipal(),
               projectId, projectRole);
         })

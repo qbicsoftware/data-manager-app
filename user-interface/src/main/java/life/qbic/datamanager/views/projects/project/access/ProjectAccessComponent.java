@@ -8,6 +8,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.Column;
+import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -18,6 +19,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -26,13 +28,14 @@ import life.qbic.datamanager.views.projects.project.access.EditUserAccessToProje
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
-import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Project Access Component
@@ -57,6 +60,7 @@ public class ProjectAccessComponent extends PageArea {
   private final transient UserInformationService userInformationService;
   private final UserPermissions userPermissions;
   private final Grid<ProjectAccessService.ProjectCollaborator> projectCollaborators;
+  private final Span buttonBar;
 
   private Context context;
 
@@ -81,11 +85,7 @@ public class ProjectAccessComponent extends PageArea {
     titleField.setText("Project Access Management");
     titleField.addClassName("title");
 
-    Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openEditUserAccessToProjectDialog());
-
-    Span buttonBar = new Span();
-    buttonBar.add(editButton);
+    buttonBar = new Span();
     header.add(titleField, buttonBar);
     add(header);
 
@@ -100,23 +100,40 @@ public class ProjectAccessComponent extends PageArea {
     add(content);
   }
 
+  private Button addCollaboratorButton() {
+    Button button = new Button("Add people");
+    button.addClickListener(event -> openAddCollaboratorDialog());
+    return button;
+  }
+
+  private void showControls() {
+    buttonBar.removeAll();
+    buttonBar.add(addCollaboratorButton());
+  }
+
+  private void removeControls() {
+    buttonBar.removeAll();
+  }
+
   private Grid<ProjectAccessService.ProjectCollaborator> projectCollaboratorGrid(
       UserInformationService userInformationService, UserPermissions userPermissions) {
     Grid<ProjectAccessService.ProjectCollaborator> grid = new Grid<>();
     Column<ProjectAccessService.ProjectCollaborator> usernameColumn = grid.addColumn(
             projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
                 .map(UserInfo::userName).orElseThrow())
-        .setHeader("username")
         .setKey("username");
     Column<ProjectAccessService.ProjectCollaborator> projectRoleColumn = grid.addColumn(
-            ProjectAccessService.ProjectCollaborator::projectRole)
-        .setRenderer(new ComponentRenderer<>(
-            collaborator -> renderProjectRoleComponent(userPermissions, collaborator)))
-        .setHeader("project role")
+            new ComponentRenderer<>(
+                collaborator -> renderProjectRoleComponent(userPermissions, collaborator)))
         .setKey("projectRole");
+    grid.addColumn(new ComponentRenderer<>(
+            collaborator -> collaborator.projectRole() == ProjectRole.OWNER ? new Span()
+                : new Button("Remove", clickEvent -> removeCollaborator(collaborator))))
+        .setKey("removeButton");
     grid.sort(
         List.of(new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING),
             new GridSortOrder<>(usernameColumn, SortDirection.ASCENDING)));
+    grid.setSelectionMode(SelectionMode.NONE);
     return grid;
   }
 
@@ -129,28 +146,52 @@ public class ProjectAccessComponent extends PageArea {
 
   private Component renderProjectRoleComponent(UserPermissions userPermissions,
       ProjectAccessService.ProjectCollaborator collaborator) {
+    String labelPrefix = "Role: ";
     if (collaborator.projectRole() == ProjectRole.OWNER) {
-      return new Span(collaborator.projectRole().label());
+      return new Span(labelPrefix + collaborator.projectRole().label()); //can not change owner
+    }
+    if (Objects.equals(collaborator.userId(), ((QbicUserDetails) SecurityContextHolder.getContext()
+        .getAuthentication().getPrincipal()).getUserId())) {
+      return new Span(labelPrefix + collaborator.projectRole().label());
     }
     if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-      return new Span(collaborator.projectRole().label());
+      return new Span(labelPrefix + collaborator.projectRole()
+          .label()); //insufficient permissions to change roles
     }
 
     Select<ProjectRole> roleSelect = new Select<>();
+    roleSelect.addClassName("project-role-select");
     roleSelect.setItemLabelGenerator(ProjectRole::label);
+    roleSelect.setPrefixComponent(new Span(labelPrefix));
     roleSelect.setItems(
         ProjectRole.READ,
         ProjectRole.WRITE,
         ProjectRole.ADMIN
     );
     roleSelect.setRenderer(new ComponentRenderer<>(
-        projectRole -> new Div(new Span(projectRole.label()), new Span(
-            ProjectRoleRecommendationRenderer.render(
-                projectRole)))));
+        projectRole -> {
+          Span roleLabel = new Span(projectRole.label());
+          roleLabel.addClassName("project-role-label");
+
+          Span roleDescription = new Span(projectRole.description());
+          roleDescription.addClassName("project-role-description");
+
+          Div projectRoleDiv = new Div();
+          projectRoleDiv.addClassName("project-role-item");
+          projectRoleDiv.add(roleLabel, roleDescription);
+          return projectRoleDiv;
+        }));
+
     roleSelect.setValue(collaborator.projectRole());
     roleSelect.addValueChangeListener(
         valueChanged -> onProjectRoleSelectionChanged(collaborator, valueChanged));
     return roleSelect;
+  }
+
+  private void removeCollaborator(ProjectAccessService.ProjectCollaborator collaborator) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    projectAccessService.removeCollaborator(projectId, collaborator.userId());
+    reloadProjectCollaborators(projectCollaborators, projectAccessService);
   }
 
   private void onProjectRoleSelectionChanged(ProjectAccessService.ProjectCollaborator collaborator,
@@ -170,10 +211,15 @@ public class ProjectAccessComponent extends PageArea {
 
   private void onProjectChanged() {
     reloadProjectCollaborators(projectCollaborators, projectAccessService);
+    if (userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+      showControls();
+    } else {
+      removeControls();
+    }
   }
 
 
-  private void openEditUserAccessToProjectDialog() {
+  private void openAddCollaboratorDialog() {
     EditUserAccessToProjectDialog editUserAccessToProjectDialog = new EditUserAccessToProjectDialog(
         projectAccessService,
         context.projectId().orElseThrow(),
