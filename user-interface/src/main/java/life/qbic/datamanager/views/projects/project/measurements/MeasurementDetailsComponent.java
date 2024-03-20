@@ -190,41 +190,83 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addClassName("measurement-grid");
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
-        .setHeader("Measurement Code").setAutoWidth(true).setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value()).setFlexGrow(0);
+        .setHeader("Measurement Code")
+        .setAutoWidth(true)
+        .setTooltipGenerator(
+            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
+        .setFlexGrow(0);
     //Todo Should the sampleCodes be retrieved via a service or from column?
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
         .setHeader("Measurement Label")
         .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
-        .setAutoWidth(true).setFlexGrow(1);
+        .setAutoWidth(true)
+        .setFlexGrow(1);
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
-        .setHeader("Measurement Label Type").setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse("")).setAutoWidth(true)
+        .setHeader("Measurement Label Type")
+        .setTooltipGenerator(
+            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
+        .setAutoWidth(true)
         .setFlexGrow(1);
+    proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderSampleCodes()
+            .createComponent(proteomicsMeasurement.measuredSamples()))
+        .setHeader("Sample Codes")
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderOrganisation()
+            .createComponent(proteomicsMeasurement.organisation()))
+        .setHeader("Organisation")
+        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.organisation().label())
+        .setAutoWidth(true)
+        .setFlexGrow(0);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility)
+        .setHeader("Facility")
+        .setTooltipGenerator(ProteomicsMeasurement::facility)
+        .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
-        proteomicsMeasurement -> renderSampleCodes().createComponent(
-            proteomicsMeasurement.measuredSamples())).setHeader("Sample Codes").setAutoWidth(true);
-    proteomicsMeasurementGrid.addComponentColumn(
-            proteomicsMeasurement -> renderOrganisation().createComponent(proteomicsMeasurement.organisation()))
-        .setHeader("Organisation").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.organisation().label()).setAutoWidth(true).setFlexGrow(0);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility).setHeader("Facility").setTooltipGenerator(ProteomicsMeasurement::facility).setAutoWidth(true);
-    proteomicsMeasurementGrid.addComponentColumn(
-                    proteomicsMeasurement -> renderInstrument().createComponent(proteomicsMeasurement.instrument()))
-            .setHeader("Instrument").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted()).setAutoWidth(true).setFlexGrow(0);
+            proteomicsMeasurement -> renderInstrument().createComponent(
+                proteomicsMeasurement.instrument()))
+        .setHeader("Instrument")
+        .setTooltipGenerator(
+            proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted())
+        .setAutoWidth(true)
+        .setFlexGrow(0);
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.fraction().orElse(""))
         .setHeader("Fraction Name")
         .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.fraction().orElse(""))
         .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod).setHeader("Digestion Method").setTooltipGenerator(ProteomicsMeasurement::digestionMethod).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme).setHeader("Digestion Enzyme").setTooltipGenerator(ProteomicsMeasurement::digestionEnzyme).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::enrichmentMethod).setHeader("Enrichment Method").setTooltipGenerator(ProteomicsMeasurement::enrichmentMethod).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::injectionVolume).setHeader("Injection Volume").setTooltipGenerator(proteomicsMeasurement -> String.valueOf(proteomicsMeasurement.injectionVolume())).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn).setHeader("LC Column").setTooltipGenerator(ProteomicsMeasurement::lcColumn).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod).setHeader("LCMS Method").setTooltipGenerator(ProteomicsMeasurement::lcmsMethod).setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setHeader("Sample Pool Group").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse("")).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod)
+        .setHeader("Digestion Method")
+        .setTooltipGenerator(ProteomicsMeasurement::digestionMethod)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme)
+        .setHeader("Digestion Enzyme")
+        .setTooltipGenerator(ProteomicsMeasurement::digestionEnzyme)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::enrichmentMethod)
+        .setHeader("Enrichment Method")
+        .setTooltipGenerator(ProteomicsMeasurement::enrichmentMethod)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::injectionVolume)
+        .setHeader("Injection Volume")
+        .setTooltipGenerator(
+            proteomicsMeasurement -> String.valueOf(proteomicsMeasurement.injectionVolume()))
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn)
+        .setHeader("LC Column")
+        .setTooltipGenerator(ProteomicsMeasurement::lcColumn)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod)
+        .setHeader("LCMS Method")
+        .setTooltipGenerator(ProteomicsMeasurement::lcmsMethod)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(
+            proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse(""))
+        .setHeader("Sample Pool Group")
+        .setTooltipGenerator(
+            proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse(""))
+        .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(new LocalDateTimeRenderer<>(
                     proteomicsMeasurement -> asClientLocalDateTime(proteomicsMeasurement.registrationDate()),
                     "yyyy-MM-dd"))
@@ -235,7 +277,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
             })
             .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse("")).setHeader("Comment").setTooltipGenerator(measurement -> measurement.comment().orElse("")).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse(""))
+        .setHeader("Comment")
+        .setTooltipGenerator(measurement -> measurement.comment().orElse(""))
+        .setAutoWidth(true);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
