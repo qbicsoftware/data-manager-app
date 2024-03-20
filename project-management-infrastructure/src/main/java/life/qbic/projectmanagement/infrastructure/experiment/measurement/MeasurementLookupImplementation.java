@@ -165,6 +165,18 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       };
     }
 
+    //We are only interested in measurements which contain at least one of the provided sampleIds
+    public static Specification<ProteomicsMeasurement> containsSampleId(
+        Collection<SampleId> sampleIds) {
+      return (root, query, builder) -> {
+        if (sampleIds.isEmpty()) {
+          //If no sampleId is in the experiment then there can also be no measurement
+          return builder.disjunction();
+        }
+        return root.join("measuredSamples").in(sampleIds);
+      };
+    }
+
     //If no filter was provided return all proteomicsMeasurement
     public static Specification<ProteomicsMeasurement> isBlank(String filter) {
       return (root, query, builder) -> {
