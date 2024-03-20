@@ -31,8 +31,7 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataService;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.NGSRawData;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.ProteomicsRawData;
+import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataSampleInformation;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -53,8 +52,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private final TabSheet registeredRawDataTabSheet = new TabSheet();
   private String searchTerm = "";
-  private final Grid<NGSRawData> ngsRawDataGrid = new Grid<>();
-  private final Grid<ProteomicsRawData> proteomicsRawDataGrid = new Grid<>();
+  private final Grid<RawData> ngsRawDataGrid = new Grid<>();
+  private final Grid<RawData> proteomicsRawDataGrid = new Grid<>();
   private final Collection<GridLazyDataView<?>> rawDataGridDataViews = new ArrayList<>();
   private final transient RawDataService rawDataService;
   private final transient SampleInformationService sampleInformationService;
@@ -115,13 +114,16 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
   }
 
+  //Todo how to best distinguish between the different measurement types?
   private void addRawDataTab(GridLazyDataView<?> gridLazyDataView) {
-    if (gridLazyDataView.getItem(0) instanceof ProteomicsRawData) {
+    if (gridLazyDataView.getItem(0) instanceof RawData) {
       tabsInTabSheet.add(registeredRawDataTabSheet.add("Proteomics", proteomicsRawDataGrid));
     }
+    /*
     if (gridLazyDataView.getItem(0) instanceof NGSRawData) {
       tabsInTabSheet.add(registeredRawDataTabSheet.add("Genomics", ngsRawDataGrid));
     }
+     */
   }
 
   private void createNGSRawDataGrid() {
@@ -141,13 +143,13 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
         })
         .setAutoWidth(true);
-    GridLazyDataView<NGSRawData> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
+    GridLazyDataView<RawData> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("measurementCode").ascending());
-      return rawDataService.findNGSRawData(searchTerm,
+      return rawDataService.findRawData(searchTerm,
               context.experimentId().orElseThrow(),
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
@@ -176,7 +178,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
         })
         .setAutoWidth(true);
-    GridLazyDataView<ProteomicsRawData> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
+    GridLazyDataView<RawData> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
                   it -> new SortOrder(it.getSorted(),
@@ -184,7 +186,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               .collect(Collectors.toList());
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementCode").ascending());
-          return rawDataService.findProteomicsRawData(searchTerm,
+          return rawDataService.findRawData(searchTerm,
                   context.experimentId().orElseThrow(),
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();
@@ -193,7 +195,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
 
-  private static ComponentRenderer<Div, ProteomicsRawData> createProteomicsRawDataRenderer() {
+  private static ComponentRenderer<Div, RawData> createProteomicsRawDataRenderer() {
     return new ComponentRenderer<>(RawDataDetails::new);
   }
 
@@ -202,7 +204,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     /**
      * Creates a new empty div.
      */
-    public RawDataDetails(ProteomicsRawData rawData) {
+    public RawDataDetails(RawData rawData) {
       addClassName("raw-data-details");
       add(createSingularValueEntry("QBiC Measurement ID", rawData.measurementId().value()));
       add(createSampleLabelsEntry(rawData.measuredSamples()));
@@ -272,10 +274,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   public Collection<MeasurementId> getSelectedMeasurements() {
     List<MeasurementId> selectedMeasurements = new ArrayList<>();
     selectedMeasurements.addAll(
-        proteomicsRawDataGrid.getSelectedItems().stream().map(ProteomicsRawData::measurementId)
+        proteomicsRawDataGrid.getSelectedItems().stream().map(RawData::measurementId)
             .toList());
     selectedMeasurements.addAll(
-        proteomicsRawDataGrid.getSelectedItems().stream().map(ProteomicsRawData::measurementId)
+        proteomicsRawDataGrid.getSelectedItems().stream().map(RawData::measurementId)
             .toList());
     return selectedMeasurements;
   }
