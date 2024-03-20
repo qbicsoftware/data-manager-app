@@ -103,11 +103,22 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
 
     Specification<ProteomicsMeasurement> filterSpecification =
-            Specification.anyOf(measurementCodeContains, measurementLabelContains, measurementLabelingTypeContains, organisationLabelContains,
-                    samplePoolGroupContains, ontologyNameContains, ontologyLabelContains, facilityContains,
-                digestionMethodContains, digestionEnzymeContains, fractionContains,
-                enrichmentMethodContains,
-                    injectionVolumeContains, lcColumnContains, lcmsMethodContains, registrationDateContains, commentContains);
+        Specification.anyOf(measurementCodeContains,
+            measurementLabelContains,
+            measurementLabelingTypeContains,
+            organisationLabelContains,
+            samplePoolGroupContains,
+            ontologyNameContains,
+            ontologyLabelContains,
+            facilityContains,
+            digestionMethodContains,
+            digestionEnzymeContains,
+            enrichmentMethodContains,
+            injectionVolumeContains,
+            lcColumnContains,
+            lcmsMethodContains,
+            registrationDateContains,
+            commentContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)
@@ -160,14 +171,14 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     //We are only interested in measurements which contain at least one of the provided sampleIds
-    public static Specification<ProteomicsMeasurement> containsSampleId (
+    public static Specification<ProteomicsMeasurement> containsSampleId(
         Collection<SampleId> sampleIds) {
       return (root, query, builder) -> {
         if (sampleIds.isEmpty()) {
           //If no sampleId is in the experiment then there can also be no measurement
           return builder.disjunction();
         }
-       return root.join("measuredSamples").in(sampleIds);
+        return root.join("measuredSamples").in(sampleIds);
       };
     }
 
@@ -271,7 +282,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
     public static Specification<ProteomicsMeasurement> isRegistrationDate(String filter){
       return (root, query, builder) ->
-              builder.like(root.get("registration"), "%" + filter + "%");
+          builder.like(root.get("registration").as(String.class), "%" + filter + "%");
     }
   }
 
