@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.collect.Streams;
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -19,9 +18,9 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -151,7 +150,9 @@ public class EditBatchDialog extends DialogWindow {
 
   private void onRemoveLastRowClicked(ClickEvent<Button> clickEvent) {
     List<SampleInfo> tableData = spreadsheet.getData();
-    Optional<SampleInfo> optionalSampleInfo = Streams.findLast(tableData.stream());
+    Optional<SampleInfo> optionalSampleInfo = tableData.stream()
+        .skip(tableData.size() - 1L)
+        .findAny();
     optionalSampleInfo.ifPresent(sampleInfo -> {
       if (isNull(sampleInfo.getSampleId())) {
         spreadsheet.removeLastRow();
