@@ -213,8 +213,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addComponentColumn(
                     proteomicsMeasurement -> renderInstrument().createComponent(proteomicsMeasurement.instrument()))
             .setHeader("Instrument").setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted()).setAutoWidth(true).setFlexGrow(0);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::fraction).setHeader("Fraction Name")
-        .setTooltipGenerator(ProteomicsMeasurement::fraction).setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(
+            proteomicsMeasurement -> proteomicsMeasurement.fraction().orElse(""))
+        .setHeader("Fraction Name")
+        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.fraction().orElse(""))
+        .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod).setHeader("Digestion Method").setTooltipGenerator(ProteomicsMeasurement::digestionMethod).setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme).setHeader("Digestion Enzyme").setTooltipGenerator(ProteomicsMeasurement::digestionEnzyme).setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::enrichmentMethod).setHeader("Enrichment Method").setTooltipGenerator(ProteomicsMeasurement::enrichmentMethod).setAutoWidth(true);
