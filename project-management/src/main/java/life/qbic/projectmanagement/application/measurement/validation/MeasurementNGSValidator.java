@@ -70,8 +70,8 @@ public class MeasurementNGSValidator implements
   }
 
   @Override
-  public MeasurementValidationResult validate(NGSMeasurementMetadata measurementMetadata) {
+  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata) {
     // TODO implement property validation
-    return MeasurementValidationResult.withFailures(1, List.of("This went wrong"));
+    return ValidationResult.withFailures(1, List.of("This went wrong"));
   }
 }

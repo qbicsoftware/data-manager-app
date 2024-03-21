@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
  * <p>
  * This service can be used to validate provided measurement metadata before register them. Of
  * course registration will also contain validation, consider this service as a try-run registration
- * service to let the user fail early with detailed provided {@link MeasurementValidationResult}.
+ * service to let the user fail early with detailed provided {@link ValidationResult}.
  *
  * @since 1.0.0
  */
@@ -32,11 +32,11 @@ public class MeasurementValidationService {
     this.pxpValidator = pxpValidator;
   }
 
-  public MeasurementValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
+  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
     return measurementNgsValidator.validate(ngsMeasurementMetadata);
   }
 
-  public MeasurementValidationResult validateProteomics(
+  public ValidationResult validateProteomics(
       ProteomicsMeasurementMetadata pxMeasurementMetadata) {
     return pxpValidator.validate(pxMeasurementMetadata);
   }

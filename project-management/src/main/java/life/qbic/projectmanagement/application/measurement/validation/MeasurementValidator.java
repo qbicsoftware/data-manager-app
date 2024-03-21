@@ -13,6 +13,6 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
  */
 public interface MeasurementValidator<T extends MeasurementMetadata> {
 
-  MeasurementValidationResult validate(T measurementMetadata);
+  ValidationResult validate(T measurementMetadata);
 
 }

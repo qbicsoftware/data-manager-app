@@ -2,8 +2,8 @@ package life.qbic.datamanager.views.projects.project.measurements;
 
 import java.util.Objects;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -28,12 +28,12 @@ public class MeasurementProteomicsValidationExecutor implements
   }
 
   @Override
-  public MeasurementValidationResult validateRegistration(ProteomicsMeasurementMetadata metadata) {
+  public ValidationResult validateRegistration(ProteomicsMeasurementMetadata metadata) {
     return measurementValidationService.validateProteomics(metadata);
   }
 
   @Override
-  public MeasurementValidationResult validateEdit(ProteomicsMeasurementMetadata metadata) {
+  public ValidationResult validateEdit(ProteomicsMeasurementMetadata metadata) {
     //Todo provide edit validation for proteomics
     return null;
   }

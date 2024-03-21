@@ -44,8 +44,8 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
@@ -300,7 +300,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(succeededEvent.getFileName(),
         validationReport);
     //We don't want to upload any invalid measurements in spreadsheet
-    if (validationReport.measurementValidationResult.containsFailures()) {
+    if (validationReport.validationResult.containsFailures()) {
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload<>(
           succeededEvent.getFileName(), Collections.emptyList());
       addFile(measurementFileItem, metadataUpload);
@@ -346,43 +346,43 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     var metadata = new NGSMeasurementMetadata();
     var finalValidationResult = generateModeDependentValidationResult(
         measurementNGSValidationExecutor, metadata);
-    return new MeasurementValidationReport(0, MeasurementValidationResult.successful(0));
+    return new MeasurementValidationReport(0, ValidationResult.successful(0));
   }
 
   private MeasurementValidationReport validatePxP(MetadataContent content) {
 
-    var validationResult = MeasurementValidationResult.successful(0);
+    var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
     var evaluatedRows = 0;
     // we check if there are any rows provided or if we have only rows with empty content
     if (content.rows().isEmpty() || content.rows().stream()
         .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
       validationResult = validationResult.combine(
-          MeasurementValidationResult.withFailures(0,
+          ValidationResult.withFailures(0,
               List.of("The metadata sheet seems to be empty")));
       return new MeasurementValidationReport(0, validationResult);
     }
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      MeasurementValidationResult result = validatePxPRow(propertyColumnMap, row);
+      ValidationResult result = validatePxPRow(propertyColumnMap, row);
       validationResult = validationResult.combine(result);
       evaluatedRows++;
     }
     return new MeasurementValidationReport(evaluatedRows, validationResult);
   }
 
-  private MeasurementValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap,
+  private ValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap,
       String row) {
-    var validationResult = MeasurementValidationResult.successful(0);
+    var validationResult = ValidationResult.successful(0);
     var metaDataValues = row.split("\t"); // tab separated values
     // we consider an empty row as a reason to warn, not to fail
     if (metaDataValues.length == 0) {
       validationResult.combine(
-          MeasurementValidationResult.successful(1, List.of("Empty row provided.")));
+          ValidationResult.successful(1, List.of("Empty row provided.")));
       return validationResult;
     }
     if (metaDataValues.length != propertyColumnMap.keySet().size()) {
-      validationResult.combine(MeasurementValidationResult.withFailures(1, List.of("")));
+      validationResult.combine(ValidationResult.withFailures(1, List.of("")));
     }
 
     var sampleCodeColumnIndex = propertyColumnMap.get(
@@ -410,7 +410,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return validationResult.combine(MeasurementValidationResult.withFailures(1,
+      return validationResult.combine(ValidationResult.withFailures(1,
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
 
@@ -443,7 +443,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     return finalValidationResult;
   }
 
-  private MeasurementValidationResult generateModeDependentValidationResult(
+  private ValidationResult generateModeDependentValidationResult(
       MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
     return switch (mode) {
       case ADD -> measurementValidationExecutor.validateRegistration(metadata);
@@ -479,8 +479,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private boolean containsInvalidMeasurementData() {
     return measurementFileItems.stream()
         .map(MeasurementFileItem::measurementValidationReport)
-        .map(MeasurementValidationReport::measurementValidationResult)
-        .anyMatch(MeasurementValidationResult::containsFailures);
+        .map(MeasurementValidationReport::validationResult)
+        .anyMatch(ValidationResult::containsFailures);
   }
 
 
@@ -517,7 +517,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   record MeasurementValidationReport(int validatedRows,
-                                     MeasurementValidationResult measurementValidationResult) {
+                                     ValidationResult validationResult) {
 
   }
 
@@ -574,11 +574,11 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     private void createDisplayBox(MeasurementValidationReport measurementValidationReport) {
       displayBox.removeAll();
-      if (measurementValidationReport.measurementValidationResult().allPassed()) {
+      if (measurementValidationReport.validationResult().allPassed()) {
         displayBox.add(createApprovedDisplayBox(measurementValidationReport.validatedRows()));
       } else {
         displayBox.add(createInvalidDisplayBox(
-            measurementValidationReport.measurementValidationResult().failures()));
+            measurementValidationReport.validationResult().failures()));
       }
     }
 

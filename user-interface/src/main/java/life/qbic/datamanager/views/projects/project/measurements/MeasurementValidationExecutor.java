@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 
 /**
  * <b>Validation Executor</b>
@@ -16,8 +16,8 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
  */
 public interface MeasurementValidationExecutor<MeasurementMetadata> {
 
-  MeasurementValidationResult validateRegistration(MeasurementMetadata metadata);
+  ValidationResult validateRegistration(MeasurementMetadata metadata);
 
-  MeasurementValidationResult validateEdit(MeasurementMetadata metadata);
+  ValidationResult validateEdit(MeasurementMetadata metadata);
 
 }
