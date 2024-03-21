@@ -7,7 +7,6 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-;
 
 /**
  * <b>Measurement Proteomics Validation Executor</b>
