@@ -44,6 +44,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
@@ -62,7 +63,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
-  private final MeasurementValidationExecutor measurementValidationExecutor;
+  private final MeasurementValidationService measurementValidationService;
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final transient List<MeasurementFileItem> measurementFileItems;
@@ -70,9 +71,9 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private final Div uploadedItemsDisplays;
   private final MODE mode;
 
-  public MeasurementMetadataUploadDialog(
-      MeasurementValidationExecutor measurementValidationExecutor, MODE mode) {
-    this.measurementValidationExecutor = requireNonNull(measurementValidationExecutor,
+  public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
+      MODE mode) {
+    this.measurementValidationService = requireNonNull(measurementValidationService,
         "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
         "The dialog mode needs to be defined");
@@ -287,13 +288,17 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     var contentHeader = content.theHeader()
         .orElseThrow(() -> new RuntimeException("No header row found"));
+    MeasurementValidationExecutor measurementValidationExecutor = switch (mode) {
+      case EDIT -> new MeasurementEditValidationExecutor(measurementValidationService);
+      case ADD -> new MeasurementRegistrationValidationExecutor(measurementValidationService);
+    };
     var domain = measurementValidationExecutor.inferDomainByProperties(
             parseHeaderContent(contentHeader))
         .orElseThrow(() -> new RuntimeException(
             "Header row could not be recognized, Please provide a valid template file"));
     var validationReport = switch (domain) {
-      case PROTEOMICS -> validatePxP(content);
-      case NGS -> validateNGS();
+      case PROTEOMICS -> validatePxP(content, measurementValidationExecutor);
+      case NGS -> validateNGS(measurementValidationExecutor);
     };
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(succeededEvent.getFileName(),
         validationReport);
@@ -338,11 +343,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         .toList();
   }
 
-  private MeasurementValidationReport validateNGS() {
+  private MeasurementValidationReport validateNGS(
+      MeasurementValidationExecutor measurementValidationExecutor) {
     return new MeasurementValidationReport(0, MeasurementValidationResult.successful(0));
   }
 
-  private MeasurementValidationReport validatePxP(MetadataContent content) {
+  private MeasurementValidationReport validatePxP(MetadataContent content,
+      MeasurementValidationExecutor measurementValidationExecutor) {
 
     var validationResult = MeasurementValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
@@ -357,14 +364,17 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     }
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      MeasurementValidationResult result = validatePxPRow(propertyColumnMap, row);
+      MeasurementValidationResult result = validatePxPRow(measurementValidationExecutor,
+          propertyColumnMap, row);
       validationResult = validationResult.combine(result);
       evaluatedRows++;
     }
     return new MeasurementValidationReport(evaluatedRows, validationResult);
   }
 
-  private MeasurementValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap,
+  private MeasurementValidationResult validatePxPRow(
+      MeasurementValidationExecutor measurementValidationExecutor,
+      Map<String, Integer> propertyColumnMap,
       String row) {
     var validationResult = MeasurementValidationResult.successful(0);
     var metaDataValues = row.split("\t"); // tab separated values
