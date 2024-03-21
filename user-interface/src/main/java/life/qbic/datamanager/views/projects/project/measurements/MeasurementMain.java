@@ -24,13 +24,14 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -63,7 +64,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final TextField measurementSearchField = new TextField();
   private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
-  private final transient ValidationService validationService;
+  private final transient MeasurementValidationService measurementValidationService;
   private transient Context context;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
@@ -75,12 +76,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
-      @Autowired ValidationService validationService) {
-    this.measurementDetailsComponent = Objects.requireNonNull(measurementDetailsComponent);
-    this.measurementTemplateListComponent = Objects.requireNonNull(
-        measurementTemplateListComponent);
-    this.measurementService = Objects.requireNonNull(measurementService);
-    this.validationService = Objects.requireNonNull(validationService);
+      @Autowired MeasurementValidationService measurementValidationService) {
+    Objects.requireNonNull(measurementTemplateListComponent);
+    Objects.requireNonNull(measurementDetailsComponent);
+    Objects.requireNonNull(measurementService);
+    Objects.requireNonNull(measurementValidationService);
+    this.measurementDetailsComponent = measurementDetailsComponent;
+    this.measurementService = measurementService;
+    this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
@@ -111,7 +114,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(content);
     content.addClassName("measurement-main-content");
   }
-
 
   private void initSearchFieldAndButtonBar() {
     measurementSearchField.setPlaceholder("Search");
@@ -249,8 +251,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(validationService,
-        context.experimentId().orElseThrow());
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD);
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
       var uploads = confirmEvent.uploads();

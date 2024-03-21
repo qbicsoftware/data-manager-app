@@ -19,24 +19,26 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class ValidationService {
+public class MeasurementValidationService {
 
-  private final NGSValidator ngsValidator;
+  private final MeasurementNGSValidator measurementNgsValidator;
 
-  private final ProteomicsValidator pxValidator;
+  private final MeasurementProteomicsValidator pxpValidator;
 
   @Autowired
-  public ValidationService(NGSValidator ngsValidator, ProteomicsValidator pxValidator) {
-    this.ngsValidator = ngsValidator;
-    this.pxValidator = pxValidator;
+  public MeasurementValidationService(MeasurementNGSValidator measurementNgsValidator,
+      MeasurementProteomicsValidator pxpValidator) {
+    this.measurementNgsValidator = measurementNgsValidator;
+    this.pxpValidator = pxpValidator;
   }
 
   public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
-    return ngsValidator.validate(ngsMeasurementMetadata);
+    return measurementNgsValidator.validate(ngsMeasurementMetadata);
   }
 
-  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxValidator.validate(pxMeasurementMetadata);
+  public ValidationResult validateProteomics(
+      ProteomicsMeasurementMetadata pxMeasurementMetadata) {
+    return pxpValidator.validate(pxMeasurementMetadata);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {
@@ -44,10 +46,10 @@ public class ValidationService {
   }
 
   private static Domain determinDomain(Collection<String> propertyTypes) {
-    if (NGSValidator.isNGS(propertyTypes)) {
+    if (MeasurementNGSValidator.isNGS(propertyTypes)) {
       return Domain.NGS;
     }
-    if (ProteomicsValidator.isProteomics(propertyTypes)) {
+    if (MeasurementProteomicsValidator.isProteomics(propertyTypes)) {
       return Domain.PROTEOMICS;
     }
     return null;
