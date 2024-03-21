@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 ;
 
 /**
- * <b>Measurement Edit Validation Executor</b>
+ * <b>Measurement Proteomics Validation Executor</b>
  * <p>
  * Implementation of the {@link MeasurementValidationExecutor} interface,
- * handling the validation of to be edited {@link life.qbic.projectmanagement.application.measurement.MeasurementMetadata}
+ * handling the validation of to be registered or edited {@link life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata}
  *
  */
 @Component

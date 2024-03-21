@@ -8,10 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b>Registration Validation Executor</b>
+ * <b>Measurement NGS Validation Executor</b>
  * <p>
  * Implementation of the {@link MeasurementValidationExecutor} interface,
- * handling the validation of newly registered {@link life.qbic.projectmanagement.application.measurement.MeasurementMetadata}
+ * handling the validation of to be registered or edited  {@link life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata}
  *
  */
 @Component
