@@ -30,8 +30,8 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -82,6 +82,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     this.measurementDetailsComponent = measurementDetailsComponent;
+    this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
     this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
