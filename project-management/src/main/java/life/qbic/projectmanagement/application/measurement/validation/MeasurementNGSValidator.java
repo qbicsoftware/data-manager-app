@@ -12,14 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement NGS Validator</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Validator employed to check the provided user input for a measurement in the ngs domain.
+ *    The validator checks the for the provision of mandatory information, and will return a ValidationResult
+ *    dependent on the presence or absence of data
+ * </p>
  *
- * @since <version tag>
  */
 @Component
-public class NGSValidator implements Validator<NGSMeasurementMetadata> {
+public class MeasurementNGSValidator implements
+    MeasurementValidator<NGSMeasurementMetadata> {
 
   private static final Set<String> NGS_PROPERTIES = new HashSet<>();
 
@@ -33,7 +36,7 @@ public class NGSValidator implements Validator<NGSMeasurementMetadata> {
             "note"));
   }
   @Autowired
-  public NGSValidator(SampleInformationService sampleInformationService) {
+  public MeasurementNGSValidator(SampleInformationService sampleInformationService) {
     this.sampleInformationService = sampleInformationService;
   }
 

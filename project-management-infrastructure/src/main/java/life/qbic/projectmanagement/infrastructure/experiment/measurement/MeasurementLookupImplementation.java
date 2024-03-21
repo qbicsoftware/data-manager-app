@@ -81,6 +81,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         filter);
     Specification<ProteomicsMeasurement> facilityContains = ProteomicsMeasurementSpec.isFacility(
             filter);
+    Specification<ProteomicsMeasurement> fractionContains = ProteomicsMeasurementSpec.isFraction(
+        filter);
     Specification<ProteomicsMeasurement> digestionMethodContains = ProteomicsMeasurementSpec.isDigestionMethod(
             filter);
     Specification<ProteomicsMeasurement> digestionEnzymeContains = ProteomicsMeasurementSpec.isDigestionEnzyme(
@@ -92,6 +94,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     Specification<ProteomicsMeasurement> lcColumnContains = ProteomicsMeasurementSpec.isLcColumn(
             filter);
     Specification<ProteomicsMeasurement> lcmsMethodContains = ProteomicsMeasurementSpec.isLcmsMethod(
+            filter);
+    Specification<ProteomicsMeasurement> registrationDateContains = ProteomicsMeasurementSpec.isRegistrationDate(
             filter);
     Specification<ProteomicsMeasurement> commentContains = ProteomicsMeasurementSpec.isComment(
             filter);
@@ -113,6 +117,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
             injectionVolumeContains,
             lcColumnContains,
             lcmsMethodContains,
+            registrationDateContains,
             commentContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
@@ -220,6 +225,11 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
               builder.like(root.get("facility"), "%" + filter + "%");
     }
 
+    public static Specification<ProteomicsMeasurement> isFraction(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("fraction"), "%" + filter + "%");
+    }
+
     public static Specification<ProteomicsMeasurement> isDigestionMethod(String filter) {
       return (root, query, builder) ->
               builder.like(root.get("digestionMethod"), "%" + filter + "%");
@@ -270,10 +280,10 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
               builder.like(root.get("samplePool"), "%" + filter + "%");
     }
 
-//    public static Specification<ProteomicsMeasurement> isRegistrationDate(String filter){
-//      return (root, query, builder) ->
-//              builder.like(root.get("registration"), "%" + filter + "%");
-//    }
+    public static Specification<ProteomicsMeasurement> isRegistrationDate(String filter){
+      return (root, query, builder) ->
+          builder.like(root.get("registration").as(String.class), "%" + filter + "%");
+    }
   }
 
   private static class NgsMeasurementSpec {
