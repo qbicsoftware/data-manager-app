@@ -29,8 +29,6 @@ public class RawData {
     // Needed for JPA
   }
 
-  //Todo handle sample label and sample code
-
   private RawData(RawDataId rawDataId, MeasurementId measurementId, Instant registration) {
     this.rawDataId = rawDataId;
     this.measurementId = measurementId;

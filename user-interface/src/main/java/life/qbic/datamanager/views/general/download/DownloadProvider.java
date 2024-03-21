@@ -34,7 +34,7 @@ public class DownloadProvider extends Anchor {
     byte[] content = downloadContentProvider.getContent();
     if(content.length > 0) {
       UI ui = getUI().orElseThrow(() -> new ApplicationException(
-          "Metadata Download component triggered but not attached to any UI."));
+          "Download component triggered but not attached to any UI."));
       StreamResource resource = new StreamResource(downloadContentProvider.getFileName(),
           () -> new ByteArrayInputStream(content));
       this.setHref(resource);

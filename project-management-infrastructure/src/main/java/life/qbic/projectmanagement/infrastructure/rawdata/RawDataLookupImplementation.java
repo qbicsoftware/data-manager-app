@@ -1,10 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.rawdata;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Collection;
 import java.util.List;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataLookup;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
@@ -23,8 +20,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class RawDataLookupImplementation implements RawDataLookup {
-
-  private static final Logger log = logger(RawDataLookupImplementation.class);
   private final RawDataJpaRepo rawDataJpaRepo;
 
   public RawDataLookupImplementation(RawDataJpaRepo rawDataJpaRepo) {
@@ -89,7 +84,7 @@ public class RawDataLookupImplementation implements RawDataLookup {
           //If no sampleId is in the experiment then there can also be no measurement
           return builder.disjunction();
         }
-        return root.join("measurements").in(measurementIds);
+        return root.get("measurementId").in(measurementIds);
       };
     }
 

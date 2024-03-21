@@ -213,7 +213,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     if (!measurementService.hasMeasurements(currentExperimentId)) {
       showRegisterMeasurementDisclaimer();
-      return;
     } else {
       showMeasurements();
     }

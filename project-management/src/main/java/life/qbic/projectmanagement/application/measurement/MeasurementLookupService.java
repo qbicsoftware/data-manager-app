@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -21,8 +20,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class MeasurementLookupService {
-
-  private static final Logger log = LoggerFactory.logger(MeasurementLookupService.class);
   private final MeasurementRepository measurementRepository;
   private final MeasurementLookup measurementLookup;
 
@@ -83,4 +80,7 @@ public class MeasurementLookupService {
         + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
   }
 
+  public List<MeasurementId> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.retrieveAllMeasurementsWithSampleIds(sampleIds);
+  }
 }

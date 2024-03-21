@@ -16,6 +16,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -23,17 +24,22 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.rawdata.RawDataService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 
 /**
@@ -52,6 +58,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  private final DownloadProvider urlDownload;
+  private final transient RawDataURLContentProvider urlDownloadFormatter;
   @Serial
   private static final long serialVersionUID = -4506659645977994192L;
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
@@ -60,20 +68,26 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final TextField rawDataSearchField = new TextField();
   private transient Context context;
   private final Div content = new Div();
+  private final transient ExperimentInformationService experimentInformationService;
   private final transient MeasurementService measurementService;
   private final transient RawDataService rawDataService;
   private final Disclaimer registerMeasurementsDisclaimer;
   private final Disclaimer noRawDataRegisteredDisclaimer;
+  private final String rawDataSourceURL;
 
   public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
       @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
+      @Autowired ExperimentInformationService experimentInformationService,
       @Autowired MeasurementService measurementService,
-      @Autowired RawDataService rawDataService) {
+      @Autowired RawDataService rawDataService,
+      @Value("${rawdata.datasource.url}") String dataSourceURL) {
     this.rawdataDetailsComponent = Objects.requireNonNull(rawDataDetailsComponent);
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.measurementService = Objects.requireNonNull(measurementService);
     this.rawDataService = Objects.requireNonNull(rawDataService);
+    this.rawDataSourceURL = Objects.requireNonNull(dataSourceURL);
     registerMeasurementsDisclaimer = createNoMeasurementsRegisteredDisclaimer();
     registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
     noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();
@@ -83,6 +97,9 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     add(noRawDataRegisteredDisclaimer);
     add(rawDataDetailsComponent);
     add(rawDataDownloadInformationComponent);
+    urlDownloadFormatter = new RawDataURLContentProvider();
+    urlDownload = new DownloadProvider(urlDownloadFormatter);
+    add(urlDownload);
     addListeners();
     addClassName("raw-data");
     log.debug(String.format(
@@ -129,16 +146,24 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
 
 
   private void handleUrlDownload(ComponentEvent<?> event) {
-    //ToDo Implement
-    Collection<MeasurementId> selectedMeasurements = rawdataDetailsComponent.getSelectedMeasurements();
-    generateUrls(selectedMeasurements);
+    Collection<MeasurementCode> selectedMeasurements = rawdataDetailsComponent.getSelectedMeasurementUrls();
+    if (selectedMeasurements.isEmpty()) {
+      ErrorMessage errorMessage = new ErrorMessage("No Raw Data Item Selected",
+          "Please select at least one measurement to generate an URL from");
+      StyledNotification notification = new StyledNotification(errorMessage);
+      notification.open();
+    }
+    var downloadUrls = generateDownloadUrls(selectedMeasurements);
+    var currentExperiment = experimentInformationService.find(context.experimentId().orElseThrow())
+        .orElseThrow();
+    urlDownloadFormatter.updateContext(currentExperiment, downloadUrls);
+    urlDownload.trigger();
   }
 
-  private static void generateUrls(Collection<MeasurementId> measurementIdCollection) {
-    if (measurementIdCollection.isEmpty()) {
-      return;
-    }
-    //Todo implement URL generation and file download
+  private List<RawDataURL> generateDownloadUrls(
+      Collection<MeasurementCode> measurementCodeCollection) {
+    return measurementCodeCollection.stream().map(measurementCode ->
+        new RawDataURL(rawDataSourceURL, measurementCode.value())).toList();
   }
 
   /**
@@ -235,6 +260,14 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
           "Rerouting to measurement page for experiment %s of project %s: %s",
           currentExperimentId, currentProjectId, routeToMeasurementPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
+    }
+  }
+
+  public record RawDataURL(String serverURL, String measurementCode) {
+
+    @Override
+    public String toString() {
+      return String.format("%s/%s", serverURL(), measurementCode());
     }
   }
 
