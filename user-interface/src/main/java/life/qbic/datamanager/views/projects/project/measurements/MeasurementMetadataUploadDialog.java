@@ -42,8 +42,8 @@ import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.validation.ProteomicsValidator.PROTEOMICS_PROPERTY;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
@@ -52,7 +52,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  * <b>Upload Measurement Metadata Dialog</b>
  *
  * <p>Component that provides the user with a dialog to upload files to edit or add {@link MeasurementMetadata}</p>
- * to an {@link Experiment} dependent on the provided {@link MODE} and {@link ValidationExecutor} with which it was initialized
+ * to an {@link Experiment} dependent on the provided {@link MODE} and {@link MeasurementValidationExecutor} with which it was initialized
  *
  * @since 1.0.0
  */
@@ -62,7 +62,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
-  private final ValidationExecutor validationExecutor;
+  private final MeasurementValidationExecutor measurementValidationExecutor;
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final transient List<MeasurementFileItem> measurementFileItems;
@@ -70,9 +70,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private final Div uploadedItemsDisplays;
   private final MODE mode;
 
-  public MeasurementMetadataUploadDialog(ValidationExecutor validationExecutor, MODE mode) {
-    this.validationExecutor = requireNonNull(validationExecutor,
-        "validationExecutor must not be null");
+  public MeasurementMetadataUploadDialog(
+      MeasurementValidationExecutor measurementValidationExecutor, MODE mode) {
+    this.measurementValidationExecutor = requireNonNull(measurementValidationExecutor,
+        "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
         "The dialog mode needs to be defined");
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
@@ -286,10 +287,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     var contentHeader = content.theHeader()
         .orElseThrow(() -> new RuntimeException("No header row found"));
-    var domain = validationExecutor.inferDomainByProperties(parseHeaderContent(contentHeader))
+    var domain = measurementValidationExecutor.inferDomainByProperties(
+            parseHeaderContent(contentHeader))
         .orElseThrow(() -> new RuntimeException(
             "Header row could not be recognized, Please provide a valid template file"));
-
     var validationReport = switch (domain) {
       case PROTEOMICS -> validatePxP(content);
       case NGS -> validateNGS();
@@ -297,7 +298,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(succeededEvent.getFileName(),
         validationReport);
     //We don't want to upload any invalid measurements in spreadsheet
-    if (validationReport.validationResult.containsFailures()) {
+    if (validationReport.measurementValidationResult.containsFailures()) {
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload<>(
           succeededEvent.getFileName(), Collections.emptyList());
       addFile(measurementFileItem, metadataUpload);
@@ -337,41 +338,44 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         .toList();
   }
 
-  private ValidationReport validateNGS() {
-    return new ValidationReport(0, ValidationResult.successful(0));
+  private MeasurementValidationReport validateNGS() {
+    return new MeasurementValidationReport(0, MeasurementValidationResult.successful(0));
   }
 
-  private ValidationReport validatePxP(MetadataContent content) {
+  private MeasurementValidationReport validatePxP(MetadataContent content) {
 
-    var validationResult = ValidationResult.successful(0);
+    var validationResult = MeasurementValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
     var evaluatedRows = 0;
     // we check if there are any rows provided or if we have only rows with empty content
     if (content.rows().isEmpty() || content.rows().stream()
         .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
       validationResult = validationResult.combine(
-          ValidationResult.withFailures(0, List.of("The metadata sheet seems to be empty")));
-      return new ValidationReport(0, validationResult);
+          MeasurementValidationResult.withFailures(0,
+              List.of("The metadata sheet seems to be empty")));
+      return new MeasurementValidationReport(0, validationResult);
     }
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      ValidationResult result = validatePxPRow(propertyColumnMap, row);
+      MeasurementValidationResult result = validatePxPRow(propertyColumnMap, row);
       validationResult = validationResult.combine(result);
       evaluatedRows++;
     }
-    return new ValidationReport(evaluatedRows, validationResult);
+    return new MeasurementValidationReport(evaluatedRows, validationResult);
   }
 
-  private ValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap, String row) {
-    var validationResult = ValidationResult.successful(0);
+  private MeasurementValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap,
+      String row) {
+    var validationResult = MeasurementValidationResult.successful(0);
     var metaDataValues = row.split("\t"); // tab separated values
     // we consider an empty row as a reason to warn, not to fail
     if (metaDataValues.length == 0) {
-      validationResult.combine(ValidationResult.successful(1, List.of("Empty row provided.")));
+      validationResult.combine(
+          MeasurementValidationResult.successful(1, List.of("Empty row provided.")));
       return validationResult;
     }
     if (metaDataValues.length != propertyColumnMap.keySet().size()) {
-      validationResult.combine(ValidationResult.withFailures(1, List.of("")));
+      validationResult.combine(MeasurementValidationResult.withFailures(1, List.of("")));
     }
 
     var sampleCodeColumnIndex = propertyColumnMap.get(
@@ -399,7 +403,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return validationResult.combine(ValidationResult.withFailures(1,
+      return validationResult.combine(MeasurementValidationResult.withFailures(1,
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
 
@@ -426,7 +430,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, List.of(new Labeling(sampleCodes.code(), labelingType, label)), note);
 
-    validationResult = validationResult.combine(validationExecutor.validateProteomics(metadata));
+    validationResult = validationResult.combine(
+        measurementValidationExecutor.validateProteomics(metadata));
     return validationResult;
   }
 
@@ -457,9 +462,9 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   private boolean containsInvalidMeasurementData() {
     return measurementFileItems.stream()
-        .map(MeasurementFileItem::validationReport)
-        .map(ValidationReport::validationResult)
-        .anyMatch(ValidationResult::containsFailures);
+        .map(MeasurementFileItem::measurementValidationReport)
+        .map(MeasurementValidationReport::measurementValidationResult)
+        .anyMatch(MeasurementValidationResult::containsFailures);
   }
 
 
@@ -495,7 +500,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     }
   }
 
-  record ValidationReport(int validatedRows, ValidationResult validationResult) {
+  record MeasurementValidationReport(int validatedRows,
+                                     MeasurementValidationResult measurementValidationResult) {
 
   }
 
@@ -511,7 +517,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   }
 
-  public record MeasurementFileItem(String fileName, ValidationReport validationReport) {
+  public record MeasurementFileItem(String fileName,
+                                    MeasurementValidationReport measurementValidationReport) {
 
   }
 
@@ -534,7 +541,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
       fileNameLabel.addClassName("file-name");
       add(fileNameLabel);
-      createDisplayBox(measurementFileItem.validationReport());
+      createDisplayBox(measurementFileItem.measurementValidationReport());
       displayBox.addClassName("validation-display-box");
       add(displayBox);
       addClassName("measurement-item");
@@ -549,12 +556,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       displayBox.add(createInvalidDisplayBox(List.of(error)));
     }
 
-    private void createDisplayBox(ValidationReport validationReport) {
+    private void createDisplayBox(MeasurementValidationReport measurementValidationReport) {
       displayBox.removeAll();
-      if (validationReport.validationResult().allPassed()) {
-        displayBox.add(createApprovedDisplayBox(validationReport.validatedRows()));
+      if (measurementValidationReport.measurementValidationResult().allPassed()) {
+        displayBox.add(createApprovedDisplayBox(measurementValidationReport.validatedRows()));
       } else {
-        displayBox.add(createInvalidDisplayBox(validationReport.validationResult().failures()));
+        displayBox.add(createInvalidDisplayBox(
+            measurementValidationReport.measurementValidationResult().failures()));
       }
     }
 

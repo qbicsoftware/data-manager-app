@@ -13,21 +13,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement Proteomics Validator</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Validator employed to check the provided user input for a measurement in the proteomics domain.
+ *    The validator checks the for the provision of mandatory information, and will return a ValidationResult
+ *    dependent on the presence or absence of data
+ * </p>
  *
- * @since <version tag>
  */
 @Component
-public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetadata> {
+public class MeasurementProteomicsValidator implements
+    MeasurementValidator<ProteomicsMeasurementMetadata> {
 
   protected final SampleInformationService sampleInformationService;
 
   protected final OntologyLookupService ontologyLookupService;
 
   @Autowired
-  public ProteomicsValidator(SampleInformationService sampleInformationService,
+  public MeasurementProteomicsValidator(SampleInformationService sampleInformationService,
       OntologyLookupService ontologyLookupService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
@@ -64,13 +67,13 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
   }
 
   @Override
-  public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
+  public MeasurementValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
+    MeasurementValidationResult mandatoryMeasurementValidationResult = validationPolicy.validateMandatoryDataProvided(
         measurementMetadata);
-    if (mandatoryValidationResult.containsFailures()) {
-      return mandatoryValidationResult;
+    if (mandatoryMeasurementValidationResult.containsFailures()) {
+      return mandatoryMeasurementValidationResult;
     }
     //If all fields were filled then we can validate the entries individually
     return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
@@ -124,105 +127,113 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
     // https://ror.readme.io/docs/ror-identifier-pattern
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
-    ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
+    MeasurementValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
       if (sampleCodes.isEmpty()) {
-        return ValidationResult.withFailures(1,
+        return MeasurementValidationResult.withFailures(1,
             List.of("A measurement must contain at least one sample reference. Provided: none"));
       }
-      ValidationResult validationResult = ValidationResult.successful(0);
+      MeasurementValidationResult measurementValidationResult = MeasurementValidationResult.successful(
+          0);
       for (SampleCode sample : sampleCodes) {
-        validationResult = validationResult.combine(validateSampleId(sample));
+        measurementValidationResult = measurementValidationResult.combine(validateSampleId(sample));
       }
-      return validationResult;
+      return measurementValidationResult;
     }
 
-    ValidationResult validateSampleId(SampleCode sampleCodes) {
+    MeasurementValidationResult validateSampleId(SampleCode sampleCodes) {
       var queriedSampleEntry = sampleInformationService.findSampleId(sampleCodes);
       if (queriedSampleEntry.isPresent()) {
-        return ValidationResult.successful(1);
+        return MeasurementValidationResult.successful(1);
       }
-      return ValidationResult.withFailures(1,
+      return MeasurementValidationResult.withFailures(1,
           List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCodes.code())));
     }
 
-    ValidationResult validateOrganisation(String organisationId) {
+    MeasurementValidationResult validateOrganisation(String organisationId) {
       if (Pattern.compile(ROR_ID_REGEX).matcher(organisationId).find()) {
-        return ValidationResult.successful(1);
+        return MeasurementValidationResult.successful(1);
       }
-      return ValidationResult.withFailures(1,
+      return MeasurementValidationResult.withFailures(1,
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
     }
 
-    ValidationResult validateInstrument(String instrument) {
+    MeasurementValidationResult validateInstrument(String instrument) {
       var result = ontologyLookupService.findByCURI(instrument);
       if (result.isPresent()) {
-        return ValidationResult.successful(1);
+        return MeasurementValidationResult.successful(1);
       }
-      return ValidationResult.withFailures(1, List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
+      return MeasurementValidationResult.withFailures(1,
+          List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
     }
 
-    ValidationResult validateMandatoryDataProvided(
+    MeasurementValidationResult validateMandatoryDataProvided(
         ProteomicsMeasurementMetadata measurementMetadata) {
-      var validation = ValidationResult.successful(0);
+      var validation = MeasurementValidationResult.successful(0);
       if (measurementMetadata.sampleCodes().isEmpty()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Sample id: missing sample id reference")));
+            MeasurementValidationResult.withFailures(1,
+                List.of("Sample id: missing sample id reference")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.organisationId().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+            MeasurementValidationResult.withFailures(1,
+                List.of("Organisation: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.instrumentCURI().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+            MeasurementValidationResult.withFailures(1,
+                List.of("Instrument: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Facility: missing mandatory metadata")));
+            MeasurementValidationResult.withFailures(1,
+                List.of("Facility: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.digestionEnzyme().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(MeasurementValidationResult.withFailures(1,
             List.of("Digestion Enzyme: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.digestionMethod().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(MeasurementValidationResult.withFailures(1,
             List.of("Digestion Method: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.enrichmentMethod().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(MeasurementValidationResult.withFailures(1,
             List.of("Enrichment Method: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.injectionVolume().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(MeasurementValidationResult.withFailures(1,
             List.of("Injection Volume: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.lcColumn().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("LC Column: missing mandatory metadata")));
+            MeasurementValidationResult.withFailures(1,
+                List.of("LC Column: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       if (measurementMetadata.lcmsMethod().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("LCMS Method: missing mandatory metadata")));
+            MeasurementValidationResult.withFailures(1,
+                List.of("LCMS Method: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(MeasurementValidationResult.successful(1));
       }
       return validation;
     }

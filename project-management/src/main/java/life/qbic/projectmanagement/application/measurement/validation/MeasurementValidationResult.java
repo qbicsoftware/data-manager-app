@@ -7,13 +7,14 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement Validation Result</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Validation Result in a measurement context which contains an extendable collection of Strings
+ * indicating failure or warnings occurring during the measurement validation
+ * </p>
  *
- * @since <version tag>
  */
-public class ValidationResult {
+public class MeasurementValidationResult {
 
   private final int validatedEntries;
 
@@ -21,36 +22,37 @@ public class ValidationResult {
 
   private final List<String> failures;
 
-  private ValidationResult() {
+  private MeasurementValidationResult() {
     this.validatedEntries = 0;
     this.warnings = Collections.emptyList();
     this.failures = Collections.emptyList();
   }
 
-  private ValidationResult(int validatedEntries) {
+  private MeasurementValidationResult(int validatedEntries) {
     this.validatedEntries = validatedEntries;
     this.warnings = Collections.emptyList();
     this.failures = Collections.emptyList();
   }
 
-  private ValidationResult(int validatedEntries, Collection<String> warnings,
+  private MeasurementValidationResult(int validatedEntries, Collection<String> warnings,
       Collection<String> failures) {
     this.validatedEntries = validatedEntries;
     this.warnings = warnings.stream().toList();
     this.failures = failures.stream().toList();
   }
 
-  public static ValidationResult successful(int validatedEntries) {
-    return new ValidationResult(validatedEntries);
+  public static MeasurementValidationResult successful(int validatedEntries) {
+    return new MeasurementValidationResult(validatedEntries);
   }
 
-  public static ValidationResult withFailures(int validatedEntries,
+  public static MeasurementValidationResult withFailures(int validatedEntries,
       Collection<String> failureReports) {
-    return new ValidationResult(validatedEntries, new ArrayList<>(), failureReports);
+    return new MeasurementValidationResult(validatedEntries, new ArrayList<>(), failureReports);
   }
 
-  public static ValidationResult successful(int validatedEntries, Collection<String> warnings) {
-    return new ValidationResult(validatedEntries, warnings, new ArrayList<>());
+  public static MeasurementValidationResult successful(int validatedEntries,
+      Collection<String> warnings) {
+    return new MeasurementValidationResult(validatedEntries, warnings, new ArrayList<>());
   }
 
 
@@ -59,7 +61,7 @@ public class ValidationResult {
    * <p>
    * Note: Even if the validation was successful, the validation result might still contain warnings
    * for the client, so go on and check for any warnings via
-   * {@link ValidationResult#containsWarnings()}
+   * {@link MeasurementValidationResult#containsWarnings()}
    *
    * @return true, if there are no reported failures during validation, else returns false
    * @since 1.0.0
@@ -89,8 +91,8 @@ public class ValidationResult {
     return !warnings.isEmpty();
   }
 
-  public ValidationResult combine(ValidationResult otherResult) {
-    return new ValidationResult(this.validatedEntries + otherResult.validatedEntries,
+  public MeasurementValidationResult combine(MeasurementValidationResult otherResult) {
+    return new MeasurementValidationResult(this.validatedEntries + otherResult.validatedEntries,
         Stream.concat(this.warnings.stream(), otherResult.warnings.stream()).toList(),
         Stream.concat(this.failures.stream(), otherResult.failures.stream()).toList());
   }

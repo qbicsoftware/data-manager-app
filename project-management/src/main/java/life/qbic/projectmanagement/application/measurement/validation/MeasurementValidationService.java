@@ -14,28 +14,30 @@ import org.springframework.stereotype.Service;
  * <p>
  * This service can be used to validate provided measurement metadata before register them. Of
  * course registration will also contain validation, consider this service as a try-run registration
- * service to let the user fail early with detailed provided {@link ValidationResult}.
+ * service to let the user fail early with detailed provided {@link MeasurementValidationResult}.
  *
  * @since 1.0.0
  */
 @Service
-public class ValidationService {
+public class MeasurementValidationService {
 
-  private final NGSValidator ngsValidator;
+  private final MeasurementNGSValidator measurementNgsValidator;
 
-  private final ProteomicsValidator pxpValidator;
+  private final MeasurementProteomicsValidator pxpValidator;
 
   @Autowired
-  public ValidationService(NGSValidator ngsValidator, ProteomicsValidator pxpValidator) {
-    this.ngsValidator = ngsValidator;
+  public MeasurementValidationService(MeasurementNGSValidator measurementNgsValidator,
+      MeasurementProteomicsValidator pxpValidator) {
+    this.measurementNgsValidator = measurementNgsValidator;
     this.pxpValidator = pxpValidator;
   }
 
-  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
-    return ngsValidator.validate(ngsMeasurementMetadata);
+  public MeasurementValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
+    return measurementNgsValidator.validate(ngsMeasurementMetadata);
   }
 
-  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
+  public MeasurementValidationResult validateProteomics(
+      ProteomicsMeasurementMetadata pxMeasurementMetadata) {
     return pxpValidator.validate(pxMeasurementMetadata);
   }
 
@@ -44,10 +46,10 @@ public class ValidationService {
   }
 
   private static Domain determinDomain(Collection<String> propertyTypes) {
-    if (NGSValidator.isNGS(propertyTypes)) {
+    if (MeasurementNGSValidator.isNGS(propertyTypes)) {
       return Domain.NGS;
     }
-    if (ProteomicsValidator.isProteomics(propertyTypes)) {
+    if (MeasurementProteomicsValidator.isProteomics(propertyTypes)) {
       return Domain.PROTEOMICS;
     }
     return null;
