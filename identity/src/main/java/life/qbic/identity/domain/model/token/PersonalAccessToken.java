@@ -38,7 +38,7 @@ public class PersonalAccessToken {
   private Instant creationDate;
   private Duration duration;
 
-  private static final TokenEncoder tokenEncoder = PasswordEncryptionPolicy.instance();
+  private static final TokenEncoder TOKEN_ENCODER = PasswordEncryptionPolicy.instance();
 
   protected PersonalAccessToken() {
   }
@@ -56,7 +56,7 @@ public class PersonalAccessToken {
 
   public static PersonalAccessToken create(String userId, String description, Duration duration,
       String secret) {
-    return new PersonalAccessToken(userId, description, duration, tokenEncoder.encode(
+    return new PersonalAccessToken(userId, description, duration, TOKEN_ENCODER.encode(
         secret.toCharArray()));
   }
 
@@ -110,7 +110,7 @@ public class PersonalAccessToken {
   }
 
   public boolean matches(String rawToken) {
-    return tokenEncoder.matches(rawToken.toCharArray(), this.tokenValueEncrypted);
+    return TOKEN_ENCODER.matches(rawToken.toCharArray(), this.tokenValueEncrypted);
   }
 
 }
