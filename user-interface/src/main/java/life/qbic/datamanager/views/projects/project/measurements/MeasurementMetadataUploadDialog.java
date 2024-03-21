@@ -41,6 +41,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
@@ -288,17 +289,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     var contentHeader = content.theHeader()
         .orElseThrow(() -> new RuntimeException("No header row found"));
-    MeasurementValidationExecutor measurementValidationExecutor = switch (mode) {
-      case EDIT -> new MeasurementEditValidationExecutor(measurementValidationService);
-      case ADD -> new MeasurementRegistrationValidationExecutor(measurementValidationService);
-    };
-    var domain = measurementValidationExecutor.inferDomainByProperties(
+    var domain = measurementValidationService.inferDomainByPropertyTypes(
             parseHeaderContent(contentHeader))
         .orElseThrow(() -> new RuntimeException(
             "Header row could not be recognized, Please provide a valid template file"));
     var validationReport = switch (domain) {
-      case PROTEOMICS -> validatePxP(content, measurementValidationExecutor);
-      case NGS -> validateNGS(measurementValidationExecutor);
+      case PROTEOMICS -> validatePxP(content);
+      case NGS -> validateNGS(content);
     };
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(succeededEvent.getFileName(),
         validationReport);
@@ -343,13 +340,16 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         .toList();
   }
 
-  private MeasurementValidationReport validateNGS(
-      MeasurementValidationExecutor measurementValidationExecutor) {
+  private MeasurementValidationReport validateNGS(MetadataContent content) {
+    MeasurementNGSValidationExecutor measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
+        measurementValidationService);
+    var metadata = new NGSMeasurementMetadata();
+    var finalValidationResult = generateModeDependentValidationResult(
+        measurementNGSValidationExecutor, metadata);
     return new MeasurementValidationReport(0, MeasurementValidationResult.successful(0));
   }
 
-  private MeasurementValidationReport validatePxP(MetadataContent content,
-      MeasurementValidationExecutor measurementValidationExecutor) {
+  private MeasurementValidationReport validatePxP(MetadataContent content) {
 
     var validationResult = MeasurementValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
@@ -364,17 +364,14 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     }
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      MeasurementValidationResult result = validatePxPRow(measurementValidationExecutor,
-          propertyColumnMap, row);
+      MeasurementValidationResult result = validatePxPRow(propertyColumnMap, row);
       validationResult = validationResult.combine(result);
       evaluatedRows++;
     }
     return new MeasurementValidationReport(evaluatedRows, validationResult);
   }
 
-  private MeasurementValidationResult validatePxPRow(
-      MeasurementValidationExecutor measurementValidationExecutor,
-      Map<String, Integer> propertyColumnMap,
+  private MeasurementValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap,
       String row) {
     var validationResult = MeasurementValidationResult.successful(0);
     var metaDataValues = row.split("\t"); // tab separated values
@@ -439,10 +436,19 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, List.of(new Labeling(sampleCodes.code(), labelingType, label)), note);
+    var measurementProteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
+        measurementValidationService);
+    var finalValidationResult = generateModeDependentValidationResult(
+        measurementProteomicsValidationExecutor, metadata);
+    return finalValidationResult;
+  }
 
-    validationResult = validationResult.combine(
-        measurementValidationExecutor.validateProteomics(metadata));
-    return validationResult;
+  private MeasurementValidationResult generateModeDependentValidationResult(
+      MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
+    return switch (mode) {
+      case ADD -> measurementValidationExecutor.validateRegistration(metadata);
+      case EDIT -> measurementValidationExecutor.validateEdit(metadata);
+    };
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {

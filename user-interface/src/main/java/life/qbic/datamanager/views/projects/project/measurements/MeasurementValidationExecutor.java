@@ -1,12 +1,7 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import java.util.Collection;
-import java.util.Optional;
-import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService.Domain;
 
 /**
  * <b>Validation Executor</b>
@@ -19,12 +14,10 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
  *
  * @since 1.0.0
  */
-public interface MeasurementValidationExecutor {
+public interface MeasurementValidationExecutor<MeasurementMetadata> {
 
-  MeasurementValidationResult validateNGS(NGSMeasurementMetadata metadata);
+  MeasurementValidationResult validateRegistration(MeasurementMetadata metadata);
 
-  MeasurementValidationResult validateProteomics(ProteomicsMeasurementMetadata metadata);
-
-  Optional<Domain> inferDomainByProperties(Collection<String> properties);
+  MeasurementValidationResult validateEdit(MeasurementMetadata metadata);
 
 }

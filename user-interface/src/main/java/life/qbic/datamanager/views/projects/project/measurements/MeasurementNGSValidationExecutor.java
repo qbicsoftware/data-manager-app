@@ -1,13 +1,9 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationResult;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService.Domain;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,29 +15,23 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-public class MeasurementRegistrationValidationExecutor implements
-    MeasurementValidationExecutor {
+public class MeasurementNGSValidationExecutor implements
+    MeasurementValidationExecutor<NGSMeasurementMetadata> {
 
   private final MeasurementValidationService measurementValidationService;
 
   @Autowired
-  public MeasurementRegistrationValidationExecutor(
+  public MeasurementNGSValidationExecutor(
       MeasurementValidationService measurementValidationService) {
     this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
   }
-
   @Override
-  public MeasurementValidationResult validateNGS(NGSMeasurementMetadata metadata) {
+  public MeasurementValidationResult validateRegistration(NGSMeasurementMetadata metadata) {
     return measurementValidationService.validateNGS(metadata);
   }
-
   @Override
-  public MeasurementValidationResult validateProteomics(ProteomicsMeasurementMetadata metadata) {
-    return measurementValidationService.validateProteomics(metadata);
-  }
-
-  @Override
-  public Optional<Domain> inferDomainByProperties(Collection<String> properties) {
-    return measurementValidationService.inferDomainByPropertyTypes(properties);
+  public MeasurementValidationResult validateEdit(NGSMeasurementMetadata metadata) {
+    //Todo provide edit validation for ngs;
+    return null;
   }
 }
