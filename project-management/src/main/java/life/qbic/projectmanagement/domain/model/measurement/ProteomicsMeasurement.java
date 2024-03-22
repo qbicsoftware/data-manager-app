@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
+import static java.util.Objects.requireNonNull;
+
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -14,13 +16,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -42,6 +44,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
+
+  @Embedded
+  @Column(nullable = false)
+  ProjectId projectId;
 
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
@@ -97,9 +103,11 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     // Needed for JPA
   }
 
-  private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds,
+  private ProteomicsMeasurement(ProjectId projectId, MeasurementId id,
+      Collection<SampleId> sampleIds,
       MeasurementCode measurementCode,
       Organisation organisation, ProteomicsMethodMetadata method, Instant registration) {
+    this.projectId = requireNonNull(projectId, "projectId must not be null");
     evaluateMandatorMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
@@ -155,6 +163,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
    * Creates a new {@link ProteomicsMeasurement} object instance, that describes an NGS measurement
    * entity with many describing properties about provenance and instrumentation.
    *
+   * @param projectId
    * @param sampleIds the sample ids of the samples the measurement was performed on. If more than
    *                  one sample id is provided, the measurement is considered to be performed on a
    *                  pooled sample
@@ -162,28 +171,30 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
    * @throws IllegalArgumentException in case there are missing required metadata.
    * @since 1.0.0
    */
-  public static ProteomicsMeasurement create(Collection<SampleId> sampleIds,
+  public static ProteomicsMeasurement create(ProjectId projectId, Collection<SampleId> sampleIds,
       MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method)
       throws IllegalArgumentException {
     if (sampleIds.isEmpty()) {
       throw new IllegalArgumentException(
           "No sample ids provided. At least one sample id must provided for a measurement.");
     }
-    Objects.requireNonNull(method.instrument());
-    Objects.requireNonNull(measurementCode);
+    requireNonNull(method.instrument());
+    requireNonNull(measurementCode);
     if (!measurementCode.isMSDomain()) {
       throw new IllegalArgumentException(
           "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
     var measurementId = MeasurementId.create();
-    return new ProteomicsMeasurement(measurementId, sampleIds, measurementCode, organisation,
+    return new ProteomicsMeasurement(projectId, measurementId, sampleIds, measurementCode,
+        organisation,
         method, Instant.now());
   }
 
-  public static ProteomicsMeasurement create(Collection<SampleId> sampleIds, MeasurementCode code,
+  public static ProteomicsMeasurement create(ProjectId projectId, Collection<SampleId> sampleIds,
+      MeasurementCode code,
       Organisation organisation, ProteomicsMethodMetadata method,
       ProteomicsSamplePreparation samplePreparation) {
-    var measurement = create(sampleIds, code, organisation, method);
+    var measurement = create(projectId, sampleIds, code, organisation, method);
     measurement.setSamplePreparation(samplePreparation);
     return measurement;
   }
