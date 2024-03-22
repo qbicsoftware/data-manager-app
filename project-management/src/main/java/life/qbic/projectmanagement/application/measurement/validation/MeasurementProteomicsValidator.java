@@ -1,10 +1,13 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
@@ -25,6 +28,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MeasurementProteomicsValidator implements
     MeasurementValidator<ProteomicsMeasurementMetadata> {
+
+  private static final Logger log = logger(MeasurementProteomicsValidator.class);
 
   protected final SampleInformationService sampleInformationService;
 
@@ -60,6 +65,7 @@ public class MeasurementProteomicsValidator implements
           .filter(property -> Objects.equals(property.toLowerCase(), pxpProperty.label()))
           .findAny();
       if (propertyFound.isEmpty()) {
+        log.debug("Missing property header: " + pxpProperty.label());
         return false;
       }
     }
@@ -100,7 +106,7 @@ public class MeasurementProteomicsValidator implements
   }
 
   public enum PROTEOMICS_PROPERTY {
-    QBIC_SAMPLE_ID("qbic sample ids"),
+    QBIC_SAMPLE_ID("qbic sample id"),
     SAMPLE_LABEL("sample label"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),

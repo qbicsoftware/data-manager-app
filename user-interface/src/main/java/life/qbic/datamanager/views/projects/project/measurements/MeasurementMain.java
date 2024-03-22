@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -65,7 +66,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
   private final transient MeasurementService measurementService;
-  private final transient ValidationService validationService;
   private final transient MeasurementValidationService measurementValidationService;
   private transient Context context;
   private final Div content = new Div();
@@ -73,14 +73,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
 
   private final DownloadProvider downloadProvider;
-  private transient Context context;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired MeasurementService measurementService,
-      @Autowired ValidationService validationService,
-      @Autowired MeasurementPresenter measurementPresenter) {
+      @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
@@ -88,7 +86,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Objects.requireNonNull(measurementValidationService);
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementService = measurementService;
-    this.validationService = validationService;
     this.measurementPresenter = measurementPresenter;
     this.proteomicsMeasurementContentProvider = new ProteomicsMeasurementContentProvider();
     this.downloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
@@ -139,13 +136,48 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> openEditMeasurementDialog());
-    Span buttonAndField = new Span(measurementSearchField, downloadButton, registerMeasurementButton);
+    Span buttonAndField = new Span(measurementSearchField, downloadButton, editButton, registerMeasurementButton);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
   }
 
-  private void openEditMeasurementDialog() {
+  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
+    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmListener(confirmEvent -> {
+      var uploads = confirmEvent.uploads();
+      boolean allSuccessfull = true;
+      for (var upload : uploads) {
+        try {
+          measurementService.registerMultiple(upload.measurementMetadata(),
+              context.projectId().orElseThrow());
+        } catch (MeasurementRegistrationException measurementRegistrationException) {
+          allSuccessfull = false;
+          String errorMessage = switch (measurementRegistrationException.reason()) {
+            case FAILED, SUCCESSFUL -> "Registration failed. Please try again.";
+            case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
+            case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
+            case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
+            case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
+            case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
+            case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
+          };
+          confirmEvent.getSource().showError(upload.fileName(), errorMessage);
+          continue;
+        }
+        confirmEvent.getSource().markSuccessful(upload.fileName());
+      }
+      if (allSuccessfull) {
+        measurementDetailsComponent.setContext(context);
+        confirmEvent.getSource().close();
+      }
+    });
+    return dialog;
+  }
 
+  private void openEditMeasurementDialog() {
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT);
+    setupDialog(dialog);
+    dialog.open();
   }
 
   private void downloadMetadata() {
@@ -195,35 +227,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void openRegisterMeasurementDialog() {
     var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD);
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent -> {
-      var uploads = confirmEvent.uploads();
-      boolean allSuccessfull = true;
-      for (var upload : uploads) {
-        try {
-          measurementService.registerMultiple(upload.measurementMetadata(),
-              context.projectId().orElseThrow());
-        } catch (MeasurementRegistrationException measurementRegistrationException) {
-          allSuccessfull = false;
-          String errorMessage = switch (measurementRegistrationException.reason()) {
-            case FAILED, SUCCESSFUL -> "Registration failed. Please try again.";
-            case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
-            case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
-            case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-            case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
-            case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
-            case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
-          };
-          confirmEvent.getSource().showError(upload.fileName(), errorMessage);
-          continue;
-        }
-        confirmEvent.getSource().markSuccessful(upload.fileName());
-      }
-      if (allSuccessfull) {
-        measurementDetailsComponent.setContext(context);
-        confirmEvent.getSource().close();
-      }
-    });
+    setupDialog(dialog);
     dialog.open();
   }
 

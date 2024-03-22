@@ -31,7 +31,7 @@ public class MeasurementPresenter {
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
         measurement.instrument().getName().replace("_", ":"),
         measurement.instrument().getLabel(),
-        measurement.samplePoolGroup().orElse(""), measurement.facility(), measurement.fraction(),
+        measurement.samplePoolGroup().orElse(""), measurement.facility(), measurement.fraction().orElse(""),
         measurement.digestionEnzyme(), measurement.digestionMethod(),
         measurement.enrichmentMethod(), String.valueOf(measurement.injectionVolume()),
         measurement.lcColumn(), measurement.lcmsMethod(), measurement.labelingType().orElse(""),

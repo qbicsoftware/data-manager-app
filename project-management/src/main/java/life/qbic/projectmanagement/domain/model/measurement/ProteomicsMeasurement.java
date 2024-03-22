@@ -263,10 +263,6 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return lcmsMethod;
   }
 
-  public String fraction() {
-    return fraction;
-  }
-
   public Optional<String> comment() {
     return Optional.ofNullable(comment.isBlank() ? null : comment);
   }

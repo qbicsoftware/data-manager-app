@@ -78,6 +78,6 @@ public class MeasurementLookupService {
   }
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
-    return measurementRepository.find(MeasurementCode.parse(measurementId));
+    return measurementRepository.find(measurementId);
   }
 }

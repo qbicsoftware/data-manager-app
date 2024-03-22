@@ -80,8 +80,15 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public Optional<ProteomicsMeasurement> find(MeasurementCode measurementCode) {
-    return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(measurementCode);
+  public Optional<ProteomicsMeasurement> find(String measurementCode) {
+    try {
+      var code = MeasurementCode.parse(measurementCode);
+      return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(code);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement code: " + measurementCode, e);
+      return Optional.empty();
+    }
+
   }
 
   @Override

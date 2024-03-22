@@ -33,10 +33,10 @@ public class MeasurementValidationService {
   }
 
   private static Domain determinDomain(Collection<String> propertyTypes) {
-    if (NGSValidator.isNGS(propertyTypes)) {
+    if (MeasurementNGSValidator.isNGS(propertyTypes)) {
       return Domain.NGS;
     }
-    if (ProteomicsValidator.isProteomics(propertyTypes)) {
+    if (MeasurementProteomicsValidator.isProteomics(propertyTypes)) {
       return Domain.PROTEOMICS;
     }
     return null;
@@ -46,9 +46,6 @@ public class MeasurementValidationService {
     return measurementNgsValidator.validate(ngsMeasurementMetadata);
   }
 
-  public ValidationResult validateProteomics(
-      ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxpValidator.validate(pxMeasurementMetadata);
   /**
    * This method validates a proteomic measurement metadata object in the case of a new measurement
    * that is going to be registered.
@@ -63,7 +60,7 @@ public class MeasurementValidationService {
    * @since 1.0.0
    */
   public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxValidator.validate(pxMeasurementMetadata);
+    return pxpValidator.validate(pxMeasurementMetadata);
   }
 
   /**
@@ -75,25 +72,15 @@ public class MeasurementValidationService {
    */
   public ValidationResult validateProteomicsUpdate(
       ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxValidator.validateUpdate(pxMeasurementMetadata);
+    return pxpValidator.validateUpdate(pxMeasurementMetadata);
   }
 
   public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata) {
-    return ngsValidator.validate(ngsMeasurementMetadata);
+    return measurementNgsValidator.validate(ngsMeasurementMetadata);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {
     return Optional.ofNullable(determinDomain(propertyTypes));
-  }
-
-  private static Domain determinDomain(Collection<String> propertyTypes) {
-    if (MeasurementNGSValidator.isNGS(propertyTypes)) {
-      return Domain.NGS;
-    }
-    if (MeasurementProteomicsValidator.isProteomics(propertyTypes)) {
-      return Domain.PROTEOMICS;
-    }
-    return null;
   }
 
   public enum Domain {

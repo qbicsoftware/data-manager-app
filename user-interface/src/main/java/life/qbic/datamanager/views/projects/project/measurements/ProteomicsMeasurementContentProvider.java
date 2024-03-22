@@ -52,7 +52,7 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
     h1.setCellStyle(readOnlyHeader);
 
     var h2 = header.createCell(1);
-    h2.setCellValue("Sample ID");
+    h2.setCellValue("QBiC Sample ID");
     h2.setCellStyle(readOnlyHeader);
 
     var h3 = header.createCell(2);

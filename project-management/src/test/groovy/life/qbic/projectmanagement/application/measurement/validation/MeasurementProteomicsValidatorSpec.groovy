@@ -109,8 +109,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.of(_)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
 
         when:
         def result = validator.validate(validMeasurementEntry)
@@ -149,7 +148,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.empty()
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry)
@@ -190,7 +189,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(sampleToBeFound) >> Optional.of(sampleToBeFound)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry)
@@ -225,7 +224,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry)
@@ -267,7 +266,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
 
 
         when:
@@ -313,7 +312,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
 
 
         when:
@@ -351,7 +350,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
 
 
         when:
