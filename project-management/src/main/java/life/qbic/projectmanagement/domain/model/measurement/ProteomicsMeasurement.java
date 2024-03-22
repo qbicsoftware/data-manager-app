@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -197,6 +196,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.labeling = Set.copyOf(labeling.stream().toList());
   }
 
+  public void setFraction(String fraction) {
+    this.fraction = fraction;
+  }
+
   /**
    * Convenience method to query if the measurement was derived from a pooled sample.
    *
@@ -241,6 +244,10 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   public String enrichmentMethod() {
     return enrichmentMethod;
+  }
+
+  public Optional<String> fraction() {
+    return Optional.ofNullable(fraction.isBlank() ? null : fraction);
   }
 
   public int injectionVolume() {
