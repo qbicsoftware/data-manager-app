@@ -7,11 +7,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Validation Result</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Validation Result in a measurement context which contains an extendable collection of Strings
+ * indicating failure or warnings occurring during the measurement validation
+ * </p>
  *
- * @since <version tag>
  */
 public class ValidationResult {
 
@@ -49,7 +50,8 @@ public class ValidationResult {
     return new ValidationResult(validatedEntries, new ArrayList<>(), failureReports);
   }
 
-  public static ValidationResult successful(int validatedEntries, Collection<String> warnings) {
+  public static ValidationResult successful(int validatedEntries,
+      Collection<String> warnings) {
     return new ValidationResult(validatedEntries, warnings, new ArrayList<>());
   }
 

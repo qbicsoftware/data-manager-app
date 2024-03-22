@@ -193,6 +193,8 @@ public class MeasurementService {
 
     measurement.setLabeling(labelingMethod);
 
+    measurement.setFraction(metadata.fractionName());
+
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
     var result = measurementDomainService.addProteomics(measurement, parentCodes);
