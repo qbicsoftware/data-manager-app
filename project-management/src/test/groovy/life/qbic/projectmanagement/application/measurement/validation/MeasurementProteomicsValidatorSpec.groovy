@@ -11,7 +11,7 @@ import spock.lang.Specification
 
 import java.util.stream.Collectors
 
-class ProteomicsValidatorSpec extends Specification {
+class MeasurementProteomicsValidatorSpec extends Specification {
 
     final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", [SampleCode.create("QTEST001AE")],
             "https://ror.org/03a1kwz48", //Universität Tübingen,
@@ -110,6 +110,7 @@ class ProteomicsValidatorSpec extends Specification {
 
         and:
         def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
         def result = validator.validate(validMeasurementEntry)
