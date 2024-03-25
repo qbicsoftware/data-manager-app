@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
+import static java.util.Objects.requireNonNull;
+
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -13,11 +15,11 @@ import jakarta.persistence.JoinColumn;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -39,6 +41,11 @@ public class NGSMeasurement implements MeasurementMetadata {
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
+
+  @Embedded
+  @Column(nullable = false)
+  private ProjectId projectId;
+
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
 
@@ -72,7 +79,8 @@ public class NGSMeasurement implements MeasurementMetadata {
     // Needed for JPA
   }
 
-  private NGSMeasurement(MeasurementId measurementId, Collection<SampleId> sampleIds,
+  private NGSMeasurement(MeasurementId measurementId, ProjectId projectId,
+      Collection<SampleId> sampleIds,
       MeasurementCode measurementCode,
       Organisation organisation, NGSMethodMetadata method, String comment, Instant registration) {
     evaluateMandatoryMetadata(
@@ -80,6 +88,7 @@ public class NGSMeasurement implements MeasurementMetadata {
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
     this.id = measurementId;
+    this.projectId = requireNonNull(projectId, "projectId must not be null");
     this.organisation = organisation;
     this.instrument = method.instrument();
     this.measurementCode = measurementCode;
@@ -117,27 +126,29 @@ public class NGSMeasurement implements MeasurementMetadata {
    * Creates a new {@link NGSMeasurement} object instance, that describes an NGS measurement entity
    * with many describing properties about provenance and instrumentation.
    *
+   * @param projectId
    * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
    *                   one sample id is provided, the measurement is considered to be performed on a
    *                   pooled sample
    * @return
    * @since 1.0.0
    */
-  public static NGSMeasurement create(Collection<SampleId> sampleIds,
+  public static NGSMeasurement create(ProjectId projectId, Collection<SampleId> sampleIds,
       MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
       String comment) throws IllegalArgumentException {
     if (sampleIds.isEmpty()) {
       throw new IllegalArgumentException(
           "No sample ids provided. At least one sample id must provided for a measurement.");
     }
-    Objects.requireNonNull(measurementCode);
-    Objects.requireNonNull(method);
-    Objects.requireNonNull(method.instrument());
+    requireNonNull(measurementCode);
+    requireNonNull(method);
+    requireNonNull(method.instrument());
     if (!measurementCode.isNGSDomain()) {
       throw new IllegalArgumentException("NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode + "\"");
     }
     var measurementId = MeasurementId.create();
-    return new NGSMeasurement(measurementId, sampleIds, measurementCode, organisation, method,
+    return new NGSMeasurement(measurementId, projectId, sampleIds, measurementCode, organisation,
+        method,
         comment, Instant.now());
   }
 

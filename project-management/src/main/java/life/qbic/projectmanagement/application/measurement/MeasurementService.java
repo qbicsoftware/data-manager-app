@@ -117,7 +117,7 @@ public class MeasurementService {
   }
 
   private Result<MeasurementId, ResponseCode> registerNGS(
-      NGSMeasurementMetadata metadata) {
+      ProjectId projectId, NGSMeasurementMetadata metadata) {
 
     var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createNGS(
@@ -145,7 +145,7 @@ public class MeasurementService {
         metadata.sequencingRunProtocol(),
         metadata.indexI7(), metadata.indexI5());
 
-    var measurement = NGSMeasurement.create(
+    var measurement = NGSMeasurement.create(projectId,
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode, organisationQuery.get(), method, metadata.comment());
 
@@ -161,7 +161,7 @@ public class MeasurementService {
   }
 
   private Result<MeasurementId, ResponseCode> registerPxP(
-      ProteomicsMeasurementMetadata metadata) {
+      ProjectId projectId, ProteomicsMeasurementMetadata metadata) {
     var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createMS(
         String.valueOf(metadata.associatedSamples().get(0).code()));
@@ -194,6 +194,7 @@ public class MeasurementService {
         label.sampleCode(), label.labelType(), label.label())).toList();
 
     var measurement = ProteomicsMeasurement.create(
+        projectId,
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode,
         organisationQuery.get(),
@@ -224,10 +225,10 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.MISSING_ASSOCIATED_SAMPLES);
     }
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
-      return registerPxP(proteomicsMeasurementMetadata);
+      return registerPxP(projectId, proteomicsMeasurementMetadata);
     }
     if (measurementMetadata instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
-      return registerNGS(ngsMeasurementMetadata);
+      return registerNGS(projectId, ngsMeasurementMetadata);
     }
     return Result.fromError(ResponseCode.FAILED);
   }
