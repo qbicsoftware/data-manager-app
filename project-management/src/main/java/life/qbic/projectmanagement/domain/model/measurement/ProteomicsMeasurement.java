@@ -100,7 +100,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   private ProteomicsMeasurement(MeasurementId id, Collection<SampleId> sampleIds,
       MeasurementCode measurementCode,
       Organisation organisation, ProteomicsMethodMetadata method, Instant registration) {
-    evaluateMandatorMetadata(
+    evaluateMandatoryMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
     labeling = new HashSet<>();
@@ -119,7 +119,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.registration = registration;
   }
 
-  private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
+  private static void evaluateMandatoryMetadata(ProteomicsMethodMetadata method)
       throws IllegalArgumentException {
     if (method.instrument() == null) {
       throw new IllegalArgumentException("Instrument: Missing metadata.");

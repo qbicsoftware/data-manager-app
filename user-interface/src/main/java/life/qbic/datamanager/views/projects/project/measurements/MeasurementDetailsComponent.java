@@ -163,15 +163,72 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ngsMeasurementGrid.addClassName("measurement-grid");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
         .setHeader("Measurement Code");
+    ngsMeasurementGrid.addComponentColumn(ngsMeasurement -> renderSampleCodes()
+            .createComponent(ngsMeasurement.measuredSamples()))
+        .setHeader("Sample Codes")
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addComponentColumn(ngsMeasurement -> renderOrganisation()
+            .createComponent(ngsMeasurement.organisation()))
+        .setHeader("Organisation")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.organisation().label())
+        .setAutoWidth(true)
+        .setFlexGrow(0);
+    ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
+        .setHeader("Facility")
+        .setTooltipGenerator(NGSMeasurement::facility)
+        .setAutoWidth(true);
     ngsMeasurementGrid.addComponentColumn(
-            ngsMeasurement -> renderSampleCodes().createComponent(ngsMeasurement.measuredSamples()))
-        .setHeader("Sample Codes");
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getLabel())
-        .setHeader("Instrument");
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getDescription())
-        .setHeader("Description");
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getName())
-        .setHeader("Name");
+            ngsMeasurement -> renderInstrument().createComponent(
+                ngsMeasurement.instrument()))
+        .setHeader("Instrument")
+        .setTooltipGenerator(
+            ngsMeasurement -> ngsMeasurement.instrument().formatted())
+        .setAutoWidth(true)
+        .setFlexGrow(0);
+    ngsMeasurementGrid.addColumn(
+            NGSMeasurement::sequencingReadType)
+        .setHeader("Read Type")
+        .setTooltipGenerator(NGSMeasurement::sequencingReadType)
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(
+            ngsMeasurement -> ngsMeasurement.libraryKit().orElse(""))
+        .setHeader("Library Kit")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.libraryKit().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(
+            ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
+        .setHeader("Flow Cell")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(
+            ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
+        .setHeader("Run Protocol")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(
+            NGSMeasurement::indexI7)
+        .setHeader("Index I5")
+        .setTooltipGenerator(NGSMeasurement::indexI7)
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(
+            NGSMeasurement::indexI5)
+        .setHeader("Index I5")
+        .setTooltipGenerator(NGSMeasurement::indexI5)
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(new LocalDateTimeRenderer<>(
+            ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate()),
+            "yyyy-MM-dd"))
+        .setKey("registrationDate")
+        .setHeader("Registration Date")
+        .setTooltipGenerator(ngsMeasurement -> {
+          LocalDateTime dateTime = asClientLocalDateTime(ngsMeasurement.registrationDate());
+          return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
+        })
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
+        .setHeader("Comment")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
+        .setAutoWidth(true);
     ngsMeasurementGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -195,7 +252,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setFlexGrow(0);
-    //Todo Should the sampleCodes be retrieved via a service or from column?
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
         .setHeader("Measurement Label")

@@ -1,16 +1,27 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
-import jakarta.persistence.*;
-
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
- * <b>NGS NGSMeasurementMetadata Metadata Object</b>
+ * <b>NGS Metadata Object</b>
  *
  * <p>Captures an measurement metadata object entity with information
  * about the origin of measurement, the instrumentation and much more domain-specific
@@ -28,27 +39,78 @@ public class NGSMeasurement implements MeasurementMetadata {
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
-
-  @Embedded
+  @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
 
   @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
-
-  @ElementCollection
+  @Column(name = "registration")
+  private Instant registration;
+  @Embedded
+  private Organisation organisation;
+  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
-  @Column(name = "measured_sample")
   private Collection<SampleId> measuredSamples;
+  @Column(name = "facility")
+  String facility = "";
+  @Column(name = "readType")
+  String sequencingReadType = "";
+  @Column(name = "libraryKit")
+  String libraryKit = "";
+  @Column(name = "flowcell")
+  String flowCell = "";
+  @Column(name = "runProtocol")
+  String sequencingRunProtocol = "";
+  @Column(name = "indexI7")
+  String indexI7 = "";
+  @Column(name = "indexI5")
+  String indexI5 = "";
+  @Column(name = "comment")
+  String comment = "";
 
   protected NGSMeasurement() {
     // Needed for JPA
   }
 
-  private NGSMeasurement(Collection<SampleId> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
+  private NGSMeasurement(MeasurementId measurementId, Collection<SampleId> sampleIds,
+      MeasurementCode measurementCode,
+      Organisation organisation, NGSMethodMetadata method, String comment, Instant registration) {
+    evaluateMandatoryMetadata(
+        method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
-    this.instrument = instrument;
+    this.id = measurementId;
+    this.organisation = organisation;
+    this.instrument = method.instrument();
     this.measurementCode = measurementCode;
+    this.facility = method.facility();
+    this.sequencingReadType = method.sequencingReadType();
+    this.libraryKit = method.libraryKit();
+    this.flowCell = method.flowCell();
+    this.sequencingRunProtocol = method.sequencingRunProtocol();
+    this.indexI7 = method.indexI7();
+    this.indexI5 = method.indexI5();
+    this.registration = registration;
+    this.comment = comment;
+  }
+
+  private static void evaluateMandatoryMetadata(NGSMethodMetadata method)
+      throws IllegalArgumentException {
+    if (method.instrument() == null) {
+      throw new IllegalArgumentException("Instrument: Missing metadata.");
+    }
+    if (method.facility().isBlank()) {
+      throw new IllegalArgumentException("Facility: Missing metadata");
+    }
+    if (method.sequencingReadType().isBlank()) {
+      throw new IllegalArgumentException("Sequencing Read Type: Missing metadata");
+    }
+    if (method.indexI7().isBlank()) {
+      throw new IllegalArgumentException("Index I7: Missing metadata");
+    }
+    if (method.indexI5().isBlank()) {
+      throw new IllegalArgumentException("Index I5: Missing metadata");
+    }
   }
 
   /**
@@ -58,32 +120,25 @@ public class NGSMeasurement implements MeasurementMetadata {
    * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
    *                   one sample id is provided, the measurement is considered to be performed on a
    *                   pooled sample
-   * @param instrument the instrument used for the measurement, which is represented as an
-   *                   {@link OntologyTerm}
    * @return
    * @since 1.0.0
    */
-  public static NGSMeasurement create(Collection<SampleId> sampleIds, MeasurementCode measurementCode, OntologyTerm instrument) {
+  public static NGSMeasurement create(Collection<SampleId> sampleIds,
+      MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
+      String comment) throws IllegalArgumentException {
     if (sampleIds.isEmpty()) {
       throw new IllegalArgumentException(
           "No sample ids provided. At least one sample id must provided for a measurement.");
     }
-    Objects.requireNonNull(instrument);
     Objects.requireNonNull(measurementCode);
+    Objects.requireNonNull(method);
+    Objects.requireNonNull(method.instrument());
     if (!measurementCode.isNGSDomain()) {
       throw new IllegalArgumentException("NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode + "\"");
     }
-    return new NGSMeasurement(sampleIds, measurementCode, instrument);
-  }
-
-  /**
-   * Convenience method to query if the measurement was derived from a pooled sample.
-   *
-   * @return true, if the measurement was performed on a pooled sample, else returns false
-   * @since 1.0.0
-   */
-  public boolean isPooledSampleMeasurement() {
-    return measuredSamples.size() > 1;
+    var measurementId = MeasurementId.create();
+    return new NGSMeasurement(measurementId, sampleIds, measurementCode, organisation, method,
+        comment, Instant.now());
   }
 
   public MeasurementCode measurementCode() {
@@ -100,5 +155,45 @@ public class NGSMeasurement implements MeasurementMetadata {
 
   public OntologyTerm instrument() {
     return instrument;
+  }
+
+  public Instant registrationDate() {
+    return registration;
+  }
+
+  public Organisation organisation() {
+    return organisation;
+  }
+
+  public String facility() {
+    return facility;
+  }
+
+  public String sequencingReadType() {
+    return sequencingReadType;
+  }
+
+  public Optional<String> libraryKit() {
+    return Optional.ofNullable(libraryKit.isBlank() ? null : libraryKit);
+  }
+
+  public Optional<String> flowCell() {
+    return Optional.ofNullable(flowCell.isBlank() ? null : flowCell);
+  }
+
+  public Optional<String> sequencingRunProtocol() {
+    return Optional.ofNullable(sequencingRunProtocol.isBlank() ? null : sequencingRunProtocol);
+  }
+
+  public String indexI7() {
+    return indexI7;
+  }
+
+  public String indexI5() {
+    return indexI5;
+  }
+
+  public Optional<String> comment() {
+    return Optional.ofNullable(comment.isBlank() ? null : comment);
   }
 }

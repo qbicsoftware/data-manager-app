@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsLabeling;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
@@ -116,11 +117,11 @@ public class MeasurementService {
   }
 
   private Result<MeasurementId, ResponseCode> registerNGS(
-      NGSMeasurementMetadata ngsMeasurementMetadata) {
+      NGSMeasurementMetadata metadata) {
 
-    var associatedSampleCodes = ngsMeasurementMetadata.associatedSamples();
+    var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createNGS(
-        String.valueOf(ngsMeasurementMetadata.associatedSamples().get(0).code()));
+        String.valueOf(metadata.associatedSamples().get(0).code()));
     var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
@@ -128,15 +129,25 @@ public class MeasurementService {
       return Result.fromError(ResponseCode.FAILED);
     }
 
-    var instrumentQuery = resolveOntologyCURI(ngsMeasurementMetadata.instrumentCURIE());
+    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
     if (instrumentQuery.isEmpty()) {
       return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
+    var organisationQuery = organisationLookupService.organisation(
+        metadata.organisationId());
+    if (organisationQuery.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
+        metadata.sequencingReadType(), metadata.libraryKit(), metadata.flowCell(),
+        metadata.sequencingRunProtocol(),
+        metadata.indexI7(), metadata.indexI5());
+
     var measurement = NGSMeasurement.create(
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
-        selectedSampleCode,
-        instrumentQuery.get());
+        selectedSampleCode, organisationQuery.get(), method, metadata.comment());
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 
@@ -238,6 +249,11 @@ public class MeasurementService {
   private List<? extends MeasurementMetadata> mergeBySamplePoolGroup(
       List<? extends MeasurementMetadata> measurementMetadataList) {
     if (measurementMetadataList.isEmpty()) {
+      return measurementMetadataList;
+    }
+    //Todo how should pooled be handled in NGS?
+    if (measurementMetadataList.stream()
+        .allMatch(NGSMeasurementMetadata.class::isInstance)) {
       return measurementMetadataList;
     }
     if (measurementMetadataList.stream()
