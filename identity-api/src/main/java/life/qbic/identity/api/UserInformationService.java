@@ -42,4 +42,11 @@ public interface UserInformationService {
    */
   boolean userNameAvailable(String userName);
 
+  /**
+   * updates the users information
+   *
+   * @param userInfo
+   */
+  void updateUserInformation(String userId, UserInfo userInfo);
+
 }

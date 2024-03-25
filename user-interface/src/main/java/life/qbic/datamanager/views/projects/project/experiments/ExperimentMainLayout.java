@@ -22,6 +22,7 @@ import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -54,11 +55,12 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired UserPermissions userPermissions) {
+      @Autowired UserPermissions userPermissions,
+      @Autowired UserInformationService userInformationService) {
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    this.dataManagerMenu = new DataManagerMenu(logoutService);
+    this.dataManagerMenu = new DataManagerMenu(userInformationService, logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService,

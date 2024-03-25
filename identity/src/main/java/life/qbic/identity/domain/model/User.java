@@ -161,6 +161,15 @@ public class User implements Serializable {
     this.setEncryptedPassword(newPassword);
   }
 
+  /**
+   * Overwrites the previous username.
+   *
+   * @param userName the new username
+   */
+  public void setUserName(String userName) {
+    this.userName = userName;
+  }
+
   private void activate() {
     if (this.active) {
       return;

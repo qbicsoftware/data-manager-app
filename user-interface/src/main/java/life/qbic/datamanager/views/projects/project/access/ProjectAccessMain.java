@@ -6,6 +6,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * A component that allows to manage project access
  */
 
+@PageTitle("Project Access")
 @Route(value = "projects/:projectId?/access", layout = ProjectMainLayout.class)
 @PermitAll
 public class ProjectAccessMain extends Main implements BeforeEnterObserver {

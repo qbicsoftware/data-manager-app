@@ -5,6 +5,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -62,6 +63,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * provided {@link ProjectId} in the URL
  */
 
+@PageTitle("Sample Information")
 @Route(value = "projects/:projectId?/experiments/:experimentId?/samples", layout = ExperimentMainLayout.class)
 @SpringComponent
 @UIScope
