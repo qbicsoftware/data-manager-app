@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.policy;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
+
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 
@@ -18,11 +19,9 @@ import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleS
  */
 public class ProjectRegisteredPolicy {
 
-  private final CreateNewSampleStatisticsEntry createNewSampleStatisticsEntry;
-
   public ProjectRegisteredPolicy(CreateNewSampleStatisticsEntry createNewSampleStatisticsEntry) {
-    this.createNewSampleStatisticsEntry = Objects.requireNonNull(createNewSampleStatisticsEntry);
-    DomainEventDispatcher.instance().subscribe(createNewSampleStatisticsEntry);
+    DomainEventDispatcher.instance().subscribe(requireNonNull(createNewSampleStatisticsEntry,
+        "createNewSampleStatisticsEntry must not be null"));
   }
 
 }

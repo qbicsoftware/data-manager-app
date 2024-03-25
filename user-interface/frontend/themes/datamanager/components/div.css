@@ -98,6 +98,15 @@
   width: 100%;
 }
 
+.project-role-item .project-role-label {
+  font-weight: bold;
+}
+
+.project-role-item .project-role-description {
+  display: flex;
+  flex-direction: column;
+}
+
 .tag-collection {
   display: inline-flex;
   flex-wrap: wrap;

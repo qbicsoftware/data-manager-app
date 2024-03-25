@@ -15,24 +15,20 @@ import life.qbic.domain.concepts.DomainEvent;
 public class ProjectAccessGranted extends DomainEvent {
 
   @Serial
-  private static final long serialVersionUID = 199678646014632540L;
+  private static final long serialVersionUID = -3950161360758950786L;
   private final String userId;
   private final String projectId;
 
-  private final String projectTitle;
-
   private final Instant occurredOn;
 
-  private ProjectAccessGranted(Instant occurredOn, String userId, String projectId,
-      String projectTitle) {
+  private ProjectAccessGranted(Instant occurredOn, String userId, String projectId) {
     this.userId = Objects.requireNonNull(userId);
     this.projectId = Objects.requireNonNull(projectId);
-    this.projectTitle = Objects.requireNonNull(projectTitle);
     this.occurredOn = occurredOn;
   }
 
-  public static ProjectAccessGranted create(String userId, String projectId, String projectTitle) {
-    return new ProjectAccessGranted(Instant.now(), userId, projectId, projectTitle);
+  public static ProjectAccessGranted create(String userId, String projectId) {
+    return new ProjectAccessGranted(Instant.now(), userId, projectId);
   }
 
   @Override
@@ -46,9 +42,5 @@ public class ProjectAccessGranted extends DomainEvent {
 
   public String forProjectId() {
     return projectId;
-  }
-
-  public String forProjectTitle() {
-    return projectTitle;
   }
 }
