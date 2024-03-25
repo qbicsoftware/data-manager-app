@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
+import life.qbic.projectmanagement.application.measurement.Labeling
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService
@@ -9,7 +10,7 @@ import spock.lang.Specification
 
 import java.util.stream.Collectors
 
-class ProteomicsValidatorSpec extends Specification {
+class MeasurementProteomicsValidatorSpec extends Specification {
 
     final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata([SampleCode.create("QTEST001AE")],
             "https://ror.org/03a1kwz48", //Universität Tübingen,
@@ -23,7 +24,7 @@ class ProteomicsValidatorSpec extends Specification {
             "1337",
             "12",
             "LCMS Method 1",
-            "isotope", "N15",
+            [new Labeling("QTEST001AE", "isotope", "N15")],
             "Don't tell anyone this is a test"
     )
     final static OntologyClass illuminaMiSeq = new OntologyClass(
@@ -49,7 +50,7 @@ class ProteomicsValidatorSpec extends Specification {
     def "A complete property set must be valid no matter the letter casing style"() {
 
         when:
-        def isPxPmetadata = ProteomicsValidator.isProteomics(chaosCasing)
+        def isPxPmetadata = MeasurementProteomicsValidator.isProteomics(chaosCasing)
 
         then:
         isPxPmetadata
@@ -64,7 +65,7 @@ class ProteomicsValidatorSpec extends Specification {
         given:
 
         when:
-        def isPXPmetadata = ProteomicsValidator.isProteomics(validPXPProperties)
+        def isPXPmetadata = MeasurementProteomicsValidator.isProteomics(validPXPProperties)
 
         then:
         isPXPmetadata
@@ -78,7 +79,7 @@ class ProteomicsValidatorSpec extends Specification {
         missingProperties.remove(0)
 
         when:
-        def isPXPmetadata = ProteomicsValidator.isProteomics(missingProperties)
+        def isPXPmetadata = MeasurementProteomicsValidator.isProteomics(missingProperties)
 
         then:
         !isPXPmetadata
@@ -89,7 +90,7 @@ class ProteomicsValidatorSpec extends Specification {
         def missingProperties = []
 
         when:
-        def isPxPmetadata = ProteomicsValidator.isProteomics(missingProperties)
+        def isPxPmetadata = MeasurementProteomicsValidator.isProteomics(missingProperties)
 
         then:
         !isPxPmetadata
@@ -105,7 +106,7 @@ class ProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.of(_)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
         def result = validator.validate(validMeasurementEntry)
@@ -135,7 +136,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -144,7 +145,7 @@ class ProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.empty()
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry)
@@ -175,7 +176,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -185,7 +186,7 @@ class ProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(sampleToBeFound) >> Optional.of(sampleToBeFound)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry)
@@ -212,7 +213,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -220,7 +221,7 @@ class ProteomicsValidatorSpec extends Specification {
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry)
@@ -253,7 +254,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -262,7 +263,7 @@ class ProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
 
         when:
@@ -299,7 +300,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -308,7 +309,7 @@ class ProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
 
         when:
@@ -337,7 +338,7 @@ class ProteomicsValidatorSpec extends Specification {
                 "1337",
                 "12",
                 "LCMS Method 1",
-                "isotope", "N15",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
                 "Don't tell anyone this is a test"
         )
 
@@ -346,7 +347,7 @@ class ProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new ProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
 
 
         when:

@@ -24,13 +24,14 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -62,7 +63,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final MeasurementDetailsComponent measurementDetailsComponent;
   private final TextField measurementSearchField = new TextField();
   private final transient MeasurementService measurementService;
-  private final transient ValidationService validationService;
+  private final transient MeasurementValidationService measurementValidationService;
   private transient Context context;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
@@ -71,14 +72,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired MeasurementService measurementService,
-      @Autowired ValidationService validationService) {
+      @Autowired MeasurementValidationService measurementValidationService) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
-    Objects.requireNonNull(validationService);
+    Objects.requireNonNull(measurementValidationService);
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementService = measurementService;
-    this.validationService = validationService;
+    this.measurementValidationService = measurementValidationService;
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
@@ -160,8 +161,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(validationService,
-        context.experimentId().orElseThrow());
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD);
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
       var uploads = confirmEvent.uploads();
