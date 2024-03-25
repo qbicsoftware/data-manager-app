@@ -3,9 +3,13 @@ package life.qbic.projectmanagement.application.measurement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -69,4 +73,11 @@ public class MeasurementLookupService {
     return new ArrayList<>(termList);
   }
 
+  public List<ProteomicsMeasurement> queryAllProteomicsMeasurement(List<SampleId> sampleIds) {
+    return measurementLookup.queryProteomicsMeasurementsBySampleIds(sampleIds);
+  }
+
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
+    return measurementRepository.find(measurementId);
+  }
 }

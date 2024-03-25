@@ -28,4 +28,6 @@ public interface MeasurementLookup {
   List<NGSMeasurement> queryNGSMeasurementsBySampleIds(String filter,
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders);
+
+  List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 }

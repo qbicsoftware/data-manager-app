@@ -74,6 +74,10 @@ public class SampleInformationService {
     return new ArrayList<>(previewList);
   }
 
+  public Optional<Sample> findSample(SampleId sampleId) {
+    return sampleRepository.findSample(sampleId);
+  }
+
   public Optional<SampleIdCodeEntry> findSampleId(SampleCode sampleCode) {
     return sampleRepository.findSample(sampleCode)
         .map(sample -> new SampleIdCodeEntry(sample.sampleId(), sampleCode));

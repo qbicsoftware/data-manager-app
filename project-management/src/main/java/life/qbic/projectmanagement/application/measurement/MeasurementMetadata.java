@@ -20,4 +20,6 @@ public interface MeasurementMetadata {
     return Collections.emptyList();
   }
 
+  default Optional<String> measurementIdentifier() { return Optional.empty();}
+
 }

@@ -28,6 +28,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
+import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -105,7 +106,7 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(String filter,
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
@@ -113,6 +114,18 @@ public class MeasurementService {
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
         samplesInExperiment, offset, limit, sortOrder);
+  }
+
+  @PostAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(ExperimentId experimentId, ProjectId projectId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryAllProteomicsMeasurement(samplesInExperiment);
+  }
+
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
+    return measurementLookupService.findProteomicsMeasurement(measurementId);
   }
 
   private Result<MeasurementId, ResponseCode> registerNGS(
@@ -209,6 +222,73 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<MeasurementId, ResponseCode> update(ProjectId projectId, MeasurementMetadata metadata) {
+    if (metadata.measurementIdentifier().isEmpty()) {
+      return Result.fromError(ResponseCode.MISSING_MEASUREMENT_ID);
+    }
+
+    if (metadata instanceof ProteomicsMeasurementMetadata pxpMetadata) {
+      return updatePxP(pxpMetadata);
+    }
+    if (metadata instanceof NGSMeasurementMetadata) {
+      return updateNGS(metadata);
+    }
+    return Result.fromError(ResponseCode.FAILED);
+  }
+
+  private Result<MeasurementId, ResponseCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
+
+    var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
+    if (result.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_MEASUREMENT);
+    }
+    var measurementToUpdate = result.get();
+
+    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
+    if (instrumentQuery.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var organisationQuery = organisationLookupService.organisation(
+        metadata.organisationId());
+    if (organisationQuery.isEmpty()) {
+      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
+        metadata.fractionName(),
+        metadata.digestionMethod(), metadata.digestionEnzyme(),
+        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
+        metadata.lcColumn(), metadata.lcmsMethod());
+
+    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
+    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
+        label.sampleCode(), label.labelType(), label.label())).collect(Collectors.toList());
+
+    measurementToUpdate.setSamplePreparation(samplePreparation);
+    measurementToUpdate.setLabeling(labelingMethod);
+
+
+    metadata.assignedSamplePoolGroup()
+        .ifPresent(measurementToUpdate::setSamplePoolGroup);
+
+    measurementToUpdate.setLabeling(labelingMethod);
+    measurementToUpdate.setMethod(method);
+
+    var updateResult = measurementDomainService.update(measurementToUpdate);
+
+    if (updateResult.isError()) {
+      return Result.fromError(ResponseCode.FAILED);
+    } else {
+      return Result.fromValue(updateResult.getValue().measurementId());
+    }
+  }
+
+  private Result<MeasurementId, ResponseCode> updateNGS(MeasurementMetadata metadata) {
+    return Result.fromError(ResponseCode.FAILED);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
     if (measurementMetadata.associatedSamples().isEmpty()) {
@@ -231,6 +311,20 @@ public class MeasurementService {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
     for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
       register(projectId, measurementMetadata)
+          .onError(error -> {
+            throw new MeasurementRegistrationException(error);
+          });
+    }
+  }
+
+  @Transactional
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void updateMultiple(
+      List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
+    var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
+    for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
+      update(projectId, measurementMetadata)
           .onError(error -> {
             throw new MeasurementRegistrationException(error);
           });
@@ -280,7 +374,7 @@ public class MeasurementService {
   }
 
   public enum ResponseCode {
-    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES
+    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {

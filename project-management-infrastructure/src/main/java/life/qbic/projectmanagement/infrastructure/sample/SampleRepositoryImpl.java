@@ -144,5 +144,10 @@ public class SampleRepositoryImpl implements SampleRepository {
     return Optional.ofNullable(qbicSampleRepository.findBySampleCode(sampleCode));
   }
 
+  @Override
+  public Optional<Sample> findSample(SampleId sampleId) {
+    return qbicSampleRepository.findById(sampleId);
+  }
+
 
 }

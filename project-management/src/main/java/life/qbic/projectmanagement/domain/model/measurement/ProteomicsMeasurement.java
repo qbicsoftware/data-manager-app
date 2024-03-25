@@ -125,6 +125,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
     this.registration = registration;
+    this.fraction = method.fractionName();
   }
 
   private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
@@ -288,6 +289,19 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   public Instant registrationDate() {
     return registration;
   }
+
+  public void setMethod(ProteomicsMethodMetadata method) {
+    this.instrument = method.instrument();
+    this.facility = method.facility();
+    this.fraction = method.fractionName();
+    this.digestionMethod = method.digestionMethod();
+    this.digestionEnzyme = method.digestionEnzyme();
+    this.enrichmentMethod = method.enrichmentMethod();
+    this.injectionVolume = method.injectionVolume();
+    this.lcColumn = method.lcColumn();
+    this.lcmsMethod = method.lcmsMethod();
+  }
+
 
 
   public void setSamplePoolGroup(String group) {
