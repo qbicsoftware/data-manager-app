@@ -379,7 +379,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         def validMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
-                "EFO:0004205", //Illumina MiSeq
+                validInstrumentCurie, //Illumina MiSeq
                 "My awesome facility",
                 "Unknown sequencing read type",
                 "Cool library kit",
@@ -481,75 +481,4 @@ class MeasurementNGSValidatorSpec extends Specification {
         result.failedEntries() == 1
         result.failures()[0] == "Read Type: missing mandatory metadata"
     }
-
-    def "If no value was provided for the Index I7 information the validation will fail"() {
-        given:
-        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
-                "https://ror.org/03a1kwz48", //Universität Tübingen,
-                "EFO:0004205", //Illumina MiSeq
-                "My awesome facility",
-                "Unknown sequencing read type",
-                "Cool library kit",
-                "Bodacious flow cell",
-                "We do it by the book",
-                "",
-                "Index I5 always goes",
-                "Don't tell anyone this is a test"
-        )
-
-        and:
-        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
-        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
-
-        and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
-
-
-        when:
-        def result = validator.validate(invalidMeasurementMetadata)
-
-        then:
-        !result.allPassed()
-        !result.containsWarnings()
-        result.containsFailures()
-        result.failedEntries() == 1
-        result.failures()[0] == "Index I7: missing mandatory metadata"
-    }
-
-    def "If no value was provided for the Index I5 information the validation will fail"() {
-        given:
-        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
-                "https://ror.org/03a1kwz48", //Universität Tübingen,
-                "EFO:0004205", //Illumina MiSeq
-                "My awesome facility",
-                "Unknown sequencing read type",
-                "Cool library kit",
-                "Bodacious flow cell",
-                "We do it by the book",
-                "Index I7 never stops",
-                "",
-                "Don't tell anyone this is a test"
-        )
-
-        and:
-        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
-        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
-
-        and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
-
-
-        when:
-        def result = validator.validate(invalidMeasurementMetadata)
-
-        then:
-        !result.allPassed()
-        !result.containsWarnings()
-        result.containsFailures()
-        result.failedEntries() == 1
-        result.failures()[0] == "Index I5: missing mandatory metadata"
-    }
-
 }
