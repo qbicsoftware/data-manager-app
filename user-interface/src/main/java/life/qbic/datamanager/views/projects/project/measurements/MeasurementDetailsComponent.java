@@ -162,7 +162,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private void createNGSMeasurementGrid() {
     ngsMeasurementGrid.addClassName("measurement-grid");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
-        .setHeader("Measurement Code");
+        .setHeader("Measurement Code")
+        .setAutoWidth(true)
+        .setTooltipGenerator(
+            ngsMeasurement -> ngsMeasurement.measurementCode().value())
+        .setFlexGrow(0);
     ngsMeasurementGrid.addComponentColumn(ngsMeasurement -> renderSampleCodes()
             .createComponent(ngsMeasurement.measuredSamples()))
         .setHeader("Sample Codes")
@@ -205,15 +209,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setHeader("Run Protocol")
         .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
         .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(
-            NGSMeasurement::indexI7)
-        .setHeader("Index I5")
-        .setTooltipGenerator(NGSMeasurement::indexI7)
+    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.indexI7().orElse(""))
+        .setHeader("Index I7")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.indexI7().orElse(""))
         .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(
-            NGSMeasurement::indexI5)
+            ngsMeasurement -> ngsMeasurement.indexI5().orElse(""))
         .setHeader("Index I5")
-        .setTooltipGenerator(NGSMeasurement::indexI5)
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.indexI5().orElse(""))
         .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(new LocalDateTimeRenderer<>(
             ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate()),

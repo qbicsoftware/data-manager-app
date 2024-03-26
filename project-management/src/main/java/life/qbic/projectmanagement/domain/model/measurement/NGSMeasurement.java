@@ -56,7 +56,7 @@ public class NGSMeasurement implements MeasurementMetadata {
   @Embedded
   private Organisation organisation;
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
+  @CollectionTable(name = "ngs_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;
   @Column(name = "facility")
   String facility = "";
@@ -113,12 +113,6 @@ public class NGSMeasurement implements MeasurementMetadata {
     }
     if (method.sequencingReadType().isBlank()) {
       throw new IllegalArgumentException("Sequencing Read Type: Missing metadata");
-    }
-    if (method.indexI7().isBlank()) {
-      throw new IllegalArgumentException("Index I7: Missing metadata");
-    }
-    if (method.indexI5().isBlank()) {
-      throw new IllegalArgumentException("Index I5: Missing metadata");
     }
   }
 
@@ -196,12 +190,12 @@ public class NGSMeasurement implements MeasurementMetadata {
     return Optional.ofNullable(sequencingRunProtocol.isBlank() ? null : sequencingRunProtocol);
   }
 
-  public String indexI7() {
-    return indexI7;
+  public Optional<String> indexI7() {
+    return Optional.ofNullable(indexI7.isBlank() ? null : indexI7);
   }
 
-  public String indexI5() {
-    return indexI5;
+  public Optional<String> indexI5() {
+    return Optional.ofNullable(indexI5.isBlank() ? null : indexI5);
   }
 
   public Optional<String> comment() {

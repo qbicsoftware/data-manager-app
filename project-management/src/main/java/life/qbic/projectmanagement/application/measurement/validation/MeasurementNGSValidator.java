@@ -198,18 +198,6 @@ public class MeasurementNGSValidator implements
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.indexI7().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Index I7: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (measurementMetadata.indexI5().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Index I5: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
       return validation;
     }
   }
