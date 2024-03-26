@@ -60,7 +60,7 @@ public class RawDataService {
     }
     var measurements = measurementLookupService.retrieveAllMeasurementsWithSampleIds(
         samplesInExperiment);
-    return rawDataLookupService.countRawDataByMeasurementIds(measurements) != 0;
+    return rawDataLookupService.countRawDataByMeasurementIds(measurements) > 0;
   }
 
   @PostAuthorize(
