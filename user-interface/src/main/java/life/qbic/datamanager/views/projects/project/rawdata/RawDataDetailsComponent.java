@@ -11,28 +11,24 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serializable;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataService;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataFileInformation;
+import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataSampleInformation;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
@@ -52,9 +48,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private final TabSheet registeredRawDataTabSheet = new TabSheet();
   private String searchTerm = "";
-  private final Grid<RawDataFileInformation> ngsRawDataGrid = new Grid<>();
-  private final Grid<RawDataFileInformation> proteomicsRawDataGrid = new Grid<>();
-  private final Collection<GridLazyDataView<RawDataFileInformation>> rawDataGridDataViews = new ArrayList<>();
+  private final Grid<RawData> ngsRawDataGrid = new Grid<>();
+  private final Grid<RawData> proteomicsRawDataGrid = new Grid<>();
+  private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
   private final transient RawDataService rawDataService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
   private transient Context context;
@@ -94,7 +90,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   public void setContext(Context context) {
     resetTabsInTabsheet();
     this.context = context;
-    List<GridLazyDataView<RawDataFileInformation>> dataViewsWithItems = rawDataGridDataViews.stream()
+    List<GridLazyDataView<RawData>> dataViewsWithItems = rawDataGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();
     if (dataViewsWithItems.isEmpty()) {
@@ -102,6 +98,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
     dataViewsWithItems.forEach(this::addRawDataTab);
   }
+
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
   private void resetTabsInTabsheet() {
     if (!tabsInTabSheet.isEmpty()) {
@@ -110,7 +107,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
   }
 
-  private void addRawDataTab(GridLazyDataView<RawDataFileInformation> gridLazyDataView) {
+  private void addRawDataTab(GridLazyDataView<RawData> gridLazyDataView) {
     if (gridLazyDataView.getItems().allMatch(rawData -> rawData.measurementCode().isNGSDomain())) {
       tabsInTabSheet.add(registeredRawDataTabSheet.add("Genomics", ngsRawDataGrid));
     }
@@ -121,22 +118,41 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private void createNGSRawDataGrid() {
     ngsRawDataGrid.addClassName("raw-data-grid");
-    ngsRawDataGrid.addColumn(ngsRawData -> ngsRawData.measurementCode().value())
-        .setHeader("Measurement Id").setAutoWidth(true);
-    ngsRawDataGrid.addComponentColumn(
-            ngsRawData -> renderSampleInformation().createComponent(ngsRawData.measuredSamples()))
-        .setHeader("Sample Ids").setFlexGrow(1).setAutoWidth(true);
-    ngsRawDataGrid.addColumn(new LocalDateTimeRenderer<>(
-            ngsRawData -> asClientLocalDateTime(ngsRawData.registrationDate().toInstant()),
-            "yyyy-MM-dd"))
-        .setKey("registrationDate")
-        .setHeader("Registration Date")
-        .setTooltipGenerator(ngsRawData -> {
-          LocalDateTime dateTime = asClientLocalDateTime(ngsRawData.registrationDate().toInstant());
-          return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
-        })
+    ngsRawDataGrid.addColumn(rawData -> rawData.measurementCode().value())
+        .setKey("measurementId")
+        .setHeader("Measurement Id")
         .setAutoWidth(true);
-    GridLazyDataView<RawDataFileInformation> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
+    ngsRawDataGrid.addComponentColumn(
+            ngsRawData -> renderSampleInformation().createComponent(ngsRawData.sampleInformation()))
+        .setKey("sampleIds")
+        .setHeader("Sample Ids")
+        .setFlexGrow(1)
+        .setAutoWidth(true);
+    ngsRawDataGrid.addColumn(rawData -> rawData.rawDataDatasetInformation().fileSize())
+        .setKey("fileSize")
+        .setHeader("File Size")
+        .setTooltipGenerator(rawData -> rawData.rawDataDatasetInformation().fileSize())
+        .setAutoWidth(true);
+    ngsRawDataGrid.addComponentColumn(rawData -> renderFileSuffixes().createComponent(
+            rawData.rawDataDatasetInformation().fileEndings()))
+        .setKey("fileSuffixes")
+        .setHeader("File Suffixes")
+        .setAutoWidth(true);
+    ngsRawDataGrid.addColumn(
+            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
+        .setKey("numberOfFiles")
+        .setHeader("Number Of Files")
+        .setTooltipGenerator(
+            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
+        .setAutoWidth(true);
+    ngsRawDataGrid.addColumn(
+            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
+        .setKey("uploadDate")
+        .setHeader("Upload Date")
+        .setTooltipGenerator(
+            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
+        .setAutoWidth(true);
+    GridLazyDataView<RawData> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
           .collect(Collectors.toList());
@@ -148,31 +164,49 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .stream();
     });
     ngsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
-    ngsRawDataGrid.setItemDetailsRenderer(createRawDataRenderer(rawDataService));
     rawDataGridDataViews.add(ngsGridDataView);
   }
 
   private void createProteomicsRawDataGrid() {
     proteomicsRawDataGrid.addClassName("raw-data-grid");
     proteomicsRawDataGrid.addColumn(
-            proteomicsRawData -> proteomicsRawData.measurementCode().value())
-        .setHeader("Measurement Code").setAutoWidth(true)
-        .setTooltipGenerator(proteomicsRawData -> proteomicsRawData.measurementCode().value());
+            rawData -> rawData.measurementCode().value())
+        .setKey("measurementId")
+        .setHeader("Measurement Id")
+        .setTooltipGenerator(rawData -> rawData.measurementCode().value())
+        .setAutoWidth(true);
     proteomicsRawDataGrid.addComponentColumn(
             proteomicsRawData -> renderSampleInformation().createComponent(
-                proteomicsRawData.measuredSamples())).setHeader("Sample Ids").setFlexGrow(1)
+                proteomicsRawData.sampleInformation()))
+        .setKey("sampleIds")
+        .setHeader("Sample Ids")
+        .setFlexGrow(1)
         .setAutoWidth(true);
-    proteomicsRawDataGrid.addColumn(new LocalDateTimeRenderer<>(
-            proteomicsRawData -> asClientLocalDateTime(proteomicsRawData.registrationDate()),
-            "yyyy-MM-dd"))
+    proteomicsRawDataGrid.addColumn(rawData -> rawData.rawDataDatasetInformation().fileSize())
+        .setKey("fileSize")
+        .setHeader("File Size")
+        .setTooltipGenerator(rawData -> rawData.rawDataDatasetInformation().fileSize())
+        .setAutoWidth(true);
+    proteomicsRawDataGrid.addComponentColumn(rawData -> renderFileSuffixes().createComponent(
+            rawData.rawDataDatasetInformation().fileEndings()))
+        .setKey("fileSuffixes")
+        .setHeader("File Suffixes")
+        .setAutoWidth(true);
+    proteomicsRawDataGrid.addColumn(
+            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
+        .setKey("numberOfFiles")
+        .setHeader("Number Of Files")
+        .setTooltipGenerator(
+            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
+        .setAutoWidth(true);
+    proteomicsRawDataGrid.addColumn(
+            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
         .setKey("uploaddate")
         .setHeader("Upload Date")
-        .setTooltipGenerator(proteomicsRawData -> {
-          LocalDateTime dateTime = asClientLocalDateTime(proteomicsRawData.registrationDate());
-          return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
-        })
+        .setTooltipGenerator(
+            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
         .setAutoWidth(true);
-    GridLazyDataView<RawDataFileInformation> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
+    GridLazyDataView<RawData> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
                   it -> new SortOrder(it.getSorted(),
@@ -186,75 +220,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               .stream();
         });
     proteomicsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
-    proteomicsRawDataGrid.setItemDetailsRenderer(createRawDataRenderer(rawDataService));
     rawDataGridDataViews.add(proteomicsGridDataView);
-  }
-
-  private static ComponentRenderer<Div, RawDataFileInformation> createRawDataRenderer(
-      RawDataService rawDataService) {
-    return new ComponentRenderer<>(rawData -> {
-      RawDataFileInformation rawDataFileInformation = rawDataService.findRawDataFileInformationForMeasurementCode(
-          rawData.measurementCode());
-      return new RawDataDetails(rawData, rawDataFileInformation);
-    });
-  }
-
-  private static class RawDataDetails extends Div {
-
-    /**
-     * Creates a new empty div.
-     */
-    public RawDataDetails(RawDataFileInformation rawData, RawDataFileInformation rawDataFileInformation) {
-      addClassName("raw-data-details");
-      add(createSingularValueEntry("QBiC Measurement ID", rawData.measurementCode().value()));
-      add(createSampleLabelsEntry(rawData.measuredSamples()));
-      add(createSingularValueEntry("Dataset endings", String.join(", ",rawDataFileInformation.fileEndings())));
-      add(createSingularValueEntry("File size", rawDataFileInformation.fileSize()));
-      add(createSingularValueEntry("No. of files", Integer.toString(rawDataFileInformation.numberOfFiles())));
-      add(createSingularValueEntry("Upload date", String.valueOf(rawData.registrationDate())));
-    }
-
-    private Span createSingularValueEntry(String label, String value) {
-      Span entry = new Span();
-      entry.addClassName("raw-data-details-entry");
-      Span entryLabel = new Span(label + " : ");
-      entryLabel.addClassName("bold");
-      Span entryValue = new Span(value);
-      entryValue.addClassName("raw-data-details-entry-value");
-      entry.add(entryLabel, entryValue);
-      return entry;
-    }
-
-    private Span createSampleLabelsEntry(Collection<RawDataSampleInformation> samples) {
-      Span entry = new Span();
-      entry.addClassName("raw-data-details-entry");
-      Span entryLabel = new Span("Sample labels" + ":");
-      entryLabel.addClassName("bold");
-      Span entryValue = new Span();
-      samples.forEach(sampleInformation -> entryValue.add(
-          createSampleInformation(sampleInformation.sampleLabel(),
-              sampleInformation.sampleCode().code())));
-      entryValue.addClassName("raw-data-details-entry-value");
-      entry.add(entryLabel, entryValue);
-      return entry;
-    }
-
-    private Span createSampleInformation(String label, String sampleCode) {
-      Span sampleInformation = new Span();
-      sampleInformation.addClassName("sample-information");
-      Span sampleLabel = new Span(label);
-      Tag sampleCodeTag = new Tag(sampleCode);
-      sampleInformation.add(sampleLabel, sampleCodeTag);
-      return sampleInformation;
-    }
-
-  }
-
-  private LocalDateTime asClientLocalDateTime(Instant instant) {
-    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(
-        this.clientDetailsProvider.latestDetails()
-            .map(ClientDetailsProvider.ClientDetails::timeZoneId).orElse("UTC")));
-    return zonedDateTime.toLocalDateTime();
   }
 
   private ComponentRenderer<Div, Collection<RawDataSampleInformation>> renderSampleInformation() {
@@ -268,15 +234,32 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     });
   }
 
+  private ComponentRenderer<Div, Collection<String>> renderFileSuffixes() {
+    return new ComponentRenderer<>(fileSuffixes -> {
+      Div showFileSuffixes = new Div();
+      showFileSuffixes.addClassName("file-suffix-column");
+      fileSuffixes.forEach(fileSuffix -> showFileSuffixes.add(new Span(fileSuffix + " ")));
+      return showFileSuffixes;
+    });
+  }
+
+  private String convertToLocalDate(Date date) {
+    return date.toInstant()
+        .atZone(ZoneId.of(clientDetailsProvider
+            .latestDetails()
+            .orElseThrow()
+            .timeZoneId()))
+        .format(DateTimeFormatter.ISO_LOCAL_DATE);
+  }
+
   public Collection<MeasurementCode> getSelectedMeasurementUrls() {
     List<MeasurementCode> selectedMeasurements = new ArrayList<>();
     selectedMeasurements.addAll(
-        proteomicsRawDataGrid.getSelectedItems().stream().map(RawDataFileInformation::measurementCode)
+        proteomicsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
             .toList());
     selectedMeasurements.addAll(
-        ngsRawDataGrid.getSelectedItems().stream().map(RawDataFileInformation::measurementCode)
+        ngsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
             .toList());
     return selectedMeasurements;
   }
-
 }

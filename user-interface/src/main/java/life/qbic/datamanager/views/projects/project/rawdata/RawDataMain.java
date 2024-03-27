@@ -80,7 +80,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired RawDataService rawDataService,
-      @Value("${rawdata.datasource.url}") String dataSourceURL) {
+      @Value("${server.download.api.measurement.url}") String dataSourceURL) {
     this.rawdataDetailsComponent = Objects.requireNonNull(rawDataDetailsComponent);
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);

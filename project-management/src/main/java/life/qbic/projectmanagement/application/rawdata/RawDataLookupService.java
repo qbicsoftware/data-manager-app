@@ -7,9 +7,10 @@ import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
+import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
-import life.qbic.projectmanagement.domain.model.rawdata.RawData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,10 +40,10 @@ public class RawDataLookupService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    */
-  public List<RawData> queryRawDataByMeasurementCodes(String filter,
+  public List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
       List<MeasurementCode> measurementCodes, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    List<RawData> dataList = rawDataLookup.queryRawDataByMeasurementCodes(
+    var dataList = rawDataLookup.queryRawDataByMeasurementCodes(
         filter, measurementCodes, offset,
         limit, sortOrders);
     // the list must be modifiable for spring security to filter it

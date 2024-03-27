@@ -67,58 +67,58 @@ public class RawDataService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<RawDataFileInformation> findProteomicsRawData(String filter,
+  public Collection<RawData> findProteomicsRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
     var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId, filter, offset,
         limit,
         sortOrder);
-    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode).toList();
-    var rawDomainData = rawDataLookupService.queryRawDataByMeasurementCodes(filter, measurementCodes,
+    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
+        .toList();
+    var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
+        measurementCodes,
         offset, limit, sortOrder);
-    return rawDomainData.stream().map(rawData -> {
-      ProteomicsMeasurement measurementWithData = measurements.stream().filter(
-              proteomicsMeasurement -> proteomicsMeasurement.measurementId()
-                  .equals(rawData.measurememeantId())).findAny().orElseThrow();
-      List<RawDataSampleInformation> sampleInformation = sampleInformationService.retrieveSamplesByIds(
-              measurementWithData.measuredSamples()).stream()
-          .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
-          .toList();
-      return new RawDataFileInformation(measurementWithData.measurementCode(), sampleInformation,
-          rawData.registrationDate());
-    }).toList();
+    return rawDataDatasetInformation.stream()
+        .map((RawDataDatasetInformation datasetInformation) -> {
+          var measurement = measurements.stream().filter(
+                  proteomicsMeasurement -> proteomicsMeasurement.measurementCode()
+                      .equals(datasetInformation.measurementCode()))
+              .findFirst().orElseThrow();
+          var sampleInformation = sampleInformationService.retrieveSamplesByIds(
+                  measurement.measuredSamples()).stream()
+              .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
+              .toList();
+          return new RawData(measurement.measurementCode(), sampleInformation, datasetInformation);
+        }).toList();
   }
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<RawDataFileInformation> findNGSRawData(String filter,
+  public Collection<RawData> findNGSRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
     var measurements = retrieveNGSMeasurementsForExperiment(experimentId, filter, offset, limit,
         sortOrder);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
-    var rawDomainData = rawDataLookupService.queryRawDataByMeasurementCodes(filter, measurementCodes,
+    var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
+        measurementCodes,
         offset, limit, sortOrder);
-    return rawDomainData.stream().map(rawData -> {
-      NGSMeasurement measurementWithData = measurements.stream()
-          .filter(ngsMeasurement -> ngsMeasurement.measurementId().equals(rawData.measurementId()))
-          .findAny().orElseThrow();
-      List<RawDataSampleInformation> sampleInformation = sampleInformationService.retrieveSamplesByIds(
-              measurementWithData.measuredSamples()).stream()
-          .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
-          .toList();
-    }).toList();
+    return rawDataDatasetInformation.stream()
+        .map((RawDataDatasetInformation datasetInformation) -> {
+          var measurement = measurements.stream().filter(
+                  proteomicsMeasurement -> proteomicsMeasurement.measurementCode()
+                      .equals(datasetInformation.measurementCode()))
+              .findFirst().orElseThrow();
+          var sampleInformation = sampleInformationService.retrieveSamplesByIds(
+                  measurement.measuredSamples()).stream()
+              .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
+              .toList();
+          return new RawData(measurement.measurementCode(), sampleInformation, datasetInformation);
+        }).toList();
   }
 
-
-  public RawDataFileInformation findRawDataFileInformationForMeasurementCode(
-      MeasurementCode measurementCode) {
-    //Todo implement OpenBis connection?
-    return new RawDataFileInformation("Q0000_primary_results.zip", "78GB", "20",
-        "120EA8A25E5D487BF68B5F7096440019");
-  }
 
   private List<NGSMeasurement> retrieveNGSMeasurementsForExperiment(ExperimentId experimentId,
       String filter, int offset, int limit,
@@ -146,18 +146,29 @@ public class RawDataService {
   }
 
   /**
-   * Raw Data File information to be employed in the frontend containing information associated
-   * with {@link life.qbic.projectmanagement.domain.model.rawdata.RawData} collected from the connected datastore
+   * Raw Data File information to be employed in the frontend containing information
+   * collected from the connected datastore
    */
-  public record RawDataFileInformation(MeasurementCode measurementCode, Set<String> fileEndings,
-                                       String fileSize, int numberOfFiles, Date registrationDate) {
+  public record RawData(MeasurementCode measurementCode,
+                        List<RawDataSampleInformation> sampleInformation,
+                        RawDataDatasetInformation rawDataDatasetInformation) {
   }
 
   /**
-   * Sample Information associated with the measurements to which the {@link life.qbic.projectmanagement.domain.model.rawdata.RawData}
+   * Sample Information associated with the measurements to which the {@link RawData}
    * is linked and meant to be employed in the frontend
    */
   public record RawDataSampleInformation(SampleCode sampleCode, String sampleLabel) {
+
+  }
+
+  /**
+   * Sample Information associated with the measurements to which the {@link RawData}
+   * is linked and meant to be employed in the frontend
+   */
+  public record RawDataDatasetInformation(MeasurementCode measurementCode, String fileSize,
+                                          int numberOfFiles, Set<String> fileEndings,
+                                          Date registrationDate) {
 
   }
 }

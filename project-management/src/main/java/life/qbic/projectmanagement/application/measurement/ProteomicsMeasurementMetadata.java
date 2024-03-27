@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.measurement;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -30,6 +31,11 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
   @Override
   public List<SampleCode> associatedSamples() {
     return sampleCodes.stream().toList();
+  }
+
+  @Override
+  public MeasurementCode measurementCode() {
+    return null;
   }
 
   public static ProteomicsMeasurementMetadata copyWithNewProperties(Collection<SampleCode> associatedSamples, Collection<Labeling> labeling,

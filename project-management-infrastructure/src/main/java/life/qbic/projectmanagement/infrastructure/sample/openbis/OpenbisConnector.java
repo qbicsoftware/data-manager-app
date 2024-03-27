@@ -56,14 +56,13 @@ import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataLookup;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataFileInformation;
+import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
+import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
-import life.qbic.projectmanagement.domain.model.rawdata.RawData;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.MeasurementDataRepo;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
@@ -429,10 +428,10 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   }
 
   /**
-   * Queries {@link RawDataFileInformation} with a provided offset and limit that supports pagination.
+   * Queries {@link RawData} with a provided offset and limit that supports pagination.
    *
    * @param filter           the results fields will be checked for the value within this filter
-   * @param measurementCodes the list of {@link MeasurementCode}s for which the {@link RawData}
+   * @param measurementCodes the list of {@link MeasurementCode}s for which the {@link life.qbic.projectmanagement.domain.model.rawdata.RawData}
    *                         should be fetched
    * @param offset           the offset for the search result to start
    * @param limit            the maximum number of results that should be returned
@@ -440,10 +439,10 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
    * @return the results in the provided range
    */
   @Override
-  public List<RawDataFileInformation> queryRawDataByMeasurementCodes(String filter,
+  public List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
       Collection<MeasurementCode> measurementCodes, int offset, int limit,
       List<SortOrder> sortOrders) {
-    List<RawDataFileInformation> result = new ArrayList<>();
+    List<RawDataDatasetInformation> result = new ArrayList<>();
     DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
     fetchOptions.from(offset);
     fetchOptions.count(limit);
@@ -467,8 +466,8 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       Map<String, List<DataSetFile>> fileInfos = fetchFileInformationForDatasets(session,
           searchResult.stream().map(DataSet::getCode).toList());
       for(DataSet dataset : searchResult) {
-        String measurementCode = dataset.getCode();
-        List<DataSetFile> dsFileInfos = fileInfos.get(measurementCode);
+        String datasetCode = dataset.getCode();
+        List<DataSetFile> dsFileInfos = fileInfos.get(datasetCode);
         Date registrationDate = dataset.getRegistrationDate();
         Set<String> suffixes = new HashSet<>();
         long dataSetSize = 0;
@@ -483,8 +482,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
             dataSetSize += file.getFileLength();
           }
         }
-        result.add(new RawDataFileInformation(MeasurementCode.parse(measurementCode), suffixes,
-            getStringSizeLengthFile(dataSetSize), numOfFiles, registrationDate));
+        result.add(
+            new RawDataDatasetInformation(MeasurementCode.parse(dataset.getSample().getCode()),
+                getStringSizeLengthFile(dataSetSize), numOfFiles, suffixes, registrationDate));
       }
     }
     return result;
