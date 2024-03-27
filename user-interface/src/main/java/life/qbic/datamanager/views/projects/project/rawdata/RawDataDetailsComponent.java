@@ -32,7 +32,6 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataService;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataFileInformation;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataSampleInformation;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -53,9 +52,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private final TabSheet registeredRawDataTabSheet = new TabSheet();
   private String searchTerm = "";
-  private final Grid<RawData> ngsRawDataGrid = new Grid<>();
-  private final Grid<RawData> proteomicsRawDataGrid = new Grid<>();
-  private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
+  private final Grid<RawDataFileInformation> ngsRawDataGrid = new Grid<>();
+  private final Grid<RawDataFileInformation> proteomicsRawDataGrid = new Grid<>();
+  private final Collection<GridLazyDataView<RawDataFileInformation>> rawDataGridDataViews = new ArrayList<>();
   private final transient RawDataService rawDataService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
   private transient Context context;
@@ -95,7 +94,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   public void setContext(Context context) {
     resetTabsInTabsheet();
     this.context = context;
-    List<GridLazyDataView<RawData>> dataViewsWithItems = rawDataGridDataViews.stream()
+    List<GridLazyDataView<RawDataFileInformation>> dataViewsWithItems = rawDataGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();
     if (dataViewsWithItems.isEmpty()) {
@@ -111,7 +110,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
   }
 
-  private void addRawDataTab(GridLazyDataView<RawData> gridLazyDataView) {
+  private void addRawDataTab(GridLazyDataView<RawDataFileInformation> gridLazyDataView) {
     if (gridLazyDataView.getItems().allMatch(rawData -> rawData.measurementCode().isNGSDomain())) {
       tabsInTabSheet.add(registeredRawDataTabSheet.add("Genomics", ngsRawDataGrid));
     }
@@ -128,16 +127,16 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             ngsRawData -> renderSampleInformation().createComponent(ngsRawData.measuredSamples()))
         .setHeader("Sample Ids").setFlexGrow(1).setAutoWidth(true);
     ngsRawDataGrid.addColumn(new LocalDateTimeRenderer<>(
-            ngsRawData -> asClientLocalDateTime(ngsRawData.registrationDate()),
+            ngsRawData -> asClientLocalDateTime(ngsRawData.registrationDate().toInstant()),
             "yyyy-MM-dd"))
         .setKey("registrationDate")
         .setHeader("Registration Date")
         .setTooltipGenerator(ngsRawData -> {
-          LocalDateTime dateTime = asClientLocalDateTime(ngsRawData.registrationDate());
+          LocalDateTime dateTime = asClientLocalDateTime(ngsRawData.registrationDate().toInstant());
           return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
         })
         .setAutoWidth(true);
-    GridLazyDataView<RawData> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
+    GridLazyDataView<RawDataFileInformation> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
           .collect(Collectors.toList());
@@ -173,7 +172,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
         })
         .setAutoWidth(true);
-    GridLazyDataView<RawData> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
+    GridLazyDataView<RawDataFileInformation> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
                   it -> new SortOrder(it.getSorted(),
@@ -191,7 +190,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
 
-  private static ComponentRenderer<Div, RawData> createRawDataRenderer(
+  private static ComponentRenderer<Div, RawDataFileInformation> createRawDataRenderer(
       RawDataService rawDataService) {
     return new ComponentRenderer<>(rawData -> {
       RawDataFileInformation rawDataFileInformation = rawDataService.findRawDataFileInformationForMeasurementCode(
@@ -205,15 +204,14 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     /**
      * Creates a new empty div.
      */
-    public RawDataDetails(RawData rawData, RawDataFileInformation rawDataFileInformation) {
+    public RawDataDetails(RawDataFileInformation rawData, RawDataFileInformation rawDataFileInformation) {
       addClassName("raw-data-details");
       add(createSingularValueEntry("QBiC Measurement ID", rawData.measurementCode().value()));
       add(createSampleLabelsEntry(rawData.measuredSamples()));
-      add(createSingularValueEntry("Dataset file name", rawDataFileInformation.dataSetFileName()));
+      add(createSingularValueEntry("Dataset endings", String.join(", ",rawDataFileInformation.fileEndings())));
       add(createSingularValueEntry("File size", rawDataFileInformation.fileSize()));
-      add(createSingularValueEntry("No. of files", rawDataFileInformation.numberOfFiles()));
+      add(createSingularValueEntry("No. of files", Integer.toString(rawDataFileInformation.numberOfFiles())));
       add(createSingularValueEntry("Upload date", String.valueOf(rawData.registrationDate())));
-      add(createSingularValueEntry("Checksum", rawDataFileInformation.checksum()));
     }
 
     private Span createSingularValueEntry(String label, String value) {
@@ -273,10 +271,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   public Collection<MeasurementCode> getSelectedMeasurementUrls() {
     List<MeasurementCode> selectedMeasurements = new ArrayList<>();
     selectedMeasurements.addAll(
-        proteomicsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
+        proteomicsRawDataGrid.getSelectedItems().stream().map(RawDataFileInformation::measurementCode)
             .toList());
     selectedMeasurements.addAll(
-        ngsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
+        ngsRawDataGrid.getSelectedItems().stream().map(RawDataFileInformation::measurementCode)
             .toList());
     return selectedMeasurements;
   }

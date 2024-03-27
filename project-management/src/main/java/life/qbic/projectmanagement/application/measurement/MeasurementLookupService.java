@@ -80,7 +80,7 @@ public class MeasurementLookupService {
         + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
   }
 
-  public List<MeasurementId> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
+  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
     return measurementLookup.retrieveAllMeasurementsWithSampleIds(sampleIds);
   }
 }

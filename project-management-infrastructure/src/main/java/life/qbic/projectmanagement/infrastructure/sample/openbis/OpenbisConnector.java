@@ -5,6 +5,9 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.dataset.DataSet;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.dataset.fetchoptions.DataSetFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.dataset.search.DataSetSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.deletion.id.IDeletionId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.Experiment;
@@ -32,20 +35,35 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriter
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.SampleUpdate;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.update.UpdateSamplesOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.id.SpacePermId;
+import ch.ethz.sis.openbis.generic.dssapi.v3.IDataStoreServerApi;
+import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.DataSetFile;
+import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.fetchoptions.DataSetFileFetchOptions;
+import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.search.DataSetFileSearchCriteria;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.application.rawdata.RawDataLookup;
+import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataFileInformation;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
+import life.qbic.projectmanagement.domain.model.rawdata.RawData;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.MeasurementDataRepo;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
@@ -62,7 +80,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo,
-    MeasurementDataRepo {
+    MeasurementDataRepo, RawDataLookup {
 
   private static final Logger log = logger(OpenbisConnector.class);
 
@@ -73,16 +91,20 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
   private final OpenbisSessionFactory sessionFactory;
   private final IApplicationServerApi applicationServer;
+  private final IDataStoreServerApi datastoreServer;
 
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
       @Value("${openbis.user.password}") String password,
-      @Value("${openbis.datasource.url}") String url) {
+      @Value("${openbis.datasource.as.url}") String asUrl,
+      @Value("${openbis.datasource.dss.url}") String dssUrl) {
 
-    final String openbisApplicationUrl = url + IApplicationServerApi.SERVICE_URL;
+    final String openbisApplicationUrl = asUrl + IApplicationServerApi.SERVICE_URL;
+    final String openbisDssUrl = dssUrl + IDataStoreServerApi.SERVICE_URL;
 
     this.sessionFactory =  new OpenbisSessionFactory(openbisApplicationUrl, userName, password);
     this.applicationServer = ApiV3.applicationServer(openbisApplicationUrl);
+    this.datastoreServer = ApiV3.dataStoreServer(openbisDssUrl);
   }
 
   private List<Sample> searchSamplesByCodes(OpenBisSession session,
@@ -405,6 +427,130 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
         deletionOptions);
     applicationServer.confirmDeletions(session.getToken(), Collections.singletonList(deletionId));
   }
+
+  /**
+   * Queries {@link RawDataFileInformation} with a provided offset and limit that supports pagination.
+   *
+   * @param filter           the results fields will be checked for the value within this filter
+   * @param measurementCodes the list of {@link MeasurementCode}s for which the {@link RawData}
+   *                         should be fetched
+   * @param offset           the offset for the search result to start
+   * @param limit            the maximum number of results that should be returned
+   * @param sortOrders       the ordering to sort by
+   * @return the results in the provided range
+   */
+  @Override
+  public List<RawDataFileInformation> queryRawDataByMeasurementCodes(String filter,
+      Collection<MeasurementCode> measurementCodes, int offset, int limit,
+      List<SortOrder> sortOrders) {
+    List<RawDataFileInformation> result = new ArrayList<>();
+    DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
+    fetchOptions.from(offset);
+    fetchOptions.count(limit);
+    fetchOptions.withSample();
+    DataSetSearchCriteria searchCriteria = new DataSetSearchCriteria();
+    List<String> codes = new ArrayList<>(measurementCodes.stream().map(MeasurementCode::value)
+        .toList());
+    searchCriteria.withSample().withCodes().thatIn(codes);
+
+    if(!filter.isBlank()) {
+      searchCriteria.withAndOperator();
+      DataSetSearchCriteria filterCriteria = searchCriteria.withSubcriteria().withOrOperator();
+      filterCriteria.withSample().withCode().thatContains(filter);
+      //TODO other possibilities to filter by than the measured sample code?
+    }
+    try (OpenBisSession session = sessionFactory.getSession()) {
+
+      List<DataSet> searchResult = applicationServer.searchDataSets(
+          session.getToken(), searchCriteria,
+          fetchOptions).getObjects();
+      Map<String, List<DataSetFile>> fileInfos = fetchFileInformationForDatasets(session,
+          searchResult.stream().map(DataSet::getCode).toList());
+      for(DataSet dataset : searchResult) {
+        String measurementCode = dataset.getCode();
+        List<DataSetFile> dsFileInfos = fileInfos.get(measurementCode);
+        Date registrationDate = dataset.getRegistrationDate();
+        Set<String> suffixes = new HashSet<>();
+        long dataSetSize = 0;
+        int numOfFiles = 0;
+        for(DataSetFile file : dsFileInfos) {
+          if(!file.isDirectory()) {
+            numOfFiles++;
+            String path = file.getPath();
+            if(path.contains(".")) {
+              suffixes.add(path.substring(path.indexOf(".") + 1));
+            }
+            dataSetSize += file.getFileLength();
+          }
+        }
+        result.add(new RawDataFileInformation(MeasurementCode.parse(measurementCode), suffixes,
+            getStringSizeLengthFile(dataSetSize), numOfFiles, registrationDate));
+      }
+    }
+    return result;
+  }
+
+  @Override
+  public long countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes) {
+    DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
+    DataSetSearchCriteria searchCriteria = new DataSetSearchCriteria();
+    List<String> codes = new ArrayList<>(measurementCodes.stream().map(MeasurementCode::value).toList());
+    searchCriteria.withSample().withCodes().thatIn(codes);
+    try (OpenBisSession session = sessionFactory.getSession()) {
+      return applicationServer.searchDataSets(
+          session.getToken(), searchCriteria,
+          fetchOptions).getObjects().size();
+    }
+  }
+
+  private Map<String, List<DataSetFile>> fetchFileInformationForDatasets(OpenBisSession session,
+      List<String> datasetCodes) {
+
+    Map<String, List<DataSetFile>> result = new HashMap<>();
+    for(String code : datasetCodes) {
+      result.put(code, new ArrayList<>());
+    }
+
+    DataSetFileSearchCriteria criteria = new DataSetFileSearchCriteria();
+
+    DataSetSearchCriteria dataSetCriteria = criteria.withDataSet().withOrOperator();
+    dataSetCriteria.withCodes().thatIn(new ArrayList<>(datasetCodes));
+
+    SearchResult<DataSetFile> searchResult = datastoreServer.searchFiles(session.getToken(), criteria,
+        new DataSetFileFetchOptions());
+
+    for (DataSetFile file : searchResult.getObjects()) {
+      result.get(file.getDataSetPermId().getPermId()).add(file);
+    }
+    return result;
+  }
+
+  public static String complementOfTwoToHex(int complementOfTwo) {
+    long unsigned = Integer.toUnsignedLong(complementOfTwo);
+    return Long.toHexString(unsigned);
+  }
+
+  public static String getStringSizeLengthFile(long size) {
+    DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
+    otherSymbols.setDecimalSeparator('.');
+    DecimalFormat df = new DecimalFormat("0.00", otherSymbols);
+
+    float sizeKb = 1024.0f;
+    float sizeMb = sizeKb * sizeKb;
+    float sizeGb = sizeMb * sizeKb;
+    float sizeTerra = sizeGb * sizeKb;
+
+    if(size < sizeMb)
+      return df.format(size / sizeKb)+ " Kb";
+    else if(size < sizeGb)
+      return df.format(size / sizeMb) + " Mb";
+    else if(size < sizeTerra)
+      return df.format(size / sizeGb) + " Gb";
+
+    return "";
+  }
+
+  public record FileInfo(String path, String size, String checksum) {}
 
   private void handleOperations(OpenBisSession session, IOperation operation) {
     SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();

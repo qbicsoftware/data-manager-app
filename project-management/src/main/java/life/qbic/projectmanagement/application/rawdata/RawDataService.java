@@ -1,9 +1,10 @@
 package life.qbic.projectmanagement.application.rawdata;
 
-import java.time.Instant;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -60,45 +61,45 @@ public class RawDataService {
     }
     var measurements = measurementLookupService.retrieveAllMeasurementsWithSampleIds(
         samplesInExperiment);
-    return rawDataLookupService.countRawDataByMeasurementIds(measurements) > 0;
+    var codes = measurements.stream().map(MeasurementMetadata::measurementCode).toList();
+    return rawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
   }
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<RawData> findProteomicsRawData(String filter,
+  public Collection<RawDataFileInformation> findProteomicsRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
     var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId, filter, offset,
         limit,
         sortOrder);
-    var measurementIds = measurements.stream().map(ProteomicsMeasurement::measurementId).toList();
-    var rawDomainData = rawDataLookupService.queryRawDataByMeasurementIds(filter, measurementIds,
+    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode).toList();
+    var rawDomainData = rawDataLookupService.queryRawDataByMeasurementCodes(filter, measurementCodes,
         offset, limit, sortOrder);
     return rawDomainData.stream().map(rawData -> {
       ProteomicsMeasurement measurementWithData = measurements.stream().filter(
               proteomicsMeasurement -> proteomicsMeasurement.measurementId()
-                  .equals(rawData.measurementId()))
-          .findAny().orElseThrow();
+                  .equals(rawData.measurememeantId())).findAny().orElseThrow();
       List<RawDataSampleInformation> sampleInformation = sampleInformationService.retrieveSamplesByIds(
               measurementWithData.measuredSamples()).stream()
           .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
           .toList();
-      return new RawData(measurementWithData.measurementCode(), sampleInformation,
+      return new RawDataFileInformation(measurementWithData.measurementCode(), sampleInformation,
           rawData.registrationDate());
     }).toList();
   }
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<RawData> findNGSRawData(String filter,
+  public Collection<RawDataFileInformation> findNGSRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
     var measurements = retrieveNGSMeasurementsForExperiment(experimentId, filter, offset, limit,
         sortOrder);
-    var measurementIds = measurements.stream().map(NGSMeasurement::measurementId).toList();
-    var rawDomainData = rawDataLookupService.queryRawDataByMeasurementIds(filter, measurementIds,
+    var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
+    var rawDomainData = rawDataLookupService.queryRawDataByMeasurementCodes(filter, measurementCodes,
         offset, limit, sortOrder);
     return rawDomainData.stream().map(rawData -> {
       NGSMeasurement measurementWithData = measurements.stream()
@@ -108,8 +109,6 @@ public class RawDataService {
               measurementWithData.measuredSamples()).stream()
           .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
           .toList();
-      return new RawData(measurementWithData.measurementCode(), sampleInformation,
-          rawData.registrationDate());
     }).toList();
   }
 
@@ -147,21 +146,11 @@ public class RawDataService {
   }
 
   /**
-   * Raw Data to be employed in the frontend containing information associated
-   * with {@link life.qbic.projectmanagement.domain.model.rawdata.RawData}
-   */
-  public record RawData(MeasurementCode measurementCode,
-                        Collection<RawDataSampleInformation> measuredSamples,
-                        Instant registrationDate) {
-
-  }
-
-  /**
    * Raw Data File information to be employed in the frontend containing information associated
    * with {@link life.qbic.projectmanagement.domain.model.rawdata.RawData} collected from the connected datastore
    */
-  public record RawDataFileInformation(String dataSetFileName, String fileSize,
-                                       String numberOfFiles, String checksum) {
+  public record RawDataFileInformation(MeasurementCode measurementCode, Set<String> fileEndings,
+                                       String fileSize, int numberOfFiles, Date registrationDate) {
   }
 
   /**

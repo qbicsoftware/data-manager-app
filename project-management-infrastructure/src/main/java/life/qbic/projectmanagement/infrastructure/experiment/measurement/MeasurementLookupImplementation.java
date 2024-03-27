@@ -156,17 +156,15 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
   }
 
   @Override
-  public List<MeasurementId> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
+  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
     Specification<NGSMeasurement> ngsContainsSampleId = NgsMeasurementSpec.containsSampleId(
         sampleIds);
     Specification<ProteomicsMeasurement> proteomicsContainsSampleId = ProteomicsMeasurementSpec.containsSampleId(
         sampleIds);
-    List<MeasurementId> measurementIds = new ArrayList<>();
-    measurementIds.addAll(ngsMeasurementJpaRepo.findAll(ngsContainsSampleId).stream()
-        .map(NGSMeasurement::measurementId).toList());
-    measurementIds.addAll(pxpMeasurementJpaRepo.findAll(proteomicsContainsSampleId).stream()
-        .map(ProteomicsMeasurement::measurementId).toList());
-    return measurementIds;
+    List<MeasurementMetadata> measurements = new ArrayList<>();
+    measurements.addAll(ngsMeasurementJpaRepo.findAll(ngsContainsSampleId));
+    measurements.addAll(pxpMeasurementJpaRepo.findAll(proteomicsContainsSampleId));
+    return measurements;
   }
 
   private Specification<NGSMeasurement> generateNGSFilterSpecification(

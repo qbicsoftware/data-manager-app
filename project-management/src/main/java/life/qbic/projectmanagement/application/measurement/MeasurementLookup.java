@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.measurement;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -34,5 +35,5 @@ public interface MeasurementLookup {
 
   long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 
-  List<MeasurementId> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds);
+  List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds);
 }
