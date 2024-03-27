@@ -358,10 +358,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     return new ArrayList<>(searchResult.stream().map(Sample::getIdentifier).toList());
   }
 
-  record VocabularyTerm(String code, String label, String description) {
-
-  }
-
   private void createOpenbisProject(String spaceCodeString, String projectCode) {
     ProjectCreation project = new ProjectCreation();
     project.setCode(projectCode);
@@ -431,7 +427,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
    * Queries {@link RawData} with a provided offset and limit that supports pagination.
    *
    * @param filter           the results fields will be checked for the value within this filter
-   * @param measurementCodes the list of {@link MeasurementCode}s for which the {@link life.qbic.projectmanagement.domain.model.rawdata.RawData}
+   * @param measurementCodes the list of {@link MeasurementCode}s for which the raw Data
    *                         should be fetched
    * @param offset           the offset for the search result to start
    * @param limit            the maximum number of results that should be returned
@@ -549,8 +545,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
     return "";
   }
-
-  public record FileInfo(String path, String size, String checksum) {}
 
   private void handleOperations(OpenBisSession session, IOperation operation) {
     SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();

@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataDatasetInformation;
@@ -22,7 +20,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class RawDataLookupService {
 
-  private static final Logger log = LoggerFactory.logger(RawDataLookupService.class);
   private final RawDataLookup rawDataLookup;
 
   public RawDataLookupService(@Autowired RawDataLookup rawDataLookup) {

@@ -14,7 +14,7 @@ public interface RawDataLookup {
    * pagination.
    *
    * @param filter     the results fields will be checked for the value within this filter
-   * @param measurementCodes  the list of {@link MeasurementCode}s for which the {@link life.qbic.projectmanagement.domain.model.rawdata.RawData}
+   * @param measurementCodes  the list of {@link MeasurementCode}s for which the raw Data
    *                   should be fetched
    * @param offset     the offset for the search result to start
    * @param limit      the maximum number of results that should be returned
