@@ -64,6 +64,19 @@ public class MeasurementService {
   }
 
   /**
+   * Checks if there are measurements registered for the provided experimentId
+   *
+   * @param experimentId {@link ExperimentId}s of the experiment for which it should be determined
+   *                     if its contained {@link Sample} have measurements attached
+   * @return true if experiments has samples with associated measurements, false if not
+   */
+  public boolean hasMeasurements(ExperimentId experimentId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) != 0;
+  }
+
+  /**
    * Merges a collection of {@link ProteomicsMeasurementMetadata} items into one single
    * {@link ProteomicsMeasurementMetadata} item.
    * <p>

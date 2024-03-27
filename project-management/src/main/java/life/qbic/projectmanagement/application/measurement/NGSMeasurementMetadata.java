@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.application.measurement;
 
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
+
 /**
  * <b>NGS Measurement Metadata</b>
  * <p>
@@ -14,4 +16,8 @@ public class NGSMeasurementMetadata implements MeasurementMetadata {
     return "";
   }
 
+  @Override
+  public MeasurementCode measurementCode() {
+    return null;
+  }
 }

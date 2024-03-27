@@ -23,14 +23,14 @@ import org.springframework.stereotype.Repository;
 public class MeasurementRepositoryImplementation implements MeasurementRepository {
 
   private static final Logger log = logger(MeasurementRepositoryImplementation.class);
-  private final NGSMeasurementJpaRepo measurementJpaRepo;
+  private final NGSMeasurementJpaRepo ngsMeasurementJpaRepo;
   private final ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo;
   private final MeasurementDataRepo measurementDataRepo;
 
-  public MeasurementRepositoryImplementation(NGSMeasurementJpaRepo measurementJpaRepo,
+  public MeasurementRepositoryImplementation(NGSMeasurementJpaRepo ngsMeasurementJpaRepo,
       ProteomicsMeasurementJpaRepo pxpMeasurenemtJpaRepo,
       MeasurementDataRepo measurementDataRepo) {
-    this.measurementJpaRepo = measurementJpaRepo;
+    this.ngsMeasurementJpaRepo = ngsMeasurementJpaRepo;
     this.pxpMeasurementJpaRepo = pxpMeasurenemtJpaRepo;
     this.measurementDataRepo = measurementDataRepo;
   }
@@ -38,7 +38,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   @Override
   public Result<NGSMeasurement, ResponseCode> save(NGSMeasurement measurement, List<SampleCode> sampleCodes) {
     try {
-      measurementJpaRepo.save(measurement);
+      ngsMeasurementJpaRepo.save(measurement);
     } catch (Exception e) {
       log.error("Saving ngs measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
@@ -48,7 +48,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
     } catch (Exception e) {
       log.error("Saving ngs measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
-      measurementJpaRepo.delete(measurement); // Rollback JPA save
+      ngsMeasurementJpaRepo.delete(measurement); // Rollback JPA save
       return Result.fromError(ResponseCode.FAILED);
     }
 
@@ -64,7 +64,6 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       log.error("Saving proteomics measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
-
     try {
       measurementDataRepo.addProtemicsMeasurement(measurement, sampleCodes);
     } catch (Exception e) {

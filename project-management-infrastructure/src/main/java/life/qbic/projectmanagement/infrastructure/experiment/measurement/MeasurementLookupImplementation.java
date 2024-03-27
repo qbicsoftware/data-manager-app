@@ -3,12 +3,14 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import jakarta.persistence.criteria.Expression;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -26,8 +28,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class MeasurementLookupImplementation implements MeasurementLookup {
-
-  private static final Logger log = logger(MeasurementLookupImplementation.class);
   private final NGSMeasurementJpaRepo ngsMeasurementJpaRepo;
   private final ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo;
   private final MeasurementDataRepo measurementDataRepo;
@@ -38,6 +38,16 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     this.ngsMeasurementJpaRepo = ngsMeasurementJpaRepo;
     this.pxpMeasurementJpaRepo = pxpMeasurementJpaRepo;
     this.measurementDataRepo = measurementDataRepo;
+  }
+
+  @Override
+  public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return pxpMeasurementJpaRepo.count(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public long countNgsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return ngsMeasurementJpaRepo.count(NgsMeasurementSpec.containsSampleId(sampleIds));
   }
 
   @Override
@@ -111,6 +121,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
             ontologyNameContains,
             ontologyLabelContains,
             facilityContains,
+            fractionContains,
             digestionMethodContains,
             digestionEnzymeContains,
             enrichmentMethodContains,
@@ -142,6 +153,18 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         sampleIds, filter);
     return ngsMeasurementJpaRepo.findAll(filterSpecification,
         new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+  }
+
+  @Override
+  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
+    Specification<NGSMeasurement> ngsContainsSampleId = NgsMeasurementSpec.containsSampleId(
+        sampleIds);
+    Specification<ProteomicsMeasurement> proteomicsContainsSampleId = ProteomicsMeasurementSpec.containsSampleId(
+        sampleIds);
+    List<MeasurementMetadata> measurements = new ArrayList<>();
+    measurements.addAll(ngsMeasurementJpaRepo.findAll(ngsContainsSampleId));
+    measurements.addAll(pxpMeasurementJpaRepo.findAll(proteomicsContainsSampleId));
+    return measurements;
   }
 
   private Specification<NGSMeasurement> generateNGSFilterSpecification(

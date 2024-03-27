@@ -88,6 +88,28 @@ public class MeasurementCode {
     return prefix == MEASUREMENT_PREFIX.IMG;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof MeasurementCode that)) {
+      return false;
+    }
+
+    if (prefix != that.prefix) {
+      return false;
+    }
+    return measurementCode.equals(that.measurementCode);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = prefix.hashCode();
+    result = 31 * result + measurementCode.hashCode();
+    return result;
+  }
+
   public enum MEASUREMENT_PREFIX {
     NGS, MS, IMG
   }

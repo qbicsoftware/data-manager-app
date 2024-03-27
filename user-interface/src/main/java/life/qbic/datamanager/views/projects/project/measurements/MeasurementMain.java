@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -17,20 +17,21 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -56,19 +57,24 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
-  private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
+  private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
   private final MeasurementTemplateDownload measurementTemplateDownload;
+  private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final MeasurementDetailsComponent measurementDetailsComponent;
   private final TextField measurementSearchField = new TextField();
+  private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
   private final transient MeasurementValidationService measurementValidationService;
   private transient Context context;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
+  private static Disclaimer registerSamplesDisclaimer;
+  private final Div noMeasurementDisclaimer;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
+      @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementValidationService measurementValidationService) {
     Objects.requireNonNull(measurementTemplateListComponent);
@@ -76,18 +82,22 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     this.measurementDetailsComponent = measurementDetailsComponent;
+    this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
     this.measurementValidationService = measurementValidationService;
+    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
+    registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
+    add(registerSamplesDisclaimer);
+    noMeasurementDisclaimer = createNoMeasurementDisclaimer();
+    add(noMeasurementDisclaimer);
     initContent();
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
     addClassName("measurement");
-    measurementDetailsComponent.addRegisterMeasurementClickedListener(
-        event -> openRegisterMeasurementDialog());
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         getClass().getSimpleName(), System.identityHashCode(this),
@@ -123,6 +133,57 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     content.add(buttonAndField);
   }
 
+  private Disclaimer createNoSamplesRegisteredDisclaimer() {
+    Disclaimer noSamplesRegisteredDisclaimer = Disclaimer.createWithTitle(
+        "Register your samples first",
+        "You have to register samples before measurement registration is possible",
+        "Register Samples");
+    noSamplesRegisteredDisclaimer.addDisclaimerConfirmedListener(
+        this::routeToSampleCreation);
+    noSamplesRegisteredDisclaimer.addClassName("no-samples-registered-disclaimer");
+    return noSamplesRegisteredDisclaimer;
+  }
+
+  private Div createNoMeasurementDisclaimer() {
+    Div noMeasurementDisclaimer = new Div();
+    Span disclaimerTitle = new Span("Manage your measurement metadata");
+    disclaimerTitle.addClassName("no-measurement-registered-title");
+    noMeasurementDisclaimer.add(disclaimerTitle);
+    Div noMeasurementDisclaimerContent = new Div();
+    noMeasurementDisclaimerContent.addClassName("no-measurement-registered-content");
+    Span noMeasurementText1 = new Span("Start by downloading the required metadata template");
+    Span noMeasurementText2 = new Span(
+        "Fill the metadata sheet and register your measurement metadata.");
+    noMeasurementDisclaimerContent.add(noMeasurementText1);
+    noMeasurementDisclaimerContent.add(noMeasurementText2);
+    noMeasurementDisclaimer.add(noMeasurementDisclaimerContent);
+    InfoBox availableTemplatesInfo = new InfoBox();
+    availableTemplatesInfo.setInfoText(
+        "You can download the measurement metadata template from the Templates component above");
+    availableTemplatesInfo.setClosable(false);
+    noMeasurementDisclaimer.add(availableTemplatesInfo);
+    Button registerMeasurements = new Button("Register Measurements");
+    registerMeasurements.addClassName("primary");
+    noMeasurementDisclaimer.add(registerMeasurements);
+    registerMeasurements.addClickListener(event -> openRegisterMeasurementDialog());
+    noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
+    return noMeasurementDisclaimer;
+  }
+
+  private void routeToSampleCreation(ComponentEvent<?> componentEvent) {
+    if (componentEvent.isFromClient()) {
+      String currentExperimentId = context.experimentId().orElseThrow().value();
+      String currentProjectId = context.projectId().orElseThrow().value();
+      String routeToMeasurementPage = String.format(Projects.SAMPLES,
+          currentProjectId,
+          currentExperimentId);
+      log.debug(String.format(
+          "Rerouting to sample page for experiment %s of project %s: %s",
+          currentExperimentId, currentProjectId, routeToMeasurementPage));
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
+    }
+  }
+
   /**
    * Callback executed before navigation to attaching Component chain is made.
    *
@@ -144,13 +205,45 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    measurementDetailsComponent.setContext(context);
-    isRawDataAvailable();
+    setMeasurementInformation();
   }
 
-  private void isRawDataAvailable() {
-    /*Todo check for raw data if available*/
-    rawDataAvailableInfo.setVisible(false);
+  private void setMeasurementInformation() {
+    ExperimentId currentExperimentId = context.experimentId().orElseThrow();
+    if (!sampleInformationService.hasSamples(currentExperimentId)) {
+      showRegisterSamplesDisclaimer();
+      return;
+    }
+    if (!measurementService.hasMeasurements(currentExperimentId)) {
+      showRegisterMeasurementDisclaimer();
+    } else {
+      showMeasurements();
+    }
+  }
+
+  private void showRegisterSamplesDisclaimer() {
+    noMeasurementDisclaimer.setVisible(false);
+    content.setVisible(false);
+    measurementDetailsComponent.setVisible(false);
+    measurementTemplateListComponent.setVisible(false);
+    registerSamplesDisclaimer.setVisible(true);
+  }
+
+  private void showRegisterMeasurementDisclaimer() {
+    noMeasurementDisclaimer.setVisible(true);
+    measurementTemplateListComponent.setVisible(true);
+    content.setVisible(false);
+    measurementDetailsComponent.setVisible(false);
+    registerSamplesDisclaimer.setVisible(false);
+  }
+
+  private void showMeasurements() {
+    noMeasurementDisclaimer.setVisible(false);
+    registerSamplesDisclaimer.setVisible(false);
+    content.setVisible(true);
+    measurementTemplateListComponent.setVisible(true);
+    measurementDetailsComponent.setContext(context);
+    measurementDetailsComponent.setVisible(true);
   }
 
   private void onDownloadMeasurementTemplateClicked(
@@ -166,7 +259,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       boolean allSuccessfull = true;
       for (var upload : uploads) {
         try {
-          measurementService.registerMultiple(upload.measurementMetadata(), context.projectId().orElseThrow());
+          measurementService.registerMultiple(upload.measurementMetadata(),
+              context.projectId().orElseThrow());
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
           String errorMessage = switch (measurementRegistrationException.reason()) {
@@ -193,13 +287,27 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     rawDataAvailableInfo.setInfoText(
         "Raw data results for your registered measurement are available now");
     Button navigateToDownloadRawDataButton = new Button("Go to Download Raw data");
-    //ToDo Replace with Raw Data Main Class as soon as it's written
-    navigateToDownloadRawDataButton.addClickListener(event -> UI.getCurrent().navigate(
-        ProjectOverviewMain.class));
+    navigateToDownloadRawDataButton.addClickListener(this::routeToRawData);
     navigateToDownloadRawDataButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
     rawDataAvailableInfo.add(navigateToDownloadRawDataButton);
     rawDataAvailableInfo.setClosable(true);
     content.add(rawDataAvailableInfo);
     rawDataAvailableInfo.setVisible(false);
   }
+
+  private void routeToRawData(ComponentEvent<?> componentEvent) {
+    if (componentEvent.isFromClient()) {
+      String currentExperimentId = context.experimentId().orElseThrow().value();
+      String currentProjectId = context.projectId().orElseThrow().value();
+      String routeToRawDataPage = String.format(Projects.RAWDATA,
+          currentProjectId,
+          currentExperimentId);
+      log.debug(String.format(
+          "Rerouting to raw data page for experiment %s of project %s: %s",
+          currentExperimentId, currentProjectId, routeToRawDataPage));
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToRawDataPage));
+    }
+  }
+
+
 }

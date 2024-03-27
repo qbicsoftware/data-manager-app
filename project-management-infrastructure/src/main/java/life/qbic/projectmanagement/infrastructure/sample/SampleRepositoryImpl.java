@@ -144,5 +144,10 @@ public class SampleRepositoryImpl implements SampleRepository {
     return Optional.ofNullable(qbicSampleRepository.findBySampleCode(sampleCode));
   }
 
+  @Override
+  public long countSamplesWithExperimentId(ExperimentId experimentId) {
+    return qbicSampleRepository.countAllByExperimentId(experimentId);
+  }
+
 
 }

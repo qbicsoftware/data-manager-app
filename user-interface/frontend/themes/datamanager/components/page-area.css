@@ -171,25 +171,6 @@
   display: inline-flex;
 }
 
-.measurement-details-component .no-measurements-registered-disclaimer {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-m);
-  align-items: center;
-}
-
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-title {
-  font-weight: bold;
-  font-size: var(--lumo-font-size-m);
-  margin-bottom: 0.5rem;
-}
-
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 .ontology-lookup-component {
   display: flex;
   flex-direction: column;
@@ -416,6 +397,45 @@
   display: inline-flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.raw-data-details-component .raw-data-details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .sample-information-column {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-details .raw-data-details-entry {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-details .raw-data-details-entry-value {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-details .sample-information {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-download-information-component {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-l);
+}
+
+.raw-data-download-information-component .section .section-title {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-m);
+  font-weight: bold;
 }
 
 .project-details-component .ontology-entry-collection {
