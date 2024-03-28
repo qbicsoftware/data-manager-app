@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.measurement;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -14,7 +15,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 public record NGSMeasurementMetadata(Collection<SampleCode> sampleCodes,
                                      String organisationId, String instrumentCURI, String facility,
                                      String sequencingReadType, String libraryKit, String flowCell,
-                                     String sequencingRunProtocol, String indexI7, String indexI5,
+                                     String sequencingRunProtocol, String samplePoolGroup,
+                                     String indexI7, String indexI5,
                                      String comment) implements MeasurementMetadata {
 
   @Override
@@ -22,20 +24,26 @@ public record NGSMeasurementMetadata(Collection<SampleCode> sampleCodes,
     return sampleCodes.stream().toList();
   }
 
+  @Override
+  public Optional<String> assignedSamplePoolGroup() {
+    return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
+  }
+
   public static NGSMeasurementMetadata copyWithNewProperties(
-      Collection<SampleCode> associatedSamples,
+      Collection<SampleCode> associatedSamples, String indexI7, String indexI5,
       NGSMeasurementMetadata metadata) {
     return new NGSMeasurementMetadata(
         associatedSamples.stream().toList(),
         metadata.organisationId(),
-        metadata.facility(),
         metadata.instrumentCURI(),
+        metadata.facility(),
         metadata.sequencingReadType(),
         metadata.libraryKit(),
         metadata.flowCell(),
         metadata.sequencingRunProtocol(),
-        metadata.indexI7(),
-        metadata.indexI5(),
+        metadata.samplePoolGroup(),
+        indexI7,
+        indexI5,
         metadata.comment());
   }
 }

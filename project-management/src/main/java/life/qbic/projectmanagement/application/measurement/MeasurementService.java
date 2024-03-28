@@ -76,7 +76,7 @@ public class MeasurementService {
    * @return
    * @since 1.0.0
    */
-  private static Optional<ProteomicsMeasurementMetadata> merge(
+  private static Optional<ProteomicsMeasurementMetadata> mergePxP(
       Collection<ProteomicsMeasurementMetadata> metadata) {
     if (metadata.isEmpty()) {
       return Optional.empty();
@@ -89,6 +89,32 @@ public class MeasurementService {
     var firstEntry = metadata.iterator().next();
     return Optional.of(
         ProteomicsMeasurementMetadata.copyWithNewProperties(associatedSamples, labels,
+            firstEntry));
+  }
+
+  /**
+   * Merges a collection of {@link NGSMeasurementMetadata} items into one single
+   * {@link NGSMeasurementMetadata} item.
+   * <p>
+   * The method currently considers labels to be distinctly preserved, as well as the sample codes.
+   * <p>
+   * For all other properties, there is no guarantee from which item they are derived.
+   *
+   * @param metadata a collection of metadata items to be merged into a single item
+   * @return
+   */
+  private static Optional<NGSMeasurementMetadata> mergeNGS(
+      Collection<NGSMeasurementMetadata> metadata) {
+    if (metadata.isEmpty()) {
+      return Optional.empty();
+    }
+    List<SampleCode> associatedSamples = metadata.stream().map(
+        NGSMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
+    var indexI7 = metadata.stream().map(NGSMeasurementMetadata::indexI7).findFirst().orElseThrow();
+    var indexI5 = metadata.stream().map(NGSMeasurementMetadata::indexI5).findFirst().orElseThrow();
+    var firstEntry = metadata.iterator().next();
+    return Optional.of(
+        NGSMeasurementMetadata.copyWithNewProperties(associatedSamples, indexI7, indexI5,
             firstEntry));
   }
 
@@ -252,10 +278,11 @@ public class MeasurementService {
     if (measurementMetadataList.isEmpty()) {
       return measurementMetadataList;
     }
-    //Todo how should pooled be handled in NGS?
     if (measurementMetadataList.stream()
         .allMatch(NGSMeasurementMetadata.class::isInstance)) {
-      return measurementMetadataList;
+      var ngsMeasurementMetadataList = measurementMetadataList.stream()
+          .map(NGSMeasurementMetadata.class::cast).toList();
+      return mergeBySamplePoolGroupNGS(ngsMeasurementMetadataList);
     }
     if (measurementMetadataList.stream()
         .allMatch(ProteomicsMeasurementMetadata.class::isInstance)) {
@@ -275,7 +302,7 @@ public class MeasurementService {
             .isPresent()).collect(Collectors.groupingBy(
         metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
     List<ProteomicsMeasurementMetadata> mergedPooledMeasurements = poolingGroups.values().stream()
-        .map(MeasurementService::merge).filter(Optional::isPresent).map(Optional::get).toList();
+        .map(MeasurementService::mergePxP).filter(Optional::isPresent).map(Optional::get).toList();
 
     var singleMeasurements = proteomicsMeasurementMetadataList.stream()
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
@@ -283,6 +310,23 @@ public class MeasurementService {
     return Stream.concat(singleMeasurements.stream(),
         mergedPooledMeasurements.stream()).toList();
   }
+
+  private List<NGSMeasurementMetadata> mergeBySamplePoolGroupNGS(
+      List<NGSMeasurementMetadata> ngsMeasurementMetadataList) {
+    var poolingGroups = ngsMeasurementMetadataList.stream().filter(
+        ngsMeasurementMetadata -> ngsMeasurementMetadata.assignedSamplePoolGroup()
+            .isPresent()).collect(Collectors.groupingBy(
+        metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
+    List<NGSMeasurementMetadata> mergedPooledMeasurements = poolingGroups.values().stream()
+        .map(MeasurementService::mergeNGS).filter(Optional::isPresent).map(Optional::get).toList();
+
+    var singleMeasurements = ngsMeasurementMetadataList.stream()
+        .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
+
+    return Stream.concat(singleMeasurements.stream(),
+        mergedPooledMeasurements.stream()).toList();
+  }
+
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
     return ontologyLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);

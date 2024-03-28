@@ -192,6 +192,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     Integer libraryKitIndex = columns.get(NGS_PROPERTY.LIBRARY_KIT.label());
     Integer flowCellIndex = columns.get(NGS_PROPERTY.FLOW_CELL.label());
     Integer runProtocolIndex = columns.get(NGS_PROPERTY.SEQUENCING_RUN_PROTOCOL.label());
+    Integer samplePoolIndex = columns.get(NGS_PROPERTY.SAMPLE_POOL_GROUP.label());
     Integer indexI7Index = columns.get(NGS_PROPERTY.INDEX_I7.label());
     Integer indexI5Index = columns.get(NGS_PROPERTY.INDEX_I5.label());
     Integer commentIndex = columns.get(NGS_PROPERTY.COMMENT.label());
@@ -206,6 +207,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     List<SampleCode> sampleCodes = List.of(
         SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
+
     String organisationRoRId = safeArrayAccess(columnValues, organisationColumnIndex).orElse("");
     String instrumentCURIE = safeArrayAccess(columnValues, instrumentColumnIndex).orElse("");
     String facility = safeArrayAccess(columnValues, facilityIndex).orElse("");
@@ -213,13 +215,13 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     String libraryKit = safeArrayAccess(columnValues, libraryKitIndex).orElse("");
     String flowCell = safeArrayAccess(columnValues, flowCellIndex).orElse("");
     String runProtocol = safeArrayAccess(columnValues, runProtocolIndex).orElse("");
+    String samplePool = safeArrayAccess(columnValues, samplePoolIndex).orElse("");
     String indexI7 = safeArrayAccess(columnValues, indexI7Index).orElse("");
     String indexI5 = safeArrayAccess(columnValues, indexI5Index).orElse("");
     String comment = safeArrayAccess(columnValues, commentIndex).orElse("");
-
     NGSMeasurementMetadata metadata = new NGSMeasurementMetadata(sampleCodes,
         organisationRoRId, instrumentCURIE, facility, readType,
-        libraryKit, flowCell, runProtocol, indexI7, indexI5, comment);
+        libraryKit, flowCell, runProtocol, samplePool, indexI7, indexI5, comment);
     return Result.fromValue(metadata);
   }
 
@@ -475,6 +477,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
         NGS_PROPERTY.FLOW_CELL.label());
     var sequencingRunProtocolIndex = propertyColumnMap.get(
         NGS_PROPERTY.SEQUENCING_RUN_PROTOCOL.label());
+    var samplePoolIndex = propertyColumnMap.get(
+        NGS_PROPERTY.SAMPLE_POOL_GROUP.label());
     var indexI7Index = propertyColumnMap.get(
         NGS_PROPERTY.INDEX_I7.label());
     var indexI5Index = propertyColumnMap.get(
@@ -496,13 +500,14 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     var flowCell = safeArrayAccess(metaDataValues, flowCellIndex).orElse("");
     var sequencingRunProtocol = safeArrayAccess(metaDataValues, sequencingRunProtocolIndex).orElse(
         "");
+    var samplePoolGroup = safeArrayAccess(metaDataValues, samplePoolIndex).orElse("");
     var indexI7 = safeArrayAccess(metaDataValues, indexI7Index).orElse("");
     var indexI5 = safeArrayAccess(metaDataValues, indexI5Index).orElse("");
     var comment = safeArrayAccess(metaDataValues, commentIndex).orElse("");
 
     var metadata = new NGSMeasurementMetadata(List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, facility, sequencingReadType,
-        libraryKit, flowCell, sequencingRunProtocol, indexI7, indexI5, comment);
+        libraryKit, flowCell, sequencingRunProtocol, samplePoolGroup, indexI7, indexI5, comment);
     var measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
         measurementValidationService);
     var finalValidationResult = generateModeDependentValidationResult(

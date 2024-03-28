@@ -85,19 +85,20 @@ public class MeasurementNGSValidator implements
 
   public enum NGS_PROPERTY {
     QBIC_SAMPLE_ID("qbic sample ids"),
+    SAMPLE_LABEL("sample label"),
     ORGANISATION_ID("organisation id"),
-    INSTRUMENT("instrument"),
     FACILITY("facility"),
+    INSTRUMENT("instrument"),
     SEQUENCING_READ_TYPE("sequencing read type"),
     LIBRARY_KIT("library kit"),
     FLOW_CELL("flow cell"),
     SEQUENCING_RUN_PROTOCOL("sequencing run protocol"),
+    SAMPLE_POOL_GROUP("sample pool group"),
     INDEX_I7("index i7"),
     INDEX_I5("index i5"),
     COMMENT("comment");
 
     private final String label;
-
 
     NGS_PROPERTY(String propertyLabel) {
       this.label = propertyLabel;

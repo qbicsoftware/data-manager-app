@@ -19,6 +19,7 @@ class MeasurementNGSValidatorSpec extends Specification {
             "Cool library kit",
             "Bodacious flow cell",
             "We do it by the book",
+            "We need groups",
             "Index I7 never stops",
             "Index I5 always goes",
             "Don't tell anyone this is a test"
@@ -124,6 +125,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -161,6 +163,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -195,6 +198,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -233,6 +237,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -276,6 +281,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -311,6 +317,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -350,6 +357,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -385,6 +393,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -423,6 +432,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"
@@ -458,6 +468,7 @@ class MeasurementNGSValidatorSpec extends Specification {
                 "Cool library kit",
                 "Bodacious flow cell",
                 "We do it by the book",
+                "We need groups",
                 "Index I7 never stops",
                 "Index I5 always goes",
                 "Don't tell anyone this is a test"

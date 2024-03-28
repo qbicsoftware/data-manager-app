@@ -51,7 +51,7 @@ public class NGSMeasurement implements MeasurementMetadata {
 
   @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
-  @Column(name = "registration")
+  @Column(name = "registrationTime")
   private Instant registration;
   @Embedded
   private Organisation organisation;
@@ -134,9 +134,9 @@ public class NGSMeasurement implements MeasurementMetadata {
       throw new IllegalArgumentException(
           "No sample ids provided. At least one sample id must provided for a measurement.");
     }
-    requireNonNull(measurementCode);
+    requireNonNull(measurementCode, "measurement code must not be null");
     requireNonNull(method, "method must not be null");
-    requireNonNull(method.instrument());
+    requireNonNull(method.instrument(), "instrument must not be null");
     if (!measurementCode.isNGSDomain()) {
       throw new IllegalArgumentException("NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode + "\"");
     }
