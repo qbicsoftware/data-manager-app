@@ -135,7 +135,7 @@ public class NGSMeasurement implements MeasurementMetadata {
           "No sample ids provided. At least one sample id must provided for a measurement.");
     }
     requireNonNull(measurementCode);
-    requireNonNull(method);
+    requireNonNull(method, "method must not be null");
     requireNonNull(method.instrument());
     if (!measurementCode.isNGSDomain()) {
       throw new IllegalArgumentException("NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode + "\"");
