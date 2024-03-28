@@ -365,5 +365,389 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         ]
     }
 
-    //Todo Extend test for the other mandatory metadata
+
+    def "If no instrument Curie for the instrument information is provided, the validation must fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Instrument: missing mandatory metadata"
+    }
+
+    def "If a valid instrument curie for the instrument information is provided, the validation must pass"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                validInstrumentCurie, //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(validMetadata)
+
+        then:
+        result.allPassed()
+        !result.containsWarnings()
+        !result.containsFailures()
+
+        where:
+        validInstrumentCurie << [
+                "EFO:0004205", // Illumina MiSeq
+        ]
+    }
+
+
+    def "If no value was provided for the facility information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Facility: missing mandatory metadata"
+    }
+
+    def "If no value was provided for the fraction name information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Fraction Name: missing mandatory metadata"
+    }
+
+    def "If no value was provided for the digestion enzyme information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Digestion Enzyme: missing mandatory metadata"
+    }
+
+    def "If no value was provided for the digestion method information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Digestion Method: missing mandatory metadata"
+    }
+
+    def "If no value was provided for the enrichment method information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "",
+                "1337",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Enrichment Method: missing mandatory metadata"
+    }
+
+    def "If no value was provided for the injection volume information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "",
+                "12",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "Injection Volume: missing mandatory metadata"
+    }
+
+    def "If no value was provided for the LC column information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "",
+                "LCMS Method 1",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "LC Column: missing mandatory metadata"
+    }
+
+    def "If no value was provided for the LCMS method information the validation will fail"() {
+        given:
+        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+                "https://ror.org/03a1kwz48", //Universität Tübingen,
+                "EFO:0004205", //Illumina MiSeq
+                "1",
+                "The geniuses of ITSS",
+                "4 Nations lived in harmony",
+                "CASPASE6",
+                "in solition",
+                "Enrichment Index",
+                "1337",
+                "12",
+                "",
+                [new Labeling("QTEST001AE", "isotope", "N15")],
+                "Don't tell anyone this is a test"
+        )
+
+        and:
+        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+
+        and:
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+
+
+        when:
+        def result = validator.validate(invalidMetadata)
+
+        then:
+        !result.allPassed()
+        !result.containsWarnings()
+        result.containsFailures()
+        result.failedEntries() == 1
+        result.failures()[0] == "LCMS Method: missing mandatory metadata"
+    }
+
 }

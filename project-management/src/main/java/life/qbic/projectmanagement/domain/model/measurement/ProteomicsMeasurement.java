@@ -92,7 +92,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   private String fraction = "";
 
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
+  @CollectionTable(name = "proteomics_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;
 
   @ElementCollection(targetClass = ProteomicsLabeling.class, fetch = FetchType.EAGER)
@@ -108,7 +108,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
       MeasurementCode measurementCode,
       Organisation organisation, ProteomicsMethodMetadata method, Instant registration) {
     this.projectId = requireNonNull(projectId, "projectId must not be null");
-    evaluateMandatorMetadata(
+    evaluateMandatoryMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
     labeling = new HashSet<>();
@@ -127,7 +127,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.registration = registration;
   }
 
-  private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
+  private static void evaluateMandatoryMetadata(ProteomicsMethodMetadata method)
       throws IllegalArgumentException {
     if (method.instrument() == null) {
       throw new IllegalArgumentException("Instrument: Missing metadata.");
