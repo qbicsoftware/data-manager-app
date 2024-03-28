@@ -18,6 +18,7 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import org.springframework.security.access.AccessDeniedException;
 
 /**
  * Project Creation Dialog
@@ -80,8 +82,11 @@ public class AddProjectDialog extends Dialog {
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         ontologyLookupService);
 
-    List<Contact> knownContacts = contactRepository.findAll().stream()
-        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();
+    List<Contact> knownContacts = new ArrayList<>();
+    try {
+      knownContacts = contactRepository.findAll().stream()
+          .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();
+    } catch (AccessDeniedException e) {}
     collaboratorsLayout.setPrincipalInvestigators(knownContacts);
     collaboratorsLayout.setResponsiblePersons(knownContacts);
     collaboratorsLayout.setProjectManagers(knownContacts);

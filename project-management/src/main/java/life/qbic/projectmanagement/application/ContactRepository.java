@@ -2,14 +2,17 @@ package life.qbic.projectmanagement.application;
 
 import java.util.List;
 import life.qbic.projectmanagement.domain.model.project.Contact;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ContactRepository {
 
-  public List<Contact> findAll() {
-    //TODO implement
-    return dummyContacts();
+  @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
+  public List<Contact> findAll() throws AccessDeniedException {
+      //TODO implement
+      return dummyContacts();
   }
 
   private static List<Contact> dummyContacts() {

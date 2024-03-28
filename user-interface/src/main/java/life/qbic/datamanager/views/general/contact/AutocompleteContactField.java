@@ -143,6 +143,7 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
   public void setItems(List<Contact> contacts) {
     contactSelection.setItems(contacts);
+    contactSelection.setVisible(!contacts.isEmpty());
   }
 
   @Override
