@@ -184,7 +184,7 @@ public class MeasurementProteomicsValidator implements
       var queryMeasurement = measurementService.findProteomicsMeasurement(measurementId);
       return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
           ValidationResult.withFailures(1,
-              List.of("Measurement ID: Unknown measurement " + measurementId)));
+              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
     }
 
     ValidationResult validateInstrument(String instrument) {

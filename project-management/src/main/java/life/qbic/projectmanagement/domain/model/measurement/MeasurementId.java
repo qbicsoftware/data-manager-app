@@ -67,7 +67,7 @@ public class MeasurementId implements Serializable {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", SampleId.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", MeasurementId.class.getSimpleName() + "[", "]")
         .add("uuid=" + uuid)
         .toString();
   }

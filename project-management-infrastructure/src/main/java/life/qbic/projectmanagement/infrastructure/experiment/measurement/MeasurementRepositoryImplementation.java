@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
@@ -92,7 +93,12 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public void save(ProteomicsMeasurement measurement) {
+  public void update(ProteomicsMeasurement measurement) {
     pxpMeasurementJpaRepo.save(measurement);
+  }
+
+  @Override
+  public void updateAll(Collection<ProteomicsMeasurement> measurements) {
+    pxpMeasurementJpaRepo.saveAll(measurements);
   }
 }

@@ -33,7 +33,7 @@ public class MeasurementProteomicsValidationExecutor implements
   }
 
   @Override
-  public ValidationResult validateEdit(ProteomicsMeasurementMetadata metadata) {
+  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata) {
     return measurementValidationService.validateProteomicsUpdate(metadata);
   }
 }

@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -194,7 +195,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public void setLabeling(Collection<ProteomicsLabeling> labeling) {
-    this.labeling = Set.copyOf(labeling.stream().toList());
+    this.labeling = new HashSet<>(labeling);
   }
 
   public void setFraction(String fraction) {
@@ -220,7 +221,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public Collection<SampleId> measuredSamples() {
-    return measuredSamples;
+    return measuredSamples.stream().toList();
   }
 
   public OntologyTerm instrument() {

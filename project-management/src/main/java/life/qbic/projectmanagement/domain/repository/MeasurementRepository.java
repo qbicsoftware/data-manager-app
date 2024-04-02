@@ -1,9 +1,9 @@
 package life.qbic.projectmanagement.domain.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -25,5 +25,7 @@ public interface MeasurementRepository {
 
   Optional<ProteomicsMeasurement> find(String measurementCode);
 
-  void save(ProteomicsMeasurement measurement);
+  void update(ProteomicsMeasurement measurement);
+
+  void updateAll(Collection<ProteomicsMeasurement> measurement);
 }

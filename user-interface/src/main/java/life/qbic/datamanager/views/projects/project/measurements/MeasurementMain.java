@@ -67,12 +67,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final TextField measurementSearchField = new TextField();
   private final transient MeasurementService measurementService;
   private final transient MeasurementValidationService measurementValidationService;
-  private transient Context context;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
-
   private final DownloadProvider downloadProvider;
+  private transient Context context;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
@@ -136,20 +135,26 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> openEditMeasurementDialog());
-    Span buttonAndField = new Span(measurementSearchField, downloadButton, editButton, registerMeasurementButton);
+    Span buttonAndField = new Span(measurementSearchField, downloadButton, editButton,
+        registerMeasurementButton);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
   }
 
-  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
+  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog, boolean editMode) {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
       var uploads = confirmEvent.uploads();
       boolean allSuccessfull = true;
       for (var upload : uploads) {
         try {
-          measurementService.registerMultiple(upload.measurementMetadata(),
-              context.projectId().orElseThrow());
+          if (editMode) {
+            measurementService.updateMultiple(upload.measurementMetadata(),
+                context.projectId().orElseThrow());
+          } else {
+            measurementService.registerMultiple(upload.measurementMetadata(),
+                context.projectId().orElseThrow());
+          }
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
           String errorMessage = switch (measurementRegistrationException.reason()) {
@@ -176,15 +181,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void openEditMeasurementDialog() {
     var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT);
-    setupDialog(dialog);
+    setupDialog(dialog, true);
     dialog.open();
   }
 
   private void downloadMetadata() {
-    var proteomicsMeasurements = measurementService.findProteomicsMeasurements(context.experimentId().orElseThrow(() -> new ApplicationException(
-        ErrorCode.GENERAL, null)), context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+    var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
+        context.experimentId().orElseThrow(() -> new ApplicationException(
+            ErrorCode.GENERAL, null)),
+        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
     proteomicsMeasurements.size();
-    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools).flatMap(items -> items.stream()).toList();
+    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools)
+        .flatMap(items -> items.stream()).toList();
     result.size();
     proteomicsMeasurementContentProvider.setMeasurements(result);
     downloadProvider.trigger();
@@ -227,7 +235,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void openRegisterMeasurementDialog() {
     var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD);
-    setupDialog(dialog);
+    setupDialog(dialog, false);
     dialog.open();
   }
 

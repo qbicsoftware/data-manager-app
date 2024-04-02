@@ -183,6 +183,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return Result.fromValue(null);
     }
 
+    Integer measurementIdIndex = columns.getOrDefault(MeasurementProperty.MEASUREMENT_ID.label(),
+        -1);
     Integer sampleCodeColumnIndex = columns.get(PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
     Integer organisationColumnIndex = columns.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
     Integer instrumentColumnIndex = columns.get(PROTEOMICS_PROPERTY.INSTRUMENT.label());
@@ -207,6 +209,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return Result.fromError("Not enough columns provided for row: %s".formatted(row));
     }
 
+    String measurementId = safeArrayAccess(columnValues, measurementIdIndex).orElse("");
     List<SampleCode> sampleCodes = List.of(
         SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
     String organisationRoRId = safeArrayAccess(columnValues, organisationColumnIndex).orElse("");
@@ -224,7 +227,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     String label = safeArrayAccess(columnValues, labelIndex).orElse("");
     String note = safeArrayAccess(columnValues, noteIndex).orElse("");
 
-    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata("", sampleCodes,
+    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(measurementId, sampleCodes,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
@@ -385,6 +388,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       validationResult.combine(ValidationResult.withFailures(1, List.of("")));
     }
 
+    var measurementIdIndex = propertyColumnMap.getOrDefault(MeasurementProperty.MEASUREMENT_ID.label(), -1);
     var sampleCodeColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
     var organisationsColumnIndex = propertyColumnMap.get(
@@ -414,6 +418,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
 
+    var measurementId = safeArrayAccess(metaDataValues, measurementIdIndex).orElse("");
     var sampleCodes = SampleCode.create(
         safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
     var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
@@ -432,7 +437,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
     var note = safeArrayAccess(metaDataValues, noteIndex).orElse("");
 
-    var metadata = new ProteomicsMeasurementMetadata("", List.of(sampleCodes),
+    var metadata = new ProteomicsMeasurementMetadata(measurementId, List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, List.of(new Labeling(sampleCodes.code(), labelingType, label)), note);
@@ -447,7 +452,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
     return switch (mode) {
       case ADD -> measurementValidationExecutor.validateRegistration(metadata);
-      case EDIT -> measurementValidationExecutor.validateEdit(metadata);
+      case EDIT -> measurementValidationExecutor.validateUpdate(metadata);
     };
   }
 

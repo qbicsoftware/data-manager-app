@@ -62,10 +62,10 @@ public class MeasurementDomainService {
 
   public Result<ProteomicsMeasurement, ResponseCode> update(ProteomicsMeasurement measurement) {
     try {
-      measurementRepository.save(measurement);
+      measurementRepository.update(measurement);
       return Result.fromValue(measurement);
     } catch (RuntimeException e) {
-      log.error("Measurement update: Failed for measurement with id" + measurement.measurementId().value(), e);
+      log.error("Measurement update: Failed for measurement with id " + measurement.measurementId().value(), e);
     }
     return Result.fromError(ResponseCode.FAILED);
   }
