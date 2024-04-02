@@ -24,7 +24,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.access.EditUserAccessToProjectDialog.ProjectCollaborator;
+import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ConfirmEvent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
@@ -127,8 +127,10 @@ public class ProjectAccessComponent extends PageArea {
                 collaborator -> renderProjectRoleComponent(userPermissions, collaborator)))
         .setKey("projectRole");
     grid.addColumn(new ComponentRenderer<>(
-            collaborator -> collaborator.projectRole() == ProjectRole.OWNER ? new Span()
-                : new Button("Remove", clickEvent -> removeCollaborator(collaborator))))
+            collaborator ->
+                collaborator.projectRole() == ProjectRole.OWNER || isCurrentUser(collaborator)
+                    ? new Span() // you cannot remove yourself or the owner
+                    : new Button("Remove", clickEvent -> removeCollaborator(collaborator))))
         .setKey("removeButton");
     grid.sort(
         List.of(new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING),
@@ -150,8 +152,7 @@ public class ProjectAccessComponent extends PageArea {
     if (collaborator.projectRole() == ProjectRole.OWNER) {
       return new Span(labelPrefix + collaborator.projectRole().label()); //can not change owner
     }
-    if (Objects.equals(collaborator.userId(), ((QbicUserDetails) SecurityContextHolder.getContext()
-        .getAuthentication().getPrincipal()).getUserId())) {
+    if (isCurrentUser(collaborator)) {
       return new Span(labelPrefix + collaborator.projectRole().label());
     }
     if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
@@ -188,6 +189,12 @@ public class ProjectAccessComponent extends PageArea {
     return roleSelect;
   }
 
+  private static boolean isCurrentUser(ProjectAccessService.ProjectCollaborator collaborator) {
+    return Objects.equals(collaborator.userId(),
+        ((QbicUserDetails) SecurityContextHolder.getContext()
+            .getAuthentication().getPrincipal()).getUserId());
+  }
+
   private void removeCollaborator(ProjectAccessService.ProjectCollaborator collaborator) {
     ProjectId projectId = context.projectId().orElseThrow();
     projectAccessService.removeCollaborator(projectId, collaborator.userId());
@@ -220,51 +227,22 @@ public class ProjectAccessComponent extends PageArea {
 
 
   private void openAddCollaboratorDialog() {
-    EditUserAccessToProjectDialog editUserAccessToProjectDialog = new EditUserAccessToProjectDialog(
-        projectAccessService,
-        context.projectId().orElseThrow(),
-        sidRepository, userInformationService);
-    addEditUserAccessToProjectDialogListeners(editUserAccessToProjectDialog);
-    editUserAccessToProjectDialog.open();
+    List<ProjectAccessService.ProjectCollaborator> alreadyExistingCollaborators = projectAccessService.listCollaborators(
+        context.projectId().orElseThrow());
+    AddCollaboratorToProjectDialog addCollaboratorToProjectDialog = new AddCollaboratorToProjectDialog(
+        userInformationService, projectAccessService, context.projectId().orElseThrow(),
+        alreadyExistingCollaborators);
+    addCollaboratorToProjectDialog.open();
+    addCollaboratorToProjectDialog.addCancelListener(event -> event.getSource().close());
+    addCollaboratorToProjectDialog.addConfirmListener(this::onAddCollaboratorConfirmed);
   }
 
-  private void addEditUserAccessToProjectDialogListeners(
-      EditUserAccessToProjectDialog editUserAccessToProjectDialog) {
-    editUserAccessToProjectDialog.addCancelEventListener(
-        addUserToProjectDialogCancelEvent -> editUserAccessToProjectDialog.close());
-    editUserAccessToProjectDialog.addConfirmEventListener(addUserToProjectDialogConfirmEvent -> {
-      List<String> addedUsers = editUserAccessToProjectDialog.getUserSelectionContent().addedUsers()
-          .stream()
-          .map(ProjectCollaborator::userId)
-          .toList();
-      List<String> removedUsers = editUserAccessToProjectDialog.getUserSelectionContent()
-          .removedUsers()
-          .stream()
-          .map(ProjectCollaborator::userId)
-          .toList();
-      if (!addedUsers.isEmpty()) {
-        addUsersToProject(addedUsers);
-      }
-      if (!removedUsers.isEmpty()) {
-        removeUsersFromProject(removedUsers);
-      }
-      reloadProjectCollaborators(projectCollaborators, projectAccessService);
-      editUserAccessToProjectDialog.close();
-    });
-  }
-
-  private void addUsersToProject(List<String> userIDs) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    for (String userId : userIDs) {
-      projectAccessService.addCollaborator(projectId, userId, ProjectRole.READ);
-    }
-  }
-
-  private void removeUsersFromProject(List<String> userIDs) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    for (String userId : userIDs) {
-      projectAccessService.removeCollaborator(projectId, userId);
-    }
+  private void onAddCollaboratorConfirmed(ConfirmEvent event) {
+    projectAccessService.addCollaborator(context.projectId().orElseThrow(),
+        event.projectCollaborator()
+            .userId(), event.projectCollaborator().projectRole());
+    reloadProjectCollaborators(projectCollaborators, projectAccessService);
+    event.getSource().close();
   }
 
 }

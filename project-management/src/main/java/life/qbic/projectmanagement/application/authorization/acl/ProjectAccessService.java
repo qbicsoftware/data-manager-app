@@ -108,12 +108,13 @@ public interface ProjectAccessService {
   }
 
   /**
-   * Adds a collaborator to the given project
+   * Initializes an ACL for a given project with the user as owner.
    *
-   * @param projectId
-   * @param userId
-   * @param projectRole
+   * @param projectId the project id
+   * @param userId the owner
    */
+  void initializeProject(ProjectId projectId, String userId);
+
   void addCollaborator(ProjectId projectId, String userId, ProjectRole projectRole);
 
   void removeCollaborator(ProjectId projectId, String userId);

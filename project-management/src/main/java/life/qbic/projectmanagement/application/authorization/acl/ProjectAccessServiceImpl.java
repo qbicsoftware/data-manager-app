@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
@@ -23,11 +26,13 @@ import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.jdbc.JdbcMutableAclService;
 import org.springframework.security.acls.model.AccessControlEntry;
 import org.springframework.security.acls.model.Acl;
+import org.springframework.security.acls.model.AlreadyExistsException;
 import org.springframework.security.acls.model.MutableAcl;
 import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,16 +59,49 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     try {
       acl = (MutableAcl) serviceImpl.readAclById(objectIdentity, sids);
     } catch (NotFoundException e) {
-      acl = serviceImpl.createAcl(objectIdentity);
+      acl = createAclForProject(projectId, mutableAclService);
     }
     return acl;
   }
+
+  private static MutableAcl createAclForProject(ProjectId projectId,
+      MutableAclService mutableAclService) {
+    ObjectIdentityImpl objectIdentity = new ObjectIdentityImpl(Project.class, projectId);
+    JdbcMutableAclService serviceImpl = (JdbcMutableAclService) mutableAclService;
+    // these settings are necessary for MySQL to correctly throw several types of exceptions
+    // instead of an unrelated exception related to the identity function
+    serviceImpl.setClassIdentityQuery("SELECT @@IDENTITY");
+    serviceImpl.setSidIdentityQuery("SELECT @@IDENTITY");
+    return serviceImpl.createAcl(objectIdentity);
+  }
+
 
   private void fireProjectAccessGranted(String userId, ProjectId projectId) {
     var projectAccessGranted = ProjectAccessGranted.create(userId, projectId.value());
     DomainEventDispatcher.instance().dispatch(projectAccessGranted);
   }
 
+
+  @Override
+  @Transactional
+  public void initializeProject(ProjectId projectId, String userId) {
+    try {
+      MutableAcl aclForProject = createAclForProject(projectId, aclService);
+      PrincipalSid principalSid = new PrincipalSid(userId);
+      aclForProject.setOwner(principalSid);
+      var permissions = ProjectRole.OWNER.toPermissions();
+      for (Permission permission : permissions) {
+        aclForProject.insertAce(aclForProject.getEntries().size(), permission, principalSid, true);
+      }
+      aclService.updateAcl(aclForProject);
+      log.debug("Initialized project %s with owner %s".formatted(projectId.value(), userId));
+    } catch (AlreadyExistsException e) {
+      throw new ApplicationException("User %s tried to create ACL for project %s"
+          .formatted(SecurityContextHolder.getContext().getAuthentication().getName(),
+              projectId.value())
+          , e);
+    }
+  }
 
   @Override
   @Transactional
@@ -77,8 +115,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
           aclForProject.getOwner(), projectId));
       aclForProject.setOwner(principalSid);
       aclService.updateAcl(aclForProject);
-      fireProjectAccessGranted(userId, projectId);
-      return;
+//      fireProjectAccessGranted(userId, projectId);
+//      return;
     }
 
     Collection<Permission> permissions = projectRole.toPermissions();
@@ -110,14 +148,18 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     PrincipalSid principalSid = new PrincipalSid(userId);
     MutableAcl aclForProject = getAclForProject(projectId, List.of(principalSid), aclService);
     List<AccessControlEntry> entries = aclForProject.getEntries();
-    for (int entryIndex = 0; entryIndex < entries.size(); entryIndex++) {
-      AccessControlEntry accessControlEntry = entries.get(entryIndex);
-      if (accessControlEntry.getSid().equals(principalSid)) {
-        aclForProject.deleteAce(entryIndex);
+    if (Objects.isNull(entries)) {
+      log.warn("No ACEs found for project " + projectId);
+      return;
+    }
+    for (int i = entries.size() - 1; i >= 0; i--) {
+      AccessControlEntry accessControlEntry = entries.get(i);
+      if (principalSid.equals(accessControlEntry.getSid())) {
+        aclForProject.deleteAce(i);
       }
     }
-    log.debug("User %s no longer collaborates on project %s.".formatted(userId, projectId.value()));
     aclService.updateAcl(aclForProject);
+    log.debug("User %s no longer collaborates on project %s.".formatted(userId, projectId.value()));
   }
 
   @Override
@@ -292,22 +334,33 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     }
     Map<Sid, List<AccessControlEntry>> entriesBySid = acl.getEntries().stream()
         .collect(Collectors.groupingBy(AccessControlEntry::getSid));
-    // skip the owner as it is handled explicitly
+
     Set<ProjectCollaborator> otherCollaborators = entriesBySid.entrySet().stream()
         // skip the owner as it is handled explicitly
         .filter(sidListEntry -> !acl.getOwner().equals(sidListEntry.getKey()))
         .filter(sidListEntry -> sidListEntry.getKey() instanceof PrincipalSid)
+        .filter(sidListEntry -> {
+          //only show resolvable project roles
+          Set<Permission> permissions = parsePermissions(sidListEntry);
+          return ProjectRole.fromPermissions(permissions).isPresent();
+        })
         .map(sidListEntry -> {
-          Set<Permission> permissions = sidListEntry.getValue().stream()
-              .map(AccessControlEntry::getPermission)
-              .collect(Collectors.toSet());
-          ProjectRole projectRole = ProjectRole.fromPermissions(permissions).orElseThrow();
+          Set<Permission> permissions = parsePermissions(sidListEntry);
+          Optional<ProjectRole> roleFromPermissions = ProjectRole.fromPermissions(permissions);
+          ProjectRole projectRole = roleFromPermissions.orElseThrow();
           return new ProjectCollaborator(((PrincipalSid) sidListEntry.getKey()).getPrincipal(),
               projectId, projectRole);
         })
         .collect(Collectors.toUnmodifiableSet());
     collaborators.addAll(otherCollaborators);
     return collaborators;
+  }
+
+  private static Set<Permission> parsePermissions(
+      Entry<Sid, List<AccessControlEntry>> sidListEntry) {
+    return sidListEntry.getValue().stream()
+        .map(AccessControlEntry::getPermission)
+        .collect(Collectors.toSet());
   }
 
   @Override

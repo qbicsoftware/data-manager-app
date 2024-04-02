@@ -41,8 +41,6 @@ public class UserPermissionsImpl implements UserPermissions {
         PROJECT_TARGET_TYPE, BasePermission.READ);
     boolean administratesProject = aclPermissionEvaluator.hasPermission(authentication, projectId,
         PROJECT_TARGET_TYPE, BasePermission.ADMINISTRATION);
-    boolean canChangeAclAccess = authentication.getAuthorities().stream()
-        .anyMatch(it -> it.getAuthority().equals("acl:change-access"));
-    return (hasReadPermission && (canChangeAclAccess || administratesProject));
+    return (hasReadPermission && administratesProject);
   }
 }

@@ -22,13 +22,13 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
-import life.qbic.projectmanagement.application.SortOrder;
 import org.springframework.stereotype.Component;
 
 /**

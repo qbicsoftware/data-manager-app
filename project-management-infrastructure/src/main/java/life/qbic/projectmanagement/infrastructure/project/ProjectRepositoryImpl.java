@@ -64,8 +64,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     var savedProject = projectRepo.save(project);
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     var userId = ((QbicUserDetails) authentication.getPrincipal()).getUserId();
-    projectAccessService.addCollaborator(savedProject.getId(), userId,
-        ProjectAccessService.ProjectRole.OWNER);
+    projectAccessService.initializeProject(savedProject.getId(), userId);
     projectAccessService.addAuthorityAccess(savedProject.getId(),
         "ROLE_ADMIN", ProjectAccessService.ProjectRole.ADMIN);
     projectAccessService.addAuthorityAccess(savedProject.getId(), "ROLE_PROJECT_MANAGER",
