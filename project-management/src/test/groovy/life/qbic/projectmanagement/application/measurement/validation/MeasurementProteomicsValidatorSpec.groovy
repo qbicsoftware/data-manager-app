@@ -11,7 +11,7 @@ import spock.lang.Specification
 
 import java.util.stream.Collectors
 
-class MeasurementProteomicsValidatorSpec extends Specification {
+class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
     final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", [SampleCode.create("QTEST001AE")],
             "https://ror.org/03a1kwz48", //Universität Tübingen,
@@ -43,7 +43,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
 
     final MeasurementService measurementService = Mock(MeasurementService.class)
 
-    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample ids", "sample label", "organisation id", "facility", "instrument",
+    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample label", "organisation id", "facility", "instrument",
                                                     "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "labeling type", "label", "comment"])
@@ -53,7 +53,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "A complete property set must be valid no matter the letter casing style"() {
 
         when:
-        def isPxPmetadata = ProteomicsValidator.isProteomics(chaosCasing)
+        def isPxPmetadata = MeasurementProteomicsValidator.isProteomics(chaosCasing)
 
         then:
         isPxPmetadata
@@ -68,7 +68,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         given:
 
         when:
-        def isPXPmetadata = ProteomicsValidator.isProteomics(validPXPProperties)
+        def isPXPmetadata = MeasurementProteomicsValidator.isProteomics(validPXPProperties)
 
         then:
         isPXPmetadata
@@ -82,7 +82,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         missingProperties.remove(0)
 
         when:
-        def isPXPmetadata = ProteomicsValidator.isProteomics(missingProperties)
+        def isPXPmetadata = MeasurementProteomicsValidator.isProteomics(missingProperties)
 
         then:
         !isPXPmetadata
@@ -93,7 +93,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         def missingProperties = []
 
         when:
-        def isPxPmetadata = ProteomicsValidator.isProteomics(missingProperties)
+        def isPxPmetadata = MeasurementProteomicsValidator.isProteomics(missingProperties)
 
         then:
         !isPxPmetadata
