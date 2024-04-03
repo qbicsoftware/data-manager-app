@@ -162,7 +162,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private void createNGSMeasurementGrid() {
     ngsMeasurementGrid.addClassName("measurement-grid");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
-        .setHeader("Measurement Code");
+        .setHeader("Measurement ID");
     ngsMeasurementGrid.addComponentColumn(
             ngsMeasurement -> renderSampleCodes().createComponent(ngsMeasurement.measuredSamples()))
         .setHeader("Sample Codes");
@@ -190,7 +190,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addClassName("measurement-grid");
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
-        .setHeader("Measurement Code")
+        .setHeader("Measurement ID")
         .setAutoWidth(true)
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())

@@ -38,7 +38,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .sorted(Comparator.comparing(AnalysisMethod::label)).toList();
 
     if (showSampleCode) {
-      Column<SampleInfo, SampleCode> sampleCodeColumn = addColumn("Sample code",
+      Column<SampleInfo, SampleCode> sampleCodeColumn = addColumn("Sample ID",
           SampleInfo::getSampleCode, SampleCode::code, (sampleInfo, sampleCodeString) -> {
             var sampleCode =
                 sampleCodeString.isBlank() ? null : SampleCode.create(sampleCodeString);
