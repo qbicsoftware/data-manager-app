@@ -216,12 +216,6 @@ public class MeasurementProteomicsValidator implements
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.enrichmentMethod().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Enrichment Method: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
       if (measurementMetadata.injectionVolume().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Injection Volume: missing mandatory metadata")));

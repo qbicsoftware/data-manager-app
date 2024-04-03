@@ -135,17 +135,11 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     if (method.facility().isBlank()) {
       throw new IllegalArgumentException("Facility: Missing metadata");
     }
-    if (method.fractionName().isBlank()) {
-      throw new IllegalArgumentException("Cycle/Fraction Name: Missing metadata");
-    }
     if (method.digestionMethod().isBlank()) {
       throw new IllegalArgumentException("Digestion Method: Missing metadata");
     }
     if (method.digestionEnzyme().isBlank()) {
       throw new IllegalArgumentException("Digestion Enzyme: Missing metadata");
-    }
-    if (method.enrichmentMethod().isBlank()) {
-      throw new IllegalArgumentException("Enrichment Method: Missing metadata");
     }
     if (method.injectionVolume() <= 0) {
       throw new IllegalArgumentException(

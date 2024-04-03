@@ -255,19 +255,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setFlexGrow(0);
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
-        .setHeader("Measurement Label")
-        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
-        .setAutoWidth(true)
-        .setFlexGrow(1);
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
-        .setHeader("Measurement Label Type")
-        .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
-        .setAutoWidth(true)
-        .setFlexGrow(1);
     proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderSampleCodes()
             .createComponent(proteomicsMeasurement.measuredSamples()))
         .setHeader("Sample Codes")
@@ -282,6 +269,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setHeader("Facility")
         .setTooltipGenerator(ProteomicsMeasurement::facility)
         .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn)
+        .setHeader("LC Column")
+        .setTooltipGenerator(ProteomicsMeasurement::lcColumn)
+        .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderInstrument().createComponent(
                 proteomicsMeasurement.instrument()))
@@ -290,6 +281,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted())
         .setAutoWidth(true)
         .setFlexGrow(0);
+    proteomicsMeasurementGrid.addColumn(
+            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
+        .setHeader("Measurement Label Type")
+        .setTooltipGenerator(
+            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
+        .setAutoWidth(true)
+        .setFlexGrow(1);
+    proteomicsMeasurementGrid.addColumn(
+            proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
+        .setHeader("Measurement Label")
+        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
+        .setAutoWidth(true)
+        .setFlexGrow(1);
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.fraction().orElse(""))
         .setHeader("Fraction Name")
@@ -311,10 +315,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setHeader("Injection Volume")
         .setTooltipGenerator(
             proteomicsMeasurement -> String.valueOf(proteomicsMeasurement.injectionVolume()))
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn)
-        .setHeader("LC Column")
-        .setTooltipGenerator(ProteomicsMeasurement::lcColumn)
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod)
         .setHeader("LCMS Method")
