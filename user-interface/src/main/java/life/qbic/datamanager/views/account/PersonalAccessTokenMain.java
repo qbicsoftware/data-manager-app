@@ -7,16 +7,15 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
-import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
+import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
@@ -110,12 +109,11 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   private void loadGeneratedPersonalAccessTokens() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    List<PersonalAccessTokenDTO> personalAccessTokenDTOs = new ArrayList<>();
-    Collection<PersonalAccessToken> personalAccessTokens = personalAccessTokenService.find(
+    Collection<PersonalAccessToken> personalAccessTokens = personalAccessTokenService.findAll(
         details.getUserId());
-    personalAccessTokens.forEach(token -> personalAccessTokenDTOs.add(
-        new PersonalAccessTokenDTO(token.tokenId(), token.description(), Duration.between(
-            Instant.now(), token.expiration()), token.expired())));
-    personalAccessTokenComponent.setTokens(personalAccessTokenDTOs);
+    List<PersonalAccessTokenFrontendBean> personalAccessTokenFrontendBeans = personalAccessTokens.stream()
+        .map(PersonalAccessTokenFrontendBean::from)
+        .collect(Collectors.toCollection(ArrayList::new));
+    personalAccessTokenComponent.setTokens(personalAccessTokenFrontendBeans);
   }
 }

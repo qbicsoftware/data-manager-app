@@ -19,6 +19,16 @@
       "name": "org.jobrunr.database.datasource.password",
       "type": "java.lang.String",
       "description": "The password jobRunr uses for the datasource."
+    },
+    {
+      "name": "qbic.access-token.salt",
+      "type": "java.lang.String",
+      "description": "The salt used to encrypt personal access tokens."
+    },
+    {
+      "name": "qbic.access-token.iteration-count",
+      "type": "java.lang.String",
+      "description": "The number of iterations used in personal access token encryption."
     }
   ]
 }
