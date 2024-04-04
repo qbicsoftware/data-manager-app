@@ -104,6 +104,7 @@ public class AppConfig {
     return new Registration(identityService);
   }
 
+
   @Bean
   public UserInformationService userInformationService(UserRepository userRepository) {
     return new BasicUserInformationService(userRepository);

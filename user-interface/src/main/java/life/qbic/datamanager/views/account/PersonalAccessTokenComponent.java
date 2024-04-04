@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.account;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -24,6 +22,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -35,7 +34,6 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.RawToken;
-import life.qbic.logging.api.Logger;
 
 /**
  * Personal Access Token Component
@@ -53,11 +51,10 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   @Serial
   private static final long serialVersionUID = -8972242722349756972L;
-  private static final Logger log = logger(PersonalAccessTokenComponent.class);
   private static final String TITLE = "Personal Access Token (PAT)";
   private final Disclaimer noTokensRegisteredDisclaimer;
   private final Div createdTokenLayout = new Div();
-  private final VirtualList<PersonalAccessTokenDTO> personalAccessTokens = new VirtualList<>();
+  private final VirtualList<PersonalAccessTokenFrontendBean> personalAccessTokens = new VirtualList<>();
 
 
   public PersonalAccessTokenComponent() {
@@ -77,14 +74,14 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     updateUI();
   }
 
-  private ComponentRenderer<Component, PersonalAccessTokenDTO> showEncryptedPersonalAccessTokenRenderer() {
-    return new ComponentRenderer<>(personalAccessTokenDTO -> {
+  private ComponentRenderer<Component, PersonalAccessTokenFrontendBean> showEncryptedPersonalAccessTokenRenderer() {
+    return new ComponentRenderer<>(personalAccessTokenFrontendBean -> {
       Div showEncryptedPersonalTokenDetails = new Div();
-      Span personalAccessToken = new Span(personalAccessTokenDTO.tokenDescription());
-      Span expirationDate = createExpirationDate(personalAccessTokenDTO);
+      Span personalAccessToken = new Span(personalAccessTokenFrontendBean.tokenDescription());
+      Span expirationDate = createExpirationDate(personalAccessTokenFrontendBean);
       Icon deletionIcon = VaadinIcon.TRASH.create();
       deletionIcon.addClickListener(event -> fireEvent(new DeleteTokenEvent(this,
-          event.isFromClient(), personalAccessTokenDTO.tokenId())));
+          event.isFromClient(), personalAccessTokenFrontendBean.tokenId())));
       deletionIcon.addClassNames("error", "clickable");
       showEncryptedPersonalTokenDetails.addClassName(
           "show-encrypted-personal-access-token-details");
@@ -96,13 +93,14 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     });
   }
 
-  private Span createExpirationDate(PersonalAccessTokenDTO personalAccessTokenDTO) {
+  private Span createExpirationDate(
+      PersonalAccessTokenFrontendBean personalAccessTokenFrontendBean) {
     Span expirationDate = new Span();
     expirationDate.addClassName("expiration-date");
     String expirationDateText = LocalDate.now()
-        .plusDays(personalAccessTokenDTO.expirationDate.toDays()).format(
+        .plusDays(personalAccessTokenFrontendBean.expirationDate.toDays()).format(
             DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG));
-    if (personalAccessTokenDTO.expired()) {
+    if (personalAccessTokenFrontendBean.expired()) {
       Icon warningIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
       warningIcon.addClassName(IconSize.SMALL);
       expirationDate.add(warningIcon);
@@ -231,18 +229,20 @@ private void handleCopyClicked(String rawTokenText) {
   }
 
   /**
-   * Sets the provided collection of {@link PersonalAccessTokenDTO} within the
+   * Sets the provided collection of {@link PersonalAccessTokenFrontendBean} within the
    * {@link PersonalAccessTokenComponent}
    *
-   * @param personalAccessTokenDTOs Collection of {@link PersonalAccessTokenDTO} for the logged-in
+   * @param personalAccessTokenFrontendBeans Collection of {@link PersonalAccessTokenFrontendBean} for the logged-in
    *                                user to be displayed within {@link VirtualList} the component
    */
-  public void setTokens(Collection<PersonalAccessTokenDTO> personalAccessTokenDTOs) {
+  public void setTokens(
+      Collection<PersonalAccessTokenFrontendBean> personalAccessTokenFrontendBeans) {
     //Each time the component is updated the generated token should not be visible anymore(e.g. deletion, adding another token etc.)
     createdTokenLayout.removeAll();
     //Sort list so the tokens with the remaining duration of expiration date is on top
-    List<PersonalAccessTokenDTO> sortedTokenList = personalAccessTokenDTOs.stream()
-        .sorted(Comparator.comparing(PersonalAccessTokenDTO::expirationDate, Duration::compareTo)
+    List<PersonalAccessTokenFrontendBean> sortedTokenList = personalAccessTokenFrontendBeans.stream()
+        .sorted(Comparator.comparing(PersonalAccessTokenFrontendBean::expirationDate,
+                Duration::compareTo)
             .reversed())
         .toList();
     personalAccessTokens.setItems(sortedTokenList);
@@ -332,24 +332,31 @@ private void handleCopyClicked(String rawTokenText) {
   }
 
   /**
-   * PersonalAccessTokenDTO
+   * PersonalAccessTokenFrontendBean
    * <p>
    * Class which is used to store and display the frontend relevant properties of the
    * {@link PersonalAccessToken} in the {@link PersonalAccessTokenComponent}
    */
-  public static class PersonalAccessTokenDTO {
+  public static class PersonalAccessTokenFrontendBean {
 
     private final String tokenId;
     private String tokenDescription;
     private Duration expirationDate;
     private final boolean hasExpired;
 
-    public PersonalAccessTokenDTO(String tokenId, String tokenDescription,
+    public PersonalAccessTokenFrontendBean(String tokenId, String tokenDescription,
         Duration expirationDate, boolean hasExpired) {
       this.tokenId = tokenId;
       this.tokenDescription = tokenDescription;
       this.expirationDate = expirationDate;
       this.hasExpired = hasExpired;
+    }
+
+    public static PersonalAccessTokenFrontendBean from(PersonalAccessToken personalAccessToken) {
+      return new PersonalAccessTokenFrontendBean(personalAccessToken.tokenId(),
+          personalAccessToken.description(), Duration.between(
+          Instant.now(), personalAccessToken.expiration()),
+          personalAccessToken.expired());
     }
 
     public String tokenId() {

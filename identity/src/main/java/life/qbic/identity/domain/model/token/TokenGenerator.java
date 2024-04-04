@@ -22,9 +22,7 @@ public class TokenGenerator {
 
   private static final int TOKEN_LENGTH = 32;
 
-  public TokenGenerator() {
-    /* Tokens can and should be generated via the token() method within the generator;
-     */
+  private TokenGenerator() {
   }
 
   private static Stream<Character> getRandomAlphabet() {
@@ -48,7 +46,7 @@ public class TokenGenerator {
    *
    * @since 1.0.0
    */
-  public String token() {
+  public static String token() {
     var randomSequence = new ArrayList<>(
         Stream.concat(getRandomAlphabet(), getRandomNumber()).toList());
     Collections.shuffle(randomSequence);
