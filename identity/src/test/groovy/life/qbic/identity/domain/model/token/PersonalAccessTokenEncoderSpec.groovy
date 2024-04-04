@@ -8,7 +8,7 @@ import java.util.stream.Collectors
 class PersonalAccessTokenEncoderSpec extends Specification {
 
     final int validIterationCount = 100_000
-    final String validSalt = "000102030405060708090a0b0c0d" //14 bytes -> 126bit
+    final String validSalt = "000102030405060708090a0b0c0d0e0f" //16 bytes -> 128bit
 
     def "when a token is encoded then the encoded token is not the original input"() {
         given:
@@ -90,7 +90,7 @@ class PersonalAccessTokenEncoderSpec extends Specification {
     }
 
     def "when the salt has #numberOfBytes bytes then fail"() {
-        when: "the salt has less than 126 bit"
+        when: "the salt has less than 128 bit"
         new PersonalAccessTokenEncoder(salt, validIterationCount)
 
         then: "fail"
@@ -102,6 +102,8 @@ class PersonalAccessTokenEncoderSpec extends Specification {
                 1,
                 12,
                 13,
+                14,
+                15,
                 PersonalAccessTokenEncoder.EXPECTED_MIN_SALT_BYTES - 1
         ]
 
@@ -131,9 +133,9 @@ class PersonalAccessTokenEncoderSpec extends Specification {
         salt = generateRandomSalt(PersonalAccessTokenEncoder.EXPECTED_MIN_SALT_BYTES + 1)
     }
 
-    def "expect minimum salt bytes to be at least 14"() {
+    def "expect minimum salt bytes to be at least 16"() {
         expect:
-        PersonalAccessTokenEncoder.EXPECTED_MIN_SALT_BYTES >= 14
+        PersonalAccessTokenEncoder.EXPECTED_MIN_SALT_BYTES >= 16
     }
 
     def "when the salt has at least the minimum expected bits then succeed"() {

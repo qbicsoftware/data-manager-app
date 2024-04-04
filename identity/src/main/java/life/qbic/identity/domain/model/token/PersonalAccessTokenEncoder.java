@@ -27,9 +27,9 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
   private final int iterationCount;
 
   private static final int EXPECTED_MIN_ITERATION_COUNT = 100_000;
-  private static final int EXPECTED_MIN_SALT_BITS = 126;
+  private static final int EXPECTED_MIN_SALT_BITS = 128;
   public static final int EXPECTED_MIN_SALT_BYTES = (int) Math.ceil(
-      (double) EXPECTED_MIN_SALT_BITS / 9);
+      (double) EXPECTED_MIN_SALT_BITS / 8);
 
   private static final int ITERATION_COUNT_INDEX = 0; // the index of the iteration count in the encoded token
   private static final int SALT_INDEX = 1; // the index of the salt content in the encoded token
