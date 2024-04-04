@@ -3,7 +3,6 @@ package life.qbic.identity.domain.model.token;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
@@ -24,10 +23,13 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
 
   private static final Logger log = logger(PersonalAccessTokenEncoder.class);
 
-  private final String salt;
+  private final byte[] salt;
   private final int iterationCount;
 
   private static final int EXPECTED_MIN_ITERATION_COUNT = 100_000;
+  private static final int EXPECTED_MIN_SALT_BITS = 126;
+  public static final int EXPECTED_MIN_SALT_BYTES = (int) Math.ceil(
+      (double) EXPECTED_MIN_SALT_BITS / 9);
 
   private static final int ITERATION_COUNT_INDEX = 0; // the index of the iteration count in the encoded token
   private static final int SALT_INDEX = 1; // the index of the salt content in the encoded token
@@ -36,9 +38,10 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
   public PersonalAccessTokenEncoder(
       @Value("${qbic.access-token.salt}") String salt,
       @Value("${qbic.access-token.iteration-count}") int iterationCount) {
-    this.salt = requireNonNull(salt, "salt must not be null");
-    if (this.salt.isBlank()) {
-      throw new IllegalArgumentException("salt must not be blank");
+    this.salt = fromHex(requireNonNull(salt, "salt must not be null"));
+    if (this.salt.length < EXPECTED_MIN_SALT_BYTES) {
+      throw new IllegalArgumentException(
+          "salt must have at least " + EXPECTED_MIN_SALT_BITS + " bits.");
     }
     if (iterationCount < EXPECTED_MIN_ITERATION_COUNT) {
       throw new IllegalArgumentException(
@@ -57,20 +60,15 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
 
   @Override
   public String encode(char[] token) {
-    String saltyString = requireNonNull(this.salt, "this.salt must not be null");
-    if (saltyString.isBlank()) {
-      throw new RuntimeException("Salt cannot be blank");
-    }
     var iterationCountCopy = this.iterationCount;
-    byte[] saltBytes = saltyString.getBytes(StandardCharsets.UTF_8);
-    byte[] hash = pbe(token, saltBytes, iterationCountCopy);
-    return iterationCountCopy + ":" + toHex(saltBytes) + ":" + toHex(hash);
+    byte[] hash = pbe(token, this.salt, iterationCountCopy);
+    return iterationCountCopy + ":" + toHex(this.salt) + ":" + toHex(hash);
   }
 
   @Override
   public boolean matches(char[] token, String encodedToken) {
     byte[] readSalt = readSalt(encodedToken);
-    if (!Arrays.equals(readSalt, this.salt.getBytes(StandardCharsets.UTF_8))) {
+    if (!Arrays.equals(readSalt, this.salt)) {
       log.warn("Personal access token has different salt than currently configured.");
     }
     int readIterationCount = readIterationCount(encodedToken);
@@ -135,7 +133,11 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
   private static byte[] fromHex(String hex) {
     byte[] binary = new byte[hex.length() / 2];
     for (int i = 0; i < binary.length; i++) {
-      binary[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
+      var startIdxInclusive = i * 2;
+      var endIdxInclusive =
+          startIdxInclusive + 1 >= hex.length() ? startIdxInclusive : startIdxInclusive + 1;
+      binary[i] = (byte) Integer.parseInt(
+          hex.substring(startIdxInclusive, endIdxInclusive + 1), 16);
     }
     return binary;
   }
