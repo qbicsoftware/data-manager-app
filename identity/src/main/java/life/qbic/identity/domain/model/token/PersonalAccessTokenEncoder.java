@@ -27,7 +27,7 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
   private final String salt;
   private final int iterationCount;
 
-  private static final int EXPECTED_MIN_ITERATION_COUNT = 10_000;
+  private static final int EXPECTED_MIN_ITERATION_COUNT = 100_000;
 
   private static final int ITERATION_COUNT_INDEX = 0; // the index of the iteration count in the encoded token
   private static final int SALT_INDEX = 1; // the index of the salt content in the encoded token
@@ -40,13 +40,10 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
     if (this.salt.isBlank()) {
       throw new IllegalArgumentException("salt must not be blank");
     }
-    if (iterationCount <= 0) {
-      throw new IllegalArgumentException("iterationCount must be greater than 0");
-    }
-    if (iterationCount <= EXPECTED_MIN_ITERATION_COUNT) {
-      log.warn(
-          "Low iteration count for token encryption detected n=%d. Expected minimal iteration count is n=%d".formatted(
-              iterationCount, EXPECTED_MIN_ITERATION_COUNT));
+    if (iterationCount < EXPECTED_MIN_ITERATION_COUNT) {
+      throw new IllegalArgumentException(
+          "Iteration count n=" + iterationCount + " cannot be less than n="
+              + EXPECTED_MIN_ITERATION_COUNT);
     }
     this.iterationCount = iterationCount;
   }
