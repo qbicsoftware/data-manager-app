@@ -113,4 +113,47 @@ class PersonalAccessTokenEncoderSpec extends Specification {
         where:
         count << [-100, -1, 0]
     }
+
+    def "when the iteration count is less than the expected minimal iteration count then throw IllegalArgumentException"() {
+        when: "the iteration count is less than the expected minimal iteration count"
+        new PersonalAccessTokenEncoder("1234", count)
+        then: "fail"
+        thrown(IllegalArgumentException)
+        where:
+        count << [
+                -100,
+                0,
+                100,
+                1_000,
+                10_000,
+                PersonalAccessTokenEncoder.EXPECTED_MIN_ITERATION_COUNT - 1
+        ]
+    }
+
+    def "when the iteration count is exactly the expected minimal iteration count then no IllegalArgumentException is thrown"() {
+        when: "the iteration count is exactly the expected minimal iteration count"
+        new PersonalAccessTokenEncoder("1234", count)
+
+        then: "all good"
+        noExceptionThrown()
+
+        where:
+        count = PersonalAccessTokenEncoder.EXPECTED_MIN_ITERATION_COUNT
+    }
+
+    def "when the iteration count is greater than the expected minimal iteration count then no IllegalArgumentException is thrown"() {
+        when: "the iteration count is greater than the expected minimal iteration count"
+        new PersonalAccessTokenEncoder("1234", count)
+
+        then: "no IllegalArgumentException is thrown"
+        noExceptionThrown()
+
+        where:
+        count = PersonalAccessTokenEncoder.EXPECTED_MIN_ITERATION_COUNT + 1
+    }
+
+    def "expect the minimal iteration count to be at least 100_000"() {
+        expect:
+        PersonalAccessTokenEncoder.EXPECTED_MIN_ITERATION_COUNT >= 100_000
+    }
 }
