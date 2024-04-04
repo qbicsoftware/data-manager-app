@@ -2,7 +2,7 @@ package life.qbic.identity.domain.model.token
 
 import spock.lang.Specification
 
-class PersonalAccessTokenEncoderTest extends Specification {
+class PersonalAccessTokenEncoderSpec extends Specification {
 
     def "when a token is encoded then the encoded token is not the original input"() {
         given:
