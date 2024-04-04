@@ -62,9 +62,6 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
       throw new RuntimeException("Salt cannot be blank");
     }
     var iterationCountCopy = this.iterationCount;
-    if (iterationCountCopy <= EXPECTED_MIN_ITERATION_COUNT) {
-      log.warn("Low iteration count for personal access token encryption");
-    }
     byte[] saltBytes = saltyString.getBytes(StandardCharsets.UTF_8);
     byte[] hash = pbe(token, saltBytes, iterationCountCopy);
     return iterationCountCopy + ":" + toHex(saltBytes) + ":" + toHex(hash);
