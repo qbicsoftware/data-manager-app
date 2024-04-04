@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.account;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -16,10 +14,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenDTO;
+import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.identity.domain.model.token.PersonalAccessToken;
-import life.qbic.logging.api.Logger;
 
 
 /**
@@ -31,12 +28,11 @@ import life.qbic.logging.api.Logger;
  */
 public class AddPersonalAccessTokenDialog extends DialogWindow {
 
-  private static final Logger log = logger(AddPersonalAccessTokenDialog.class);
   @Serial
   private static final long serialVersionUID = 6149070385320827888L;
   private final TextField tokenDescription = new TextField();
   private final Select<Duration> expirationDate = new Select<>();
-  private final Binder<PersonalAccessTokenDTO> personalAccessTokenDTOBinder;
+  private final Binder<PersonalAccessTokenFrontendBean> personalAccessTokenDTOBinder;
 
   public AddPersonalAccessTokenDialog() {
     setHeaderTitle("Generate Personal Access Token");
@@ -53,15 +49,15 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
       expirationDate.setHelperText("The token will expire " + formattedDate);
     });
     expirationDate.addClassName("expiration-date");
-    personalAccessTokenDTOBinder = new Binder<>(PersonalAccessTokenDTO.class);
+    personalAccessTokenDTOBinder = new Binder<>(PersonalAccessTokenFrontendBean.class);
     personalAccessTokenDTOBinder.forField(tokenDescription)
         .asRequired("Please provide a token description")
-        .bind((PersonalAccessTokenDTO::tokenDescription),
-            PersonalAccessTokenDTO::setTokenDescription);
+        .bind((PersonalAccessTokenFrontendBean::tokenDescription),
+            PersonalAccessTokenFrontendBean::setTokenDescription);
     personalAccessTokenDTOBinder.forField(expirationDate)
         .asRequired("Please provide a valid expiration date")
-        .bind(PersonalAccessTokenDTO::expirationDate,
-            PersonalAccessTokenDTO::setExpirationDate);
+        .bind(PersonalAccessTokenFrontendBean::expirationDate,
+            PersonalAccessTokenFrontendBean::setExpirationDate);
     add(tokenDescription);
     add(expirationDate);
     addClassName("add-personal-access-token-dialog");
@@ -85,9 +81,9 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
       personalAccessTokenDTOBinder.validate();
       return;
     }
-    PersonalAccessTokenDTO personalAccessTokenDTO = new PersonalAccessTokenDTO(
+    PersonalAccessTokenFrontendBean personalAccessTokenFrontendBean = new PersonalAccessTokenFrontendBean(
         "My new Id", tokenDescription.getValue(), expirationDate.getValue(), false);
-    fireEvent(new ConfirmEvent(this, true, personalAccessTokenDTO));
+    fireEvent(new ConfirmEvent(this, true, personalAccessTokenFrontendBean));
   }
 
   private Duration computeExpirationDate(Long addedDays) {
@@ -115,11 +111,11 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<AddPersonalAccessTokenDialog> {
 
-    public PersonalAccessTokenDTO personalAccessTokenDTO() {
-      return personalAccessTokenDTO;
+    public PersonalAccessTokenFrontendBean personalAccessTokenDTO() {
+      return personalAccessTokenFrontendBean;
     }
 
-    private final PersonalAccessTokenDTO personalAccessTokenDTO;
+    private final PersonalAccessTokenFrontendBean personalAccessTokenFrontendBean;
 
 
     /**
@@ -131,9 +127,9 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
      *                   side, <code>false</code> otherwise
      */
     public ConfirmEvent(AddPersonalAccessTokenDialog source, boolean fromClient,
-        PersonalAccessTokenDTO personalAccessTokenDTO) {
+        PersonalAccessTokenFrontendBean personalAccessTokenFrontendBean) {
       super(source, fromClient);
-      this.personalAccessTokenDTO = personalAccessTokenDTO;
+      this.personalAccessTokenFrontendBean = personalAccessTokenFrontendBean;
     }
 
   }
