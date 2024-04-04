@@ -109,7 +109,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
       MeasurementCode measurementCode,
       Organisation organisation, ProteomicsMethodMetadata method, Instant registration) {
     this.projectId = requireNonNull(projectId, "projectId must not be null");
-    evaluateMandatorMetadata(
+    evaluateMandatoryMetadata(
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
     labeling = new HashSet<>();
@@ -129,7 +129,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.fraction = method.fractionName();
   }
 
-  private static void evaluateMandatorMetadata(ProteomicsMethodMetadata method)
+  private static void evaluateMandatoryMetadata(ProteomicsMethodMetadata method)
       throws IllegalArgumentException {
     if (method.instrument() == null) {
       throw new IllegalArgumentException("Instrument: Missing metadata.");
@@ -137,17 +137,11 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     if (method.facility().isBlank()) {
       throw new IllegalArgumentException("Facility: Missing metadata");
     }
-    if (method.fractionName().isBlank()) {
-      throw new IllegalArgumentException("Cycle/Fraction Name: Missing metadata");
-    }
     if (method.digestionMethod().isBlank()) {
       throw new IllegalArgumentException("Digestion Method: Missing metadata");
     }
     if (method.digestionEnzyme().isBlank()) {
       throw new IllegalArgumentException("Digestion Enzyme: Missing metadata");
-    }
-    if (method.enrichmentMethod().isBlank()) {
-      throw new IllegalArgumentException("Enrichment Method: Missing metadata");
     }
     if (method.injectionVolume() <= 0) {
       throw new IllegalArgumentException(
