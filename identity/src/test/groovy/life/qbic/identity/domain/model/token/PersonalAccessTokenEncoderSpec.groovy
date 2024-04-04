@@ -4,10 +4,12 @@ import spock.lang.Specification
 
 class PersonalAccessTokenEncoderSpec extends Specification {
 
+    final int validIterationCount = 100_000
+
     def "when a token is encoded then the encoded token is not the original input"() {
         given:
         String salt = "1234"
-        var iterationCount = 10_000
+        var iterationCount = validIterationCount
         PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, iterationCount)
         var secret = "Hello World!".toCharArray()
 
@@ -21,8 +23,7 @@ class PersonalAccessTokenEncoderSpec extends Specification {
     def "expect two different tokens to lead to different encoded outputs"() {
         given:
         String salt = "1234"
-        var iterationCount = 10_000
-        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, iterationCount)
+        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, validIterationCount)
         var token = "Hello World!"
 
         expect:
@@ -41,23 +42,21 @@ class PersonalAccessTokenEncoderSpec extends Specification {
     def "when a token is encoded then the encoded token matches the token pattern"() {
         given:
         String salt = "1234"
-        var iterationCount = 10_000
-        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, iterationCount)
+        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, validIterationCount)
         var secret = "Hello World!".toCharArray()
 
         when: "a token is encoded"
         var encodedToken = tokenEncoderUnderTest.encode(secret)
 
         then: "the encoded token matches the token pattern"
-        encodedToken.matches("^" + iterationCount + ":.+:.+\$")
+        encodedToken.matches("^" + validIterationCount + ":.+:.+\$")
 
     }
 
     def "when a token is encrypted and compared to its raw form then the comparison succeeds"() {
         given:
         String salt = "1234"
-        var iterationCount = 10_000
-        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, iterationCount)
+        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, validIterationCount)
 
         when: "a token is encrypted and compared to its raw form"
         var encodedToken = tokenEncoderUnderTest.encode(secret)
@@ -76,8 +75,7 @@ class PersonalAccessTokenEncoderSpec extends Specification {
     def "expect the comparison to fail for non-matching tokens"() {
         given:
         String salt = "1234"
-        var iterationCount = 10_000
-        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, iterationCount)
+        PersonalAccessTokenEncoder tokenEncoderUnderTest = new PersonalAccessTokenEncoder(salt, validIterationCount)
         var secret = "Hello World!".toCharArray()
 
         expect:
@@ -93,14 +91,14 @@ class PersonalAccessTokenEncoderSpec extends Specification {
 
     def "when no salt is provided then fail"() {
         when: "no salt is provided"
-        new PersonalAccessTokenEncoder(null, 10_000)
+        new PersonalAccessTokenEncoder(null, validIterationCount)
         then: "fail"
         thrown(RuntimeException)
     }
 
     def "when an empty salt is provided then fail"() {
         when: "no salt is provided"
-        new PersonalAccessTokenEncoder("", 10_000)
+        new PersonalAccessTokenEncoder("", validIterationCount)
         then: "fail"
         thrown(RuntimeException)
     }
@@ -126,6 +124,7 @@ class PersonalAccessTokenEncoderSpec extends Specification {
                 100,
                 1_000,
                 10_000,
+                99_999,
                 PersonalAccessTokenEncoder.EXPECTED_MIN_ITERATION_COUNT - 1
         ]
     }
