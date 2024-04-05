@@ -1,5 +1,7 @@
 package life.qbic.identity.application.token;
 
+import static java.util.Objects.requireNonNull;
+
 import java.time.Duration;
 import java.util.Collection;
 import life.qbic.identity.api.PersonalAccessToken;
@@ -7,6 +9,7 @@ import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
 import life.qbic.identity.api.UnknownUserIdException;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.domain.model.token.TokenEncoder;
 import life.qbic.identity.domain.model.token.TokenGenerator;
 import life.qbic.identity.domain.model.token.TokenRepository;
 import org.springframework.stereotype.Service;
@@ -22,13 +25,16 @@ import org.springframework.stereotype.Service;
 public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenService {
 
   private final UserInformationService userInformationService;
-
   private final TokenRepository tokenRepository;
+  private final TokenEncoder tokenEncoder;
 
   public PersonalAccessTokenServiceImpl(UserInformationService basicUserInformationService,
-      TokenRepository tokenRepository) {
-    this.userInformationService = basicUserInformationService;
-    this.tokenRepository = tokenRepository;
+      TokenRepository tokenRepository,
+      TokenEncoder tokenEncoder) {
+    this.userInformationService = requireNonNull(basicUserInformationService,
+        "basicUserInformationService must not be null");
+    this.tokenRepository = requireNonNull(tokenRepository, "tokenRepository must not be null");
+    this.tokenEncoder = requireNonNull(tokenEncoder, "tokenEncoder must not be null");
   }
 
   private static PersonalAccessToken convert(
@@ -49,16 +55,16 @@ public class PersonalAccessTokenServiceImpl implements PersonalAccessTokenServic
   }
 
   private RawToken processTokenRequest(String userId, String description, Duration duration) {
-    TokenGenerator tokenGenerator = new TokenGenerator();
-    String rawToken = tokenGenerator.token();
-    var token = life.qbic.identity.domain.model.token.PersonalAccessToken.create(userId,
-        description, duration, rawToken);
+    String rawToken = TokenGenerator.token();
+    String encodedToken = tokenEncoder.encode(rawToken.toCharArray());
+    var token = new life.qbic.identity.domain.model.token.PersonalAccessToken(userId, description,
+        duration, encodedToken);
     tokenRepository.save(token);
     return new RawToken(rawToken);
   }
 
   @Override
-  public Collection<PersonalAccessToken> find(String userId) {
+  public Collection<PersonalAccessToken> findAll(String userId) {
     return tokenRepository.findAllByUserId(userId).stream()
         .map(PersonalAccessTokenServiceImpl::convert).toList();
   }
