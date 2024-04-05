@@ -89,11 +89,11 @@ public class NGSMeasurement implements MeasurementMetadata {
     measuredSamples.addAll(sampleIds);
     this.id = measurementId;
     this.projectId = requireNonNull(projectId, "projectId must not be null");
-    this.organisation = organisation;
-    this.instrument = method.instrument();
-    this.measurementCode = measurementCode;
-    this.facility = method.facility();
-    this.sequencingReadType = method.sequencingReadType();
+    this.organisation = requireNonNull(organisation, "organisation must not be null");
+    this.instrument = requireNonNull(method.instrument(), "instrument must not be null");
+    this.measurementCode = requireNonNull(measurementCode, "measurement code must not be null");
+    this.facility = requireNonNull(method.facility(), "facility must not be null");
+    this.sequencingReadType = requireNonNull(method.sequencingReadType(), "read type must not be null");
     this.libraryKit = method.libraryKit();
     this.flowCell = method.flowCell();
     this.sequencingRunProtocol = method.sequencingRunProtocol();

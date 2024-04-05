@@ -598,7 +598,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         result.failures()[0] == "Digestion Method: missing mandatory metadata"
     }
 
-    def "If no value was provided for the enrichment method information the validation will fail"() {
+    def "If no value was provided for the enrichment method information the validation will not fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
@@ -629,11 +629,9 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         def result = validator.validate(invalidMetadata)
 
         then:
-        !result.allPassed()
+        result.allPassed()
         !result.containsWarnings()
-        result.containsFailures()
-        result.failedEntries() == 1
-        result.failures()[0] == "Enrichment Method: missing mandatory metadata"
+        !result.containsFailures()
     }
 
     def "If no value was provided for the injection volume information the validation will fail"() {
