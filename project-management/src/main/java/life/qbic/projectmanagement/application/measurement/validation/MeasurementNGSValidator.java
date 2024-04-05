@@ -1,9 +1,6 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Pattern;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
@@ -51,15 +48,9 @@ public class MeasurementNGSValidator implements
     if (properties.size() != NGS_PROPERTY.values().length) {
       return false;
     }
-    for (NGS_PROPERTY ngsProperty : NGS_PROPERTY.values()) {
-      var propertyFound = properties.stream()
-          .filter(property -> Objects.equals(property.toLowerCase(), ngsProperty.label()))
-          .findAny();
-      if (propertyFound.isEmpty()) {
-        return false;
-      }
-    }
-    return true;
+    var providedNGSProperties = properties.stream().map(String::toLowerCase).toList();
+    var expectedNGSProperties = Arrays.stream(NGS_PROPERTY.values()).map(NGS_PROPERTY::label).toList();
+    return new HashSet<>(providedNGSProperties).containsAll(expectedNGSProperties);
   }
 
   public static Collection<String> properties() {
