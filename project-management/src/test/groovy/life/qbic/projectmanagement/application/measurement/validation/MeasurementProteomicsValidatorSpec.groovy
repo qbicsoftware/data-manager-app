@@ -484,7 +484,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         result.failures()[0] == "Facility: missing mandatory metadata"
     }
 
-    def "If no value was provided for the fraction name information the validation will fail"() {
+    def "If no value was provided for the fraction name information the validation will not fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
@@ -515,11 +515,9 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         def result = validator.validate(invalidMetadata)
 
         then:
-        !result.allPassed()
+        result.allPassed()
         !result.containsWarnings()
-        result.containsFailures()
-        result.failedEntries() == 1
-        result.failures()[0] == "Fraction Name: missing mandatory metadata"
+        !result.containsFailures()
     }
 
     def "If no value was provided for the digestion enzyme information the validation will fail"() {

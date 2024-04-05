@@ -96,9 +96,7 @@ public class MeasurementProteomicsValidator implements
     INJECTION_VOLUME("injection volume (ul)"),
     LC_COLUMN("lc column"),
     LCMS_METHOD("lcms method"),
-
     LABELING_TYPE("labeling type"),
-
     LABEL("label"),
     COMMENT("comment");
 
@@ -194,13 +192,6 @@ public class MeasurementProteomicsValidator implements
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("Facility: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (measurementMetadata.fractionName().isBlank()) {
-        validation = validation.combine(
-            ValidationResult.withFailures(1,
-                List.of("Fraction Name: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }

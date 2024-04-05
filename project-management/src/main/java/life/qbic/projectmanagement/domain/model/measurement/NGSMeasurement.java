@@ -105,9 +105,6 @@ public class NGSMeasurement implements MeasurementMetadata {
 
   private static void evaluateMandatoryMetadata(NGSMethodMetadata method)
       throws IllegalArgumentException {
-    if (method.instrument() == null) {
-      throw new IllegalArgumentException("Instrument: Missing metadata.");
-    }
     if (method.facility().isBlank()) {
       throw new IllegalArgumentException("Facility: Missing metadata");
     }
