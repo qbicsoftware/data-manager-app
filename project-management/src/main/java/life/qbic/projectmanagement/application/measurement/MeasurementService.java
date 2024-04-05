@@ -2,15 +2,13 @@ package life.qbic.projectmanagement.application.measurement;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
@@ -42,7 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Service that provides an API to manage and query measurement information
  */
 @Service
-public class MeasurementService {
+public class MeasurementService{
 
   private static final Logger log = logger(MeasurementService.class);
   private final MeasurementDomainService measurementDomainService;
@@ -50,18 +48,20 @@ public class MeasurementService {
   private final SampleInformationService sampleInformationService;
   private final OntologyLookupService ontologyLookupService;
   private final OrganisationLookupService organisationLookupService;
+  private final ProjectInformationService projectInformationService;
 
   @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
       SampleInformationService sampleInformationService,
       OntologyLookupService ontologyLookupService,
       OrganisationLookupService organisationLookupService,
-      MeasurementLookupService measurementLookupService) {
+      MeasurementLookupService measurementLookupService, ProjectInformationService projectInformationService) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
+    this.projectInformationService = Objects.requireNonNull(projectInformationService);
   }
 
   /**
@@ -250,6 +250,9 @@ public class MeasurementService {
     if (measurementMetadata.associatedSamples().isEmpty()) {
       return Result.fromError(ResponseCode.MISSING_ASSOCIATED_SAMPLES);
     }
+    if(!areSamplesFromProject(projectId, measurementMetadata.associatedSamples())){
+      return Result.fromError(ResponseCode.SAMPLECODE_NOT_FROM_PROJECT);
+    }
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(projectId, proteomicsMeasurementMetadata);
     }
@@ -338,8 +341,23 @@ public class MeasurementService {
         .map(Optional::get).toList();
   }
 
+  /*Ensures that the provided sample code belong to one of the experiments within the project*/
+  private boolean areSamplesFromProject(ProjectId projectId, List<SampleCode> sampleCodes){
+    var possibleSampleIds = sampleCodes.stream().map(sampleInformationService::findSampleId).toList();
+    //If an invalid sampleCode was provided we fail early
+    if(possibleSampleIds.stream().anyMatch(Optional::isEmpty)){
+      return false;
+    }
+    var sampleIds = possibleSampleIds.stream().map(Optional::get).map(SampleIdCodeEntry::sampleId).toList();
+    var samples = sampleInformationService.retrieveSamplesByIds(sampleIds);
+    var associatedExperimentsFromSamples = samples.stream().map(Sample::experimentId).toList();
+    var associatedExperimentsFromProject = projectInformationService.find(projectId).get().experiments();
+    return new HashSet<>(associatedExperimentsFromProject).containsAll(associatedExperimentsFromSamples);
+
+  }
+
   public enum ResponseCode {
-    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES
+    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, SAMPLECODE_NOT_FROM_PROJECT, MISSING_ASSOCIATED_SAMPLES
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {
