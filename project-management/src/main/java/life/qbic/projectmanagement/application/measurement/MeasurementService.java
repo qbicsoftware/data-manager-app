@@ -351,9 +351,8 @@ public class MeasurementService{
     var sampleIds = possibleSampleIds.stream().map(Optional::get).map(SampleIdCodeEntry::sampleId).toList();
     var samples = sampleInformationService.retrieveSamplesByIds(sampleIds);
     var associatedExperimentsFromSamples = samples.stream().map(Sample::experimentId).toList();
-    var associatedExperimentsFromProject = projectInformationService.find(projectId).get().experiments();
+    var associatedExperimentsFromProject = projectInformationService.find(projectId).orElseThrow().experiments();
     return new HashSet<>(associatedExperimentsFromProject).containsAll(associatedExperimentsFromSamples);
-
   }
 
   public enum ResponseCode {
