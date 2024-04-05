@@ -31,7 +31,7 @@ public interface PersonalAccessTokenService {
    * @return a collection of personal access token entries associated with a user id
    * @since 1.0.0
    */
-  Collection<PersonalAccessToken> find(String userId);
+  Collection<PersonalAccessToken> findAll(String userId);
 
   /**
    * Deletes a personal access token with a given token id for a user

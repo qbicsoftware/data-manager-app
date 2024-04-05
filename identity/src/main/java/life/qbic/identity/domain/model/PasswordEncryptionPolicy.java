@@ -8,7 +8,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import life.qbic.identity.domain.model.token.TokenEncoder;
 
 /**
  * <b>Password encryption policy</b>
@@ -18,7 +17,7 @@ import life.qbic.identity.domain.model.token.TokenEncoder;
  *
  * @since 1.0.0
  */
-public class PasswordEncryptionPolicy implements TokenEncoder {
+public class PasswordEncryptionPolicy {
 
   private static final int ITERATION_INDEX =
       0; // the index of the iteration count in the encoded password String
@@ -153,16 +152,6 @@ public class PasswordEncryptionPolicy implements TokenEncoder {
       throw new EncryptionException(
           "Failed to generate secret key for password hashing.", invalidKeySpecException);
     }
-  }
-
-  @Override
-  public String encode(char[] token) {
-    return encrypt(token);
-  }
-
-  @Override
-  public boolean matches(char[] token, String encodedToken) {
-    return doPasswordsMatch(token, encodedToken);
   }
 
   static class EncryptionException extends RuntimeException {

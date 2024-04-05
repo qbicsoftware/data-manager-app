@@ -1,5 +1,6 @@
 package life.qbic.identity.domain.model.token;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,7 +10,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
-import life.qbic.identity.domain.model.PasswordEncryptionPolicy;
 
 /**
  * <b>Personal Access Token</b>
@@ -31,19 +31,23 @@ public class PersonalAccessToken {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;
+  @Column(name = "tokenValueEncrypted", unique = true)
   private String tokenValueEncrypted;
+  @Column(name = "description")
   private String description;
+  @Column(name = "userId")
   private String userId;
+  @Column(name = "tokenId")
   private String tokenId;
+  @Column(name = "creationDate")
   private Instant creationDate;
+  @Column(name = "duration")
   private Duration duration;
-
-  private static final TokenEncoder TOKEN_ENCODER = PasswordEncryptionPolicy.instance();
 
   protected PersonalAccessToken() {
   }
 
-  private PersonalAccessToken(String userId, String description, Duration duration,
+  public PersonalAccessToken(String userId, String description, Duration duration,
       String encryptedSecret) {
     this.userId = userId;
     this.description = description;
@@ -51,13 +55,6 @@ public class PersonalAccessToken {
     this.creationDate = Instant.now();
     this.tokenValueEncrypted = encryptedSecret;
     this.tokenId = UUID.randomUUID().toString();
-  }
-
-
-  public static PersonalAccessToken create(String userId, String description, Duration duration,
-      String secret) {
-    return new PersonalAccessToken(userId, description, duration, TOKEN_ENCODER.encode(
-        secret.toCharArray()));
   }
 
   public String description() {
@@ -108,9 +105,4 @@ public class PersonalAccessToken {
   public int hashCode() {
     return Objects.hash(tokenId);
   }
-
-  public boolean matches(String rawToken) {
-    return TOKEN_ENCODER.matches(rawToken.toCharArray(), this.tokenValueEncrypted);
-  }
-
 }
