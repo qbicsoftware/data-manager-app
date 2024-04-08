@@ -115,7 +115,7 @@ public class ProjectCollectionComponent extends PageArea {
   private void layoutGrid() {
     projectGrid.addColumn(new ComponentRenderer<>(
             item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-                item.projectCode()))).setHeader("Code").setWidth("7em").setFlexGrow(0)
+                item.projectCode()))).setHeader("ID").setWidth("7em").setFlexGrow(0)
         .setSortProperty("projectCode");
 
     projectGrid.addColumn(new ComponentRenderer<>(
@@ -125,7 +125,7 @@ public class ProjectCollectionComponent extends PageArea {
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(
             projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
-            "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("lastModified").setSortable(true)
+            "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified").setSortable(true)
         .setSortProperty("lastModified");
     projectGrid.addClassName("projects-grid");
     add(projectGrid);
