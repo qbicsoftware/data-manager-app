@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.model.experiment
 
-import life.qbic.projectmanagement.domain.model.experiment.*
+
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException
 import spock.lang.Specification
 

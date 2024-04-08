@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.lang.NonNull;
 
 /**
