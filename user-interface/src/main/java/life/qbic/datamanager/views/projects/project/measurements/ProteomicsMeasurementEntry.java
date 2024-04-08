@@ -1,14 +1,14 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Proteomics Measurement Entry</b>
+ * <p>
+ * Record that describes various proteomics measurement metadata properties.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public record ProteomicsMeasurementEntry(String measurementCode,
-                                         SampleInformation sampleIdCodeEntry,
+                                         SampleInformation sampleInformation,
                                          String organisationId,
                                          String organisationName,
                                          String instrumentCURI,

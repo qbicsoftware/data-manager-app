@@ -10,11 +10,9 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 import life.qbic.logging.api.Logger;
-import org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -107,11 +105,11 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
     measureCol.setCellStyle(readOnlyStyle);
 
     var sampleIdCol = entry.createCell(1);
-    sampleIdCol.setCellValue(pxpEntry.sampleIdCodeEntry().sampleId());
+    sampleIdCol.setCellValue(pxpEntry.sampleInformation().sampleId());
     sampleIdCol.setCellStyle(readOnlyStyle);
 
     var sampleLabelCol = entry.createCell(2);
-    sampleLabelCol.setCellValue(pxpEntry.sampleIdCodeEntry().sampleLabel());
+    sampleLabelCol.setCellValue(pxpEntry.sampleInformation().sampleLabel());
     sampleLabelCol.setCellStyle(readOnlyStyle);
 
     var samplePoolCol = entry.createCell(3);
