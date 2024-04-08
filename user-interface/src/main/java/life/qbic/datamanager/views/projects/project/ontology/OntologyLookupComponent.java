@@ -163,13 +163,10 @@ public class OntologyLookupComponent extends PageArea {
       Span title = new Span(label);
       title.addClassName("ontology-item-title");
       Span curie = new Tag(curieText);
-      curie.addClassNames("primary", "clickable");
 
       Icon copyIcon = initCopyIcon();
       Span header = new Span(title, curie, copyIcon);
 
-      curie.addClickListener(
-          event -> handleCopyClicked(header, curieText));
       copyIcon.addClickListener(
           event -> handleCopyClicked(header, curieText));
 
