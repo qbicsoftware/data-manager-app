@@ -29,9 +29,9 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
-import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
@@ -295,7 +295,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private static Grid<SamplePreview> createSampleGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
-    sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id")
+    sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample ID")
         .setSortProperty("sampleCode").setAutoWidth(true).setFlexGrow(0)
         .setTooltipGenerator(SamplePreview::sampleCode);
     sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")

@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.spreadsheet.Column;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -38,7 +38,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .sorted(Comparator.comparing(AnalysisMethod::label)).toList();
 
     if (showSampleCode) {
-      Column<SampleInfo, SampleCode> sampleCodeColumn = addColumn("Sample code",
+      Column<SampleInfo, SampleCode> sampleCodeColumn = addColumn("Sample ID",
           SampleInfo::getSampleCode, SampleCode::code, (sampleInfo, sampleCodeString) -> {
             var sampleCode =
                 sampleCodeString.isBlank() ? null : SampleCode.create(sampleCodeString);
