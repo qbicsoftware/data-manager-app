@@ -10,11 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement presenter</b>
+ * <p>
+ * Some helper methods to render {@link ProteomicsMeasurement} information.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @Component
 public class MeasurementPresenter {
@@ -31,7 +31,8 @@ public class MeasurementPresenter {
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
         measurement.instrument().getName().replace("_", ":"),
         measurement.instrument().getLabel(),
-        measurement.samplePoolGroup().orElse(""), measurement.facility(), measurement.fraction().orElse(""),
+        measurement.samplePoolGroup().orElse(""), measurement.facility(),
+        measurement.fraction().orElse(""),
         measurement.digestionEnzyme(), measurement.digestionMethod(),
         measurement.enrichmentMethod(), String.valueOf(measurement.injectionVolume()),
         measurement.lcColumn(), measurement.lcmsMethod(), measurement.labelingType().orElse(""),
