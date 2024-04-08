@@ -32,7 +32,7 @@ public class MeasurementValidationService {
     this.pxpValidator = pxpValidator;
   }
 
-  private static Domain determinDomain(Collection<String> propertyTypes) {
+  private static Domain determineDomain(Collection<String> propertyTypes) {
     if (MeasurementNGSValidator.isNGS(propertyTypes)) {
       return Domain.NGS;
     }
