@@ -295,7 +295,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private static Grid<SamplePreview> createSampleGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
-    sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample Id")
+    sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample ID")
         .setSortProperty("sampleCode").setAutoWidth(true).setFlexGrow(0)
         .setTooltipGenerator(SamplePreview::sampleCode);
     sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
