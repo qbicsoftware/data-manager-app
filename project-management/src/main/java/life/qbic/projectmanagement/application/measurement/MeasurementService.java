@@ -28,7 +28,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
-import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -128,7 +127,7 @@ public class MeasurementService {
     return measurementLookupService.findProteomicsMeasurement(measurementId);
   }
 
-  private Result<MeasurementId, ResponseCode> registerNGS(
+  private Result<MeasurementId, ErrorCode> registerNGS(
       ProjectId projectId, NGSMeasurementMetadata ngsMeasurementMetadata) {
 
     var associatedSampleCodes = ngsMeasurementMetadata.associatedSamples();
@@ -138,12 +137,12 @@ public class MeasurementService {
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
       log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     }
 
     var instrumentQuery = resolveOntologyCURI(ngsMeasurementMetadata.instrumentCURIE());
     if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
     var measurement = NGSMeasurement.create(
@@ -157,13 +156,13 @@ public class MeasurementService {
     var result = measurementDomainService.addNGS(measurement, parentCodes);
 
     if (result.isError()) {
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     } else {
       return Result.fromValue(result.getValue().measurementId());
     }
   }
 
-  private Result<MeasurementId, ResponseCode> registerPxP(
+  private Result<MeasurementId, ErrorCode> registerPxP(
       ProjectId projectId, ProteomicsMeasurementMetadata metadata) {
     var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createMS(
@@ -172,18 +171,18 @@ public class MeasurementService {
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
       log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     }
 
     var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
     if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
     var organisationQuery = organisationLookupService.organisation(
         metadata.organisationId());
     if (organisationQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
     var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
@@ -215,16 +214,16 @@ public class MeasurementService {
     var result = measurementDomainService.addProteomics(measurement, parentCodes);
 
     if (result.isError()) {
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     } else {
       return Result.fromValue(result.getValue().measurementId());
     }
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<MeasurementId, ResponseCode> update(ProjectId projectId, MeasurementMetadata metadata) {
+  public Result<MeasurementId, ErrorCode> update(ProjectId projectId, MeasurementMetadata metadata) {
     if (metadata.measurementIdentifier().isEmpty()) {
-      return Result.fromError(ResponseCode.MISSING_MEASUREMENT_ID);
+      return Result.fromError(ErrorCode.MISSING_MEASUREMENT_ID);
     }
 
     if (metadata instanceof ProteomicsMeasurementMetadata pxpMetadata) {
@@ -233,26 +232,26 @@ public class MeasurementService {
     if (metadata instanceof NGSMeasurementMetadata) {
       return updateNGS(metadata);
     }
-    return Result.fromError(ResponseCode.FAILED);
+    return Result.fromError(ErrorCode.FAILED);
   }
 
-  private Result<MeasurementId, ResponseCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
+  private Result<MeasurementId, ErrorCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
 
     var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
     if (result.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_MEASUREMENT);
+      return Result.fromError(ErrorCode.UNKNOWN_MEASUREMENT);
     }
     var measurementToUpdate = result.get();
 
     var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
     if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
     var organisationQuery = organisationLookupService.organisation(
         metadata.organisationId());
     if (organisationQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
     var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
@@ -278,21 +277,21 @@ public class MeasurementService {
     var updateResult = measurementDomainService.update(measurementToUpdate);
 
     if (updateResult.isError()) {
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     } else {
       return Result.fromValue(updateResult.getValue().measurementId());
     }
   }
 
-  private Result<MeasurementId, ResponseCode> updateNGS(MeasurementMetadata metadata) {
-    return Result.fromError(ResponseCode.FAILED);
+  private Result<MeasurementId, ErrorCode> updateNGS(MeasurementMetadata metadata) {
+    return Result.fromError(ErrorCode.FAILED);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
+  public Result<MeasurementId, ErrorCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
     if (measurementMetadata.associatedSamples().isEmpty()) {
-      return Result.fromError(ResponseCode.MISSING_ASSOCIATED_SAMPLES);
+      return Result.fromError(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
     }
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(projectId, proteomicsMeasurementMetadata);
@@ -300,7 +299,7 @@ public class MeasurementService {
     if (measurementMetadata instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
       return registerNGS(projectId, ngsMeasurementMetadata);
     }
-    return Result.fromError(ResponseCode.FAILED);
+    return Result.fromError(ErrorCode.FAILED);
   }
 
   @Transactional
@@ -373,19 +372,19 @@ public class MeasurementService {
         .map(Optional::get).toList();
   }
 
-  public enum ResponseCode {
-    FAILED, SUCCESSFUL, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, UNKNOWN_MEASUREMENT
+  public enum ErrorCode {
+    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {
 
-    private final MeasurementService.ResponseCode reason;
+    private final ErrorCode reason;
 
-    public MeasurementRegistrationException(ResponseCode reason) {
+    public MeasurementRegistrationException(ErrorCode reason) {
       this.reason = reason;
     }
 
-    public ResponseCode reason() {
+    public ErrorCode reason() {
       return reason;
     }
   }
