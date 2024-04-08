@@ -80,7 +80,7 @@ public class MeasurementValidationService {
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {
-    return Optional.ofNullable(determinDomain(propertyTypes));
+    return Optional.ofNullable(determineDomain(propertyTypes));
   }
 
   public enum Domain {
