@@ -7,9 +7,6 @@ import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.SortOrder;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -47,7 +44,7 @@ public class MeasurementLookupService {
   public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    List<ProteomicsMeasurement> termList = measurementLookup.queryProteomicsMeasurementsBySampleIds(
+    List<ProteomicsMeasurement> termList = measurementLookup.findProteomicsMeasurementsBySampleIds(
         termFilter, sampleIds, offset,
         limit, sortOrders);
     // the list must be modifiable for spring security to filter it
@@ -74,7 +71,7 @@ public class MeasurementLookupService {
   }
 
   public List<ProteomicsMeasurement> queryAllProteomicsMeasurement(List<SampleId> sampleIds) {
-    return measurementLookup.queryProteomicsMeasurementsBySampleIds(sampleIds);
+    return measurementLookup.findProteomicsMeasurementsBySampleIds(sampleIds);
   }
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
