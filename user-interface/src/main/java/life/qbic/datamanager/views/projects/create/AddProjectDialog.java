@@ -82,14 +82,12 @@ public class AddProjectDialog extends Dialog {
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         ontologyLookupService);
 
-    List<Contact> knownContacts = new ArrayList<>();
-    try {
-      knownContacts = contactRepository.findAll().stream()
-          .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();
-    } catch (AccessDeniedException e) {}
-    collaboratorsLayout.setPrincipalInvestigators(knownContacts);
-    collaboratorsLayout.setResponsiblePersons(knownContacts);
-    collaboratorsLayout.setProjectManagers(knownContacts);
+    List<Contact> knownContacts = contactRepository.findAll().stream().map(contact ->
+        new Contact(contact.fullName(), contact.emailAddress())).toList();
+    collaboratorsLayout.setKnownContacts(knownContacts);
+    if(knownContacts.isEmpty()) {
+      collaboratorsLayout.hideContactBox();
+    }
 
     stepContent = new HashMap<>();
 

@@ -176,4 +176,15 @@ public class EditProjectInformationForm extends FormLayout {
     return binder;
   }
 
+  public void setKnownContacts(List<Contact> knownContacts) {
+    principalInvestigatorField.setItems(knownContacts);
+    responsiblePersonField.setItems(knownContacts);
+    projectManagerField.setItems(knownContacts);
+  }
+
+  public void hideContactBox() {
+    principalInvestigatorField.hideContactBox();
+    responsiblePersonField.hideContactBox();
+    projectManagerField.hideContactBox();
+  }
 }

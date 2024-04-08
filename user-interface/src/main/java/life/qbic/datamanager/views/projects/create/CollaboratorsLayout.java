@@ -118,6 +118,18 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     return projectCollaborators;
   }
 
+  public void setKnownContacts(List<Contact> knownContacts) {
+    principalInvestigatorField.setItems(knownContacts);
+    responsiblePersonField.setItems(knownContacts);
+    projectManagerField.setItems(knownContacts);
+  }
+
+  public void hideContactBox() {
+    principalInvestigatorField.hideContactBox();
+    responsiblePersonField.hideContactBox();
+    projectManagerField.hideContactBox();
+  }
+
   public static final class ProjectCollaborators implements Serializable {
 
     @Serial
