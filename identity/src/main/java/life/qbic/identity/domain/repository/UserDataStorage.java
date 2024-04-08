@@ -5,6 +5,7 @@ import java.util.Optional;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
+import org.springframework.data.domain.Pageable;
 
 /**
  * <b>User Data Storage Interface</b>
@@ -56,5 +57,7 @@ public interface UserDataStorage {
   List<User> findAllActiveUsers();
 
   Optional<User> findUserByUserName(String userName);
+
+  List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String username, Pageable pageable);
 
 }

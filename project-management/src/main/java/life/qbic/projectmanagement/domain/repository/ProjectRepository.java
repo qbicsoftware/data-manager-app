@@ -43,8 +43,6 @@ public interface ProjectRepository {
 
   Optional<Project> find(ProjectId projectId);
 
-  void deleteByProjectCode(ProjectCode projectCode);
-
   /**
    * Is thrown if a project that should be created already exists, as denoted by the project id
    */
