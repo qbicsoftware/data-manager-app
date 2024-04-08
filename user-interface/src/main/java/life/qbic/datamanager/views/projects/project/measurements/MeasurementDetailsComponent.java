@@ -165,7 +165,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setHeader("Measurement ID");
     ngsMeasurementGrid.addComponentColumn(
             ngsMeasurement -> renderSampleCodes().createComponent(ngsMeasurement.measuredSamples()))
-        .setHeader("Sample Codes");
+        .setHeader("Sample IDs");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getLabel())
         .setHeader("Instrument");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getDescription())
@@ -198,7 +198,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     //Todo Should the sampleCodes be retrieved via a service or from column?
     proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderSampleCodes()
             .createComponent(proteomicsMeasurement.measuredSamples()))
-        .setHeader("Sample Codes")
+        .setHeader("Sample IDs")
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderOrganisation()
             .createComponent(proteomicsMeasurement.organisation()))
