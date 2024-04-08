@@ -44,7 +44,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   private static final Logger log = logger(ProjectDesignLayout.class);
   private static final String TITLE = "Project Design";
   private final ComboBox<OfferSummary> offerSearchField = new ComboBox<>("Offer");
-  private final TextField codeField = new TextField("Code");
+  private final TextField codeField = new TextField("ID");
   private final TextField titleField = new TextField("Title");
   private final TextArea projectDescription = new TextArea("Description");
   private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
@@ -94,7 +94,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   }
 
   private void initCodeGenerationButton() {
-    generateCodeButton.setTooltipText("Generate Project Code");
+    generateCodeButton.setTooltipText("Generate Project ID");
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
     generateCodeButton.addClickListener(
         buttonClickEvent -> codeField.setValue(ProjectCode.random().value()));
