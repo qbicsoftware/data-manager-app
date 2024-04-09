@@ -170,10 +170,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
           String errorMessage = switch (measurementRegistrationException.reason()) {
-            case FAILED, SUCCESSFUL -> "Registration failed. Please try again.";
+            case FAILED -> "Registration failed. Please try again.";
             case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
             case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
-            case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
+            case SAMPLECODE_NOT_FROM_PROJECT -> "There are samples that do not belong to this experiment.";
             case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
           };
           confirmEvent.getSource().showError(upload.fileName(), errorMessage);

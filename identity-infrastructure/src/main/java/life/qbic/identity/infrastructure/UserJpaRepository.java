@@ -7,6 +7,7 @@ import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 
@@ -56,5 +57,11 @@ public class UserJpaRepository implements UserDataStorage {
   @Override
   public Optional<User> findUserByUserName(String userName) {
     return Optional.ofNullable(userRepo.findUserByUserName(userName));
+  }
+
+  @Override
+  public List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String userName,
+      Pageable pageable) {
+    return userRepo.findAllByUserNameContainingIgnoreCaseAndActiveTrue(userName, pageable);
   }
 }

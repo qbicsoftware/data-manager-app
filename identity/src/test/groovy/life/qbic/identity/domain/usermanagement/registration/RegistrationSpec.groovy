@@ -9,8 +9,11 @@ import life.qbic.identity.domain.registry.DomainRegistry
 import life.qbic.identity.domain.repository.UserDataStorage
 import life.qbic.identity.domain.repository.UserRepository
 import life.qbic.identity.domain.service.UserDomainService
+import org.springframework.data.domain.Pageable
 import spock.lang.Shared
 import spock.lang.Specification
+
+import java.util.stream.Collectors
 
 /**
  * Tests for the registration use case
@@ -113,6 +116,11 @@ class RegistrationSpec extends Specification {
         @Override
         Optional<User> findUserByUserName(String userName) {
             return Optional.ofNullable(users.find { it.userName() == userName })
+        }
+
+        @Override
+        List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String username, Pageable pageable) {
+            return users.stream().filter { it.userName() == username }.filter { it.isActive() }.collect(Collectors.toList())
         }
     }
 
