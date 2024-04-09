@@ -1,20 +1,16 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import jakarta.persistence.criteria.Expression;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.application.commons.OffsetBasedRequest;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;

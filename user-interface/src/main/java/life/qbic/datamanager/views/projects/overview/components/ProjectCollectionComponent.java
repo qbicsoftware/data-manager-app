@@ -22,13 +22,13 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
-import life.qbic.projectmanagement.application.SortOrder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -115,7 +115,7 @@ public class ProjectCollectionComponent extends PageArea {
   private void layoutGrid() {
     projectGrid.addColumn(new ComponentRenderer<>(
             item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-                item.projectCode()))).setHeader("Code").setWidth("7em").setFlexGrow(0)
+                item.projectCode()))).setHeader("ID").setWidth("7em").setFlexGrow(0)
         .setSortProperty("projectCode");
 
     projectGrid.addColumn(new ComponentRenderer<>(
@@ -125,7 +125,7 @@ public class ProjectCollectionComponent extends PageArea {
 
     projectGrid.addColumn(new LocalDateTimeRenderer<>(
             projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
-            "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("lastModified").setSortable(true)
+            "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified").setSortable(true)
         .setSortProperty("lastModified");
     projectGrid.addClassName("projects-grid");
     add(projectGrid);

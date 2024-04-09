@@ -30,7 +30,7 @@ public class MeasurementNGSValidator implements
 
   static {
     NGS_PROPERTIES.addAll(
-        Arrays.asList("qbic sample id", "organisation id", "facility", "instrument",
+        Arrays.asList("qbic sample ids", "organisation id", "facility", "instrument",
             "sequencing read type", "library kit", "flow cell", "run protocol", "index i5",
             "index i7",
             "note"));

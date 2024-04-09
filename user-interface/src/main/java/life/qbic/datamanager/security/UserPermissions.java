@@ -10,6 +10,8 @@ public interface UserPermissions {
 
   boolean readProject(ProjectId projectId);
 
+  boolean editProject(ProjectId projectId);
+
   boolean changeProjectAccess(ProjectId projectId);
 
 }

@@ -6,7 +6,7 @@ class MeasurementNGSValidatorSpec extends Specification {
 
     def "Given a valid NGS measurement metadata property collection, pass the validation"() {
         given:
-        def validNGSproperties = ["qbic sample id", "organisation id", "facility", "instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
+        def validNGSproperties = ["qbic sample ids", "organisation id", "facility", "instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
 
         when:
         def isNGSMetadata = MeasurementNGSValidator.isNGS(validNGSproperties)
@@ -40,7 +40,7 @@ class MeasurementNGSValidatorSpec extends Specification {
 
     def "A complete property set must be valid no matter the letter casing style"() {
         given:
-        def chaosCasing= ["QbiC SaMpLe ID", "organisation ID", "FACiLity", "Instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
+        def chaosCasing = ["QbiC SaMpLe IDs", "organisation ID", "FACiLity", "Instrument", "sequencing read type", "library kit", "flow cell", "run protocol", "index i5", "index i7", "note"]
 
         when:
         def isNGSMetadata = MeasurementNGSValidator.isNGS(chaosCasing)

@@ -30,10 +30,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -134,10 +134,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private void createNGSMeasurementGrid() {
     ngsMeasurementGrid.addClassName("measurement-grid");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
-        .setHeader("Measurement Code");
+        .setHeader("Measurement ID");
     ngsMeasurementGrid.addComponentColumn(
             ngsMeasurement -> renderSampleCodes().createComponent(ngsMeasurement.measuredSamples()))
-        .setHeader("Sample Codes");
+        .setHeader("Sample IDs");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getLabel())
         .setHeader("Instrument");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getDescription())
@@ -162,7 +162,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addClassName("measurement-grid");
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
-        .setHeader("Measurement Code")
+        .setHeader("Measurement ID")
         .setAutoWidth(true)
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
@@ -170,7 +170,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     //Todo Should the sampleCodes be retrieved via a service or from column?
     proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderSampleCodes()
             .createComponent(proteomicsMeasurement.measuredSamples()))
-        .setHeader("Sample Codes")
+        .setHeader("Sample IDs")
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderOrganisation()
             .createComponent(proteomicsMeasurement.organisation()))

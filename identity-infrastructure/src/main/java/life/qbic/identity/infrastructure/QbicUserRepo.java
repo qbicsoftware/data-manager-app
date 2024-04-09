@@ -5,6 +5,8 @@ import java.util.List;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 
 /**
@@ -18,7 +20,7 @@ import org.springframework.data.repository.CrudRepository;
  *
  * @since 1.0.0
  */
-public interface QbicUserRepo extends CrudRepository<User, UserId> {
+public interface QbicUserRepo extends JpaRepository<User, UserId> {
 
   /**
    * Find users by mail address in the persistent data storage
@@ -46,4 +48,6 @@ public interface QbicUserRepo extends CrudRepository<User, UserId> {
   List<User> findUsersByActiveTrue();
 
   User findUserByUserName(String userName);
+
+  List<User> findAllByUserNameContainingIgnoreCaseAndActiveTrue(String username, Pageable pageable);
 }
