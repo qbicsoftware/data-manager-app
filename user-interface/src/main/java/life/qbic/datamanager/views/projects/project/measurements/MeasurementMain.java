@@ -170,7 +170,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
           String errorMessage = switch (measurementRegistrationException.reason()) {
-            case FAILED, SUCCESSFUL -> "Registration failed. Please try again.";
+            case FAILED -> "Registration failed. Please try again.";
             case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
             case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
             case SAMPLECODE_NOT_FROM_PROJECT -> "There are samples that do not belong to this experiment.";
