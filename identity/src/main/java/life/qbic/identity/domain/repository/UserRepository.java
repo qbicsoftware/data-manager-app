@@ -7,6 +7,7 @@ import java.util.Optional;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
+import org.springframework.data.domain.Pageable;
 
 /**
  * <b> Provides stateless access and storage functionality for {@link User} entities. </b>
@@ -107,6 +108,11 @@ public class UserRepository implements Serializable {
       throw new UserStorageException();
     }
     saveUser(user);
+  }
+
+  public List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String userName,
+      Pageable pageable) {
+    return dataStorage.findByUserNameContainingIgnoreCaseAndActiveTrue(userName, pageable);
   }
 
   /**

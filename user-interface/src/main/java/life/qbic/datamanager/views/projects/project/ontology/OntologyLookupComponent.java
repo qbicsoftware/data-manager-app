@@ -23,10 +23,10 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.Ontology;
@@ -163,13 +163,10 @@ public class OntologyLookupComponent extends PageArea {
       Span title = new Span(label);
       title.addClassName("ontology-item-title");
       Span curie = new Tag(curieText);
-      curie.addClassNames("primary", "clickable");
 
       Icon copyIcon = initCopyIcon();
       Span header = new Span(title, curie, copyIcon);
 
-      curie.addClickListener(
-          event -> handleCopyClicked(header, curieText));
       copyIcon.addClickListener(
           event -> handleCopyClicked(header, curieText));
 

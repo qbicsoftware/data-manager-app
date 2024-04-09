@@ -68,7 +68,7 @@ public class ProjectCode {
     // project codes are always upper case
     str = str.toUpperCase();
     if (!isGeneralFormatValid(str)) {
-      throw new IllegalArgumentException(String.format("%s is not a valid project code", str));
+      throw new IllegalArgumentException(String.format("%s is not a valid project ID", str));
     }
     if (containsInvalidCharacters(str)) {
       throw new IllegalArgumentException(String.format("%s contains invalid characters", str));
