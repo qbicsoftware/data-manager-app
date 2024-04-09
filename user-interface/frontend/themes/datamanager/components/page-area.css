@@ -399,12 +399,6 @@
   flex-direction: column;
 }
 
-.project-access-component .role-access {
-  display: flex;
-  row-gap: var(--lumo-space-m);
-  flex-direction: column;
-}
-
 .project-access-component .header {
   display: flex;
   justify-content: space-between;
