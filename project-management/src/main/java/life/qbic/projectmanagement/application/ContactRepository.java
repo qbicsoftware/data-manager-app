@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.application;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.projectmanagement.domain.model.project.Contact;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class ContactRepository {
 
   @PostFilter("hasAnyAuthority('ROLE_ADMIN')")
-  public List<Contact> findAll() throws AccessDeniedException {
+  public List<Contact> findAll() {
       //TODO implement
       return dummyContacts();
   }
