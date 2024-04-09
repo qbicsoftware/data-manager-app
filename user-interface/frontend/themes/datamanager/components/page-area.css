@@ -178,10 +178,16 @@
   cursor: default;
 }
 
-/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
+/*We want to style the cells within the rows containing the components and values within the measurement grid to be clickable*/
 .measurement-details-component .measurement-grid > * {
   cursor: pointer;
 }
+
+/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
+.measurement-details-component .measurement-grid::part(row) {
+  cursor: pointer;
+}
+
 
 .measurement-details-component .measurement-grid .measurement-item .entry {
   display: inline-flex;
