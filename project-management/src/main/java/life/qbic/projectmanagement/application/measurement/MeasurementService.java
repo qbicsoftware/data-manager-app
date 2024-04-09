@@ -160,7 +160,7 @@ public class MeasurementService {
     return measurementLookupService.findProteomicsMeasurement(measurementId);
   }
 
-  private Result<MeasurementId, ResponseCode> registerNGS(
+  private Result<MeasurementId, ErrorCode> registerNGS(
       ProjectId projectId, NGSMeasurementMetadata metadata) {
 
     var associatedSampleCodes = metadata.associatedSamples();
@@ -181,7 +181,7 @@ public class MeasurementService {
     var organisationQuery = organisationLookupService.organisation(
         metadata.organisationId());
     if (organisationQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
     var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
@@ -336,7 +336,7 @@ public class MeasurementService {
       return Result.fromError(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
     }
     if (!areSamplesFromProject(projectId, measurementMetadata.associatedSamples())) {
-      return Result.fromError(ResponseCode.SAMPLECODE_NOT_FROM_PROJECT);
+      return Result.fromError(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
     }
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(projectId, proteomicsMeasurementMetadata);
@@ -459,7 +459,7 @@ public class MeasurementService {
   }
 
   public enum ErrorCode {
-    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, UNKNOWN_MEASUREMENT
+    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {

@@ -164,6 +164,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
             case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
             case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
+            case SAMPLECODE_NOT_FROM_PROJECT -> "Sample code not from project";
             case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
           };
           confirmEvent.getSource().showError(upload.fileName(), errorMessage);
