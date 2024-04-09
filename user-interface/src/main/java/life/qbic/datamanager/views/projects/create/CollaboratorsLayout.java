@@ -37,7 +37,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     collaboratorsBinder.setBean(new ProjectCollaborators());
     collaboratorsBinder.setFieldsValidationStatusChangeListenerEnabled(true);
 
-    principalInvestigatorField = new AutocompleteContactField("Principal Investigator");
+    principalInvestigatorField = new AutocompleteContactField("Principal Investigator", "PI");
     principalInvestigatorField.setRequired(true);
     collaboratorsBinder.forField(principalInvestigatorField)
         .withNullRepresentation(principalInvestigatorField.getEmptyValue())
@@ -45,7 +45,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
         .bind(ProjectCollaborators::getPrincipalInvestigator,
             ProjectCollaborators::setPrincipalInvestigator);
 
-    responsiblePersonField = new AutocompleteContactField("Project Responsible/Co-Investigator (optional)");
+    responsiblePersonField = new AutocompleteContactField("Project Responsible/Co-Investigator (optional)", "Responsible");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
     collaboratorsBinder.forField(responsiblePersonField)
@@ -54,7 +54,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
         .bind(bean -> bean.getResponsiblePerson().orElse(null),
             ProjectCollaborators::setResponsiblePerson);
 
-    projectManagerField = new AutocompleteContactField("Project Manager");
+    projectManagerField = new AutocompleteContactField("Project Manager", "Manager");
     projectManagerField.setRequired(true);
     collaboratorsBinder.forField(projectManagerField)
         .withNullRepresentation(projectManagerField.getEmptyValue())
