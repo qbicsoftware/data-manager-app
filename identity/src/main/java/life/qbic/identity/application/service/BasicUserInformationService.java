@@ -2,8 +2,11 @@ package life.qbic.identity.application.service;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.application.commons.OffsetBasedRequest;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.domain.model.EmailAddress;
@@ -12,6 +15,8 @@ import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.logging.api.Logger;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 
 /**
  * <b>Basic user information service</b>
@@ -56,6 +61,26 @@ public class BasicUserInformationService implements UserInformationService {
   @Override
   public boolean userNameAvailable(String userName) {
     return userRepository.findByUserName(userName).isEmpty();
+  }
+
+  @Override
+  public List<UserInfo> findAllActive(String filter, int offset, int limit,
+      List<SortOrder> sortOrders) {
+    List<Order> orders = sortOrders.stream().map(it -> {
+      Order order;
+      if (it.isDescending()) {
+        order = Order.desc(it.propertyName());
+      } else {
+        order = Order.asc(it.propertyName());
+      }
+      return order;
+    }).toList();
+    return userRepository.findByUserNameContainingIgnoreCaseAndActiveTrue(
+            filter, new OffsetBasedRequest(offset, limit, Sort.by(orders)))
+        .stream()
+        .map(user -> new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
+            user.userName(), user.getEncryptedPassword().get(), user.isActive()))
+        .toList();
   }
 
   private UserInfo convert(User user) {

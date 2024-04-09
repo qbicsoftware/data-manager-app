@@ -5,14 +5,14 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import jakarta.persistence.criteria.Expression;
 import java.util.Collection;
 import java.util.List;
+import life.qbic.application.commons.OffsetBasedRequest;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
@@ -100,8 +100,6 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     Specification<ProteomicsMeasurement> commentContains = ProteomicsMeasurementSpec.isComment(
             filter);
 
-
-
     Specification<ProteomicsMeasurement> filterSpecification =
         Specification.anyOf(measurementCodeContains,
             measurementLabelContains,
@@ -111,6 +109,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
             ontologyNameContains,
             ontologyLabelContains,
             facilityContains,
+            fractionContains,
             digestionMethodContains,
             digestionEnzymeContains,
             enrichmentMethodContains,
@@ -158,9 +157,30 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         sampleIds);
     Specification<NGSMeasurement> measurementCodeContains = NgsMeasurementSpec.isMeasurementCode(
         filter);
-    //ToDo Extend with required ngs property specs
+    Specification<NGSMeasurement> sequencingReadTypeContains = NgsMeasurementSpec.isSequencingReadType(
+        filter);
+    Specification<NGSMeasurement> facilityContains = NgsMeasurementSpec.isFacility(filter);
+    Specification<NGSMeasurement> libraryKitContains = NgsMeasurementSpec.isLibraryKit(filter);
+    Specification<NGSMeasurement> flowCellContains = NgsMeasurementSpec.isFlowCell(filter);
+    Specification<NGSMeasurement> sequencingRunProtocolContains = NgsMeasurementSpec.isSequencingRunProtocol(
+        filter);
+    Specification<NGSMeasurement> indexI7Contains = NgsMeasurementSpec.isIndexI7(filter);
+    Specification<NGSMeasurement> indexI5Contains = NgsMeasurementSpec.isIndexI5(filter);
+    Specification<NGSMeasurement> registrationDateContains = NgsMeasurementSpec.isRegistrationDate(
+        filter);
+    Specification<NGSMeasurement> commentContains = NgsMeasurementSpec.isComment(
+        filter);
     Specification<NGSMeasurement> filterSpecification = Specification.anyOf(
-        measurementCodeContains);
+        measurementCodeContains,
+        sequencingReadTypeContains,
+        facilityContains,
+        libraryKitContains,
+        flowCellContains,
+        sequencingRunProtocolContains,
+        indexI7Contains,
+        indexI5Contains,
+        registrationDateContains,
+        commentContains);
     return Specification.where(isBlankSpec).and(containsSampleId).and(filterSpecification)
         .and(isDistinctSpec);
   }
@@ -329,6 +349,50 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       return (root, query, builder) ->
           builder.like(root.get("measurementCode").as(String.class), "%" + filter + "%");
     }
-    //ToDo extend with required property filters
+
+    public static Specification<NGSMeasurement> isFacility(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("facility"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isSequencingReadType(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("sequencingReadType"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isLibraryKit(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("libraryKit"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isFlowCell(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("flowCell"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isSequencingRunProtocol(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("sequencingRunProtocol"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isIndexI7(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("indexI7"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isIndexI5(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("indexI5"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isRegistrationDate(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("registration").as(String.class), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isComment(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("comment"), "%" + filter + "%");
+    }
   }
 }

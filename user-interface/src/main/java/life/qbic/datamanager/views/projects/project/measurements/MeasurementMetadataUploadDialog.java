@@ -43,6 +43,7 @@ import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementNGSValidator.NGS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
@@ -173,6 +174,55 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   private static boolean isRowNotEmpty(String row) {
     return row.split("\t").length > 0;
+  }
+
+  private static Result<NGSMeasurementMetadata, String> generateNGSRequest(
+      String row, Map<String, Integer> columns) {
+    var columnValues = row.split("\t"); // tab separated values
+    // we consider an empty row as a reason to warn, not to fail
+    if (columnValues.length == 0) {
+      return Result.fromValue(null);
+    }
+
+    Integer sampleCodeColumnIndex = columns.get(NGS_PROPERTY.QBIC_SAMPLE_ID.label());
+    Integer organisationColumnIndex = columns.get(NGS_PROPERTY.ORGANISATION_ID.label());
+    Integer instrumentColumnIndex = columns.get(NGS_PROPERTY.INSTRUMENT.label());
+    Integer facilityIndex = columns.get(NGS_PROPERTY.FACILITY.label());
+    Integer readTypeIndex = columns.get(NGS_PROPERTY.SEQUENCING_READ_TYPE.label());
+    Integer libraryKitIndex = columns.get(NGS_PROPERTY.LIBRARY_KIT.label());
+    Integer flowCellIndex = columns.get(NGS_PROPERTY.FLOW_CELL.label());
+    Integer runProtocolIndex = columns.get(NGS_PROPERTY.SEQUENCING_RUN_PROTOCOL.label());
+    Integer samplePoolIndex = columns.get(NGS_PROPERTY.SAMPLE_POOL_GROUP.label());
+    Integer indexI7Index = columns.get(NGS_PROPERTY.INDEX_I7.label());
+    Integer indexI5Index = columns.get(NGS_PROPERTY.INDEX_I5.label());
+    Integer commentIndex = columns.get(NGS_PROPERTY.COMMENT.label());
+
+    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex,
+            organisationColumnIndex,
+            instrumentColumnIndex)
+        .max().orElseThrow();
+    if (columns.size() <= maxPropertyIndex) {
+      return Result.fromError("Not enough columns provided for row: %s".formatted(row));
+    }
+
+    List<SampleCode> sampleCodes = List.of(
+        SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
+
+    String organisationRoRId = safeArrayAccess(columnValues, organisationColumnIndex).orElse("");
+    String instrumentCURIE = safeArrayAccess(columnValues, instrumentColumnIndex).orElse("");
+    String facility = safeArrayAccess(columnValues, facilityIndex).orElse("");
+    String readType = safeArrayAccess(columnValues, readTypeIndex).orElse("");
+    String libraryKit = safeArrayAccess(columnValues, libraryKitIndex).orElse("");
+    String flowCell = safeArrayAccess(columnValues, flowCellIndex).orElse("");
+    String runProtocol = safeArrayAccess(columnValues, runProtocolIndex).orElse("");
+    String samplePool = safeArrayAccess(columnValues, samplePoolIndex).orElse("");
+    String indexI7 = safeArrayAccess(columnValues, indexI7Index).orElse("");
+    String indexI5 = safeArrayAccess(columnValues, indexI5Index).orElse("");
+    String comment = safeArrayAccess(columnValues, commentIndex).orElse("");
+    NGSMeasurementMetadata metadata = new NGSMeasurementMetadata(sampleCodes,
+        organisationRoRId, instrumentCURIE, facility, readType,
+        libraryKit, flowCell, runProtocol, samplePool, indexI7, indexI5, comment);
+    return Result.fromValue(metadata);
   }
 
   private static Result<ProteomicsMeasurementMetadata, String> generatePxPRequest(
@@ -310,7 +360,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     } else {
       var measurementMetadata = switch (domain) {
         case PROTEOMICS -> generatePxPMetadata(content);
-        case NGS -> null;
+        case NGS -> generateNGSMetadata(content);
       };
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload(
           succeededEvent.getFileName(), measurementMetadata);
@@ -324,6 +374,23 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     measurementFileItems.add(measurementFileItem);
     showFile(measurementFileItem);
     toggleFileSectionIfEmpty();
+  }
+
+  private List<NGSMeasurementMetadata> generateNGSMetadata(
+      MetadataContent content) {
+    var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
+
+    var results = content.rows().stream()
+        .map(row -> generateNGSRequest(row, propertyColumnMap))
+        .toList();
+    if (results.stream().anyMatch(Result::isError)) {
+      return new ArrayList<>();
+    }
+    return results.stream()
+        .filter(Result::isValue)
+        .map(Result::getValue)
+        .filter(Objects::nonNull)
+        .toList();
   }
 
   private List<ProteomicsMeasurementMetadata> generatePxPMetadata(
@@ -344,14 +411,25 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   }
 
   private MeasurementValidationReport validateNGS(MetadataContent content) {
-    MeasurementNGSValidationExecutor measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
-        measurementValidationService);
-    var metadata = new NGSMeasurementMetadata();
-    var finalValidationResult = generateModeDependentValidationResult(
-        measurementNGSValidationExecutor, metadata);
-    return new MeasurementValidationReport(0, ValidationResult.successful(0));
+    var validationResult = ValidationResult.successful(0);
+    var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
+    var evaluatedRows = 0;
+    // we check if there are any rows provided or if we have only rows with empty content
+    if (content.rows().isEmpty() || content.rows().stream()
+        .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
+      validationResult = validationResult.combine(
+          ValidationResult.withFailures(0,
+              List.of("The metadata sheet seems to be empty")));
+      return new MeasurementValidationReport(0, validationResult);
+    }
+    for (String row : content.rows().stream()
+        .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
+      ValidationResult result = validateNGSRow(propertyColumnMap, row);
+      validationResult = validationResult.combine(result);
+      evaluatedRows++;
+    }
+    return new MeasurementValidationReport(evaluatedRows, validationResult);
   }
-
   private MeasurementValidationReport validatePxP(MetadataContent content) {
 
     var validationResult = ValidationResult.successful(0);
@@ -372,6 +450,72 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       evaluatedRows++;
     }
     return new MeasurementValidationReport(evaluatedRows, validationResult);
+  }
+
+  private ValidationResult validateNGSRow(Map<String, Integer> propertyColumnMap,
+      String row) {
+    var validationResult = ValidationResult.successful(0);
+    var metaDataValues = row.split("\t"); // tab separated values
+    // we consider an empty row as a reason to warn, not to fail
+    if (metaDataValues.length == 0) {
+      validationResult.combine(
+          ValidationResult.successful(1, List.of("Empty row provided.")));
+      return validationResult;
+    }
+    if (metaDataValues.length != propertyColumnMap.keySet().size()) {
+      validationResult.combine(ValidationResult.withFailures(1, List.of("")));
+    }
+    var sampleCodeColumnIndex = propertyColumnMap.get(
+        NGS_PROPERTY.QBIC_SAMPLE_ID.label());
+    var organisationsColumnIndex = propertyColumnMap.get(
+        NGS_PROPERTY.ORGANISATION_ID.label());
+    var facilityIndex = propertyColumnMap.get(NGS_PROPERTY.FACILITY.label());
+    var instrumentColumnIndex = propertyColumnMap.get(
+        NGS_PROPERTY.INSTRUMENT.label());
+    var sequencingReadTypeIndex = propertyColumnMap.get(
+        NGS_PROPERTY.SEQUENCING_READ_TYPE.label());
+    var libraryKitIndex = propertyColumnMap.get(
+        NGS_PROPERTY.LIBRARY_KIT.label());
+    var flowCellIndex = propertyColumnMap.get(
+        NGS_PROPERTY.FLOW_CELL.label());
+    var sequencingRunProtocolIndex = propertyColumnMap.get(
+        NGS_PROPERTY.SEQUENCING_RUN_PROTOCOL.label());
+    var samplePoolIndex = propertyColumnMap.get(
+        NGS_PROPERTY.SAMPLE_POOL_GROUP.label());
+    var indexI7Index = propertyColumnMap.get(
+        NGS_PROPERTY.INDEX_I7.label());
+    var indexI5Index = propertyColumnMap.get(
+        NGS_PROPERTY.INDEX_I5.label());
+    Integer commentIndex = propertyColumnMap.get(NGS_PROPERTY.COMMENT.label());
+    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
+        instrumentColumnIndex).max().orElseThrow();
+    if (propertyColumnMap.size() <= maxPropertyIndex) {
+      return validationResult.combine(ValidationResult.withFailures(1,
+          List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
+    }
+    var sampleCodes = SampleCode.create(
+        safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
+    var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
+    var instrumentCURIE = safeArrayAccess(metaDataValues, instrumentColumnIndex).orElse("");
+    var facility = safeArrayAccess(metaDataValues, facilityIndex).orElse("");
+    var sequencingReadType = safeArrayAccess(metaDataValues, sequencingReadTypeIndex).orElse("");
+    var libraryKit = safeArrayAccess(metaDataValues, libraryKitIndex).orElse("");
+    var flowCell = safeArrayAccess(metaDataValues, flowCellIndex).orElse("");
+    var sequencingRunProtocol = safeArrayAccess(metaDataValues, sequencingRunProtocolIndex).orElse(
+        "");
+    var samplePoolGroup = safeArrayAccess(metaDataValues, samplePoolIndex).orElse("");
+    var indexI7 = safeArrayAccess(metaDataValues, indexI7Index).orElse("");
+    var indexI5 = safeArrayAccess(metaDataValues, indexI5Index).orElse("");
+    var comment = safeArrayAccess(metaDataValues, commentIndex).orElse("");
+
+    var metadata = new NGSMeasurementMetadata(List.of(sampleCodes),
+        organisationRoRId, instrumentCURIE, facility, sequencingReadType,
+        libraryKit, flowCell, sequencingRunProtocol, samplePoolGroup, indexI7, indexI5, comment);
+    var measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
+        measurementValidationService);
+    var finalValidationResult = generateModeDependentValidationResult(
+        measurementNGSValidationExecutor, metadata);
+    return finalValidationResult;
   }
 
   private ValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap,

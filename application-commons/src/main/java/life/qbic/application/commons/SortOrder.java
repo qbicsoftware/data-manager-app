@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.application.commons;
 
 /**
  * A sort order to be consumed by a data providing service.

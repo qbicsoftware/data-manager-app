@@ -100,7 +100,7 @@ public class AclSecurityConfiguration {
         new SimpleGrantedAuthority("acl:change-owner"), //give this to ROLE_ADMIN
         new SimpleGrantedAuthority("acl:change-audit"), // give this to ROLE_ADMIN
         new SimpleGrantedAuthority("acl:change-access")
-        //give this to ROLE_ADMIN, ROLE_PROJECT_MANAGER
+        //give this to ROLE_ADMIN, ROLE_PROJECT_MANAGER, ROLE_USER it is needed to remove yourself from a project
     );
 
     aclAuthorizationStrategy.setSecurityContextHolderStrategy(securityContextHolderStrategy());

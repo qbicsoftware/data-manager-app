@@ -4,7 +4,7 @@ import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.provider.SortDirection;
 import java.util.List;
 import java.util.stream.Stream;
-import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.Ontology;

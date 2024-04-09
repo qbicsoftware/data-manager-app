@@ -1,6 +1,8 @@
 package life.qbic.identity.api;
 
+import java.util.List;
 import java.util.Optional;
+import life.qbic.application.commons.SortOrder;
 
 /**
  * <b>User information service</b>
@@ -42,4 +44,5 @@ public interface UserInformationService {
    */
   boolean userNameAvailable(String userName);
 
+  List<UserInfo> findAllActive(String filter, int offset, int limit, List<SortOrder> sortOrders);
 }

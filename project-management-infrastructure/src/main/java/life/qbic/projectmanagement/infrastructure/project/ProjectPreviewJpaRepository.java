@@ -2,10 +2,10 @@ package life.qbic.projectmanagement.infrastructure.project;
 
 import java.util.List;
 import java.util.Objects;
+import life.qbic.application.commons.OffsetBasedRequest;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ProjectPreview;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
-import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
