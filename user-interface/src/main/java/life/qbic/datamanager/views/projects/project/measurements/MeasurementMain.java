@@ -190,10 +190,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
         context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
-    proteomicsMeasurements.size();
     var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools)
         .flatMap(items -> items.stream()).toList();
-    result.size();
+
     proteomicsMeasurementContentProvider.setMeasurements(result);
     downloadProvider.trigger();
   }
