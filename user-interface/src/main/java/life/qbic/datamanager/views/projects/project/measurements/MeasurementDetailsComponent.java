@@ -141,8 +141,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()))).setFlexGrow(1);
     ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
         .setHeader("Facility")
-        .setTooltipGenerator(NGSMeasurement::facility)
-        .setFlexGrow(0);
+        .setTooltipGenerator(NGSMeasurement::facility);
     ngsMeasurementGrid.addComponentColumn(
             ngsMeasurement -> renderInstrument().createComponent(
                 ngsMeasurement.instrument()))
@@ -198,8 +197,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility)
         .setHeader("Facility")
-        .setTooltipGenerator(ProteomicsMeasurement::facility)
-        .setFlexGrow(0);
+        .setTooltipGenerator(ProteomicsMeasurement::facility);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderInstrument().createComponent(
                 proteomicsMeasurement.instrument()))

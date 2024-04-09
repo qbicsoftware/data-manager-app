@@ -131,8 +131,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setKey("uploadDate")
         .setHeader("Upload Date")
         .setTooltipGenerator(
-            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
-        .setAutoWidth(true);
+            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()));
     GridLazyDataView<RawData> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
