@@ -98,7 +98,7 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   }
 
   private void onSelfSelected(ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
-    if(checkboxvalueChangeEvent.getValue()) {
+    if(checkboxvalueChangeEvent.getValue().booleanValue()) {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
       Contact userAsContact = new Contact(details.fullName(), details.getEmailAddress());

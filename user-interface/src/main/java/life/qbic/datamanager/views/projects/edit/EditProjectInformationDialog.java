@@ -13,7 +13,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,7 +21,6 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.projectmanagement.application.ContactRepository;
-import org.springframework.security.access.AccessDeniedException;
 
 /**
  * <b>Project Information Dialog</b>
