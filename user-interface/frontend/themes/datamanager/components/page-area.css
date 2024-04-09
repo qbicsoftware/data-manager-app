@@ -194,6 +194,11 @@
   column-gap: var(--lumo-space-s);
 }
 
+.measurement-details-component .measurement-grid .measurement-item .entry .entry-label {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 .ontology-lookup-component {
   display: flex;
   flex-direction: column;
@@ -422,25 +427,50 @@
   row-gap: var(--lumo-space-s);
 }
 
-.raw-data-details-component .raw-data-grid .sample-information-column {
+.raw-data-details-component .raw-data-grid .sample-information {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: inline-flex;
+  white-space: nowrap;
+  width: calc(80%);
+}
+
+/*We want to style the cells within the rows containing the components and values within the measurement grid to be clickable*/
+.raw-data-details-component .raw-data-grid > * {
+  cursor: pointer;
+}
+
+/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
+.raw-data-details-component .raw-data-grid ::part(row) {
+  cursor: pointer;
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item {
   display: flex;
-  column-gap: var(--lumo-space-s);
   flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  cursor: default;
 }
 
-.raw-data-details-component .raw-data-details .raw-data-details-entry {
+.raw-data-details-component .raw-data-grid .raw-data-item .entry {
   display: inline-flex;
   column-gap: var(--lumo-space-s);
 }
 
-.raw-data-details-component .raw-data-details .raw-data-details-entry-value {
-  display: inline-flex;
-  column-gap: var(--lumo-space-s);
+.raw-data-details-component .raw-data-grid .raw-data-item .entry .entry-label {
+  font-weight: bold;
+  white-space: nowrap;
 }
 
-.raw-data-details-component .raw-data-details .sample-information {
+.raw-data-details-component .raw-data-grid .raw-data-item .entry-value-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry-value {
   display: inline-flex;
-  column-gap: var(--lumo-space-s);
+  white-space: nowrap;
 }
 
 .raw-data-download-information-component {

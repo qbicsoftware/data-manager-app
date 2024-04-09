@@ -3,10 +3,7 @@ package life.qbic.datamanager.views.projects.project.rawdata;
 
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
@@ -27,6 +24,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.projectmanagement.application.rawdata.RawDataService;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
@@ -121,31 +119,13 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     ngsRawDataGrid.addClassName("raw-data-grid");
     ngsRawDataGrid.addColumn(rawData -> rawData.measurementCode().value())
         .setKey("measurementId")
-        .setHeader("Measurement Id")
-        .setAutoWidth(true);
-    ngsRawDataGrid.addComponentColumn(
-            ngsRawData -> renderSampleInformation().createComponent(ngsRawData.sampleInformation()))
+        .setHeader("Measurement Id");
+    ngsRawDataGrid.addColumn(
+            rawData -> String.join(" ", groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())))
         .setKey("sampleIds")
         .setHeader("Sample Ids")
-        .setFlexGrow(1)
-        .setAutoWidth(true);
-    ngsRawDataGrid.addColumn(rawData -> rawData.rawDataDatasetInformation().fileSize())
-        .setKey("fileSize")
-        .setHeader("File Size")
-        .setTooltipGenerator(rawData -> rawData.rawDataDatasetInformation().fileSize())
-        .setAutoWidth(true);
-    ngsRawDataGrid.addComponentColumn(rawData -> renderFileSuffixes().createComponent(
-            rawData.rawDataDatasetInformation().fileEndings()))
-        .setKey("fileSuffixes")
-        .setHeader("File Suffixes")
-        .setAutoWidth(true);
-    ngsRawDataGrid.addColumn(
-            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
-        .setKey("numberOfFiles")
-        .setHeader("Number Of Files")
-        .setTooltipGenerator(
-            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
-        .setAutoWidth(true);
+        .setTooltipGenerator(rawData -> String.join(" ",
+            groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())));
     ngsRawDataGrid.addColumn(
             rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
         .setKey("uploadDate")
@@ -164,8 +144,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
+    ngsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
     ngsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
-    ngsRawDataGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     rawDataGridDataViews.add(ngsGridDataView);
   }
 
@@ -175,39 +155,20 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
             rawData -> rawData.measurementCode().value())
         .setKey("measurementId")
         .setHeader("Measurement Id")
-        .setTooltipGenerator(rawData -> rawData.measurementCode().value())
-        .setAutoWidth(true);
-    proteomicsRawDataGrid.addComponentColumn(
-            proteomicsRawData -> renderSampleInformation().createComponent(
-                proteomicsRawData.sampleInformation()))
+        .setTooltipGenerator(rawData -> rawData.measurementCode().value());
+    proteomicsRawDataGrid.addColumn(
+            rawData -> String.join(" ", groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())))
         .setKey("sampleIds")
         .setHeader("Sample Ids")
-        .setFlexGrow(1)
-        .setAutoWidth(true);
-    proteomicsRawDataGrid.addColumn(rawData -> rawData.rawDataDatasetInformation().fileSize())
-        .setKey("fileSize")
-        .setHeader("File Size")
-        .setTooltipGenerator(rawData -> rawData.rawDataDatasetInformation().fileSize())
-        .setAutoWidth(true);
-    proteomicsRawDataGrid.addComponentColumn(rawData -> renderFileSuffixes().createComponent(
-            rawData.rawDataDatasetInformation().fileEndings()))
-        .setKey("fileSuffixes")
-        .setHeader("File Suffixes")
-        .setAutoWidth(true);
-    proteomicsRawDataGrid.addColumn(
-            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
-        .setKey("numberOfFiles")
-        .setHeader("Number Of Files")
-        .setTooltipGenerator(
-            rawData -> String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()))
-        .setAutoWidth(true);
+        .setTooltipGenerator(rawData -> String.join(" ",
+            groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())));
     proteomicsRawDataGrid.addColumn(
             rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
         .setKey("uploaddate")
         .setHeader("Upload Date")
         .setTooltipGenerator(
-            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
-        .setAutoWidth(true);
+            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()));
+    proteomicsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
     GridLazyDataView<RawData> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -222,28 +183,27 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               .stream();
         });
     proteomicsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
-    proteomicsRawDataGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
 
-  private ComponentRenderer<Div, Collection<RawDataSampleInformation>> renderSampleInformation() {
-    return new ComponentRenderer<>(sampleInformationList -> {
-      Div showSampleCodes = new Div();
-      showSampleCodes.addClassName("sample-information-column");
-      sampleInformationList.forEach(sampleInformation ->
-          showSampleCodes.add(new Span(sampleInformation.sampleCode().code() + " "),
-              new Span("(" + sampleInformation.sampleLabel() + ") ")));
-      return showSampleCodes;
+  private ComponentRenderer<GridDetailsItem, RawData> renderRawDataItemDetails() {
+    return new ComponentRenderer<>(rawData -> {
+      GridDetailsItem rawDataItem = new GridDetailsItem();
+      rawDataItem.addListEntry("Sample Ids",
+          groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation()));
+      rawDataItem.addEntry("Number of Files",
+          String.valueOf(rawData.rawDataDatasetInformation().numberOfFiles()));
+      rawDataItem.addEntry("File Size", rawData.rawDataDatasetInformation().fileSize());
+      rawDataItem.addListEntry("File Suffixes", rawData.rawDataDatasetInformation().fileEndings());
+      return rawDataItem;
     });
   }
 
-  private ComponentRenderer<Div, Collection<String>> renderFileSuffixes() {
-    return new ComponentRenderer<>(fileSuffixes -> {
-      Div showFileSuffixes = new Div();
-      showFileSuffixes.addClassName("file-suffix-column");
-      fileSuffixes.forEach(fileSuffix -> showFileSuffixes.add(new Span(fileSuffix + " ")));
-      return showFileSuffixes;
-    });
+  private Collection<String> groupSampleInfoIntoCodeAndLabel(
+      Collection<RawDataSampleInformation> sampleInformationCollection) {
+    return sampleInformationCollection.stream().map(
+        sampleInformation -> String.format("%s (%s)", sampleInformation.sampleCode().code(),
+            sampleInformation.sampleLabel())).toList();
   }
 
   private String convertToLocalDate(Date date) {
