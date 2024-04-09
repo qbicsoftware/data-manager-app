@@ -17,7 +17,7 @@ public class OntologyClass {
   String ontologyVersion;
   @Column(name = "ontologyIri")
   String ontologyIri;
-  @Column(name = "label")
+  @Column(name = "label", length = 1024)
   String classLabel;
   @Column(name = "name")
   String curie;
