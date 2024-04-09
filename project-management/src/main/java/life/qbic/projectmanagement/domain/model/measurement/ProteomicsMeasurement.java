@@ -92,7 +92,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   private String fraction = "";
 
   @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
+  @CollectionTable(name = "proteomics_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
   private Collection<SampleId> measuredSamples;
 
   @ElementCollection(targetClass = ProteomicsLabeling.class, fetch = FetchType.EAGER)
