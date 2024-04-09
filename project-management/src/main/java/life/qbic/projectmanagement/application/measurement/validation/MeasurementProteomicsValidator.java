@@ -96,9 +96,7 @@ public class MeasurementProteomicsValidator implements
     INJECTION_VOLUME("injection volume (ul)"),
     LC_COLUMN("lc column"),
     LCMS_METHOD("lcms method"),
-
     LABELING_TYPE("labeling type"),
-
     LABEL("label"),
     COMMENT("comment");
 

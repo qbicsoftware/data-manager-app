@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;

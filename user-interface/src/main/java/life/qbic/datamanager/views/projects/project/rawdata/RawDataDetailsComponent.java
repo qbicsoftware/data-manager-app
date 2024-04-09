@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.rawdata;
 
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -23,10 +24,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.rawdata.RawDataService;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataSampleInformation;
@@ -164,6 +165,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           .stream();
     });
     ngsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
+    ngsRawDataGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     rawDataGridDataViews.add(ngsGridDataView);
   }
 
@@ -220,6 +222,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               .stream();
         });
     proteomicsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
+    proteomicsRawDataGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
 

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
@@ -13,7 +14,6 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -73,7 +73,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private final ClientDetailsProvider clientDetailsProvider;
 
-  public MeasurementDetailsComponent(@Autowired MeasurementService measurementService, @Autowired SampleInformationService sampleInformationService, ClientDetailsProvider clientDetailsProvider) {
+  public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
+      @Autowired SampleInformationService sampleInformationService,
+      ClientDetailsProvider clientDetailsProvider) {
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
@@ -134,16 +136,46 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private void createNGSMeasurementGrid() {
     ngsMeasurementGrid.addClassName("measurement-grid");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
-        .setHeader("Measurement ID");
+        .setHeader("Measurement ID")
+        .setAutoWidth(true)
+        .setTooltipGenerator(
+            ngsMeasurement -> ngsMeasurement.measurementCode().value())
+        .setFlexGrow(0);
+    ngsMeasurementGrid.addComponentColumn(ngsMeasurement -> renderSampleCodes()
+            .createComponent(ngsMeasurement.measuredSamples()))
+        .setHeader("Sample IDs")
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
+        .setHeader("Facility")
+        .setTooltipGenerator(NGSMeasurement::facility)
+        .setAutoWidth(true);
     ngsMeasurementGrid.addComponentColumn(
-            ngsMeasurement -> renderSampleCodes().createComponent(ngsMeasurement.measuredSamples()))
-        .setHeader("Sample IDs");
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getLabel())
-        .setHeader("Instrument");
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getDescription())
-        .setHeader("Description");
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.instrument().getName())
-        .setHeader("Name");
+            ngsMeasurement -> renderInstrument().createComponent(
+                ngsMeasurement.instrument()))
+        .setHeader("Instrument")
+        .setTooltipGenerator(
+            ngsMeasurement -> ngsMeasurement.instrument().formatted())
+        .setAutoWidth(true)
+        .setFlexGrow(0);
+    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
+        .setHeader("Comment")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.setItemDetailsRenderer(new ComponentRenderer<>(ngsMeasurement -> {
+      MeasurementItem measurementItem = new MeasurementItem();
+      measurementItem.addComponentEntry("Organisation",
+          renderOrganisation(ngsMeasurement.organisation()));
+      measurementItem.addEntry("Read Type", ngsMeasurement.sequencingReadType());
+      measurementItem.addEntry("Library Kit", ngsMeasurement.libraryKit().orElse(""));
+      measurementItem.addEntry("Flow Cell", ngsMeasurement.flowCell().orElse(""));
+      measurementItem.addEntry("Run Protocol", ngsMeasurement.sequencingRunProtocol().orElse(""));
+      measurementItem.addEntry("Index I7", ngsMeasurement.indexI7().orElse(""));
+      measurementItem.addEntry("Index I5", ngsMeasurement.indexI5().orElse(""));
+      measurementItem.addEntry("Registration Date",
+          asClientLocalDateTime(ngsMeasurement.registrationDate())
+              .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+      return measurementItem;
+    }));
     ngsMeasurementGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -152,8 +184,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("measurementCode").ascending());
       return measurementService.findNGSMeasurements(searchTerm,
-          context.experimentId().orElseThrow(),
-          query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow()).stream();
+              context.experimentId().orElseThrow(),
+              query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
+          .stream();
     });
     measurementsGridDataViews.add(ngsGridDataView);
   }
@@ -167,24 +200,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setFlexGrow(0);
-    //Todo Should the sampleCodes be retrieved via a service or from column?
     proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderSampleCodes()
             .createComponent(proteomicsMeasurement.measuredSamples()))
         .setHeader("Sample IDs")
         .setAutoWidth(true);
-    proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderOrganisation()
-            .createComponent(proteomicsMeasurement.organisation()))
-        .setHeader("Organisation")
-        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.organisation().label())
-        .setAutoWidth(true)
-        .setFlexGrow(0);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility)
         .setHeader("Facility")
         .setTooltipGenerator(ProteomicsMeasurement::facility)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn)
-        .setHeader("LC Column")
-        .setTooltipGenerator(ProteomicsMeasurement::lcColumn)
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderInstrument().createComponent(
@@ -201,58 +223,30 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
         .setAutoWidth(true)
         .setFlexGrow(1);
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
-        .setHeader("Measurement Label")
-        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.label().orElse(""))
-        .setAutoWidth(true)
-        .setFlexGrow(1);
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.fraction().orElse(""))
-        .setHeader("Fraction Name")
-        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.fraction().orElse(""))
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod)
-        .setHeader("Digestion Method")
-        .setTooltipGenerator(ProteomicsMeasurement::digestionMethod)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme)
-        .setHeader("Digestion Enzyme")
-        .setTooltipGenerator(ProteomicsMeasurement::digestionEnzyme)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::enrichmentMethod)
-        .setHeader("Enrichment Method")
-        .setTooltipGenerator(ProteomicsMeasurement::enrichmentMethod)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::injectionVolume)
-        .setHeader("Injection Volume")
-        .setTooltipGenerator(
-            proteomicsMeasurement -> String.valueOf(proteomicsMeasurement.injectionVolume()))
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod)
-        .setHeader("LCMS Method")
-        .setTooltipGenerator(ProteomicsMeasurement::lcmsMethod)
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse(""))
-        .setHeader("Sample Pool Group")
-        .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.samplePoolGroup().orElse(""))
-        .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(new LocalDateTimeRenderer<>(
-                    proteomicsMeasurement -> asClientLocalDateTime(proteomicsMeasurement.registrationDate()),
-                    "yyyy-MM-dd"))
-            .setKey("registrationDate")
-            .setHeader("Registration Date")
-            .setTooltipGenerator(proteomicsMeasurement -> {
-              LocalDateTime dateTime = asClientLocalDateTime(proteomicsMeasurement.registrationDate());
-              return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 'at' hh:mm a"));
-            })
-            .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse(""))
         .setHeader("Comment")
         .setTooltipGenerator(measurement -> measurement.comment().orElse(""))
         .setAutoWidth(true);
+    proteomicsMeasurementGrid.setItemDetailsRenderer(
+        new ComponentRenderer<>(proteomicsMeasurement -> {
+          MeasurementItem measurementItem = new MeasurementItem();
+          measurementItem.addComponentEntry("Organisation",
+              renderOrganisation(proteomicsMeasurement.organisation()));
+          measurementItem.addEntry("Digestion Enzyme", proteomicsMeasurement.digestionEnzyme());
+          measurementItem.addEntry("Digestion Method", proteomicsMeasurement.digestionMethod());
+          measurementItem.addEntry("Injection Volume",
+              String.valueOf(proteomicsMeasurement.injectionVolume()));
+          measurementItem.addEntry("LCMS Method", proteomicsMeasurement.lcColumn());
+          measurementItem.addEntry("Enrichment Method", proteomicsMeasurement.enrichmentMethod());
+          measurementItem.addEntry("Fraction Name", proteomicsMeasurement.fraction().orElse(""));
+          measurementItem.addEntry("Measurement Label", proteomicsMeasurement.label().orElse(""));
+          measurementItem.addEntry("Sample Pool Group",
+              proteomicsMeasurement.samplePoolGroup().orElse(""));
+          measurementItem.addEntry("Registration Date",
+              asClientLocalDateTime(proteomicsMeasurement.registrationDate())
+                  .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+          return measurementItem;
+        }));
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -262,29 +256,56 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementCode").ascending());
           return measurementService.findProteomicsMeasurement(searchTerm,
-              context.experimentId().orElseThrow(),
-              query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow()).stream();
+                  context.experimentId().orElseThrow(),
+                  query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
+              .stream();
         });
+    proteomicsMeasurementGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     measurementsGridDataViews.add(proteomicsGridDataView);
+  }
+
+  private static final class MeasurementItem extends Div {
+
+    public MeasurementItem() {
+      addClassName("measurement-item");
+    }
+
+    public void addEntry(String propertyLabel, String propertyValue) {
+      Span propertyLabelSpan = new Span(propertyLabel + ":");
+      Span propertyValueSpan = new Span(propertyValue);
+      propertyLabelSpan.addClassName("bold");
+      Span entry = new Span();
+      entry.addClassName("entry");
+      entry.add(propertyLabelSpan, propertyValueSpan);
+      add(entry);
+    }
+
+    public void addComponentEntry(String propertyLabel, Component propertyValueComponent) {
+      Span propertyLabelSpan = new Span(propertyLabel + ":");
+      propertyLabelSpan.addClassName("bold");
+      Span entry = new Span();
+      entry.addClassName("entry");
+      entry.add(propertyLabelSpan, propertyValueComponent);
+      add(entry);
+    }
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
     ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(
-            this.clientDetailsProvider.latestDetails().map(ClientDetailsProvider.ClientDetails::timeZoneId).orElse("UTC")));
+        this.clientDetailsProvider.latestDetails()
+            .map(ClientDetailsProvider.ClientDetails::timeZoneId).orElse("UTC")));
     return zonedDateTime.toLocalDateTime();
   }
 
-  private ComponentRenderer<Anchor, Organisation> renderOrganisation() {
-    return new ComponentRenderer<>(organisation-> {
+  private Anchor renderOrganisation(Organisation organisation) {
       SvgIcon svgIcon = new SvgIcon(rorIconResource);
       svgIcon.addClassName("organisation-icon");
       Span organisationLabel = new Span(organisation.label());
       String organisationUrl = organisation.IRI();
       Anchor organisationAnchor = new Anchor(organisationUrl, organisationLabel, svgIcon);
       organisationAnchor.setTarget(AnchorTarget.BLANK);
-      organisationAnchor.addClassName("organisation-column-entry");
+    organisationAnchor.addClassName("organisation-entry");
       return organisationAnchor;
-    });
   }
 
   private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
@@ -301,12 +322,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private ComponentRenderer<Div, Collection<SampleId>> renderSampleCodes() {
-    return new ComponentRenderer<>(sampleIds-> {
+    return new ComponentRenderer<>(sampleIds -> {
       Div showSampleCodes = new Div();
-        List<SampleCode> sampleCodes = sampleInformationService.retrieveSamplesByIds(sampleIds).stream().map(Sample::sampleCode).toList();
-        showSampleCodes.addClassName("sample-code-column");
-        sampleCodes.forEach(sampleCode -> showSampleCodes.add(new Span(sampleCode.code())));
-        return showSampleCodes;
+      List<SampleCode> sampleCodes = sampleInformationService.retrieveSamplesByIds(sampleIds)
+          .stream().map(Sample::sampleCode).toList();
+      showSampleCodes.addClassName("sample-code-column");
+      sampleCodes.forEach(sampleCode -> showSampleCodes.add(new Span(sampleCode.code())));
+      return showSampleCodes;
     });
   }
 }
