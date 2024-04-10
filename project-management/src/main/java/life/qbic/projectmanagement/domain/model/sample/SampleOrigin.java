@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.domain.model.sample;
 
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 
 /**
  * <b>Sample Origin</b>

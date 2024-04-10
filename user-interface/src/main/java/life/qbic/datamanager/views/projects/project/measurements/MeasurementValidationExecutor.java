@@ -18,6 +18,6 @@ public interface MeasurementValidationExecutor<MeasurementMetadata> {
 
   ValidationResult validateRegistration(MeasurementMetadata metadata);
 
-  ValidationResult validateEdit(MeasurementMetadata metadata);
+  ValidationResult validateUpdate(MeasurementMetadata metadata);
 
 }

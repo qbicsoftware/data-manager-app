@@ -125,6 +125,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
     this.registration = registration;
+    this.fraction = method.fractionName();
   }
 
   private static void evaluateMandatoryMetadata(ProteomicsMethodMetadata method)
@@ -198,7 +199,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public void setLabeling(Collection<ProteomicsLabeling> labeling) {
-    this.labeling = Set.copyOf(labeling.stream().toList());
+    this.labeling = new HashSet<>(labeling);
   }
 
   public void setFraction(String fraction) {
@@ -224,7 +225,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   }
 
   public Collection<SampleId> measuredSamples() {
-    return measuredSamples;
+    return measuredSamples.stream().toList();
   }
 
   public OntologyTerm instrument() {
@@ -282,6 +283,19 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
   public Instant registrationDate() {
     return registration;
   }
+
+  public void setMethod(ProteomicsMethodMetadata method) {
+    this.instrument = method.instrument();
+    this.facility = method.facility();
+    this.fraction = method.fractionName();
+    this.digestionMethod = method.digestionMethod();
+    this.digestionEnzyme = method.digestionEnzyme();
+    this.enrichmentMethod = method.enrichmentMethod();
+    this.injectionVolume = method.injectionVolume();
+    this.lcColumn = method.lcColumn();
+    this.lcmsMethod = method.lcmsMethod();
+  }
+
 
 
   public void setSamplePoolGroup(String group) {

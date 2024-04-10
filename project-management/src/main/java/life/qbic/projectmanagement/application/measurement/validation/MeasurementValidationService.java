@@ -32,20 +32,7 @@ public class MeasurementValidationService {
     this.pxpValidator = pxpValidator;
   }
 
-  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
-    return measurementNgsValidator.validate(ngsMeasurementMetadata);
-  }
-
-  public ValidationResult validateProteomics(
-      ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxpValidator.validate(pxMeasurementMetadata);
-  }
-
-  public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {
-    return Optional.ofNullable(determinDomain(propertyTypes));
-  }
-
-  private static Domain determinDomain(Collection<String> propertyTypes) {
+  private static Domain determineDomain(Collection<String> propertyTypes) {
     if (MeasurementNGSValidator.isNGS(propertyTypes)) {
       return Domain.NGS;
     }
@@ -53,6 +40,47 @@ public class MeasurementValidationService {
       return Domain.PROTEOMICS;
     }
     return null;
+  }
+
+  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
+    return measurementNgsValidator.validate(ngsMeasurementMetadata);
+  }
+
+  /**
+   * This method validates a proteomic measurement metadata object in the case of a new measurement
+   * that is going to be registered.
+   * <p>
+   * It will validate all properties exhaustive, but also is not aware of any present measurement
+   * id, which also will not get validated.
+   * <p>
+   * If you want to validate a measurement update, please use
+   *
+   * @param pxMeasurementMetadata the measurement to validate
+   * @return a detailed {@link ValidationResult} with information about the validation
+   * @since 1.0.0
+   */
+  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
+    return pxpValidator.validate(pxMeasurementMetadata);
+  }
+
+  /**
+   * Validates proteomic measurement metadata in the case of an update of a registered measurement.
+   *
+   * @param pxMeasurementMetadata the measurement to validate
+   * @return a detailed {@link ValidationResult} with information about the validation
+   * @since 1.0.0
+   */
+  public ValidationResult validateProteomicsUpdate(
+      ProteomicsMeasurementMetadata pxMeasurementMetadata) {
+    return pxpValidator.validateUpdate(pxMeasurementMetadata);
+  }
+
+  public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata) {
+    return measurementNgsValidator.validate(ngsMeasurementMetadata);
+  }
+
+  public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {
+    return Optional.ofNullable(determineDomain(propertyTypes));
   }
 
   public enum Domain {

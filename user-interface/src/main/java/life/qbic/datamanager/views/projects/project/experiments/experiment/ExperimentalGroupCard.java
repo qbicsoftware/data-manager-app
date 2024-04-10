@@ -6,7 +6,6 @@ import com.vaadin.flow.component.html.Span;
 import java.io.Serial;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
