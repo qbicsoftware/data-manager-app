@@ -6,7 +6,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
@@ -49,7 +48,6 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
-import life.qbic.projectmanagement.application.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -245,7 +243,7 @@ public class ProjectSideNavigationComponent extends Div implements
     Icon flask = VaadinIcon.FLASK.create();
     flask.addClassName("primary");
     expHeader.setPrefixComponent(flask);
-    expHeader.addClassName("experiment-header");
+    expHeader.addClassName("primary");
     experimentSection.add(expHeader);
 
     Icon addIcon = LumoIcon.PLUS.create();
