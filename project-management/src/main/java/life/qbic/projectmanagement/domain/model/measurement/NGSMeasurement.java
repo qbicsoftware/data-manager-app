@@ -93,7 +93,8 @@ public class NGSMeasurement implements MeasurementMetadata {
     this.instrument = requireNonNull(method.instrument(), "instrument must not be null");
     this.measurementCode = requireNonNull(measurementCode, "measurement code must not be null");
     this.facility = requireNonNull(method.facility(), "facility must not be null");
-    this.sequencingReadType = requireNonNull(method.sequencingReadType(), "read type must not be null");
+    this.sequencingReadType = requireNonNull(method.sequencingReadType(),
+        "read type must not be null");
     this.libraryKit = method.libraryKit();
     this.flowCell = method.flowCell();
     this.sequencingRunProtocol = method.sequencingRunProtocol();
@@ -143,6 +144,7 @@ public class NGSMeasurement implements MeasurementMetadata {
         comment, Instant.now());
   }
 
+  @Override
   public MeasurementCode measurementCode() {
     return this.measurementCode;
   }

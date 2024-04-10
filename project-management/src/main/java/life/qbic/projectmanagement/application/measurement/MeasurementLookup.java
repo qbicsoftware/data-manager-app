@@ -29,5 +29,11 @@ public interface MeasurementLookup {
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders);
 
+  long countNgsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
+
+  long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
+
+  List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds);
+
   List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 }

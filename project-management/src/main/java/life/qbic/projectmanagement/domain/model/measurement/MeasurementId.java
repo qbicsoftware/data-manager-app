@@ -60,8 +60,8 @@ public class MeasurementId implements Serializable {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    MeasurementId sampleId = (MeasurementId) o;
-    return Objects.equals(uuid, sampleId.uuid);
+    MeasurementId measurementId = (MeasurementId) o;
+    return Objects.equals(uuid, measurementId.uuid);
   }
 
   @Override

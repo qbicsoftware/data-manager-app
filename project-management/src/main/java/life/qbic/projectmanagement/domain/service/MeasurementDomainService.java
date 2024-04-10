@@ -51,7 +51,8 @@ public class MeasurementDomainService {
       return Result.fromValue(measurement);
     } catch (RuntimeException e) {
       log.error(
-          "Saving the Proteomics measurement failed for id: " + measurement.measurementCode().value(), e);
+          "Saving the Proteomics measurement failed for id: " + measurement.measurementCode()
+              .value(), e);
     }
     return Result.fromError(ResponseCode.FAILED);
   }
@@ -65,7 +66,8 @@ public class MeasurementDomainService {
       measurementRepository.update(measurement);
       return Result.fromValue(measurement);
     } catch (RuntimeException e) {
-      log.error("Measurement update: Failed for measurement with id " + measurement.measurementId().value(), e);
+      log.error("Measurement update: Failed for measurement with id " + measurement.measurementId()
+          .value(), e);
     }
     return Result.fromError(ResponseCode.FAILED);
   }
