@@ -145,6 +145,11 @@ public class SampleRepositoryImpl implements SampleRepository {
   }
 
   @Override
+  public Optional<Sample> findSample(SampleId sampleId) {
+    return qbicSampleRepository.findById(sampleId);
+  }
+
+  @Override
   public long countSamplesWithExperimentId(ExperimentId experimentId) {
     return qbicSampleRepository.countAllByExperimentId(experimentId);
   }

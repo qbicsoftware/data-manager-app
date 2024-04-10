@@ -88,6 +88,11 @@
   margin-top: auto;
 }
 
+.main.measurement .measurement-main-content .button-bar {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
 .main.ontology-lookup-main {
   grid-template-columns: auto;
   grid-template-rows: auto;

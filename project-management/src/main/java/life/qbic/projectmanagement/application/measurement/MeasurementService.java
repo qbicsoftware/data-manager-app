@@ -150,7 +150,7 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<ProteomicsMeasurement> findProteomicsMeasurement(String filter,
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
@@ -160,7 +160,20 @@ public class MeasurementService {
         samplesInExperiment, offset, limit, sortOrder);
   }
 
-  private Result<MeasurementId, ResponseCode> registerNGS(
+  @PostAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(ExperimentId experimentId,
+      ProjectId projectId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryAllProteomicsMeasurement(samplesInExperiment);
+  }
+
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
+    return measurementLookupService.findProteomicsMeasurement(measurementId);
+  }
+
+  private Result<MeasurementId, ErrorCode> registerNGS(
       ProjectId projectId, NGSMeasurementMetadata metadata) {
 
     var associatedSampleCodes = metadata.associatedSamples();
@@ -170,18 +183,18 @@ public class MeasurementService {
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
       log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     }
 
     var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
     if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
     var organisationQuery = organisationLookupService.organisation(
         metadata.organisationId());
     if (organisationQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
     var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
@@ -198,13 +211,13 @@ public class MeasurementService {
     var result = measurementDomainService.addNGS(measurement, parentCodes);
 
     if (result.isError()) {
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     } else {
       return Result.fromValue(result.getValue().measurementId());
     }
   }
 
-  private Result<MeasurementId, ResponseCode> registerPxP(
+  private Result<MeasurementId, ErrorCode> registerPxP(
       ProjectId projectId, ProteomicsMeasurementMetadata metadata) {
     var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createMS(
@@ -213,18 +226,18 @@ public class MeasurementService {
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
       log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     }
 
     var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
     if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ONTOLOGY_TERM);
+      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
     var organisationQuery = organisationLookupService.organisation(
         metadata.organisationId());
     if (organisationQuery.isEmpty()) {
-      return Result.fromError(ResponseCode.UNKNOWN_ORGANISATION_ROR_ID);
+      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
     var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
@@ -256,20 +269,89 @@ public class MeasurementService {
     var result = measurementDomainService.addProteomics(measurement, parentCodes);
 
     if (result.isError()) {
-      return Result.fromError(ResponseCode.FAILED);
+      return Result.fromError(ErrorCode.FAILED);
     } else {
       return Result.fromValue(result.getValue().measurementId());
     }
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<MeasurementId, ResponseCode> register(ProjectId projectId,
+  public Result<MeasurementId, ErrorCode> update(ProjectId projectId,
+      MeasurementMetadata metadata) {
+    if (metadata.measurementIdentifier().isEmpty()) {
+      return Result.fromError(ErrorCode.MISSING_MEASUREMENT_ID);
+    }
+    if (!areSamplesFromProject(projectId, metadata.associatedSamples())) {
+      return Result.fromError(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
+    }
+    if (metadata instanceof ProteomicsMeasurementMetadata pxpMetadata) {
+      return updatePxP(pxpMetadata);
+    }
+    if (metadata instanceof NGSMeasurementMetadata) {
+      return updateNGS(metadata);
+    }
+    return Result.fromError(ErrorCode.FAILED);
+  }
+
+  private Result<MeasurementId, ErrorCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
+
+    var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
+    if (result.isEmpty()) {
+      return Result.fromError(ErrorCode.UNKNOWN_MEASUREMENT);
+    }
+    var measurementToUpdate = result.get();
+
+    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
+    if (instrumentQuery.isEmpty()) {
+      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var organisationQuery = organisationLookupService.organisation(
+        metadata.organisationId());
+    if (organisationQuery.isEmpty()) {
+      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
+        metadata.fractionName(),
+        metadata.digestionMethod(), metadata.digestionEnzyme(),
+        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
+        metadata.lcColumn(), metadata.lcmsMethod());
+
+    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
+    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
+        label.sampleCode(), label.labelType(), label.label())).collect(Collectors.toList());
+
+    measurementToUpdate.setSamplePreparation(samplePreparation);
+    measurementToUpdate.setLabeling(labelingMethod);
+
+    metadata.assignedSamplePoolGroup()
+        .ifPresent(measurementToUpdate::setSamplePoolGroup);
+
+    measurementToUpdate.setLabeling(labelingMethod);
+    measurementToUpdate.setMethod(method);
+
+    var updateResult = measurementDomainService.update(measurementToUpdate);
+
+    if (updateResult.isError()) {
+      return Result.fromError(ErrorCode.FAILED);
+    } else {
+      return Result.fromValue(updateResult.getValue().measurementId());
+    }
+  }
+
+  private Result<MeasurementId, ErrorCode> updateNGS(MeasurementMetadata metadata) {
+    return Result.fromError(ErrorCode.FAILED);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<MeasurementId, ErrorCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
     if (measurementMetadata.associatedSamples().isEmpty()) {
-      return Result.fromError(ResponseCode.MISSING_ASSOCIATED_SAMPLES);
+      return Result.fromError(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
     }
     if (!areSamplesFromProject(projectId, measurementMetadata.associatedSamples())) {
-      return Result.fromError(ResponseCode.SAMPLECODE_NOT_FROM_PROJECT);
+      return Result.fromError(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
     }
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(projectId, proteomicsMeasurementMetadata);
@@ -277,7 +359,7 @@ public class MeasurementService {
     if (measurementMetadata instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
       return registerNGS(projectId, ngsMeasurementMetadata);
     }
-    return Result.fromError(ResponseCode.FAILED);
+    return Result.fromError(ErrorCode.FAILED);
   }
 
   @Transactional
@@ -288,6 +370,20 @@ public class MeasurementService {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
     for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
       register(projectId, measurementMetadata)
+          .onError(error -> {
+            throw new MeasurementRegistrationException(error);
+          });
+    }
+  }
+
+  @Transactional
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void updateMultiple(
+      List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
+    var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
+    for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
+      update(projectId, measurementMetadata)
           .onError(error -> {
             throw new MeasurementRegistrationException(error);
           });
@@ -377,19 +473,19 @@ public class MeasurementService {
         associatedExperimentsFromSamples);
   }
 
-  public enum ResponseCode {
-    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, SAMPLECODE_NOT_FROM_PROJECT, MISSING_ASSOCIATED_SAMPLES
+  public enum ErrorCode {
+    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementRegistrationException extends RuntimeException {
 
-    private final MeasurementService.ResponseCode reason;
+    private final ErrorCode reason;
 
-    public MeasurementRegistrationException(ResponseCode reason) {
+    public MeasurementRegistrationException(ErrorCode reason) {
       this.reason = reason;
     }
 
-    public ResponseCode reason() {
+    public ErrorCode reason() {
       return reason;
     }
   }

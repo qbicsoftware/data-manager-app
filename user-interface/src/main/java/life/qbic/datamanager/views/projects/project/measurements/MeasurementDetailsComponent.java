@@ -243,7 +243,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               .collect(Collectors.toList());
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementCode").ascending());
-          return measurementService.findProteomicsMeasurement(searchTerm,
+          return measurementService.findProteomicsMeasurements(searchTerm,
                   context.experimentId().orElseThrow(),
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();

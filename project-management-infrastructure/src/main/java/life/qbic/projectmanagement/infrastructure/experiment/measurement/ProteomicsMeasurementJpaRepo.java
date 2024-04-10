@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
+import java.util.Optional;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import org.springframework.data.jpa.domain.Specification;
@@ -16,5 +18,8 @@ public interface ProteomicsMeasurementJpaRepo extends
 
   @Override
   long count(Specification<ProteomicsMeasurement> spec);
+
+  Optional<ProteomicsMeasurement> findProteomicsMeasurementByMeasurementCode(
+      MeasurementCode measurementCode);
 
 }

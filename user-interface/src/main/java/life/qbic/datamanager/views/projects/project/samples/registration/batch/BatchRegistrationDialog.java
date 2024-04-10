@@ -15,9 +15,9 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
  * A dialog used for sample batch registration.

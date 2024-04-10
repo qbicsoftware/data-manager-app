@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.model.experiment
 
-import life.qbic.projectmanagement.domain.model.experiment.*
+
 import org.spockframework.util.Nullable
 import spock.lang.Specification
 

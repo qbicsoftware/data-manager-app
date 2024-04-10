@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.model.experiment
 
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable
+
 import spock.lang.Specification
 
 /**

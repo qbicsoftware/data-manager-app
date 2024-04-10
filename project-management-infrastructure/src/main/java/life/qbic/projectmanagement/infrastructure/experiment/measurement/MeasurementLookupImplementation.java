@@ -47,7 +47,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
   }
 
   @Override
-  public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String filter,
+  public List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(String filter,
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
@@ -159,6 +159,12 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     measurements.addAll(ngsMeasurementJpaRepo.findAll(ngsContainsSampleId));
     measurements.addAll(pxpMeasurementJpaRepo.findAll(proteomicsContainsSampleId));
     return measurements;
+  }
+
+  @Override
+  public List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(
+      Collection<SampleId> sampleIds) {
+    return pxpMeasurementJpaRepo.findAll(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
   }
 
   private Specification<NGSMeasurement> generateNGSFilterSpecification(

@@ -21,7 +21,7 @@ public interface MeasurementLookup {
    * @param sortOrders the ordering to sort by
    * @return the results in the provided range
    */
-  List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String filter,
+  List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(String filter,
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders);
 
@@ -34,4 +34,6 @@ public interface MeasurementLookup {
   long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 
   List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds);
+
+  List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 }
