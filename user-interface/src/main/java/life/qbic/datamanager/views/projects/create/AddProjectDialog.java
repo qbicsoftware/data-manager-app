@@ -82,9 +82,10 @@ public class AddProjectDialog extends Dialog {
 
     List<Contact> knownContacts = contactRepository.findAll().stream().map(contact ->
         new Contact(contact.fullName(), contact.emailAddress())).toList();
-    collaboratorsLayout.setKnownContacts(knownContacts);
     if(knownContacts.isEmpty()) {
       collaboratorsLayout.hideContactBox();
+    } else {
+      collaboratorsLayout.setKnownContacts(knownContacts);
     }
 
     stepContent = new HashMap<>();
