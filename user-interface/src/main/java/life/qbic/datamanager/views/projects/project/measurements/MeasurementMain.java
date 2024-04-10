@@ -185,8 +185,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         confirmEvent.getSource().markSuccessful(upload.fileName());
       }
       if (allSuccessfull) {
-        measurementDetailsComponent.setContext(context);
         confirmEvent.getSource().close();
+        setMeasurementInformation();
       }
     });
     return dialog;
