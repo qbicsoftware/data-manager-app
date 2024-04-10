@@ -1,11 +1,7 @@
 package life.qbic.projectmanagement.domain.model.experiment
 
-import life.qbic.projectmanagement.domain.model.experiment.Condition
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel
-import spock.lang.Specification
 
+import spock.lang.Specification
 
 class ConditionSpec extends Specification {
 

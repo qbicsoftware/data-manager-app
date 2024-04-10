@@ -21,11 +21,13 @@ public interface MeasurementLookup {
    * @param sortOrders the ordering to sort by
    * @return the results in the provided range
    */
-  List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String filter,
+  List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(String filter,
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders);
 
   List<NGSMeasurement> queryNGSMeasurementsBySampleIds(String filter,
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders);
+
+  List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 }

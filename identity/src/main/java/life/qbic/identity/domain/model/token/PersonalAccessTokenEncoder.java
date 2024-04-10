@@ -41,7 +41,7 @@ public class PersonalAccessTokenEncoder implements TokenEncoder {
     this.salt = fromHex(requireNonNull(salt, "salt must not be null"));
     if (this.salt.length < EXPECTED_MIN_SALT_BYTES) {
       throw new IllegalArgumentException(
-          "salt must have at least " + EXPECTED_MIN_SALT_BITS + " bits.");
+          "salt must have at least " + EXPECTED_MIN_SALT_BITS + " bits. Provided: " + this.salt.length);
     }
     if (iterationCount < EXPECTED_MIN_ITERATION_COUNT) {
       throw new IllegalArgumentException(

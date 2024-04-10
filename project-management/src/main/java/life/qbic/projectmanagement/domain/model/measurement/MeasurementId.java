@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.lang.NonNull;
 
 /**
@@ -67,7 +66,7 @@ public class MeasurementId implements Serializable {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", SampleId.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", MeasurementId.class.getSimpleName() + "[", "]")
         .add("uuid=" + uuid)
         .toString();
   }

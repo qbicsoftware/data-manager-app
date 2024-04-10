@@ -2,9 +2,12 @@ package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -39,13 +42,13 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   public Result<NGSMeasurement, ResponseCode> save(NGSMeasurement measurement, List<SampleCode> sampleCodes) {
     try {
       measurementJpaRepo.save(measurement);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving ngs measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
     try {
       measurementDataRepo.addNGSMeasurement(measurement, sampleCodes);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving ngs measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
       measurementJpaRepo.delete(measurement); // Rollback JPA save
@@ -60,14 +63,14 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       ProteomicsMeasurement measurement, List<SampleCode> sampleCodes) {
     try {
       pxpMeasurementJpaRepo.save(measurement);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving proteomics measurement failed", e);
       return Result.fromError(ResponseCode.FAILED);
     }
 
     try {
       measurementDataRepo.addProtemicsMeasurement(measurement, sampleCodes);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.error("Saving proteomics measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
       pxpMeasurementJpaRepo.delete(measurement); // Rollback JPA save
@@ -75,5 +78,27 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
     }
 
     return Result.fromValue(measurement);
+  }
+
+  @Override
+  public Optional<ProteomicsMeasurement> find(String measurementCode) {
+    try {
+      var code = MeasurementCode.parse(measurementCode);
+      return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(code);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement code: " + measurementCode, e);
+      return Optional.empty();
+    }
+
+  }
+
+  @Override
+  public void update(ProteomicsMeasurement measurement) {
+    pxpMeasurementJpaRepo.save(measurement);
+  }
+
+  @Override
+  public void updateAll(Collection<ProteomicsMeasurement> measurements) {
+    pxpMeasurementJpaRepo.saveAll(measurements);
   }
 }
