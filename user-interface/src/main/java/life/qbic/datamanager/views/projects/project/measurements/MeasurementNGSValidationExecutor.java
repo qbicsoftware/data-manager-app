@@ -30,7 +30,7 @@ public class MeasurementNGSValidationExecutor implements
     return measurementValidationService.validateNGS(metadata);
   }
   @Override
-  public ValidationResult validateEdit(NGSMeasurementMetadata metadata) {
+  public ValidationResult validateUpdate(NGSMeasurementMetadata metadata) {
     //Todo provide edit validation for ngs;
     return null;
   }

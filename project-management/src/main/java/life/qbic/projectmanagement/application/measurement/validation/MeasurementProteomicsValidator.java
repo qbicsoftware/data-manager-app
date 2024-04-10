@@ -1,10 +1,14 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -25,15 +29,20 @@ import org.springframework.stereotype.Component;
 public class MeasurementProteomicsValidator implements
     MeasurementValidator<ProteomicsMeasurementMetadata> {
 
+  private static final Logger log = logger(MeasurementProteomicsValidator.class);
+
   protected final SampleInformationService sampleInformationService;
+
+  protected final MeasurementService measurementService;
 
   protected final OntologyLookupService ontologyLookupService;
 
   @Autowired
   public MeasurementProteomicsValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService) {
+      OntologyLookupService ontologyLookupService, MeasurementService measurementService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
+    this.measurementService = Objects.requireNonNull(measurementService);
   }
 
   /**
@@ -56,6 +65,7 @@ public class MeasurementProteomicsValidator implements
           .filter(property -> Objects.equals(property.toLowerCase(), pxpProperty.label()))
           .findAny();
       if (propertyFound.isEmpty()) {
+        log.debug("Missing property header: " + pxpProperty.label());
         return false;
       }
     }
@@ -82,8 +92,21 @@ public class MeasurementProteomicsValidator implements
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
   }
 
+  /**
+   * Ignores sample ids but validates measurement ids.
+   *
+   * @param metadata
+   * @return
+   * @since
+   */
+  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata) {
+    var validationPolicy = new ValidationPolicy();
+    return validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
+        .combine(validationPolicy.validateMandatoryDataForUpdate(metadata));
+  }
+
   public enum PROTEOMICS_PROPERTY {
-    QBIC_SAMPLE_ID("qbic sample ids"),
+    QBIC_SAMPLE_ID("qbic sample id"),
     SAMPLE_LABEL("sample label"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),
@@ -155,6 +178,13 @@ public class MeasurementProteomicsValidator implements
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
     }
 
+    ValidationResult validateMeasurementId(String measurementId) {
+      var queryMeasurement = measurementService.findProteomicsMeasurement(measurementId);
+      return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
+          ValidationResult.withFailures(1,
+              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
+    }
+
     ValidationResult validateInstrument(String instrument) {
       var result = ontologyLookupService.findByCURI(instrument);
       if (result.isPresent()) {
@@ -164,63 +194,122 @@ public class MeasurementProteomicsValidator implements
           List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
     }
 
+    ValidationResult validateMandatoryDataForUpdate(ProteomicsMeasurementMetadata metadata) {
+      var validation = ValidationResult.successful(1);
+      if (metadata.measurementIdentifier().isEmpty()) {
+        validation.combine(ValidationResult.withFailures(1,
+            List.of("Measurement id: missing measurement id for update")));
+      } else {
+        validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.organisationId().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.instrumentCURI().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.facility().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.digestionEnzyme().isBlank()) {
+        validation = validation.combine(ValidationResult.withFailures(1,
+            List.of("Digestion Enzyme: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.digestionMethod().isBlank()) {
+        validation = validation.combine(ValidationResult.withFailures(1,
+            List.of("Digestion Method: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.injectionVolume().isBlank()) {
+        validation = validation.combine(ValidationResult.withFailures(1,
+            List.of("Injection Volume: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.lcColumn().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("LC Column: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.lcmsMethod().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("LCMS Method: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      return validation;
+    }
+
     ValidationResult validateMandatoryDataProvided(
-        ProteomicsMeasurementMetadata measurementMetadata) {
+        ProteomicsMeasurementMetadata metadata) {
       var validation = ValidationResult.successful(0);
-      if (measurementMetadata.sampleCodes().isEmpty()) {
+      if (metadata.sampleCodes().isEmpty()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("Sample id: missing sample id reference")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.organisationId().isBlank()) {
+      if (metadata.organisationId().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("Organisation: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.instrumentCURI().isBlank()) {
+      if (metadata.instrumentCURI().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("Instrument: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.facility().isBlank()) {
+      if (metadata.facility().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("Facility: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.digestionEnzyme().isBlank()) {
+      if (metadata.digestionEnzyme().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Digestion Enzyme: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.digestionMethod().isBlank()) {
+      if (metadata.digestionMethod().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Digestion Method: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.injectionVolume().isBlank()) {
+      if (metadata.injectionVolume().isBlank()) {
         validation = validation.combine(ValidationResult.withFailures(1,
             List.of("Injection Volume: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.lcColumn().isBlank()) {
+      if (metadata.lcColumn().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("LC Column: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.lcmsMethod().isBlank()) {
+      if (metadata.lcmsMethod().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("LCMS Method: missing mandatory metadata")));
