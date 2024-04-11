@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -67,17 +66,24 @@ public class OntologyTermRepository implements OntologyRepository, OntologyLooku
    */
   private String buildSearchTerm(String searchString) {
     StringBuilder searchTermBuilder = new StringBuilder();
-    String[] words = searchString.split(" ");
+    String[] words = searchString.split("\\s+");
+    String quot = "\"";
 
     if (words.length > 1) {
-      var wordsRemaining = Arrays.stream(words).skip(1).toList();
-      var allWords = Arrays.stream(words).toList();
-      searchTermBuilder.append("\"").append(words[0] + " " + String.join(" ", wordsRemaining)).append("\"").append(" < ")
-          .append("\"").append(String.join(" ", new ArrayList<>(allWords).remove(allWords.size() - 1))).append("\"").append(" < ")
-          .append("+").append(String.join(" ", allWords)).append("*");
+      var completedWords = String.join(" ", Arrays.copyOf(words, words.length - 1));
+      var lastWord = words[words.length-1];
+      var fullTermCleaned = completedWords+" "+lastWord;
+
+      // first part
+      searchTermBuilder.append(quot).append(fullTermCleaned).append(quot).append(" < ");
+      // middle part
+      searchTermBuilder.append(quot).append(completedWords).append(quot).append(" < ");
+      // last part
+      searchTermBuilder.append("+").append(fullTermCleaned).append("*");
+
     } else {
       searchTermBuilder
-          .append("\"").append(words[0]).append("\"").append(" < ")
+          .append(quot).append(words[0]).append(quot).append(" < ")
           .append("+").append(words[0]).append("*");
     }
     return searchTermBuilder.toString();
