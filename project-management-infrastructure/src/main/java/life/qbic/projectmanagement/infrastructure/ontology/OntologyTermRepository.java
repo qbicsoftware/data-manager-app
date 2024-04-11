@@ -1,9 +1,11 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -23,7 +25,8 @@ import org.springframework.stereotype.Service;
  * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
  * with persistent {@link OntologyClass} data in the storage layer.
  *
- * <p>The actual JPA implementation is done by {@link OntologyTermRepositoryJpaInterface}, which is injected as
+ * <p>The actual JPA implementation is done by {@link OntologyTermRepositoryJpaInterface}, which is
+ * injected as
  * dependency upon creation.
  * <p>
  *
@@ -39,23 +42,45 @@ public class OntologyTermRepository implements OntologyRepository, OntologyLooku
     this.jpaRepository = jpaRepository;
   }
 
+  private static Sort sortByOrders(List<SortOrder> sortOrders) {
+    return Sort.by(sortOrders.stream()
+        .map(sortOrder -> sortOrder.isDescending()
+            ? Order.desc(sortOrder.propertyName())
+            : Order.asc(sortOrder.propertyName()))
+        .toList());
+  }
+
   @Override
   public Optional<OntologyClass> findByCuri(String curie) {
     return jpaRepository.findOntologyClassEntitiesByCurie(curie).stream().findAny();
   }
 
   /**
-   * The way the MyISAM engine searches the fulltext index makes it necessary to use multiple search
-   * terms that need to be found instead of one full search term. The asterisk suffix is needed so
-   * incomplete words are found (mu for musculus).
+   * We ensure that in case of multiple words we use them as full phrase instead of single
+   * individual words. The search terms are semantically belonging to the same concept the user is
+   * intereseted in, e.g.
+   * <p>
+   * Homo sapiens instead of "Homo" and "sapiens".
+   * <p>
+   * So we wrap it according the operator syntax in boolean mode with quotes. The asterisk suffix is
+   * needed so incomplete words are found (mu for musculus).
    */
   private String buildSearchTerm(String searchString) {
     StringBuilder searchTermBuilder = new StringBuilder();
-    for (String word : searchString.split(" ")) {
-      searchTermBuilder.append(" +").append(word);
+    String[] words = searchString.split(" ");
+
+    if (words.length > 1) {
+      var wordsRemaining = Arrays.stream(words).skip(1).toList();
+      var allWords = Arrays.stream(words).toList();
+      searchTermBuilder.append("\"").append(words[0] + " " + String.join(" ", wordsRemaining)).append("\"").append(" < ")
+          .append("\"").append(String.join(" ", new ArrayList<>(allWords).remove(allWords.size() - 1))).append("\"").append(" < ")
+          .append("+").append(String.join(" ", allWords)).append("*");
+    } else {
+      searchTermBuilder
+          .append("\"").append(words[0]).append("\"").append(" < ")
+          .append("+").append(words[0]).append("*");
     }
-    searchTermBuilder.append("*");
-    return searchTermBuilder.toString().trim();
+    return searchTermBuilder.toString();
   }
 
   @Override
@@ -84,14 +109,6 @@ public class OntologyTermRepository implements OntologyRepository, OntologyLooku
     var capitalizedCURI = delimiterCorrectedCURI.toUpperCase();
 
     return jpaRepository.findByCuriFulltextMatching(capitalizedCURI);
-  }
-
-  private static Sort sortByOrders(List<SortOrder> sortOrders) {
-    return Sort.by(sortOrders.stream()
-        .map(sortOrder -> sortOrder.isDescending()
-            ? Order.desc(sortOrder.propertyName())
-            : Order.asc(sortOrder.propertyName()))
-        .toList());
   }
 
   public List<String> findUniqueOntologyAbbreviations() {
