@@ -16,4 +16,6 @@ public interface QbicSampleRepository extends JpaRepository<Sample, SampleId> {
   List<Sample> findAllByAssignedBatch(BatchId batchId);
 
   Sample findBySampleCode(SampleCode sampleCode);
+
+  long countAllByExperimentId(ExperimentId experimentId);
 }

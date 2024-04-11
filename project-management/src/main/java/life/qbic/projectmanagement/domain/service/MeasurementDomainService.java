@@ -39,9 +39,9 @@ public class MeasurementDomainService {
       return Result.fromValue(measurement);
     } catch (RuntimeException e) {
       log.error(
-          "Saving the NGS measurement failed for id: " + measurement.measurementCode().value());
+          "Saving the NGS measurement failed for id: " + measurement.measurementCode().value(), e);
     }
-    return Result.fromValue(measurement);
+    return Result.fromError(ResponseCode.FAILED);
   }
 
   public Result<ProteomicsMeasurement, ResponseCode> addProteomics(
@@ -51,13 +51,25 @@ public class MeasurementDomainService {
       return Result.fromValue(measurement);
     } catch (RuntimeException e) {
       log.error(
-          "Saving the Proteomics measurement failed for id: " + measurement.measurementCode().value());
+          "Saving the Proteomics measurement failed for id: " + measurement.measurementCode()
+              .value(), e);
     }
-    return Result.fromValue(measurement);
+    return Result.fromError(ResponseCode.FAILED);
   }
 
   public enum ResponseCode {
     SUCCESSFUL, FAILED, MEASUREMENT_EXISTS
+  }
+
+  public Result<ProteomicsMeasurement, ResponseCode> update(ProteomicsMeasurement measurement) {
+    try {
+      measurementRepository.update(measurement);
+      return Result.fromValue(measurement);
+    } catch (RuntimeException e) {
+      log.error("Measurement update: Failed for measurement with id " + measurement.measurementId()
+          .value(), e);
+    }
+    return Result.fromError(ResponseCode.FAILED);
   }
 
 }

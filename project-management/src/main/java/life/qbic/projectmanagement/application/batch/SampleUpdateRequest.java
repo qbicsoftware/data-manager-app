@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.application.batch;
 
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
