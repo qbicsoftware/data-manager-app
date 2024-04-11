@@ -15,8 +15,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface OntologyTermRepositoryJpaInterface extends
     PagingAndSortingRepository<OntologyClass, Long> {
 
-  @Query(value = "SELECT * FROM ontology_classes WHERE MATCH(label) AGAINST(?1 IN BOOLEAN MODE) AND ontology in (?2) ORDER BY length(label);",
-      countQuery = "SELECT count(*) FROM ontology_classes WHERE MATCH(label) AGAINST(?1 IN BOOLEAN MODE) AND ontology in (?2);",
+  @Query(value = "SELECT *, MATCH(label) AGAINST(?1 IN BOOLEAN MODE) relevancy FROM ontology_classes WHERE MATCH(label) AGAINST(?1 IN BOOLEAN MODE) AND ontology in (?2) ORDER BY relevancy desc, length(label);",
+      countQuery = "SELECT count(*), MATCH(label) AGAINST(?1 IN BOOLEAN MODE) relevancy FROM ontology_classes WHERE MATCH(label) AGAINST(?1 IN BOOLEAN MODE) AND ontology in (?2) ORDER BY relevancy desc, length(label);",
       nativeQuery = true)
   Page<OntologyClass> findByLabelFulltextMatching(
       String termFilter, List<String> ontologyAbbreviations, Pageable pageable);
