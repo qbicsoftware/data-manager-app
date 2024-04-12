@@ -1,3 +1,15 @@
+.code-block {
+  display: inline-flex;
+  border-radius: var(--lumo-border-radius-m);
+  align-items: center;
+  padding-inline: var(--lumo-space-s);
+  justify-content: space-between;
+  border: 1px solid var(--lumo-contrast-20pct);
+  column-gap: var(--lumo-space-l);
+  font-family: "Source Code Pro for Powerline", monospace;
+
+}
+
 .experiment-list-item {
   display: flex;
   gap: var(--lumo-space-s);

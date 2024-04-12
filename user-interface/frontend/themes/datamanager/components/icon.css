@@ -17,3 +17,7 @@ vaadin-icon.small {
 vaadin-icon.valid {
   color: var(--lumo-success-color);
 }
+
+vaadin-icon.copy-icon {
+  color: var(--lumo-contrast-50pct);
+}

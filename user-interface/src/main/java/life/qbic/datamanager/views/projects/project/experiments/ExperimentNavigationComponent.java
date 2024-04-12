@@ -18,8 +18,8 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
+import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import org.slf4j.Logger;
 
@@ -42,14 +42,13 @@ public class ExperimentNavigationComponent extends Div {
       new Span("Register Sample Batch"), SampleInformationMain.class);
   RoutingTab<MeasurementMain> viewMeasurements = new RoutingTab<>(VaadinIcon.USER.create(),
       new Span("View Measurements"), MeasurementMain.class);
-  RoutingTab<ProjectOverviewMain> downloadAnalysis = new RoutingTab<>(VaadinIcon.USER.create(),
-      new Span("Download Analysis"), ProjectOverviewMain.class);
+  RoutingTab<RawDataMain> rawData = new RoutingTab<>(VaadinIcon.USER.create(),
+      new Span("Download Raw Data"), RawDataMain.class);
 
   private final List<ComponentEventListener<ExperimentNavigationTriggeredEvent>> experimentNavigationTriggeredListeners = new ArrayList<>();
 
   public ExperimentNavigationComponent() {
     initializeSteps();
-    disableUnusedSteps();
     addTabSelectionListeners();
     addClassName("experiment-navigation-component");
     log.debug(
@@ -60,14 +59,10 @@ public class ExperimentNavigationComponent extends Div {
   private void initializeSteps() {
     experimentNavigationTabs.add(designExperiment, createArrowTab(), registerSampleBatch,
         createArrowTab(),
-        viewMeasurements, createArrowTab(), downloadAnalysis);
+        viewMeasurements, createArrowTab(), rawData);
     experimentNavigationTabs.addClassName("experiment-navigation-tabs");
     experimentNavigationTabs.addThemeVariants(TabsVariant.LUMO_MINIMAL);
     add(experimentNavigationTabs);
-  }
-
-  private void disableUnusedSteps() {
-    downloadAnalysis.setEnabled(false);
   }
 
   private void addTabSelectionListeners() {

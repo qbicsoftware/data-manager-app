@@ -277,7 +277,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     String label = safeArrayAccess(columnValues, labelIndex).orElse("");
     String note = safeArrayAccess(columnValues, noteIndex).orElse("");
 
-    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(measurementId, sampleCodes,
+    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(measurementId,
+        sampleCodes,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
@@ -532,7 +533,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       validationResult.combine(ValidationResult.withFailures(1, List.of("")));
     }
 
-    var measurementIdIndex = propertyColumnMap.getOrDefault(MeasurementProperty.MEASUREMENT_ID.label(), -1);
+    var measurementIdIndex = propertyColumnMap.getOrDefault(
+        MeasurementProperty.MEASUREMENT_ID.label(), -1);
     var sampleCodeColumnIndex = propertyColumnMap.get(
         PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
     var organisationsColumnIndex = propertyColumnMap.get(

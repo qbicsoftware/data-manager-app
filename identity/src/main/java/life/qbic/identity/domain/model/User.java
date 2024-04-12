@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.identity.domain.event.PasswordResetRequested;
 import life.qbic.identity.domain.event.UserActivated;
@@ -29,6 +30,9 @@ public class User implements Serializable {
   @Serial
   private static final long serialVersionUID = -8469632941022622595L;
 
+  @Column(name = "registrationDate")
+  private Instant registrationDate;
+
   @EmbeddedId
   private UserId id;
 
@@ -47,16 +51,17 @@ public class User implements Serializable {
 
   private boolean active = false;
 
-  protected User() {
-  }
-
   private User(UserId id, FullName fullName, EmailAddress emailAddress,
-      String userName, EncryptedPassword encryptedPassword) {
+      String userName, EncryptedPassword encryptedPassword, Instant registrationDate) {
     this.id = id;
     this.fullName = fullName;
     this.emailAddress = emailAddress;
     this.encryptedPassword = encryptedPassword;
     this.userName = userName;
+    this.registrationDate = registrationDate;
+  }
+
+  protected User() {
   }
 
   /**
@@ -79,7 +84,8 @@ public class User implements Serializable {
   public static User create(FullName fullName, EmailAddress emailAddress,
       String userName, EncryptedPassword encryptedPassword) {
     UserId id = UserId.create();
-    var user = new User(id, fullName, emailAddress, userName, encryptedPassword);
+    Instant registrationDate = Instant.now();
+    var user = new User(id, fullName, emailAddress, userName, encryptedPassword, registrationDate);
     user.active = false;
 
     return user;
@@ -128,6 +134,10 @@ public class User implements Serializable {
 
   public boolean isActive() {
     return this.active;
+  }
+
+  public Instant registrationDate() {
+    return this.registrationDate;
   }
 
   /**

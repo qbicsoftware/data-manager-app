@@ -34,9 +34,9 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
   private static final Logger log = logger(ProteomicsMeasurementContentProvider.class);
   private List<ProteomicsMeasurementEntry> measurements = new LinkedList<>();
 
-  private static final byte[] DARK_GREY =  { 119, 119, 119};
+  private static final byte[] DARK_GREY = {119, 119, 119};
 
-  private static final byte[] LIGHT_GREY = { (byte)220 , (byte)220 , (byte)220};
+  private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
 
   private static void setAutoWidth(Sheet sheet) {
     for (int col = 0; col <= 18; col++) {
@@ -80,7 +80,6 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
     var h9 = header.createCell(8);
     h9.setCellValue("Instrument Name");
     h9.setCellStyle(readOnlyHeader);
-
 
     header.createCell(9).setCellValue("Cycle/Fraction Name");
     header.createCell(10).setCellValue("Digestion Method");
@@ -160,7 +159,8 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       Row header = sheet.createRow(0);
 
       CellStyle readOnlyHeader = workbook.createCellStyle();
-      readOnlyHeader.setFillForegroundColor(new XSSFColor(LIGHT_GREY, new DefaultIndexedColorMap()));
+      readOnlyHeader.setFillForegroundColor(
+          new XSSFColor(LIGHT_GREY, new DefaultIndexedColorMap()));
       readOnlyHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
       XSSFFont fontHeader = (XSSFFont) workbook.createFont();
       fontHeader.setBold(true);
@@ -172,7 +172,6 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       fontBold.setBold(true);
       boldStyle.setFont(fontBold);
 
-
       formatHeader(header, readOnlyHeader, boldStyle);
 
       CellStyle readOnlyStyle = workbook.createCellStyle();
@@ -181,7 +180,6 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       XSSFFont font = (XSSFFont) workbook.createFont();
       font.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
       readOnlyStyle.setFont(font);
-      
 
       int rowCounter = 1;
 

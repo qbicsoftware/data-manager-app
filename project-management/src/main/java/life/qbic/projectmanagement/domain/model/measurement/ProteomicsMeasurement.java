@@ -216,6 +216,7 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return measuredSamples.size() > 1;
   }
 
+  @Override
   public MeasurementCode measurementCode() {
     return this.measurementCode;
   }
