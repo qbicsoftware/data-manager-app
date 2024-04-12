@@ -2,10 +2,11 @@ package life.qbic.projectmanagement.application.measurement.validation;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
-import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -13,21 +14,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement NGS Validator</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Validator employed to check the provided user input for a measurement in the ngs domain.
+ *    The validator checks the for the provision of mandatory information, and will return a ValidationResult
+ *    dependent on the presence or absence of data
+ * </p>
  *
- * @since <version tag>
  */
 @Component
-public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetadata> {
+public class MeasurementNGSValidator implements
+    MeasurementValidator<NGSMeasurementMetadata> {
 
-  protected final SampleInformationService sampleInformationService;
+  private final SampleInformationService sampleInformationService;
 
   protected final OntologyLookupService ontologyLookupService;
 
   @Autowired
-  public ProteomicsValidator(SampleInformationService sampleInformationService,
+  public MeasurementNGSValidator(SampleInformationService sampleInformationService,
       OntologyLookupService ontologyLookupService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
@@ -35,36 +39,31 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
 
   /**
    * Given a collection of properties, the validator determines if they mach the expected properties
-   * for a QBiC-defined proteomics measurement metadata object.
+   * for a QBiC-defined NGS measurement metadata object.
    *
    * @param properties
    * @return
    * @since 1.0.0
    */
-  public static boolean isProteomics(Collection<String> properties) {
+  public static boolean isNGS(Collection<String> properties) {
     if (properties.isEmpty()) {
       return false;
     }
-    if (properties.size() < PROTEOMICS_PROPERTY.values().length) {
+    if (properties.size() != NGS_PROPERTY.values().length) {
       return false;
     }
-    for (PROTEOMICS_PROPERTY pxpProperty : PROTEOMICS_PROPERTY.values()) {
-      var propertyFound = properties.stream()
-          .filter(property -> Objects.equals(property.toLowerCase(), pxpProperty.label()))
-          .findAny();
-      if (propertyFound.isEmpty()) {
-        return false;
-      }
-    }
-    return true;
+    var providedNGSProperties = properties.stream().map(String::toLowerCase).toList();
+    var expectedNGSProperties = Arrays.stream(NGS_PROPERTY.values()).map(NGS_PROPERTY::label)
+        .toList();
+    return new HashSet<>(providedNGSProperties).containsAll(expectedNGSProperties);
   }
 
   public static Collection<String> properties() {
-    return Arrays.stream(PROTEOMICS_PROPERTY.values()).map(PROTEOMICS_PROPERTY::label).toList();
+    return Arrays.stream(NGS_PROPERTY.values()).map(NGS_PROPERTY::label).toList();
   }
 
   @Override
-  public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
+  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
@@ -79,30 +78,25 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
   }
 
-  public enum PROTEOMICS_PROPERTY {
-    QBIC_SAMPLE_ID("qbic sample ids"),
+
+  public enum NGS_PROPERTY {
+    QBIC_SAMPLE_ID("qbic sample id"),
     SAMPLE_LABEL("sample label"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),
     INSTRUMENT("instrument"),
+    SEQUENCING_READ_TYPE("sequencing read type"),
+    LIBRARY_KIT("library kit"),
+    FLOW_CELL("flow cell"),
+    SEQUENCING_RUN_PROTOCOL("sequencing run protocol"),
     SAMPLE_POOL_GROUP("sample pool group"),
-    CYCLE_FRACTION_NAME("cycle/fraction name"),
-    DIGESTION_METHOD("digestion method"),
-    DIGESTION_ENZYME("digestion enzyme"),
-    ENRICHMENT_METHOD("enrichment method"),
-    INJECTION_VOLUME("injection volume (ul)"),
-    LC_COLUMN("lc column"),
-    LCMS_METHOD("lcms method"),
-
-    LABELING_TYPE("labeling type"),
-
-    LABEL("label"),
+    INDEX_I7("index i7"),
+    INDEX_I5("index i5"),
     COMMENT("comment");
 
     private final String label;
 
-
-    PROTEOMICS_PROPERTY(String propertyLabel) {
+    NGS_PROPERTY(String propertyLabel) {
       this.label = propertyLabel;
     }
 
@@ -129,7 +123,8 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
         return ValidationResult.withFailures(1,
             List.of("A measurement must contain at least one sample reference. Provided: none"));
       }
-      ValidationResult validationResult = ValidationResult.successful(0);
+      ValidationResult validationResult = ValidationResult.successful(
+          0);
       for (SampleCode sample : sampleCodes) {
         validationResult = validationResult.combine(validateSampleId(sample));
       }
@@ -158,74 +153,49 @@ public class ProteomicsValidator implements Validator<ProteomicsMeasurementMetad
       if (result.isPresent()) {
         return ValidationResult.successful(1);
       }
-      return ValidationResult.withFailures(1, List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
+      return ValidationResult.withFailures(1,
+          List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
     }
 
     ValidationResult validateMandatoryDataProvided(
-        ProteomicsMeasurementMetadata measurementMetadata) {
+        NGSMeasurementMetadata measurementMetadata) {
       var validation = ValidationResult.successful(0);
       if (measurementMetadata.sampleCodes().isEmpty()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Sample id: missing sample id reference")));
+            ValidationResult.withFailures(1,
+                List.of("Sample id: missing sample id reference")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.organisationId().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+            ValidationResult.withFailures(1,
+                List.of("Organisation: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.instrumentCURI().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+            ValidationResult.withFailures(1,
+                List.of("Instrument: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+            ValidationResult.withFailures(1,
+                List.of("Facility: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (measurementMetadata.digestionEnzyme().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Digestion Enzyme: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (measurementMetadata.digestionMethod().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Digestion Method: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (measurementMetadata.enrichmentMethod().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Enrichment Method: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (measurementMetadata.injectionVolume().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Injection Volume: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (measurementMetadata.lcColumn().isBlank()) {
+      if (measurementMetadata.sequencingReadType().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("LC Column: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (measurementMetadata.lcmsMethod().isBlank()) {
-        validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("LCMS Method: missing mandatory metadata")));
+            ValidationResult.withFailures(1,
+                List.of("Read Type: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
       return validation;
     }
-
   }
 }

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface.FilterTerm;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface.OntologyCurie;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +49,10 @@ public class OntologyLookupService {
 
   public Optional<OntologyClass> findByCURI(String curie) {
     return ontologyTermLookup.query(new OntologyCurie(curie)).stream().findAny();
+  }
+
+  public List<String> findUniqueOntologies() {
+    return ontologyTermLookup.findUniqueOntologyAbbreviations();
   }
 
 }

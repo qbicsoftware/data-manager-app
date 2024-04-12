@@ -1,11 +1,11 @@
 package life.qbic.projectmanagement.application.measurement;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.SortOrder;
+import java.util.Optional;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class MeasurementLookupService {
-
-  private static final Logger log = LoggerFactory.logger(MeasurementLookupService.class);
   private final MeasurementRepository measurementRepository;
   private final MeasurementLookup measurementLookup;
 
@@ -32,7 +30,8 @@ public class MeasurementLookupService {
   }
 
   /**
-   * Queries {@link ProteomicsMeasurement}s with a provided offset and limit that supports pagination.
+   * Queries {@link ProteomicsMeasurement}s with a provided offset and limit that supports
+   * pagination.
    *
    * @param termFilter the user's input will be applied to filter results
    * @param offset     the offset for the search result to start
@@ -43,7 +42,7 @@ public class MeasurementLookupService {
   public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    List<ProteomicsMeasurement> termList = measurementLookup.queryProteomicsMeasurementsBySampleIds(
+    List<ProteomicsMeasurement> termList = measurementLookup.findProteomicsMeasurementsBySampleIds(
         termFilter, sampleIds, offset,
         limit, sortOrders);
     // the list must be modifiable for spring security to filter it
@@ -69,4 +68,27 @@ public class MeasurementLookupService {
     return new ArrayList<>(termList);
   }
 
+  /**
+   * Provides the count of the registered measurements for the provided sampleIds
+   *
+   * @param sampleIds {@link SampleId}s for which the number of associated measurements should be
+   *                  determined
+   * @return number of measurements for all domains associated with the provided sampleIds
+   */
+  public long countMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds)
+        + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
+  }
+
+  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.retrieveAllMeasurementsWithSampleIds(sampleIds);
+  }
+
+  public List<ProteomicsMeasurement> queryAllProteomicsMeasurement(List<SampleId> sampleIds) {
+    return measurementLookup.findProteomicsMeasurementsBySampleIds(sampleIds);
+  }
+
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
+    return measurementRepository.find(measurementId);
+  }
 }

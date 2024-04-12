@@ -3,6 +3,7 @@ package life.qbic.identity.application.user.registration;
 import java.io.Serial;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
@@ -32,6 +33,7 @@ public class UserRegistrationException extends ApplicationException {
   private final transient FullNameValidationException fullNameException;
 
   private final transient UserNameNotAvailableException userNameNotAvailableException;
+  private final transient EmptyUserNameException emptyUserNameException;
 
   private final transient UserExistsException userExistsException;
   private final transient RuntimeException unexpectedException;
@@ -51,6 +53,7 @@ public class UserRegistrationException extends ApplicationException {
     private UserExistsException userExistsException;
     private RuntimeException unexpectedException;
     private UserNameNotAvailableException userNameNotAvailableException;
+    private EmptyUserNameException emptyUserNameException;
 
     protected Builder() {
 
@@ -89,6 +92,11 @@ public class UserRegistrationException extends ApplicationException {
       this.userNameNotAvailableException = e;
       return this;
     }
+
+    public Builder withEmptyUserNameException(EmptyUserNameException emptyUserNameException) {
+      this.emptyUserNameException = emptyUserNameException;
+      return this;
+    }
   }
 
   private UserRegistrationException(Builder builder) {
@@ -98,6 +106,7 @@ public class UserRegistrationException extends ApplicationException {
     userExistsException = builder.userExistsException;
     unexpectedException = builder.unexpectedException;
     userNameNotAvailableException = builder.userNameNotAvailableException;
+    emptyUserNameException = builder.emptyUserNameException;
   }
 
   public Optional<EmailValidationException> emailFormatException() {
@@ -118,6 +127,10 @@ public class UserRegistrationException extends ApplicationException {
 
   public Optional<UserNameNotAvailableException> userNameNotAvailableException() {
     return Optional.ofNullable(userNameNotAvailableException);
+  }
+
+  public Optional<EmptyUserNameException> emptyUserNameException() {
+    return Optional.ofNullable(emptyUserNameException);
   }
 
   public Optional<RuntimeException> unexpectedException() {

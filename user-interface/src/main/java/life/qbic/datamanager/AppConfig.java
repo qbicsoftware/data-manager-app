@@ -28,6 +28,7 @@ import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
@@ -103,6 +104,7 @@ public class AppConfig {
     return new Registration(identityService);
   }
 
+
   @Bean
   public UserInformationService userInformationService(UserRepository userRepository) {
     return new BasicUserInformationService(userRepository);
@@ -176,10 +178,13 @@ public class AppConfig {
   public ProjectAccessGrantedPolicy projectAccessGrantedPolicy(
       life.qbic.projectmanagement.application.communication.EmailService emailService,
       JobScheduler jobScheduler, UserInformationService userInformationService,
-      AppContextProvider appContextProvider) {
+      AppContextProvider appContextProvider,
+      ProjectInformationService projectInformationService) {
     var informUserAboutGrantedAccess = new InformUserAboutGrantedAccess(emailService,
         jobScheduler,
-        userInformationService, appContextProvider);
+        userInformationService,
+        projectInformationService,
+        appContextProvider);
     return new ProjectAccessGrantedPolicy(informUserAboutGrantedAccess);
   }
 

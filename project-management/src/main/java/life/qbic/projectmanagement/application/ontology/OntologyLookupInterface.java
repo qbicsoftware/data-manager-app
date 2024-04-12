@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.ontology;
 
 import java.util.Collection;
 import java.util.List;
-import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.application.commons.SortOrder;
 
 /**
  * Ontology Lookup interface that needs to be implemented by ontology providers
@@ -61,4 +61,10 @@ public interface OntologyLookupInterface {
    * @since 1.0.0
    */
   Collection<OntologyClass> query(OntologyCurie ontologyCURI);
+
+  /**
+   * Returns a list of unique ontology identifiers in the database
+   * @return
+   */
+  List<String> findUniqueOntologyAbbreviations();
 }

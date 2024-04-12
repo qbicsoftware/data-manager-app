@@ -1,8 +1,9 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -17,19 +18,23 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
-import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationService;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -55,38 +60,56 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
-  private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
+  private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
   private final MeasurementTemplateDownload measurementTemplateDownload;
+  private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final MeasurementDetailsComponent measurementDetailsComponent;
+
+  private final MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
+  private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
-  private final transient ValidationService validationService;
-  private transient Context context;
+  private final transient MeasurementValidationService measurementValidationService;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
+  private static Disclaimer registerSamplesDisclaimer;
+  private final Div noMeasurementDisclaimer;
+  private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
+  private final DownloadProvider downloadProvider;
+  private transient Context context;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
+      @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
-      @Autowired ValidationService validationService) {
+      @Autowired MeasurementPresenter measurementPresenter,
+      @Autowired MeasurementValidationService measurementValidationService) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
-    Objects.requireNonNull(validationService);
+    Objects.requireNonNull(measurementValidationService);
     this.measurementDetailsComponent = measurementDetailsComponent;
+    this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
-    this.validationService = validationService;
+    this.measurementPresenter = measurementPresenter;
+    this.proteomicsMeasurementContentProvider = new ProteomicsMeasurementContentProvider();
+    this.downloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
+    this.measurementValidationService = measurementValidationService;
+    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
+    registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
+    add(registerSamplesDisclaimer);
+    noMeasurementDisclaimer = createNoMeasurementDisclaimer();
+    add(noMeasurementDisclaimer);
     initContent();
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
+    add(downloadProvider);
     addClassName("measurement");
-    measurementDetailsComponent.addRegisterMeasurementClickedListener(
-        event -> openRegisterMeasurementDialog());
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         getClass().getSimpleName(), System.identityHashCode(this),
@@ -113,13 +136,129 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     measurementSearchField.addValueChangeListener(
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
+    Button downloadButton = new Button("Download Metadata");
+    downloadButton.addClickListener(event -> downloadMetadata());
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
         event -> openRegisterMeasurementDialog());
-    Span buttonAndField = new Span(measurementSearchField, registerMeasurementButton);
+
+    Button editButton = new Button("Edit");
+    editButton.addClickListener(event -> openEditMeasurementDialog());
+    Span buttonBar = new Span(downloadButton, editButton,
+        registerMeasurementButton);
+    buttonBar.addClassName("button-bar");
+    Span buttonAndField = new Span(measurementSearchField, buttonBar);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
+  }
+
+  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog, boolean editMode) {
+    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addConfirmListener(confirmEvent -> {
+      var uploads = confirmEvent.uploads();
+      boolean allSuccessfull = true;
+      for (var upload : uploads) {
+        try {
+          if (editMode) {
+            measurementService.updateMultiple(upload.measurementMetadata(),
+                context.projectId().orElseThrow());
+          } else {
+            measurementService.registerMultiple(upload.measurementMetadata(),
+                context.projectId().orElseThrow());
+          }
+        } catch (MeasurementRegistrationException measurementRegistrationException) {
+          allSuccessfull = false;
+          String errorMessage = switch (measurementRegistrationException.reason()) {
+            case FAILED -> "Registration failed. Please try again.";
+            case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
+            case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
+            case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
+            case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
+            case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
+            case SAMPLECODE_NOT_FROM_PROJECT -> "Sample code not from project";
+            case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
+          };
+          confirmEvent.getSource().showError(upload.fileName(), errorMessage);
+          continue;
+        }
+        confirmEvent.getSource().markSuccessful(upload.fileName());
+      }
+      if (allSuccessfull) {
+        confirmEvent.getSource().close();
+        setMeasurementInformation();
+      }
+    });
+    return dialog;
+  }
+
+  private void openEditMeasurementDialog() {
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT);
+    setupDialog(dialog, true);
+    dialog.open();
+  }
+
+  private void downloadMetadata() {
+    var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
+        context.experimentId().orElseThrow(() -> new ApplicationException(
+            ErrorCode.GENERAL, null)),
+        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools)
+        .flatMap(items -> items.stream()).toList();
+
+    proteomicsMeasurementContentProvider.setMeasurements(result);
+    downloadProvider.trigger();
+  }
+
+  private Disclaimer createNoSamplesRegisteredDisclaimer() {
+    Disclaimer noSamplesRegisteredDisclaimer = Disclaimer.createWithTitle(
+        "Register your samples first",
+        "You have to register samples before measurement registration is possible",
+        "Register Samples");
+    noSamplesRegisteredDisclaimer.addDisclaimerConfirmedListener(
+        this::routeToSampleCreation);
+    noSamplesRegisteredDisclaimer.addClassName("no-samples-registered-disclaimer");
+    return noSamplesRegisteredDisclaimer;
+  }
+
+  private Div createNoMeasurementDisclaimer() {
+    Div noMeasurementDisclaimer = new Div();
+    Span disclaimerTitle = new Span("Manage your measurement metadata");
+    disclaimerTitle.addClassName("no-measurement-registered-title");
+    noMeasurementDisclaimer.add(disclaimerTitle);
+    Div noMeasurementDisclaimerContent = new Div();
+    noMeasurementDisclaimerContent.addClassName("no-measurement-registered-content");
+    Span noMeasurementText1 = new Span("Start by downloading the required metadata template");
+    Span noMeasurementText2 = new Span(
+        "Fill the metadata sheet and register your measurement metadata.");
+    noMeasurementDisclaimerContent.add(noMeasurementText1);
+    noMeasurementDisclaimerContent.add(noMeasurementText2);
+    noMeasurementDisclaimer.add(noMeasurementDisclaimerContent);
+    InfoBox availableTemplatesInfo = new InfoBox();
+    availableTemplatesInfo.setInfoText(
+        "You can download the measurement metadata template from the Templates component above");
+    availableTemplatesInfo.setClosable(false);
+    noMeasurementDisclaimer.add(availableTemplatesInfo);
+    Button registerMeasurements = new Button("Register Measurements");
+    registerMeasurements.addClassName("primary");
+    noMeasurementDisclaimer.add(registerMeasurements);
+    registerMeasurements.addClickListener(event -> openRegisterMeasurementDialog());
+    noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
+    return noMeasurementDisclaimer;
+  }
+
+  private void routeToSampleCreation(ComponentEvent<?> componentEvent) {
+    if (componentEvent.isFromClient()) {
+      String currentExperimentId = context.experimentId().orElseThrow().value();
+      String currentProjectId = context.projectId().orElseThrow().value();
+      String routeToMeasurementPage = String.format(Projects.SAMPLES,
+          currentProjectId,
+          currentExperimentId);
+      log.debug(String.format(
+          "Rerouting to sample page for experiment %s of project %s: %s",
+          currentExperimentId, currentProjectId, routeToMeasurementPage));
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
+    }
   }
 
   /**
@@ -143,13 +282,45 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    measurementDetailsComponent.setContext(context);
-    isRawDataAvailable();
+    setMeasurementInformation();
   }
 
-  private void isRawDataAvailable() {
-    /*Todo check for raw data if available*/
-    rawDataAvailableInfo.setVisible(false);
+  private void setMeasurementInformation() {
+    ExperimentId currentExperimentId = context.experimentId().orElseThrow();
+    if (!sampleInformationService.hasSamples(currentExperimentId)) {
+      showRegisterSamplesDisclaimer();
+      return;
+    }
+    if (!measurementService.hasMeasurements(currentExperimentId)) {
+      showRegisterMeasurementDisclaimer();
+    } else {
+      showMeasurements();
+    }
+  }
+
+  private void showRegisterSamplesDisclaimer() {
+    noMeasurementDisclaimer.setVisible(false);
+    content.setVisible(false);
+    measurementDetailsComponent.setVisible(false);
+    measurementTemplateListComponent.setVisible(false);
+    registerSamplesDisclaimer.setVisible(true);
+  }
+
+  private void showRegisterMeasurementDisclaimer() {
+    noMeasurementDisclaimer.setVisible(true);
+    measurementTemplateListComponent.setVisible(true);
+    content.setVisible(false);
+    measurementDetailsComponent.setVisible(false);
+    registerSamplesDisclaimer.setVisible(false);
+  }
+
+  private void showMeasurements() {
+    noMeasurementDisclaimer.setVisible(false);
+    registerSamplesDisclaimer.setVisible(false);
+    content.setVisible(true);
+    measurementTemplateListComponent.setVisible(true);
+    measurementDetailsComponent.setContext(context);
+    measurementDetailsComponent.setVisible(true);
   }
 
   private void onDownloadMeasurementTemplateClicked(
@@ -158,34 +329,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(validationService,
-        context.experimentId().orElseThrow());
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent -> {
-      var uploads = confirmEvent.uploads();
-      boolean allSuccessfull = true;
-      for (var upload : uploads) {
-        try {
-          measurementService.registerMultiple(upload.measurementMetadata(), context.projectId().orElseThrow());
-        } catch (MeasurementRegistrationException measurementRegistrationException) {
-          allSuccessfull = false;
-          String errorMessage = switch (measurementRegistrationException.reason()) {
-            case FAILED, SUCCESSFUL -> "Registration failed. Please try again.";
-            case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
-            case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
-            case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-            case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
-          };
-          confirmEvent.getSource().showError(upload.fileName(), errorMessage);
-          continue;
-        }
-        confirmEvent.getSource().markSuccessful(upload.fileName());
-      }
-      if (allSuccessfull) {
-        measurementDetailsComponent.setContext(context);
-        confirmEvent.getSource().close();
-      }
-    });
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD);
+    setupDialog(dialog, false);
     dialog.open();
   }
 
@@ -193,13 +338,27 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     rawDataAvailableInfo.setInfoText(
         "Raw data results for your registered measurement are available now");
     Button navigateToDownloadRawDataButton = new Button("Go to Download Raw data");
-    //ToDo Replace with Raw Data Main Class as soon as it's written
-    navigateToDownloadRawDataButton.addClickListener(event -> UI.getCurrent().navigate(
-        ProjectOverviewMain.class));
+    navigateToDownloadRawDataButton.addClickListener(this::routeToRawData);
     navigateToDownloadRawDataButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
     rawDataAvailableInfo.add(navigateToDownloadRawDataButton);
     rawDataAvailableInfo.setClosable(true);
     content.add(rawDataAvailableInfo);
     rawDataAvailableInfo.setVisible(false);
   }
+
+  private void routeToRawData(ComponentEvent<?> componentEvent) {
+    if (componentEvent.isFromClient()) {
+      String currentExperimentId = context.experimentId().orElseThrow().value();
+      String currentProjectId = context.projectId().orElseThrow().value();
+      String routeToRawDataPage = String.format(Projects.RAWDATA,
+          currentProjectId,
+          currentExperimentId);
+      log.debug(String.format(
+          "Rerouting to raw data page for experiment %s of project %s: %s",
+          currentExperimentId, currentProjectId, routeToRawDataPage));
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToRawDataPage));
+    }
+  }
+
+
 }

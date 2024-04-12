@@ -11,6 +11,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.Messages;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.communication.Content;
 import life.qbic.projectmanagement.application.communication.EmailService;
 import life.qbic.projectmanagement.application.communication.Recipient;
@@ -78,7 +79,9 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
 
   private List<RecipientDTO> getRecipients(ProjectId projectId) {
     List<RecipientDTO> users = new ArrayList<>();
-    List<String> userIds = projectAccessService.listActiveUserIds(projectId);
+    var userIds = projectAccessService.listCollaborators(projectId).stream()
+        .map(ProjectCollaborator::userId)
+        .toList();
     for (String id : userIds) {
       userInformationService.findById(id)
           .ifPresent(userInfo -> users.add(new RecipientDTO(userInfo)));

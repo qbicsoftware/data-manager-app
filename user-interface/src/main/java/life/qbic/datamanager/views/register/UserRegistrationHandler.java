@@ -62,10 +62,10 @@ public class UserRegistrationHandler
         event -> {
           clearNotifications();
           registrationUseCase.register(
-              userRegistrationLayout.fullName.getValue(),
-              userRegistrationLayout.email.getValue(),
+              userRegistrationLayout.fullName.getValue().strip(),
+              userRegistrationLayout.email.getValue().strip(),
               userRegistrationLayout.password.getValue().toCharArray(),
-              userRegistrationLayout.username.getValue());
+              userRegistrationLayout.username.getValue().strip());
         });
   }
 
@@ -120,6 +120,9 @@ public class UserRegistrationHandler
     if (userRegistrationException.userNameNotAvailableException().isPresent()) {
       showUserNameNotAvailableError();
     }
+    if (userRegistrationException.emptyUserNameException().isPresent()) {
+      showEmptyUserNameError();
+    }
     if (userRegistrationException.unexpectedException().isPresent()) {
       showUnexpectedError();
     }
@@ -127,5 +130,9 @@ public class UserRegistrationHandler
 
   private void showUserNameNotAvailableError() {
     showError("Username already in use", "Please try another username");
+  }
+
+  private void showEmptyUserNameError() {
+    showError("Username must not be empty", "Please try another username");
   }
 }

@@ -131,7 +131,7 @@ public class SampleRepositoryImpl implements SampleRepository {
   public void updateAll(Project project,
       Collection<Sample> updatedSamples) {
     qbicSampleRepository.saveAll(updatedSamples);
-    sampleDataRepo.updateAll(updatedSamples);
+    sampleDataRepo.updateAll(project, updatedSamples);
   }
 
   @Override
@@ -142,6 +142,16 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Optional<Sample> findSample(SampleCode sampleCode) {
     return Optional.ofNullable(qbicSampleRepository.findBySampleCode(sampleCode));
+  }
+
+  @Override
+  public Optional<Sample> findSample(SampleId sampleId) {
+    return qbicSampleRepository.findById(sampleId);
+  }
+
+  @Override
+  public long countSamplesWithExperimentId(ExperimentId experimentId) {
+    return qbicSampleRepository.countAllByExperimentId(experimentId);
   }
 
 

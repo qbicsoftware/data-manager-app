@@ -1,19 +1,16 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
+import jakarta.persistence.criteria.Expression;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import jakarta.persistence.criteria.Expression;
-import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.SortOrder;
+import life.qbic.application.commons.OffsetBasedRequest;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.infrastructure.OffsetBasedRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
@@ -27,8 +24,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class MeasurementLookupImplementation implements MeasurementLookup {
-
-  private static final Logger log = logger(MeasurementLookupImplementation.class);
   private final NGSMeasurementJpaRepo ngsMeasurementJpaRepo;
   private final ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo;
   private final MeasurementDataRepo measurementDataRepo;
@@ -42,7 +37,17 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
   }
 
   @Override
-  public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String filter,
+  public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return pxpMeasurementJpaRepo.count(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public long countNgsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return ngsMeasurementJpaRepo.count(NgsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(String filter,
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
@@ -82,6 +87,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         filter);
     Specification<ProteomicsMeasurement> facilityContains = ProteomicsMeasurementSpec.isFacility(
             filter);
+    Specification<ProteomicsMeasurement> fractionContains = ProteomicsMeasurementSpec.isFraction(
+        filter);
     Specification<ProteomicsMeasurement> digestionMethodContains = ProteomicsMeasurementSpec.isDigestionMethod(
             filter);
     Specification<ProteomicsMeasurement> digestionEnzymeContains = ProteomicsMeasurementSpec.isDigestionEnzyme(
@@ -99,13 +106,24 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     Specification<ProteomicsMeasurement> commentContains = ProteomicsMeasurementSpec.isComment(
             filter);
 
-
-
     Specification<ProteomicsMeasurement> filterSpecification =
-            Specification.anyOf(measurementCodeContains, measurementLabelContains, measurementLabelingTypeContains, organisationLabelContains,
-                    samplePoolGroupContains, ontologyNameContains, ontologyLabelContains, facilityContains,
-                    digestionMethodContains, digestionEnzymeContains, enrichmentMethodContains,
-                    injectionVolumeContains, lcColumnContains, lcmsMethodContains, registrationDateContains, commentContains);
+        Specification.anyOf(measurementCodeContains,
+            measurementLabelContains,
+            measurementLabelingTypeContains,
+            organisationLabelContains,
+            samplePoolGroupContains,
+            ontologyNameContains,
+            ontologyLabelContains,
+            facilityContains,
+            fractionContains,
+            digestionMethodContains,
+            digestionEnzymeContains,
+            enrichmentMethodContains,
+            injectionVolumeContains,
+            lcColumnContains,
+            lcmsMethodContains,
+            registrationDateContains,
+            commentContains);
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)
@@ -131,6 +149,24 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
   }
 
+  @Override
+  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
+    Specification<NGSMeasurement> ngsContainsSampleId = NgsMeasurementSpec.containsSampleId(
+        sampleIds);
+    Specification<ProteomicsMeasurement> proteomicsContainsSampleId = ProteomicsMeasurementSpec.containsSampleId(
+        sampleIds);
+    List<MeasurementMetadata> measurements = new ArrayList<>();
+    measurements.addAll(ngsMeasurementJpaRepo.findAll(ngsContainsSampleId));
+    measurements.addAll(pxpMeasurementJpaRepo.findAll(proteomicsContainsSampleId));
+    return measurements;
+  }
+
+  @Override
+  public List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(
+      Collection<SampleId> sampleIds) {
+    return pxpMeasurementJpaRepo.findAll(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
   private Specification<NGSMeasurement> generateNGSFilterSpecification(
       Collection<SampleId> sampleIds, String filter) {
     Specification<NGSMeasurement> isBlankSpec = NgsMeasurementSpec.isBlank(filter);
@@ -139,9 +175,30 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         sampleIds);
     Specification<NGSMeasurement> measurementCodeContains = NgsMeasurementSpec.isMeasurementCode(
         filter);
-    //ToDo Extend with required ngs property specs
+    Specification<NGSMeasurement> sequencingReadTypeContains = NgsMeasurementSpec.isSequencingReadType(
+        filter);
+    Specification<NGSMeasurement> facilityContains = NgsMeasurementSpec.isFacility(filter);
+    Specification<NGSMeasurement> libraryKitContains = NgsMeasurementSpec.isLibraryKit(filter);
+    Specification<NGSMeasurement> flowCellContains = NgsMeasurementSpec.isFlowCell(filter);
+    Specification<NGSMeasurement> sequencingRunProtocolContains = NgsMeasurementSpec.isSequencingRunProtocol(
+        filter);
+    Specification<NGSMeasurement> indexI7Contains = NgsMeasurementSpec.isIndexI7(filter);
+    Specification<NGSMeasurement> indexI5Contains = NgsMeasurementSpec.isIndexI5(filter);
+    Specification<NGSMeasurement> registrationDateContains = NgsMeasurementSpec.isRegistrationDate(
+        filter);
+    Specification<NGSMeasurement> commentContains = NgsMeasurementSpec.isComment(
+        filter);
     Specification<NGSMeasurement> filterSpecification = Specification.anyOf(
-        measurementCodeContains);
+        measurementCodeContains,
+        sequencingReadTypeContains,
+        facilityContains,
+        libraryKitContains,
+        flowCellContains,
+        sequencingRunProtocolContains,
+        indexI7Contains,
+        indexI5Contains,
+        registrationDateContains,
+        commentContains);
     return Specification.where(isBlankSpec).and(containsSampleId).and(filterSpecification)
         .and(isDistinctSpec);
   }
@@ -158,14 +215,14 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     //We are only interested in measurements which contain at least one of the provided sampleIds
-    public static Specification<ProteomicsMeasurement> containsSampleId (
+    public static Specification<ProteomicsMeasurement> containsSampleId(
         Collection<SampleId> sampleIds) {
       return (root, query, builder) -> {
         if (sampleIds.isEmpty()) {
           //If no sampleId is in the experiment then there can also be no measurement
           return builder.disjunction();
         }
-       return root.join("measuredSamples").in(sampleIds);
+        return root.join("measuredSamples").in(sampleIds);
       };
     }
 
@@ -210,6 +267,11 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     public static Specification<ProteomicsMeasurement> isFacility(String filter) {
       return (root, query, builder) ->
               builder.like(root.get("facility"), "%" + filter + "%");
+    }
+
+    public static Specification<ProteomicsMeasurement> isFraction(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("fraction"), "%" + filter + "%");
     }
 
     public static Specification<ProteomicsMeasurement> isDigestionMethod(String filter) {
@@ -264,7 +326,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
     public static Specification<ProteomicsMeasurement> isRegistrationDate(String filter){
       return (root, query, builder) ->
-              builder.like(root.get("registration"), "%" + filter + "%");
+          builder.like(root.get("registration").as(String.class), "%" + filter + "%");
     }
   }
 
@@ -305,6 +367,50 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       return (root, query, builder) ->
           builder.like(root.get("measurementCode").as(String.class), "%" + filter + "%");
     }
-    //ToDo extend with required property filters
+
+    public static Specification<NGSMeasurement> isFacility(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("facility"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isSequencingReadType(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("sequencingReadType"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isLibraryKit(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("libraryKit"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isFlowCell(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("flowCell"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isSequencingRunProtocol(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("sequencingRunProtocol"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isIndexI7(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("indexI7"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isIndexI5(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("indexI5"), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isRegistrationDate(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("registration").as(String.class), "%" + filter + "%");
+    }
+
+    public static Specification<NGSMeasurement> isComment(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("comment"), "%" + filter + "%");
+    }
   }
 }

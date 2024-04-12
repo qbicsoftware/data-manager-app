@@ -94,6 +94,10 @@ public class Sample {
         sampleRegistrationRequest.analysisMethod(), sampleRegistrationRequest.comment());
   }
 
+  public ExperimentId experimentId() {
+    return this.experimentId;
+  }
+
   public BatchId assignedBatch() {
     return this.assignedBatch;
   }

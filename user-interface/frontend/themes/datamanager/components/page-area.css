@@ -154,13 +154,13 @@
   row-gap: var(--lumo-space-s);
 }
 
-.measurement-details-component .measurement-grid .organisation-column-entry {
+.measurement-details-component .measurement-grid .organisation-entry {
   align-items: center;
   column-gap: var(--lumo-space-s);
   display: flex;
 }
 
-.measurement-details-component .measurement-grid .organisation-column-entry .organisation-icon {
+.measurement-details-component .measurement-grid .organisation-entry .organisation-icon {
   min-width: var(--lumo-icon-size-m);
   min-height: var(--lumo-icon-size-m);
 }
@@ -171,23 +171,32 @@
   display: inline-flex;
 }
 
-.measurement-details-component .no-measurements-registered-disclaimer {
+.measurement-details-component .measurement-grid .measurement-item {
   display: flex;
   flex-direction: column;
-  row-gap: var(--lumo-space-m);
-  align-items: center;
+  row-gap: var(--lumo-space-s);
+  cursor: default;
 }
 
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-title {
+/*We want to style the cells within the rows containing the components and values within the measurement grid to be clickable*/
+.measurement-details-component .measurement-grid > * {
+  cursor: pointer;
+}
+
+/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
+.measurement-details-component .measurement-grid::part(row) {
+  cursor: pointer;
+}
+
+
+.measurement-details-component .measurement-grid .measurement-item .entry {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.measurement-details-component .measurement-grid .measurement-item .entry .entry-label {
   font-weight: bold;
-  font-size: var(--lumo-font-size-m);
-  margin-bottom: 0.5rem;
-}
-
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  white-space: nowrap;
 }
 
 .ontology-lookup-component {
@@ -220,7 +229,6 @@
 }
 
 .ontology-lookup-component .ontology-item {
-  background-color: var(--lumo-base-color);
   border: black;
   border-radius: var(--lumo-border-radius-m);
   box-shadow: var(--lumo-box-shadow-s);
@@ -248,6 +256,21 @@
   font-size: smaller;
   flex-shrink: 0;
   color: var(--lumo-tertiary-text-color);
+}
+
+.copy-icon-success {
+  display: inline-flex;
+  font-size: smaller;
+  flex-shrink: 0;
+  color: var(--lumo-success-color);
+}
+
+.success-background-hue {
+  background-color: var(--lumo-success-color-10pct);
+}
+
+.base-background {
+  background-color: var(--lumo-base-color);
 }
 
 .ontology-lookup-component .ontology-item .ontology-item-title {
@@ -368,12 +391,6 @@
   flex-direction: column;
 }
 
-.project-access-component .role-access {
-  display: flex;
-  row-gap: var(--lumo-space-m);
-  flex-direction: column;
-}
-
 .project-access-component .header {
   display: flex;
   justify-content: space-between;
@@ -402,6 +419,71 @@
   display: inline-flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.raw-data-details-component .raw-data-details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .sample-information {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: inline-flex;
+  white-space: nowrap;
+  width: calc(80%);
+}
+
+/*We want to style the cells within the rows containing the components and values within the measurement grid to be clickable*/
+.raw-data-details-component .raw-data-grid > * {
+  cursor: pointer;
+}
+
+/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
+.raw-data-details-component .raw-data-grid ::part(row) {
+  cursor: pointer;
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  cursor: default;
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry .entry-label {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry-value-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry-value {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.raw-data-download-information-component {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-l);
+}
+
+.raw-data-download-information-component .section .section-title {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-m);
+  font-weight: bold;
 }
 
 .project-details-component .ontology-entry-collection {
