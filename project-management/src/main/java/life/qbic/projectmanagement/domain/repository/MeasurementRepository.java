@@ -23,7 +23,9 @@ public interface MeasurementRepository {
 
   Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurement measurement, List<SampleCode> sampleCodes);
 
-  Optional<ProteomicsMeasurement> find(String measurementCode);
+  Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode);
+
+  Optional<NGSMeasurement> findNGSMeasurement(String measurementCode);
 
   void update(ProteomicsMeasurement measurement);
 

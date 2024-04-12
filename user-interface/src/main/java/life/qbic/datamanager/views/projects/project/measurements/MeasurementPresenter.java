@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,8 @@ public class MeasurementPresenter {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
   }
 
-  private static ProteomicsMeasurementEntry convert(ProteomicsMeasurement measurement,
+  private static ProteomicsMeasurementEntry convertProteomicsMeasurement(
+      ProteomicsMeasurement measurement,
       SampleInformation sampleInfo) {
     return new ProteomicsMeasurementEntry(measurement.measurementCode().value(),
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
@@ -39,15 +41,39 @@ public class MeasurementPresenter {
         measurement.label().orElse(""), measurement.comment().orElse(""));
   }
 
-  public List<ProteomicsMeasurementEntry> expandPools(ProteomicsMeasurement proteomicsMeasurement) {
+  public List<ProteomicsMeasurementEntry> expandProteomicsPools(
+      ProteomicsMeasurement proteomicsMeasurement) {
     List<ProteomicsMeasurementEntry> expandedEntries = new ArrayList<>();
     for (SampleId sampleId : proteomicsMeasurement.measuredSamples()) {
       var sampleInfo = sampleInformationService.findSample(sampleId)
           .map(sample -> new SampleInformation(sample.sampleCode().code(), sample.label()))
           .orElse(new SampleInformation("", ""));
-      expandedEntries.add(convert(proteomicsMeasurement, sampleInfo));
+      expandedEntries.add(convertProteomicsMeasurement(proteomicsMeasurement, sampleInfo));
     }
     return expandedEntries;
   }
 
+  private static NGSMeasurementEntry convertNGSMeasurement(NGSMeasurement measurement,
+      SampleInformation sampleInfo) {
+    return new NGSMeasurementEntry(measurement.measurementCode().value(),
+        sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
+        measurement.instrument().getName().replace("_", ":"),
+        measurement.instrument().getLabel(),
+        measurement.samplePoolGroup().orElse(""), measurement.facility(),
+        measurement.sequencingReadType(),
+        measurement.libraryKit().orElse(""), measurement.flowCell().orElse(""),
+        measurement.sequencingRunProtocol().orElse(""), measurement.indexI7().orElse(""),
+        measurement.indexI5().orElse(""), measurement.comment().orElse(""));
+  }
+
+  public List<NGSMeasurementEntry> expandNGSPools(NGSMeasurement ngsMeasurement) {
+    List<NGSMeasurementEntry> expandedEntries = new ArrayList<>();
+    for (SampleId sampleId : ngsMeasurement.measuredSamples()) {
+      var sampleInfo = sampleInformationService.findSample(sampleId)
+          .map(sample -> new SampleInformation(sample.sampleCode().code(), sample.label()))
+          .orElse(new SampleInformation("", ""));
+      expandedEntries.add(convertNGSMeasurement(ngsMeasurement, sampleInfo));
+    }
+    return expandedEntries;
+  }
 }

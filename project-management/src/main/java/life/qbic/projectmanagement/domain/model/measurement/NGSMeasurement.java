@@ -49,6 +49,9 @@ public class NGSMeasurement implements MeasurementMetadata {
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
 
+  @Column(name = "samplePool")
+  private String samplePool = "";
+
   @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
   private MeasurementCode measurementCode;
   @Column(name = "registrationTime")

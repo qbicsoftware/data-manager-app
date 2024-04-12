@@ -167,6 +167,12 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     return pxpMeasurementJpaRepo.findAll(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
   }
 
+  @Override
+  public List<NGSMeasurement> findNGSMeasurementsBySampleIds(
+      Collection<SampleId> sampleIds) {
+    return ngsMeasurementJpaRepo.findAll(NgsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
   private Specification<NGSMeasurement> generateNGSFilterSpecification(
       Collection<SampleId> sampleIds, String filter) {
     Specification<NGSMeasurement> isBlankSpec = NgsMeasurementSpec.isBlank(filter);

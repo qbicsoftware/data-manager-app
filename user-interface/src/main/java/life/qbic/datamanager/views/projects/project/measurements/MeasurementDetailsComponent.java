@@ -164,6 +164,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       measurementItem.addEntry("Run Protocol", ngsMeasurement.sequencingRunProtocol().orElse(""));
       measurementItem.addEntry("Index I7", ngsMeasurement.indexI7().orElse(""));
       measurementItem.addEntry("Index I5", ngsMeasurement.indexI5().orElse(""));
+      measurementItem.addEntry("Sample Pool", ngsMeasurement.samplePoolGroup().orElse(""));
       measurementItem.addEntry("Registration Date",
           asClientLocalDateTime(ngsMeasurement.registrationDate())
               .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
@@ -286,5 +287,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return sampleInformationService.retrieveSamplesByIds(sampleIds).stream()
         .map(sample -> String.format("%s (%s)", sample.sampleCode().code(), sample.label()))
         .toList();
+  }
+
+  //Todo introduce custom tab with label and updateable count
+  public String getSelectedTab() {
+    return registerMeasurementTabSheet.getSelectedTab().getLabel();
   }
 }

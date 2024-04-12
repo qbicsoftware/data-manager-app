@@ -16,6 +16,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.Collection;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
@@ -61,10 +62,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
+  private static Disclaimer registerSamplesDisclaimer;
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final MeasurementDetailsComponent measurementDetailsComponent;
-
   private final MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
   private final transient SampleInformationService sampleInformationService;
@@ -72,10 +73,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final transient MeasurementValidationService measurementValidationService;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
-  private static Disclaimer registerSamplesDisclaimer;
   private final Div noMeasurementDisclaimer;
   private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
-  private final DownloadProvider downloadProvider;
+  private final NGSMeasurementContentProvider ngsMeasurementContentProvider;
+  private final DownloadProvider ngsDownloadProvider;
+  private final DownloadProvider proteomicsDownloadProvider;
   private transient Context context;
 
   public MeasurementMain(
@@ -94,7 +96,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.measurementService = measurementService;
     this.measurementPresenter = measurementPresenter;
     this.proteomicsMeasurementContentProvider = new ProteomicsMeasurementContentProvider();
-    this.downloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
+    this.ngsMeasurementContentProvider = new NGSMeasurementContentProvider();
+    this.ngsDownloadProvider = new DownloadProvider(ngsMeasurementContentProvider);
+    this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
     this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     measurementTemplateDownload = new MeasurementTemplateDownload();
@@ -108,7 +112,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
-    add(downloadProvider);
+    add(ngsDownloadProvider);
+    add(proteomicsDownloadProvider);
     addClassName("measurement");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
@@ -137,7 +142,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementSearchField.addValueChangeListener(
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
     Button downloadButton = new Button("Download Metadata");
-    downloadButton.addClickListener(event -> downloadMetadata());
+    downloadButton.addClickListener(event -> downloadMetadataForSelectedTab());
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
@@ -198,16 +203,42 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     dialog.open();
   }
 
-  private void downloadMetadata() {
+  private void downloadMetadataForSelectedTab() {
+    switch (measurementDetailsComponent.getSelectedTab()) {
+      case "Proteomics": {
+        downloadProteomicsMetadata();
+        return;
+      }
+      case "Genomics": {
+        downloadNGSMetadata();
+        return;
+      }
+      default:
+        throw new ApplicationException(
+            "Unknown tab: " + measurementDetailsComponent.getSelectedTab());
+    }
+  }
+
+  private void downloadProteomicsMetadata() {
     var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
         context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
-    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools)
-        .flatMap(items -> items.stream()).toList();
-
+    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
+        .flatMap(Collection::stream).toList();
     proteomicsMeasurementContentProvider.setMeasurements(result);
-    downloadProvider.trigger();
+    proteomicsDownloadProvider.trigger();
+  }
+
+  private void downloadNGSMetadata() {
+    var ngsMeasurements = measurementService.findNGSMeasurements(
+        context.experimentId().orElseThrow(() -> new ApplicationException(
+            ErrorCode.GENERAL, null)),
+        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+    var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
+        .flatMap(Collection::stream).toList();
+    ngsMeasurementContentProvider.setMeasurements(result);
+    ngsDownloadProvider.trigger();
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
@@ -359,6 +390,4 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToRawDataPage));
     }
   }
-
-
 }

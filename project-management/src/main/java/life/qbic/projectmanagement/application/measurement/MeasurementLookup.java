@@ -36,4 +36,6 @@ public interface MeasurementLookup {
   List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds);
 
   List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
+
+  List<NGSMeasurement> findNGSMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 }

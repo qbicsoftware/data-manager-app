@@ -173,6 +173,19 @@ public class MeasurementService {
     return measurementLookupService.findProteomicsMeasurement(measurementId);
   }
 
+  @PostAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId,
+      ProjectId projectId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryAllNGSMeasurement(samplesInExperiment);
+  }
+
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementId) {
+    return measurementLookupService.findNGSMeasurement(measurementId);
+  }
+
   private Result<MeasurementId, ErrorCode> registerNGS(
       ProjectId projectId, NGSMeasurementMetadata metadata) {
 
@@ -205,6 +218,9 @@ public class MeasurementService {
     var measurement = NGSMeasurement.create(projectId,
         sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
         selectedSampleCode, organisationQuery.get(), method, metadata.comment());
+
+    metadata.assignedSamplePoolGroup()
+        .ifPresent(measurement::setSamplePoolGroup);
 
     var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
 

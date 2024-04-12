@@ -80,7 +80,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public Optional<ProteomicsMeasurement> find(String measurementCode) {
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
     try {
       var code = MeasurementCode.parse(measurementCode);
       return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(code);
@@ -88,11 +88,21 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       log.error("Illegal measurement code: " + measurementCode, e);
       return Optional.empty();
     }
-
   }
 
   @Override
-  public void update(ProteomicsMeasurement measurement) {
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
+    try {
+      var code = MeasurementCode.parse(measurementCode);
+      return ngsMeasurementJpaRepo.findNGSMeasurementByMeasurementCode(code);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement code: " + measurementCode, e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public void updateProteomics(ProteomicsMeasurement measurement) {
     pxpMeasurementJpaRepo.save(measurement);
   }
 
