@@ -216,7 +216,7 @@ public class MeasurementProteomicsValidator implements
       }
       if (metadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+            ValidationResult.withFailures(1, List.of("Facility: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
