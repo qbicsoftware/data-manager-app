@@ -147,6 +147,21 @@ public class NGSMeasurement implements MeasurementMetadata {
         comment, Instant.now());
   }
 
+  public void setMethod(NGSMethodMetadata methodMetadata) {
+    this.instrument = methodMetadata.instrument();
+    this.facility = methodMetadata.facility();
+    this.sequencingReadType = methodMetadata.sequencingReadType();
+    this.libraryKit = methodMetadata.libraryKit();
+    this.flowCell = methodMetadata.flowCell();
+    this.sequencingRunProtocol = methodMetadata.sequencingRunProtocol();
+    this.indexI7 = methodMetadata.indexI7();
+    this.indexI5 = methodMetadata.indexI5();
+  }
+
+  public void setComment(String comment) {
+    this.comment = comment;
+  }
+
   @Override
   public MeasurementCode measurementCode() {
     return this.measurementCode;
@@ -162,6 +177,14 @@ public class NGSMeasurement implements MeasurementMetadata {
 
   public OntologyTerm instrument() {
     return instrument;
+  }
+
+  public void setSamplePoolGroup(String group) {
+    this.samplePool = group;
+  }
+
+  public Optional<String> samplePoolGroup() {
+    return samplePool.isBlank() ? Optional.empty() : Optional.of(samplePool);
   }
 
   public Instant registrationDate() {

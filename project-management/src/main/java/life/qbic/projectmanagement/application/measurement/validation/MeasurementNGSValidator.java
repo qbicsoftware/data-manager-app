@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -28,13 +29,16 @@ public class MeasurementNGSValidator implements
 
   private final SampleInformationService sampleInformationService;
 
+  protected final MeasurementService measurementService;
+
   protected final OntologyLookupService ontologyLookupService;
 
   @Autowired
   public MeasurementNGSValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService) {
+      OntologyLookupService ontologyLookupService, MeasurementService measurementService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
+    this.measurementService = Objects.requireNonNull(measurementService);
   }
 
   /**
@@ -49,7 +53,7 @@ public class MeasurementNGSValidator implements
     if (properties.isEmpty()) {
       return false;
     }
-    if (properties.size() != NGS_PROPERTY.values().length) {
+    if (properties.size() < NGS_PROPERTY.values().length) {
       return false;
     }
     var providedNGSProperties = properties.stream().map(String::toLowerCase).toList();
@@ -78,6 +82,19 @@ public class MeasurementNGSValidator implements
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
   }
 
+  /**
+   * Ignores sample ids but validates measurement ids.
+   *
+   * @param metadata
+   * @return
+   * @since
+   */
+  public ValidationResult validateUpdate(NGSMeasurementMetadata metadata) {
+    var validationPolicy = new MeasurementNGSValidator.ValidationPolicy();
+    return validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
+        .combine(validationPolicy.validateMandatoryDataForUpdate(metadata));
+  }
+
 
   public enum NGS_PROPERTY {
     QBIC_SAMPLE_ID("qbic sample id"),
@@ -103,7 +120,6 @@ public class MeasurementNGSValidator implements
     public String label() {
       return this.label;
     }
-
   }
 
   private class ValidationPolicy {
@@ -118,6 +134,13 @@ public class MeasurementNGSValidator implements
     // https://ror.readme.io/docs/ror-identifier-pattern
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
+    ValidationResult validateMeasurementId(String measurementId) {
+      var queryMeasurement = measurementService.findNGSMeasurement(measurementId);
+      return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
+          ValidationResult.withFailures(1,
+              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
+    }
+
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
       if (sampleCodes.isEmpty()) {
         return ValidationResult.withFailures(1,
@@ -131,13 +154,13 @@ public class MeasurementNGSValidator implements
       return validationResult;
     }
 
-    ValidationResult validateSampleId(SampleCode sampleCodes) {
-      var queriedSampleEntry = sampleInformationService.findSampleId(sampleCodes);
+    ValidationResult validateSampleId(SampleCode sampleCode) {
+      var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
       if (queriedSampleEntry.isPresent()) {
         return ValidationResult.successful(1);
       }
       return ValidationResult.withFailures(1,
-          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCodes.code())));
+          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCode.code())));
     }
 
     ValidationResult validateOrganisation(String organisationId) {
@@ -189,6 +212,43 @@ public class MeasurementNGSValidator implements
         validation = validation.combine(ValidationResult.successful(1));
       }
       if (measurementMetadata.sequencingReadType().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1,
+                List.of("Read Type: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      return validation;
+    }
+
+
+    ValidationResult validateMandatoryDataForUpdate(NGSMeasurementMetadata metadata) {
+      var validation = ValidationResult.successful(1);
+      if (metadata.measurementIdentifier().isEmpty()) {
+        validation.combine(ValidationResult.withFailures(1,
+            List.of("Measurement id: missing measurement id for update")));
+      } else {
+        validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.organisationId().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.instrumentCURI().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.facility().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+      } else {
+        validation = validation.combine(ValidationResult.successful(1));
+      }
+      if (metadata.sequencingReadType().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("Read Type: missing mandatory metadata")));

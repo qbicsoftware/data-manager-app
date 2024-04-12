@@ -107,6 +107,11 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
+  public void updateNGS(NGSMeasurement measurement) {
+    ngsMeasurementJpaRepo.save(measurement);
+  }
+
+  @Override
   public void updateAll(Collection<ProteomicsMeasurement> measurements) {
     pxpMeasurementJpaRepo.saveAll(measurements);
   }

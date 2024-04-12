@@ -303,8 +303,8 @@ public class MeasurementService {
     if (metadata instanceof ProteomicsMeasurementMetadata pxpMetadata) {
       return updatePxP(pxpMetadata);
     }
-    if (metadata instanceof NGSMeasurementMetadata) {
-      return updateNGS(metadata);
+    if (metadata instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
+      return updateNGS(ngsMeasurementMetadata);
     }
     return Result.fromError(ErrorCode.FAILED);
   }
@@ -346,8 +346,9 @@ public class MeasurementService {
 
     measurementToUpdate.setLabeling(labelingMethod);
     measurementToUpdate.setMethod(method);
+    measurementToUpdate.setComment(metadata.comment());
 
-    var updateResult = measurementDomainService.update(measurementToUpdate);
+    var updateResult = measurementDomainService.updateProteomics(measurementToUpdate);
 
     if (updateResult.isError()) {
       return Result.fromError(ErrorCode.FAILED);
@@ -356,8 +357,42 @@ public class MeasurementService {
     }
   }
 
-  private Result<MeasurementId, ErrorCode> updateNGS(MeasurementMetadata metadata) {
-    return Result.fromError(ErrorCode.FAILED);
+  private Result<MeasurementId, ErrorCode> updateNGS(NGSMeasurementMetadata metadata) {
+    var result = measurementLookupService.findNGSMeasurement(metadata.measurementId());
+    if (result.isEmpty()) {
+      return Result.fromError(ErrorCode.UNKNOWN_MEASUREMENT);
+    }
+    var measurementToUpdate = result.get();
+
+    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
+    if (instrumentQuery.isEmpty()) {
+      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var organisationQuery = organisationLookupService.organisation(
+        metadata.organisationId());
+    if (organisationQuery.isEmpty()) {
+      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
+        metadata.sequencingReadType(),
+        metadata.libraryKit(), metadata.flowCell(),
+        metadata.sequencingRunProtocol(),
+        metadata.indexI7(), metadata.indexI5());
+
+    metadata.assignedSamplePoolGroup()
+        .ifPresent(measurementToUpdate::setSamplePoolGroup);
+
+    measurementToUpdate.setMethod(method);
+    measurementToUpdate.setComment(metadata.comment());
+    var updateResult = measurementDomainService.updateNGS(measurementToUpdate);
+
+    if (updateResult.isError()) {
+      return Result.fromError(ErrorCode.FAILED);
+    } else {
+      return Result.fromValue(updateResult.getValue().measurementId());
+    }
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")

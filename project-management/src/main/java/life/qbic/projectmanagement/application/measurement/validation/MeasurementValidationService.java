@@ -76,7 +76,7 @@ public class MeasurementValidationService {
   }
 
   public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata) {
-    return measurementNgsValidator.validate(ngsMeasurementMetadata);
+    return measurementNgsValidator.validateUpdate(ngsMeasurementMetadata);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {

@@ -184,6 +184,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return Result.fromValue(null);
     }
 
+    Integer measurementIdIndex = columns.getOrDefault(MeasurementProperty.MEASUREMENT_ID.label(),
+        -1);
     Integer sampleCodeColumnIndex = columns.get(NGS_PROPERTY.QBIC_SAMPLE_ID.label());
     Integer organisationColumnIndex = columns.get(NGS_PROPERTY.ORGANISATION_ID.label());
     Integer instrumentColumnIndex = columns.get(NGS_PROPERTY.INSTRUMENT.label());
@@ -205,6 +207,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return Result.fromError("Not enough columns provided for row: %s".formatted(row));
     }
 
+    String measurementId = safeArrayAccess(columnValues, measurementIdIndex).orElse("");
     List<SampleCode> sampleCodes = List.of(
         SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
 
@@ -219,7 +222,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     String indexI7 = safeArrayAccess(columnValues, indexI7Index).orElse("");
     String indexI5 = safeArrayAccess(columnValues, indexI5Index).orElse("");
     String comment = safeArrayAccess(columnValues, commentIndex).orElse("");
-    NGSMeasurementMetadata metadata = new NGSMeasurementMetadata(sampleCodes,
+    NGSMeasurementMetadata metadata = new NGSMeasurementMetadata(measurementId, sampleCodes,
         organisationRoRId, instrumentCURIE, facility, readType,
         libraryKit, flowCell, runProtocol, samplePool, indexI7, indexI5, comment);
     return Result.fromValue(metadata);
@@ -466,6 +469,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     if (metaDataValues.length != propertyColumnMap.keySet().size()) {
       validationResult.combine(ValidationResult.withFailures(1, List.of("")));
     }
+    var measurementIdIndex = propertyColumnMap.getOrDefault(
+        MeasurementProperty.MEASUREMENT_ID.label(), -1);
     var sampleCodeColumnIndex = propertyColumnMap.get(
         NGS_PROPERTY.QBIC_SAMPLE_ID.label());
     var organisationsColumnIndex = propertyColumnMap.get(
@@ -494,6 +499,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return validationResult.combine(ValidationResult.withFailures(1,
           List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
     }
+    var measurementId = safeArrayAccess(metaDataValues, measurementIdIndex).orElse("");
     var sampleCodes = SampleCode.create(
         safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
     var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
@@ -509,7 +515,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     var indexI5 = safeArrayAccess(metaDataValues, indexI5Index).orElse("");
     var comment = safeArrayAccess(metaDataValues, commentIndex).orElse("");
 
-    var metadata = new NGSMeasurementMetadata(List.of(sampleCodes),
+    var metadata = new NGSMeasurementMetadata(measurementId, List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, facility, sequencingReadType,
         libraryKit, flowCell, sequencingRunProtocol, samplePoolGroup, indexI7, indexI5, comment);
     var measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(

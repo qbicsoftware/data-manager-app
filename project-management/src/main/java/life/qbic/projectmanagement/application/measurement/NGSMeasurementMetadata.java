@@ -13,7 +13,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public record NGSMeasurementMetadata(Collection<SampleCode> sampleCodes,
+public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode> sampleCodes,
                                      String organisationId, String instrumentCURI, String facility,
                                      String sequencingReadType, String libraryKit, String flowCell,
                                      String sequencingRunProtocol, String samplePoolGroup,
@@ -30,6 +30,10 @@ public record NGSMeasurementMetadata(Collection<SampleCode> sampleCodes,
     return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
   }
 
+  public Optional<String> measurementIdentifier() {
+    return Optional.ofNullable(measurementId.isBlank() ? null : measurementId);
+  }
+
   @Override
   public MeasurementCode measurementCode() {
     return null;
@@ -39,6 +43,7 @@ public record NGSMeasurementMetadata(Collection<SampleCode> sampleCodes,
       Collection<SampleCode> associatedSamples, String indexI7, String indexI5,
       NGSMeasurementMetadata metadata) {
     return new NGSMeasurementMetadata(
+        metadata.measurementId(),
         associatedSamples.stream().toList(),
         metadata.organisationId(),
         metadata.instrumentCURI(),
