@@ -216,7 +216,7 @@ vaadin-dialog-overlay::part(title) {
 }
 
 .contact-field .prefill-input-fields .contact-self-select {
-  width: 5em;
+  width: 36em;
 }
 
 .edit-project-dialog .form-content .contact-field .name-field {
