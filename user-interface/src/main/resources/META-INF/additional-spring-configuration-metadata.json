@@ -29,6 +29,21 @@
       "name": "qbic.access-token.iteration-count",
       "type": "java.lang.String",
       "description": "The number of iterations used in personal access token encryption."
+    },
+    {
+      "name": "server.download.api.measurement.url",
+      "type": "java.lang.String",
+      "description": "URL of the server from which to download the raw data from."
+    },
+    {
+      "name": "openbis.datasource.as.url",
+      "type": "java.lang.String",
+      "description": "URL of the openbis application server containing the measurement information"
+    },
+    {
+      "name": "openbis.datasource.dss.url",
+      "type": "java.lang.String",
+      "description": "URL of the openbis datastore server containing the measurement information"
     }
   ]
 }

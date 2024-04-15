@@ -1,6 +1,10 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
@@ -49,7 +53,8 @@ public class MeasurementNGSValidator implements
       return false;
     }
     var providedNGSProperties = properties.stream().map(String::toLowerCase).toList();
-    var expectedNGSProperties = Arrays.stream(NGS_PROPERTY.values()).map(NGS_PROPERTY::label).toList();
+    var expectedNGSProperties = Arrays.stream(NGS_PROPERTY.values()).map(NGS_PROPERTY::label)
+        .toList();
     return new HashSet<>(providedNGSProperties).containsAll(expectedNGSProperties);
   }
 
@@ -75,7 +80,7 @@ public class MeasurementNGSValidator implements
 
 
   public enum NGS_PROPERTY {
-    QBIC_SAMPLE_ID("qbic sample ids"),
+    QBIC_SAMPLE_ID("qbic sample id"),
     SAMPLE_LABEL("sample label"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),

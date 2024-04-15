@@ -38,6 +38,18 @@ public class SampleInformationService {
     this.sampleRepository = sampleRepository;
   }
 
+  /**
+   * Checks if there are samples registered for the provided experimentId
+   *
+   * @param experimentId {@link ExperimentId}s of the experiment for which it should be determined
+   *                     if it has samples registered
+   * @return true if experiments has samples, false if not
+   */
+  public boolean hasSamples(ExperimentId experimentId) {
+    Objects.requireNonNull(experimentId, "experiment id must not be null");
+    return sampleRepository.countSamplesWithExperimentId(experimentId) != 0;
+  }
+
   public Result<Collection<Sample>, ResponseCode> retrieveSamplesForExperiment(
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
@@ -75,6 +87,10 @@ public class SampleInformationService {
         sortOrders, filter);
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(previewList);
+  }
+
+  public Optional<Sample> findSample(SampleId sampleId) {
+    return sampleRepository.findSample(sampleId);
   }
 
   public Optional<SampleIdCodeEntry> findSampleId(SampleCode sampleCode) {

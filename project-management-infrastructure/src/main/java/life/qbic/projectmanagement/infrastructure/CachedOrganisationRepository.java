@@ -91,8 +91,10 @@ public class CachedOrganisationRepository implements OrganisationRepository {
           .header("Content-Type", "application/json").GET().build();
       var result = client.send(rorQuery, BodyHandlers.ofString());
       //If a valid RoRId was provided but the ID does not exist we fail
-      if(result.statusCode() != 200) {
-        log.warn("Provided Organisation ROR id: %s was not found via API call to %s".formatted(rorId, ROR_API_URL));
+      if (result.statusCode() != 200) {
+        log.warn(
+            "Provided Organisation ROR id: %s was not found via API call to %s".formatted(rorId,
+                ROR_API_URL));
         return null;
       }
       RORentry rorEntry = new ObjectMapper().configure(

@@ -33,8 +33,7 @@ public class MeasurementProteomicsValidationExecutor implements
   }
 
   @Override
-  public ValidationResult validateEdit(ProteomicsMeasurementMetadata metadata) {
-    //Todo provide edit validation for proteomics
-    return null;
+  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata) {
+    return measurementValidationService.validateProteomicsUpdate(metadata);
   }
 }

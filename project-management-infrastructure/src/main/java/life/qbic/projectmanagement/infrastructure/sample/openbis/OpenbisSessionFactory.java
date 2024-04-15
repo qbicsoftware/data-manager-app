@@ -5,8 +5,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.dssapi.v3.IDataStoreServerApi;
-import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
 import ch.systemsx.cisd.common.exceptions.UserFailureException;
+import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
 import org.slf4j.Logger;
 
 /**

@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.lang.NonNull;
 
 /**
@@ -61,13 +60,13 @@ public class MeasurementId implements Serializable {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    MeasurementId sampleId = (MeasurementId) o;
-    return Objects.equals(uuid, sampleId.uuid);
+    MeasurementId measurementId = (MeasurementId) o;
+    return Objects.equals(uuid, measurementId.uuid);
   }
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", SampleId.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", MeasurementId.class.getSimpleName() + "[", "]")
         .add("uuid=" + uuid)
         .toString();
   }

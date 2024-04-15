@@ -51,12 +51,14 @@ public class EditProjectInformationDialog extends DialogWindow {
 
     formLayout = new EditProjectInformationForm();
 
-    List<Contact> knownContacts = contactRepository.findAll().stream()
-        .map(contact -> new Contact(contact.fullName(), contact.emailAddress())).toList();
-    formLayout.setPrincipalInvestigators(knownContacts);
-    formLayout.setResponsiblePersons(knownContacts);
-    formLayout.setProjectManagers(knownContacts);
+    List<Contact> knownContacts = contactRepository.findAll().stream().map(contact ->
+        new Contact(contact.fullName(), contact.emailAddress())).toList();
 
+    if(knownContacts.isEmpty()) {
+      formLayout.hideContactBox();
+    } else {
+      formLayout.setKnownContacts(knownContacts);
+    }
 
     binder = formLayout.getBinder();
 
