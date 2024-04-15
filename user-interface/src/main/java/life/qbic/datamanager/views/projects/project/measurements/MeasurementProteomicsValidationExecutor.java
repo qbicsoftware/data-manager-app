@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
@@ -33,7 +34,7 @@ public class MeasurementProteomicsValidationExecutor implements
   }
 
   @Override
-  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata) {
+  public CompletableFuture<ValidationResult> validateUpdate(ProteomicsMeasurementMetadata metadata) {
     return measurementValidationService.validateProteomicsUpdate(metadata);
   }
 }

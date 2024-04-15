@@ -7,8 +7,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
@@ -32,8 +34,11 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -365,7 +370,8 @@ public class MeasurementService {
   @Transactional
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public void registerMultiple(
+  @Async
+  public CompletableFuture<Void> registerMultiple(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
     for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
@@ -374,12 +380,14 @@ public class MeasurementService {
             throw new MeasurementRegistrationException(error);
           });
     }
+    return CompletableFuture.completedFuture(null);
   }
 
   @Transactional
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public void updateMultiple(
+  @Async
+  public CompletableFuture<Void> updateMultiple(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
     for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
@@ -388,6 +396,7 @@ public class MeasurementService {
             throw new MeasurementRegistrationException(error);
           });
     }
+    return CompletableFuture.completedFuture(null);
   }
 
   private List<? extends MeasurementMetadata> mergeBySamplePoolGroup(
@@ -467,6 +476,8 @@ public class MeasurementService {
         .toList();
     var samples = sampleInformationService.retrieveSamplesByIds(sampleIds);
     var associatedExperimentsFromSamples = samples.stream().map(Sample::experimentId).toList();
+    var object = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
     var associatedExperimentsFromProject = projectInformationService.find(projectId).orElseThrow()
         .experiments();
     return new HashSet<>(associatedExperimentsFromProject).containsAll(

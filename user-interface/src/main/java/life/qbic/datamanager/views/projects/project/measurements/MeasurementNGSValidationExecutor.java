@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
@@ -30,7 +31,7 @@ public class MeasurementNGSValidationExecutor implements
     return measurementValidationService.validateNGS(metadata);
   }
   @Override
-  public ValidationResult validateUpdate(NGSMeasurementMetadata metadata) {
+  public CompletableFuture<ValidationResult> validateUpdate(NGSMeasurementMetadata metadata) {
     //Todo provide edit validation for ngs;
     return null;
   }

@@ -2,10 +2,13 @@ package life.qbic.projectmanagement.application.measurement.validation;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
 
 /**
  * <b>Validation Service</b>
@@ -70,9 +73,10 @@ public class MeasurementValidationService {
    * @return a detailed {@link ValidationResult} with information about the validation
    * @since 1.0.0
    */
-  public ValidationResult validateProteomicsUpdate(
+  @Async
+  public CompletableFuture<ValidationResult> validateProteomicsUpdate(
       ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxpValidator.validateUpdate(pxMeasurementMetadata);
+    return CompletableFuture.supplyAsync(() -> pxpValidator.validateUpdate(pxMeasurementMetadata));
   }
 
   public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata) {

@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -17,6 +18,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -160,12 +162,20 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       boolean allSuccessfull = true;
       for (var upload : uploads) {
         try {
+          var source = confirmEvent.getSource();
+          var measurementData = upload.measurementMetadata();
           if (editMode) {
+            source.showTaskInProgress("Updating %s measurements ...".formatted(measurementData.size()), "This might take a minute");
+            UI.getCurrent().push();
             measurementService.updateMultiple(upload.measurementMetadata(),
-                context.projectId().orElseThrow());
+                context.projectId().orElseThrow()).join(); // we wait for the update to finish
+            source.hideTaskInProgress();
           } else {
+            source.showTaskInProgress("Registering %s measurements ...".formatted(measurementData.size()), "This might take a minute");
+            UI.getCurrent().push();
             measurementService.registerMultiple(upload.measurementMetadata(),
                 context.projectId().orElseThrow());
+            source.hideTaskInProgress();
           }
         } catch (MeasurementRegistrationException measurementRegistrationException) {
           allSuccessfull = false;
