@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.measurement;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
@@ -222,7 +224,7 @@ public class MeasurementService {
     }
   }
 
-  private Result<MeasurementId, ErrorCode> registerPxP(
+  protected Result<MeasurementId, ErrorCode> registerPxP(
       ProjectId projectId, ProteomicsMeasurementMetadata metadata) {
     var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createMS(
@@ -231,18 +233,18 @@ public class MeasurementService {
 
     if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
       log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      return Result.fromError(ErrorCode.FAILED);
+      throw new MeasurementRegistrationException(ErrorCode.FAILED);
     }
 
     var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
     if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
     var organisationQuery = organisationLookupService.organisation(
         metadata.organisationId());
     if (organisationQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
     var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
@@ -274,10 +276,9 @@ public class MeasurementService {
     var result = measurementDomainService.addProteomics(measurement, parentCodes);
 
     if (result.isError()) {
-      return Result.fromError(ErrorCode.FAILED);
-    } else {
-      return Result.fromValue(result.getValue().measurementId());
+      throw new MeasurementRegistrationException(ErrorCode.FAILED);
     }
+    return Result.fromValue(result.getValue().measurementId());
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -350,13 +351,14 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<MeasurementId, ErrorCode> register(ProjectId projectId,
+  @Transactional
+  protected Result<MeasurementId, ErrorCode> register(ProjectId projectId,
       MeasurementMetadata measurementMetadata) {
     if (measurementMetadata.associatedSamples().isEmpty()) {
-      return Result.fromError(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
+      throw new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
     }
     if (!areSamplesFromProject(projectId, measurementMetadata.associatedSamples())) {
-      return Result.fromError(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
+      throw new MeasurementRegistrationException(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
     }
     if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
       return registerPxP(projectId, proteomicsMeasurementMetadata);
@@ -364,23 +366,24 @@ public class MeasurementService {
     if (measurementMetadata instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
       return registerNGS(projectId, ngsMeasurementMetadata);
     }
-    return Result.fromError(ErrorCode.FAILED);
+    throw new MeasurementRegistrationException(ErrorCode.FAILED);
   }
 
-  @Transactional
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
-  public CompletableFuture<Void> registerMultiple(
+  public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> registerMultiple(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
+    List<Result<MeasurementId, ErrorCode>> results = new ArrayList<>();
     for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
-      register(projectId, measurementMetadata)
-          .onError(error -> {
-            throw new MeasurementRegistrationException(error);
-          });
+      try {
+        results.add(register(projectId, measurementMetadata));
+      } catch (MeasurementRegistrationException e) {
+        results.add(Result.fromError(e.reason));
+      }
     }
-    return CompletableFuture.completedFuture(null);
+    return CompletableFuture.completedFuture(results);
   }
 
   @Transactional
@@ -476,7 +479,6 @@ public class MeasurementService {
         .toList();
     var samples = sampleInformationService.retrieveSamplesByIds(sampleIds);
     var associatedExperimentsFromSamples = samples.stream().map(Sample::experimentId).toList();
-    var object = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
     var associatedExperimentsFromProject = projectInformationService.find(projectId).orElseThrow()
         .experiments();

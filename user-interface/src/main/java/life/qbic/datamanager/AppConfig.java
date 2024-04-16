@@ -70,22 +70,6 @@ public class AppConfig {
   Global settings
    */
 
-  @Bean
-  public ThreadPoolTaskExecutor threadPoolTaskExecutor(
-      RejectedExecutionHandler rejectedExecutionHandler) {
-    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(10);
-    executor.setMaxPoolSize(100);
-    executor.setQueueCapacity(50);
-    executor.setThreadNamePrefix("async-");
-    executor.setRejectedExecutionHandler(rejectedExecutionHandler);
-    return executor;
-  }
-
-  @Bean
-  public DelegatingSecurityContextAsyncTaskExecutor taskExecutor(ThreadPoolTaskExecutor delegate) {
-    return new DelegatingSecurityContextAsyncTaskExecutor(delegate);
-  }
 
   /*
   end global settings
