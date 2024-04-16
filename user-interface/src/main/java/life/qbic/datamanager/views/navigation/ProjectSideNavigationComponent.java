@@ -247,7 +247,7 @@ public class ProjectSideNavigationComponent extends Div implements
     experimentSection.add(expHeader);
 
     Icon addIcon = LumoIcon.PLUS.create();
-    addIcon.addClassName("exp-create-icon");
+    addIcon.addClassName("clickable");
     addIcon.addClickListener(
         event -> showAddExperimentDialog());
     expHeader.setSuffixComponent(addIcon);
