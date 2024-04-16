@@ -595,8 +595,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return CompletableFuture.supplyAsync(
-          () -> validationResult.combine(ValidationResult.withFailures(1,
+      return CompletableFuture.completedFuture(validationResult.combine(ValidationResult.withFailures(1,
               List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
     }
 
@@ -634,8 +633,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private CompletableFuture<ValidationResult> generateModeDependentValidationResult(
       MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
     return switch (mode) {
-      case ADD -> CompletableFuture.supplyAsync(
-          () -> measurementValidationExecutor.validateRegistration(metadata));
+      case ADD ->  measurementValidationExecutor.validateRegistration(metadata);
       case EDIT -> measurementValidationExecutor.validateUpdate(metadata);
     };
   }

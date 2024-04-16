@@ -29,8 +29,8 @@ public class MeasurementProteomicsValidationExecutor implements
   }
 
   @Override
-  public ValidationResult validateRegistration(ProteomicsMeasurementMetadata metadata) {
-    return measurementValidationService.validateProteomics(metadata);
+  public CompletableFuture<ValidationResult> validateRegistration(ProteomicsMeasurementMetadata metadata) {
+    return CompletableFuture.completedFuture(measurementValidationService.validateProteomics(metadata));
   }
 
   @Override

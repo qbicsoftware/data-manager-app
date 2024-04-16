@@ -17,7 +17,7 @@ import life.qbic.projectmanagement.application.measurement.validation.Validation
  */
 public interface MeasurementValidationExecutor<MeasurementMetadata> {
 
-  ValidationResult validateRegistration(MeasurementMetadata metadata);
+  CompletableFuture<ValidationResult> validateRegistration(MeasurementMetadata metadata);
 
   CompletableFuture<ValidationResult> validateUpdate(MeasurementMetadata metadata);
 

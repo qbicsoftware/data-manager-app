@@ -27,8 +27,8 @@ public class MeasurementNGSValidationExecutor implements
     this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
   }
   @Override
-  public ValidationResult validateRegistration(NGSMeasurementMetadata metadata) {
-    return measurementValidationService.validateNGS(metadata);
+  public CompletableFuture<ValidationResult> validateRegistration(NGSMeasurementMetadata metadata) {
+    return CompletableFuture.completedFuture(measurementValidationService.validateNGS(metadata));
   }
   @Override
   public CompletableFuture<ValidationResult> validateUpdate(NGSMeasurementMetadata metadata) {
