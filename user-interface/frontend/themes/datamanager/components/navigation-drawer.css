@@ -22,9 +22,6 @@
   color: var(--lumo-primary-color);
 }
 
-.project-navigation-drawer vaadin-side-nav-item.experiment-header {
-  color: var(--lumo-primary-color);
-}
 
 .exp-create-icon {
   cursor: pointer;
