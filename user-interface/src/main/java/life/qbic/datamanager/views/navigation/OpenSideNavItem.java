@@ -14,7 +14,6 @@ public class OpenSideNavItem extends Span implements HasSuffix {
 
   public OpenSideNavItem(String label) {
     this.setLabel(label);
-    //this.addComponentAsFirst(prefix);
   }
 
   public void setLabel(String label) {
