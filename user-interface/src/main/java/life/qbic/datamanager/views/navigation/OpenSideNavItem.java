@@ -1,13 +1,14 @@
 package life.qbic.datamanager.views.navigation;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.shared.HasSuffix;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.dom.Element;
 
+/**
+ * Pendant to the SideNavItem component to display sub-elements in a list. Other than SideNavItem
+ * this Span is not collapsible but always shows all sub-items.
+ */
 public class OpenSideNavItem extends Span implements HasSuffix {
   private Element labelElement;
 

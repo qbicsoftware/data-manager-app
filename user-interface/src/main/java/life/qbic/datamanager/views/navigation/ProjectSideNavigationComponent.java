@@ -54,7 +54,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Project Side Navigation Component
@@ -241,9 +240,12 @@ public class ProjectSideNavigationComponent extends Div implements
     Div experimentSection = new Div();
     SideNavItem expHeader = new SideNavItem("EXPERIMENTS");
     Icon flask = VaadinIcon.FLASK.create();
-    flask.addClassName("primary");
+
+    if(context.experimentId().isPresent()) {
+      expHeader.addClassName("primary");
+    }
+
     expHeader.setPrefixComponent(flask);
-    expHeader.addClassName("primary");
     experimentSection.add(expHeader);
 
     Icon addIcon = LumoIcon.PLUS.create();
