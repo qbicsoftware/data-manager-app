@@ -179,7 +179,22 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
               "This might take a minute");
           UI.getCurrent().push();
           measurementService.updateMultiple(upload.measurementMetadata(),
-              context.projectId().orElseThrow()).join(); // we wait for the update to finish
+              context.projectId().orElseThrow()).thenAccept(results -> {
+            var errorResult = results.stream().filter(Result::isError).toList();
+            if (!errorResult.isEmpty()) {
+              errorResult.forEach(errorCodeResult ->
+                  confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
+                    confirmEvent.getSource()
+                        .showError(upload.fileName(),
+                            convertErrorCodeToMessage(errorCodeResult.getError()));
+                  })));
+            } else {
+              confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
+                confirmEvent.getSource().close();
+                setMeasurementInformation();
+              }));
+            }
+          }).join(); // we wait for the update to finish
         } else {
           source.showTaskInProgress(
               "Registering %s measurements ...".formatted(measurementData.size()),

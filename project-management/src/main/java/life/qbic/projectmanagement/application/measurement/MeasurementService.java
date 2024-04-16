@@ -224,7 +224,7 @@ public class MeasurementService {
     }
   }
 
-  protected Result<MeasurementId, ErrorCode> registerPxP(
+  private Result<MeasurementId, ErrorCode> registerPxP(
       ProjectId projectId, ProteomicsMeasurementMetadata metadata) {
     var associatedSampleCodes = metadata.associatedSamples();
     var selectedSampleCode = MeasurementCode.createMS(
@@ -281,14 +281,15 @@ public class MeasurementService {
     return Result.fromValue(result.getValue().measurementId());
   }
 
+  @Transactional
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<MeasurementId, ErrorCode> update(ProjectId projectId,
       MeasurementMetadata metadata) {
     if (metadata.measurementIdentifier().isEmpty()) {
-      return Result.fromError(ErrorCode.MISSING_MEASUREMENT_ID);
+      throw new MeasurementRegistrationException(ErrorCode.MISSING_MEASUREMENT_ID);
     }
     if (!areSamplesFromProject(projectId, metadata.associatedSamples())) {
-      return Result.fromError(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
+      throw new MeasurementRegistrationException(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
     }
     if (metadata instanceof ProteomicsMeasurementMetadata pxpMetadata) {
       return updatePxP(pxpMetadata);
@@ -296,7 +297,7 @@ public class MeasurementService {
     if (metadata instanceof NGSMeasurementMetadata) {
       return updateNGS(metadata);
     }
-    return Result.fromError(ErrorCode.FAILED);
+    throw new MeasurementRegistrationException(ErrorCode.FAILED);
   }
 
   private Result<MeasurementId, ErrorCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
@@ -386,20 +387,21 @@ public class MeasurementService {
     return CompletableFuture.completedFuture(results);
   }
 
-  @Transactional
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
-  public CompletableFuture<Void> updateMultiple(
+  public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> updateMultiple(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
+    List<Result<MeasurementId, ErrorCode>> results = new ArrayList<>();
     for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
-      update(projectId, measurementMetadata)
-          .onError(error -> {
-            throw new MeasurementRegistrationException(error);
-          });
+        try {
+          results.add(update(projectId, measurementMetadata));
+        } catch (MeasurementRegistrationException e) {
+          results.add(Result.fromError(e.reason));
+        }
     }
-    return CompletableFuture.completedFuture(null);
+    return CompletableFuture.completedFuture(results);
   }
 
   private List<? extends MeasurementMetadata> mergeBySamplePoolGroup(
