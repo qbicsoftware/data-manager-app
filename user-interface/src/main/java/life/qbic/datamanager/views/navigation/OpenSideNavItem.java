@@ -10,7 +10,6 @@ import com.vaadin.flow.dom.Element;
 
 public class OpenSideNavItem extends Span implements HasSuffix {
   private Element labelElement;
-  //private Icon prefix;
 
   public OpenSideNavItem(String label) {
     this.setLabel(label);
