@@ -178,7 +178,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
               "Updating %s measurements ...".formatted(measurementData.size()),
               "This might take a minute");
           UI.getCurrent().push();
-          measurementService.updateMultiple(upload.measurementMetadata(),
+          measurementService.updateAll(upload.measurementMetadata(),
               context.projectId().orElseThrow()).thenAccept(results -> {
             var errorResult = results.stream().filter(Result::isError).toList();
             if (!errorResult.isEmpty()) {

@@ -9,6 +9,7 @@ import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -60,13 +61,11 @@ public class MeasurementDomainService {
     return Result.fromError(ResponseCode.FAILED);
   }
 
-  public void addProteomicsAll(
+  public List<MeasurementId> addProteomicsAll(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
     measurementRepository.saveAll(proteomicsMeasurementsMapping);
-  }
-
-  public enum ResponseCode {
-    SUCCESSFUL, FAILED, MEASUREMENT_EXISTS
+    return proteomicsMeasurementsMapping.keySet().stream().map(ProteomicsMeasurement::measurementId)
+        .toList();
   }
 
   public Result<ProteomicsMeasurement, ResponseCode> update(ProteomicsMeasurement measurement) {
@@ -78,6 +77,16 @@ public class MeasurementDomainService {
           .value(), e);
     }
     return Result.fromError(ResponseCode.FAILED);
+  }
+
+  public List<MeasurementId> updateProteomicsAll(
+      List<ProteomicsMeasurement> proteomicsMeasurements) {
+    measurementRepository.updateAll(proteomicsMeasurements);
+    return proteomicsMeasurements.stream().map(ProteomicsMeasurement::measurementId).toList();
+  }
+
+  public enum ResponseCode {
+    SUCCESSFUL, FAILED, MEASUREMENT_EXISTS
   }
 
 }
