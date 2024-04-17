@@ -433,7 +433,8 @@ public class MeasurementService {
 
   private void performRegistrationNGS(List<MeasurementMetadata> measurementMetadataList,
       ProjectId projectId) {
-
+    // TODO implement
+    throw new RuntimeException("Not implemented");
   }
 
   private void performRegistrationPxp(List<MeasurementMetadata> measurementMetadataList,
