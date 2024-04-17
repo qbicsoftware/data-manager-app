@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * <b>Validation Executor</b>
@@ -17,8 +18,8 @@ import life.qbic.projectmanagement.application.measurement.validation.Validation
  */
 public interface MeasurementValidationExecutor<MeasurementMetadata> {
 
-  CompletableFuture<ValidationResult> validateRegistration(MeasurementMetadata metadata);
+  CompletableFuture<ValidationResult> validateRegistration(MeasurementMetadata metadata, ProjectId projectId);
 
-  CompletableFuture<ValidationResult> validateUpdate(MeasurementMetadata metadata);
+  CompletableFuture<ValidationResult> validateUpdate(MeasurementMetadata metadata, ProjectId projectId);
 
 }

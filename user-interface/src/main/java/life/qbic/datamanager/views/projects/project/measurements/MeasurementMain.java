@@ -226,7 +226,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openEditMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT);
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT, context.projectId().orElse(null));
     setupDialog(dialog, true);
     dialog.open();
   }
@@ -362,7 +362,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD);
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD, context.projectId().orElse(null));
     setupDialog(dialog, false);
     dialog.open();
   }

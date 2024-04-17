@@ -53,6 +53,7 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 
@@ -83,9 +84,11 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private final NativeLabel progressbarLabelText;
   private final Span progressbarDescriptionText;
   private final Div uploadSection;
+  private final ProjectId projectId;
 
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
-      MODE mode) {
+      MODE mode, ProjectId projectId) {
+    this.projectId = requireNonNull(projectId, "projectId cannot be null");
     this.measurementValidationService = requireNonNull(measurementValidationService,
         "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
@@ -633,8 +636,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private CompletableFuture<ValidationResult> generateModeDependentValidationResult(
       MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
     return switch (mode) {
-      case ADD ->  measurementValidationExecutor.validateRegistration(metadata);
-      case EDIT -> measurementValidationExecutor.validateUpdate(metadata);
+      case ADD ->  measurementValidationExecutor.validateRegistration(metadata, projectId);
+      case EDIT -> measurementValidationExecutor.validateUpdate(metadata, projectId);
     };
   }
 

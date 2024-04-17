@@ -8,22 +8,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
  * <b>Measurement Proteomics Validator</b>
  *
- * <p>Validator employed to check the provided user input for a measurement in the proteomics domain.
- *    The validator checks the for the provision of mandatory information, and will return a ValidationResult
- *    dependent on the presence or absence of data
+ * <p>Validator employed to check the provided user input for a measurement in the proteomics
+ * domain. The validator checks the for the provision of mandatory information, and will return a
+ * ValidationResult dependent on the presence or absence of data
  * </p>
- *
  */
 @Component
 public class MeasurementProteomicsValidator implements
@@ -37,12 +39,17 @@ public class MeasurementProteomicsValidator implements
 
   protected final OntologyLookupService ontologyLookupService;
 
+  protected final ProjectInformationService projectInformationService;
+
   @Autowired
+
   public MeasurementProteomicsValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService, MeasurementService measurementService) {
+      OntologyLookupService ontologyLookupService, MeasurementService measurementService,
+      ProjectInformationService projectInformationService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.measurementService = Objects.requireNonNull(measurementService);
+    this.projectInformationService = Objects.requireNonNull(projectInformationService);
   }
 
   /**
@@ -77,7 +84,8 @@ public class MeasurementProteomicsValidator implements
   }
 
   @Override
-  public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata) {
+  public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata,
+      ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
@@ -99,10 +107,16 @@ public class MeasurementProteomicsValidator implements
    * @return
    * @since
    */
-  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata) {
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata,
+      ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
-    return validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
-        .combine(validationPolicy.validateMandatoryDataForUpdate(metadata));
+    return metadata.associatedSamples().stream()
+        .map(sampleCode -> validationPolicy.validationProjectRelation(sampleCode, projectId))
+        .reduce(ValidationResult.successful(0),
+            ValidationResult::combine).combine(validationPolicy.validateMeasurementId(
+                metadata.measurementIdentifier().orElse(""))
+            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -159,6 +173,28 @@ public class MeasurementProteomicsValidator implements
         validationResult = validationResult.combine(validateSampleId(sample));
       }
       return validationResult;
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationProjectRelation(SampleCode sampleCode, ProjectId projectId) {
+      var projectQuery = projectInformationService.find(projectId);
+      if (projectQuery.isEmpty()) {
+        log.error("No project information found for projectId: " + projectId);
+        throw new ValidationException("This should not happen, please try again.");
+      }
+      var experimentIds = projectQuery.get().experiments();
+      var sampleQuery = sampleInformationService.findSampleId(sampleCode).flatMap(
+          sampleIdCodeEntry -> sampleInformationService.findSample(sampleIdCodeEntry.sampleId()));
+      if (sampleQuery.isEmpty()) {
+        log.error("No sample information found for sample id: " + sampleCode);
+        return ValidationResult.withFailures(1,
+            List.of("No sample information found for sample id: %s".formatted(sampleCode)));
+      }
+      if (experimentIds.contains(sampleQuery.get().experimentId())) {
+        return ValidationResult.successful(1);
+      }
+      return ValidationResult.withFailures(1,
+          List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
     }
 
     ValidationResult validateSampleId(SampleCode sampleCodes) {
