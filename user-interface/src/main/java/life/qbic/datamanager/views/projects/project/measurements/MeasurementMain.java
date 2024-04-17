@@ -200,7 +200,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
               "Registering %s measurements ...".formatted(measurementData.size()),
               "This might take a minute");
           UI.getCurrent().push();
-          measurementService.registerMultiple(upload.measurementMetadata(),
+          measurementService.registerAll(upload.measurementMetadata(),
               context.projectId().orElseThrow()).thenAccept(results -> {
             var errorResult = results.stream().filter(Result::isError).toList();
             if (!errorResult.isEmpty()) {
