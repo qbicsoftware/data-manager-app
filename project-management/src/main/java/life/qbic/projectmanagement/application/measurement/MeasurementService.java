@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
@@ -471,6 +472,11 @@ public class MeasurementService {
         .experiments();
     return new HashSet<>(associatedExperimentsFromProject).containsAll(
         associatedExperimentsFromSamples);
+  }
+
+  public void deleteMeasurements(Set<? extends MeasurementMetadata> selectedMeasurements) {
+    measurementDomainService.delete(selectedMeasurements);
+
   }
 
   public enum ErrorCode {

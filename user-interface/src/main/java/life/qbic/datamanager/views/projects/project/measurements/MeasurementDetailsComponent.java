@@ -1,6 +1,9 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -24,14 +27,17 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -55,7 +61,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
-  private final TabSheet registerMeasurementTabSheet = new TabSheet();
+  private static final Logger log = logger(MeasurementDetailsComponent.class);
+  private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private String searchTerm = "";
   private final Grid<NGSMeasurement> ngsMeasurementGrid = new Grid<>();
   private final Grid<ProteomicsMeasurement> proteomicsMeasurementGrid = new Grid<>();
@@ -77,8 +84,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.clientDetailsProvider = clientDetailsProvider;
     createProteomicsGrid();
     createNGSMeasurementGrid();
-    add(registerMeasurementTabSheet);
-    registerMeasurementTabSheet.addClassName("measurement-tabsheet");
+    add(registeredMeasurementsTabSheet);
+    registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
   }
 
@@ -115,22 +122,24 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
   private void resetTabsInTabsheet() {
     if (!tabsInTabSheet.isEmpty()) {
-      tabsInTabSheet.forEach(registerMeasurementTabSheet::remove);
+      tabsInTabSheet.forEach(registeredMeasurementsTabSheet::remove);
       tabsInTabSheet.clear();
     }
   }
 
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
-      tabsInTabSheet.add(registerMeasurementTabSheet.add("Proteomics", proteomicsMeasurementGrid));
+      tabsInTabSheet.add(registeredMeasurementsTabSheet.add("Proteomics", proteomicsMeasurementGrid));
     }
     if (gridLazyDataView.getItem(0) instanceof NGSMeasurement) {
-      tabsInTabSheet.add(registerMeasurementTabSheet.add("Genomics", ngsMeasurementGrid));
+      tabsInTabSheet.add(registeredMeasurementsTabSheet.add("Genomics", ngsMeasurementGrid));
     }
   }
 
   private void createNGSMeasurementGrid() {
     ngsMeasurementGrid.addClassName("measurement-grid");
+    ngsMeasurementGrid.setSelectionMode(Grid.SelectionMode.MULTI);
+
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
         .setHeader("Measurement ID")
         .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.measurementCode().value());
@@ -185,6 +194,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private void createProteomicsGrid() {
     proteomicsMeasurementGrid.addClassName("measurement-grid");
+    proteomicsMeasurementGrid.setSelectionMode(SelectionMode.MULTI);
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setHeader("Measurement ID")
@@ -286,5 +296,17 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return sampleInformationService.retrieveSamplesByIds(sampleIds).stream()
         .map(sample -> String.format("%s (%s)", sample.sampleCode().code(), sample.label()))
         .toList();
+  }
+
+  public Set<? extends MeasurementMetadata> getSelectedMeasurementsInActiveGrid() {
+    String label = registeredMeasurementsTabSheet.getSelectedTab().getLabel();
+    if(label.equals("Proteomics")) {
+      return proteomicsMeasurementGrid.getSelectedItems();
+    }
+    if(label.equals("Genomics")) {
+      return ngsMeasurementGrid.getSelectedItems();
+    }
+    log.warn("Unknown measurements TabSheet label: %s. Could not return selected measurements.".formatted(label));
+    return new HashSet<>();
   }
 }

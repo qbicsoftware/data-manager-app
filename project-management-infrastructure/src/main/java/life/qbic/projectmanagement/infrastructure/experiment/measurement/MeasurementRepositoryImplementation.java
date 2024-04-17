@@ -5,8 +5,10 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -14,6 +16,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Measurement Repository Implementation</b>
@@ -89,6 +92,35 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       return Optional.empty();
     }
 
+  }
+
+  @Override
+  @Transactional
+  public void deleteAll(Set<? extends MeasurementMetadata> measurements) throws RuntimeException {
+    if(measurementDataRepo.hasDataAttached(measurements)) {
+      throw new RuntimeException("Could not delete measurements, because data is attached.");
+    }
+    if(measurements.isEmpty()) {
+      return;
+    }
+    if(measurements.stream().findFirst().get() instanceof ProteomicsMeasurement) {
+      List<ProteomicsMeasurement> ptxMeasurements = measurements.stream().map(m -> (ProteomicsMeasurement) m).toList();
+      deleteAllPtx(ptxMeasurements);
+    }
+    if(measurements.stream().findFirst().get() instanceof NGSMeasurement) {
+      List<NGSMeasurement> ngsMeasurements = measurements.stream().map(m -> (NGSMeasurement) m).toList();
+      deleteAllNGS(ngsMeasurements);
+    }
+  }
+
+  private void deleteAllPtx(List<ProteomicsMeasurement> measurements) {
+    pxpMeasurementJpaRepo.deleteAll(measurements);
+    measurementDataRepo.deleteMeasurements(measurements);
+  }
+
+  private void deleteAllNGS(List<NGSMeasurement> measurements) {
+    ngsMeasurementJpaRepo.deleteAll(measurements);
+    measurementDataRepo.deleteMeasurements(measurements);
   }
 
   @Override

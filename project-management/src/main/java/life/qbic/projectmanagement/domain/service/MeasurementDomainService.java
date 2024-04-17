@@ -2,10 +2,14 @@ package life.qbic.projectmanagement.domain.service;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -68,6 +72,16 @@ public class MeasurementDomainService {
     } catch (RuntimeException e) {
       log.error("Measurement update: Failed for measurement with id " + measurement.measurementId()
           .value(), e);
+    }
+    return Result.fromError(ResponseCode.FAILED);
+  }
+
+  public Result<List<? extends MeasurementMetadata>, ResponseCode> delete(Set<? extends MeasurementMetadata> measurements) {
+    try {
+      measurementRepository.deleteAll(measurements);
+      return Result.fromValue(measurements.stream().toList());
+    } catch (RuntimeException e) {
+      log.error("Measurement deletion failed", e);
     }
     return Result.fromError(ResponseCode.FAILED);
   }

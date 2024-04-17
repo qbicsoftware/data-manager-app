@@ -69,9 +69,14 @@ public class RawDataService {
   public Collection<RawData> findProteomicsRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {
-    var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId, filter, offset,
-        limit,
+      List<SortOrder> sortOrder, ProjectId projectId) {//TODO max int
+
+    var measurements = //measurementLookupService.queryAllProteomicsMeasurement(
+        //sampleInformationService.retrieveSamplesForExperiment(experimentId).getValue().stream()
+          //  .map(sample -> sample.sampleId()).toList());
+
+        retrieveProteomicsMeasurementsForExperiment(experimentId, filter, offset,
+        Integer.MAX_VALUE,
         sortOrder);
     var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
         .toList();
@@ -97,8 +102,8 @@ public class RawDataService {
   public Collection<RawData> findNGSRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {
-    var measurements = retrieveNGSMeasurementsForExperiment(experimentId, filter, offset, limit,
+      List<SortOrder> sortOrder, ProjectId projectId) {//TODO max int
+    var measurements = retrieveNGSMeasurementsForExperiment(experimentId, filter, offset, Integer.MAX_VALUE,
         sortOrder);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
     var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,

@@ -16,7 +16,9 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.views.AppRoutes.Projects;
@@ -31,6 +33,7 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementMeta
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -145,12 +148,22 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> openEditMeasurementDialog());
-    Span buttonBar = new Span(downloadButton, editButton,
+
+    Button deleteButton = new Button("Delete");
+    deleteButton.addClickListener(event -> deleteSelectedMeasurements());
+
+    Span buttonBar = new Span(downloadButton, editButton, deleteButton,
         registerMeasurementButton);
     buttonBar.addClassName("button-bar");
     Span buttonAndField = new Span(measurementSearchField, buttonBar);
     buttonAndField.addClassName("buttonAndField");
     content.add(buttonAndField);
+  }
+
+  private void deleteSelectedMeasurements() {
+    Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurementsInActiveGrid();
+    measurementService.deleteMeasurements(selectedMeasurements);
+    //measurementDetailsComponent.
   }
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog, boolean editMode) {
