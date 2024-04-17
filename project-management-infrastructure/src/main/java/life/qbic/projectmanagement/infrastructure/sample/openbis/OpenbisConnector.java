@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.rawdata.RawDataLookup;
@@ -360,7 +361,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     return updatedSamples.stream().map(s -> createSampleUpdate(projectCode, s)).toList();
   }
 
-  private void registerMeasurementSample(OpenBisSession session, String sampleCode,
+  private SampleCreation prepareMeasurementSample(String sampleCode,
       String measurementTypeCode, List<SampleIdentifier> parentIds, Map<String, String> metadata) {
     SampleCreation sampleCreation = new SampleCreation();
     sampleCreation.setCode(sampleCode);
@@ -368,7 +369,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     sampleCreation.setTypeId(new EntityTypePermId(measurementTypeCode));
     sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
     sampleCreation.setProperties(metadata);
-    createOpenbisSamples(session, Arrays.asList(sampleCreation));
+    return sampleCreation;
   }
 
   @Override
@@ -379,8 +380,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     try (OpenBisSession session = sessionFactory.getSession()) {
       List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session,
           parentCodes.stream().map(SampleCode::code).toList());
-      registerMeasurementSample(session, measurement.measurementCode().value(), TYPE_CODE,
-          parentIds, metadata);
+      createOpenbisSamples(session, Arrays.asList(
+          prepareMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds,
+              metadata)));
     }
   }
 
@@ -393,16 +395,32 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     try (OpenBisSession session = sessionFactory.getSession()) {
       List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session,
           parentCodes.stream().map(SampleCode::code).toList());
-      registerMeasurementSample(session, measurement.measurementCode().value(), TYPE_CODE,
-          parentIds, metadata);
+      createOpenbisSamples(session, Arrays.asList(
+          prepareMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds,
+              metadata)));
     }
   }
 
   @Override
   public void saveAll(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
-    // TODO implement method with transactional consistency in mind. Either all entries are saved or none is
-    throw new RuntimeException("Not implemented");
+    String TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
+    List<SampleCreation> objectsToCreate = new ArrayList<>();
+
+    try (OpenBisSession session = sessionFactory.getSession()) {
+      for(ProteomicsMeasurement measurement : proteomicsMeasurementsMapping.keySet()) {
+        List<String> parentCodes = proteomicsMeasurementsMapping.get(measurement).stream()
+            .map(entry -> entry.sampleCode().code()).collect(Collectors.toList());
+        List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session, parentCodes);
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(EXTERNAL_ID_CODE, measurement.measurementId().value());
+
+        objectsToCreate.add(prepareMeasurementSample(measurement.measurementCode().value(),
+            TYPE_CODE, parentIds, metadata));
+      }
+      createOpenbisSamples(session, objectsToCreate);
+    }
   }
 
   private List<SampleIdentifier> fetchSampleIdentifiers(OpenBisSession session,
