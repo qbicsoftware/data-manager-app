@@ -1,11 +1,13 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
+import life.qbic.projectmanagement.application.ProjectInformationService
 import life.qbic.projectmanagement.application.measurement.Labeling
 import life.qbic.projectmanagement.application.measurement.MeasurementService
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService
 import life.qbic.projectmanagement.application.sample.SampleInformationService
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.sample.SampleCode
 import spock.lang.Specification
 
@@ -43,12 +45,12 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
     final MeasurementService measurementService = Mock(MeasurementService.class)
 
+    final ProjectInformationService projectInformationService = Mock(ProjectInformationService.class)
+
     final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample label", "organisation id", "facility", "instrument",
                                                     "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "labeling type", "label", "comment"])
-
-    final static Collection<String> optionalPxPProperties = ["labeling type", "label", "comment", "sample pool group"]
 
     def "A complete property set must be valid no matter the letter casing style"() {
 
@@ -107,12 +109,13 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.of(_)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(validMeasurementEntry)
+        def result = validator.validate(validMeasurementEntry, projectId)
 
         then:
         result.allPassed()
@@ -146,12 +149,13 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.empty()
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry, projectId)
 
         then:
         !result.allPassed()
@@ -165,6 +169,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         def sampleToBeFound = SampleCode.create("QNWBY999AE")
         def unknownSample = SampleCode.create("QNKWN001AE")
+        ProjectId projectId = ProjectId.create()
 
         and:
         def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", [sampleToBeFound, unknownSample],
@@ -189,10 +194,10 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(sampleToBeFound) >> Optional.of(sampleToBeFound)
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry, projectId)
 
         then:
         !result.allPassed()
@@ -222,12 +227,13 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry, projectId)
 
         then:
         !result.allPassed()
@@ -264,13 +270,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -310,13 +317,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -348,13 +356,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(validMetadata)
+        def result = validator.validate(validMetadata, projectId)
 
         then:
         result.allPassed()
@@ -391,13 +400,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -429,13 +439,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(validMetadata)
+        def result = validator.validate(validMetadata, projectId)
 
         then:
         result.allPassed()
@@ -471,13 +482,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -509,13 +521,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         result.allPassed()
@@ -545,13 +558,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create();
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -583,13 +597,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -621,13 +636,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         result.allPassed()
@@ -657,13 +673,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -695,13 +712,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -733,13 +751,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
