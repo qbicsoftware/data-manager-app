@@ -13,8 +13,10 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,14 +44,19 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
   public ProjectMainLayout(@Autowired LogoutService logoutService,
       ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
-      @Autowired UserPermissions userPermissions) {
+      @Autowired AddExperimentToProjectService addExperimentToProjectService,
+      @Autowired UserPermissions userPermissions,
+      @Autowired OntologyLookupService ontologyLookupService) {
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
+    Objects.requireNonNull(addExperimentToProjectService);
+    Objects.requireNonNull(ontologyLookupService);
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
-        experimentInformationService, userPermissions);
+        experimentInformationService, addExperimentToProjectService,
+        userPermissions, ontologyLookupService);
     dataManagerMenu = new DataManagerMenu(logoutService);
     addToNavbar(createDrawerToggleAndTitleBar(), dataManagerMenu);
     addClassName("project-main-layout");
