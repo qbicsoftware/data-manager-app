@@ -127,6 +127,8 @@ public interface ProjectAccessService {
 
   void changeAuthorityAccess(ProjectId projectId, String authority, ProjectRole projectRole);
 
+  List<ProjectId> getAccessibleProjectsForSid(String sid);
+
   List<ProjectCollaborator> listCollaborators(ProjectId projectId);
 
   void removeProject(ProjectId projectId);
