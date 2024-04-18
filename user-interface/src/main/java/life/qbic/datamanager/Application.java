@@ -2,6 +2,7 @@ package life.qbic.datamanager;
 
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import java.io.Serial;
@@ -26,6 +27,7 @@ import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConf
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * The entry point of the Spring Boot application.
@@ -42,6 +44,7 @@ import org.springframework.context.annotation.ComponentScan;
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 @ComponentScan({"life.qbic"})
 @EntityScan(basePackages = "life.qbic")
+@Push
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
   private static final Logger log = LoggerFactory.logger(Application.class.getName());

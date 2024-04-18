@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * <b>Measurement Validator</b>
@@ -13,6 +14,6 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
  */
 public interface MeasurementValidator<T extends MeasurementMetadata> {
 
-  ValidationResult validate(T measurementMetadata);
+  ValidationResult validate(T measurementMetadata, ProjectId projectId);
 
 }

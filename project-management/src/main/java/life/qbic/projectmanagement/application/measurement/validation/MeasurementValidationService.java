@@ -2,10 +2,16 @@ package life.qbic.projectmanagement.application.measurement.validation;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
 
 /**
  * <b>Validation Service</b>
@@ -42,8 +48,8 @@ public class MeasurementValidationService {
     return null;
   }
 
-  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata) {
-    return measurementNgsValidator.validate(ngsMeasurementMetadata);
+  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata, ProjectId projectId) {
+    return measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
   }
 
   /**
@@ -59,8 +65,8 @@ public class MeasurementValidationService {
    * @return a detailed {@link ValidationResult} with information about the validation
    * @since 1.0.0
    */
-  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxpValidator.validate(pxMeasurementMetadata);
+  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata, ProjectId projectId) {
+    return pxpValidator.validate(pxMeasurementMetadata, projectId);
   }
 
   /**
@@ -70,13 +76,17 @@ public class MeasurementValidationService {
    * @return a detailed {@link ValidationResult} with information about the validation
    * @since 1.0.0
    */
-  public ValidationResult validateProteomicsUpdate(
-      ProteomicsMeasurementMetadata pxMeasurementMetadata) {
-    return pxpValidator.validateUpdate(pxMeasurementMetadata);
+  @Async
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public CompletableFuture<ValidationResult> validateProteomicsUpdate(
+      ProteomicsMeasurementMetadata pxMeasurementMetadata, ProjectId projectId) {
+    SecurityContextHolder.getContext().getAuthentication();
+    var result = pxpValidator.validateUpdate(pxMeasurementMetadata, projectId);
+    return CompletableFuture.completedFuture(result);
   }
 
-  public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata) {
-    return measurementNgsValidator.validate(ngsMeasurementMetadata);
+  public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata, ProjectId projectId) {
+    return measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {
