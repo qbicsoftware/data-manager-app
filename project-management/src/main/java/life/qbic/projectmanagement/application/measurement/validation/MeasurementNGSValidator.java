@@ -6,9 +6,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -30,11 +32,15 @@ public class MeasurementNGSValidator implements
 
   protected final OntologyLookupService ontologyLookupService;
 
+  protected final ProjectInformationService projectInformationService;
+
   @Autowired
   public MeasurementNGSValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService) {
+      OntologyLookupService ontologyLookupService,
+      ProjectInformationService projectInformationService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
+    this.projectInformationService = Objects.requireNonNull(projectInformationService);
   }
 
   /**
@@ -63,7 +69,8 @@ public class MeasurementNGSValidator implements
   }
 
   @Override
-  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata) {
+  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
+      ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
