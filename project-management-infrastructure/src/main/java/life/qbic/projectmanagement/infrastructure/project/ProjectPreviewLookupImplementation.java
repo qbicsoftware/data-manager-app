@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 /**
  * Basic implementation to query project preview information
  *
- * @since 1.0.0
  */
 @Component
 @Scope("singleton")
@@ -73,7 +72,7 @@ public class ProjectPreviewLookupImplementation implements ProjectPreviewLookup 
 
   private static class ProjectPreviewSpec {
 
-    //We need to ensure that we only count and retrieve unique ngsMeasurements
+    //We need to ensure that we only count and retrieve unique projectPreviews
     public static Specification<ProjectPreview> isDistinct() {
       return (root, query, builder) -> {
         query.distinct(true);
@@ -81,12 +80,12 @@ public class ProjectPreviewLookupImplementation implements ProjectPreviewLookup 
       };
     }
 
-    //We are only interested in measurements which contain at least one of the provided sampleIds
+    //We are only interested in previews which have one of the provided projectIds
     public static Specification<ProjectPreview> containsProjectId(
         Collection<ProjectId> projectIds) {
       return (root, query, builder) -> {
         if (projectIds.isEmpty()) {
-          //If no sampleId is in the experiment then there can also be no measurement
+          //If no projectIds are provided then the user has no access to any project
           return builder.disjunction();
         } else {
           return root.join("id").in(projectIds);
@@ -94,7 +93,8 @@ public class ProjectPreviewLookupImplementation implements ProjectPreviewLookup 
       };
     }
 
-    //If no filter was provided return all proteomicsMeasurement
+    //If no filter was provided return all projectIds,
+    //should always be combined with the containsProjectId specification
     public static Specification<ProjectPreview> isBlank(String filter) {
       return (root, query, builder) -> {
         if (filter != null && filter.isBlank()) {
