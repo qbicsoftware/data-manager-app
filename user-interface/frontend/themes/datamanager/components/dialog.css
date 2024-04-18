@@ -423,6 +423,12 @@ vaadin-dialog-overlay::part(title) {
   align-items: baseline;
 }
 
+.measurement-upload-dialog::part(overlay) {
+  min-width: 66%;
+  min-height: 66%;
+  max-height: 66%;
+  max-width: 66%;
+}
 
 .measurement-upload-dialog::part(content) {
   display: flex;

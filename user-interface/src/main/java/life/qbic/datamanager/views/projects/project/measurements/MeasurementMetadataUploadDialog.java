@@ -8,10 +8,12 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.upload.FailedEvent;
 import com.vaadin.flow.component.upload.FileRejectedEvent;
 import com.vaadin.flow.component.upload.SucceededEvent;
@@ -32,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -49,14 +54,16 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 
 /**
  * <b>Upload Measurement Metadata Dialog</b>
  *
- * <p>Component that provides the user with a dialog to upload files to edit or add {@link MeasurementMetadata}</p>
- * to an {@link Experiment} dependent on the provided {@link MODE} and {@link MeasurementValidationExecutor} with which it was initialized
+ * <p>Component that provides the user with a dialog to upload files to edit or add
+ * {@link MeasurementMetadata}</p> to an {@link Experiment} dependent on the provided {@link MODE}
+ * and {@link MeasurementValidationExecutor} with which it was initialized
  *
  * @since 1.0.0
  */
@@ -74,8 +81,15 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private final Div uploadedItemsDisplays;
   private final MODE mode;
 
+  private final Div taskInProgressDisplay;
+  private final NativeLabel progressbarLabelText;
+  private final Span progressbarDescriptionText;
+  private final Div uploadSection;
+  private final ProjectId projectId;
+
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
-      MODE mode) {
+      MODE mode, ProjectId projectId) {
+    this.projectId = requireNonNull(projectId, "projectId cannot be null");
     this.measurementValidationService = requireNonNull(measurementValidationService,
         "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
@@ -83,6 +97,16 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
+    this.taskInProgressDisplay = new Div();
+
+    this.progressbarLabelText = new NativeLabel("Work in progress...");
+    this.progressbarDescriptionText = new Span("Process might take a few moments");
+    ProgressBar progressBar = new ProgressBar();
+    progressBar.setIndeterminate(true);
+    taskInProgressDisplay.add(progressbarLabelText, progressBar, progressbarDescriptionText);
+
+    add(taskInProgressDisplay);
+    taskInProgressDisplay.setVisible(false);
 
     Upload upload = new Upload(uploadBuffer);
     upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain");
@@ -102,7 +126,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     restrictions.add(new Span("Supported file formats: .txt, .tsv"));
     restrictions.add("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / Math.pow(1024, 2)));
 
-    var uploadSection = new Div();
+    this.uploadSection = new Div();
     uploadSection.add(uploadSectionTitle, saveYourFileInfo, upload, restrictions);
     uploadSection.addClassName("upload-section");
 
@@ -130,26 +154,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         .addEventData(VAADIN_FILENAME_EVENT);
     addClassName("measurement-upload-dialog");
     toggleFileSectionIfEmpty();
-  }
-
-  private void setModeBasedLabels() {
-    switch (mode) {
-      case ADD -> {
-        setHeaderTitle("Register measurements");
-        confirmButton.setText("Register");
-      }
-      case EDIT -> {
-        setHeaderTitle("Edit measurements");
-        confirmButton.setText("Save");
-      }
-    }
-  }
-
-  /**
-   * Returns the {@link MODE} with which this dialog was initialized
-   */
-  public MODE getMode() {
-    return mode;
   }
 
   private static List<String> parseHeaderContent(String header) {
@@ -299,6 +303,26 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     }
   }
 
+  private void setModeBasedLabels() {
+    switch (mode) {
+      case ADD -> {
+        setHeaderTitle("Register measurements");
+        confirmButton.setText("Register");
+      }
+      case EDIT -> {
+        setHeaderTitle("Edit measurements");
+        confirmButton.setText("Save");
+      }
+    }
+  }
+
+  /**
+   * Returns the {@link MODE} with which this dialog was initialized
+   */
+  public MODE getMode() {
+    return mode;
+  }
+
   private void onFileRemoved(DomEvent domEvent) {
     JsonObject jsonObject = domEvent.getEventData();
     var fileName = jsonObject.getString(VAADIN_FILENAME_EVENT);
@@ -424,19 +448,20 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
               List.of("The metadata sheet seems to be empty")));
       return new MeasurementValidationReport(0, validationResult);
     }
+
+    HashMap<String, CompletableFuture<ValidationResult>> tasks = new HashMap<>();
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      ValidationResult result = validateNGSRow(propertyColumnMap, row);
-      validationResult = validationResult.combine(result);
-      evaluatedRows++;
+      tasks.put(row, validateNGSRow(propertyColumnMap, row));
     }
+
     return new MeasurementValidationReport(evaluatedRows, validationResult);
   }
+
   private MeasurementValidationReport validatePxP(MetadataContent content) {
 
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-    var evaluatedRows = 0;
     // we check if there are any rows provided or if we have only rows with empty content
     if (content.rows().isEmpty() || content.rows().stream()
         .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
@@ -445,16 +470,28 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
               List.of("The metadata sheet seems to be empty")));
       return new MeasurementValidationReport(0, validationResult);
     }
+
+    List<CompletableFuture<ValidationResult>> tasks = new ArrayList<>();
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      ValidationResult result = validatePxPRow(propertyColumnMap, row);
-      validationResult = validationResult.combine(result);
-      evaluatedRows++;
+      tasks.add(validatePxPRow(propertyColumnMap, row));
     }
-    return new MeasurementValidationReport(evaluatedRows, validationResult);
+
+    ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
+    AtomicInteger rowCounter = new AtomicInteger(0);
+
+    tasks.forEach(task -> task.thenAccept(result -> {
+      concurrentLinkedDeque.add(result);
+      rowCounter.incrementAndGet();
+      // Here we can update a progress bar in the future easily.
+    }));
+    CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+
+    return new MeasurementValidationReport(rowCounter.get(), concurrentLinkedDeque.stream().reduce(
+        validationResult, ValidationResult::combine));
   }
 
-  private ValidationResult validateNGSRow(Map<String, Integer> propertyColumnMap,
+  private CompletableFuture<ValidationResult> validateNGSRow(Map<String, Integer> propertyColumnMap,
       String row) {
     var validationResult = ValidationResult.successful(0);
     var metaDataValues = row.split("\t"); // tab separated values
@@ -462,7 +499,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     if (metaDataValues.length == 0) {
       validationResult.combine(
           ValidationResult.successful(1, List.of("Empty row provided.")));
-      return validationResult;
+      return CompletableFuture.supplyAsync(() -> validationResult);
     }
     if (metaDataValues.length != propertyColumnMap.keySet().size()) {
       validationResult.combine(ValidationResult.withFailures(1, List.of("")));
@@ -492,8 +529,9 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return validationResult.combine(ValidationResult.withFailures(1,
-          List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
+      return CompletableFuture.supplyAsync(
+          () -> validationResult.combine(ValidationResult.withFailures(1,
+              List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
     }
     var sampleCodes = SampleCode.create(
         safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
@@ -520,7 +558,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     return finalValidationResult;
   }
 
-  private ValidationResult validatePxPRow(Map<String, Integer> propertyColumnMap,
+  private CompletableFuture<ValidationResult> validatePxPRow(Map<String, Integer> propertyColumnMap,
       String row) {
     var validationResult = ValidationResult.successful(0);
     var metaDataValues = row.split("\t"); // tab separated values
@@ -528,7 +566,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     if (metaDataValues.length == 0) {
       validationResult.combine(
           ValidationResult.successful(1, List.of("Empty row provided.")));
-      return validationResult;
+      return CompletableFuture.supplyAsync(() -> validationResult);
     }
     if (metaDataValues.length != propertyColumnMap.keySet().size()) {
       validationResult.combine(ValidationResult.withFailures(1, List.of("")));
@@ -561,8 +599,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return validationResult.combine(ValidationResult.withFailures(1,
-          List.of("Not enough columns provided for row: \"%s\"".formatted(row))));
+      return CompletableFuture.completedFuture(validationResult.combine(ValidationResult.withFailures(1,
+              List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
     }
 
     var measurementId = safeArrayAccess(metaDataValues, measurementIdIndex).orElse("");
@@ -587,7 +625,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     var metadata = new ProteomicsMeasurementMetadata(measurementId, List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, List.of(new Labeling(sampleCodes.code(), labelingType, label)), note);
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
+        List.of(new Labeling(sampleCodes.code(), labelingType, label)), note);
     var measurementProteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
         measurementValidationService);
     var finalValidationResult = generateModeDependentValidationResult(
@@ -595,11 +634,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     return finalValidationResult;
   }
 
-  private ValidationResult generateModeDependentValidationResult(
+  private CompletableFuture<ValidationResult> generateModeDependentValidationResult(
       MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
     return switch (mode) {
-      case ADD -> measurementValidationExecutor.validateRegistration(metadata);
-      case EDIT -> measurementValidationExecutor.validateUpdate(metadata);
+      case ADD ->  measurementValidationExecutor.validateRegistration(metadata, projectId);
+      case EDIT -> measurementValidationExecutor.validateUpdate(metadata, projectId);
     };
   }
 
@@ -616,6 +655,20 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
     return addListener(ConfirmEvent.class, listener);
+  }
+
+  public void showTaskInProgress(String label, String description) {
+    this.taskInProgressDisplay.setVisible(true);
+    progressbarLabelText.setText(label);
+    progressbarDescriptionText.setText(description);
+    this.uploadSection.setVisible(false);
+    this.uploadedItemsSection.setVisible(false);
+  }
+
+  public void hideTaskInProgress() {
+    taskInProgressDisplay.setVisible(false);
+    uploadSection.setVisible(true);
+    this.uploadedItemsSection.setVisible(true);
   }
 
   @Override
@@ -666,6 +719,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     for (MeasurementFileDisplay measurementFileDisplay : fileDisplaysWithFileName(filename)) {
       measurementFileDisplay.addError(error);
     }
+  }
+
+  public enum MODE {
+    ADD, EDIT
+
   }
 
   record MeasurementValidationReport(int validatedRows,
@@ -813,10 +871,5 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     public CancelEvent(MeasurementMetadataUploadDialog source, boolean fromClient) {
       super(source, fromClient);
     }
-  }
-
-  public enum MODE {
-    ADD, EDIT
-
   }
 }
