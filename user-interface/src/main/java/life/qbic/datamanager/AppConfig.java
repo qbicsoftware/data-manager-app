@@ -67,15 +67,6 @@ import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecu
 @ComponentScan({"life.qbic.identity.infrastructure"})
 public class AppConfig {
   /*
-  Global settings
-   */
-
-
-  /*
-  end global settings
-   */
-
-  /*
   Wiring up identity application core and policies
 
   Section starts below

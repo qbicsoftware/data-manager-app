@@ -188,7 +188,7 @@ public class MeasurementProteomicsValidator implements
       if (sampleQuery.isEmpty()) {
         log.error("No sample information found for sample id: " + sampleCode);
         return ValidationResult.withFailures(1,
-            List.of("No sample information found for sample id: %s".formatted(sampleCode)));
+            List.of("No sample information found for sample id: %s".formatted(sampleCode.code())));
       }
       if (experimentIds.contains(sampleQuery.get().experimentId())) {
         return ValidationResult.successful(1);
