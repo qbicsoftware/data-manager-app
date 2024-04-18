@@ -36,6 +36,7 @@ import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.InfoBox;
+import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
@@ -59,7 +60,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public class MeasurementMetadataUploadDialog extends DialogWindow {
+public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   @Serial
