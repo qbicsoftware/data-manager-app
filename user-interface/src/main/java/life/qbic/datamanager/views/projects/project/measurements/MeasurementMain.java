@@ -177,6 +177,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           source.showTaskInProgress(
               "Updating %s measurements ...".formatted(measurementData.size()),
               "This might take a minute");
+          source.showFinished();
           UI.getCurrent().push();
           measurementService.updateAll(upload.measurementMetadata(),
               context.projectId().orElseThrow()).thenAccept(results -> {
@@ -189,10 +190,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                             convertErrorCodeToMessage(errorCodeResult.getError()));
                   })));
             } else {
-              confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                confirmEvent.getSource().close();
-                setMeasurementInformation();
-              }));
+              source.getUI().ifPresent(ui -> ui.access(() -> {
+                    source.enableFinishButton();
+                    this.setMeasurementInformation();
+                  }
+              ));
             }
           }).join(); // we wait for the update to finish
         } else {
@@ -218,7 +220,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             }
           }).join();
         }
-        source.hideTaskInProgress();
+        //source.hideTaskInProgress();
       }
 
     });
@@ -226,7 +228,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openEditMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT, context.projectId().orElse(null));
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT,
+        context.projectId().orElse(null));
     setupDialog(dialog, true);
     dialog.open();
   }
@@ -362,7 +365,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD, context.projectId().orElse(null));
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD,
+        context.projectId().orElse(null));
     setupDialog(dialog, false);
     dialog.open();
   }
