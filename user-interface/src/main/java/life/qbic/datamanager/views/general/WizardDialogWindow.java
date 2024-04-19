@@ -25,8 +25,8 @@ public abstract class WizardDialogWindow extends DialogWindow {
   protected WizardDialogWindow() {
     super();
     finishButton = new Button("Finish");
-    finishButton.addClassName("primary");
     getFooter().add(finishButton);
+    finishButton.addClassName("primary");
     showConfirm();
     disableFinishButton();
     finishButton.addClickListener(this::onFinishClicked);
