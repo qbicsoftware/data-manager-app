@@ -102,16 +102,17 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
     if(measurements.isEmpty()) {
       return;
     }
+    MeasurementMetadata firstMeasurement = measurements.stream().findFirst().get();
     if(measurementDataRepo.hasDataAttached(measurements)) {
       throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
     }
     try {
-      if (measurements.stream().findFirst().get() instanceof ProteomicsMeasurement) {
+      if (firstMeasurement instanceof ProteomicsMeasurement) {
         List<ProteomicsMeasurement> ptxMeasurements = measurements.stream()
             .map(m -> (ProteomicsMeasurement) m).toList();
         deleteAllPtx(ptxMeasurements);
       }
-      if (measurements.stream().findFirst().get() instanceof NGSMeasurement) {
+      if (firstMeasurement instanceof NGSMeasurement) {
         List<NGSMeasurement> ngsMeasurements = measurements.stream().map(m -> (NGSMeasurement) m)
             .toList();
         deleteAllNGS(ngsMeasurements);
