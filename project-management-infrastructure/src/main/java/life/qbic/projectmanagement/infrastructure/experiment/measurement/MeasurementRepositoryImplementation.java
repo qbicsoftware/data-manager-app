@@ -4,14 +4,15 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.DeletionErrorCode;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
+import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -139,5 +140,23 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   @Override
   public void updateAll(Collection<ProteomicsMeasurement> measurements) {
     pxpMeasurementJpaRepo.saveAll(measurements);
+  }
+
+  @Override
+  public void saveAll(
+      Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
+    try {
+      pxpMeasurementJpaRepo.saveAll(proteomicsMeasurementsMapping.keySet());
+    } catch (RuntimeException e) {
+      log.error("Saving proteomics measurement failed", e);
+      throw e;
+    }
+    try {
+      measurementDataRepo.saveAll(proteomicsMeasurementsMapping);
+    } catch (RuntimeException e) {
+      log.error("Saving proteomics measurement in data repo failed", e);
+      pxpMeasurementJpaRepo.deleteAll(proteomicsMeasurementsMapping.keySet());
+      throw e;
+    }
   }
 }

@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -38,7 +39,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -67,10 +67,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
+  private static Disclaimer registerSamplesDisclaimer;
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final MeasurementDetailsComponent measurementDetailsComponent;
-
   private final MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
   private final transient SampleInformationService sampleInformationService;
@@ -78,7 +78,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final transient MeasurementValidationService measurementValidationService;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
-  private static Disclaimer registerSamplesDisclaimer;
   private final Div noMeasurementDisclaimer;
   private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
   private final DownloadProvider downloadProvider;
@@ -121,6 +120,19 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         getClass().getSimpleName(), System.identityHashCode(this),
         measurementTemplateListComponent.getClass().getSimpleName(),
         System.identityHashCode(measurementTemplateListComponent)));
+  }
+
+  private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
+    return switch (errorCode) {
+      case FAILED -> "Registration failed. Please try again.";
+      case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
+      case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
+      case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
+      case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
+      case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
+      case SAMPLECODE_NOT_FROM_PROJECT -> "QBiC sample ID does not belong to this project";
+      case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
+    };
   }
 
   private void initContent() {
@@ -183,43 +195,63 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmListener(confirmEvent -> {
       var uploads = confirmEvent.uploads();
-      boolean allSuccessfull = true;
       for (var upload : uploads) {
-        try {
-          if (editMode) {
-            measurementService.updateMultiple(upload.measurementMetadata(),
-                context.projectId().orElseThrow());
-          } else {
-            measurementService.registerMultiple(upload.measurementMetadata(),
-                context.projectId().orElseThrow());
-          }
-        } catch (MeasurementRegistrationException measurementRegistrationException) {
-          allSuccessfull = false;
-          String errorMessage = switch (measurementRegistrationException.reason()) {
-            case FAILED -> "Registration failed. Please try again.";
-            case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
-            case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
-            case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-            case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
-            case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
-            case SAMPLECODE_NOT_FROM_PROJECT -> "Sample code not from project";
-            case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
-          };
-          confirmEvent.getSource().showError(upload.fileName(), errorMessage);
-          continue;
+        var source = confirmEvent.getSource();
+        var measurementData = upload.measurementMetadata();
+        if (editMode) {
+          source.showTaskInProgress(
+              "Updating %s measurements ...".formatted(measurementData.size()),
+              "This might take a minute");
+          UI.getCurrent().push();
+          measurementService.updateAll(upload.measurementMetadata(),
+              context.projectId().orElseThrow()).thenAccept(results -> {
+            var errorResult = results.stream().filter(Result::isError).toList();
+            if (!errorResult.isEmpty()) {
+              errorResult.forEach(errorCodeResult ->
+                  confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
+                    confirmEvent.getSource()
+                        .showError(upload.fileName(),
+                            convertErrorCodeToMessage(errorCodeResult.getError()));
+                  })));
+            } else {
+              confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
+                confirmEvent.getSource().close();
+                setMeasurementInformation();
+              }));
+            }
+          }).join(); // we wait for the update to finish
+        } else {
+          source.showTaskInProgress(
+              "Registering %s measurements ...".formatted(measurementData.size()),
+              "This might take a minute");
+          UI.getCurrent().push();
+          measurementService.registerAll(upload.measurementMetadata(),
+              context.projectId().orElseThrow()).thenAccept(results -> {
+            var errorResult = results.stream().filter(Result::isError).toList();
+            if (!errorResult.isEmpty()) {
+              errorResult.forEach(errorCodeResult ->
+                  confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
+                    confirmEvent.getSource()
+                        .showError(upload.fileName(),
+                            convertErrorCodeToMessage(errorCodeResult.getError()));
+                  })));
+            } else {
+              confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
+                confirmEvent.getSource().close();
+                setMeasurementInformation();
+              }));
+            }
+          }).join();
         }
-        confirmEvent.getSource().markSuccessful(upload.fileName());
+        source.hideTaskInProgress();
       }
-      if (allSuccessfull) {
-        confirmEvent.getSource().close();
-        setMeasurementInformation();
-      }
+
     });
     return dialog;
   }
 
   private void openEditMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT);
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT, context.projectId().orElse(null));
     setupDialog(dialog, true);
     dialog.open();
   }
@@ -361,7 +393,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD);
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD, context.projectId().orElse(null));
     setupDialog(dialog, false);
     dialog.open();
   }

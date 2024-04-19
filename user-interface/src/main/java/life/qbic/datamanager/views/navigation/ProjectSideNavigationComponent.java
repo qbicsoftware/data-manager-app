@@ -29,22 +29,31 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
+import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentAddEvent;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Project Side Navigation Component
@@ -66,16 +75,23 @@ public class ProjectSideNavigationComponent extends Div implements
   private final Div content;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private final AddExperimentToProjectService addExperimentToProjectService;
+  private OntologyLookupService ontologyTermInformationService;
   private final transient UserPermissions userPermissions;
   private Context context = new Context();
 
   public ProjectSideNavigationComponent(
-      @Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired UserPermissions userPermissions) {
+      ProjectInformationService projectInformationService,
+      ExperimentInformationService experimentInformationService,
+      AddExperimentToProjectService addExperimentToProjectService,
+      UserPermissions userPermissions,
+      OntologyLookupService ontologyTermInformationService) {
     content = new Div();
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
+    Objects.requireNonNull(addExperimentToProjectService);
+    this.ontologyTermInformationService = ontologyTermInformationService;
+    this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     addClassName("project-navigation-drawer");
     this.projectInformationService = projectInformationService;
@@ -124,7 +140,7 @@ public class ProjectSideNavigationComponent extends Div implements
     return projectInformationService.queryPreview("", 0, 4, sortOrders);
   }
 
-  private static List<Div> generateNavigationSections(Project project,
+  private List<Div> generateNavigationSections(Project project,
       List<ProjectPreview> lastModifiedProjects, List<Experiment> experiments,
       boolean canUserAdministrate) {
     Div projectSection = createProjectSection(project, lastModifiedProjects, canUserAdministrate);
@@ -220,20 +236,91 @@ public class ProjectSideNavigationComponent extends Div implements
         VaadinIcon.USERS.create());
   }
 
-  private static Div createExperimentSection(String projectId, List<Experiment> experimentsList) {
+  private Div createExperimentSection(String projectId, List<Experiment> experimentsList) {
     Div experimentSection = new Div();
-    SideNavItem experiments = new SideNavItem("");
-    experiments.setLabel("EXPERIMENTS");
-    experiments.setPrefixComponent(VaadinIcon.FLASK.create());
+    SideNavItem expHeader = new SideNavItem("EXPERIMENTS");
+    Icon flask = VaadinIcon.FLASK.create();
+
+    if(context.experimentId().isPresent()) {
+      expHeader.addClassName("primary");
+    }
+
+    expHeader.setPrefixComponent(flask);
+    experimentSection.add(expHeader);
+
+    Icon addIcon = LumoIcon.PLUS.create();
+    addIcon.addClassName("clickable");
+    addIcon.addClickListener(
+        event -> showAddExperimentDialog());
+    expHeader.setSuffixComponent(addIcon);
+
+    OpenSideNavItem experiments = new OpenSideNavItem("");
     experimentsList.forEach(
         experiment -> experiments.addItem(
             createItemFromExperiment(projectId, experiment.experimentId().value(),
                 experiment.getName())));
-    experiments.setExpanded(true);
-    experiments.addClassName("experiment-section");
-    experiments.addClassName("primary");
     experimentSection.add(experiments);
     return experimentSection;
+  }
+
+  private void showAddExperimentDialog() {
+    var creationDialog = new AddExperimentDialog(ontologyTermInformationService);
+    creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
+    creationDialog.addCancelListener(event -> event.getSource().close());
+    creationDialog.open();
+  }
+
+  private void onExperimentAddEvent(ExperimentAddEvent event) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
+    event.getSource().close();
+    displayExperimentCreationSuccess();
+    routeToExperiment(createdExperiment);
+  }
+
+  private void routeToExperiment(ExperimentId experimentId) {
+    RouteParameters routeParameters = new RouteParameters(
+        new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
+            context.projectId().map(ProjectId::value).orElseThrow()),
+        new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER, experimentId.value()));
+    getUI().ifPresent(ui -> ui.navigate(ExperimentInformationMain.class, routeParameters));
+    log.debug("re-routing to ExperimentInformation page for experiment " + experimentId.value());
+  }
+
+  private ExperimentId createExperiment(ProjectId projectId,
+      ExperimentDraft experimentDraft) {
+    Result<ExperimentId, RuntimeException> result = addExperimentToProjectService.addExperimentToProject(
+        projectId,
+        experimentDraft.getExperimentName(),
+        experimentDraft.getSpecies(),
+        experimentDraft.getSpecimens(),
+        experimentDraft.getAnalytes());
+    if (result.isValue()) {
+      return result.getValue();
+    } else {
+      throw new ApplicationException("Experiment Creation failed");
+    }
+  }
+
+  private void displayExperimentCreationSuccess() {
+    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
+    StyledNotification notification = new StyledNotification(successMessage);
+    notification.open();
+  }
+
+  public static class AddExperimentClickEvent extends ComponentEvent<ExperimentListComponent> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public AddExperimentClickEvent(ExperimentListComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 
   private static SideNavItem createItemFromExperiment(String projectId, String experimentId,

@@ -1,9 +1,11 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
+import life.qbic.projectmanagement.application.ProjectInformationService
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService
 import life.qbic.projectmanagement.application.sample.SampleInformationService
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.sample.SampleCode
 import spock.lang.Specification
 
@@ -37,6 +39,9 @@ class MeasurementNGSValidatorSpec extends Specification {
     final OntologyLookupService ontologyLookupService = Mock(OntologyLookupService.class, {
         findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
+
+    final ProjectInformationService projectInformationService = Mock(ProjectInformationService.class)
+
     final static List<String> validNGSProperties = MeasurementNGSValidator.NGS_PROPERTY.values().collect { it.label() }
 
 
@@ -97,12 +102,13 @@ class MeasurementNGSValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.of(_)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
         when:
-        def result = validator.validate(validMeasurementEntry)
+        def result = validator.validate(validMeasurementEntry, projectId)
 
         then:
         result.allPassed()
@@ -134,12 +140,13 @@ class MeasurementNGSValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.empty()
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -173,12 +180,12 @@ class MeasurementNGSValidatorSpec extends Specification {
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(unknownSample) >> Optional.empty()
         sampleInformationService.findSampleId(sampleToBeFound) >> Optional.of(sampleToBeFound)
-
+        ProjectId projectId = ProjectId.create()
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -206,12 +213,13 @@ class MeasurementNGSValidatorSpec extends Specification {
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -246,13 +254,14 @@ class MeasurementNGSValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -292,11 +301,12 @@ class MeasurementNGSValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        ProjectId projectId = ProjectId.create()
 
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -328,11 +338,11 @@ class MeasurementNGSValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
-
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        ProjectId projectId = ProjectId.create()
 
         when:
-        def result = validator.validate(validMetadata)
+        def result = validator.validate(validMetadata, projectId)
 
         then:
         result.allPassed()
@@ -368,11 +378,12 @@ class MeasurementNGSValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
-
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        ProjectId projectId = ProjectId.create()
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
+
 
         then:
         !result.allPassed()
@@ -402,13 +413,14 @@ class MeasurementNGSValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
 
         when:
-        def result = validator.validate(validMetadata)
+        def result = validator.validate(validMetadata, projectId)
 
         then:
         result.allPassed()
@@ -441,13 +453,14 @@ class MeasurementNGSValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -477,13 +490,14 @@ class MeasurementNGSValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMeasurementMetadata)
+        def result = validator.validate(invalidMeasurementMetadata, projectId)
 
         then:
         !result.allPassed()

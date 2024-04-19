@@ -1,8 +1,11 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import java.util.Map;
+import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -24,4 +27,5 @@ public interface MeasurementDataRepo {
   void deleteNGSMeasurements(List<NGSMeasurement> measurements);
 
   boolean hasDataAttached(Set<? extends MeasurementMetadata> measurements);
+  void saveAll(Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
 }
