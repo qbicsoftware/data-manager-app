@@ -35,7 +35,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.InfoBox;
@@ -415,24 +414,18 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       return new MeasurementValidationReport(0, validationResult);
     }
 
-    List<CompletableFuture<ValidationResult>> tasks = new ArrayList<>();
+    ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      tasks.add(validatePxPRow(propertyColumnMap, row));
+      tasks.add(validatePxPRow(propertyColumnMap, row).thenAccept(concurrentLinkedDeque::add));
     }
 
-    ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
-    AtomicInteger rowCounter = new AtomicInteger(0);
-
-    tasks.forEach(task -> task.thenAccept(result -> {
-      concurrentLinkedDeque.add(result);
-      rowCounter.incrementAndGet();
-      // Here we can update a progress bar in the future easily.
-    }));
     CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
 
-    return new MeasurementValidationReport(rowCounter.get(), concurrentLinkedDeque.stream().reduce(
-        validationResult, ValidationResult::combine));
+    return new MeasurementValidationReport(concurrentLinkedDeque.size(),
+        concurrentLinkedDeque.stream().reduce(
+            validationResult, ValidationResult::combine));
   }
 
   private CompletableFuture<ValidationResult> validateNGSRow(Map<String, Integer> propertyColumnMap,
