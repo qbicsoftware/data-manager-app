@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
@@ -548,12 +547,17 @@ public class MeasurementService {
     if (measurementMetadataList.isEmpty()) {
       return new ArrayList<>(); // Nothing to do
     }
-    if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
-      return performUpdatePxp(measurementMetadataList, projectId);
+    try {
+      if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
+        return performUpdatePxp(measurementMetadataList, projectId);
+      }
+      if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
+        return performUpdateNGS(measurementMetadataList, projectId);
+      }
+    } catch (Exception exception) {
+      throw new MeasurementRegistrationException(ErrorCode.FAILED);
     }
-    if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
-      return performUpdateNGS(measurementMetadataList, projectId);
-    }
+
     throw new MeasurementRegistrationException(ErrorCode.FAILED);
   }
 
