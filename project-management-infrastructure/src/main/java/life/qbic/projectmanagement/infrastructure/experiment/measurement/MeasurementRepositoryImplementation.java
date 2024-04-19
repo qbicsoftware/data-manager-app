@@ -99,10 +99,12 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
 
   @Override
   public void deleteAll(Set<? extends MeasurementMetadata> measurements) {
-    if(measurements.isEmpty()) {
+    MeasurementMetadata firstMeasurement;
+    if(measurements.stream().findFirst().isEmpty()) {
       return;
+    } else {
+      firstMeasurement = measurements.stream().findFirst().get();
     }
-    MeasurementMetadata firstMeasurement = measurements.stream().findFirst().get();
     if(measurementDataRepo.hasDataAttached(measurements)) {
       throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
     }
