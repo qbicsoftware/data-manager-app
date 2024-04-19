@@ -174,53 +174,34 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         var source = confirmEvent.getSource();
         var measurementData = upload.measurementMetadata();
         if (editMode) {
-          source.showTaskInProgress(
+          source.taskInProgress(
               "Updating %s measurements ...".formatted(measurementData.size()),
               "This might take a minute");
-          source.showFinished();
           UI.getCurrent().push();
           measurementService.updateAll(upload.measurementMetadata(),
               context.projectId().orElseThrow()).thenAccept(results -> {
-            var errorResult = results.stream().filter(Result::isError).toList();
-            if (!errorResult.isEmpty()) {
-              errorResult.forEach(errorCodeResult ->
-                  confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                    confirmEvent.getSource()
-                        .showError(upload.fileName(),
-                            convertErrorCodeToMessage(errorCodeResult.getError()));
-                  })));
+            var errorResult = results.stream().filter(Result::isError).findAny();
+            if (errorResult.isPresent()) {
+              source.getUI().ifPresent(ui -> ui.access(() -> source.taskFailed("Failure", "Aint working")));
             } else {
-              source.getUI().ifPresent(ui -> ui.access(() -> {
-                    source.enableFinishButton();
-                    this.setMeasurementInformation();
-                  }
-              ));
+              source.getUI().ifPresent(ui -> ui.access(() -> source.taskSucceeded("Success", "Yeah!")));
             }
           }).join(); // we wait for the update to finish
         } else {
-          source.showTaskInProgress(
+          source.taskInProgress(
               "Registering %s measurements ...".formatted(measurementData.size()),
               "This might take a minute");
           UI.getCurrent().push();
           measurementService.registerAll(upload.measurementMetadata(),
               context.projectId().orElseThrow()).thenAccept(results -> {
-            var errorResult = results.stream().filter(Result::isError).toList();
-            if (!errorResult.isEmpty()) {
-              errorResult.forEach(errorCodeResult ->
-                  confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                    confirmEvent.getSource()
-                        .showError(upload.fileName(),
-                            convertErrorCodeToMessage(errorCodeResult.getError()));
-                  })));
+            var errorResult = results.stream().filter(Result::isError).findAny();
+            if (errorResult.isPresent()) {
+              source.getUI().ifPresent(ui -> ui.access(() -> source.taskFailed("Failure", "Aint working")));
             } else {
-              confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                confirmEvent.getSource().close();
-                setMeasurementInformation();
-              }));
+              source.getUI().ifPresent(ui -> ui.access(() -> source.taskSucceeded("Success", "Yeah!")));
             }
-          }).join();
+          }).join(); // we wait for the registration to finish
         }
-        //source.hideTaskInProgress();
       }
 
     });

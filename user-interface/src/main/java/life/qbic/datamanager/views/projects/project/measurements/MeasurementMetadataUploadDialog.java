@@ -39,7 +39,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -87,6 +86,13 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private final Div uploadSection;
   private final ProjectId projectId;
 
+  private final Div processFailureDisplay;
+  private final Span processFailureTitle;
+  private final Span processFailureDescriptionText;
+
+  private final Div processSucceededDisplay;
+  private final Span processSucceededTitle;
+
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
       MODE mode, ProjectId projectId) {
     this.projectId = requireNonNull(projectId, "projectId cannot be null");
@@ -98,6 +104,26 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
     this.taskInProgressDisplay = new Div();
+    this.processFailureDisplay = new Div();
+    this.processFailureDisplay.setClassName("process-failure-display");
+    this.processFailureTitle = new Span("Measurement %s could not be completed".formatted(
+        mode == MODE.ADD ? "registration" : "update"));
+    this.processFailureTitle.setClassName("process-failure-title");
+    this.processFailureDescriptionText = new Span(
+        "There was an error %s the measurement data. Please try again.".formatted(
+            mode == MODE.ADD ? "registering" : "editing"));
+    this.processFailureDescriptionText.setClassName("process-failure-description-text");
+    processFailureDisplay.add(processFailureTitle, processFailureDescriptionText);
+    add(processFailureDisplay);
+    processFailureDisplay.setVisible(false);
+
+    this.processSucceededDisplay = new Div();
+    processSucceededDisplay.setClassName("process-succeeded-display");
+    this.processSucceededTitle = new Span("Measurement %s succeeded".formatted(mode == MODE.ADD ? "registration" : "update"));
+    this.processSucceededTitle.setClassName("process-succeeded-title");
+    processSucceededDisplay.add(processSucceededTitle);
+    add(processSucceededDisplay);
+    processSucceededDisplay.setVisible(false);
 
     this.progressbarLabelText = new NativeLabel("Work in progress...");
     this.progressbarDescriptionText = new Span("Process might take a few moments");
@@ -599,7 +625,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return CompletableFuture.completedFuture(validationResult.combine(ValidationResult.withFailures(1,
+      return CompletableFuture.completedFuture(
+          validationResult.combine(ValidationResult.withFailures(1,
               List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
     }
 
@@ -637,7 +664,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private CompletableFuture<ValidationResult> generateModeDependentValidationResult(
       MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
     return switch (mode) {
-      case ADD ->  measurementValidationExecutor.validateRegistration(metadata, projectId);
+      case ADD -> measurementValidationExecutor.validateRegistration(metadata, projectId);
       case EDIT -> measurementValidationExecutor.validateUpdate(metadata, projectId);
     };
   }
@@ -657,18 +684,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     return addListener(ConfirmEvent.class, listener);
   }
 
-  public void showTaskInProgress(String label, String description) {
-    this.taskInProgressDisplay.setVisible(true);
-    progressbarLabelText.setText(label);
-    progressbarDescriptionText.setText(description);
-    this.uploadSection.setVisible(false);
-    this.uploadedItemsSection.setVisible(false);
-  }
-
-  public void hideTaskInProgress() {
+  private void showTaskFailed() {
+    processFailureDisplay.setVisible(true);
     taskInProgressDisplay.setVisible(false);
-    uploadSection.setVisible(true);
-    this.uploadedItemsSection.setVisible(true);
+    uploadSection.setVisible(false);
+    processFailureDisplay.setVisible(true);
   }
 
   @Override
@@ -721,9 +741,35 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     }
   }
 
+  @Override
+  public void taskFailed(String label, String description) {
+    showTaskFailed();
+    showConfirm();
+    setConfirmButtonLabel("%s Again".formatted(mode == MODE.ADD ? "Register" : "Edit"));
+    disableFinishButton();
+  }
+
+  @Override
+  public void taskSucceeded(String label, String description) {
+    taskInProgressDisplay.setVisible(false);
+    processSucceededDisplay.setVisible(true);
+    showFinished();
+    enableFinishButton();
+  }
+
+  @Override
+  public void taskInProgress(String label, String description) {
+    this.taskInProgressDisplay.setVisible(true);
+    progressbarLabelText.setText(label);
+    progressbarDescriptionText.setText(description);
+    this.uploadSection.setVisible(false);
+    this.uploadedItemsSection.setVisible(false);
+    showFinished();
+    disableFinishButton();
+  }
+
   public enum MODE {
     ADD, EDIT
-
   }
 
   record MeasurementValidationReport(int validatedRows,

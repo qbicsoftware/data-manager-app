@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
@@ -529,7 +530,7 @@ public class MeasurementService {
   public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> updateAll(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
-    List<Result<MeasurementId, ErrorCode>> results = new ArrayList<>();
+    List<Result<MeasurementId, ErrorCode>> results;
 
     try {
       results = performUpdate(mergedSamplePoolGroups, projectId);
