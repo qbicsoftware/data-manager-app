@@ -23,7 +23,7 @@ vaadin-button.primary {
 }
 
 /* Styles recreated from vaadin lumo theme */
-vaadin-button.primary[disabled] {
+vaadin-button[disabled] {
   background-color: var(--lumo-contrast-30pct);
   color: var(--lumo-base-color);
 }

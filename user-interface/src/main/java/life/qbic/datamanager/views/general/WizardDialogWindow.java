@@ -27,8 +27,7 @@ public abstract class WizardDialogWindow extends DialogWindow {
     finishButton = new Button("Finish");
     getFooter().add(finishButton);
     finishButton.addClassName("primary");
-    showConfirm();
-    disableFinishButton();
+    showFailed();
     finishButton.addClickListener(this::onFinishClicked);
   }
 
@@ -47,29 +46,37 @@ public abstract class WizardDialogWindow extends DialogWindow {
    *
    * @since 1.0.0
    */
-  public void showFinished() {
+  public void showSucceeded() {
     this.cancelButton.setVisible(false);
     this.confirmButton.setVisible(false);
     this.finishButton.setVisible(true);
+    this.finishButton.setEnabled(true);
   }
 
   /**
-   * Displays the confirm button and hides the finish button.
+   * Displays the confirm anc cancel button and hides the finish button.
    *
    * @since 1.0.0
    */
-  public void showConfirm() {
+  public void showFailed() {
     this.cancelButton.setVisible(true);
+    this.cancelButton.setEnabled(true);
     this.confirmButton.setVisible(true);
+    this.confirmButton.setEnabled(true);
     this.finishButton.setVisible(false);
   }
 
-  public void disableFinishButton() {
+  /**
+   * Displays the finish and cancel button in a disabled state and hides the confirm button.
+   *
+   * @since 1.0.0
+   */
+  public void showInProgress() {
+    this.cancelButton.setVisible(true);
+    this.cancelButton.setEnabled(false);
+    this.finishButton.setVisible(true);
     this.finishButton.setEnabled(false);
-  }
-
-  public void enableFinishButton() {
-    this.finishButton.setEnabled(true);
+    this.confirmButton.setVisible(false);
   }
 
   /**
