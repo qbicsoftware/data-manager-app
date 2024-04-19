@@ -69,15 +69,9 @@ public class RawDataService {
   public Collection<RawData> findProteomicsRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {//TODO max int
+      List<SortOrder> sortOrder, ProjectId projectId) {
 
-    var measurements = //measurementLookupService.queryAllProteomicsMeasurement(
-        //sampleInformationService.retrieveSamplesForExperiment(experimentId).getValue().stream()
-          //  .map(sample -> sample.sampleId()).toList());
-
-        retrieveProteomicsMeasurementsForExperiment(experimentId, filter, offset,
-        Integer.MAX_VALUE,
-        sortOrder);
+    var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
         .toList();
     var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
@@ -102,9 +96,8 @@ public class RawDataService {
   public Collection<RawData> findNGSRawData(String filter,
       ExperimentId experimentId,
       int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {//TODO max int
-    var measurements = retrieveNGSMeasurementsForExperiment(experimentId, filter, offset, Integer.MAX_VALUE,
-        sortOrder);
+      List<SortOrder> sortOrder, ProjectId projectId) {
+    var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
     var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
         measurementCodes,
@@ -124,29 +117,17 @@ public class RawDataService {
   }
 
 
-  private List<NGSMeasurement> retrieveNGSMeasurementsForExperiment(ExperimentId experimentId,
-      String filter, int offset, int limit,
-      List<SortOrder> sortOrder) {
+  private List<NGSMeasurement> retrieveNGSMeasurementsForExperiment(ExperimentId experimentId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    /*We need to cast the id property manually*/
-    var measurementSortOrder = sortOrder.stream().map(sortOrder1 -> new SortOrder("id", true))
-        .toList();
-    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter,
-        samplesInExperiment, offset, limit, measurementSortOrder);
+    return measurementLookupService.queryAllNGSMeasurements(samplesInExperiment);
   }
 
   private List<ProteomicsMeasurement> retrieveProteomicsMeasurementsForExperiment(
-      ExperimentId experimentId,
-      String filter, int offset, int limit,
-      List<SortOrder> sortOrder) {
+      ExperimentId experimentId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    /*We need to cast the id property manually*/
-    var measurementSortOrder = sortOrder.stream().map(sortOrder1 -> new SortOrder("id", true))
-        .toList();
-    return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
-        samplesInExperiment, offset, limit, measurementSortOrder);
+    return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
   /**

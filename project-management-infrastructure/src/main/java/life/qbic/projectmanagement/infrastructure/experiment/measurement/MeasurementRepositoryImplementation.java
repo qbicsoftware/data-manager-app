@@ -9,6 +9,9 @@ import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.DeletionErrorCode;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -16,7 +19,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>Measurement Repository Implementation</b>
@@ -95,32 +97,38 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  @Transactional
-  public void deleteAll(Set<? extends MeasurementMetadata> measurements) throws RuntimeException {
-    if(measurementDataRepo.hasDataAttached(measurements)) {
-      throw new RuntimeException("Could not delete measurements, because data is attached.");
-    }
+  public void deleteAll(Set<? extends MeasurementMetadata> measurements) {
     if(measurements.isEmpty()) {
       return;
     }
-    if(measurements.stream().findFirst().get() instanceof ProteomicsMeasurement) {
-      List<ProteomicsMeasurement> ptxMeasurements = measurements.stream().map(m -> (ProteomicsMeasurement) m).toList();
-      deleteAllPtx(ptxMeasurements);
+    if(measurementDataRepo.hasDataAttached(measurements)) {
+      throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
     }
-    if(measurements.stream().findFirst().get() instanceof NGSMeasurement) {
-      List<NGSMeasurement> ngsMeasurements = measurements.stream().map(m -> (NGSMeasurement) m).toList();
-      deleteAllNGS(ngsMeasurements);
+    try {
+      if (measurements.stream().findFirst().get() instanceof ProteomicsMeasurement) {
+        List<ProteomicsMeasurement> ptxMeasurements = measurements.stream()
+            .map(m -> (ProteomicsMeasurement) m).toList();
+        deleteAllPtx(ptxMeasurements);
+      }
+      if (measurements.stream().findFirst().get() instanceof NGSMeasurement) {
+        List<NGSMeasurement> ngsMeasurements = measurements.stream().map(m -> (NGSMeasurement) m)
+            .toList();
+        deleteAllNGS(ngsMeasurements);
+      }
+    } catch (Exception e) {
+      log.error("Measurement deletion failed due to " + e.getMessage());
+      throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
     }
   }
 
   private void deleteAllPtx(List<ProteomicsMeasurement> measurements) {
     pxpMeasurementJpaRepo.deleteAll(measurements);
-    measurementDataRepo.deleteMeasurements(measurements);
+    measurementDataRepo.deleteProteomicsMeasurements(measurements);
   }
 
   private void deleteAllNGS(List<NGSMeasurement> measurements) {
     ngsMeasurementJpaRepo.deleteAll(measurements);
-    measurementDataRepo.deleteMeasurements(measurements);
+    measurementDataRepo.deleteNGSMeasurements(measurements);
   }
 
   @Override

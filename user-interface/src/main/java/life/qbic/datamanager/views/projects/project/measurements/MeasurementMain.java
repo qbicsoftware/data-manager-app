@@ -16,11 +16,11 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -28,6 +28,8 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
@@ -35,6 +37,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementRegistrationException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -162,8 +165,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void deleteSelectedMeasurements() {
     Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurementsInActiveGrid();
-    measurementService.deleteMeasurements(selectedMeasurements);
-    //measurementDetailsComponent.
+    if(!selectedMeasurements.isEmpty()) {
+      Result<Void, MeasurementDeletionException> result = measurementService.deleteMeasurements(
+          context.projectId().orElseThrow(), selectedMeasurements);
+      result.onError(error -> {
+        String errorMessage = switch (error.reason()) {
+          case FAILED -> "Deletion failed. Please try again.";
+          case DATA_ATTACHED -> "Data is attached to one or more measurements.";
+        };
+        showErrorNotification("Deletion failed", errorMessage);
+      });
+      result.onValue(v -> measurementDetailsComponent.refreshActiveGrid());
+    }
   }
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog, boolean editMode) {
@@ -272,6 +285,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           currentExperimentId, currentProjectId, routeToMeasurementPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
     }
+  }
+
+  private void showErrorNotification(String title, String description) {
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
   }
 
   /**

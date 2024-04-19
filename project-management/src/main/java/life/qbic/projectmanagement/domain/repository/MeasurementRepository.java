@@ -31,5 +31,5 @@ public interface MeasurementRepository {
 
   void updateAll(Collection<ProteomicsMeasurement> measurement);
 
-  void deleteAll(Set<? extends MeasurementMetadata> measurements) throws RuntimeException;
+  void deleteAll(Set<? extends MeasurementMetadata> measurements);
 }

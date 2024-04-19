@@ -32,6 +32,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
+import life.qbic.projectmanagement.domain.service.MeasurementDomainService.ResponseCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -167,7 +168,7 @@ public class MeasurementService {
       ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.queryAllProteomicsMeasurement(samplesInExperiment);
+    return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
@@ -474,9 +475,31 @@ public class MeasurementService {
         associatedExperimentsFromSamples);
   }
 
-  public void deleteMeasurements(Set<? extends MeasurementMetadata> selectedMeasurements) {
-    measurementDomainService.delete(selectedMeasurements);
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<Void, MeasurementDeletionException> deleteMeasurements(ProjectId projectId, Set<? extends MeasurementMetadata> selectedMeasurements) {
+    try {
+      measurementDomainService.delete(selectedMeasurements);
+      return Result.fromValue(null);
+    } catch (MeasurementDeletionException e) {
+      return Result.fromError(e);
+    }
+  }
 
+  public static final class MeasurementDeletionException extends RuntimeException {
+
+    private final DeletionErrorCode reason;
+
+    public MeasurementDeletionException(DeletionErrorCode reason) {
+      this.reason = reason;
+    }
+
+    public DeletionErrorCode reason() {
+      return reason;
+    }
+  }
+
+  public enum DeletionErrorCode {
+    FAILED, DATA_ATTACHED
   }
 
   public enum ErrorCode {

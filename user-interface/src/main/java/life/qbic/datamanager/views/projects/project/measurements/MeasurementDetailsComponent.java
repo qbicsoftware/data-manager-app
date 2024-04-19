@@ -309,4 +309,20 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     log.warn("Unknown measurements TabSheet label: %s. Could not return selected measurements.".formatted(label));
     return new HashSet<>();
   }
+
+  public void refreshActiveGrid() {
+    String label = registeredMeasurementsTabSheet.getSelectedTab().getLabel();
+    if(label.equals("Proteomics")) {
+      proteomicsMeasurementGrid.getDataProvider().refreshAll();
+      proteomicsMeasurementGrid.deselectAll(); //necessary to manually deselect as the refresh method only makes it look like measurements are deselected
+    }
+    if(label.equals("Genomics")) {
+      ngsMeasurementGrid.getDataProvider().refreshAll();
+      ngsMeasurementGrid.deselectAll();
+    } else {
+      log.warn(
+          "Unknown measurements TabSheet label: %s. Could not return selected measurements.".formatted(
+              label));
+    }
+  }
 }

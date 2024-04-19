@@ -354,7 +354,16 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   }
 
   @Override
-  public void deleteMeasurements(List<? extends MeasurementMetadata> measurements) {
+  public void deleteProteomicsMeasurements(List<ProteomicsMeasurement> measurements) {
+    deleteMeasurements(measurements);
+  }
+
+  @Override
+  public void deleteNGSMeasurements(List<NGSMeasurement> measurements) {
+    deleteMeasurements(measurements);
+  }
+
+  private void deleteMeasurements(List<? extends MeasurementMetadata> measurements) {
     try (OpenBisSession session = sessionFactory.getSession()) {
       for(MeasurementMetadata measurement : measurements) {
         String sampleCode = measurement.measurementCode().value();
@@ -372,18 +381,15 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     try (OpenBisSession session = sessionFactory.getSession()) {
       for (MeasurementMetadata measurement : measurements) {
         String measurementCode = measurement.measurementCode().value();
-        System.err.println("does "+measurementCode+" have data?");
         List<Sample> samplesToDelete = searchSamplesByCodes(session,
             new ArrayList<>(Arrays.asList(measurementCode)));
         for (Sample sample : samplesToDelete) {
           if (isSampleWithData(List.of(sample))) {
-            System.err.println("yes");
             return true;
           }
         }
       }
     }
-    System.err.println("no");
     return false;
   }
 
@@ -479,10 +485,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   public List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
       Collection<MeasurementCode> measurementCodes, int offset, int limit,
       List<SortOrder> sortOrders) {
-    System.err.println(measurementCodes.stream().map(m -> m.value()).collect(Collectors.toList()));
-    System.err.println(filter);
-    System.err.println(limit);
-    System.err.println(offset);
 
     List<RawDataDatasetInformation> result = new ArrayList<>();
     DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
@@ -529,7 +531,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
                 getStringSizeLengthFile(dataSetSize), numOfFiles, suffixes, registrationDate));
       }
     }
-    System.err.println(result.size());
     return result;
   }
 

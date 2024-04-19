@@ -20,7 +20,8 @@ public interface MeasurementDataRepo {
 
   void addProtemicsMeasurement(ProteomicsMeasurement proteomicsMeasurement, List<SampleCode> sampleCodes);
 
-  void deleteMeasurements(List<? extends MeasurementMetadata> measurements);
+  void deleteProteomicsMeasurements(List<ProteomicsMeasurement> measurements);
+  void deleteNGSMeasurements(List<NGSMeasurement> measurements);
 
   boolean hasDataAttached(Set<? extends MeasurementMetadata> measurements);
 }
