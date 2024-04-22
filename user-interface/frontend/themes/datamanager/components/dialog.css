@@ -211,7 +211,7 @@ vaadin-dialog-overlay::part(title) {
 .contact-field .prefill-input-fields {
   line-height: 0;
   display: flex;
-  gap: 1em;
+  flex-direction: column;
   align-items: baseline;
 }
 
@@ -436,13 +436,19 @@ vaadin-dialog-overlay::part(title) {
   gap: var(--lumo-space-s);
 }
 
-.measurement-upload-dialog .upload-section {
+.measurement-upload-dialog .upload-items-display {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-s);
 }
 
-.measurement-upload-dialog .restrictions {
+.measurement-upload-dialog .upload-items-display .upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-items-display .upload-section .restrictions {
   font-size: smaller;
   display: inline-flex;
   justify-content: space-between;
@@ -450,7 +456,7 @@ vaadin-dialog-overlay::part(title) {
   column-gap: var(--lumo-space-s);
 }
 
-.measurement-upload-dialog .section-title {
+.measurement-upload-dialog .upload-items-display .uploaded-items-section .section-title {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
   font-weight: 500;
@@ -460,14 +466,14 @@ vaadin-dialog-overlay::part(title) {
   font-size: var(--lumo-font-size-s);
 }
 
-.measurement-upload-dialog .uploaded-measurement-items {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items {
   border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-l);
   display: flex;
   flex-direction: column;
 }
 
-.measurement-upload-dialog .uploaded-measurement-items .measurement-item {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item {
   border-bottom-color: var(--lumo-contrast-20pct);
   border-bottom-style: solid;
   border-width: 1px;
@@ -480,20 +486,20 @@ vaadin-dialog-overlay::part(title) {
   row-gap: var(--lumo-space-m);
 }
 
-.measurement-upload-dialog .uploaded-measurement-items  .measurement-item .file-name {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-name {
   display: inline-flex;
   align-items: center;
   column-gap: var(--lumo-space-s);
 }
 
-.measurement-upload-dialog .uploaded-measurement-items  .measurement-item .file-icon {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-icon {
   display: inline-flex;
   flex-shrink: 0;
   font-size: smaller;
   color: var(--lumo-tertiary-text-color);
 }
 
-.measurement-upload-dialog .uploaded-measurement-items .measurement-item .validation-display-box {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-s);
@@ -504,7 +510,7 @@ vaadin-dialog-overlay::part(title) {
   border-radius: var(--lumo-border-radius-m);
 }
 
-.measurement-upload-dialog .uploaded-measurement-items .measurement-item .validation-display-box .header {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .header {
   font-size: small;
   align-items: center;
   display: inline-flex;
@@ -512,12 +518,34 @@ vaadin-dialog-overlay::part(title) {
   font-weight: bold;
 }
 
-.measurement-upload-dialog .uploaded-measurement-items .measurement-item .validation-display-box .invalid-measurement-list {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .invalid-measurement-list {
   padding-left: var(--lumo-space-m);
 }
 
-.measurement-upload-dialog .uploaded-measurement-items .measurement-item:last-child {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item:last-child {
   border-style: none;
+}
+
+.measurement-upload-dialog .upload-progress-display {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-progress-display .display-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  border-radius: var(--lumo-border-radius-l);
+  border: 1px solid var(--lumo-contrast-20pct);
+  padding: var(--lumo-space-m);
+  margin-top: var(--lumo-space-s);
+}
+
+.measurement-upload-dialog .upload-progress-display .display-box .description {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  align-items: center;
 }
 
 .project-information-dialog::part(overlay) {
