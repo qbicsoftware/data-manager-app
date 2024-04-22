@@ -177,61 +177,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         confirmEvent.getSource()));
     return dialog;
   }
-      /*
-      for (var upload : uploads) {
-        var source = confirmEvent.getSource();
-        var measurementData = upload.measurementMetadata();
-
-        if (editMode) {
-          source.taskInProgress(
-              "Updating %s measurements ...".formatted(measurementData.size()),
-              "This might take a minute");
-          //Necessary so the dialog window switches to show the upload progress
-          UI.getCurrent().push();
-          measurementService.updateAll(upload.measurementMetadata(),
-              context.projectId().orElseThrow()).thenAccept(results -> {
-            var errorResult = results.stream().filter(Result::isError).findAny();
-            if (errorResult.isPresent()) {
-              var errors = errorResult.stream().filter(Result::isError)
-                  .map(Result::getError)
-                  .map(MeasurementMain::convertErrorCodeToMessage).distinct().toList();
-              source.getUI().ifPresent(ui -> ui.access(
-                  () -> source.taskFailed("Measurement Update could not be completed",
-                      "The following errors occurred while updating the data:" +
-                          "\n" +
-                          String.join("\n", errors)
-                          + "\n" + "Please try again")));
-            } else {
-              source.getUI().ifPresent(ui -> ui.access(
-                  () -> source.taskSucceeded("Measurement Update is complete",
-                      String.format("%s Measurements are now successfully updated",
-                          results.size()))));
-            }
-          }).join(); // we wait for the update to finish
-        } else {
-          source.taskInProgress(
-              "Registering %s measurements ...".formatted(measurementData.size()),
-              "This might take a minute");
-          UI.getCurrent().push();
-          measurementService.registerAll(upload.measurementMetadata(),
-              context.projectId().orElseThrow()).thenAccept(results -> {
-            var errorResult = results.stream().filter(Result::isError).findAny();
-            if (errorResult.isPresent()) {
-              source.getUI()
-                  .ifPresent(ui -> ui.access(
-                      () -> source.taskFailed("Measurement Registration could not be completed",
-                          "There was an error registering the measurement data. Please try again")));
-            } else {
-              source.getUI().ifPresent(ui -> ui.access(
-                  () -> source.taskSucceeded("Measurement Registration is complete",
-                      String.format("%s Measurements are now successfully registered",
-                          results.size()))));
-            }
-          }).join(); // we wait for the registration to finish
-        }
-      }
-    });
-       */
 
   private void triggerMeasurementRegistration(
       List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads,
