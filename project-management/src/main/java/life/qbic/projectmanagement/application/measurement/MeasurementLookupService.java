@@ -39,7 +39,7 @@ public class MeasurementLookupService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    */
-  public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String termFilter,
+  protected List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<ProteomicsMeasurement> termList = measurementLookup.findProteomicsMeasurementsBySampleIds(
@@ -58,7 +58,7 @@ public class MeasurementLookupService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    */
-  public List<NGSMeasurement> queryNGSMeasurementsBySampleIds(String termFilter,
+  protected List<NGSMeasurement> queryNGSMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<NGSMeasurement> termList = measurementLookup.queryNGSMeasurementsBySampleIds(termFilter,
@@ -75,7 +75,7 @@ public class MeasurementLookupService {
    *                  determined
    * @return number of measurements for all domains associated with the provided sampleIds
    */
-  public long countMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+  protected long countMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
     return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds)
         + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
   }

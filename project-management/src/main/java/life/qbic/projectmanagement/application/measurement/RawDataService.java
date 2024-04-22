@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application.rawdata;
+package life.qbic.projectmanagement.application.measurement;
 
 import java.util.Collection;
 import java.util.Date;
@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;

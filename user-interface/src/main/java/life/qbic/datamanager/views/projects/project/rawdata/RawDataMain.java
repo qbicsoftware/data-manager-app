@@ -33,7 +33,7 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
-import life.qbic.projectmanagement.application.rawdata.RawDataService;
+import life.qbic.projectmanagement.application.measurement.RawDataService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;

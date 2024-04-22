@@ -1,12 +1,12 @@
-package life.qbic.projectmanagement.application.rawdata;
+package life.qbic.projectmanagement.application.measurement;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.measurement.RawDataService.RawData;
+import life.qbic.projectmanagement.application.measurement.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ public class RawDataLookupService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    */
-  public List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
+  protected List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
       List<MeasurementCode> measurementCodes, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     var dataList = rawDataLookup.queryRawDataByMeasurementCodes(
