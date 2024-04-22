@@ -385,7 +385,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private MeasurementValidationReport validateNGS(MetadataContent content) {
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-    var evaluatedRows = 0;
     // we check if there are any rows provided or if we have only rows with empty content
     if (content.rows().isEmpty() || content.rows().stream()
         .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
@@ -500,9 +499,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         libraryKit, flowCell, sequencingRunProtocol, samplePoolGroup, indexI7, indexI5, comment);
     var measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
         measurementValidationService);
-    var finalValidationResult = generateModeDependentValidationResult(
+    return generateModeDependentValidationResult(
         measurementNGSValidationExecutor, metadata);
-    return finalValidationResult;
   }
 
   private CompletableFuture<ValidationResult> validatePxPRow(Map<String, Integer> propertyColumnMap,

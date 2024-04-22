@@ -54,8 +54,8 @@ public class MeasurementNGSValidator implements
    * Given a collection of properties, the validator determines if they mach the expected properties
    * for a QBiC-defined NGS measurement metadata object.
    *
-   * @param properties
-   * @return
+   * @param properties List of string representing property values in the column headers of the NGS Excel sheet
+   * @return boolean indicating if all expected properties of the ngs sheet could be found
    * @since 1.0.0
    */
   public static boolean isNGS(Collection<String> properties) {
