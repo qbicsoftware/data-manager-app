@@ -13,7 +13,7 @@ import com.vaadin.flow.component.button.Button;
  * process being done and the user can close the window.
  * <p>
  * The default appearance is the confirm button is shown, and the finish button can be toggled when
- * called explicitly via {@link WizardDialogWindow#showFinished()} and the finish button is disabled
+ * called explicitly via {@link WizardDialogWindow#showSucceeded()} )} and the finish button is disabled
  * by default.
  *
  * @since 1.0.0
