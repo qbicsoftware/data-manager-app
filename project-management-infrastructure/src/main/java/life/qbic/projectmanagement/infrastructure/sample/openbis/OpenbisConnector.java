@@ -408,7 +408,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     List<SampleCreation> objectsToCreate = new ArrayList<>();
 
     try (OpenBisSession session = sessionFactory.getSession()) {
-      for(ProteomicsMeasurement measurement : proteomicsMeasurementsMapping.keySet()) {
+      for (ProteomicsMeasurement measurement : proteomicsMeasurementsMapping.keySet()) {
         List<String> parentCodes = proteomicsMeasurementsMapping.get(measurement).stream()
             .map(entry -> entry.sampleCode().code()).collect(Collectors.toList());
         List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session, parentCodes);

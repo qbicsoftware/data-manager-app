@@ -36,7 +36,8 @@ public class MeasurementNGSValidator implements
 
   @Autowired
   public MeasurementNGSValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService, ProjectInformationService projectInformationService) {
+      OntologyLookupService ontologyLookupService,
+      ProjectInformationService projectInformationService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
@@ -68,7 +69,8 @@ public class MeasurementNGSValidator implements
   }
 
   @Override
-  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata, ProjectId projectId) {
+  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
+      ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
