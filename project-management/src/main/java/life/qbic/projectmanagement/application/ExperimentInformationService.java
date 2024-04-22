@@ -29,6 +29,8 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -144,6 +146,7 @@ public class ExperimentInformationService {
    * @param projectId the project the experiment is linked to
    * @return a list of experiments linked to the project
    */
+  @PostAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public List<Experiment> findAllForProject(ProjectId projectId) {
     Project project = projectRepository.find(projectId).orElseThrow();
     List<ExperimentId> experimentIds = project.experiments();

@@ -21,6 +21,7 @@ import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +70,7 @@ public class BatchRegistrationService {
    * provided.
    * @since 1.0.0
    */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<BatchId, ResponseCode> registerBatch(String label, boolean isPilot,
       ProjectId projectId) {
     var project = projectInformationService.find(projectId);
@@ -155,6 +157,7 @@ public class BatchRegistrationService {
    * @return a result object with the response. If the editing failed, a response code will be
    * provided.
    */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Transactional
   public Result<BatchId, ResponseCode> editBatch(BatchId batchId, String batchLabel,
       boolean isPilot,
