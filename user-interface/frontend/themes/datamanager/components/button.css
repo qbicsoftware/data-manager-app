@@ -22,6 +22,12 @@ vaadin-button.primary {
   min-width: calc(var(--lumo-button-size) * 2.5);
 }
 
+/* Styles recreated from vaadin lumo theme */
+vaadin-button[disabled] {
+  background-color: var(--lumo-contrast-30pct);
+  color: var(--lumo-base-color);
+}
+
 vaadin-button.primary .button::before {
   background-color: black;
 }

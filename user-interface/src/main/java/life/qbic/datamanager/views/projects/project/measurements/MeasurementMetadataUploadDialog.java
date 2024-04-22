@@ -8,7 +8,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
-import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -36,11 +35,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.InfoBox;
+import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
@@ -66,7 +64,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public class MeasurementMetadataUploadDialog extends DialogWindow {
+public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   @Serial
@@ -76,15 +74,10 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final transient List<MeasurementFileItem> measurementFileItems;
-  private final Div uploadedItemsSection;
-  private final Div uploadedItemsDisplays;
   private final MODE mode;
-
-  private final Div taskInProgressDisplay;
-  private final NativeLabel progressbarLabelText;
-  private final Span progressbarDescriptionText;
-  private final Div uploadSection;
   private final ProjectId projectId;
+  private final UploadProgressDisplay uploadProgressDisplay;
+  private final UploadItemsDisplay uploadItemsDisplay;
 
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
       MODE mode, ProjectId projectId) {
@@ -96,52 +89,16 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
-    this.taskInProgressDisplay = new Div();
-
-    this.progressbarLabelText = new NativeLabel("Work in progress...");
-    this.progressbarDescriptionText = new Span("Process might take a few moments");
-    ProgressBar progressBar = new ProgressBar();
-    progressBar.setIndeterminate(true);
-    taskInProgressDisplay.add(progressbarLabelText, progressBar, progressbarDescriptionText);
-
-    add(taskInProgressDisplay);
-    taskInProgressDisplay.setVisible(false);
-
     Upload upload = new Upload(uploadBuffer);
     upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
-
     setModeBasedLabels();
-
-    var uploadSectionTitle = new Span("Upload the measurement data");
-    uploadSectionTitle.addClassName("section-title");
-
-    var saveYourFileInfo = new InfoBox().setInfoText(
-            "Please save your excel file as Text (Tab delimited) (*.txt) before uploading.")
-        .setClosable(false);
-
-    var restrictions = new Div();
-    restrictions.addClassName("restrictions");
-    restrictions.add(new Span("Supported file formats: .txt, .tsv"));
-    restrictions.add("Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / Math.pow(1024, 2)));
-
-    this.uploadSection = new Div();
-    uploadSection.add(uploadSectionTitle, saveYourFileInfo, upload, restrictions);
-    uploadSection.addClassName("upload-section");
-
-    uploadedItemsSection = new Div();
-    uploadedItemsSection.addClassName("uploaded-items-section");
-
-    var uploadedItemsSectionTitle = new Span("Uploaded files");
-    uploadedItemsSectionTitle.addClassName("section-title");
-
-    uploadedItemsDisplays = new Div();
-    uploadedItemsDisplays.addClassName("uploaded-measurement-items");
-
-    uploadedItemsSection.add(uploadedItemsSectionTitle, uploadedItemsDisplays);
-
-    add(uploadSection, uploadedItemsSection);
-
+    uploadItemsDisplay = new UploadItemsDisplay(upload);
+    uploadItemsDisplay.toggleFileSectionIfEmpty(true);
+    add(uploadItemsDisplay);
+    uploadProgressDisplay = new UploadProgressDisplay(mode);
+    add(uploadProgressDisplay);
+    uploadProgressDisplay.setVisible(false);
     upload.addSucceededListener(this::onUploadSucceeded);
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
@@ -152,7 +109,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     upload.getElement().addEventListener("file-remove", this::onFileRemoved)
         .addEventData(VAADIN_FILENAME_EVENT);
     addClassName("measurement-upload-dialog");
-    toggleFileSectionIfEmpty();
+
   }
 
   private static List<String> parseHeaderContent(String header) {
@@ -331,31 +288,19 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
 
   private void showFile(MeasurementFileItem measurementFileItem) {
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
-    uploadedItemsDisplays.add(measurementFileDisplay);
+    uploadItemsDisplay.addFileToDisplay(measurementFileDisplay);
+    //Todo Move logic to Display itself
+    uploadItemsDisplay.toggleFileSectionIfEmpty(!measurementFileItems.isEmpty());
   }
 
   private void removeFile(String fileName) {
     uploadBuffer.remove(fileName);
-    MeasurementFileDisplay[] fileDisplays = fileDisplaysWithFileName(fileName);
-    uploadedItemsDisplays.remove(fileDisplays);
     measurementMetadataUploads.removeIf(
         metadataUpload -> metadataUpload.fileName().equals(fileName));
     measurementFileItems.removeIf(
         measurementFileItem -> measurementFileItem.fileName().equals(fileName));
-    toggleFileSectionIfEmpty();
-  }
-
-  private MeasurementFileDisplay[] fileDisplaysWithFileName(String fileName) {
-    return uploadedItemsDisplays.getChildren()
-        .filter(MeasurementFileDisplay.class::isInstance)
-        .map(MeasurementFileDisplay.class::cast)
-        .filter(measurementFileDisplay -> measurementFileDisplay.measurementFileItem().fileName()
-            .equals(fileName))
-        .toArray(MeasurementFileDisplay[]::new);
-  }
-
-  private void toggleFileSectionIfEmpty() {
-    uploadedItemsSection.setVisible(!measurementFileItems.isEmpty());
+    uploadItemsDisplay.removeFileFromDisplay(fileName);
+    uploadItemsDisplay.toggleFileSectionIfEmpty(!measurementFileItems.isEmpty());
   }
 
   private void onUploadFailed(FailedEvent failedEvent) {
@@ -398,7 +343,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     measurementMetadataUploads.add(metadataUpload);
     measurementFileItems.add(measurementFileItem);
     showFile(measurementFileItem);
-    toggleFileSectionIfEmpty();
   }
 
   private List<NGSMeasurementMetadata> generateNGSMetadata(
@@ -470,24 +414,18 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return new MeasurementValidationReport(0, validationResult);
     }
 
-    List<CompletableFuture<ValidationResult>> tasks = new ArrayList<>();
+    ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      tasks.add(validatePxPRow(propertyColumnMap, row));
+      tasks.add(validatePxPRow(propertyColumnMap, row).thenAccept(concurrentLinkedDeque::add));
     }
 
-    ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
-    AtomicInteger rowCounter = new AtomicInteger(0);
-
-    tasks.forEach(task -> task.thenAccept(result -> {
-      concurrentLinkedDeque.add(result);
-      rowCounter.incrementAndGet();
-      // Here we can update a progress bar in the future easily.
-    }));
     CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
 
-    return new MeasurementValidationReport(rowCounter.get(), concurrentLinkedDeque.stream().reduce(
-        validationResult, ValidationResult::combine));
+    return new MeasurementValidationReport(concurrentLinkedDeque.size(),
+        concurrentLinkedDeque.stream().reduce(
+            validationResult, ValidationResult::combine));
   }
 
   private CompletableFuture<ValidationResult> validateNGSRow(Map<String, Integer> propertyColumnMap,
@@ -598,7 +536,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
         instrumentColumnIndex).max().orElseThrow();
     if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return CompletableFuture.completedFuture(validationResult.combine(ValidationResult.withFailures(1,
+      return CompletableFuture.completedFuture(
+          validationResult.combine(ValidationResult.withFailures(1,
               List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
     }
 
@@ -636,7 +575,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
   private CompletableFuture<ValidationResult> generateModeDependentValidationResult(
       MeasurementValidationExecutor measurementValidationExecutor, MeasurementMetadata metadata) {
     return switch (mode) {
-      case ADD ->  measurementValidationExecutor.validateRegistration(metadata, projectId);
+      case ADD -> measurementValidationExecutor.validateRegistration(metadata, projectId);
       case EDIT -> measurementValidationExecutor.validateUpdate(metadata, projectId);
     };
   }
@@ -656,20 +595,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     return addListener(ConfirmEvent.class, listener);
   }
 
-  public void showTaskInProgress(String label, String description) {
-    this.taskInProgressDisplay.setVisible(true);
-    progressbarLabelText.setText(label);
-    progressbarDescriptionText.setText(description);
-    this.uploadSection.setVisible(false);
-    this.uploadedItemsSection.setVisible(false);
-  }
-
-  public void hideTaskInProgress() {
-    taskInProgressDisplay.setVisible(false);
-    uploadSection.setVisible(true);
-    this.uploadedItemsSection.setVisible(true);
-  }
-
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     if (containsInvalidMeasurementData()) {
@@ -677,6 +602,8 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
           "Please correct your metadata first and upload it again.");
       return;
     }
+    uploadItemsDisplay.setVisible(false);
+    uploadProgressDisplay.setVisible(true);
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), measurementMetadataUploads));
   }
 
@@ -699,30 +626,27 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
-  /**
-   * modifies the dialog in a way to show that all measurements of a file were registered.
-   *
-   * @param filename
-   */
-  public void markSuccessful(String filename) {
-    removeFile(filename);
+  @Override
+  public void taskFailed(String label, String description) {
+    uploadProgressDisplay.showProgressFailedDisplay(label, description);
+    setConfirmButtonLabel("%s Again".formatted(mode == MODE.ADD ? "Register" : "Edit"));
+    showFailed();
   }
 
-  /**
-   * shows an error for a given measurement file
-   *
-   * @param filename
-   * @param error
-   */
-  public void showError(String filename, String error) {
-    for (MeasurementFileDisplay measurementFileDisplay : fileDisplaysWithFileName(filename)) {
-      measurementFileDisplay.addError(error);
-    }
+  @Override
+  public void taskSucceeded(String label, String description) {
+    uploadProgressDisplay.showProgressSucceededDisplay(label, description);
+    showSucceeded();
+  }
+
+  @Override
+  public void taskInProgress(String label, String description) {
+    uploadProgressDisplay.showInProgressDisplay(label, description);
+    showInProgress();
   }
 
   public enum MODE {
     ADD, EDIT
-
   }
 
   record MeasurementValidationReport(int validatedRows,
@@ -757,7 +681,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
     private final transient MeasurementFileItem measurementFileItem;
     private final Div displayBox = new Div();
 
-
     public MeasurementFileDisplay(MeasurementFileItem measurementFileItem) {
       this.measurementFileItem = requireNonNull(measurementFileItem,
           "measurementFileItem must not be null");
@@ -776,11 +699,6 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       return measurementFileItem;
     }
 
-    public void addError(String error) {
-      displayBox.removeAll();
-      displayBox.add(createInvalidDisplayBox(List.of(error)));
-    }
-
     private void createDisplayBox(MeasurementValidationReport measurementValidationReport) {
       displayBox.removeAll();
       if (measurementValidationReport.validationResult().allPassed()) {
@@ -795,7 +713,7 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
       Div box = new Div();
       Span approvedTitle = new Span("Your data has been approved");
       Icon validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
-      validIcon.addClassName("valid");
+      validIcon.addClassName("success");
       Span header = new Span(validIcon, approvedTitle);
       header.addClassName("header");
       box.add(header);
@@ -869,6 +787,157 @@ public class MeasurementMetadataUploadDialog extends DialogWindow {
      */
     public CancelEvent(MeasurementMetadataUploadDialog source, boolean fromClient) {
       super(source, fromClient);
+    }
+  }
+
+  private static class UploadItemsDisplay extends Div {
+
+    private final Div uploadSection;
+    private final Div uploadedItemsSection;
+    private final Div uploadedItemsDisplays;
+
+    public UploadItemsDisplay(Upload upload) {
+      var uploadSectionTitle = new Span("Upload the measurement data");
+      uploadSectionTitle.addClassName("section-title");
+
+      var saveYourFileInfo = new InfoBox().setInfoText(
+              "Please save your excel file as Text (Tab delimited) (*.txt) before uploading.")
+          .setClosable(false);
+
+      var restrictions = new Div();
+      restrictions.addClassName("restrictions");
+      restrictions.add(new Span("Supported file formats: .txt, .tsv"));
+      restrictions.add(
+          "Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / Math.pow(1024, 2)));
+
+      this.uploadSection = new Div();
+      uploadSection.add(uploadSectionTitle, saveYourFileInfo, upload, restrictions);
+      uploadSection.addClassName("upload-section");
+
+      uploadedItemsSection = new Div();
+      uploadedItemsSection.addClassName("uploaded-items-section");
+
+      var uploadedItemsSectionTitle = new Span("Uploaded files");
+      uploadedItemsSectionTitle.addClassName("section-title");
+
+      uploadedItemsDisplays = new Div();
+      uploadedItemsDisplays.addClassName("uploaded-measurement-items");
+      uploadedItemsSection.add(uploadedItemsSectionTitle, uploadedItemsDisplays);
+      add(uploadSection, uploadedItemsSection);
+      addClassName("upload-items-display");
+    }
+
+    private void addFileToDisplay(MeasurementFileDisplay measurementFileDisplay) {
+      uploadedItemsDisplays.add(measurementFileDisplay);
+    }
+
+    private void removeFileFromDisplay(String fileName) {
+      MeasurementFileDisplay[] fileDisplays = fileDisplaysWithFileName(fileName);
+      uploadedItemsDisplays.remove(fileDisplays);
+    }
+
+    private MeasurementFileDisplay[] fileDisplaysWithFileName(String fileName) {
+      return uploadedItemsDisplays.getChildren()
+          .filter(MeasurementFileDisplay.class::isInstance)
+          .map(MeasurementFileDisplay.class::cast)
+          .filter(measurementFileDisplay -> measurementFileDisplay.measurementFileItem().fileName()
+              .equals(fileName))
+          .toArray(MeasurementFileDisplay[]::new);
+    }
+
+    private void toggleFileSectionIfEmpty(boolean isEmpty) {
+      uploadedItemsSection.setVisible(isEmpty);
+    }
+  }
+
+  private static class UploadProgressDisplay extends Div {
+
+    private final Div processInProgressDisplay;
+    private final Div processFailureDisplay;
+    private final Div processSucceededDisplay;
+
+    public UploadProgressDisplay(MODE mode) {
+
+      Objects.requireNonNull(mode, "Mode cannot be null");
+      String modeBasedTask = (mode == MODE.ADD ? "Register" : "Update");
+      Span title = new Span(String.format("%s the measurement data", modeBasedTask));
+      title.addClassNames("bold", "secondary");
+      Span description = new Span(
+          String.format("It may take about a minute for the %s process to complete",
+              modeBasedTask));
+      description.addClassName("secondary");
+      add(title, description);
+      this.processSucceededDisplay = new Div();
+      processSucceededDisplay.setClassName("display-box");
+      this.processInProgressDisplay = new Div();
+      processInProgressDisplay.setClassName("display-box");
+      this.processFailureDisplay = new Div();
+      this.processFailureDisplay.setClassName("display-box");
+      add(processSucceededDisplay, processInProgressDisplay, processFailureDisplay);
+      processInProgressDisplay.setVisible(false);
+      processFailureDisplay.setVisible(false);
+      processSucceededDisplay.setVisible(false);
+      addClassName("upload-progress-display");
+    }
+
+    private void createProgressSuccessDisplay(String label, String description) {
+      Span processSucceededTitle = new Span(label);
+      processSucceededTitle.addClassName("bold");
+      processSucceededDisplay.add(processSucceededTitle);
+      Icon successIcon = VaadinIcon.CHECK_CIRCLE_O.create();
+      successIcon.addClassNames("success", "small");
+      Span processSucceededDescription = new Span(successIcon, new Span(description));
+      processSucceededDescription.addClassName("description");
+      processSucceededDisplay.add(processSucceededDescription);
+    }
+
+    private void createProcessFailureDisplay(String label, String description) {
+      Span processFailureTitle = new Span(label);
+      processFailureTitle.addClassName("bold");
+      Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
+      errorIcon.addClassNames("error", "small");
+      Span descriptionText = new Span(description);
+      descriptionText.addClassName("error-text");
+      Span processFailureDescription = new Span(errorIcon, descriptionText);
+      processFailureDescription.addClassNames("description");
+      processFailureDisplay.add(processFailureTitle, processFailureDescription);
+    }
+
+    private void createProcessInProgressDisplay(String label, String description) {
+      processInProgressDisplay.removeAll();
+      Span processInProgressTitle = new Span(label);
+      processInProgressTitle.addClassNames("bold");
+      Span processInProgressDescription = new Span(description);
+      processInProgressDescription.addClassNames("secondary");
+      ProgressBar progressBar = new ProgressBar();
+      progressBar.setIndeterminate(true);
+      processInProgressDisplay.add(processInProgressTitle, progressBar,
+          processInProgressDescription);
+    }
+
+    public void showInProgressDisplay(String label, String description) {
+      processInProgressDisplay.removeAll();
+      createProcessInProgressDisplay(label, description);
+      processFailureDisplay.setVisible(false);
+      processSucceededDisplay.setVisible(false);
+      processInProgressDisplay.setVisible(true);
+    }
+
+    public void showProgressSucceededDisplay(String label, String description) {
+      processSucceededDisplay.removeAll();
+      createProgressSuccessDisplay(label, description);
+      processInProgressDisplay.setVisible(false);
+      processFailureDisplay.setVisible(false);
+      processSucceededDisplay.setVisible(true);
+
+    }
+
+    public void showProgressFailedDisplay(String label, String description) {
+      processFailureDisplay.removeAll();
+      createProcessFailureDisplay(label, description);
+      processSucceededDisplay.setVisible(false);
+      processInProgressDisplay.setVisible(false);
+      processFailureDisplay.setVisible(true);
     }
   }
 }
