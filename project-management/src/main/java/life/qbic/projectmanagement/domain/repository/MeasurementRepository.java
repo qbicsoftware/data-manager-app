@@ -33,8 +33,12 @@ public interface MeasurementRepository {
 
   void updateNGS(NGSMeasurement measurement);
 
-  void updateAll(Collection<ProteomicsMeasurement> measurement);
+  void updateAllProteomics(Collection<ProteomicsMeasurement> measurement);
 
-  void saveAll(
+  void updateAllNGS(Collection<NGSMeasurement> measurement);
+
+  void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
+
+  void saveAllNGS(Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping);
 }

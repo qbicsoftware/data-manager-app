@@ -343,6 +343,7 @@ class MeasurementNGSValidatorSpec extends Specification {
 
         and:
         def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
+        ProjectId projectId = ProjectId.create()
 
 
         when:

@@ -394,14 +394,18 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
               List.of("The metadata sheet seems to be empty")));
       return new MeasurementValidationReport(0, validationResult);
     }
-
-    HashMap<String, CompletableFuture<ValidationResult>> tasks = new HashMap<>();
+    ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      tasks.put(row, validateNGSRow(propertyColumnMap, row));
+      tasks.add(validateNGSRow(propertyColumnMap, row).thenAccept(concurrentLinkedDeque::add));
     }
 
-    return new MeasurementValidationReport(evaluatedRows, validationResult);
+    CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+
+    return new MeasurementValidationReport(concurrentLinkedDeque.size(),
+        concurrentLinkedDeque.stream().reduce(
+            validationResult, ValidationResult::combine));
   }
 
   private MeasurementValidationReport validatePxP(MetadataContent content) {

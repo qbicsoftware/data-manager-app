@@ -1,11 +1,14 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
@@ -14,6 +17,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,13 +33,11 @@ import org.springframework.stereotype.Component;
 public class MeasurementNGSValidator implements
     MeasurementValidator<NGSMeasurementMetadata> {
 
-  private final SampleInformationService sampleInformationService;
-
+  private static final Logger log = logger(MeasurementNGSValidator.class);
   protected final MeasurementService measurementService;
-
   protected final OntologyLookupService ontologyLookupService;
-
   protected final ProjectInformationService projectInformationService;
+  private final SampleInformationService sampleInformationService;
 
   @Autowired
   public MeasurementNGSValidator(SampleInformationService sampleInformationService,
@@ -93,14 +95,19 @@ public class MeasurementNGSValidator implements
   /**
    * Ignores sample ids but validates measurement ids.
    *
-   * @param metadata
-   * @return
-   * @since
+   * @param metadata, {@link NGSMeasurementMetadata} of the measurement to be updated
+   * @param projectId Id of the project to which the measurement belongs to, necessary to check user permission
+   * @return ValidationResult
    */
-  public ValidationResult validateUpdate(NGSMeasurementMetadata metadata) {
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
     var validationPolicy = new MeasurementNGSValidator.ValidationPolicy();
-    return validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
-        .combine(validationPolicy.validateMandatoryDataForUpdate(metadata));
+    return metadata.associatedSamples().stream()
+        .map(sampleCode -> validationPolicy.validationProjectRelation(sampleCode, projectId))
+        .reduce(ValidationResult.successful(0),
+            ValidationResult::combine).combine(validationPolicy.validateMeasurementId(
+                metadata.measurementIdentifier().orElse(""))
+            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)));
   }
 
 
@@ -147,6 +154,28 @@ public class MeasurementNGSValidator implements
       return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
           ValidationResult.withFailures(1,
               List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationProjectRelation(SampleCode sampleCode, ProjectId projectId) {
+      var projectQuery = projectInformationService.find(projectId);
+      if (projectQuery.isEmpty()) {
+        log.error("No project information found for projectId: " + projectId);
+        throw new ValidationException("This should not happen, please try again.");
+      }
+      var experimentIds = projectQuery.get().experiments();
+      var sampleQuery = sampleInformationService.findSampleId(sampleCode).flatMap(
+          sampleIdCodeEntry -> sampleInformationService.findSample(sampleIdCodeEntry.sampleId()));
+      if (sampleQuery.isEmpty()) {
+        log.error("No sample information found for sample id: " + sampleCode);
+        return ValidationResult.withFailures(1,
+            List.of("No sample information found for sample id: %s".formatted(sampleCode.code())));
+      }
+      if (experimentIds.contains(sampleQuery.get().experimentId())) {
+        return ValidationResult.successful(1);
+      }
+      return ValidationResult.withFailures(1,
+          List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
     }
 
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {

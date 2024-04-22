@@ -196,7 +196,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           "This might take a minute");
       //Necessary so the dialog window switches to show the upload progress
       UI.getCurrent().push();
-      CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture = new CompletableFuture();
+      CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
       if (measurementMetadataUploadDialog.getMode().equals(MODE.EDIT)) {
         completableFuture = measurementService.updateAll(upload.measurementMetadata(),
             context.projectId().orElseThrow());

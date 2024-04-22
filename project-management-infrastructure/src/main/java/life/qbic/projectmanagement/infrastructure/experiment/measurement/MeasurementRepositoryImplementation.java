@@ -114,12 +114,17 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public void updateAll(Collection<ProteomicsMeasurement> measurements) {
+  public void updateAllProteomics(Collection<ProteomicsMeasurement> measurements) {
     pxpMeasurementJpaRepo.saveAll(measurements);
   }
 
   @Override
-  public void saveAll(
+  public void updateAllNGS(Collection<NGSMeasurement> measurements) {
+    ngsMeasurementJpaRepo.saveAll(measurements);
+  }
+
+  @Override
+  public void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
     try {
       pxpMeasurementJpaRepo.saveAll(proteomicsMeasurementsMapping.keySet());
@@ -128,10 +133,28 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       throw e;
     }
     try {
-      measurementDataRepo.saveAll(proteomicsMeasurementsMapping);
+      measurementDataRepo.saveAllProteomics(proteomicsMeasurementsMapping);
     } catch (RuntimeException e) {
       log.error("Saving proteomics measurement in data repo failed", e);
       pxpMeasurementJpaRepo.deleteAll(proteomicsMeasurementsMapping.keySet());
+      throw e;
+    }
+  }
+
+  @Override
+  public void saveAllNGS(
+      Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping) {
+    try {
+      ngsMeasurementJpaRepo.saveAll(ngsMeasurementsMapping.keySet());
+    } catch (RuntimeException e) {
+      log.error("Saving ngs measurement failed", e);
+      throw e;
+    }
+    try {
+      measurementDataRepo.saveAllNGS(ngsMeasurementsMapping);
+    } catch (RuntimeException e) {
+      log.error("Saving ngs measurement in data repo failed", e);
+      ngsMeasurementJpaRepo.deleteAll(ngsMeasurementsMapping.keySet());
       throw e;
     }
   }
