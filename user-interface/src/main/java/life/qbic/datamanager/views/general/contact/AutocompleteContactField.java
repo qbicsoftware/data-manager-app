@@ -86,7 +86,7 @@ public class AutocompleteContactField extends CustomField<Contact> implements
         .bind(Contact::getEmail,
             Contact::setEmail);
 
-    Div preselectLayout = new Div(contactSelection, selfSelect);
+    Div preselectLayout = new Div(selfSelect, contactSelection);
     preselectLayout.addClassName("prefill-input-fields");
 
     Div layout = new Div(nameField, emailField);

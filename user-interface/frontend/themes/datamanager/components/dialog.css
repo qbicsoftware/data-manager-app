@@ -211,7 +211,7 @@ vaadin-dialog-overlay::part(title) {
 .contact-field .prefill-input-fields {
   line-height: 0;
   display: flex;
-  gap: 1em;
+  flex-direction: column;
   align-items: baseline;
 }
 
