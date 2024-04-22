@@ -1,8 +1,10 @@
 package life.qbic.projectmanagement.application.api;
 
+import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 public interface ProjectPreviewLookup {
 
@@ -23,9 +25,11 @@ public interface ProjectPreviewLookup {
    * @param offset     the offset for the search result to start
    * @param limit      the maximum number of results that should be returned
    * @param sortOrders the ordering to sort by
+   * @param projectIds the projectIds to which the user has access to
    * @return the results in the provided range
    * @since 1.0.0
    */
-  List<ProjectPreview> query(String filter, int offset, int limit, List<SortOrder> sortOrders);
+  List<ProjectPreview> query(String filter, int offset, int limit, List<SortOrder> sortOrders,
+      Collection<ProjectId> projectIds);
 
 }

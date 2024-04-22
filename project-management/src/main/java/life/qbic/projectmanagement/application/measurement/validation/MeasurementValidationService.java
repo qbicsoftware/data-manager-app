@@ -86,20 +86,9 @@ public class MeasurementValidationService {
     return CompletableFuture.completedFuture(result);
   }
 
-  /**
-   * Validates ngs measurement metadata asyncronically in the case of an update of a registered measurement.
-   *
-   * @param ngsMeasurementMetadata the measurement to validate
-   * @param projectId projectId of the project in which the NGS measurement Update should be performed
-   * @return a detailed {@link ValidationResult} with information about the validation
-   * @since 1.0.0
-   */
-  @Async
-  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-  public CompletableFuture<ValidationResult> validateNGSUpdate(
-      NGSMeasurementMetadata ngsMeasurementMetadata, ProjectId projectId) {
-    var result = measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
-    return CompletableFuture.completedFuture(result);
+  public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata,
+      ProjectId projectId) {
+    return measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {

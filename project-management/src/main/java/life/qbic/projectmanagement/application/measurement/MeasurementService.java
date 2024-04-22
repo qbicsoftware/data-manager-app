@@ -580,7 +580,7 @@ public class MeasurementService {
   public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> updateAll(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
-    List<Result<MeasurementId, ErrorCode>> results = new ArrayList<>();
+    List<Result<MeasurementId, ErrorCode>> results;
 
     try {
       results = performUpdate(mergedSamplePoolGroups, projectId);
@@ -598,12 +598,17 @@ public class MeasurementService {
     if (measurementMetadataList.isEmpty()) {
       return new ArrayList<>(); // Nothing to do
     }
-    if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
-      return performUpdatePxp(measurementMetadataList, projectId);
+    try {
+      if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
+        return performUpdatePxp(measurementMetadataList, projectId);
+      }
+      if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
+        return performUpdateNGS(measurementMetadataList, projectId);
+      }
+    } catch (Exception exception) {
+      throw new MeasurementRegistrationException(ErrorCode.FAILED);
     }
-    if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
-      return performUpdateNGS(measurementMetadataList, projectId);
-    }
+
     throw new MeasurementRegistrationException(ErrorCode.FAILED);
   }
 
