@@ -84,6 +84,7 @@ public class MeasurementProteomicsValidator implements
   }
 
   @Override
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();

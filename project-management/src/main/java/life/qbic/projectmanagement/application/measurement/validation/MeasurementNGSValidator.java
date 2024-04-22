@@ -13,6 +13,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
@@ -68,6 +69,7 @@ public class MeasurementNGSValidator implements
   }
 
   @Override
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validate(NGSMeasurementMetadata measurementMetadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
