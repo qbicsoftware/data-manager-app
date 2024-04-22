@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -34,6 +35,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
+import life.qbic.datamanager.views.projects.project.samples.BatchDeletionConfirmationNotification;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -165,7 +167,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     editButton.addClickListener(event -> openEditMeasurementDialog());
 
     Button deleteButton = new Button("Delete");
-    deleteButton.addClickListener(event -> deleteSelectedMeasurements());
+    deleteButton.addClickListener(this::onDeleteMeasurementsClicked);
 
     Span buttonBar = new Span(downloadButton, editButton, deleteButton,
         registerMeasurementButton);
@@ -175,20 +177,32 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     content.add(buttonAndField);
   }
 
-  private void deleteSelectedMeasurements() {
+  private void onDeleteMeasurementsClicked(ClickEvent<Button> buttonClickEvent) {
     Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurementsInActiveGrid();
-    if(!selectedMeasurements.isEmpty()) {
-      Result<Void, MeasurementDeletionException> result = measurementService.deleteMeasurements(
-          context.projectId().orElseThrow(), selectedMeasurements);
-      result.onError(error -> {
-        String errorMessage = switch (error.reason()) {
-          case FAILED -> "Deletion failed. Please try again.";
-          case DATA_ATTACHED -> "Data is attached to one or more measurements.";
-        };
-        showErrorNotification("Deletion failed", errorMessage);
-      });
-      result.onValue(v -> measurementDetailsComponent.refreshActiveGrid());
+    if(selectedMeasurements.isEmpty()) {
+      return;
     }
+    MeasurementDeletionConfirmationNotification deletionConfirmationNotification = new MeasurementDeletionConfirmationNotification();
+    deletionConfirmationNotification.open();
+    deletionConfirmationNotification.addConfirmListener(event -> {
+      deleteSelectedMeasurements(selectedMeasurements);
+      deletionConfirmationNotification.close();
+    });
+    deletionConfirmationNotification.addCancelListener(
+        event -> deletionConfirmationNotification.close());
+  }
+
+  private void deleteSelectedMeasurements(Set<? extends MeasurementMetadata> selectedMeasurements) {
+    Result<Void, MeasurementDeletionException> result = measurementService.deleteMeasurements(
+          context.projectId().orElseThrow(), selectedMeasurements);
+    result.onError(error -> {
+      String errorMessage = switch (error.reason()) {
+        case FAILED -> "Deletion failed. Please try again.";
+        case DATA_ATTACHED -> "Data is attached to one or more measurements.";
+      };
+      showErrorNotification("Deletion failed", errorMessage);
+    });
+    result.onValue(v -> measurementDetailsComponent.refreshActiveGrid());
   }
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog, boolean editMode) {
