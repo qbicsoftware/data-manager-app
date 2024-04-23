@@ -12,10 +12,10 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
  */
 public class MeasurementDeletionConfirmationNotification extends NotificationDialog {
 
-  public MeasurementDeletionConfirmationNotification() {
+  public MeasurementDeletionConfirmationNotification(int amount) {
     customizeHeader();
     content.add(new Span(
-        "Are you sure you want to delete the selected measurements?"));
+        "Are you sure you want to delete %s selected measurements?".formatted(String.valueOf(amount))));
     setCancelable(true);
     setConfirmText("Confirm");
   }

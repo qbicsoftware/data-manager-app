@@ -148,6 +148,9 @@
   width: 100%;
 }
 
+.selected-checkbox-grid * vaadin-checkbox {
+}
+
 .measurement-details-component .measurement-grid .sample-code-column {
   display: flex;
   flex-direction: column;

@@ -169,8 +169,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Button deleteButton = new Button("Delete");
     deleteButton.addClickListener(this::onDeleteMeasurementsClicked);
 
+    Button deleteAll = new Button("Delete All");
+    deleteAll.addClickListener(this::onDeleteAllMeasurementsClicked);
+
     Span buttonBar = new Span(downloadButton, editButton, deleteButton,
-        registerMeasurementButton);
+        deleteAll, registerMeasurementButton);
     buttonBar.addClassName("button-bar");
     Span buttonAndField = new Span(measurementSearchField, buttonBar);
     buttonAndField.addClassName("buttonAndField");
@@ -178,18 +181,26 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void onDeleteMeasurementsClicked(ClickEvent<Button> buttonClickEvent) {
-    Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurementsInActiveGrid();
-    if(selectedMeasurements.isEmpty()) {
+    Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurements();
+    handleDeletionRequest(selectedMeasurements);
+  }
+
+  private void onDeleteAllMeasurementsClicked(ClickEvent<Button> buttonClickEvent) {
+    Set<? extends MeasurementMetadata> allMeasurements = measurementDetailsComponent.getAllDisplayedMeasurements();
+    handleDeletionRequest(allMeasurements);
+  }
+
+  private void handleDeletionRequest(Set<? extends MeasurementMetadata> measurements) {
+    if(measurements.isEmpty()) {
       return;
     }
-    MeasurementDeletionConfirmationNotification deletionConfirmationNotification = new MeasurementDeletionConfirmationNotification();
-    deletionConfirmationNotification.open();
-    deletionConfirmationNotification.addConfirmListener(event -> {
-      deleteSelectedMeasurements(selectedMeasurements);
-      deletionConfirmationNotification.close();
+    MeasurementDeletionConfirmationNotification notification = new MeasurementDeletionConfirmationNotification(measurements.size());
+    notification.open();
+    notification.addConfirmListener(event -> {
+      deleteSelectedMeasurements(measurements);
+      notification.close();
     });
-    deletionConfirmationNotification.addCancelListener(
-        event -> deletionConfirmationNotification.close());
+    notification.addCancelListener(event -> notification.close());
   }
 
   private void deleteSelectedMeasurements(Set<? extends MeasurementMetadata> selectedMeasurements) {
@@ -202,7 +213,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       };
       showErrorNotification("Deletion failed", errorMessage);
     });
-    result.onValue(v -> measurementDetailsComponent.refreshActiveGrid());
+    result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog, boolean editMode) {
