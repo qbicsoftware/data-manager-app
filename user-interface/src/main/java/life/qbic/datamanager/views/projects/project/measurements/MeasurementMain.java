@@ -47,6 +47,7 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 
 /**
@@ -192,7 +193,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     for (var upload : measurementMetadataUploads) {
       var measurementData = upload.measurementMetadata();
       measurementMetadataUploadDialog.taskInProgress(
-          "%s of %s measurements ...".formatted(process, measurementData.size()),
+          "%s of %s measurements ...".formatted(StringUtils.capitalize(process),
+              measurementData.size()),
           "This might take a minute");
       //Necessary so the dialog window switches to show the upload progress
       UI.getCurrent().push();
@@ -216,7 +218,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
               () -> measurementMetadataUploadDialog.taskSucceeded(
                   "Measurement %s is complete".formatted(process),
                   "Measurement %s for %s measurements was successful".formatted(process,
-                      results.size()))));
+                      measurementData.size()))));
         }
       }).join(); // we wait for the update to finish
     }

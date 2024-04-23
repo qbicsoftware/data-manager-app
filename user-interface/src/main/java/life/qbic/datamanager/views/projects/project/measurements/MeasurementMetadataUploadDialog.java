@@ -53,6 +53,7 @@ import life.qbic.projectmanagement.application.measurement.validation.Validation
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import org.springframework.util.StringUtils;
 
 
 /**
@@ -867,8 +868,9 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     public UploadProgressDisplay(MODE mode) {
 
       Objects.requireNonNull(mode, "Mode cannot be null");
-      String modeBasedTask = (mode == MODE.ADD ? "Register" : "Update");
-      Span title = new Span(String.format("%s the measurement data", modeBasedTask));
+      String modeBasedTask = (mode == MODE.ADD ? "register" : "update");
+      Span title = new Span(
+          String.format("%s" + " the measurement data", StringUtils.capitalize(modeBasedTask)));
       title.addClassNames("bold", "secondary");
       Span description = new Span(
           String.format("It may take about a minute for the %s process to complete",
