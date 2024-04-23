@@ -31,5 +31,6 @@ public interface MeasurementRepository {
 
   void updateAll(Collection<ProteomicsMeasurement> measurement);
 
-  void saveAll(Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
+  void saveAll(
+      Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
 }

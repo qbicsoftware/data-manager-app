@@ -19,6 +19,8 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.service.event.ProjectAccessGranted;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.acls.domain.GrantedAuthoritySid;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
@@ -30,6 +32,7 @@ import org.springframework.security.acls.model.AlreadyExistsException;
 import org.springframework.security.acls.model.MutableAcl;
 import org.springframework.security.acls.model.MutableAclService;
 import org.springframework.security.acls.model.NotFoundException;
+import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.security.acls.model.Permission;
 import org.springframework.security.acls.model.Sid;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,13 +42,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProjectAccessServiceImpl implements ProjectAccessService {
 
-  private final MutableAclService aclService;
   private static final Logger log = logger(ProjectAccessServiceImpl.class);
+  private final MutableAclService aclService;
+  private final JdbcTemplate jdbcTemplate;
 
-  public ProjectAccessServiceImpl(@Autowired MutableAclService aclService) {
+  public ProjectAccessServiceImpl(@Autowired MutableAclService aclService,
+      JdbcTemplate jdbcTemplate) {
     this.aclService = aclService;
+    this.jdbcTemplate = jdbcTemplate;
   }
-
 
   private static MutableAcl getAclForProject(ProjectId projectId, List<Sid> sids,
       MutableAclService mutableAclService) {
@@ -75,12 +80,17 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     return serviceImpl.createAcl(objectIdentity);
   }
 
+  private static Set<Permission> parsePermissions(
+      Entry<Sid, List<AccessControlEntry>> sidListEntry) {
+    return sidListEntry.getValue().stream()
+        .map(AccessControlEntry::getPermission)
+        .collect(Collectors.toSet());
+  }
 
   private void fireProjectAccessGranted(String userId, ProjectId projectId) {
     var projectAccessGranted = ProjectAccessGranted.create(userId, projectId.value());
     DomainEventDispatcher.instance().dispatch(projectAccessGranted);
   }
-
 
   @Override
   @Transactional
@@ -316,7 +326,49 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     }
 
     aclService.updateAcl(aclForProject);
+  }
 
+  @Override
+  public List<ProjectId> getAccessibleProjectsForSid(String sid) {
+    Object[] args = {sid, Project.class.getName()};
+    var accessibleProjectsForSid = jdbcTemplate.query(getProjectsWithAccessQuery(), getRowMapper(),
+        args);
+    var accessibleProjectIds = new ArrayList<ProjectId>();
+    if (!accessibleProjectsForSid.isEmpty()) {
+      accessibleProjectIds.addAll(accessibleProjectsForSid.stream().distinct()
+          .map(objectIdentity -> objectIdentity.getIdentifier().toString())
+          .map(ProjectId::parse).toList());
+    }
+    return accessibleProjectIds;
+  }
+
+  /*Taken and adapted from
+ https://stackoverflow.com/questions/30133667/how-to-get-a-list-of-objects-that-a-user-can-access-using-acls-related-tables#40275173*/
+  private static String getProjectsWithAccessQuery() {
+    return "SELECT " +
+        "    obj.object_id_identity AS obj_id, " +
+        "    class.class AS class " +
+        "FROM " +
+        "    acl_object_identity obj, " +
+        "    acl_class class, " +
+        "    acl_entry entry " +
+        "WHERE " +
+        "    obj.object_id_class = class.id " +
+        "    and entry.granting = true " +
+        "    and entry.acl_object_identity = obj.id " +
+        "    and entry.sid = (SELECT id FROM acl_sid WHERE sid = ?) " +
+        "    and obj.object_id_class = (SELECT id FROM acl_class WHERE acl_class.class = ?) " +
+        "GROUP BY " +
+        "    obj.object_id_identity, " +
+        "    class.class ";
+  }
+
+  private RowMapper<ObjectIdentity> getRowMapper() {
+    return (rs, rowNum) -> {
+      String javaType = rs.getString("class");
+      String identifier = rs.getString("obj_id");
+      return new ObjectIdentityImpl(javaType, identifier);
+    };
   }
 
   @Override
@@ -356,13 +408,6 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     return collaborators;
   }
 
-  private static Set<Permission> parsePermissions(
-      Entry<Sid, List<AccessControlEntry>> sidListEntry) {
-    return sidListEntry.getValue().stream()
-        .map(AccessControlEntry::getPermission)
-        .collect(Collectors.toSet());
-  }
-
   @Override
   @Transactional
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'ADMINISTRATION')")
@@ -370,4 +415,6 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     ObjectIdentityImpl objectIdentity = new ObjectIdentityImpl(Project.class, projectId);
     aclService.deleteAcl(objectIdentity, true);
   }
+
+
 }

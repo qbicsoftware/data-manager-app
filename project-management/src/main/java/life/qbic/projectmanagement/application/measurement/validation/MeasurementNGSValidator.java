@@ -37,7 +37,8 @@ public class MeasurementNGSValidator implements
 
   @Autowired
   public MeasurementNGSValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService, ProjectInformationService projectInformationService) {
+      OntologyLookupService ontologyLookupService,
+      ProjectInformationService projectInformationService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);

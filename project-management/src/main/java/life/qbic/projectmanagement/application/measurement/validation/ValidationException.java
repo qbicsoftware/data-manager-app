@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
-public class ValidationException extends RuntimeException{
+public class ValidationException extends RuntimeException {
 
   public ValidationException() {
   }

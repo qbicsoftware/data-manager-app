@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application
 
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
 import spock.lang.Specification
@@ -9,7 +10,8 @@ class ProjectInformationServiceSpec extends Specification {
 
     ProjectRepository projectRepository = Mock()
     ProjectPreviewLookup projectPreviewLookup = Mock()
-    ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository)
+    ProjectAccessService projectAccessService = Mock()
+    ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService)
 
     def project = setupProject()
 
