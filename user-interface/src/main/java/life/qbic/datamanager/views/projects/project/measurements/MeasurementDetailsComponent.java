@@ -236,7 +236,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           measurementItem.addEntry("Digestion Method", proteomicsMeasurement.digestionMethod());
           measurementItem.addEntry("Injection Volume",
               String.valueOf(proteomicsMeasurement.injectionVolume()));
-          measurementItem.addEntry("LCMS Method", proteomicsMeasurement.lcColumn());
+          measurementItem.addEntry("LCMS Method", proteomicsMeasurement.lcmsMethod());
           measurementItem.addEntry("Enrichment Method", proteomicsMeasurement.enrichmentMethod());
           measurementItem.addEntry("Fraction Name", proteomicsMeasurement.fraction().orElse(""));
           measurementItem.addEntry("Measurement Label", proteomicsMeasurement.label().orElse(""));
