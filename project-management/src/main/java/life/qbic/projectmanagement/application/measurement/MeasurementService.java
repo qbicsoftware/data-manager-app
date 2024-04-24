@@ -107,7 +107,7 @@ public class MeasurementService {
    * Merges a collection of {@link NGSMeasurementMetadata} items into one single
    * {@link NGSMeasurementMetadata} item.
    * <p>
-   * The method currently considers labels to be distinctly preserved, as well as the sample codes.
+   * The method currently considers the sample codes as preservable.
    * <p>
    * For all other properties, there is no guarantee from which item they are derived.
    *
@@ -450,9 +450,8 @@ public class MeasurementService {
     } catch (MeasurementRegistrationException e) {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     }
-
     try {
-      results = performRegistration(measurementMetadataList, projectId).stream()
+      results = performRegistration(mergedSamplePoolGroups, projectId).stream()
           .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
     } catch (MeasurementRegistrationException e) {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
@@ -467,16 +466,16 @@ public class MeasurementService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Transactional
   protected List<MeasurementId> performRegistration(
-      List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
+      List<? extends MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     if (measurementMetadataList.isEmpty()) {
       return new ArrayList<>(); // Nothing to do
     }
     if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
-      return performRegistrationPxp(measurementMetadataList, projectId);
+      return performRegistrationPxp((List<MeasurementMetadata>) measurementMetadataList, projectId);
 
     }
     if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
-      return performRegistrationNGS(measurementMetadataList, projectId);
+      return performRegistrationNGS((List<MeasurementMetadata>) measurementMetadataList, projectId);
     }
     throw new MeasurementRegistrationException(ErrorCode.FAILED);
   }

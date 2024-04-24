@@ -38,29 +38,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 @Entity(name = "ngs_measurements")
 public class NGSMeasurement implements MeasurementMetadata {
 
-  @EmbeddedId
-  @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
-  private MeasurementId id;
-
-  @Embedded
-  @Column(nullable = false)
-  private ProjectId projectId;
-
-  @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
-  private OntologyTerm instrument;
-
-  @Column(name = "samplePool")
-  private String samplePool = "";
-
-  @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
-  private MeasurementCode measurementCode;
-  @Column(name = "registrationTime")
-  private Instant registration;
-  @Embedded
-  private Organisation organisation;
-  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "ngs_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
-  private Collection<SampleId> measuredSamples;
   @Column(name = "facility")
   String facility = "";
   @Column(name = "readType")
@@ -77,6 +54,25 @@ public class NGSMeasurement implements MeasurementMetadata {
   String indexI5 = "";
   @Column(name = "comment")
   String comment = "";
+  @EmbeddedId
+  @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
+  private MeasurementId id;
+  @Embedded
+  @Column(nullable = false)
+  private ProjectId projectId;
+  @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
+  private OntologyTerm instrument;
+  @Column(name = "samplePool")
+  private String samplePool = "";
+  @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
+  private MeasurementCode measurementCode;
+  @Column(name = "registrationTime")
+  private Instant registration;
+  @Embedded
+  private Organisation organisation;
+  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
+  @CollectionTable(name = "ngs_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
+  private Collection<SampleId> measuredSamples;
 
   protected NGSMeasurement() {
     // Needed for JPA
@@ -122,9 +118,9 @@ public class NGSMeasurement implements MeasurementMetadata {
    * with many describing properties about provenance and instrumentation.
    *
    * @param projectId
-   * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
-   *                   one sample id is provided, the measurement is considered to be performed on a
-   *                   pooled sample
+   * @param sampleIds the sample ids of the samples the measurement was performed on. If more than
+   *                  one sample id is provided, the measurement is considered to be performed on a
+   *                  pooled sample
    * @return
    * @since 1.0.0
    */
@@ -139,7 +135,9 @@ public class NGSMeasurement implements MeasurementMetadata {
     requireNonNull(method, "method must not be null");
     requireNonNull(method.instrument(), "instrument must not be null");
     if (!measurementCode.isNGSDomain()) {
-      throw new IllegalArgumentException("NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode + "\"");
+      throw new IllegalArgumentException(
+          "NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode
+              + "\"");
     }
     var measurementId = MeasurementId.create();
     return new NGSMeasurement(measurementId, projectId, sampleIds, measurementCode, organisation,
@@ -172,7 +170,7 @@ public class NGSMeasurement implements MeasurementMetadata {
   }
 
   public Collection<SampleId> measuredSamples() {
-    return measuredSamples;
+    return measuredSamples.stream().toList();
   }
 
   public OntologyTerm instrument() {
