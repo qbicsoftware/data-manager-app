@@ -3,12 +3,9 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.grid.AbstractGridMultiSelectionModel;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
@@ -78,12 +75,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
-  private final Span selectedMeasurementsInfo;
   private transient Context context;
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
 
   private final ClientDetailsProvider clientDetailsProvider;
+  private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
       @Autowired SampleInformationService sampleInformationService,
@@ -93,8 +90,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.clientDetailsProvider = clientDetailsProvider;
     createProteomicsGrid();
     createNGSMeasurementGrid();
-    selectedMeasurementsInfo = new Span();
-    add(selectedMeasurementsInfo);
     add(registeredMeasurementsTabSheet);
     registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
@@ -294,7 +289,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       } else {
         selectedMeasurements.remove(measurement);
       }
-      updateSelectedMeasurementsInfo();
+      updateSelectedMeasurementsInfo(true);
     }
   }
 
@@ -307,9 +302,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return box;
   }
 
-  private void updateSelectedMeasurementsInfo() {
-    String text = "%s measurements are currently selected.".formatted(String.valueOf(selectedMeasurements.size()));
-    selectedMeasurementsInfo.setText(text);
+  private void updateSelectedMeasurementsInfo(boolean isFromClient) {
+    listeners.forEach(listener -> listener.onComponentEvent(new MeasurementSelectionChangedEvent(this, isFromClient)));
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
@@ -360,17 +354,42 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private void resetSelectedMeasurements() {
     selectedMeasurements.clear();
-    updateSelectedMeasurementsInfo();
+    updateSelectedMeasurementsInfo(false);
   }
 
   public Set<? extends MeasurementMetadata> getAllDisplayedMeasurements() {
-        if(registeredMeasurementsTabSheet.getSelectedTab().getLabel().equals("Proteomics")) {
-          return proteomicsMeasurementGrid.getLazyDataView().getItems().collect(Collectors.toSet());
-        }
-        if(registeredMeasurementsTabSheet.getSelectedTab().getLabel().equals("Genomics")) {
-          return ngsMeasurementGrid.getLazyDataView().getItems().collect(Collectors.toSet());
-        }
-        return Collections.emptySet();
+    String label = registeredMeasurementsTabSheet.getSelectedTab().getLabel();
+    if(label.equals("Proteomics")) {
+      return proteomicsMeasurementGrid.getLazyDataView().getItems().collect(Collectors.toSet());
+    }
+    if(label.equals("Genomics")) {
+      return ngsMeasurementGrid.getLazyDataView().getItems().collect(Collectors.toSet());
+    }
+    log.warn("Could not fetch measurements because tab with label %s unknown.".formatted(label));
+    return Collections.emptySet();
+  }
+
+  public void addListener(ComponentEventListener<MeasurementSelectionChangedEvent> listener) {
+    listeners.add(listener);
+  }
+
+  /**
+   * <b>Measurement Selection Changed Event</b>
+   * <p>
+   * Event that indicates that measurements were selected or deselected by the user or a deletion event
+   * {@link MeasurementDetailsComponent}
+   *
+   * @since 1.0.0
+   */
+  public class MeasurementSelectionChangedEvent extends
+      ComponentEvent<MeasurementDetailsComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 1213984633337676231L;
+
+    public MeasurementSelectionChangedEvent(MeasurementDetailsComponent source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 
 }

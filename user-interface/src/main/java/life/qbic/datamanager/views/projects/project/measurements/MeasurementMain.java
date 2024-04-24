@@ -35,7 +35,6 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.samples.BatchDeletionConfirmationNotification;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -72,6 +71,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static Disclaimer registerSamplesDisclaimer;
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
+  private final Span measurementsSelectedInfoBox = new Span();
   private final MeasurementDetailsComponent measurementDetailsComponent;
   private final MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
@@ -115,6 +115,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
+
+    measurementDetailsComponent.addListener(
+        selectionChangedEvent -> updateSelectedMeasurementInfo(selectionChangedEvent.getSource().getSelectedMeasurements()));
+
     add(downloadProvider);
     addClassName("measurement");
     log.debug(String.format(
@@ -169,32 +173,32 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Button deleteButton = new Button("Delete");
     deleteButton.addClickListener(this::onDeleteMeasurementsClicked);
 
-    Button deleteAll = new Button("Delete All");
-    deleteAll.addClickListener(this::onDeleteAllMeasurementsClicked);
-
-    Span buttonBar = new Span(downloadButton, editButton, deleteButton,
-        deleteAll, registerMeasurementButton);
+    Span buttonBar = new Span(downloadButton, editButton, deleteButton, registerMeasurementButton);
     buttonBar.addClassName("button-bar");
-    Span buttonAndField = new Span(measurementSearchField, buttonBar);
-    buttonAndField.addClassName("buttonAndField");
-    content.add(buttonAndField);
+    Span buttonsAndSearch = new Span(measurementSearchField, buttonBar);
+    buttonsAndSearch.addClassName("buttonAndField");
+    measurementsSelectedInfoBox.addClassName("info");
+    Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
+    interactionsAndInfo.addClassName("buttonsAndInfo");
+    content.add(interactionsAndInfo);
   }
 
   private void onDeleteMeasurementsClicked(ClickEvent<Button> buttonClickEvent) {
     Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurements();
-    handleDeletionRequest(selectedMeasurements);
+    handleDeletionRequest("Selected measurements will be deleted", selectedMeasurements);
   }
 
   private void onDeleteAllMeasurementsClicked(ClickEvent<Button> buttonClickEvent) {
     Set<? extends MeasurementMetadata> allMeasurements = measurementDetailsComponent.getAllDisplayedMeasurements();
-    handleDeletionRequest(allMeasurements);
+    handleDeletionRequest("Measurements in the table will be deleted", allMeasurements);
   }
 
-  private void handleDeletionRequest(Set<? extends MeasurementMetadata> measurements) {
+  private void handleDeletionRequest(String title, Set<? extends MeasurementMetadata> measurements) {
     if(measurements.isEmpty()) {
       return;
     }
-    MeasurementDeletionConfirmationNotification notification = new MeasurementDeletionConfirmationNotification(measurements.size());
+    MeasurementDeletionConfirmationNotification notification =
+        new MeasurementDeletionConfirmationNotification(title, measurements.size());
     notification.open();
     notification.addConfirmListener(event -> {
       deleteSelectedMeasurements(measurements);
@@ -447,6 +451,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           currentExperimentId, currentProjectId, routeToRawDataPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToRawDataPage));
     }
+  }
+
+  private void updateSelectedMeasurementInfo(Set<MeasurementMetadata> selectedMeasurements) {
+    System.err.println("changed");
+    System.err.println(selectedMeasurements.size());
+    String text = "%s measurements are currently selected.".formatted(String.valueOf(selectedMeasurements.size()));
+    measurementsSelectedInfoBox.setText(text);
   }
 
 

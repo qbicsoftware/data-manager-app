@@ -12,18 +12,18 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
  */
 public class MeasurementDeletionConfirmationNotification extends NotificationDialog {
 
-  public MeasurementDeletionConfirmationNotification(int amount) {
-    customizeHeader();
+  public MeasurementDeletionConfirmationNotification(String title, int amount) {
+    customizeHeader(title);
     content.add(new Span(
-        "Are you sure you want to delete %s selected measurements?".formatted(String.valueOf(amount))));
+        "Are you sure you want to delete %s measurements?".formatted(String.valueOf(amount))));
     setCancelable(true);
     setConfirmText("Confirm");
   }
 
-  private void customizeHeader() {
+  private void customizeHeader(String title) {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Measurements will be deleted");
+    setTitle(title);
     setHeaderIcon(errorIcon);
   }
 }
