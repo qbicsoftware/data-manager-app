@@ -180,8 +180,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent -> triggerMeasurementRegistration(confirmEvent.uploads(),
-        confirmEvent.getSource()));
+    dialog.addConfirmListener(confirmEvent ->
+    {
+      triggerMeasurementRegistration(confirmEvent.uploads(),
+          confirmEvent.getSource());
+      setMeasurementInformation();
+    });
     return dialog;
   }
 
