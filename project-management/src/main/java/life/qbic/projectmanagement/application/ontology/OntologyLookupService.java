@@ -41,8 +41,8 @@ public class OntologyLookupService {
       int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<OntologyClass> termList = ontologyTermLookup.query(new FilterTerm(filterTerm),
-        ontologyAbbreviations, offset,
-        limit, sortOrders);
+        ontologyAbbreviations, offset, limit, sortOrders)
+        .stream().distinct().toList();
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(termList);
   }
