@@ -81,18 +81,21 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     sampleLabelCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleLabel());
     setCellStyle(sampleLabelCol, NGSMeasurementColumns.SAMPLELABEL.readOnly());
 
-    entry.createCell(NGSMeasurementColumns.ORGANISATIONID.columnNumber())
-        .setCellValue(ngsMeasurementEntry.organisationId());
+    var orgIdCol = entry.createCell(NGSMeasurementColumns.ORGANISATIONID.columnNumber());
+    orgIdCol.setCellValue(ngsMeasurementEntry.organisationId());
+    setCellStyle(orgIdCol, NGSMeasurementColumns.ORGANISATIONID.readOnly());
 
     var organisationNameCol = entry.createCell(
         NGSMeasurementColumns.ORGANISATIONNAME.columnNumber());
     organisationNameCol.setCellValue(ngsMeasurementEntry.organisationName());
     setCellStyle(organisationNameCol, NGSMeasurementColumns.ORGANISATIONNAME.readOnly());
 
-    entry.createCell(NGSMeasurementColumns.FACILITY.columnNumber())
-        .setCellValue(ngsMeasurementEntry.facility());
-    entry.createCell(NGSMeasurementColumns.INSTRUMENT.columnNumber())
-        .setCellValue(ngsMeasurementEntry.instrumentCURI());
+    var facilityCol = entry.createCell(NGSMeasurementColumns.FACILITY.columnNumber());
+    facilityCol.setCellValue(ngsMeasurementEntry.facility());
+    setCellStyle(facilityCol, NGSMeasurementColumns.FACILITY.readOnly);
+    var instrumentCol = entry.createCell(NGSMeasurementColumns.INSTRUMENT.columnNumber());
+    instrumentCol.setCellValue(ngsMeasurementEntry.instrumentCURI());
+    setCellStyle(instrumentCol, NGSMeasurementColumns.INSTRUMENT.readOnly());
 
     var instrumentNameCol = entry.createCell(NGSMeasurementColumns.INSTRUMENTNAME.columnNumber());
     instrumentNameCol.setCellValue(ngsMeasurementEntry.instrumentName());
@@ -126,8 +129,9 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     indexI5Col.setCellValue(ngsMeasurementEntry.indexI5());
     setCellStyle(indexI5Col, NGSMeasurementColumns.INDEXI5.readOnly());
 
-    entry.createCell(NGSMeasurementColumns.COMMENT.columnNumber())
-        .setCellValue(ngsMeasurementEntry.comment());
+    var commentCol = entry.createCell(NGSMeasurementColumns.COMMENT.columnNumber());
+    commentCol.setCellValue(ngsMeasurementEntry.comment());
+    setCellStyle(commentCol, NGSMeasurementColumns.COMMENT.readOnly());
   }
 
   public void setMeasurements(List<NGSMeasurementEntry> measurements) {
@@ -224,7 +228,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     POOLGROUP("Sample Pool Group", 3,
         true),
     ORGANISATIONID("Organisation ID", 4,
-        true),
+        false),
     ORGANISATIONNAME("Organisation Name", 5,
         true),
     FACILITY("Facility", 6,
