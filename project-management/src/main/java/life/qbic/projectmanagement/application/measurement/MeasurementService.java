@@ -442,7 +442,7 @@ public class MeasurementService {
   @Async
   public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> registerAll(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
+    var mergedSamplePoolGroups = mergeRegisteredBySamplePoolGroup(measurementMetadataList);
     List<Result<MeasurementId, ErrorCode>> results;
 
     try {
@@ -630,15 +630,26 @@ public class MeasurementService {
   @Async
   public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> updateAll(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    var mergedSamplePoolGroups = mergeBySamplePoolGroup(measurementMetadataList);
     List<Result<MeasurementId, ErrorCode>> results;
 
+    var pooledMeasurements = mergeUpdatedBySamplePoolGroup(measurementMetadataList);
     try {
-      results = performUpdate(mergedSamplePoolGroups, projectId);
+      results = performUpdate(pooledMeasurements, projectId);
     } catch (MeasurementRegistrationException e) {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     }
     return CompletableFuture.completedFuture(results);
+  }
+
+  /**
+   * In an edit context, a measurement with a pooled sample group appears multiple times (once per
+   * row per sample). Since the user cannot change the sample group of a measurement within the edit
+   * context, we assume that the provided values for the first row of the pooled measurement are the
+   * ones were interested and discard the rest.
+   */
+  private List<MeasurementMetadata> mergeUpdatedBySamplePoolGroup(
+      List<MeasurementMetadata> measurementMetadata) {
+    return measurementMetadata.stream().distinct().toList();
   }
 
   @PreAuthorize(
@@ -761,7 +772,7 @@ public class MeasurementService {
   }
 
 
-  private List<? extends MeasurementMetadata> mergeBySamplePoolGroup(
+  private List<? extends MeasurementMetadata> mergeRegisteredBySamplePoolGroup(
       List<? extends MeasurementMetadata> measurementMetadataList) {
     if (measurementMetadataList.isEmpty()) {
       return measurementMetadataList;

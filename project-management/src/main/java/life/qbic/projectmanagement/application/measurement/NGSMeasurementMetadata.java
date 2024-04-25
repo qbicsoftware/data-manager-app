@@ -57,4 +57,21 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
         indexI5,
         metadata.comment());
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof NGSMeasurementMetadata that)) {
+      return false;
+    }
+
+    return measurementId.equals(that.measurementId);
+  }
+
+  @Override
+  public int hashCode() {
+    return measurementId.hashCode();
+  }
 }
