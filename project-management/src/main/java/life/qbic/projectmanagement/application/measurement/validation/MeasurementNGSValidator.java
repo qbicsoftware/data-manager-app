@@ -101,13 +101,15 @@ public class MeasurementNGSValidator implements
    */
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
   public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
-    var validationPolicy = new MeasurementNGSValidator.ValidationPolicy();
+    var validationPolicy = new ValidationPolicy();
     return metadata.associatedSamples().stream()
         .map(sampleCode -> validationPolicy.validationProjectRelation(sampleCode, projectId))
         .reduce(ValidationResult.successful(0),
             ValidationResult::combine).combine(validationPolicy.validateMeasurementId(
                 metadata.measurementIdentifier().orElse(""))
-            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)));
+            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)))
+        .combine(validationPolicy.validateOrganisation(metadata.organisationId())
+            .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())));
   }
 
 
