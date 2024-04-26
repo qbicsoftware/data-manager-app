@@ -51,7 +51,7 @@ public class OntologyLookupComponent extends PageArea {
   private final Div ontologyGridSection = new Div();
   private GridLazyDataView<OntologyClass> ontologyGridLazyDataView;
   private String searchTerm = "";
-  private final Span foundResults = new Span();
+  private final Span numberOfHitsInfo = new Span();
   private final transient OntologyLookupService ontologyTermInformationService;
   private static final int ONTOLOGY_SEARCH_LOWER_LIMIT = 2;
 
@@ -99,8 +99,8 @@ public class OntologyLookupComponent extends PageArea {
     ontologyGrid.addClassName("ontology-grid");
     ontologyGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     setLazyDataProviderForOntologyGrid(ontologyGrid);
-    ontologyGridSection.add(foundResults, ontologyGrid);
-    foundResults.addClassName("secondary");
+    ontologyGridSection.add(numberOfHitsInfo, ontologyGrid);
+    numberOfHitsInfo.addClassName("secondary");
     ontologyGridSection.addClassName("ontology-grid-section");
   }
 
@@ -132,8 +132,8 @@ public class OntologyLookupComponent extends PageArea {
   }
 
   private void showResultSection(boolean isVisible) {
-    foundResults.setVisible(isVisible);
-    foundResults.setText(
+    numberOfHitsInfo.setVisible(isVisible);
+    numberOfHitsInfo.setText(
         "%s results found".formatted(ontologyGridLazyDataView.getItems().count()));
     ontologyGridSection.setVisible(isVisible);
   }
