@@ -37,17 +37,32 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
     addSelectAllItemsListener();
   }
 
+  private boolean areAllSelected() {
+    return getLazyDataView().getItems().toList().size() == selectedItems.size();
+  }
+
   private Checkbox renderCheckbox(T bean) {
     Checkbox box = new Checkbox();
     box.addValueChangeListener(event -> {
+      var checkBoxSelectEvent = new CheckBoxSelectedEvent(box, bean, event.isFromClient());
+      updateSelectedItem(event.getValue(), bean);
+      listeners.forEach(listener -> listener.onComponentEvent(checkBoxSelectEvent));
+
       if (event.isFromClient()) {
-        var checkBoxSelectEvent = new CheckBoxSelectedEvent(box, bean, event.isFromClient());
-        updateSelectedItem(event.getValue(), bean);
-        listeners.forEach(listener -> listener.onComponentEvent(checkBoxSelectEvent));
+        if(selectAllCheckBox.getValue() && !box.getValue()) {
+          selectAllCheckBox.setValue(false);
+        } else if(!selectAllCheckBox.getValue() && areAllSelected()) {
+          System.err.println("all should be selected");
+          selectAllCheckBox.setValue(true);
+        }
       }
     });
     /*Necessary to propagate selection of select all checkbox to individual checkbox*/
-    selectAllCheckBox.addValueChangeListener(event -> box.setValue(event.getValue()));
+    selectAllCheckBox.addValueChangeListener(event -> {
+      if(event.isFromClient()) {
+        box.setValue(event.getValue());
+      }
+    });
     /*Necessary to keep items selected even if grid pagination is reloaded*/
     box.setValue(selectedItems.contains(bean));
     return box;
@@ -63,10 +78,12 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
   private void addSelectAllItemsListener() {
     selectAllCheckBox.addValueChangeListener(event -> {
-      if (event.getValue()) {
-        selectedItems.addAll(getLazyDataView().getItems().toList());
-      } else {
-        getLazyDataView().getItems().toList().forEach(selectedItems::remove);
+      if(event.isFromClient()) {
+        if (event.getValue()) {
+          selectedItems.addAll(getLazyDataView().getItems().toList());
+        } else {
+          getLazyDataView().getItems().toList().forEach(selectedItems::remove);
+        }
       }
       //Todo Should this be treated differently?
       var checkBoxSelectEvent = new CheckBoxSelectedEvent(selectAllCheckBox, null,
