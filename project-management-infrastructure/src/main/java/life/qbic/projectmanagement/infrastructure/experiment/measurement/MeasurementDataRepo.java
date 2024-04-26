@@ -21,7 +21,10 @@ public interface MeasurementDataRepo {
 
   void addProtemicsMeasurement(ProteomicsMeasurement proteomicsMeasurement, List<SampleCode> sampleCodes);
 
-  void saveAll(
+  void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
+
+  void saveAllNGS(
+      Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping);
 
 }

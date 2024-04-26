@@ -34,7 +34,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  * @since 1.0.0
  */
 @Entity(name = "proteomics_measurement")
-public class ProteomicsMeasurement implements MeasurementMetadata {
+public class ProteomicsMeasurement {
 
   @Column(name = "lcmsMethod")
   private String lcmsMethod = "";
@@ -216,7 +216,6 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return measuredSamples.size() > 1;
   }
 
-  @Override
   public MeasurementCode measurementCode() {
     return this.measurementCode;
   }

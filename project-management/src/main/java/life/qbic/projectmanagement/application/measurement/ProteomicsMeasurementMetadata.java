@@ -62,4 +62,21 @@ public record ProteomicsMeasurementMetadata(String measurementId,
   public List<SampleCode> associatedSamples() {
     return sampleCodes.stream().toList();
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ProteomicsMeasurementMetadata that)) {
+      return false;
+    }
+
+    return measurementId.equals(that.measurementId);
+  }
+
+  @Override
+  public int hashCode() {
+    return measurementId.hashCode();
+  }
 }
