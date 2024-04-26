@@ -116,7 +116,9 @@ public class MeasurementProteomicsValidator implements
         .reduce(ValidationResult.successful(0),
             ValidationResult::combine).combine(validationPolicy.validateMeasurementId(
                 metadata.measurementIdentifier().orElse(""))
-            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)));
+            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
+            .combine(validationPolicy.validateOrganisation(metadata.organisationId())
+                .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()))));
   }
 
   public enum PROTEOMICS_PROPERTY {

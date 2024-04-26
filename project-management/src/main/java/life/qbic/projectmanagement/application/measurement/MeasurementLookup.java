@@ -33,7 +33,7 @@ public interface MeasurementLookup {
 
   long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 
-  List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds);
-
   List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds);
+
+  List<NGSMeasurement> findNGSMeasurementsBySampleIds(Collection<SampleId> sampleIds);
 }

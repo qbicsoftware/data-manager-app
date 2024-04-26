@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
 import life.qbic.projectmanagement.application.ProjectInformationService
+import life.qbic.projectmanagement.application.measurement.MeasurementService
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService
@@ -13,7 +14,7 @@ import java.util.stream.Collectors
 
 class MeasurementNGSValidatorSpec extends Specification {
 
-    final static NGSMeasurementMetadata validMetadata = new NGSMeasurementMetadata([SampleCode.create("QTEST001AE")],
+    final static NGSMeasurementMetadata validMetadata = new NGSMeasurementMetadata("", [SampleCode.create("QTEST001AE")],
             "https://ror.org/03a1kwz48", //Universität Tübingen,
             "EFO:0004205", //Illumina MiSeq
             "My awesome facility",
@@ -39,6 +40,9 @@ class MeasurementNGSValidatorSpec extends Specification {
     final OntologyLookupService ontologyLookupService = Mock(OntologyLookupService.class, {
         findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
+
+    final MeasurementService measurementService = Mock(MeasurementService.class)
+
 
     final ProjectInformationService projectInformationService = Mock(ProjectInformationService.class)
 
@@ -105,7 +109,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
         when:
         def result = validator.validate(validMeasurementEntry, projectId)
@@ -123,7 +127,7 @@ class MeasurementNGSValidatorSpec extends Specification {
 
     def "An unknown sample code in a ngs measurement metadata object must return a failed validation "() {
         given:
-        NGSMeasurementMetadata invalidMeasurementMetadata = new NGSMeasurementMetadata([SampleCode.create("QNKWN001AE")],
+        NGSMeasurementMetadata invalidMeasurementMetadata = new NGSMeasurementMetadata("", [SampleCode.create("QNKWN001AE")],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "My awesome facility",
@@ -143,7 +147,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
         when:
         def result = validator.validate(invalidMeasurementMetadata, projectId)
@@ -162,7 +166,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         def unknownSample = SampleCode.create("QNKWN001AE")
 
         and:
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([sampleToBeFound, unknownSample],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [sampleToBeFound, unknownSample],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "My awesome facility",
@@ -182,7 +186,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         sampleInformationService.findSampleId(sampleToBeFound) >> Optional.of(sampleToBeFound)
         ProjectId projectId = ProjectId.create()
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
         when:
         def result = validator.validate(invalidMeasurementMetadata, projectId)
@@ -197,7 +201,7 @@ class MeasurementNGSValidatorSpec extends Specification {
 
     def "If no sample code is provided, the validation must fail"() {
         given:
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "My awesome facility",
@@ -216,7 +220,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
         when:
         def result = validator.validate(invalidMeasurementMetadata, projectId)
@@ -237,7 +241,7 @@ class MeasurementNGSValidatorSpec extends Specification {
     def "If an invalid ROR ID for the organisation information is provided, the validation must fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [validSampleCode],
                 invalidRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "My awesome facility",
@@ -257,7 +261,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
 
         when:
@@ -282,7 +286,7 @@ class MeasurementNGSValidatorSpec extends Specification {
     def "If no RoRId was provided for the organisation information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [validSampleCode],
                 "", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "My awesome facility",
@@ -301,7 +305,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
         ProjectId projectId = ProjectId.create()
 
 
@@ -319,7 +323,7 @@ class MeasurementNGSValidatorSpec extends Specification {
     def "If an valid ROR ID for the organisation information is provided, the validation must pass"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [],
                 validRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "My awesome facility",
@@ -338,8 +342,9 @@ class MeasurementNGSValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
         ProjectId projectId = ProjectId.create()
+
 
         when:
         def result = validator.validate(validMetadata, projectId)
@@ -359,7 +364,7 @@ class MeasurementNGSValidatorSpec extends Specification {
     def "If no instrument Curie for the instrument information is provided, the validation must fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "", //Illumina MiSeq
                 "My awesome facility",
@@ -378,7 +383,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
         ProjectId projectId = ProjectId.create()
 
         when:
@@ -396,7 +401,7 @@ class MeasurementNGSValidatorSpec extends Specification {
     def "If a valid instrument curie for the instrument information is provided, the validation must pass"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def validMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
+        def validMeasurementMetadata = new NGSMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 validInstrumentCurie, //Illumina MiSeq
                 "My awesome facility",
@@ -416,7 +421,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
 
         when:
@@ -436,7 +441,7 @@ class MeasurementNGSValidatorSpec extends Specification {
     def "If no value was provided for the facility information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "",
@@ -456,7 +461,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
 
         when:
@@ -473,7 +478,7 @@ class MeasurementNGSValidatorSpec extends Specification {
     def "If no value was provided for the sequencing read type information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        def invalidMeasurementMetadata = new NGSMeasurementMetadata([validSampleCode],
+        def invalidMeasurementMetadata = new NGSMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "My awesome facility",
@@ -493,7 +498,7 @@ class MeasurementNGSValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService)
+        def validator = new MeasurementNGSValidator(sampleInformationService, ontologyLookupService, projectInformationService, measurementService)
 
 
         when:

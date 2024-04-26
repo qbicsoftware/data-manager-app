@@ -25,12 +25,20 @@ public interface MeasurementRepository {
 
   Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurement measurement, List<SampleCode> sampleCodes);
 
-  Optional<ProteomicsMeasurement> find(String measurementCode);
+  Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode);
 
-  void update(ProteomicsMeasurement measurement);
+  Optional<NGSMeasurement> findNGSMeasurement(String measurementCode);
 
-  void updateAll(Collection<ProteomicsMeasurement> measurement);
+  void updateProteomics(ProteomicsMeasurement measurement);
 
-  void saveAll(
+  void updateNGS(NGSMeasurement measurement);
+
+  void updateAllProteomics(Collection<ProteomicsMeasurement> measurement);
+
+  void updateAllNGS(Collection<NGSMeasurement> measurement);
+
+  void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
+
+  void saveAllNGS(Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping);
 }

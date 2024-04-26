@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -58,9 +60,12 @@ public class RawDataService {
     if (measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) == 0) {
       return false;
     }
-    var measurements = measurementLookupService.retrieveAllMeasurementsWithSampleIds(
-        samplesInExperiment);
-    var codes = measurements.stream().map(MeasurementMetadata::measurementCode).toList();
+    var ngsMeasurementCodes = measurementLookupService.queryAllNGSMeasurement(samplesInExperiment)
+        .stream().map(NGSMeasurement::measurementCode);
+    var pxpMeasurementCodes = measurementLookupService.queryAllProteomicsMeasurement(
+        samplesInExperiment).stream().map(ProteomicsMeasurement::measurementCode);
+    var codes = Stream.concat(ngsMeasurementCodes, pxpMeasurementCodes)
+        .collect(Collectors.toList());
     return rawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
   }
 
