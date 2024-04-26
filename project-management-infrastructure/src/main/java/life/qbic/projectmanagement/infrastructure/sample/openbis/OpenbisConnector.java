@@ -56,6 +56,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.DataRepoConnectionTester;
 import life.qbic.projectmanagement.application.rawdata.RawDataLookup;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
 import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataDatasetInformation;
@@ -81,7 +82,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo,
-    MeasurementDataRepo, RawDataLookup {
+    MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester {
 
   private static final Logger log = logger(OpenbisConnector.class);
 
@@ -624,6 +625,21 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   @Override
   public boolean projectExists(ProjectCode projectCode) {
     return !searchProjectsByCode(projectCode.value()).isEmpty();
+  }
+
+  @Override
+  public void testDatastoreServer() {
+    int major = datastoreServer.getMajorVersion();
+    int minor = datastoreServer.getMinorVersion();
+    log.info("Successfully tested connection to openBIS datastore server version: %d.%d".formatted(major, minor));
+  }
+
+  @Override
+  public void testApplicationServer() {
+    try (OpenBisSession session = sessionFactory.getSession()) {
+      applicationServer.isSessionActive(session.getToken());
+      log.info("Successfully tested connection to openBIS application server.");
+    }
   }
 
   // Convenience RTE to describe connection issues
