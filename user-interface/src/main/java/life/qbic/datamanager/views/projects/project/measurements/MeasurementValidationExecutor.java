@@ -18,8 +18,10 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  */
 public interface MeasurementValidationExecutor<MeasurementMetadata> {
 
-  CompletableFuture<ValidationResult> validateRegistration(MeasurementMetadata metadata, ProjectId projectId);
+  CompletableFuture<ValidationResult> validateRegistration(MeasurementMetadata metadata,
+      ProjectId projectId);
 
-  CompletableFuture<ValidationResult> validateUpdate(MeasurementMetadata metadata, ProjectId projectId);
+  CompletableFuture<ValidationResult> validateUpdate(MeasurementMetadata metadata,
+      ProjectId projectId);
 
 }

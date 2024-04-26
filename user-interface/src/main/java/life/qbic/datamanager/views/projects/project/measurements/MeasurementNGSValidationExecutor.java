@@ -28,12 +28,14 @@ public class MeasurementNGSValidationExecutor implements
     this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
   }
   @Override
-  public CompletableFuture<ValidationResult> validateRegistration(NGSMeasurementMetadata metadata, ProjectId projectId) {
-    return CompletableFuture.completedFuture(measurementValidationService.validateNGS(metadata, projectId));
+  public CompletableFuture<ValidationResult> validateRegistration(NGSMeasurementMetadata metadata,
+      ProjectId projectId) {
+    return CompletableFuture.completedFuture(
+        measurementValidationService.validateNGS(metadata, projectId));
   }
   @Override
-  public CompletableFuture<ValidationResult> validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
-    //Todo provide edit validation for ngs;
-    return null;
+  public CompletableFuture<ValidationResult> validateUpdate(NGSMeasurementMetadata metadata,
+      ProjectId projectId) {
+    return measurementValidationService.validateNGSUpdate(metadata, projectId);
   }
 }

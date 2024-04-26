@@ -20,6 +20,7 @@ import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.identity.domain.service.UserDomainService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.DataRepoConnectionTester;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -27,7 +28,6 @@ import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConf
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * The entry point of the Spring Boot application.
@@ -54,7 +54,12 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
   public static void main(String[] args) {
     log.info("Starting data manager app...");
+
     var appContext = SpringApplication.run(Application.class, args);
+
+    var connectionTester = appContext.getBean(DataRepoConnectionTester.class);
+    connectionTester.testApplicationServer();
+    connectionTester.testDatastoreServer();
 
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);

@@ -74,7 +74,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       return Result.fromError(ResponseCode.FAILED);
     }
     try {
-      measurementDataRepo.addProtemicsMeasurement(measurement, sampleCodes);
+      measurementDataRepo.addProteomicsMeasurement(measurement, sampleCodes);
     } catch (RuntimeException e) {
       log.error("Saving proteomics measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
@@ -86,7 +86,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public Optional<ProteomicsMeasurement> find(String measurementCode) {
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
     try {
       var code = MeasurementCode.parse(measurementCode);
       return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(code);
@@ -94,31 +94,38 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       log.error("Illegal measurement code: " + measurementCode, e);
       return Optional.empty();
     }
-
   }
 
   @Override
-  public void deleteAll(Set<? extends MeasurementMetadata> measurements) {
+  public void deleteAllProteomics(Set<ProteomicsMeasurement> measurements) {
     if(measurements.isEmpty()) {
       return;
     }
-    Optional<? extends MeasurementMetadata> first = measurements.stream().findFirst();
-    MeasurementMetadata firstMeasurement = first.isPresent() ? first.get() : null;
-
-    if(measurementDataRepo.hasDataAttached(measurements)) {
+    List<MeasurementCode> measurementCodes = measurements.stream()
+        .map(ProteomicsMeasurement::measurementCode).toList();
+    if(measurementDataRepo.hasDataAttached(measurementCodes)) {
       throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
     }
     try {
-      if (firstMeasurement instanceof ProteomicsMeasurement) {
-        List<ProteomicsMeasurement> ptxMeasurements = measurements.stream()
-            .map(m -> (ProteomicsMeasurement) m).toList();
-        deleteAllPtx(ptxMeasurements);
-      }
-      if (firstMeasurement instanceof NGSMeasurement) {
-        List<NGSMeasurement> ngsMeasurements = measurements.stream().map(m -> (NGSMeasurement) m)
-            .toList();
-        deleteAllNGS(ngsMeasurements);
-      }
+      deleteAllPtx(measurements.stream().toList());
+    } catch (Exception e) {
+      log.error("Measurement deletion failed due to " + e.getMessage());
+      throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
+    }
+  }
+
+  @Override
+  public void deleteAllNGS(Set<NGSMeasurement> measurements) {
+    if(measurements.isEmpty()) {
+      return;
+    }
+    List<MeasurementCode> measurementCodes = measurements.stream()
+        .map(NGSMeasurement::measurementCode).toList();
+    if(measurementDataRepo.hasDataAttached(measurementCodes)) {
+      throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
+    }
+    try {
+      deleteAllNGS(measurements.stream().toList());
     } catch (Exception e) {
       log.error("Measurement deletion failed due to " + e.getMessage());
       throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
@@ -136,17 +143,38 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
-  public void update(ProteomicsMeasurement measurement) {
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
+    try {
+      var code = MeasurementCode.parse(measurementCode);
+      return ngsMeasurementJpaRepo.findNGSMeasurementByMeasurementCode(code);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement code: " + measurementCode, e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public void updateProteomics(ProteomicsMeasurement measurement) {
     pxpMeasurementJpaRepo.save(measurement);
   }
 
   @Override
-  public void updateAll(Collection<ProteomicsMeasurement> measurements) {
+  public void updateNGS(NGSMeasurement measurement) {
+    ngsMeasurementJpaRepo.save(measurement);
+  }
+
+  @Override
+  public void updateAllProteomics(Collection<ProteomicsMeasurement> measurements) {
     pxpMeasurementJpaRepo.saveAll(measurements);
   }
 
   @Override
-  public void saveAll(
+  public void updateAllNGS(Collection<NGSMeasurement> measurements) {
+    ngsMeasurementJpaRepo.saveAll(measurements);
+  }
+
+  @Override
+  public void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
     try {
       pxpMeasurementJpaRepo.saveAll(proteomicsMeasurementsMapping.keySet());
@@ -155,10 +183,28 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       throw e;
     }
     try {
-      measurementDataRepo.saveAll(proteomicsMeasurementsMapping);
+      measurementDataRepo.saveAllProteomics(proteomicsMeasurementsMapping);
     } catch (RuntimeException e) {
       log.error("Saving proteomics measurement in data repo failed", e);
       pxpMeasurementJpaRepo.deleteAll(proteomicsMeasurementsMapping.keySet());
+      throw e;
+    }
+  }
+
+  @Override
+  public void saveAllNGS(
+      Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping) {
+    try {
+      ngsMeasurementJpaRepo.saveAll(ngsMeasurementsMapping.keySet());
+    } catch (RuntimeException e) {
+      log.error("Saving ngs measurement failed", e);
+      throw e;
+    }
+    try {
+      measurementDataRepo.saveAllNGS(ngsMeasurementsMapping);
+    } catch (RuntimeException e) {
+      log.error("Saving ngs measurement in data repo failed", e);
+      ngsMeasurementJpaRepo.deleteAll(ngsMeasurementsMapping.keySet());
       throw e;
     }
   }

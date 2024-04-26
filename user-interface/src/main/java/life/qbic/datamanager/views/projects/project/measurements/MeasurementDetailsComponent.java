@@ -174,6 +174,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       measurementItem.addEntry("Run Protocol", ngsMeasurement.sequencingRunProtocol().orElse(""));
       measurementItem.addEntry("Index I7", ngsMeasurement.indexI7().orElse(""));
       measurementItem.addEntry("Index I5", ngsMeasurement.indexI5().orElse(""));
+      measurementItem.addEntry("Sample Pool", ngsMeasurement.samplePoolGroup().orElse(""));
       measurementItem.addEntry("Registration Date",
           asClientLocalDateTime(ngsMeasurement.registrationDate())
               .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
@@ -305,9 +306,23 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .toList();
   }
 
-  public Set<MeasurementMetadata> getSelectedMeasurements() {
-    return Stream.concat(ngsMeasurementGrid.getSelectedItems().stream(),
-        proteomicsMeasurementGrid.getSelectedItems().stream()).collect(Collectors.toSet());
+  public int getNumberOfSelectedMeasurements() {
+    String label = getSelectedTabName();
+    if(label.equals("Proteomics")) {
+      return getSelectedProteomicsMeasurements().size();
+    }
+    if(label.equals("Genomics")) {
+      return getSelectedNGSMeasurements().size();
+    }
+    return 0;
+  }
+
+  public Set<NGSMeasurement> getSelectedNGSMeasurements() {
+    return ngsMeasurementGrid.getSelectedItems().stream().collect(Collectors.toSet());
+  }
+
+  public Set<ProteomicsMeasurement> getSelectedProteomicsMeasurements() {
+    return proteomicsMeasurementGrid.getSelectedItems().stream().collect(Collectors.toSet());
   }
 
   public void refreshGrids() {
@@ -322,8 +337,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ngsMeasurementGrid.clearSelectedItems();
   }
 
+  /*
   public Set<? extends MeasurementMetadata> getAllDisplayedMeasurements() {
-    String label = registeredMeasurementsTabSheet.getSelectedTab().getLabel();
+    String label = getSelectedTabName();
     if(label.equals("Proteomics")) {
       return proteomicsMeasurementGrid.getLazyDataView().getItems().collect(Collectors.toSet());
     }
@@ -333,6 +349,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     log.warn("Could not fetch measurements because tab with label %s unknown.".formatted(label));
     return Collections.emptySet();
   }
+   */
 
   public void addListener(ComponentEventListener<MeasurementSelectionChangedEvent> listener) {
     listeners.add(listener);
@@ -357,4 +374,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
+  //Todo introduce custom tab with label and updateable count
+  public String getSelectedTabName() {
+    return registeredMeasurementsTabSheet.getSelectedTab().getLabel();
+  }
 }

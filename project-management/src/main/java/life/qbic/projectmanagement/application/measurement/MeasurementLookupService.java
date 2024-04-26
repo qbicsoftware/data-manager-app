@@ -80,10 +80,6 @@ public class MeasurementLookupService {
         + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
   }
 
-  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
-    return measurementLookup.retrieveAllMeasurementsWithSampleIds(sampleIds);
-  }
-
   public List<ProteomicsMeasurement> queryAllProteomicsMeasurements(List<SampleId> sampleIds) {
     return measurementLookup.findProteomicsMeasurementsBySampleIds(sampleIds);
   }
@@ -93,6 +89,14 @@ public class MeasurementLookupService {
   }
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
-    return measurementRepository.find(measurementId);
+    return measurementRepository.findProteomicsMeasurement(measurementId);
+  }
+
+  public List<NGSMeasurement> queryAllNGSMeasurement(List<SampleId> sampleIds) {
+    return measurementLookup.findNGSMeasurementsBySampleIds(sampleIds);
+  }
+
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementId) {
+    return measurementRepository.findNGSMeasurement(measurementId);
   }
 }

@@ -17,8 +17,11 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
@@ -33,6 +36,7 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -43,9 +47,13 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 
 /**
@@ -81,7 +89,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
   private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
-  private final DownloadProvider downloadProvider;
+  private final NGSMeasurementContentProvider ngsMeasurementContentProvider;
+  private final DownloadProvider ngsDownloadProvider;
+  private final DownloadProvider proteomicsDownloadProvider;
   private transient Context context;
 
   public MeasurementMain(
@@ -100,7 +110,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.measurementService = measurementService;
     this.measurementPresenter = measurementPresenter;
     this.proteomicsMeasurementContentProvider = new ProteomicsMeasurementContentProvider();
-    this.downloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
+    this.ngsMeasurementContentProvider = new NGSMeasurementContentProvider();
+    this.ngsDownloadProvider = new DownloadProvider(ngsMeasurementContentProvider);
+    this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
     this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     measurementTemplateDownload = new MeasurementTemplateDownload();
@@ -116,9 +128,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementDetailsComponent);
 
     measurementDetailsComponent.addListener(
-        selectionChangedEvent -> updateSelectedMeasurementInfo(selectionChangedEvent.getSource().getSelectedMeasurements()));
+        selectionChangedEvent -> updateSelectedMeasurementInfo(selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
 
-    add(downloadProvider);
+    add(ngsDownloadProvider);
+    add(proteomicsDownloadProvider);
     addClassName("measurement");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
@@ -129,7 +142,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
     return switch (errorCode) {
-      case FAILED -> "Registration failed. Please try again.";
+      case FAILED -> "Registration failed";
       case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
       case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
       case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
@@ -160,7 +173,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementSearchField.addValueChangeListener(
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
     Button downloadButton = new Button("Download Metadata");
-    downloadButton.addClickListener(event -> downloadMetadata());
+    downloadButton.addClickListener(event -> downloadMetadataForSelectedTab());
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
@@ -177,33 +190,63 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Span buttonsAndSearch = new Span(measurementSearchField, buttonBar);
     buttonsAndSearch.addClassName("buttonAndField");
     measurementsSelectedInfoBox.addClassName("info");
+    updateSelectedMeasurementInfo(0);
     Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
     interactionsAndInfo.addClassName("buttonsAndInfo");
     content.add(interactionsAndInfo);
   }
 
   private void onDeleteMeasurementsClicked() {
-    Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurements();
-    handleDeletionRequest("Selected measurements will be deleted", selectedMeasurements);
+    String label = measurementDetailsComponent.getSelectedTabName();
+    if(label.equals("Proteomics")) {
+      handlePtxDeletionRequest(measurementDetailsComponent.getSelectedProteomicsMeasurements());
+    }
+    if(label.equals("Genomics")) {
+      handleNGSDeletionRequest(measurementDetailsComponent.getSelectedNGSMeasurements());
+    }
   }
 
-  private void handleDeletionRequest(String title, Set<? extends MeasurementMetadata> measurements) {
+  private void handlePtxDeletionRequest(Set<ProteomicsMeasurement> measurements) {
     if(measurements.isEmpty()) {
       return;
     }
     MeasurementDeletionConfirmationNotification notification =
-        new MeasurementDeletionConfirmationNotification(title, measurements.size());
+        new MeasurementDeletionConfirmationNotification("Selected proteomics measurements will be deleted", measurements.size());
     notification.open();
     notification.addConfirmListener(event -> {
-      deleteSelectedMeasurements(measurements);
+      deletePtxMeasurements(measurements);
       notification.close();
     });
     notification.addCancelListener(event -> notification.close());
   }
 
-  private void deleteSelectedMeasurements(Set<? extends MeasurementMetadata> selectedMeasurements) {
-    Result<Void, MeasurementDeletionException> result = measurementService.deleteMeasurements(
-          context.projectId().orElseThrow(), selectedMeasurements);
+  private void handleNGSDeletionRequest(Set<NGSMeasurement> measurements) {
+    if(measurements.isEmpty()) {
+      return;
+    }
+    MeasurementDeletionConfirmationNotification notification =
+        new MeasurementDeletionConfirmationNotification("Selected genomics measurements will be deleted", measurements.size());
+    notification.open();
+    notification.addConfirmListener(event -> {
+      deleteNGSMeasurements(measurements);
+      notification.close();
+    });
+    notification.addCancelListener(event -> notification.close());
+  }
+
+  private void deleteNGSMeasurements(Set<NGSMeasurement> measurements) {
+    Result<Void, MeasurementDeletionException> result = measurementService.deleteNGSMeasurements(
+          context.projectId().orElseThrow(), measurements);
+    handleDeletionResults(result);
+  }
+
+  private void deletePtxMeasurements(Set<ProteomicsMeasurement> measurements) {
+    Result<Void, MeasurementDeletionException> result = measurementService.deletePtxMeasurements(
+        context.projectId().orElseThrow(), measurements);
+    handleDeletionResults(result);
+  }
+
+  private void handleDeletionResults(Result<Void, MeasurementDeletionException> result) {
     result.onError(error -> {
       String errorMessage = switch (error.reason()) {
         case FAILED -> "Deletion failed. Please try again.";
@@ -214,81 +257,99 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
-  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog, boolean editMode) {
+  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent -> {
-      var uploads = confirmEvent.uploads();
-      for (var upload : uploads) {
-        var source = confirmEvent.getSource();
-        var measurementData = upload.measurementMetadata();
-        if (editMode) {
-          source.showTaskInProgress(
-              "Updating %s measurements ...".formatted(measurementData.size()),
-              "This might take a minute");
-          UI.getCurrent().push();
-          measurementService.updateAll(upload.measurementMetadata(),
-              context.projectId().orElseThrow()).thenAccept(results -> {
-            var errorResult = results.stream().filter(Result::isError).toList();
-            if (!errorResult.isEmpty()) {
-              errorResult.forEach(errorCodeResult ->
-                  confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                    confirmEvent.getSource()
-                        .showError(upload.fileName(),
-                            convertErrorCodeToMessage(errorCodeResult.getError()));
-                  })));
-            } else {
-              confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                confirmEvent.getSource().close();
-                setMeasurementInformation();
-              }));
-            }
-          }).join(); // we wait for the update to finish
-        } else {
-          source.showTaskInProgress(
-              "Registering %s measurements ...".formatted(measurementData.size()),
-              "This might take a minute");
-          UI.getCurrent().push();
-          measurementService.registerAll(upload.measurementMetadata(),
-              context.projectId().orElseThrow()).thenAccept(results -> {
-            var errorResult = results.stream().filter(Result::isError).toList();
-            if (!errorResult.isEmpty()) {
-              errorResult.forEach(errorCodeResult ->
-                  confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                    confirmEvent.getSource()
-                        .showError(upload.fileName(),
-                            convertErrorCodeToMessage(errorCodeResult.getError()));
-                  })));
-            } else {
-              confirmEvent.getSource().getUI().ifPresent(ui -> ui.access(() -> {
-                confirmEvent.getSource().close();
-                setMeasurementInformation();
-              }));
-            }
-          }).join();
-        }
-        source.hideTaskInProgress();
-      }
-
+    dialog.addConfirmListener(confirmEvent ->
+    {
+      triggerMeasurementRegistration(confirmEvent.uploads(),
+          confirmEvent.getSource());
+      setMeasurementInformation();
     });
     return dialog;
   }
 
+  private void triggerMeasurementRegistration(
+      List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads,
+      MeasurementMetadataUploadDialog measurementMetadataUploadDialog) {
+    String process =
+        measurementMetadataUploadDialog.getMode() == MODE.EDIT ? "update" : "registration";
+    for (var upload : measurementMetadataUploads) {
+      var measurementData = upload.measurementMetadata();
+      measurementMetadataUploadDialog.taskInProgress(
+          "%s of %s measurements ...".formatted(StringUtils.capitalize(process),
+              measurementData.size()),
+          "This might take a minute");
+      //Necessary so the dialog window switches to show the upload progress
+      UI.getCurrent().push();
+      CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
+      if (measurementMetadataUploadDialog.getMode().equals(MODE.EDIT)) {
+        completableFuture = measurementService.updateAll(upload.measurementMetadata(),
+            context.projectId().orElseThrow());
+      } else {
+        completableFuture = measurementService.registerAll(upload.measurementMetadata(),
+            context.projectId().orElseThrow());
+      }
+      completableFuture.thenAccept(results -> {
+        var errorResult = results.stream().filter(Result::isError).findAny();
+        if (errorResult.isPresent()) {
+          measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
+              () -> measurementMetadataUploadDialog.taskFailed(
+                  "Measurement %s could not be completed".formatted(process),
+                  "Please try again")));
+        } else {
+          measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
+              () -> measurementMetadataUploadDialog.taskSucceeded(
+                  "Measurement %s is complete".formatted(process),
+                  "Measurement %s for %s measurements was successful".formatted(process,
+                      measurementData.size()))));
+        }
+      }).join(); // we wait for the update to finish
+    }
+  }
+
   private void openEditMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT, context.projectId().orElse(null));
-    setupDialog(dialog, true);
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT,
+        context.projectId().orElse(null));
+    setupDialog(dialog);
     dialog.open();
   }
 
-  private void downloadMetadata() {
+  private void downloadMetadataForSelectedTab() {
+    switch (measurementDetailsComponent.getSelectedTabName()) {
+      case "Proteomics": {
+        downloadProteomicsMetadata();
+        return;
+      }
+      case "Genomics": {
+        downloadNGSMetadata();
+        return;
+      }
+      default:
+        throw new ApplicationException(
+            "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
+    }
+  }
+
+  private void downloadProteomicsMetadata() {
     var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
         context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
-    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandPools)
-        .flatMap(items -> items.stream()).toList();
-
+    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
+        .flatMap(Collection::stream).toList();
     proteomicsMeasurementContentProvider.setMeasurements(result);
-    downloadProvider.trigger();
+    proteomicsDownloadProvider.trigger();
+  }
+
+  private void downloadNGSMetadata() {
+    var ngsMeasurements = measurementService.findNGSMeasurements(
+        context.experimentId().orElseThrow(() -> new ApplicationException(
+            ErrorCode.GENERAL, null)),
+        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+    var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
+        .flatMap(Collection::stream).toList();
+    ngsMeasurementContentProvider.setMeasurements(result);
+    ngsDownloadProvider.trigger();
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
@@ -416,8 +477,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD, context.projectId().orElse(null));
-    setupDialog(dialog, false);
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD,
+        context.projectId().orElse(null));
+    setupDialog(dialog);
     dialog.open();
   }
 
@@ -447,10 +509,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void updateSelectedMeasurementInfo(Set<MeasurementMetadata> selectedMeasurements) {
-    String text = "%s measurements are currently selected.".formatted(String.valueOf(selectedMeasurements.size()));
+  private void updateSelectedMeasurementInfo(int selectedMeasurements) {
+    String text = "%s measurements are currently selected.".formatted(String.valueOf(selectedMeasurements));
     measurementsSelectedInfoBox.setText(text);
   }
-
 
 }
