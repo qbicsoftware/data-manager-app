@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
+import java.util.Optional;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import org.springframework.data.jpa.domain.Specification;
@@ -16,4 +18,7 @@ public interface NGSMeasurementJpaRepo
 
   @Override
   long count(Specification<NGSMeasurement> spec);
+
+  Optional<NGSMeasurement> findNGSMeasurementByMeasurementCode(
+      MeasurementCode measurementCode);
 }

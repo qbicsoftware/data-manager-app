@@ -9,7 +9,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -81,14 +80,24 @@ public class MeasurementValidationService {
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
   public CompletableFuture<ValidationResult> validateProteomicsUpdate(
       ProteomicsMeasurementMetadata pxMeasurementMetadata, ProjectId projectId) {
-    SecurityContextHolder.getContext().getAuthentication();
     var result = pxpValidator.validateUpdate(pxMeasurementMetadata, projectId);
     return CompletableFuture.completedFuture(result);
   }
 
-  public ValidationResult validateNGSUpdate(NGSMeasurementMetadata ngsMeasurementMetadata,
+  /**
+   * Validates ngs measurement metadata in the case of an update of a registered measurement.
+   *
+   * @param ngsMeasurementMetadata the measurement to validate
+   * @return a detailed {@link ValidationResult} with information about the validation
+   * @since 1.0.0
+   */
+  @Async
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public CompletableFuture<ValidationResult> validateNGSUpdate(
+      NGSMeasurementMetadata ngsMeasurementMetadata,
       ProjectId projectId) {
-    return measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
+    var result = measurementNgsValidator.validateUpdate(ngsMeasurementMetadata, projectId);
+    return CompletableFuture.completedFuture(result);
   }
 
   public Optional<Domain> inferDomainByPropertyTypes(Collection<String> propertyTypes) {

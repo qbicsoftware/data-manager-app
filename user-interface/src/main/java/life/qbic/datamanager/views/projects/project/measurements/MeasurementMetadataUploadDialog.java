@@ -53,6 +53,7 @@ import life.qbic.projectmanagement.application.measurement.validation.Validation
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import org.springframework.util.StringUtils;
 
 
 /**
@@ -145,6 +146,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       return Result.fromValue(null);
     }
 
+    Integer measurementIdIndex = columns.getOrDefault(MeasurementProperty.MEASUREMENT_ID.label(),
+        -1);
     Integer sampleCodeColumnIndex = columns.get(NGS_PROPERTY.QBIC_SAMPLE_ID.label());
     Integer organisationColumnIndex = columns.get(NGS_PROPERTY.ORGANISATION_ID.label());
     Integer instrumentColumnIndex = columns.get(NGS_PROPERTY.INSTRUMENT.label());
@@ -166,6 +169,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       return Result.fromError("Not enough columns provided for row: %s".formatted(row));
     }
 
+    String measurementId = safeArrayAccess(columnValues, measurementIdIndex).orElse("");
     List<SampleCode> sampleCodes = List.of(
         SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
 
@@ -180,7 +184,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     String indexI7 = safeArrayAccess(columnValues, indexI7Index).orElse("");
     String indexI5 = safeArrayAccess(columnValues, indexI5Index).orElse("");
     String comment = safeArrayAccess(columnValues, commentIndex).orElse("");
-    NGSMeasurementMetadata metadata = new NGSMeasurementMetadata(sampleCodes,
+    NGSMeasurementMetadata metadata = new NGSMeasurementMetadata(measurementId, sampleCodes,
         organisationRoRId, instrumentCURIE, facility, readType,
         libraryKit, flowCell, runProtocol, samplePool, indexI7, indexI5, comment);
     return Result.fromValue(metadata);
@@ -382,7 +386,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private MeasurementValidationReport validateNGS(MetadataContent content) {
     var validationResult = ValidationResult.successful(0);
     var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-    var evaluatedRows = 0;
     // we check if there are any rows provided or if we have only rows with empty content
     if (content.rows().isEmpty() || content.rows().stream()
         .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
@@ -391,14 +394,18 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
               List.of("The metadata sheet seems to be empty")));
       return new MeasurementValidationReport(0, validationResult);
     }
-
-    HashMap<String, CompletableFuture<ValidationResult>> tasks = new HashMap<>();
+    ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (String row : content.rows().stream()
         .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      tasks.put(row, validateNGSRow(propertyColumnMap, row));
+      tasks.add(validateNGSRow(propertyColumnMap, row).thenAccept(concurrentLinkedDeque::add));
     }
 
-    return new MeasurementValidationReport(evaluatedRows, validationResult);
+    CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+
+    return new MeasurementValidationReport(concurrentLinkedDeque.size(),
+        concurrentLinkedDeque.stream().reduce(
+            validationResult, ValidationResult::combine));
   }
 
   private MeasurementValidationReport validatePxP(MetadataContent content) {
@@ -441,6 +448,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     if (metaDataValues.length != propertyColumnMap.keySet().size()) {
       validationResult.combine(ValidationResult.withFailures(1, List.of("")));
     }
+    var measurementIdIndex = propertyColumnMap.getOrDefault(
+        MeasurementProperty.MEASUREMENT_ID.label(), -1);
     var sampleCodeColumnIndex = propertyColumnMap.get(
         NGS_PROPERTY.QBIC_SAMPLE_ID.label());
     var organisationsColumnIndex = propertyColumnMap.get(
@@ -470,6 +479,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
           () -> validationResult.combine(ValidationResult.withFailures(1,
               List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
     }
+    var measurementId = safeArrayAccess(metaDataValues, measurementIdIndex).orElse("");
     var sampleCodes = SampleCode.create(
         safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
     var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
@@ -485,14 +495,13 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     var indexI5 = safeArrayAccess(metaDataValues, indexI5Index).orElse("");
     var comment = safeArrayAccess(metaDataValues, commentIndex).orElse("");
 
-    var metadata = new NGSMeasurementMetadata(List.of(sampleCodes),
+    var metadata = new NGSMeasurementMetadata(measurementId, List.of(sampleCodes),
         organisationRoRId, instrumentCURIE, facility, sequencingReadType,
         libraryKit, flowCell, sequencingRunProtocol, samplePoolGroup, indexI7, indexI5, comment);
     var measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
         measurementValidationService);
-    var finalValidationResult = generateModeDependentValidationResult(
+    return generateModeDependentValidationResult(
         measurementNGSValidationExecutor, metadata);
-    return finalValidationResult;
   }
 
   private CompletableFuture<ValidationResult> validatePxPRow(Map<String, Integer> propertyColumnMap,
@@ -859,8 +868,9 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     public UploadProgressDisplay(MODE mode) {
 
       Objects.requireNonNull(mode, "Mode cannot be null");
-      String modeBasedTask = (mode == MODE.ADD ? "Register" : "Update");
-      Span title = new Span(String.format("%s the measurement data", modeBasedTask));
+      String modeBasedTask = (mode == MODE.ADD ? "register" : "update");
+      Span title = new Span(
+          String.format("%s" + " the measurement data", StringUtils.capitalize(modeBasedTask)));
       title.addClassNames("bold", "secondary");
       Span description = new Span(
           String.format("It may take about a minute for the %s process to complete",

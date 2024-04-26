@@ -36,7 +36,6 @@ public class MeasurementNGSValidationExecutor implements
   @Override
   public CompletableFuture<ValidationResult> validateUpdate(NGSMeasurementMetadata metadata,
       ProjectId projectId) {
-    //Todo provide edit validation for ngs;
-    return null;
+    return measurementValidationService.validateNGSUpdate(metadata, projectId);
   }
 }
