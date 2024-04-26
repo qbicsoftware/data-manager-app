@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;

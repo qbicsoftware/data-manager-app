@@ -50,7 +50,7 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
       if (event.isFromClient()) {
         Boolean allBoxVal = selectAllCheckBox.getValue();
-        if(Boolean.TRUE.equals(allBoxVal) && !box.getValue()) {
+        if(Boolean.TRUE.equals(allBoxVal) && Boolean.FALSE.equals(box.getValue())) {
           selectAllCheckBox.setValue(false);
         } else if(Boolean.FALSE.equals(allBoxVal) && areAllSelected()) {
           selectAllCheckBox.setValue(true);
