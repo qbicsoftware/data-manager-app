@@ -12,11 +12,15 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * <class short description - One Line!>
+ * Grid that allows lazy loading and the use of a selection column.
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * Vaadin does not natively allow the use of a selection column (and select-all), as the concept of
+ * "all" is not clearly defined with lazy loading and there are problems with keeping items in the
+ * grid selected when scrolling. This component solves these issues. Using the "select all" box
+ * selects all items contained in the LazyDataView. These are all filtered items, irrespective of
+ * limit and offset.
  *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
@@ -28,9 +32,6 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
   private final Checkbox selectAllCheckBox = new Checkbox();
 
-  /**
-   * Creates a new instance, with page size of 50.
-   */
   public MultiSelectLazyLoadingGrid() {
     selectionColumn = addComponentColumn(this::renderCheckbox).setHeader(selectAllCheckBox);
     selectionColumn.setFlexGrow(0);
