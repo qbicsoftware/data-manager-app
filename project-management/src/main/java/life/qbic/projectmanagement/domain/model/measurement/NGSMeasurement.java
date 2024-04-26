@@ -36,7 +36,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  * @since 1.0.0
  */
 @Entity(name = "ngs_measurements")
-public class NGSMeasurement implements MeasurementMetadata {
+public class NGSMeasurement {
 
   @Column(name = "facility")
   String facility = "";
@@ -160,7 +160,6 @@ public class NGSMeasurement implements MeasurementMetadata {
     this.comment = comment;
   }
 
-  @Override
   public MeasurementCode measurementCode() {
     return this.measurementCode;
   }
