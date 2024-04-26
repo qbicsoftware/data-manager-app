@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import jakarta.persistence.criteria.Expression;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.OffsetBasedRequest;
@@ -147,18 +146,6 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         sampleIds, filter);
     return ngsMeasurementJpaRepo.findAll(filterSpecification,
         new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
-  }
-
-  @Override
-  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
-    Specification<NGSMeasurement> ngsContainsSampleId = NgsMeasurementSpec.containsSampleId(
-        sampleIds);
-    Specification<ProteomicsMeasurement> proteomicsContainsSampleId = ProteomicsMeasurementSpec.containsSampleId(
-        sampleIds);
-    List<MeasurementMetadata> measurements = new ArrayList<>();
-    measurements.addAll(ngsMeasurementJpaRepo.findAll(ngsContainsSampleId));
-    measurements.addAll(pxpMeasurementJpaRepo.findAll(proteomicsContainsSampleId));
-    return measurements;
   }
 
   @Override

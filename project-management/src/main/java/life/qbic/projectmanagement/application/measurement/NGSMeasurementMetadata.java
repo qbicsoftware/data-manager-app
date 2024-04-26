@@ -20,25 +20,6 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
                                      String indexI7, String indexI5,
                                      String comment) implements MeasurementMetadata {
 
-  @Override
-  public List<SampleCode> associatedSamples() {
-    return sampleCodes.stream().toList();
-  }
-
-  @Override
-  public Optional<String> assignedSamplePoolGroup() {
-    return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
-  }
-
-  public Optional<String> measurementIdentifier() {
-    return Optional.ofNullable(measurementId.isBlank() ? null : measurementId);
-  }
-
-  @Override
-  public MeasurementCode measurementCode() {
-    return null;
-  }
-
   public static NGSMeasurementMetadata copyWithNewProperties(
       Collection<SampleCode> associatedSamples, String indexI7, String indexI5,
       NGSMeasurementMetadata metadata) {
@@ -56,6 +37,25 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
         indexI7,
         indexI5,
         metadata.comment());
+  }
+
+  @Override
+  public List<SampleCode> associatedSamples() {
+    return sampleCodes.stream().toList();
+  }
+
+  @Override
+  public Optional<String> assignedSamplePoolGroup() {
+    return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
+  }
+
+  public Optional<String> measurementIdentifier() {
+    return Optional.ofNullable(measurementId.isBlank() ? null : measurementId);
+  }
+
+  @Override
+  public MeasurementCode measurementCode() {
+    return null;
   }
 
   @Override
