@@ -27,6 +27,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -87,6 +88,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     add(registeredMeasurementsTabSheet);
     registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
+
+    registeredMeasurementsTabSheet.addSelectedChangeListener(selectedChangeEvent -> resetSelectedMeasurements());
   }
 
   /**
@@ -115,6 +118,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    *                   be filtered for
    */
   public void setSearchedMeasurementValue(String searchTerm) {
+    if(!this.searchTerm.equals(searchTerm)) {
+      resetSelectedMeasurements();
+    }
     this.searchTerm = searchTerm;
     measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
   }
@@ -264,7 +270,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void updateSelectedMeasurementsInfo(boolean isFromClient) {
-    listeners.forEach(listener -> listener.onComponentEvent(new MeasurementSelectionChangedEvent(this, isFromClient)));
+    listeners.forEach(listener -> listener.onComponentEvent(
+        new MeasurementSelectionChangedEvent(this, isFromClient)));
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
@@ -316,11 +323,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   public Set<NGSMeasurement> getSelectedNGSMeasurements() {
-    return ngsMeasurementGrid.getSelectedItems().stream().collect(Collectors.toSet());
+    return new HashSet<>(ngsMeasurementGrid.getSelectedItems());
   }
 
   public Set<ProteomicsMeasurement> getSelectedProteomicsMeasurements() {
-    return proteomicsMeasurementGrid.getSelectedItems().stream().collect(Collectors.toSet());
+    return new HashSet<>(proteomicsMeasurementGrid.getSelectedItems());
   }
 
   public void refreshGrids() {
@@ -329,10 +336,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void resetSelectedMeasurements() {
-    updateSelectedMeasurementsInfo(false);
-
     proteomicsMeasurementGrid.clearSelectedItems();
     ngsMeasurementGrid.clearSelectedItems();
+    updateSelectedMeasurementsInfo(false);
   }
 
   public void addListener(ComponentEventListener<MeasurementSelectionChangedEvent> listener) {
@@ -347,7 +353,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    *
    * @since 1.0.0
    */
-  public class MeasurementSelectionChangedEvent extends
+  public static class MeasurementSelectionChangedEvent extends
       ComponentEvent<MeasurementDetailsComponent> {
 
     @Serial
@@ -358,7 +364,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
-  //Todo introduce custom tab with label and updateable count
+  //TODO introduce custom tab with label and updateable count
   public String getSelectedTabName() {
     return registeredMeasurementsTabSheet.getSelectedTab().getLabel();
   }

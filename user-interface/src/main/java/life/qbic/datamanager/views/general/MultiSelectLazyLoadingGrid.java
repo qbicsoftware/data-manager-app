@@ -98,6 +98,7 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
   }
 
   public void clearSelectedItems() {
+    selectAllCheckBox.setValue(false);
     selectedItems.clear();
   }
 
