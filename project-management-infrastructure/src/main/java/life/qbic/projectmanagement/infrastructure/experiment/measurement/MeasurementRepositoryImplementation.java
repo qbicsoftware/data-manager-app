@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.DeletionErrorCode;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;

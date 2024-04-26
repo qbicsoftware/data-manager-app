@@ -27,12 +27,10 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
@@ -336,20 +334,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.clearSelectedItems();
     ngsMeasurementGrid.clearSelectedItems();
   }
-
-  /*
-  public Set<? extends MeasurementMetadata> getAllDisplayedMeasurements() {
-    String label = getSelectedTabName();
-    if(label.equals("Proteomics")) {
-      return proteomicsMeasurementGrid.getLazyDataView().getItems().collect(Collectors.toSet());
-    }
-    if(label.equals("Genomics")) {
-      return ngsMeasurementGrid.getLazyDataView().getItems().collect(Collectors.toSet());
-    }
-    log.warn("Could not fetch measurements because tab with label %s unknown.".formatted(label));
-    return Collections.emptySet();
-  }
-   */
 
   public void addListener(ComponentEventListener<MeasurementSelectionChangedEvent> listener) {
     listeners.add(listener);
