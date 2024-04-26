@@ -171,7 +171,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     editButton.addClickListener(event -> openEditMeasurementDialog());
 
     Button deleteButton = new Button("Delete");
-    deleteButton.addClickListener(this::onDeleteMeasurementsClicked);
+    deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());
 
     Span buttonBar = new Span(downloadButton, editButton, deleteButton, registerMeasurementButton);
     buttonBar.addClassName("button-bar");
@@ -183,14 +183,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     content.add(interactionsAndInfo);
   }
 
-  private void onDeleteMeasurementsClicked(ClickEvent<Button> buttonClickEvent) {
+  private void onDeleteMeasurementsClicked() {
     Set<? extends MeasurementMetadata> selectedMeasurements = measurementDetailsComponent.getSelectedMeasurements();
     handleDeletionRequest("Selected measurements will be deleted", selectedMeasurements);
-  }
-
-  private void onDeleteAllMeasurementsClicked(ClickEvent<Button> buttonClickEvent) {
-    Set<? extends MeasurementMetadata> allMeasurements = measurementDetailsComponent.getAllDisplayedMeasurements();
-    handleDeletionRequest("Measurements in the table will be deleted", allMeasurements);
   }
 
   private void handleDeletionRequest(String title, Set<? extends MeasurementMetadata> measurements) {
@@ -454,8 +449,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void updateSelectedMeasurementInfo(Set<MeasurementMetadata> selectedMeasurements) {
-    System.err.println("changed");
-    System.err.println(selectedMeasurements.size());
     String text = "%s measurements are currently selected.".formatted(String.valueOf(selectedMeasurements.size()));
     measurementsSelectedInfoBox.setText(text);
   }

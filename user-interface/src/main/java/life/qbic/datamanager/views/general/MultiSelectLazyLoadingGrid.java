@@ -49,10 +49,10 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
       listeners.forEach(listener -> listener.onComponentEvent(checkBoxSelectEvent));
 
       if (event.isFromClient()) {
-        if(selectAllCheckBox.getValue() && !box.getValue()) {
+        Boolean allBoxVal = selectAllCheckBox.getValue();
+        if(Boolean.TRUE.equals(allBoxVal) && !box.getValue()) {
           selectAllCheckBox.setValue(false);
-        } else if(!selectAllCheckBox.getValue() && areAllSelected()) {
-          System.err.println("all should be selected");
+        } else if(Boolean.FALSE.equals(allBoxVal) && areAllSelected()) {
           selectAllCheckBox.setValue(true);
         }
       }
@@ -79,19 +79,19 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
   private void addSelectAllItemsListener() {
     selectAllCheckBox.addValueChangeListener(event -> {
       if(event.isFromClient()) {
-        if (event.getValue()) {
+        if (Boolean.TRUE.equals(event.getValue())) {
           selectedItems.addAll(getLazyDataView().getItems().toList());
         } else {
           getLazyDataView().getItems().toList().forEach(selectedItems::remove);
         }
       }
-      //Todo Should this be treated differently?
       var checkBoxSelectEvent = new CheckBoxSelectedEvent(selectAllCheckBox, null,
           event.isFromClient());
       listeners.forEach(listener -> listener.onComponentEvent(checkBoxSelectEvent));
     });
   }
 
+  @Override
   public Set<T> getSelectedItems() {
     return selectedItems;
   }
