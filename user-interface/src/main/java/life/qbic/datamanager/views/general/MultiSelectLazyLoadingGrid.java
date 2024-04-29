@@ -83,7 +83,7 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
         if (Boolean.TRUE.equals(event.getValue())) {
           selectedItems.addAll(getLazyDataView().getItems().toList());
         } else {
-          getLazyDataView().getItems().toList().forEach(selectedItems::remove);
+          selectedItems.clear();
         }
       }
       var checkBoxSelectEvent = new CheckBoxSelectedEvent(selectAllCheckBox, null,
