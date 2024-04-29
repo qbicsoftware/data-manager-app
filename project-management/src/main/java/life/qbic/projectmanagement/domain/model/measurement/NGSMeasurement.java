@@ -15,8 +15,8 @@ import jakarta.persistence.JoinColumn;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -222,5 +222,27 @@ public class NGSMeasurement {
 
   public Optional<String> comment() {
     return Optional.ofNullable(comment.isBlank() ? null : comment);
+  }
+
+  @Override
+  public String toString() {
+    return measurementCode.value();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof NGSMeasurement that)) {
+      return false;
+    }
+
+    return Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return id != null ? id.hashCode() : 0;
   }
 }
