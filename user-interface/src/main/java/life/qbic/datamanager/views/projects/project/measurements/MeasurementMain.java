@@ -129,8 +129,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementDetailsComponent);
 
     measurementDetailsComponent.addListener(
-        selectionChangedEvent -> selectionChanged(selectionChangedEvent.getSource().getNumberOfSelectedMeasurements(),
-            selectionChangedEvent.isFromClient()));
+        selectionChangedEvent -> setSelectedMeasurementsInfo(selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
 
     add(ngsDownloadProvider);
     add(proteomicsDownloadProvider);
@@ -192,7 +191,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Span buttonsAndSearch = new Span(measurementSearchField, buttonBar);
     buttonsAndSearch.addClassName("buttonAndField");
     measurementsSelectedInfoBox.addClassName("info");
-    selectionChanged(0, true);
+    setSelectedMeasurementsInfo(0);
     Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
     interactionsAndInfo.addClassName("buttonsAndInfo");
     content.add(interactionsAndInfo);
@@ -519,12 +518,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void selectionChanged(int selectedMeasurements, boolean updateUI) {
-    if(updateUI) {
+  private void setSelectedMeasurementsInfo(int selectedMeasurements) {
       String text = "%s measurements are currently selected.".formatted(
           String.valueOf(selectedMeasurements));
       measurementsSelectedInfoBox.setText(text);
-    }
   }
 
 }
