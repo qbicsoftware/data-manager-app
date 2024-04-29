@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
@@ -312,12 +313,15 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   public int getNumberOfSelectedMeasurements() {
-    String label = getSelectedTabName();
-    if(label.equals("Proteomics")) {
-      return getSelectedProteomicsMeasurements().size();
-    }
-    if(label.equals("Genomics")) {
-      return getSelectedNGSMeasurements().size();
+    Optional<String> tabLabel = getSelectedTabName();
+    if (tabLabel.isPresent()) {
+      String label = tabLabel.get();
+      if (label.equals("Proteomics")) {
+        return getSelectedProteomicsMeasurements().size();
+      }
+      if (label.equals("Genomics")) {
+        return getSelectedNGSMeasurements().size();
+      }
     }
     return 0;
   }
@@ -365,7 +369,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   //TODO introduce custom tab with label and updateable count
-  public String getSelectedTabName() {
-    return registeredMeasurementsTabSheet.getSelectedTab().getLabel();
+  public Optional<String> getSelectedTabName() {
+    if(registeredMeasurementsTabSheet.getSelectedTab()!=null) {
+      return Optional.of(registeredMeasurementsTabSheet.getSelectedTab().getLabel());
+    } else {
+      return Optional.empty();
+    }
   }
 }

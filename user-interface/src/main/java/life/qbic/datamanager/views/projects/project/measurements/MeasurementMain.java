@@ -20,6 +20,7 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
@@ -128,7 +129,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementDetailsComponent);
 
     measurementDetailsComponent.addListener(
-        selectionChangedEvent -> updateSelectedMeasurementInfo(selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
+        selectionChangedEvent -> selectionChanged(selectionChangedEvent.getSource().getNumberOfSelectedMeasurements(),
+            selectionChangedEvent.isFromClient()));
 
     add(ngsDownloadProvider);
     add(proteomicsDownloadProvider);
@@ -190,14 +192,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Span buttonsAndSearch = new Span(measurementSearchField, buttonBar);
     buttonsAndSearch.addClassName("buttonAndField");
     measurementsSelectedInfoBox.addClassName("info");
-    updateSelectedMeasurementInfo(0);
+    selectionChanged(0, true);
     Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
     interactionsAndInfo.addClassName("buttonsAndInfo");
     content.add(interactionsAndInfo);
   }
 
   private void onDeleteMeasurementsClicked() {
-    String label = measurementDetailsComponent.getSelectedTabName();
+    Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
+    if(tabLabel.isEmpty()) {
+      return;
+    }
+    String label = tabLabel.get();
     if(label.equals("Proteomics")) {
       handlePtxDeletionRequest(measurementDetailsComponent.getSelectedProteomicsMeasurements());
     }
@@ -315,7 +321,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void downloadMetadataForSelectedTab() {
-    switch (measurementDetailsComponent.getSelectedTabName()) {
+    Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
+    if(tabLabel.isEmpty()) {
+      return;
+    }
+    switch (tabLabel.get()) {
       case "Proteomics": {
         downloadProteomicsMetadata();
         return;
@@ -509,9 +519,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void updateSelectedMeasurementInfo(int selectedMeasurements) {
-    String text = "%s measurements are currently selected.".formatted(String.valueOf(selectedMeasurements));
-    measurementsSelectedInfoBox.setText(text);
+  private void selectionChanged(int selectedMeasurements, boolean updateUI) {
+    if(updateUI) {
+      String text = "%s measurements are currently selected.".formatted(
+          String.valueOf(selectedMeasurements));
+      measurementsSelectedInfoBox.setText(text);
+    }
   }
 
 }
