@@ -20,6 +20,8 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
@@ -31,6 +33,8 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
@@ -39,11 +43,14 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,6 +79,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static Disclaimer registerSamplesDisclaimer;
   private final MeasurementTemplateDownload measurementTemplateDownload;
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
+  private final Span measurementsSelectedInfoBox = new Span();
   private final MeasurementDetailsComponent measurementDetailsComponent;
   private final MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
@@ -119,6 +127,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
+
+    measurementDetailsComponent.addListener(
+        selectionChangedEvent -> setSelectedMeasurementsInfo(selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
+
     add(ngsDownloadProvider);
     add(proteomicsDownloadProvider);
     addClassName("measurement");
@@ -170,12 +182,84 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> openEditMeasurementDialog());
-    Span buttonBar = new Span(downloadButton, editButton,
-        registerMeasurementButton);
+
+    Button deleteButton = new Button("Delete");
+    deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());
+
+    Span buttonBar = new Span(downloadButton, editButton, deleteButton, registerMeasurementButton);
     buttonBar.addClassName("button-bar");
-    Span buttonAndField = new Span(measurementSearchField, buttonBar);
-    buttonAndField.addClassName("buttonAndField");
-    content.add(buttonAndField);
+    Span buttonsAndSearch = new Span(measurementSearchField, buttonBar);
+    buttonsAndSearch.addClassName("buttonAndField");
+    measurementsSelectedInfoBox.addClassName("info");
+    setSelectedMeasurementsInfo(0);
+    Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
+    interactionsAndInfo.addClassName("buttonsAndInfo");
+    content.add(interactionsAndInfo);
+  }
+
+  private void onDeleteMeasurementsClicked() {
+    Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
+    if(tabLabel.isEmpty()) {
+      return;
+    }
+    String label = tabLabel.get();
+    if(label.equals("Proteomics")) {
+      handlePtxDeletionRequest(measurementDetailsComponent.getSelectedProteomicsMeasurements());
+    }
+    if(label.equals("Genomics")) {
+      handleNGSDeletionRequest(measurementDetailsComponent.getSelectedNGSMeasurements());
+    }
+  }
+
+  private void handlePtxDeletionRequest(Set<ProteomicsMeasurement> measurements) {
+    if(measurements.isEmpty()) {
+      return;
+    }
+    MeasurementDeletionConfirmationNotification notification =
+        new MeasurementDeletionConfirmationNotification("Selected proteomics measurements will be deleted", measurements.size());
+    notification.open();
+    notification.addConfirmListener(event -> {
+      deletePtxMeasurements(measurements);
+      notification.close();
+    });
+    notification.addCancelListener(event -> notification.close());
+  }
+
+  private void handleNGSDeletionRequest(Set<NGSMeasurement> measurements) {
+    if(measurements.isEmpty()) {
+      return;
+    }
+    MeasurementDeletionConfirmationNotification notification =
+        new MeasurementDeletionConfirmationNotification("Selected genomics measurements will be deleted", measurements.size());
+    notification.open();
+    notification.addConfirmListener(event -> {
+      deleteNGSMeasurements(measurements);
+      notification.close();
+    });
+    notification.addCancelListener(event -> notification.close());
+  }
+
+  private void deleteNGSMeasurements(Set<NGSMeasurement> measurements) {
+    Result<Void, MeasurementDeletionException> result = measurementService.deleteNGSMeasurements(
+          context.projectId().orElseThrow(), measurements);
+    handleDeletionResults(result);
+  }
+
+  private void deletePtxMeasurements(Set<ProteomicsMeasurement> measurements) {
+    Result<Void, MeasurementDeletionException> result = measurementService.deletePtxMeasurements(
+        context.projectId().orElseThrow(), measurements);
+    handleDeletionResults(result);
+  }
+
+  private void handleDeletionResults(Result<Void, MeasurementDeletionException> result) {
+    result.onError(error -> {
+      String errorMessage = switch (error.reason()) {
+        case FAILED -> "Deletion failed. Please try again.";
+        case DATA_ATTACHED -> "Data is attached to one or more measurements.";
+      };
+      showErrorNotification("Deletion failed", errorMessage);
+    });
+    result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
@@ -236,7 +320,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void downloadMetadataForSelectedTab() {
-    switch (measurementDetailsComponent.getSelectedTab()) {
+    Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
+    if(tabLabel.isEmpty()) {
+      return;
+    }
+    switch (tabLabel.get()) {
       case "Proteomics": {
         downloadProteomicsMetadata();
         return;
@@ -247,7 +335,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       }
       default:
         throw new ApplicationException(
-            "Unknown tab: " + measurementDetailsComponent.getSelectedTab());
+            "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
     }
   }
 
@@ -322,6 +410,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           currentExperimentId, currentProjectId, routeToMeasurementPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
     }
+  }
+
+  private void showErrorNotification(String title, String description) {
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
   }
 
   /**
@@ -423,4 +517,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToRawDataPage));
     }
   }
+
+  private void setSelectedMeasurementsInfo(int selectedMeasurements) {
+      String text = "%s measurements are currently selected.".formatted(
+          String.valueOf(selectedMeasurements));
+      measurementsSelectedInfoBox.setText(text);
+  }
+
 }

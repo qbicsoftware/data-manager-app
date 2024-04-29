@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
@@ -96,6 +97,14 @@ public class MeasurementDomainService {
           .value(), e);
     }
     return Result.fromError(ResponseCode.FAILED);
+  }
+
+  public void deleteNGS(Set<NGSMeasurement> measurements) {
+    measurementRepository.deleteAllNGS(measurements);
+  }
+
+  public void deletePtx(Set<ProteomicsMeasurement> measurements) {
+    measurementRepository.deleteAllProteomics(measurements);
   }
 
   public List<MeasurementId> updateProteomicsAll(

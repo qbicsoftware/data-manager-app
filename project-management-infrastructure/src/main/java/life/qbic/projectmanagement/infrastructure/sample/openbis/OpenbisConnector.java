@@ -157,10 +157,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   }
 
   private List<Sample> searchSamplesByCodes(OpenBisSession session,
-      Collection<SampleCode> sampleCodes) {
+      Collection<String> sampleCodes) {
     SampleSearchCriteria criteria = new SampleSearchCriteria();
-    criteria.withCodes()
-        .thatIn(new ArrayList<>(sampleCodes.stream().map(SampleCode::code).toList()));
+    criteria.withCodes().thatIn(new ArrayList<>(sampleCodes));
     return applicationServer.searchSamples(session.getToken(), criteria,
         fetchSamplesCompletely()).getObjects();
   }
@@ -285,7 +284,8 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   @Override
   public void deleteAll(ProjectCode projectCode, Collection<SampleCode> sampleCodes) {
     try (OpenBisSession session = sessionFactory.getSession()) {
-      List<Sample> samplesToDelete = searchSamplesByCodes(session, sampleCodes);
+      List<Sample> samplesToDelete = searchSamplesByCodes(session, sampleCodes.stream()
+          .map(SampleCode::code).toList());
       for (Sample sample : samplesToDelete) {
         if (isSampleWithData(List.of(sample))) {
           throw new SampleNotDeletedException(
@@ -298,17 +298,21 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   }
 
   @Override
-  public boolean canDeleteSample(ProjectCode projectCode, SampleCode codeToDelete) {
+  public boolean canDeleteSample(SampleCode codeToDelete) {
     try (OpenBisSession session = sessionFactory.getSession()) {
-      List<Sample> samplesToDelete = searchSamplesByCodes(session,
-          List.of(codeToDelete));
-      for (Sample sample : samplesToDelete) {
-        if (isSampleWithData(List.of(sample))) {
-          return false;
-        }
-      }
-      return true;
+      return canDeleteSampleObject(session, codeToDelete.code());
     }
+  }
+
+  private boolean canDeleteSampleObject(OpenBisSession session, String code) {
+    List<Sample> samplesToDelete = searchSamplesByCodes(session,
+        List.of(code));
+    for (Sample sample : samplesToDelete) {
+      if (isSampleWithData(List.of(sample))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -410,7 +414,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   }
 
   @Override
-  public void addProtemicsMeasurement(ProteomicsMeasurement measurement,
+  public void addProteomicsMeasurement(ProteomicsMeasurement measurement,
       List<SampleCode> parentCodes) {
     String TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
     Map<String, String> metadata = new HashMap<>();
@@ -444,6 +448,45 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       }
       createOpenbisSamples(session, objectsToCreate);
     }
+  }
+
+  @Override
+  public void deleteProteomicsMeasurements(List<ProteomicsMeasurement> measurements) {
+    deleteMeasurements(measurements.stream().map(ProteomicsMeasurement::measurementCode).toList());
+  }
+
+  @Override
+  public void deleteNGSMeasurements(List<NGSMeasurement> measurements) {
+    deleteMeasurements(measurements.stream().map(NGSMeasurement::measurementCode).toList());
+  }
+
+  private void deleteMeasurements(List<MeasurementCode> measurementCodes) {
+    try (OpenBisSession session = sessionFactory.getSession()) {
+      for(MeasurementCode code : measurementCodes) {
+        String sampleCode = code.value();
+        // measurement has been deleted in JPA at this moment. We don't fail, but we keep data in
+        // openbis that might have been registered between the check and deletion
+        if (canDeleteSampleObject(session, sampleCode)) {
+          deleteOpenbisSample(session, sampleCode);
+        }
+      }
+    }
+  }
+
+  @Override
+  public boolean hasDataAttached(List<MeasurementCode> measurements) {
+    try (OpenBisSession session = sessionFactory.getSession()) {
+      for (MeasurementCode code : measurements) {
+        List<Sample> samplesToDelete = searchSamplesByCodes(session,
+            new ArrayList<>(Arrays.asList(code.value())));
+        for (Sample sample : samplesToDelete) {
+          if (isSampleWithData(List.of(sample))) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   private List<SampleIdentifier> fetchSampleIdentifiers(OpenBisSession session,
@@ -538,6 +581,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   public List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
       Collection<MeasurementCode> measurementCodes, int offset, int limit,
       List<SortOrder> sortOrders) {
+
     List<RawDataDatasetInformation> result = new ArrayList<>();
     DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
     fetchOptions.from(offset);

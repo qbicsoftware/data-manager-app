@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -172,7 +173,7 @@ public class MeasurementService {
       ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.queryAllProteomicsMeasurement(samplesInExperiment);
+    return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
@@ -854,6 +855,43 @@ public class MeasurementService {
         .experiments();
     return new HashSet<>(associatedExperimentsFromProject).containsAll(
         associatedExperimentsFromSamples);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId, Set<ProteomicsMeasurement> selectedMeasurements) {
+    try {
+      measurementDomainService.deletePtx(selectedMeasurements);
+      return Result.fromValue(null);
+    } catch (MeasurementDeletionException e) {
+      return Result.fromError(e);
+    }
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId, Set<NGSMeasurement> selectedMeasurements) {
+    try {
+      measurementDomainService.deleteNGS(selectedMeasurements);
+      return Result.fromValue(null);
+    } catch (MeasurementDeletionException e) {
+      return Result.fromError(e);
+    }
+  }
+
+  public static final class MeasurementDeletionException extends RuntimeException {
+
+    private final DeletionErrorCode reason;
+
+    public MeasurementDeletionException(DeletionErrorCode reason) {
+      this.reason = reason;
+    }
+
+    public DeletionErrorCode reason() {
+      return reason;
+    }
+  }
+
+  public enum DeletionErrorCode {
+    FAILED, DATA_ATTACHED
   }
 
   public enum ErrorCode {

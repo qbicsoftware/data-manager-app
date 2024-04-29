@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -296,8 +297,6 @@ public class ProteomicsMeasurement {
     this.lcmsMethod = method.lcmsMethod();
   }
 
-
-
   public void setSamplePoolGroup(String group) {
     this.samplePool = group;
   }
@@ -308,5 +307,22 @@ public class ProteomicsMeasurement {
 
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ProteomicsMeasurement that)) {
+      return false;
+    }
+
+    return Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return id != null ? id.hashCode() : 0;
   }
 }

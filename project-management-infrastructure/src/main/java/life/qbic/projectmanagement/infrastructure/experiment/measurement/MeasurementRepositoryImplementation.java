@@ -6,8 +6,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.DeletionErrorCode;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
@@ -70,7 +73,7 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       return Result.fromError(ResponseCode.FAILED);
     }
     try {
-      measurementDataRepo.addProtemicsMeasurement(measurement, sampleCodes);
+      measurementDataRepo.addProteomicsMeasurement(measurement, sampleCodes);
     } catch (RuntimeException e) {
       log.error("Saving proteomics measurement in data repo failed for measurement "
           + measurement.measurementCode().value(), e);
@@ -90,6 +93,52 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       log.error("Illegal measurement code: " + measurementCode, e);
       return Optional.empty();
     }
+  }
+
+  @Override
+  public void deleteAllProteomics(Set<ProteomicsMeasurement> measurements) {
+    if(measurements.isEmpty()) {
+      return;
+    }
+    List<MeasurementCode> measurementCodes = measurements.stream()
+        .map(ProteomicsMeasurement::measurementCode).toList();
+    if(measurementDataRepo.hasDataAttached(measurementCodes)) {
+      throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
+    }
+    try {
+      deleteAllPtx(measurements.stream().toList());
+    } catch (Exception e) {
+      log.error("Measurement deletion failed due to " + e.getMessage());
+      throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
+    }
+  }
+
+  @Override
+  public void deleteAllNGS(Set<NGSMeasurement> measurements) {
+    if(measurements.isEmpty()) {
+      return;
+    }
+    List<MeasurementCode> measurementCodes = measurements.stream()
+        .map(NGSMeasurement::measurementCode).toList();
+    if(measurementDataRepo.hasDataAttached(measurementCodes)) {
+      throw new MeasurementDeletionException(DeletionErrorCode.DATA_ATTACHED);
+    }
+    try {
+      deleteAllNGS(measurements.stream().toList());
+    } catch (Exception e) {
+      log.error("Measurement deletion failed due to " + e.getMessage());
+      throw new MeasurementDeletionException(DeletionErrorCode.FAILED);
+    }
+  }
+
+  private void deleteAllPtx(List<ProteomicsMeasurement> measurements) {
+    pxpMeasurementJpaRepo.deleteAll(measurements);
+    measurementDataRepo.deleteProteomicsMeasurements(measurements);
+  }
+
+  private void deleteAllNGS(List<NGSMeasurement> measurements) {
+    ngsMeasurementJpaRepo.deleteAll(measurements);
+    measurementDataRepo.deleteNGSMeasurements(measurements);
   }
 
   @Override
