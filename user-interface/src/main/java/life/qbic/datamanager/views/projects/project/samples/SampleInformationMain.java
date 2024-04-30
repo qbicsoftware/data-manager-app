@@ -281,8 +281,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private boolean isSampleRemovable(SampleId sampleId) {
-    ProjectId projectId = context.projectId().orElseThrow();
-    return deletionService.isSampleRemovable(sampleId, projectId);
+    return deletionService.isSampleRemovable(sampleId);
   }
 
   private SampleBatchInformationSpreadsheet.SampleInfo convertSampleToSampleInfo(Sample sample,

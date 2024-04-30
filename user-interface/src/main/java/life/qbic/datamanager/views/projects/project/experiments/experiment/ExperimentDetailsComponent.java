@@ -24,6 +24,7 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -491,8 +492,11 @@ public class ExperimentDetailsComponent extends PageArea {
     // We load the experimental groups of the experiment and render them as cards
     List<ExperimentalGroup> groups = experimentInformationService.experimentalGroupsFor(
         context.experimentId().orElseThrow());
+    Comparator<String> natOrder = Comparator.naturalOrder();
     List<ExperimentalGroupCard> experimentalGroupsCards = groups.stream()
-        .map(ExperimentalGroupCard::new).toList();
+        .sorted((g1, g2) -> natOrder.compare(g1.name(), g2.name()))
+        .map(ExperimentalGroupCard::new)
+        .toList();
     experimentalGroupsCollection.setContent(experimentalGroupsCards);
     this.experimentalGroupCount = experimentalGroupsCards.size();
   }
@@ -535,8 +539,11 @@ public class ExperimentDetailsComponent extends PageArea {
     this.experimentalVariables.removeAll();
     // We load the experimental variables of the experiment and render them as cards
     List<ExperimentalVariable> variables = experiment.variables();
+    Comparator<String> natOrder = Comparator.naturalOrder();
     List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
+        .sorted((var1, var2) -> natOrder.compare(var1.name().value(), var2.name().value()))
         .map(ExperimentalVariableCard::new).toList();
+
     experimentalVariableCollection.setContent(experimentalVariableCards);
 
     if (variables.isEmpty()) {

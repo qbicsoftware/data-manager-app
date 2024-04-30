@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -9,6 +8,9 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.authorities.Role;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -17,8 +19,9 @@ import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -32,12 +35,15 @@ public class ProjectInformationService {
   private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
   private final ProjectPreviewLookup projectPreviewLookup;
   private final ProjectRepository projectRepository;
+  private final ProjectAccessService projectAccessService;
 
   public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
-      @Autowired ProjectRepository projectRepository) {
+      @Autowired ProjectRepository projectRepository,
+      @Autowired ProjectAccessService projectAccessService) {
     Objects.requireNonNull(projectPreviewLookup);
     this.projectPreviewLookup = projectPreviewLookup;
     this.projectRepository = projectRepository;
+    this.projectAccessService = projectAccessService;
   }
 
   /**
@@ -50,14 +56,27 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  @PostFilter("hasPermission(filterObject.projectId(),'life.qbic.projectmanagement.domain.model.project.Project','READ')")
   public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
-    // returned by JPA -> UnmodifiableRandomAccessList
-    List<ProjectPreview> previewList = projectPreviewLookup.query(filter, offset, limit,
-        sortOrders);
-    // the list must be modifiable for spring security to filter it
-    return new ArrayList<>(previewList);
+    var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
+    return projectPreviewLookup.query(filter, offset, limit,
+        sortOrders, accessibleProjectIds);
+  }
+
+  /* @PostFilter() annotation is not possible for acl secured objects in a paginated context, for more details see:
+     https://github.com/spring-projects/spring-security/issues/2629
+     therefore the list of accessible projectIds for the user have to be retrieved beforehand
+   */
+  private List<ProjectId> retrieveAccessibleProjectIdsForUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    var principal = ((QbicUserDetails) authentication.getPrincipal());
+    var userId = principal.getUserId();
+    var userRole = principal.getAuthorities().stream()
+        .filter(grantedAuthority -> grantedAuthority instanceof Role).findFirst();
+    var accessibleProjectIds = projectAccessService.getAccessibleProjectsForSid(userId);
+    userRole.ifPresent(grantedAuthority -> accessibleProjectIds.addAll(
+        projectAccessService.getAccessibleProjectsForSid(grantedAuthority.getAuthority())));
+    return accessibleProjectIds;
   }
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
@@ -67,7 +86,7 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-  public Optional<Project> find(String projectId) throws IllegalArgumentException{
+  public Optional<Project> find(String projectId) throws IllegalArgumentException {
     return find(ProjectId.parse(projectId));
   }
 

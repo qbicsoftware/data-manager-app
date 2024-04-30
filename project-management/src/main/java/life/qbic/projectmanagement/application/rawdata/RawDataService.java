@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -58,9 +60,12 @@ public class RawDataService {
     if (measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) == 0) {
       return false;
     }
-    var measurements = measurementLookupService.retrieveAllMeasurementsWithSampleIds(
-        samplesInExperiment);
-    var codes = measurements.stream().map(MeasurementMetadata::measurementCode).toList();
+    var ngsMeasurementCodes = measurementLookupService.queryAllNGSMeasurements(samplesInExperiment)
+        .stream().map(NGSMeasurement::measurementCode);
+    var pxpMeasurementCodes = measurementLookupService.queryAllProteomicsMeasurements(
+        samplesInExperiment).stream().map(ProteomicsMeasurement::measurementCode);
+    var codes = Stream.concat(ngsMeasurementCodes, pxpMeasurementCodes)
+        .collect(Collectors.toList());
     return rawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
   }
 
@@ -70,9 +75,8 @@ public class RawDataService {
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
-    var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId, filter, offset,
-        limit,
-        sortOrder);
+
+    var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
         .toList();
     var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
@@ -98,8 +102,7 @@ public class RawDataService {
       ExperimentId experimentId,
       int offset, int limit,
       List<SortOrder> sortOrder, ProjectId projectId) {
-    var measurements = retrieveNGSMeasurementsForExperiment(experimentId, filter, offset, limit,
-        sortOrder);
+    var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
     var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
         measurementCodes,
@@ -119,29 +122,17 @@ public class RawDataService {
   }
 
 
-  private List<NGSMeasurement> retrieveNGSMeasurementsForExperiment(ExperimentId experimentId,
-      String filter, int offset, int limit,
-      List<SortOrder> sortOrder) {
+  private List<NGSMeasurement> retrieveNGSMeasurementsForExperiment(ExperimentId experimentId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    /*We need to cast the id property manually*/
-    var measurementSortOrder = sortOrder.stream().map(sortOrder1 -> new SortOrder("id", true))
-        .toList();
-    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter,
-        samplesInExperiment, offset, limit, measurementSortOrder);
+    return measurementLookupService.queryAllNGSMeasurements(samplesInExperiment);
   }
 
   private List<ProteomicsMeasurement> retrieveProteomicsMeasurementsForExperiment(
-      ExperimentId experimentId,
-      String filter, int offset, int limit,
-      List<SortOrder> sortOrder) {
+      ExperimentId experimentId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    /*We need to cast the id property manually*/
-    var measurementSortOrder = sortOrder.stream().map(sortOrder1 -> new SortOrder("id", true))
-        .toList();
-    return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
-        samplesInExperiment, offset, limit, measurementSortOrder);
+    return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
   /**

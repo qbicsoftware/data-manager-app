@@ -22,8 +22,10 @@ import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.slf4j.Logger;
@@ -54,15 +56,18 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired UserPermissions userPermissions) {
+      @Autowired AddExperimentToProjectService addExperimentToProjectService,
+      @Autowired UserPermissions userPermissions,
+      @Autowired OntologyLookupService ontologyTermInformationService) {
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
+    Objects.requireNonNull(addExperimentToProjectService);
     this.dataManagerMenu = new DataManagerMenu(logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
-        projectInformationService, experimentInformationService,
-        userPermissions);
+        projectInformationService, experimentInformationService, addExperimentToProjectService,
+        userPermissions, ontologyTermInformationService);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");

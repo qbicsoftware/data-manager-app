@@ -110,17 +110,12 @@ public class OntologyClass {
       return false;
     }
     OntologyClass that = (OntologyClass) o;
-    return Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation) && Objects.equals(
-        ontologyVersion, that.ontologyVersion) && Objects.equals(ontologyIri,
-        that.ontologyIri) && Objects.equals(classLabel, that.classLabel) && Objects.equals(
-        curie, that.curie) && Objects.equals(description, that.description)
-        && Objects.equals(classIri, that.classIri);
+    return Objects.equals(classIri, that.classIri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(ontologyAbbreviation, ontologyVersion, ontologyIri, classLabel, curie,
-        description, classIri);
+    return Objects.hash(classIri);
   }
 
   public Long getId() {
@@ -130,4 +125,5 @@ public class OntologyClass {
   public void setId(Long id) {
     this.id = id;
   }
+
 }

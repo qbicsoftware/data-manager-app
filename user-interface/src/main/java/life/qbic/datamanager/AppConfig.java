@@ -63,7 +63,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ComponentScan({"life.qbic.identity.infrastructure"})
 public class AppConfig {
-
   /*
   Wiring up identity application core and policies
 
