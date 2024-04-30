@@ -74,13 +74,6 @@ span.warning {
   font-size: var(--lumo-font-size-s);
 }
 
-span.title {
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-l);
-  margin-bottom: 0.5rem;
-}
-
 .spreadsheet-list-item {
   display: inline-flex;
   width: 100%;
