@@ -1,32 +1,38 @@
 package life.qbic.datamanager.views.projects.overview.components;
 
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.avatar.AvatarGroup;
+import com.vaadin.flow.component.avatar.AvatarGroup.AvatarGroupItem;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.SelectionMode;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import java.io.Serial;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
 import org.springframework.stereotype.Component;
@@ -36,8 +42,8 @@ import org.springframework.stereotype.Component;
  * <p>
  * A component that displays previews of accessible project previews.
  * <p>
- * The component also fires {@link ProjectCreationSubmitEvent} to all registered listeners, if a user has
- * the intend to add a new project.
+ * The component also fires {@link ProjectCreationSubmitEvent} to all registered listeners, if a
+ * user has the intend to add a new project.
  *
  * @since 1.0.0
  */
@@ -45,16 +51,16 @@ import org.springframework.stereotype.Component;
 @RouteScope
 public class ProjectCollectionComponent extends PageArea {
 
-  private final Div header = new Div();
-  private String projectPreviewFilter = "";
-  private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
   final TextField projectSearchField = new TextField();
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
   final Button createProjectButton = new Button("Add");
+  private final Div header = new Div();
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
+  private String projectPreviewFilter = "";
+  private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
 
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
       ProjectInformationService projectInformationService) {
@@ -68,9 +74,8 @@ public class ProjectCollectionComponent extends PageArea {
 
   private void initHeader() {
     header.addClassName("header");
-    Span titleField = new Span();
-    titleField.setText("Projects");
-    titleField.addClassName("title");
+    Span title = new Span("My Projects");
+    title.addClassName("title");
     createProjectButton.addClassName("primary");
     projectSearchField.setPlaceholder("Search");
     projectSearchField.setClearButtonVisible(true);
@@ -78,7 +83,7 @@ public class ProjectCollectionComponent extends PageArea {
     projectSearchField.addClassNames("search-field");
     Span controls = new Span(projectSearchField, createProjectButton);
     controls.addClassName("controls");
-    header.add(titleField, controls);
+    header.add(title, controls);
     add(header);
   }
 
@@ -113,21 +118,20 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   private void layoutGrid() {
-    projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-                item.projectCode()))).setHeader("ID").setWidth("7em").setFlexGrow(0)
-        .setSortProperty("projectCode");
-
-    projectGrid.addColumn(new ComponentRenderer<>(
-            item -> new Anchor(String.format(Projects.PROJECT_INFO, item.projectId().value()),
-                item.projectTitle()))).setHeader("Title").setKey("projectTitle").setSortable(true)
-        .setSortProperty("projectTitle");
-
-    projectGrid.addColumn(new LocalDateTimeRenderer<>(
-            projectPreview -> asClientLocalDateTime(projectPreview.lastModified()),
-            "yyyy-MM-dd HH:mm:ss")).setKey("lastModified").setHeader("Last Modified").setSortable(true)
-        .setSortProperty("lastModified");
-    projectGrid.addClassName("projects-grid");
+    projectGrid.setSelectionMode(SelectionMode.NONE);
+    projectGrid.addComponentColumn(projectPreview -> {
+      String lastModified = asClientLocalDateTime(projectPreview.lastModified()).format(
+          DateTimeFormatter.ISO_LOCAL_DATE);
+      ProjectPreviewItem projectPreviewItem = new ProjectPreviewItem(
+          projectPreview.projectId().value(), projectPreview.projectCode(),
+          projectPreview.projectTitle(), lastModified);
+      projectPreviewItem.setCollaborators(List.of("Frank Tank", "Awesome Guy", "Guso Goon"));
+      projectPreviewItem.setProjectDetails("Mrs Principles", "Mr Responsible");
+      projectPreviewItem.setMeasurementTypes(List.of("Proteomics", "Genomics"));
+      return projectPreviewItem;
+    });
+    projectGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
+    projectGrid.addClassName("project-grid");
     add(projectGrid);
   }
 
@@ -157,4 +161,63 @@ public class ProjectCollectionComponent extends PageArea {
   public void refresh() {
     projectGrid.getDataProvider().refreshAll();
   }
+
+  /**
+   * ProjectPreviewItem
+   * <p>
+   * The Project Preview Item is a Div container styled similar to the {@link Card} component,
+   * hosting the project information of interest provided by a {@link ProjectPreview}
+   */
+  private static class ProjectPreviewItem extends Div {
+
+    private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+    private final Span tags = new Span();
+    private final Div projectDetails = new Div();
+    private final AvatarGroup usersWithAccess = new AvatarGroup();
+    private static final int MAXIMUM_NUMBER_OF_SHOWN_AVATARS = 2;
+
+    public ProjectPreviewItem(String projectId, String projectCode,
+        String projectTitle, String lastModificationDate) {
+      add(createHeader(projectCode, projectTitle));
+      Span lastModified = new Span(String.format("Last modified on %s", lastModificationDate));
+      lastModified.addClassName("secondary");
+      add(lastModified);
+      projectDetails.addClassName("details");
+      add(projectDetails);
+      usersWithAccess.setMaxItemsVisible(MAXIMUM_NUMBER_OF_SHOWN_AVATARS);
+      add(usersWithAccess);
+      addClassNames("project-preview-item");
+      addClickListener(event -> getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class,
+          new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId))));
+    }
+
+    private Span createHeader(String projectCode, String projectTitle) {
+      Span title = new Span(String.format("%s - %s", projectCode, projectTitle));
+      title.addClassName("project-preview-item-title");
+      tags.addClassNames("tag-collection");
+      Span header = new Span(title, tags);
+      header.addClassName("header");
+      return header;
+    }
+
+    public void setCollaborators(List<String> collaboratorNames) {
+      usersWithAccess.getItems().forEach(usersWithAccess::remove);
+      collaboratorNames.stream().map(AvatarGroupItem::new).forEach(usersWithAccess::add);
+    }
+
+    public void setProjectDetails(String principalInvestigatorName, String responsiblePartyName) {
+      projectDetails.removeAll();
+      Span principalInvestigator = new Span(
+          String.format("Principal Investigator: %s", principalInvestigatorName));
+      Span projectResponsible = new Span(
+          String.format("Project Responsible: %s", responsiblePartyName));
+      projectDetails.add(principalInvestigator, projectResponsible);
+    }
+
+    public void setMeasurementTypes(Collection<String> measurementTypes) {
+      tags.removeAll();
+      measurementTypes.forEach(measurementType -> tags.add(new Tag(measurementType)));
+    }
+  }
+
 }

@@ -2,6 +2,10 @@ package life.qbic.datamanager.views.projects.overview;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
@@ -21,6 +25,7 @@ import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.finances.api.FinanceService;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ContactRepository;
@@ -32,8 +37,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * Project overview {@link Main} component that shows project information and additional components to manage project
- * data.
+ * Project overview {@link Main} component that shows project information and additional components
+ * to manage project data.
  *
  * @since 1.0.0
  */
@@ -41,6 +46,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @Route(value = Projects.PROJECTS, layout = UserMainLayout.class)
 @PermitAll
 public class ProjectOverviewMain extends Main {
+
   @Serial
   private static final long serialVersionUID = 4625607082710157069L;
   private static final Logger log = logger(ProjectOverviewMain.class);
@@ -50,20 +56,23 @@ public class ProjectOverviewMain extends Main {
   private final OntologyLookupService ontologyTermInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final ContactRepository contactRepository;
+  private final UserInformationService userInformationService;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       OntologyLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
+      UserInformationService userInformationService,
       ContactRepository contactRepository) {
     this.projectCollectionComponent = projectCollectionComponent;
     this.projectCreationService = projectCreationService;
     this.financeService = financeService;
     this.ontologyTermInformationService = ontologyTermInformationService;
     this.addExperimentToProjectService = addExperimentToProjectService;
-    add(projectCollectionComponent);
     this.contactRepository = contactRepository;
-    add(this.projectCollectionComponent);
+    this.userInformationService = userInformationService;
+    addTitleAndDescription();
+    add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.financeService,
           this.ontologyTermInformationService, this.contactRepository);
@@ -80,6 +89,26 @@ public class ProjectOverviewMain extends Main {
         this.getClass().getSimpleName(), System.identityHashCode(this),
         projectCollectionComponent.getClass().getSimpleName(),
         System.identityHashCode(projectCollectionComponent)));
+  }
+
+  private void addTitleAndDescription() {
+    Div titleAndDescription = new Div();
+    titleAndDescription.addClassName("title-and-description");
+    String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+    var user = userInformationService.findById(userId);
+    Span title = new Span(String.format("Welcome Back %s!", user.orElseThrow().userName()));
+    title.addClassNames("project-overview-title");
+    Span descriptionStart = new Span(
+        "Manage all your scientific data in one place with the Data Manager. You can access our robust ");
+    Anchor descriptionLinkToDoc = new Anchor("https://qbicsoftware.github.io/data-manager-app/",
+        "Documentation", AnchorTarget.BLANK);
+    Span descriptionEnd = new Span(
+        " and learn more about using the Data Manager.\n"
+            + "Start by creating a new project or continue working on an already existing project.");
+    Div description = new Div(descriptionStart, descriptionLinkToDoc, descriptionEnd);
+    description.addClassName("description");
+    titleAndDescription.add(title, description);
+    add(titleAndDescription);
   }
 
   private boolean isOfferSearchAllowed() {
