@@ -399,6 +399,9 @@
 
 .project-collection-component {
   height: 100%;
+  /*Necessary since we currently don't distinguish
+  borders if only one component was provided within a main area*/
+  border-top: none;
 }
 
 .project-collection-component .header {
