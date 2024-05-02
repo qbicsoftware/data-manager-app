@@ -49,7 +49,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   private final List<ComponentEventListener<RemoveEvent>> removeEventListeners;
   private final TextField nameField;
-  private final long id = -1;
+  private long id = -1;
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
   private final NumberField replicateCountField;
   int variableCount = 0;
@@ -236,6 +236,10 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
     boolean variableNameContainsFilterString = level.variableName().value().toLowerCase()
         .contains(filterString.toLowerCase());
     return variableNameContainsFilterString || levelValueContainsFilterString;
+  }
+
+  public void setGroupId(long id) {
+    this.id = id;
   }
 
   public static class ExperimentalGroupBean {
