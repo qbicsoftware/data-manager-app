@@ -401,6 +401,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .toList();
     var groups = experimentInformationService.getExperimentalGroups(experimentId)
         .stream().map(this::toContent).toList();
+
     ExperimentalGroupsDialog dialog;
     if(groups.isEmpty()) {
       dialog = ExperimentalGroupsDialog.empty(levels);
