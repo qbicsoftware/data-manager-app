@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -32,9 +33,17 @@ import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.identity.api.UserInfo;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.stereotype.Component;
 
 /**
@@ -55,17 +64,31 @@ public class ProjectCollectionComponent extends PageArea {
   private static final long serialVersionUID = 8579375312838977742L;
   final TextField projectSearchField = new TextField();
   final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
-  final Button createProjectButton = new Button("Add");
+  final Button createProjectButton = new Button("Create");
   private final Div header = new Div();
   private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
+  private final transient ProjectAccessService projectAccessService;
+  private final transient UserInformationService userInformationService;
+  private final transient MeasurementService measurementService;
   private String projectPreviewFilter = "";
   private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
 
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
-      ProjectInformationService projectInformationService) {
-    this.clientDetailsProvider = clientDetailsProvider;
-    this.projectInformationService = projectInformationService;
+      ProjectInformationService projectInformationService,
+      ProjectAccessService projectAccessService,
+      UserInformationService userInformationService,
+      MeasurementService measurementService) {
+    this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider,
+        "Client details provider cannot be null");
+    this.projectInformationService = Objects.requireNonNull(projectInformationService,
+        "Project information service cannot be null");
+    this.projectAccessService = Objects.requireNonNull(projectAccessService,
+        "Project access service cannot be null");
+    this.userInformationService = Objects.requireNonNull(userInformationService,
+        "User information service cannot be null");
+    this.measurementService = Objects.requireNonNull(measurementService,
+        "Measurement service cannot be null");
     layoutComponent();
     createLazyProjectView();
     configureSearch();
@@ -120,19 +143,55 @@ public class ProjectCollectionComponent extends PageArea {
   private void layoutGrid() {
     projectGrid.setSelectionMode(SelectionMode.NONE);
     projectGrid.addComponentColumn(projectPreview -> {
+      Project project = projectInformationService.find(projectPreview.projectId()).orElseThrow();
       String lastModified = asClientLocalDateTime(projectPreview.lastModified()).format(
           DateTimeFormatter.ISO_LOCAL_DATE);
       ProjectPreviewItem projectPreviewItem = new ProjectPreviewItem(
           projectPreview.projectId().value(), projectPreview.projectCode(),
           projectPreview.projectTitle(), lastModified);
-      projectPreviewItem.setCollaborators(List.of("Frank Tank", "Awesome Guy", "Guso Goon"));
-      projectPreviewItem.setProjectDetails("Mrs Principles", "Mr Responsible");
-      projectPreviewItem.setMeasurementTypes(List.of("Proteomics", "Genomics"));
+      var userNames = retrieveProjectCollaborators(projectPreview.projectId());
+      projectPreviewItem.setCollaborators(userNames);
+      String projectManagerName = project.getProjectManager().fullName();
+      String responsiblePersonName = "";
+      if (project.getResponsiblePerson().isPresent()) {
+        responsiblePersonName = project.getResponsiblePerson().get().fullName();
+      }
+      projectPreviewItem.setProjectDetails(projectManagerName, responsiblePersonName);
+      var measurementTypesInProject = retrieveRegisteredMeasurementTypes(project.getId(),
+          project.experiments());
+      projectPreviewItem.setMeasurementTypes(measurementTypesInProject);
       return projectPreviewItem;
     });
     projectGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     projectGrid.addClassName("project-grid");
     add(projectGrid);
+  }
+
+  private Collection<MeasurementType> retrieveRegisteredMeasurementTypes(ProjectId projectId,
+      Collection<ExperimentId> experimentsInProject) {
+    long proteomicsMeasurementCount = experimentsInProject.stream().map(
+            experimentId -> measurementService.countProteomicsMeasurements(experimentId, projectId))
+        .reduce(
+            0L, Long::sum);
+    long ngsMeasurementCount = experimentsInProject.stream()
+        .map(experimentId -> measurementService.countNGSMeasurements(experimentId, projectId))
+        .reduce(
+            0L, Long::sum);
+    Collection<MeasurementType> measurementTypes = new ArrayList<>();
+    if (proteomicsMeasurementCount != 0) {
+      measurementTypes.add(MeasurementType.PROTEOMICS);
+    }
+    if (ngsMeasurementCount != 0) {
+      measurementTypes.add(MeasurementType.GENOMICS);
+    }
+    return measurementTypes;
+  }
+
+  private List<String> retrieveProjectCollaborators(ProjectId projectId) {
+    return projectAccessService.listCollaborators(projectId).stream()
+        .map(projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
+            //We can't throw an exception here since projects can be linked to deleted users
+            .map(UserInfo::userName).orElse("")).toList();
   }
 
   private void fireCreateClickedEvent() {
@@ -163,6 +222,25 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   /**
+   * Tag color enum is used to set the tag color to one of the predefined values to allow different
+   * coloration of tags as necessary
+   */
+  public enum MeasurementType {
+    PROTEOMICS("Proteomics"),
+    GENOMICS("Genomics");
+
+    private final String type;
+
+    MeasurementType(String type) {
+      this.type = type;
+    }
+
+    public String getType() {
+      return type;
+    }
+  }
+
+  /**
    * ProjectPreviewItem
    * <p>
    * The Project Preview Item is a Div container styled similar to the {@link Card} component,
@@ -171,16 +249,16 @@ public class ProjectCollectionComponent extends PageArea {
   private static class ProjectPreviewItem extends Div {
 
     private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+    private static final int MAXIMUM_NUMBER_OF_SHOWN_AVATARS = 3;
     private final Span tags = new Span();
     private final Div projectDetails = new Div();
     private final AvatarGroup usersWithAccess = new AvatarGroup();
-    private static final int MAXIMUM_NUMBER_OF_SHOWN_AVATARS = 2;
 
     public ProjectPreviewItem(String projectId, String projectCode,
         String projectTitle, String lastModificationDate) {
       add(createHeader(projectCode, projectTitle));
       Span lastModified = new Span(String.format("Last modified on %s", lastModificationDate));
-      lastModified.addClassName("secondary");
+      lastModified.addClassName("tertiary");
       add(lastModified);
       projectDetails.addClassName("details");
       add(projectDetails);
@@ -209,15 +287,29 @@ public class ProjectCollectionComponent extends PageArea {
       projectDetails.removeAll();
       Span principalInvestigator = new Span(
           String.format("Principal Investigator: %s", principalInvestigatorName));
-      Span projectResponsible = new Span(
-          String.format("Project Responsible: %s", responsiblePartyName));
+      Span projectResponsible = new Span();
+      if (!responsiblePartyName.isBlank()) {
+        projectResponsible.setText(String.format("Project Responsible: %s", responsiblePartyName));
+      }
       projectDetails.add(principalInvestigator, projectResponsible);
     }
 
-    public void setMeasurementTypes(Collection<String> measurementTypes) {
+    public void setMeasurementTypes(Collection<MeasurementType> measurementTypes) {
       tags.removeAll();
-      measurementTypes.forEach(measurementType -> tags.add(new Tag(measurementType)));
+      measurementTypes.forEach(measurementType -> {
+        Tag tag = new Tag(measurementType.getType());
+        tag.setTagColor(getMeasurementSpecificTagColor(measurementType));
+        tags.add(tag);
+      });
+    }
+
+    private TagColor getMeasurementSpecificTagColor(MeasurementType measurementType) {
+      return switch (measurementType) {
+        case PROTEOMICS -> TagColor.VIOLET;
+        case GENOMICS -> TagColor.PINK;
+        default ->
+            throw new IllegalStateException("Unexpected measurement Type " + measurementType);
+      };
     }
   }
-
 }
