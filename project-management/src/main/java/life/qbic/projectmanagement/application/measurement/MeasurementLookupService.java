@@ -68,6 +68,14 @@ public class MeasurementLookupService {
     return new ArrayList<>(termList);
   }
 
+  public long countNGSMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds);
+  }
+
+  public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
+  }
+
   /**
    * Provides the count of the registered measurements for the provided sampleIds
    *
@@ -76,8 +84,8 @@ public class MeasurementLookupService {
    * @return number of measurements for all domains associated with the provided sampleIds
    */
   public long countMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
-    return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds)
-        + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
+    return countNGSMeasurementsBySampleIds(sampleIds) + countProteomicsMeasurementsBySampleIds(
+        sampleIds);
   }
 
   public List<ProteomicsMeasurement> queryAllProteomicsMeasurements(List<SampleId> sampleIds) {
