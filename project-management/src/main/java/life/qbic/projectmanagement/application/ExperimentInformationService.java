@@ -350,8 +350,6 @@ public class ExperimentInformationService {
 
   private List<Long> getGroupIdsToDelete(List<ExperimentalGroup> existingGroups,
       List<ExperimentalGroupDTO> newGroups) {
-    System.err.println(existingGroups.stream().map(ExperimentalGroup::id).toList());
-    System.err.println(newGroups.stream().map(ExperimentalGroupDTO::id).toList());
     Set<Long> newIds = newGroups.stream().map(ExperimentalGroupDTO::id).collect(Collectors.toSet());
     return existingGroups.stream()
         .map(ExperimentalGroup::id)
