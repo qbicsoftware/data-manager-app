@@ -307,8 +307,6 @@ public class ProjectCollectionComponent extends PageArea {
       return switch (measurementType) {
         case PROTEOMICS -> TagColor.VIOLET;
         case GENOMICS -> TagColor.PINK;
-        default ->
-            throw new IllegalStateException("Unexpected measurement Type " + measurementType);
       };
     }
   }
