@@ -12,6 +12,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -51,12 +52,12 @@ public class ProjectOverviewMain extends Main {
   private static final long serialVersionUID = 4625607082710157069L;
   private static final Logger log = logger(ProjectOverviewMain.class);
   private final ProjectCollectionComponent projectCollectionComponent;
-  private final ProjectCreationService projectCreationService;
-  private final FinanceService financeService;
-  private final OntologyLookupService ontologyTermInformationService;
-  private final AddExperimentToProjectService addExperimentToProjectService;
-  private final ContactRepository contactRepository;
-  private final UserInformationService userInformationService;
+  private final transient ProjectCreationService projectCreationService;
+  private final transient FinanceService financeService;
+  private final transient OntologyLookupService ontologyTermInformationService;
+  private final transient AddExperimentToProjectService addExperimentToProjectService;
+  private final transient ContactRepository contactRepository;
+  private final transient UserInformationService userInformationService;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
@@ -64,13 +65,19 @@ public class ProjectOverviewMain extends Main {
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
       ContactRepository contactRepository) {
-    this.projectCollectionComponent = projectCollectionComponent;
-    this.projectCreationService = projectCreationService;
-    this.financeService = financeService;
-    this.ontologyTermInformationService = ontologyTermInformationService;
-    this.addExperimentToProjectService = addExperimentToProjectService;
-    this.contactRepository = contactRepository;
-    this.userInformationService = userInformationService;
+    this.projectCollectionComponent = Objects.requireNonNull(projectCollectionComponent,
+        "project collection component can not be null");
+    this.projectCreationService = Objects.requireNonNull(projectCreationService,
+        "project creation service can not be null");
+    this.financeService = Objects.requireNonNull(financeService, "finance service can not be null");
+    this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService,
+        "ontology term information service can not be null");
+    this.addExperimentToProjectService = Objects.requireNonNull(addExperimentToProjectService,
+        "add experiment to project service cannot be null");
+    this.contactRepository = Objects.requireNonNull(contactRepository,
+        "contact repository can not be null");
+    this.userInformationService = Objects.requireNonNull(userInformationService,
+        "user information service can not be null");
     addTitleAndDescription();
     add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
