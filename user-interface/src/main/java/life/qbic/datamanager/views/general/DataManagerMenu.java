@@ -10,6 +10,7 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
+import life.qbic.datamanager.views.account.UserProfileMain;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,7 @@ public class DataManagerMenu extends Div {
     SubMenu userSubMenu = userMenuItem.getSubMenu();
     userSubMenu.addItem("Personal Access Tokens (PAT)", event -> routeTo(
         PersonalAccessTokenMain.class));
+    userSubMenu.addItem("User Profile", event -> routeTo(UserProfileMain.class));
     userSubMenu.addItem("Log Out", event -> logoutService.logout());
   }
 

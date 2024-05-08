@@ -57,6 +57,10 @@ public class QbicUserDetails implements UserDetails {
     return user.id();
   }
 
+  public String getAlias() {
+    return user.alias();
+  }
+
   public String fullName() {
     return user.fullName();
   }

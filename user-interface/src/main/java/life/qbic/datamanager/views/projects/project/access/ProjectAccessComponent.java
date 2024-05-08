@@ -120,7 +120,7 @@ public class ProjectAccessComponent extends PageArea {
     Grid<ProjectAccessService.ProjectCollaborator> grid = new Grid<>();
     Column<ProjectAccessService.ProjectCollaborator> usernameColumn = grid.addColumn(
             projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
-                .map(UserInfo::userName).orElseThrow())
+                .map(UserInfo::alias).orElseThrow())
         .setKey("username");
     Column<ProjectAccessService.ProjectCollaborator> projectRoleColumn = grid.addColumn(
             new ComponentRenderer<>(
