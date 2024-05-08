@@ -397,6 +397,13 @@
   align-items: baseline;
 }
 
+.project-collection-component {
+  height: 100%;
+  /*Necessary since we currently don't distinguish
+  borders if only one component was provided within a main area*/
+  border-top: none;
+}
+
 .project-collection-component .header {
   display: flex;
   column-gap: var(--lumo-space-xl);
@@ -407,6 +414,52 @@
   display: flex;
   align-content: space-between;
   gap: 1rem;
+}
+
+.project-collection-component .project-grid {
+  height: 100%;
+  margin-top: var(--lumo-space-s);
+}
+
+.project-collection-component .project-grid vaadin-grid-cell-content {
+  padding: var(--lumo-space-xs);
+}
+
+.project-collection-component .project-preview-item {
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin-bottom: var(--lumo-space-s);
+  margin-top: var(--lumo-space-s);
+  overflow: hidden;
+  padding: var(--lumo-space-l);
+  row-gap: var(--lumo-space-s);
+  text-overflow: ellipsis;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.project-collection-component .project-preview-item .header {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  flex-direction: row;
+}
+
+.project-collection-component .project-preview-item .project-preview-item-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+}
+
+.project-collection-component .project-preview-item .details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  color: var(--lumo-secondary-text-color);
 }
 
 .project-details-component .header {

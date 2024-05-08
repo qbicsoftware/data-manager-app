@@ -141,6 +141,5 @@
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--lumo-space-xs);
-  width: 100%;
   white-space: nowrap;
 }

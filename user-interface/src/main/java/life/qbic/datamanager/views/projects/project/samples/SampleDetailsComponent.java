@@ -32,6 +32,7 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
@@ -358,7 +359,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
      */
     private static Span createBadge() {
       Tag tag = new Tag(String.valueOf(0));
-      tag.addClassName("contrast");
+      tag.setTagColor(TagColor.CONTRAST);
       return tag;
     }
   }

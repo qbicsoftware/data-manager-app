@@ -145,14 +145,11 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
-      int offset,
-      int limit,
-      List<SortOrder> sortOrders, ProjectId projectId) {
+  public long countProteomicsMeasurements(ExperimentId experimentId,
+      ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
-        offset, limit, sortOrders);
+    return measurementLookupService.countProteomicsMeasurementsBySampleIds(samplesInExperiment);
   }
 
   @PostAuthorize(
@@ -178,6 +175,26 @@ public class MeasurementService {
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
     return measurementLookupService.findProteomicsMeasurement(measurementId);
+  }
+
+  @PostAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public long countNGSMeasurements(ExperimentId experimentId, ProjectId projectId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.countNGSMeasurementsBySampleIds(samplesInExperiment);
+  }
+
+  @PostAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
+      int offset,
+      int limit,
+      List<SortOrder> sortOrders, ProjectId projectId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
+        offset, limit, sortOrders);
   }
 
   @PostAuthorize(
