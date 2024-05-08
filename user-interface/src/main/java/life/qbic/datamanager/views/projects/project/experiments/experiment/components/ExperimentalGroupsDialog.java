@@ -190,6 +190,12 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         .toList();
   }
 
+  public boolean isValid() {
+    return this.experimentalGroupsCollection.getChildren()
+        .filter(component -> component.getClass().equals(ExperimentalGroupInput.class))
+        .noneMatch(g -> ((ExperimentalGroupInput) g).isInvalid());
+  }
+
   public record ExperimentalGroupContent(long id, String name, int size, List<VariableLevel> variableLevels) {}
 
   public static class ConfirmEvent extends

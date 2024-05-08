@@ -416,11 +416,13 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onExperimentalGroupAddConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
-    var groupContents = dialog.experimentalGroups();
-    addExperimentalGroups(groupContents);
+    if (dialog.isValid()) {
+      var groupContents = dialog.experimentalGroups();
+      addExperimentalGroups(groupContents);
 
-    reloadExperimentalGroups();
-    dialog.close();
+      reloadExperimentalGroups();
+      dialog.close();
+    }
   }
 
   private void openExperimentalGroupEditDialog() {
@@ -442,12 +444,15 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void onExperimentalGroupEditConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
-    var groupDTOs = confirmEvent.getSource().experimentalGroups().stream()
-        .map(this::toExperimentalGroupDTO).toList();
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    experimentInformationService.updateExperimentalGroupsOfExperiment(experimentId, groupDTOs);
-    reloadExperimentalGroups();
-    confirmEvent.getSource().close();
+    ExperimentalGroupsDialog dialog = confirmEvent.getSource();
+    if (dialog.isValid()) {
+      var groupDTOs = dialog.experimentalGroups().stream()
+          .map(this::toExperimentalGroupDTO).toList();
+      ExperimentId experimentId = context.experimentId().orElseThrow();
+      experimentInformationService.updateExperimentalGroupsOfExperiment(experimentId, groupDTOs);
+      reloadExperimentalGroups();
+      confirmEvent.getSource().close();
+    }
   }
 
   private void addExperimentalGroups(

@@ -158,7 +158,11 @@ public class ProjectDetailsComponent extends PageArea {
     var projectResponsible = new Div();
     project.getResponsiblePerson()
         .ifPresentOrElse(person -> projectResponsible.add(generateContactContainer(person)),
-            () -> projectResponsible.add(createNoPersonAssignedSpan()));
+            () -> {
+              Span noProjectResponsibleSelected = new Span("No Project Responsible Selected");
+              noProjectResponsibleSelected.addClassName("tertiary");
+              projectResponsible.add(noProjectResponsibleSelected);
+            });
     entries.add(new Entry("Project Responsible", "", projectResponsible));
 
     var projectManager = new Div();
@@ -176,12 +180,6 @@ public class ProjectDetailsComponent extends PageArea {
     emailSpan.addClassNames("email");
     nameSpan.addClassName("name");
     return personContainer;
-  }
-
-  private static Span createNoPersonAssignedSpan() {
-    Span noPersonAssignedSpan = new Span("-");
-    noPersonAssignedSpan.addClassName("no-person-assigned");
-    return noPersonAssignedSpan;
   }
 
   public void setContext(Context context) {
