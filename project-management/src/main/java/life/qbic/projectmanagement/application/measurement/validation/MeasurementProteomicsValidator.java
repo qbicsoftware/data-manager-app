@@ -391,7 +391,7 @@ public class MeasurementProteomicsValidator implements
 
     public static boolean isDigestionMethod(String input) {
       return Arrays.stream(DigestionMethod.values()).anyMatch(o ->
-              o.getName().toLowerCase().equals(input.toLowerCase()));
+              o.getName().equalsIgnoreCase(input));
     }
   }
 
