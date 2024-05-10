@@ -118,7 +118,8 @@ public class MeasurementProteomicsValidator implements
                 metadata.measurementIdentifier().orElse(""))
             .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
             .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-                .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()))));
+                .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())
+                    .combine(validationPolicy.validateDigestionMethod(metadata.digestionMethod())))));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -159,6 +160,8 @@ public class MeasurementProteomicsValidator implements
     private static final String UNKNOWN_ORGANISATION_ID_MESSAGE = "The organisation ID does not seem to be a ROR ID: \"%s\"";
 
     private static final String UNKNOWN_INSTRUMENT_ID = "Unknown instrument id: \"%s\"";
+
+    private static final String UNKNOWN_DIGESTION_METHOD = "Unknown digestion method: \"%s\"";
 
     // The unique ROR id part of the URL is described in the official documentation:
     // https://ror.readme.io/docs/ror-identifier-pattern
@@ -230,6 +233,14 @@ public class MeasurementProteomicsValidator implements
       }
       return ValidationResult.withFailures(1,
           List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
+    }
+
+    ValidationResult validateDigestionMethod(String digestionMethod) {
+      if(DigestionMethod.isDigestionMethod(digestionMethod)) {
+        return ValidationResult.successful(1);
+      }
+      return ValidationResult.withFailures(1,
+          List.of(UNKNOWN_DIGESTION_METHOD.formatted(digestionMethod)));
     }
 
     ValidationResult validateMandatoryDataForUpdate(ProteomicsMeasurementMetadata metadata) {
@@ -358,4 +369,30 @@ public class MeasurementProteomicsValidator implements
     }
 
   }
+
+  /**
+   * Describes Digestion Methods for Samples to be Measured by Proteomics
+   */
+  public enum DigestionMethod {
+    IN_GEL("in gel"),
+    IN_SOLUTION("in solution"),
+    IST_PROTEOMICS_KIT("iST proteomics kit"),
+    ON_BEADS("on beads");
+
+    private final String name;
+
+    DigestionMethod(String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public static boolean isDigestionMethod(String input) {
+      return Arrays.stream(DigestionMethod.values()).anyMatch(o ->
+              o.getName().equalsIgnoreCase(input));
+    }
+  }
+
 }
