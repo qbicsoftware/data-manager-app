@@ -8,6 +8,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -198,10 +199,9 @@ private void handleCopyClicked(String rawTokenText) {
   }
 
   private Div generateDescription() {
-    /*There is currently no download Guide, This should be adapted once it's present*/
     Anchor downloadGuideLink = new Anchor(
-        "https://github.com/qbicsoftware/postman-cli/blob/main/README.md",
-        "Download Guide");
+        "https://qbicsoftware.github.io/research-data-management/download/introduction/",
+        "Download Guide", AnchorTarget.BLANK);
     Text upperDescription = new Text(
         "Personal access tokens allow you to access your own data via the API. They can be used as an alternative over basic authentication (authentication through username and password).");
     Div description = generateDescriptionText(downloadGuideLink, upperDescription);
