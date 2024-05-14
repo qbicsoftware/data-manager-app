@@ -13,6 +13,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -24,6 +25,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdated;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -129,13 +131,15 @@ public class ExperimentInformationService {
    * experimental groups in a give experiment!
    *
    * @param experimentId the experiment reference to delete the experimental variables from
+   * @param projectId the Id of the project that is being changed
    * @since 1.0.0
    */
-  public void deleteAllExperimentalVariables(ExperimentId experimentId) {
+  public void deleteAllExperimentalVariables(ExperimentId experimentId, ProjectId projectId) {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.removeAllExperimentalGroups();
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
+    dispatchSuccessfulExperimentUpdate(projectId);
   }
 
   /**
@@ -157,10 +161,12 @@ public class ExperimentInformationService {
    * Adds species to an experiment.
    *
    * @param experimentId the Id of the experiment for which to add the species
+   * @param projectId the Id of the project that is being changed
    * @param species      the species to add
    * @see Experiment#addSpecies(Collection)
    */
-  public void addSpeciesToExperiment(ExperimentId experimentId, OntologyTerm... species) {
+  public void addSpeciesToExperiment(ExperimentId experimentId, ProjectId projectId,
+      OntologyTerm... species) {
     Arrays.stream(species).forEach(Objects::requireNonNull);
     if (species.length < 1) {
       return;
@@ -168,16 +174,19 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecies(List.of(species));
     experimentRepository.update(experiment);
+    dispatchSuccessfulExperimentUpdate(projectId);
   }
 
   /**
    * Adds specimens to an experiment
    *
    * @param experimentId the Id of the experiment for which to add the specimen
+   * @param projectId the Id of the project that is being changed
    * @param specimens    the specimens to add
    * @see Experiment#addSpecimens(Collection)
    */
-  public void addSpecimenToExperiment(ExperimentId experimentId, OntologyTerm... specimens) {
+  public void addSpecimenToExperiment(ExperimentId experimentId, ProjectId projectId,
+      OntologyTerm... specimens) {
     Arrays.stream(specimens).forEach(Objects::requireNonNull);
     if (specimens.length < 1) {
       return;
@@ -185,16 +194,19 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecimens(List.of(specimens));
     experimentRepository.update(experiment);
+    dispatchSuccessfulExperimentUpdate(projectId);
   }
 
   /**
    * Adds analytes to an experiment
    *
    * @param experimentId the Id of the experiment for which to add the analyte
+   * @param projectId the Id of the project that is being changed
    * @param analytes     the analytes to add
    * @see Experiment#addAnalytes(Collection)
    */
-  public void addAnalyteToExperiment(ExperimentId experimentId, OntologyTerm... analytes) {
+  public void addAnalyteToExperiment(ExperimentId experimentId, ProjectId projectId,
+      OntologyTerm... analytes) {
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
     if (analytes.length < 1) {
       return;
@@ -202,12 +214,14 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addAnalytes(List.of(analytes));
     experimentRepository.update(experiment);
+    dispatchSuccessfulExperimentUpdate(projectId);
   }
 
   /**
    * Adds {@link ExperimentalVariable} to an {@link Experiment}
    *
    * @param experimentId the Id of the experiment
+   * @param projectId the Id of the project that is being changed
    * @param variableName the name of the variable to be added
    * @param unit         the optionally defined unit for the {@link ExperimentalValue} within the
    *                     {@link ExperimentalVariable}
@@ -215,7 +229,8 @@ public class ExperimentInformationService {
    *                     {@link ExperimentalValue} will be derived for the to be defined
    *                     {@link ExperimentalVariable}
    */
-  public void addVariableToExperiment(ExperimentId experimentId, String variableName, String unit,
+  public void addVariableToExperiment(ExperimentId experimentId, ProjectId projectId,
+      String variableName, String unit,
       List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);
@@ -231,6 +246,7 @@ public class ExperimentInformationService {
     }
     experiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(experiment);
+    dispatchSuccessfulExperimentUpdate(projectId);
   }
 
   /**
@@ -284,9 +300,11 @@ public class ExperimentInformationService {
    *
    * @param id the experiment identifier of the experiment the experimental groups are going to be
    *           deleted.
+   * @param projectId the Id of the project that is being changed
    * @since 1.0.0
    */
-  public void deleteExperimentalGroupsWithIds(ExperimentId id, List<Long> groupIds) {
+  public void deleteExperimentalGroupsWithIds(ExperimentId id, ProjectId projectId,
+      List<Long> groupIds) {
     var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
     if (queryResult.isError()) {
       throw new ApplicationException("experiment (%s) converting %s to %s".formatted(id,
@@ -302,6 +320,7 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(id);
     experiment.removeExperimentalGroups(groupIds);
     experimentRepository.update(experiment);
+    dispatchSuccessfulExperimentUpdate(projectId);
   }
 
   @Transactional
@@ -313,10 +332,11 @@ public class ExperimentInformationService {
    * the experiment yet and updates the other groups of the experiment.
    *
    * @param id                     the experiment identifier of the experiment whose groups should be updated
+   * @param projectId the Id of the project that is being changed
    * @param experimentalGroupDTOS  the new list of experimental groups including all updates
    * @since 1.0.0
    */
-  public void updateExperimentalGroupsOfExperiment(ExperimentId experimentId,
+  public void updateExperimentalGroupsOfExperiment(ExperimentId experimentId, ProjectId projectId,
       List<ExperimentalGroupDTO> experimentalGroupDTOS) {
 
     // check for duplicates
@@ -331,7 +351,7 @@ public class ExperimentInformationService {
     List<ExperimentalGroup> existingGroups = experimentalGroupsFor(experimentId);
     List<Long> idsToDelete = getGroupIdsToDelete(existingGroups, experimentalGroupDTOS);
     if(!idsToDelete.isEmpty()) {
-      deleteExperimentalGroupsWithIds(experimentId, idsToDelete);
+      deleteExperimentalGroupsWithIds(experimentId, projectId, idsToDelete);
     }
 
     for(ExperimentalGroupDTO group : experimentalGroupDTOS) {
@@ -341,6 +361,12 @@ public class ExperimentInformationService {
         updateExperimentalGroupOfExperiment(experimentId, group);
       }
     }
+    dispatchSuccessfulExperimentUpdate(projectId);
+  }
+
+  private void dispatchSuccessfulExperimentUpdate(ProjectId projectId) {
+    ExperimentUpdated updated = ExperimentUpdated.create(projectId);
+    DomainEventDispatcher.instance().dispatch(updated);
   }
 
   private void updateExperimentalGroupOfExperiment(ExperimentId experimentId, ExperimentalGroupDTO group) {
@@ -357,14 +383,16 @@ public class ExperimentInformationService {
         .toList();
   }
 
-  public void editExperimentInformation(ExperimentId experimentId, String experimentName,
-      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
+  public void editExperimentInformation(ExperimentId experimentId, ProjectId projectId,
+      String experimentName, List<OntologyTerm> species, List<OntologyTerm> specimens,
+      List<OntologyTerm> analytes) {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.setName(experimentName);
     experiment.setSpecies(species);
     experiment.setAnalytes(analytes);
     experiment.setSpecimens(specimens);
     experimentRepository.update(experiment);
+    dispatchSuccessfulExperimentUpdate(projectId);
   }
 
   /**

@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -23,6 +24,7 @@ import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
@@ -32,9 +34,13 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsLabeling;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSamplePreparation;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsDeleted;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsRegistered;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsUpdated;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -511,7 +517,9 @@ public class MeasurementService {
     for (NGSMeasurementMetadata metadata : ngsMeasurements) {
       ngsMeasurementsMapping.putAll(prepareNGSMeasurement(projectId, metadata));
     }
-    return measurementDomainService.addNGSAll(ngsMeasurementsMapping);
+    List<MeasurementId> result = measurementDomainService.addNGSAll(ngsMeasurementsMapping);
+    dispatchSuccessfulMeasurementCreation(projectId);
+    return result;
   }
 
   private Map<NGSMeasurement, Collection<SampleIdCodeEntry>> prepareNGSMeasurement(
@@ -570,7 +578,9 @@ public class MeasurementService {
     for (ProteomicsMeasurementMetadata metadata : proteomicsMeasurements) {
       proteomicsMeasurementsMapping.putAll(preparePxpMeasurement(projectId, metadata));
     }
-    return measurementDomainService.addProteomicsAll(proteomicsMeasurementsMapping);
+    List<MeasurementId> result = measurementDomainService.addProteomicsAll(proteomicsMeasurementsMapping);
+    dispatchSuccessfulMeasurementCreation(projectId);
+    return result;
   }
 
   private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> preparePxpMeasurement(
@@ -700,9 +710,13 @@ public class MeasurementService {
         ngsMeasurements.add((NGSMeasurementMetadata) measurementMetadata);
       }
     }
-    return measurementDomainService.updateNGSAll(
+    List<Result<MeasurementId, ErrorCode>> result = measurementDomainService.updateNGSAll(
             ngsMeasurements.stream().map(this::prepareNGSMeasurementUpdate).toList()).stream()
         .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
+    if(result.stream().anyMatch(Result::isValue)) {
+      dispatchSuccessfulMeasurementUpdate(projectId);
+    }
+    return result;
   }
 
   private NGSMeasurement prepareNGSMeasurementUpdate(NGSMeasurementMetadata metadata) {
@@ -743,9 +757,13 @@ public class MeasurementService {
         proteomicsMeasurements.add((ProteomicsMeasurementMetadata) measurementMetadata);
       }
     }
-    return measurementDomainService.updateProteomicsAll(
+    List<Result<MeasurementId, ErrorCode>> result = measurementDomainService.updateProteomicsAll(
             proteomicsMeasurements.stream().map(this::preparePxpMeasurementUpdate).toList()).stream()
         .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
+    if(result.stream().anyMatch(Result::isValue)) {
+      dispatchSuccessfulMeasurementUpdate(projectId);
+    }
+    return result;
   }
 
   private ProteomicsMeasurement preparePxpMeasurementUpdate(
@@ -878,6 +896,7 @@ public class MeasurementService {
   public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId, Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deletePtx(selectedMeasurements);
+      dispatchSuccessfulMeasurementDeletion(projectId);
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
@@ -888,10 +907,26 @@ public class MeasurementService {
   public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId, Set<NGSMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deleteNGS(selectedMeasurements);
+      dispatchSuccessfulMeasurementDeletion(projectId);
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
     }
+  }
+
+  private void dispatchSuccessfulMeasurementCreation(ProjectId projectId) {
+    MeasurementsRegistered registered = MeasurementsRegistered.create(projectId);
+    DomainEventDispatcher.instance().dispatch(registered);
+  }
+
+  private void dispatchSuccessfulMeasurementUpdate(ProjectId projectId) {
+    MeasurementsUpdated updated = MeasurementsUpdated.create(projectId);
+    DomainEventDispatcher.instance().dispatch(updated);
+  }
+
+  private void dispatchSuccessfulMeasurementDeletion(ProjectId projectId) {
+    MeasurementsDeleted deleted = MeasurementsDeleted.create(projectId);
+    DomainEventDispatcher.instance().dispatch(deleted);
   }
 
   public static final class MeasurementDeletionException extends RuntimeException {

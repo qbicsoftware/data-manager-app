@@ -2,8 +2,10 @@ package life.qbic.projectmanagement.infrastructure.project;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
@@ -96,6 +98,19 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   @Override
   public Optional<Project> find(ProjectId projectId) {
     return projectRepo.findById(projectId);
+  }
+
+  /**
+   * Updates the lastModified time of the project. Does not check credentials, as the jobrunner
+   * needs to call it. Use with care.
+   * @param projectId  the id of the project to update
+   * @param modifiedOn the Instant object denoting the time the project was updated
+   */
+  @Override
+  public void updateLastModified(ProjectId projectId, Instant modifiedOn) {
+    var project = projectRepo.findById(projectId).orElseThrow(ProjectNotFoundException::new);
+    project.setLastModified(modifiedOn);
+    projectRepo.save(project);
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {

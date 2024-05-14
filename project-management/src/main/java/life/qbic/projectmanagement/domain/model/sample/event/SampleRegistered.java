@@ -5,8 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.time.Instant;
 import java.util.Objects;
-import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -16,11 +17,10 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  *
  * @since 1.0.0
  */
-public class SampleRegistered extends DomainEvent {
+public class SampleRegistered extends ProjectChangedEvent {
 
   @Serial
   private static final long serialVersionUID = -1338442721083240618L;
-  private final Instant occurredOn;
 
   @JsonProperty("batchId")
   private final BatchId assignedBatch;
@@ -28,8 +28,8 @@ public class SampleRegistered extends DomainEvent {
   @JsonProperty("sampleId")
   private final SampleId registeredSample;
 
-  private SampleRegistered(Instant occurredOn, BatchId assignedBatch, SampleId registeredSample) {
-    this.occurredOn = Objects.requireNonNull(occurredOn);
+  private SampleRegistered(BatchId assignedBatch, SampleId registeredSample, ProjectId projectId) {
+    super(projectId);
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.registeredSample = Objects.requireNonNull(registeredSample);
   }
@@ -42,14 +42,15 @@ public class SampleRegistered extends DomainEvent {
    * @return a new instance of this domain event
    * @since 1.0.0
    */
-  public static SampleRegistered create(BatchId assignedBatch, SampleId registeredSample) {
-    return new SampleRegistered(Instant.now(), assignedBatch, registeredSample);
+  public static SampleRegistered create(BatchId assignedBatch, SampleId registeredSample,
+      ProjectId projectId) {
+    return new SampleRegistered(assignedBatch, registeredSample, projectId);
   }
 
   @JsonGetter("occurredOn")
   @Override
   public Instant occurredOn() {
-    return this.occurredOn;
+    return occurredOn;
   }
 
   @JsonGetter("assignedBatch")

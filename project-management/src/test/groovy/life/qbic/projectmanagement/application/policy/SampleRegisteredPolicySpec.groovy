@@ -2,7 +2,10 @@ package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified
 import life.qbic.projectmanagement.domain.model.batch.BatchId
+import life.qbic.projectmanagement.domain.model.project.ProjectId
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent
 import life.qbic.projectmanagement.domain.model.sample.SampleId
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered
 import spock.lang.Specification
@@ -17,22 +20,26 @@ import spock.lang.Specification
 
 class SampleRegisteredPolicySpec extends Specification {
 
-    def "Given a sample registered event, the directive to add sample to batch is executed"() {
+    def "Given a sample registered event, the respective directives are executed"() {
         given:
-        SampleRegistered sampleRegistered = SampleRegistered.create(BatchId.create(), SampleId.create())
+        SampleRegistered sampleRegistered = SampleRegistered.create(BatchId.create(), SampleId.create(), ProjectId.create())
 
         and:
         AddSampleToBatch addSampleToBatch = Mock(AddSampleToBatch.class)
         addSampleToBatch.subscribedToEventType() >> SampleRegistered.class
+        UpdateProjectLastModified modifyProject = Mock(UpdateProjectLastModified.class)
+        modifyProject.subscribedToEventType() >> ProjectChangedEvent.class
 
         and:
-        SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch)
+        SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch,
+                modifyProject)
 
         when:
         DomainEventDispatcher.instance().dispatch(sampleRegistered)
 
         then:
         1 * addSampleToBatch.handleEvent(sampleRegistered)
+        1 * modifyProject.handleEvent(sampleRegistered)
     }
 
 

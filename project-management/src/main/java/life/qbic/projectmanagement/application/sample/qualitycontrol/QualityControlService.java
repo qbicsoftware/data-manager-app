@@ -7,9 +7,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
+import life.qbic.projectmanagement.domain.model.sample.event.QualityControlChanged;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 import org.springframework.stereotype.Service;
@@ -56,9 +59,15 @@ public class QualityControlService {
         .toList();
     try {
       storage.storeQualityControls(qualityControls);
+      dispatchSuccessfulQCUpdate(projectReference);
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
+  }
+
+  private void dispatchSuccessfulQCUpdate(ProjectId projectReference) {
+    QualityControlChanged qcChanged = QualityControlChanged.create(projectReference);
+    DomainEventDispatcher.instance().dispatch(qcChanged);
   }
 
   /**
@@ -81,6 +90,7 @@ public class QualityControlService {
    */
   public void deleteQualityControl(String projectId, long qualityControlId) {
     storage.deleteQualityControlForProject(projectId, qualityControlId);
+    dispatchSuccessfulQCUpdate(ProjectId.parse(projectId));
   }
 
   /**

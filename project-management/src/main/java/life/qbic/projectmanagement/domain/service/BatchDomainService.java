@@ -61,18 +61,19 @@ public class BatchDomainService {
     BatchRegistered batchRegistered = BatchRegistered.create(name, id, projectName, projectId);
     DomainEventDispatcher.instance().dispatch(batchRegistered);
   }
-  public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId) {
+
+  public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId, ProjectId projectId) {
     var result = batchRepository.deleteById(batchId);
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
     } else {
-      dispatchSuccessfulBatchDeletion(batchId);
+      dispatchSuccessfulBatchDeletion(batchId, projectId);
     }
     return Result.fromValue(result.getValue());
   }
 
-  private void dispatchSuccessfulBatchDeletion(BatchId batchId) {
-    BatchDeleted batchDeleted = BatchDeleted.create(batchId);
+  private void dispatchSuccessfulBatchDeletion(BatchId batchId, ProjectId projectId) {
+    BatchDeleted batchDeleted = BatchDeleted.create(batchId, projectId);
     DomainEventDispatcher.instance().dispatch(batchDeleted);
   }
 

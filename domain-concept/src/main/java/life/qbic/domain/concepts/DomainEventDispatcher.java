@@ -1,7 +1,10 @@
 package life.qbic.domain.concepts;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <b>Domain Event Dispatcher</b>
@@ -37,10 +40,31 @@ public class DomainEventDispatcher {
   }
 
   public <T extends DomainEvent> void dispatch(T domainEvent) {
-    subscribers.stream()
-        .filter(subscriber -> subscriber.subscribedToEventType() == domainEvent.getClass())
-        .map(subscriber -> (DomainEventSubscriber<T>) subscriber)
-        .forEach(subscriber -> subscriber.handleEvent(domainEvent));
+    List<DomainEventSubscriber<T>> directives = subscribers.stream()
+        .filter(subscriber -> isSubscribedToEventOrSuperEvent(subscriber, domainEvent.getClass()))
+        .map(subscriber -> (DomainEventSubscriber<T>) subscriber).toList();
+    distinctDirectives(directives).forEach(subscriber -> subscriber.handleEvent(domainEvent));
+  }
+
+  private <T extends DomainEvent> Collection<DomainEventSubscriber<T>> distinctDirectives(
+      List<DomainEventSubscriber<T>> subscribers) {
+    Map<Class<?>, DomainEventSubscriber<T>> distinctDirectives = new HashMap<>();
+    subscribers.forEach(directive -> distinctDirectives.put(directive.getClass(), directive));
+    return distinctDirectives.values();
+  }
+
+  /**
+   * Tests if a subscriber is subscribed to a specific event type or to the superclass of the event
+   * This allows to listen to a number of events that have something in common, e.g. they all update
+   * project information.
+   */
+  private <T extends DomainEvent> boolean isSubscribedToEventOrSuperEvent(
+      DomainEventSubscriber<?> subscriber, Class<? extends DomainEvent> domainEvent) {
+    Class<? extends DomainEvent> listeningTo = subscriber.subscribedToEventType();
+    if(listeningTo == null) {
+      return false;
+    }
+    return listeningTo == domainEvent || listeningTo.isAssignableFrom(domainEvent);
   }
 
 }

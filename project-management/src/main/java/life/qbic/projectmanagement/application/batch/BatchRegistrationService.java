@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -16,6 +17,8 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchDeleted;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import org.slf4j.Logger;
@@ -179,7 +182,10 @@ public class BatchRegistrationService {
       return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
     }
     Batch batch = searchResult.get();
-    updateBatchInformation(batch, batchLabel, isPilot);
+    Result<BatchId, ResponseCode> updateResult = updateBatchInformation(batch, batchLabel, isPilot);
+    if(updateResult.isValue()) {
+      dispatchSuccessfulBatchUpdate(batchId, projectId);
+    }
     if (!createdSamples.isEmpty()) {
       sampleRegistrationService.registerSamples(createdSamples, projectId);
     }
@@ -190,6 +196,11 @@ public class BatchRegistrationService {
       deletionService.deleteSamples(projectId, batchId, deletedSamples);
     }
     return Result.fromValue(batch.batchId());
+  }
+
+  private void dispatchSuccessfulBatchUpdate(BatchId batchId, ProjectId projectId) {
+    BatchUpdated batchUpdated = BatchUpdated.create(batchId, projectId);
+    DomainEventDispatcher.instance().dispatch(batchUpdated);
   }
 
   private Result<BatchId, ResponseCode> updateBatchInformation(Batch batch,

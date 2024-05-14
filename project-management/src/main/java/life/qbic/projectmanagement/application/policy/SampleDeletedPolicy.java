@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.policy;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 
@@ -18,8 +19,6 @@ import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
  */
 public class SampleDeletedPolicy {
 
-  private final DeleteSampleFromBatch deleteSampleFromBatch;
-
   /**
    * Creates an instance of a {@link SampleDeletedPolicy} object.
    * <p>
@@ -27,10 +26,12 @@ public class SampleDeletedPolicy {
    *
    * @param deleteSampleFromBatch directive to remove the affected sample from
    *                         {@link Batch}
+   * @param updateProject directive to update the project modified timestamp
    * @since 1.0.0
    */
-  public SampleDeletedPolicy(DeleteSampleFromBatch deleteSampleFromBatch) {
-    this.deleteSampleFromBatch = deleteSampleFromBatch;
-    DomainEventDispatcher.instance().subscribe(this.deleteSampleFromBatch);
+  public SampleDeletedPolicy(DeleteSampleFromBatch deleteSampleFromBatch,
+      UpdateProjectLastModified updateProject) {
+    DomainEventDispatcher.instance().subscribe(deleteSampleFromBatch);
+    DomainEventDispatcher.instance().subscribe(updateProject);
   }
 }

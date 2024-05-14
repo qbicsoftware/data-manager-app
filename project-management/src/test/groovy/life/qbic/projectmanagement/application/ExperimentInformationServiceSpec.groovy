@@ -9,6 +9,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.sample.Sample
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
 import spock.lang.Specification
@@ -19,6 +20,7 @@ class ExperimentInformationServiceSpec extends Specification {
     ProjectRepository projectRepository = Mock()
     SampleInformationService sampleInformationService = Mock()
     ExperimentInformationService experimentInformationService = new ExperimentInformationService(experimentRepository, projectRepository, sampleInformationService)
+    ProjectId projectId = ProjectId.create()
 
     def experiment = setupExperiment()
 
@@ -31,7 +33,7 @@ class ExperimentInformationServiceSpec extends Specification {
         OntologyTerm specimen1 = new OntologyTerm();
         OntologyTerm specimen2 = new OntologyTerm("ontology", "ontologyVersion",  "ontologyIri",
                 "classLabel", "name", "description", "classIri");
-        experimentInformationService.addSpecimenToExperiment(experiment.experimentId(), specimen1, specimen2)
+        experimentInformationService.addSpecimenToExperiment(experiment.experimentId(), projectId, specimen1, specimen2)
 
         then: "the experiment contains the added specimens"
         experiment.getSpecimens().containsAll(specimen1, specimen2)
@@ -49,7 +51,7 @@ class ExperimentInformationServiceSpec extends Specification {
         OntologyTerm analyte2 = new OntologyTerm();
         OntologyTerm analyte1 = new OntologyTerm("ontology", "ontologyVersion",  "ontologyIri",
                 "classLabel", "name", "description", "classIri");
-        experimentInformationService.addAnalyteToExperiment(experiment.experimentId(), analyte1, analyte2)
+        experimentInformationService.addAnalyteToExperiment(experiment.experimentId(), projectId, analyte1, analyte2)
 
         then: "the experiment contains the added analytes"
         experiment.getAnalytes().containsAll(analyte1, analyte2)
@@ -69,7 +71,7 @@ class ExperimentInformationServiceSpec extends Specification {
                 "classLabel", "name", "description", "classIri");
         OntologyTerm species3 = new OntologyTerm();
 
-        experimentInformationService.addSpeciesToExperiment(experiment.experimentId(), species1, species2, species3)
+        experimentInformationService.addSpeciesToExperiment(experiment.experimentId(), projectId, species1, species2, species3)
 
         then: "the experiment contains the added species"
         experiment.getSpecies().containsAll(species1, species2, species3)
@@ -91,7 +93,7 @@ class ExperimentInformationServiceSpec extends Specification {
         ExperimentalValue experimentalValue1 = ExperimentalValue.create(levels[0], unit)
         ExperimentalValue experimentalValue2 = ExperimentalValue.create(levels[1], unit)
         ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName, experimentalValue1, experimentalValue2)
-        experimentInformationService.addVariableToExperiment(experiment.experimentId(), variableName, unit, levels)
+        experimentInformationService.addVariableToExperiment(experiment.experimentId(), projectId, variableName, unit, levels)
 
         then: "the experiment contains the added variables"
         experiment.variables().contains(experimentalVariable)
@@ -119,7 +121,7 @@ class ExperimentInformationServiceSpec extends Specification {
         def group1 = new ExperimentalGroupDTO(-1, "name1", List.of(experimentalVariable.levels().get(0)), 5)
         def group2 = new ExperimentalGroupDTO(-1, "name2", List.of(experimentalVariable.levels().get(1)), 6)
 
-        experimentInformationService.updateExperimentalGroupsOfExperiment(experiment.experimentId(), Arrays.asList(group1))
+        experimentInformationService.updateExperimentalGroupsOfExperiment(experiment.experimentId(), projectId, Arrays.asList(group1))
 
 
         then: "the experiment contains the added experimental groups"

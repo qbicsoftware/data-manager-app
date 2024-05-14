@@ -13,6 +13,12 @@ import java.time.Instant;
  */
 public abstract class DomainEvent implements Serializable {
 
+  protected final Instant occurredOn;
+
+  protected DomainEvent() {
+    this.occurredOn = Instant.now();
+  }
+
   /**
    * The instant of event creation.
    *

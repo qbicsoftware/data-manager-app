@@ -8,9 +8,14 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentRegistered;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdated;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsRegistered;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsUpdated;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
@@ -72,16 +77,25 @@ public class AddExperimentToProjectService {
         return Result.fromError(new ProjectNotFoundException());
       }
       Project project = optionalProject.get();
-      return Result.<Experiment, RuntimeException>fromValue(
-              Experiment.create(experimentName))
-          .onValue(exp -> exp.addAnalytes(analytes))
-          .onValue(exp -> exp.addSpecies(species))
-          .onValue(exp -> exp.addSpecimens(specimens))
-          .onValue(experiment -> {
-            project.addExperiment(experiment);
-            projectRepository.update(project);
-          })
-          .map(Experiment::experimentId);
+    Result<ExperimentId, RuntimeException> result = Result.<Experiment, RuntimeException>fromValue(
+            Experiment.create(experimentName))
+        .onValue(exp -> exp.addAnalytes(analytes))
+        .onValue(exp -> exp.addSpecies(species))
+        .onValue(exp -> exp.addSpecimens(specimens))
+        .onValue(experiment -> {
+          project.addExperiment(experiment);
+          projectRepository.update(project);
+        })
+        .map(Experiment::experimentId);
+    if(result.isValue()) {
+      dispatchSuccessfulExperimentCreation(projectId);
+    }
+    return result;
+  }
+
+  private void dispatchSuccessfulExperimentCreation(ProjectId projectId) {
+    ExperimentRegistered registered = ExperimentRegistered.create(projectId);
+    DomainEventDispatcher.instance().dispatch(registered);
   }
 
 }

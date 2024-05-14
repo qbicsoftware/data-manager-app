@@ -296,6 +296,7 @@ public class ProjectSideNavigationComponent extends Div implements
         experimentDraft.getSpecimens(),
         experimentDraft.getAnalytes());
     if (result.isValue()) {
+
       return result.getValue();
     } else {
       throw new ApplicationException("Experiment Creation failed");

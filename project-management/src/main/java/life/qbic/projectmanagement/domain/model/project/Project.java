@@ -156,6 +156,10 @@ public class Project {
     lastModified = Instant.now();
   }
 
+  public void setLastModified(Instant modifiedOn) {
+    lastModified = modifiedOn;
+  }
+
   public void addExperiment(Experiment experiment) {
     experiments.add(experiment);
     lastModified = Instant.now();

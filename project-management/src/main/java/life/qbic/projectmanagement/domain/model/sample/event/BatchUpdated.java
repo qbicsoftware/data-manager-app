@@ -10,25 +10,25 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent;
 
 /**
- * <b>Batch Deletion Event</b>
+ * <b>Batch Update Event</b>
  * <p>
- * An event that indicates that a batch has been deleted
+ * An event that indicates that a batch has been updated
  *
  * @since 1.0.0
  */
-public class BatchDeleted extends ProjectChangedEvent {
+public class BatchUpdated extends ProjectChangedEvent {
 
   @Serial
   private static final long serialVersionUID = 365535713054819361L;
   private final BatchId batchId;
 
-  private BatchDeleted(BatchId batchId, ProjectId projectId) {
+  private BatchUpdated(BatchId batchId, ProjectId projectId) {
     super(projectId);
     this.batchId = Objects.requireNonNull(batchId);
   }
 
-  public static BatchDeleted create(BatchId batchId, ProjectId projectId) {
-    return new BatchDeleted(batchId, projectId);
+  public static BatchUpdated create(BatchId batchId, ProjectId projectId) {
+    return new BatchUpdated(batchId, projectId);
   }
 
   @JsonGetter("occurredOn")

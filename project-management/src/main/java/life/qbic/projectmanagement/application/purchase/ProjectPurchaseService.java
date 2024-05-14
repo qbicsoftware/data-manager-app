@@ -7,12 +7,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.OfferChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
+import life.qbic.projectmanagement.domain.model.sample.event.QualityControlChanged;
 import org.springframework.stereotype.Service;
 
 /**
@@ -52,9 +55,16 @@ public class ProjectPurchaseService {
         .toList();
     try {
       storage.storePurchases(servicePurchases);
+      dispatchSuccessfulPurchaseUpdate(projectReference);
+
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
+  }
+
+  private void dispatchSuccessfulPurchaseUpdate(ProjectId projectReference) {
+    OfferChanged offerChanged = OfferChanged.create(projectReference);
+    DomainEventDispatcher.instance().dispatch(offerChanged);
   }
 
   /**
@@ -71,6 +81,7 @@ public class ProjectPurchaseService {
 
   public void deleteOffer(String projectId, long offerId) {
     storage.deleteOffer(projectId, offerId);
+    dispatchSuccessfulPurchaseUpdate(ProjectId.parse(projectId));
   }
 
   public Optional<Offer> getOfferWithContent(String projectId, Long offerId) {

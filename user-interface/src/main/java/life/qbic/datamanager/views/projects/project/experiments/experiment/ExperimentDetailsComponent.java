@@ -58,6 +58,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -207,6 +208,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
     ExperimentDraft experimentDraft = event.getExperimentDraft();
     experimentInformationService.editExperimentInformation(experimentId,
+        context.projectId().orElseThrow(),
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
@@ -224,7 +226,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void deleteExistingExperimentalVariables() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    var result = deletionService.deleteAllExperimentalVariables(experimentId);
+    ProjectId projectId = context.projectId().orElseThrow();
+    var result = deletionService.deleteAllExperimentalVariables(experimentId, projectId);
     result.onError(responseCode -> {
       throw new ApplicationException("variable deletion failed: " + responseCode);
     });
@@ -449,7 +452,9 @@ public class ExperimentDetailsComponent extends PageArea {
       var groupDTOs = dialog.experimentalGroups().stream()
           .map(this::toExperimentalGroupDTO).toList();
       ExperimentId experimentId = context.experimentId().orElseThrow();
-      experimentInformationService.updateExperimentalGroupsOfExperiment(experimentId, groupDTOs);
+      ProjectId projectId = context.projectId().orElseThrow();
+      experimentInformationService.updateExperimentalGroupsOfExperiment(experimentId, projectId,
+          groupDTOs);
       reloadExperimentalGroups();
       confirmEvent.getSource().close();
     }
@@ -461,7 +466,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .map(this::toExperimentalGroupDTO).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
     experimentInformationService.updateExperimentalGroupsOfExperiment(
-        experimentId, experimentalGroupDTOS);
+        experimentId, context.projectId().orElseThrow(), experimentalGroupDTOS);
   }
 
   private ExperimentalGroupDTO toExperimentalGroupDTO(
@@ -511,7 +516,7 @@ public class ExperimentDetailsComponent extends PageArea {
       List<ExperimentalVariableContent> experimentalVariableContents) {
     experimentalVariableContents.forEach(
         experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
-            context.experimentId().orElseThrow(),
+            context.experimentId().orElseThrow(), context.projectId().orElseThrow(),
             experimentalVariableContent.name(), experimentalVariableContent.unit(),
             experimentalVariableContent.levels()));
   }

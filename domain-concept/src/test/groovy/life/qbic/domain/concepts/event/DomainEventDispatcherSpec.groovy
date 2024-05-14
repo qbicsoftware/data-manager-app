@@ -15,10 +15,10 @@ import java.time.Instant
  */
 class DomainEventDispatcherSpec extends Specification {
 
-    def "Given a number of N domain event subscriber for an event E, the dispatcher needs to call all N subscriber if an event E is dispatched"() {
+    def "Given a number of N unique domain event subscribers for an event E, the dispatcher needs to call all N subscribers if an event E is dispatched"() {
         given:
         DomainEventSubscriber<TestDomainEvent> subscriberOne = Mock(DomainEventSubscriber<TestDomainEvent>)
-        DomainEventSubscriber<TestDomainEvent> subscriberTwo = Mock(DomainEventSubscriber<TestDomainEvent>)
+        TestDomainEventSubscriber<TestDomainEvent> subscriberTwo = Mock(TestDomainEventSubscriber<TestDomainEvent>)
         subscriberOne.subscribedToEventType() >> TestDomainEvent.class
         subscriberTwo.subscribedToEventType() >> TestDomainEvent.class
 
@@ -27,7 +27,7 @@ class DomainEventDispatcherSpec extends Specification {
 
         and:
         dispatcher.subscribe(subscriberOne)
-        dispatcher.subscribe(subscriberTwo)
+        dispatcher.subscribe(subscriberTwo as DomainEventSubscriber<DomainEvent>)
 
         when:
         dispatcher.dispatch(new TestDomainEvent())
@@ -47,6 +47,27 @@ class DomainEventDispatcherSpec extends Specification {
         Instant occurredOn() {
             return null
         }
+    }
+
+    public interface TestDomainEventSubscriber<T extends DomainEvent> {
+
+        /**
+         * Query the subscribed domain event type.
+         *
+         * @return the domain event type that is subscribed to
+         * @since 1.0.0
+         */
+        Class<? extends DomainEvent> subscribedToEventType();
+
+        /**
+         * Callback that will be executed by the publisher.
+         *
+         * <p>Passes the domain event of the type that was subscribed to.
+         *
+         * @param event the domain event
+         * @since 1.0.0
+         */
+        void handleEvent(T event);
     }
 
 }
