@@ -11,7 +11,6 @@ import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
 import life.qbic.projectmanagement.domain.model.sample.event.QualityControlChanged;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;

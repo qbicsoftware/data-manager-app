@@ -58,7 +58,6 @@ import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLas
 import life.qbic.projectmanagement.application.policy.integration.UserActivated;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
-import org.jobrunr.storage.StorageProviderUtils.Jobs;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

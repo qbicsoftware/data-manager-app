@@ -15,7 +15,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.OfferChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
-import life.qbic.projectmanagement.domain.model.sample.event.QualityControlChanged;
 import org.springframework.stereotype.Service;
 
 /**

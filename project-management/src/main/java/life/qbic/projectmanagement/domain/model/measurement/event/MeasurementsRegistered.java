@@ -4,7 +4,6 @@ package life.qbic.projectmanagement.domain.model.measurement.event;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import java.io.Serial;
 import java.time.Instant;
-import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent;
 

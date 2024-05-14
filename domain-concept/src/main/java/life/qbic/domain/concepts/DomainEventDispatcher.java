@@ -58,7 +58,7 @@ public class DomainEventDispatcher {
    * This allows to listen to a number of events that have something in common, e.g. they all update
    * project information.
    */
-  private <T extends DomainEvent> boolean isSubscribedToEventOrSuperEvent(
+  private boolean isSubscribedToEventOrSuperEvent(
       DomainEventSubscriber<?> subscriber, Class<? extends DomainEvent> domainEvent) {
     Class<? extends DomainEvent> listeningTo = subscriber.subscribedToEventType();
     if(listeningTo == null) {
