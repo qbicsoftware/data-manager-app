@@ -8,8 +8,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
@@ -54,10 +55,8 @@ import org.springframework.beans.factory.annotation.Value;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/rawdata", layout = ExperimentMainLayout.class)
 @PermitAll
-public class RawDataMain extends Main implements BeforeEnterObserver {
+public class RawDataMain extends Main {
 
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final DownloadProvider urlDownload;
   private final transient RawDataURLContentProvider urlDownloadFormatter;
   @Serial
@@ -75,12 +74,14 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final Disclaimer noRawDataRegisteredDisclaimer;
   private final String rawDataSourceURL;
 
-  public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
+  public RawDataMain(@Autowired UserPermissions userPermissions,
+      @Autowired RawDataDetailsComponent rawDataDetailsComponent,
       @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired RawDataService rawDataService,
       @Value("${server.download.api.measurement.url}") String dataSourceURL) {
+    super(userPermissions);
     this.rawdataDetailsComponent = Objects.requireNonNull(rawDataDetailsComponent);
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
@@ -187,7 +188,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    setRawDataInformation();
   }
 
   private void setRawDataInformation() {
@@ -261,6 +261,16 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
           currentExperimentId, currentProjectId, routeToMeasurementPage));
       componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToMeasurementPage));
     }
+  }
+
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+    setRawDataInformation();
   }
 
   public record RawDataURL(String serverURL, String measurementCode) {

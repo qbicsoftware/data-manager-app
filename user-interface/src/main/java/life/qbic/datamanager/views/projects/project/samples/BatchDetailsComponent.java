@@ -5,6 +5,7 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -32,7 +33,6 @@ import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
@@ -66,6 +66,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private final transient ExperimentInformationService experimentInformationService;
   private final Collection<BatchPreview> batchPreviews = new LinkedHashSet<>();
   private final ClientDetailsProvider clientDetailsProvider;
+  private final Span controls;
+  private Column<BatchPreview> gridControls;
   private Context context;
 
   public BatchDetailsComponent(@Autowired BatchInformationService batchInformationService,
@@ -75,22 +77,19 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(clientDetailsProvider);
     addClassName("batch-details-component");
-    createTitleAndControls();
+    title.addClassName("title");
+    titleAndControls.addClassName("title-and-controls");
+    Button registerButton = new Button("Register");
+    controls = new Span(registerButton);
+    registerButton.addClickListener(event -> fireEvent(new CreateBatchEvent(this,
+        event.isFromClient())));
+    titleAndControls.add(title, controls);
+    add(titleAndControls);
     createBatchGrid();
     add(content);
     this.experimentInformationService = experimentInformationService;
     this.batchInformationService = batchInformationService;
     this.clientDetailsProvider = clientDetailsProvider;
-  }
-
-  private void createTitleAndControls() {
-    title.addClassName("title");
-    titleAndControls.addClassName("title-and-controls");
-    Button registerButton = new Button("Register");
-    registerButton.addClickListener(event -> fireEvent(new CreateBatchEvent(this,
-        event.isFromClient())));
-    titleAndControls.add(title, registerButton);
-    add(titleAndControls);
   }
 
   private void createBatchGrid() {
@@ -117,7 +116,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
         .setKey("samples")
         .setHeader("Samples")
         .setSortable(true);
-    batchGrid.addComponentColumn(this::generateEditorButtons).setAutoWidth(true)
+    gridControls = batchGrid.addComponentColumn(this::generateEditorButtons).setAutoWidth(true)
         .setHeader("Action");
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
     batchGrid.addClassName("batch-grid");
@@ -141,25 +140,19 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   }
 
   private Span generateEditorButtons(BatchPreview batchPreview) {
-    Icon viewIcon = LumoIcon.EYE.create();
     Icon editIcon = LumoIcon.EDIT.create();
     Icon deleteIcon = VaadinIcon.TRASH.create();
-    Button viewButton = new Button(viewIcon);
     Button editButton = new Button(editIcon);
     Button deleteButton = new Button(deleteIcon);
-    viewButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
-    viewButton.addClickListener(e -> fireEvent(new ViewBatchEvent(this, batchPreview,
-        e.isFromClient())));
     deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
         e.isFromClient())));
     editButton.addClickListener(
         e -> fireEvent(new EditBatchEvent(this, batchPreview, e.isFromClient())));
-    viewButton.setTooltipText("View Samples for Batch");
     editButton.setTooltipText("Edit Batch");
     deleteButton.setTooltipText("Delete Batch");
-    Span buttons = new Span(viewButton, editButton, deleteButton);
+    Span buttons = new Span(editButton, deleteButton);
     buttons.addClassName("editor-buttons");
     return buttons;
   }
@@ -177,15 +170,9 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
         .onValue(batchPreviews::addAll);
   }
 
-  /**
-   * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link ViewBatchEvent}, as soon as a user wants to view a {@link Batch}
-   *
-   * @param batchViewListener a listener on the batch view trigger
-   */
-  public void addBatchViewListener(
-      ComponentEventListener<ViewBatchEvent> batchViewListener) {
-    addListener(ViewBatchEvent.class, batchViewListener);
+  public void showControls(boolean isShown) {
+    controls.setVisible(isShown);
+    gridControls.setVisible(isShown);
   }
 
   /**
@@ -239,30 +226,6 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       Objects.requireNonNull(samples);
       Objects.requireNonNull(createdOn);
       Objects.requireNonNull(lastModified);
-    }
-
-    /**
-     * <b>View Batch Event</b>
-     *
-     * <p>Indicates that a user wants to view a {@link Batch}
-     * within the {@link BatchDetailsComponent} of a project</p>
-     */
-    public static class ViewBatchEvent extends ComponentEvent<BatchDetailsComponent> {
-
-      @Serial
-      private static final long serialVersionUID = -5108638994476271770L;
-
-      private final BatchPreview batchPreview;
-
-      public ViewBatchEvent(BatchDetailsComponent source, BatchPreview batchPreview,
-          boolean fromClient) {
-        super(source, fromClient);
-        this.batchPreview = batchPreview;
-      }
-
-      public BatchPreview batchPreview() {
-        return batchPreview;
-      }
     }
   }
 

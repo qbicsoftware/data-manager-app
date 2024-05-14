@@ -6,6 +6,8 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
@@ -16,6 +18,7 @@ import java.util.Objects;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
@@ -59,12 +62,15 @@ public class ProjectOverviewMain extends Main {
   private final transient ContactRepository contactRepository;
   private final transient UserInformationService userInformationService;
 
-  public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
+  @Autowired
+  public ProjectOverviewMain(UserPermissions userPermissions,
+      ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       OntologyLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
       ContactRepository contactRepository) {
+    super(userPermissions);
     this.projectCollectionComponent = Objects.requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
     this.projectCreationService = Objects.requireNonNull(projectCreationService,
@@ -169,4 +175,23 @@ public class ProjectOverviewMain extends Main {
     notification.open();
   }
 
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+
+  }
+
+  /**
+   * Callback executed before navigation to attaching Component chain is made.
+   *
+   * @param event before navigation event with event details
+   */
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+
+  }
 }

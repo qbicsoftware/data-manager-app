@@ -3,8 +3,8 @@ package life.qbic.datamanager.views.projects.project.info;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParam;
@@ -69,7 +69,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/info", layout = ProjectMainLayout.class)
 @PermitAll
-public class ProjectInformationMain extends Main implements BeforeEnterObserver {
+public class ProjectInformationMain extends Main {
 
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
@@ -79,9 +79,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final transient OntologyLookupService ontologyTermInformationService;
   private final transient ProjectPurchaseService projectPurchaseService;
   private final transient QualityControlService qualityControlService;
-  private final transient UserPermissions userPermissions;
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectDetailsComponent projectDetailsComponent;
   private final ExperimentListComponent experimentListComponent;
   private final OfferDownload offerDownload;
@@ -98,11 +95,11 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ProjectPurchaseService projectPurchaseService,
       @Autowired QualityControlService qualityControlService) {
+    super(userPermissions);
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
     this.experimentListComponent = requireNonNull(experimentListComponent,
         "experimentListComponent must not be null");
-    this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
         "addExperimentToProjectService must not be null");
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
@@ -124,7 +121,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         (projectId, qualityControlId) -> qualityControlService.getQualityControlWithContent(
                 projectId, qualityControlId)
             .orElseThrow());
-
     this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
     this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
     addClassName("project");
@@ -148,12 +144,25 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       throw new ApplicationException("invalid project id " + projectID);
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
-    if (userPermissions.readProject(parsedProjectId)) {
-      this.context = new Context().with(parsedProjectId);
-      setContext(context);
-    } else {
+    if (!userPermissions.readProject(parsedProjectId)) {
       beforeEnterEvent.rerouteToError(NotFoundException.class);
     }
+    this.context = new Context().with(parsedProjectId);
+  }
+
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+    boolean canEdit = userPermissions.editProject(context.projectId().orElseThrow());
+    projectDetailsComponent.showControls(canEdit);
+    experimentListComponent.showControls(canEdit);
+    offerListComponent.showControls(canEdit);
+    qualityControlListComponent.showControls(canEdit);
+    loadComponents();
   }
 
   private OfferListComponent getConfiguredOfferList() {
@@ -285,8 +294,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     routeToExperiment(event.getExperimentId());
   }
 
-  private void setContext(Context context) {
-    this.context = context;
+  private void loadComponents() {
     projectDetailsComponent.setContext(context);
     experimentListComponent.setContext(context);
     refreshOffers(projectPurchaseService, context.projectId().orElseThrow().value(),

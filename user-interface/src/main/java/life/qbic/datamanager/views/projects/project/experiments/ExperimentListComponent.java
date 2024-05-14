@@ -51,6 +51,7 @@ public class ExperimentListComponent extends PageArea {
   private final Disclaimer noExperimentDisclaimer;
   private final Div header = new Div();
   private final Div content = new Div();
+  private final Div controls = new Div();
   private final ListBox<Experiment> listBox = new ListBox<>();
   private Context context;
 
@@ -126,7 +127,6 @@ public class ExperimentListComponent extends PageArea {
   }
 
   private void initHeader() {
-    Div controls = new Div();
     controls.addClassName("controls");
     Button addButton = new Button("Add");
     addButton.addClickListener(
@@ -202,6 +202,10 @@ public class ExperimentListComponent extends PageArea {
     public ExperimentId getExperimentId() {
       return experimentId;
     }
+  }
+
+  public void showControls(boolean isShown) {
+    controls.setVisible(isShown);
   }
 
 }

@@ -24,6 +24,7 @@ public class OfferListComponent extends PageArea {
 
   private final VirtualList<OfferInfo> delegateList;
   private final List<OfferInfo> offers;
+  private final Span controls;
 
   public OfferListComponent() {
     offers = new ArrayList<>();
@@ -34,7 +35,8 @@ public class OfferListComponent extends PageArea {
     upload.setAriaLabel("Upload");
     Span title = new Span("Offers");
     title.addClassName("title");
-    Span header = new Span(title, upload);
+    controls = new Span(upload);
+    Span header = new Span(title, controls);
     header.addClassName("header");
     addClassName("offer-list-component");
     delegateList.addClassName("offer-list");
@@ -130,6 +132,10 @@ public class OfferListComponent extends PageArea {
   public Registration addUploadOfferClickListener(
       ComponentEventListener<UploadOfferClickEvent> listener) {
     return addListener(UploadOfferClickEvent.class, listener);
+  }
+
+  public void showControls(boolean isShown) {
+    controls.setVisible(isShown);
   }
 
   public static class DeleteOfferClickEvent extends ComponentEvent<OfferListComponent> {

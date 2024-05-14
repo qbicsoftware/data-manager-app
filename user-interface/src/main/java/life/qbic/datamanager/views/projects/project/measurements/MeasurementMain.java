@@ -10,8 +10,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -26,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -69,10 +70,8 @@ import org.springframework.util.StringUtils;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
-public class MeasurementMain extends Main implements BeforeEnterObserver {
+public class MeasurementMain extends Main {
 
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
@@ -89,19 +88,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
+  private Span controls = new Span();
   private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
   private final NGSMeasurementContentProvider ngsMeasurementContentProvider;
   private final DownloadProvider ngsDownloadProvider;
   private final DownloadProvider proteomicsDownloadProvider;
   private transient Context context;
 
-  public MeasurementMain(
+  public MeasurementMain(@Autowired UserPermissions userPermissions,
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService) {
+    super(userPermissions);
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
@@ -179,14 +180,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
         event -> openRegisterMeasurementDialog());
-
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> openEditMeasurementDialog());
-
     Button deleteButton = new Button("Delete");
     deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());
-
-    Span buttonBar = new Span(downloadButton, editButton, deleteButton, registerMeasurementButton);
+    controls = new Span(editButton, deleteButton, registerMeasurementButton);
+    Span buttonBar = new Span(downloadButton, controls);
     buttonBar.addClassName("button-bar");
     Span buttonsAndSearch = new Span(measurementSearchField, buttonBar);
     buttonsAndSearch.addClassName("buttonAndField");
@@ -439,7 +438,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    setMeasurementInformation();
   }
 
   private void setMeasurementInformation() {
@@ -478,6 +476,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementTemplateListComponent.setVisible(true);
     measurementDetailsComponent.setContext(context);
     measurementDetailsComponent.setVisible(true);
+    showControls(userPermissions.editProject(context.projectId().orElseThrow()));
   }
 
   private void onDownloadMeasurementTemplateClicked(
@@ -524,4 +523,17 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       measurementsSelectedInfoBox.setText(text);
   }
 
+  private void showControls(boolean isShown) {
+    controls.setVisible(isShown);
+  }
+
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+    setMeasurementInformation();
+  }
 }

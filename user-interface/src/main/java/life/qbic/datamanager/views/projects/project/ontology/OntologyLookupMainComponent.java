@@ -3,14 +3,15 @@ package life.qbic.datamanager.views.projects.project.ontology;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -29,16 +30,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/ontology", layout = ProjectMainLayout.class)
 @PermitAll
-public class OntologyLookupMainComponent extends Main implements BeforeEnterObserver {
+public class OntologyLookupMainComponent extends Main {
 
   @Serial
   private static final long serialVersionUID = -7781433842615499185L;
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private static final Logger log = logger(OntologyLookupMainComponent.class);
   private final OntologyLookupComponent ontologyLookupComponent;
   private Context context = new Context();
 
-  public OntologyLookupMainComponent(@Autowired OntologyLookupComponent ontologyLookupComponent) {
+  public OntologyLookupMainComponent(@Autowired UserPermissions userPermissions,
+      @Autowired OntologyLookupComponent ontologyLookupComponent) {
+    super(userPermissions);
     requireNonNull(ontologyLookupComponent);
     this.ontologyLookupComponent = ontologyLookupComponent;
     this.addClassName("ontology-lookup-main");
@@ -64,6 +66,15 @@ public class OntologyLookupMainComponent extends Main implements BeforeEnterObse
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
     this.context = new Context().with(parsedProjectId);
+  }
+
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
     ontologyLookupComponent.resetSearch();
   }
 }

@@ -3,6 +3,8 @@ package life.qbic.datamanager.views.projects.project.experiments;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -11,6 +13,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
@@ -32,18 +35,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?", layout = ExperimentMainLayout.class)
 @PermitAll
-public class ExperimentInformationMain extends Main implements BeforeEnterObserver {
+public class ExperimentInformationMain extends Main implements BeforeEnterObserver,
+    AfterNavigationObserver {
 
   @Serial
   private static final long serialVersionUID = -3443064087502678981L;
   private static final Logger log = logger(ExperimentInformationMain.class);
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private final ExperimentDetailsComponent experimentDetailsComponent;
   private transient Context context;
 
-  public ExperimentInformationMain(
+  public ExperimentInformationMain(@Autowired UserPermissions userPermissions,
       @Autowired ExperimentDetailsComponent experimentDetailsComponent) {
+    super(userPermissions);
     requireNonNull(experimentDetailsComponent);
     this.experimentDetailsComponent = experimentDetailsComponent;
     addClassName("experiment");
@@ -80,11 +83,17 @@ public class ExperimentInformationMain extends Main implements BeforeEnterObserv
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    initializeComponentsWithContext();
   }
 
-  private void initializeComponentsWithContext() {
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
     experimentDetailsComponent.setContext(context);
-    add(experimentDetailsComponent);
+    experimentDetailsComponent.showControls(
+        userPermissions.editProject(context.projectId().orElseThrow()));
   }
 }

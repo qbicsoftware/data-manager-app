@@ -2,9 +2,8 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -17,13 +16,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
@@ -66,12 +65,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class SampleInformationMain extends Main implements BeforeEnterObserver {
+public class SampleInformationMain extends Main {
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient BatchRegistrationService batchRegistrationService;
@@ -82,7 +79,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final BatchDetailsComponent batchDetailsComponent;
   private transient Context context;
 
-  public SampleInformationMain(@Autowired ProjectInformationService projectInformationService,
+  public SampleInformationMain(@Autowired UserPermissions userPermissions,
+      @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
       @Autowired DeletionService deletionService,
@@ -90,6 +88,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent) {
+    super(userPermissions);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(batchRegistrationService);
@@ -112,7 +111,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
     batchDetailsComponent.addBatchEditListener(this::onEditBatchClicked);
-    batchDetailsComponent.addBatchViewListener(this::onViewBatchClicked);
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -250,13 +248,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     notification.open();
   }
 
-  private void onViewBatchClicked(ViewBatchEvent viewBatchEvent) {
-    ConfirmDialog confirmDialog = new ConfirmDialog();
-    confirmDialog.setText(("This is where I'd show all of my Samples"));
-    confirmDialog.open();
-    confirmDialog.addConfirmListener(event -> confirmDialog.close());
-  }
-
   private void onEditBatchClicked(EditBatchEvent editBatchEvent) {
     Experiment experiment = context.experimentId()
         .flatMap(experimentInformationService::find)
@@ -365,7 +356,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
+  }
+
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
     setContext(context);
+    boolean canEdit = userPermissions.editProject(context.projectId().orElseThrow());
+    batchDetailsComponent.showControls(canEdit);
   }
 
   public static class BatchRegisteredEvent extends ComponentEvent<SampleInformationMain> {

@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views.account;
 
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
@@ -39,7 +40,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @SpringComponent
 @UIScope
 @PermitAll
-public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver {
+public class PersonalAccessTokenMain extends Main {
 
   @Serial
   private static final long serialVersionUID = -7876265792987169498L;
@@ -47,8 +48,10 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   private final PersonalAccessTokenComponent personalAccessTokenComponent;
   private final PersonalAccessTokenService personalAccessTokenService;
 
-  public PersonalAccessTokenMain(PersonalAccessTokenService personalAccessTokenService,
+  public PersonalAccessTokenMain(@Autowired UserPermissions userPermissions,
+      PersonalAccessTokenService personalAccessTokenService,
       @Autowired PersonalAccessTokenComponent personalAccessTokenComponent) {
+    super(userPermissions);
     Objects.requireNonNull(personalAccessTokenService);
     Objects.requireNonNull(personalAccessTokenComponent);
     this.personalAccessTokenService = personalAccessTokenService;
@@ -103,7 +106,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
    */
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    loadGeneratedPersonalAccessTokens();
+
   }
 
   private void loadGeneratedPersonalAccessTokens() {
@@ -115,5 +118,15 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
         .map(PersonalAccessTokenFrontendBean::from)
         .collect(Collectors.toCollection(ArrayList::new));
     personalAccessTokenComponent.setTokens(personalAccessTokenFrontendBeans);
+  }
+
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+    loadGeneratedPersonalAccessTokens();
   }
 }

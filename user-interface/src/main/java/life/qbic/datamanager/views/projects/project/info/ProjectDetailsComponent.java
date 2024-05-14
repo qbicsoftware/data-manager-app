@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
@@ -47,7 +46,7 @@ public class ProjectDetailsComponent extends PageArea {
   private static final long serialVersionUID = -5781313306040217724L;
   private final Div header = new Div();
   private final Span titleField = new Span();
-  private final Span buttonBar = new Span();
+  private final Span controls;
   private final Div content = new Div();
   private final Span projectTitleField = new Span();
   private final Span projectObjectiveField = new Span();
@@ -62,21 +61,28 @@ public class ProjectDetailsComponent extends PageArea {
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient ContactRepository contactRepository;
-  private final UserPermissions userPermissions;
   private Context context;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired ContactRepository contactRepository,
-      @Autowired UserPermissions userPermissions) {
+      @Autowired ContactRepository contactRepository) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "projectInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "experimentInformationService must not be null");
     this.contactRepository = requireNonNull(contactRepository,
         "contactRepository must not be null");
-    this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
-    layoutComponent();
+    add(header);
+    add(content);
+    content.add(projectInformationSection, fundingInformationSection, collaboratorSection);
+    content.addClassName("project-information-content");
+    Button editButton = new Button("Edit");
+    editButton.addClickListener(event -> openProjectInformationDialog());
+    controls = new Span(editButton);
+    titleField.setText("Project Summary");
+    header.addClassName("header");
+    header.add(titleField, controls);
+    titleField.addClassName("title");
     addListenerForNewEditEvent();
     addClassName("project-details-component");
   }
@@ -188,33 +194,10 @@ public class ProjectDetailsComponent extends PageArea {
     }
     this.context = context;
     loadProjectData(context.projectId().orElseThrow());
-    showControls(userPermissions.editProject(context.projectId().orElseThrow()));
-
   }
 
-  private void layoutComponent() {
-    this.add(header);
-    this.add(content);
-    content.add(projectInformationSection, fundingInformationSection, collaboratorSection);
-    content.addClassName("project-information-content");
-
-    titleField.setText("Project Summary");
-    header.addClassName("header");
-    header.add(titleField, buttonBar);
-    titleField.addClassName("title");
-  }
-
-  private Button editButton() {
-    Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openProjectInformationDialog());
-    return editButton;
-  }
-
-  private void showControls(boolean enabled) {
-    buttonBar.removeAll();
-    if (enabled) {
-      buttonBar.add(editButton());
-    }
+  public void showControls(boolean isShown) {
+    controls.setVisible(isShown);
   }
 
   private void openProjectInformationDialog() {

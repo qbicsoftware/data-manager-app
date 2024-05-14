@@ -23,15 +23,17 @@ import life.qbic.datamanager.views.general.PageArea;
 public class QualityControlListComponent extends PageArea {
 
   private final VirtualList<QualityControl> qualityControls;
+  private final Span controls;
 
   public QualityControlListComponent() {
     qualityControls = new VirtualList<>();
     qualityControls.setRenderer(qualityControlItemRenderer());
     Button upload = new Button("Upload", this::onUploadQualityControlClicked);
+    controls = new Span(upload);
     upload.setAriaLabel("Upload");
     Span title = new Span("Sample QC");
     title.addClassName("title");
-    Span header = new Span(title, upload);
+    Span header = new Span(title, controls);
     header.addClassName("header");
     addClassName("quality-control-list-component");
     qualityControls.addClassName("quality-control-list");
@@ -79,6 +81,10 @@ public class QualityControlListComponent extends PageArea {
   }
 
   public void remove(long qualityControlId) {
+  }
+
+  public void showControls(boolean isShown) {
+    controls.setVisible(isShown);
   }
 
   public static class DeleteQualityControlEvent extends

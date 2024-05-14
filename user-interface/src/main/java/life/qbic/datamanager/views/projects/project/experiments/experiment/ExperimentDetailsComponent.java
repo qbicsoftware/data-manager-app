@@ -79,7 +79,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Div content = new Div();
   private final Div header = new Div();
   private final Span title = new Span();
-  private final Span buttonBar = new Span();
+  private final Span controls = new Span();
   private final Span sampleSourceComponent = new Span();
   private final TabSheet experimentSheet = new TabSheet();
   private final Div experimentalGroups = new Div();
@@ -137,6 +137,12 @@ public class ExperimentDetailsComponent extends PageArea {
     return notification;
   }
 
+  public void showControls(boolean isShown) {
+    controls.setVisible(isShown);
+    experimentalGroupsCollection.showControls(isShown);
+    experimentalVariableCollection.showControls(isShown);
+  }
+
   private Disclaimer createNoVariableDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Get started by adding experimental variables", "Add variables");
@@ -158,8 +164,9 @@ public class ExperimentDetailsComponent extends PageArea {
     this.add(content);
     //Necessary to avoid css collution
     content.addClassName("details-content");
-    initButtonBar();
-    header.add(title, buttonBar);
+    Button editButton = new Button("Edit");
+    editButton.addClickListener(event -> onEditButtonClicked());
+    header.add(title, controls);
     title.addClassName("title");
     addSampleSourceInformationComponent();
     layoutTabSheet();
@@ -168,12 +175,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private void configureComponent() {
     listenForExperimentCollectionComponentEvents();
     listenForExperimentalVariablesComponentEvents();
-  }
-
-  private void initButtonBar() {
-    Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> onEditButtonClicked());
-    buttonBar.add(editButton);
   }
 
   private void onEditButtonClicked() {

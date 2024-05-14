@@ -25,6 +25,7 @@ public class CardCollection extends Div {
   private static final long serialVersionUID = -9123769128332512326L;
 
   private final Div content = new Div();
+  private final Span controls;
 
   public CardCollection(String title) {
     addClassName("card-collection");
@@ -32,19 +33,20 @@ public class CardCollection extends Div {
     titleSpan.addClassName("collection-title");
     Div header = new Div();
     header.addClassName("collection-header");
-    Div controlItems = new Div();
-    controlItems.addClassName("collection-controls");
-    content.addClassName("collection-content");
-    header.add(titleSpan, controlItems);
     Button addButton = new Button("Add");
     Button editButton = new Button("Edit");
-    controlItems.add(editButton, addButton);
-
-    addButton.addClassName("primary");
-    add(header, content);
-
     addButton.addClickListener(this::fireAddEvent);
     editButton.addClickListener(this::fireEditEvent);
+    content.addClassName("collection-content");
+    controls = new Span(editButton, addButton);
+    controls.addClassName("collection-controls");
+    header.add(titleSpan, controls);
+    addButton.addClassName("primary");
+    add(header, content);
+  }
+
+  public void showControls(boolean isShown) {
+    controls.setVisible(isShown);
   }
 
   private void fireEditEvent(ClickEvent<Button> buttonClickEvent) {

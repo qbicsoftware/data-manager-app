@@ -3,8 +3,8 @@ package life.qbic.datamanager.views.projects.project.access;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
@@ -24,22 +24,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Route(value = "projects/:projectId?/access", layout = ProjectMainLayout.class)
 @PermitAll
-public class ProjectAccessMain extends Main implements BeforeEnterObserver {
+public class ProjectAccessMain extends Main {
 
   @Serial
   private static final long serialVersionUID = 4979017702364519296L;
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private static final Logger log = logger(ProjectAccessMain.class);
   private final ProjectAccessComponent projectAccessComponent;
-  private final UserPermissions userPermissions;
   private transient Context context;
 
   protected ProjectAccessMain(@Autowired ProjectAccessComponent projectAccessComponent,
       @Autowired UserPermissions userPermissions) {
+    super(userPermissions);
     requireNonNull(projectAccessComponent);
-    requireNonNull(userPermissions);
     this.projectAccessComponent = projectAccessComponent;
-    this.userPermissions = userPermissions;
     this.addClassName("project-access-main");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
@@ -63,17 +60,23 @@ public class ProjectAccessMain extends Main implements BeforeEnterObserver {
     }
     ProjectId parsedProjectId = ProjectId.parse(projectID);
     this.context = new Context().with(parsedProjectId);
-    if (userPermissions.changeProjectAccess(parsedProjectId)) {
-      initializeComponentsWithContext();
-    } else {
+    if (!userPermissions.changeProjectAccess(parsedProjectId)) {
       event.rerouteToError(NotFoundException.class);
     }
-    initializeComponentsWithContext();
-
   }
 
   private void initializeComponentsWithContext() {
     projectAccessComponent.setContext(context);
     add(projectAccessComponent);
+  }
+
+  /**
+   * Callback executed after navigation has been executed.
+   *
+   * @param event after navigation event with event details
+   */
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+    initializeComponentsWithContext();
   }
 }
