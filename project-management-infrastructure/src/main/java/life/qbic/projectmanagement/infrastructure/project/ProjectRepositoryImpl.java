@@ -5,7 +5,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;

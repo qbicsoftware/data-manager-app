@@ -6,6 +6,7 @@ import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
@@ -41,7 +42,7 @@ public class UpdateProjectLastModified implements DomainEventSubscriber<ProjectC
   }
 
   @Job(name = "Update_Project_Modified")
-  public void updateProjectModified(ProjectId projectID, Instant modifiedOn) throws RuntimeException {
+  public void updateProjectModified(ProjectId projectID, Instant modifiedOn) throws ProjectNotFoundException {
     projectInformationService.updateModifiedDate(projectID, modifiedOn);
   }
 }
