@@ -603,6 +603,7 @@
 .user-profile-component .change-alias {
   color: var(--lumo-primary-text-color);
   cursor: pointer;
+  width: fit-content;
 }
 
 .user-profile-component .user-details-card .details {

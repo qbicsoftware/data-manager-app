@@ -26,7 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * {@link life.qbic.identity.api.UserInfo} and change his Username via the provided UI elements
  */
 
-@Route(value = "user-profile-main", layout = UserMainLayout.class)
+@Route(value = "profile", layout = UserMainLayout.class)
 @SpringComponent
 @UIScope
 @PermitAll
