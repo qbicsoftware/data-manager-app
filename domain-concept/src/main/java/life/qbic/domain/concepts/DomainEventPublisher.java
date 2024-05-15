@@ -51,7 +51,6 @@ public class DomainEventPublisher {
       publishing.set(Boolean.TRUE);
       List<DomainEventSubscriber<? extends DomainEvent>> registeredSubscribers = subscribers.get();
       Class<? extends DomainEvent> domainEventType = domainEvent.getClass();
-
       registeredSubscribers.stream()
           .filter(subscriber -> subscriber.subscribedToEventType() == domainEventType)
           .map(it -> (DomainEventSubscriber<T>) it)
