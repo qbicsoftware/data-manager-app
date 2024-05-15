@@ -42,5 +42,5 @@ public class DomainEventDispatcher {
         .map(subscriber -> (DomainEventSubscriber<T>) subscriber)
         .forEach(subscriber -> subscriber.handleEvent(domainEvent));
   }
-  
+
 }
