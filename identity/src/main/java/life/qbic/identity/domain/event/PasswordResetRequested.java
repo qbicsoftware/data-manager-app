@@ -38,8 +38,7 @@ public class PasswordResetRequested extends DomainEvent {
     return new PasswordResetRequested(userId, name, emailAddress);
   }
 
-  private PasswordResetRequested(UserId userId, FullName name,
-      EmailAddress emailAddress) {
+  private PasswordResetRequested(UserId userId, FullName name, EmailAddress emailAddress) {
     super();
     this.userId = userId;
     this.fullName = name;

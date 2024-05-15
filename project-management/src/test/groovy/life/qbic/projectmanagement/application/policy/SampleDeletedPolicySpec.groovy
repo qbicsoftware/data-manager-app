@@ -20,9 +20,9 @@ import spock.lang.Specification
 
 class SampleDeletedPolicySpec extends Specification {
 
-    def "Given a sample deletion event, the respective directives are executed"() {
+    def "Given a sample deletion event, the respective directive is executed"() {
         given:
-        SampleDeleted sampleDeleted = SampleDeleted.create(BatchId.create(), SampleId.create(), ProjectId.create())
+        SampleDeleted sampleDeleted = SampleDeleted.create(BatchId.create(), SampleId.create())
 
         and:
         DeleteSampleFromBatch deleteSampleFromBatch = Mock(DeleteSampleFromBatch.class)
@@ -31,15 +31,13 @@ class SampleDeletedPolicySpec extends Specification {
         modifyProject.subscribedToEventType() >> ProjectChanged.class
 
         and:
-        SampleDeletedPolicy sampleDeletedPolicy = new SampleDeletedPolicy(deleteSampleFromBatch,
-                modifyProject)
+        SampleDeletedPolicy sampleDeletedPolicy = new SampleDeletedPolicy(deleteSampleFromBatch)
 
         when:
         DomainEventDispatcher.instance().dispatch(sampleDeleted)
 
         then:
         1 * deleteSampleFromBatch.handleEvent(sampleDeleted)
-        1 * modifyProject.handleEvent(sampleDeleted)
     }
 
 

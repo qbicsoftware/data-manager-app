@@ -7,7 +7,7 @@ import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.projectmanagement.domain.model.batch.Batch
 import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.project.*
-
+import life.qbic.projectmanagement.domain.model.sample.event.BatchDeleted
 import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered
 import life.qbic.projectmanagement.domain.repository.BatchRepository
 import spock.lang.Specification

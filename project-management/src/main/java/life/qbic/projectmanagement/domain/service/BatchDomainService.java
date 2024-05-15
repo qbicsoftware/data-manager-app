@@ -7,6 +7,7 @@ import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,13 +71,15 @@ public class BatchDomainService {
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
     } else {
-      dispatchSuccessfulBatchDeletion(projectId);
+      dispatchSuccessfulBatchDeletion(batchId, projectId);
     }
     return Result.fromValue(result.getValue());
   }
 
-  private void dispatchSuccessfulBatchDeletion(ProjectId projectId) {
+  private void dispatchSuccessfulBatchDeletion(BatchId batchId, ProjectId projectId) {
+    BatchDeleted batchDeleted = BatchDeleted.create(batchId);
     ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(batchDeleted);
     DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 

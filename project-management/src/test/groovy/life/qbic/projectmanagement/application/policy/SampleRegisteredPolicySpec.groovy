@@ -20,26 +20,22 @@ import spock.lang.Specification
 
 class SampleRegisteredPolicySpec extends Specification {
 
-    def "Given a sample registered event, the respective directives are executed"() {
+    def "Given a sample registered event, the respective directive is executed"() {
         given:
-        SampleRegistered sampleRegistered = SampleRegistered.create(BatchId.create(), SampleId.create(), ProjectId.create())
+        SampleRegistered sampleRegistered = SampleRegistered.create(BatchId.create(), SampleId.create())
 
         and:
         AddSampleToBatch addSampleToBatch = Mock(AddSampleToBatch.class)
         addSampleToBatch.subscribedToEventType() >> SampleRegistered.class
-        UpdateProjectLastModified modifyProject = Mock(UpdateProjectLastModified.class)
-        modifyProject.subscribedToEventType() >> ProjectChanged.class
 
         and:
-        SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch,
-                modifyProject)
+        SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch)
 
         when:
         DomainEventDispatcher.instance().dispatch(sampleRegistered)
 
         then:
         1 * addSampleToBatch.handleEvent(sampleRegistered)
-        1 * modifyProject.handleEvent(sampleRegistered)
     }
 
 
