@@ -587,7 +587,7 @@
 .user-profile-component .user-details-card {
   display: flex;
   flex-direction: row;
-  column-gap: var(--lumo-space-xl);
+  column-gap: 5rem;
   background-color: var(--lumo-base-color);
   border: black;
   border-radius: var(--lumo-border-radius-m);
@@ -595,21 +595,20 @@
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: var(--lumo-space-xl);
+  padding: 5rem;
   min-width: fit-content;
   width: 66%;
 }
 
 .user-profile-component .change-alias {
   color: var(--lumo-primary-text-color);
-  font-size: small;
   cursor: pointer;
 }
 
 .user-profile-component .user-details-card .details {
   display: flex;
   flex-direction: column;
-  row-gap: var(--lumo-space-m);
+  row-gap: var(--lumo-space-l);
 }
 
 .user-profile-component .user-details-card .detail {
@@ -618,10 +617,15 @@
   row-gap: var(--lumo-space-s);
 }
 
-.user-profile-component .user-details-card .avatar {
+.user-profile-component .user-details-card .avatar-with-name {
   display: flex;
   flex-direction: column;
   align-items: center;
   row-gap: var(--lumo-space-l);
   justify-content: center;
+}
+
+.user-profile-component .user-details-card .avatar {
+  height: 5rem;
+  width: 5rem;
 }

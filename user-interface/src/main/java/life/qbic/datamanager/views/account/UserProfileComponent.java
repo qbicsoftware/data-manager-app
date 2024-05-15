@@ -7,9 +7,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
@@ -30,9 +28,9 @@ import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableE
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Personal Access Token Component
+ * User Profile Component
  * <p>
- * This {@link PageArea} allows the user to manage his personal access tokens. The user is able to
+ * This {@link PageArea} allows the user to manage his profile. The user is able to
  * view a tokens expiration date and descripton. Additionally,he is able to delete and create
  * personal access tokens. Only after a personal access token is created its raw text is shown to
  * the user with the ability to copy it to the clipboard
@@ -40,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringComponent
 @UIScope
-@JsModule("./javascript/copytoclipboard.js")
 public class UserProfileComponent extends PageArea implements Serializable {
 
   @Serial
@@ -221,9 +218,9 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     public UserDetailsCard() {
       Div avatarWithName = new Div(userAvatar, userFullName);
-      userAvatar.addThemeVariants(AvatarVariant.LUMO_XLARGE);
+      userAvatar.addClassName("avatar");
       userFullName.addClassName("bold");
-      avatarWithName.addClassName("avatar");
+      avatarWithName.addClassName("avatar-with-name");
       Span changeAlias = new Span("Change Username");
       changeAlias.addClickListener(event -> setupChangeUserDialog());
       changeAlias.addClassName("change-alias");
