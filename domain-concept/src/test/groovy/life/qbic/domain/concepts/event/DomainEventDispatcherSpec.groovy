@@ -38,16 +38,7 @@ class DomainEventDispatcherSpec extends Specification {
 
     }
 
-    class TestDomainEvent extends DomainEvent {
-
-        @Serial
-        static final long serialVersionUID = 12L
-
-        @Override
-        Instant occurredOn() {
-            return null
-        }
-    }
+    class TestDomainEvent extends DomainEvent {}
 
     public interface TestDomainEventSubscriber<T extends DomainEvent> {
 

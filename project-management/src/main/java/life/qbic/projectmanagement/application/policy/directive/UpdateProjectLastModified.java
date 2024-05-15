@@ -5,7 +5,7 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class UpdateProjectLastModified implements DomainEventSubscriber<ProjectChangedEvent> {
+public class UpdateProjectLastModified implements DomainEventSubscriber<ProjectChanged> {
 
   private final ProjectInformationService projectInformationService;
   private final JobScheduler jobScheduler;
@@ -33,11 +33,11 @@ public class UpdateProjectLastModified implements DomainEventSubscriber<ProjectC
 
   @Override
   public Class<? extends DomainEvent> subscribedToEventType() {
-    return ProjectChangedEvent.class;
+    return ProjectChanged.class;
   }
 
   @Override
-  public void handleEvent(ProjectChangedEvent event) {
+  public void handleEvent(ProjectChanged event) {
     jobScheduler.enqueue(() -> updateProjectModified(event.projectId(), event.occurredOn()));
   }
 

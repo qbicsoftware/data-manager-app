@@ -12,9 +12,9 @@ import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentRegistered;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,14 +85,14 @@ public class AddExperimentToProjectService {
         })
         .map(Experiment::experimentId);
     if(result.isValue()) {
-      dispatchSuccessfulExperimentCreation(projectId);
+      dispatchProjectChanged(projectId);
     }
     return result;
   }
 
-  private void dispatchSuccessfulExperimentCreation(ProjectId projectId) {
-    ExperimentRegistered registered = ExperimentRegistered.create(projectId);
-    DomainEventDispatcher.instance().dispatch(registered);
+  private void dispatchProjectChanged(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
 }

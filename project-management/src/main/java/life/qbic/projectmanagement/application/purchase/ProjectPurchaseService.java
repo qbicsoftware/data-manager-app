@@ -12,7 +12,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.event.OfferChanged;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
 import org.springframework.stereotype.Service;
@@ -55,15 +55,14 @@ public class ProjectPurchaseService {
     try {
       storage.storePurchases(servicePurchases);
       dispatchSuccessfulPurchaseUpdate(projectReference);
-
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
   }
 
   private void dispatchSuccessfulPurchaseUpdate(ProjectId projectReference) {
-    OfferChanged offerChanged = OfferChanged.create(projectReference);
-    DomainEventDispatcher.instance().dispatch(offerChanged);
+    ProjectChanged projectChanged = ProjectChanged.create(projectReference);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   /**

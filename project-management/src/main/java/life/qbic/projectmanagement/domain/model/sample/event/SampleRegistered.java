@@ -3,11 +3,9 @@ package life.qbic.projectmanagement.domain.model.sample.event;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.Objects;
+import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -17,7 +15,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  *
  * @since 1.0.0
  */
-public class SampleRegistered extends ProjectChangedEvent {
+public class SampleRegistered extends DomainEvent {
 
   @Serial
   private static final long serialVersionUID = -1338442721083240618L;
@@ -28,8 +26,8 @@ public class SampleRegistered extends ProjectChangedEvent {
   @JsonProperty("sampleId")
   private final SampleId registeredSample;
 
-  private SampleRegistered(BatchId assignedBatch, SampleId registeredSample, ProjectId projectId) {
-    super(projectId);
+  private SampleRegistered(BatchId assignedBatch, SampleId registeredSample) {
+    super();
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.registeredSample = Objects.requireNonNull(registeredSample);
   }
@@ -42,15 +40,8 @@ public class SampleRegistered extends ProjectChangedEvent {
    * @return a new instance of this domain event
    * @since 1.0.0
    */
-  public static SampleRegistered create(BatchId assignedBatch, SampleId registeredSample,
-      ProjectId projectId) {
-    return new SampleRegistered(assignedBatch, registeredSample, projectId);
-  }
-
-  @JsonGetter("occurredOn")
-  @Override
-  public Instant occurredOn() {
-    return occurredOn;
+  public static SampleRegistered create(BatchId assignedBatch, SampleId registeredSample) {
+    return new SampleRegistered(assignedBatch, registeredSample);
   }
 
   @JsonGetter("assignedBatch")

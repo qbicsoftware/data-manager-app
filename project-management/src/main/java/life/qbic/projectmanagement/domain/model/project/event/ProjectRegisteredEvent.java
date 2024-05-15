@@ -29,12 +29,6 @@ public class ProjectRegisteredEvent extends DomainEvent {
     return new ProjectRegisteredEvent(projectId);
   }
 
-  @JsonGetter("occurredOn")
-  @Override
-  public Instant occurredOn() {
-    return occurredOn;
-  }
-
   @JsonGetter("createdProject")
   public String createdProject() {
     return createdProject;

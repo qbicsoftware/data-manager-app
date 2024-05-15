@@ -3,11 +3,10 @@ package life.qbic.projectmanagement.domain.model.sample.event;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.Objects;
+import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -17,7 +16,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  *
  * @since 1.0.0
  */
-public class SampleDeleted extends ProjectChangedEvent {
+public class SampleDeleted extends DomainEvent {
 
   @Serial
   private static final long serialVersionUID = 8134640209226646506L;
@@ -26,8 +25,8 @@ public class SampleDeleted extends ProjectChangedEvent {
   @JsonProperty("sampleId")
   private final SampleId deletedSample;
 
-  private SampleDeleted(BatchId assignedBatch, SampleId deletedSample, ProjectId projectId) {
-    super(projectId);
+  private SampleDeleted(BatchId assignedBatch, SampleId deletedSample) {
+    super();
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.deletedSample = Objects.requireNonNull(deletedSample);
   }
@@ -40,15 +39,8 @@ public class SampleDeleted extends ProjectChangedEvent {
    * @return a new instance of this domain event
    * @since 1.0.0
    */
-  public static SampleDeleted create(BatchId assignedBatch, SampleId deletedSample,
-      ProjectId projectId) {
-    return new SampleDeleted(assignedBatch, deletedSample, projectId);
-  }
-
-  @JsonGetter("occurredOn")
-  @Override
-  public Instant occurredOn() {
-    return this.occurredOn;
+  public static SampleDeleted create(BatchId assignedBatch, SampleId deletedSample) {
+    return new SampleDeleted(assignedBatch, deletedSample);
   }
 
   @JsonGetter("assignedBatch")

@@ -33,10 +33,8 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsLabeling;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSamplePreparation;
-import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsDeleted;
-import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsRegistered;
-import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementsUpdated;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
@@ -516,7 +514,7 @@ public class MeasurementService {
       ngsMeasurementsMapping.putAll(prepareNGSMeasurement(projectId, metadata));
     }
     List<MeasurementId> result = measurementDomainService.addNGSAll(ngsMeasurementsMapping);
-    dispatchSuccessfulMeasurementCreation(projectId);
+    dispatchProjectChanged(projectId);
     return result;
   }
 
@@ -577,7 +575,7 @@ public class MeasurementService {
       proteomicsMeasurementsMapping.putAll(preparePxpMeasurement(projectId, metadata));
     }
     List<MeasurementId> result = measurementDomainService.addProteomicsAll(proteomicsMeasurementsMapping);
-    dispatchSuccessfulMeasurementCreation(projectId);
+    dispatchProjectChanged(projectId);
     return result;
   }
 
@@ -712,7 +710,7 @@ public class MeasurementService {
             ngsMeasurements.stream().map(this::prepareNGSMeasurementUpdate).toList()).stream()
         .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
     if(result.stream().anyMatch(Result::isValue)) {
-      dispatchSuccessfulMeasurementUpdate(projectId);
+      dispatchProjectChanged(projectId);
     }
     return result;
   }
@@ -759,7 +757,7 @@ public class MeasurementService {
             proteomicsMeasurements.stream().map(this::preparePxpMeasurementUpdate).toList()).stream()
         .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
     if(result.stream().anyMatch(Result::isValue)) {
-      dispatchSuccessfulMeasurementUpdate(projectId);
+      dispatchProjectChanged(projectId);
     }
     return result;
   }
@@ -894,7 +892,7 @@ public class MeasurementService {
   public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId, Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deletePtx(selectedMeasurements);
-      dispatchSuccessfulMeasurementDeletion(projectId);
+      dispatchProjectChanged(projectId);
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
@@ -905,26 +903,16 @@ public class MeasurementService {
   public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId, Set<NGSMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deleteNGS(selectedMeasurements);
-      dispatchSuccessfulMeasurementDeletion(projectId);
+      dispatchProjectChanged(projectId);
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
     }
   }
 
-  private void dispatchSuccessfulMeasurementCreation(ProjectId projectId) {
-    MeasurementsRegistered registered = MeasurementsRegistered.create(projectId);
-    DomainEventDispatcher.instance().dispatch(registered);
-  }
-
-  private void dispatchSuccessfulMeasurementUpdate(ProjectId projectId) {
-    MeasurementsUpdated updated = MeasurementsUpdated.create(projectId);
-    DomainEventDispatcher.instance().dispatch(updated);
-  }
-
-  private void dispatchSuccessfulMeasurementDeletion(ProjectId projectId) {
-    MeasurementsDeleted deleted = MeasurementsDeleted.create(projectId);
-    DomainEventDispatcher.instance().dispatch(deleted);
+  private void dispatchProjectChanged(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   public static final class MeasurementDeletionException extends RuntimeException {

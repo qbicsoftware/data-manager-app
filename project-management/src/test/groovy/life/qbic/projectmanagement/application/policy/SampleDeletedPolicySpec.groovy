@@ -5,7 +5,7 @@ import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFrom
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified
 import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.project.ProjectId
-import life.qbic.projectmanagement.domain.model.project.event.ProjectChangedEvent
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged
 import life.qbic.projectmanagement.domain.model.sample.SampleId
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted
 import spock.lang.Specification
@@ -28,7 +28,7 @@ class SampleDeletedPolicySpec extends Specification {
         DeleteSampleFromBatch deleteSampleFromBatch = Mock(DeleteSampleFromBatch.class)
         deleteSampleFromBatch.subscribedToEventType() >> SampleDeleted.class
         UpdateProjectLastModified modifyProject = Mock(UpdateProjectLastModified.class)
-        modifyProject.subscribedToEventType() >> ProjectChangedEvent.class
+        modifyProject.subscribedToEventType() >> ProjectChanged.class
 
         and:
         SampleDeletedPolicy sampleDeletedPolicy = new SampleDeletedPolicy(deleteSampleFromBatch,

@@ -1,5 +1,6 @@
 package life.qbic.domain.concepts;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import java.io.Serializable;
 import java.time.Instant;
 
@@ -24,5 +25,10 @@ public abstract class DomainEvent implements Serializable {
    *
    * @return the instant the of event creation.
    */
-  public abstract Instant occurredOn();
+
+  @JsonGetter("occurredOn")
+  public Instant occurredOn() {
+    return occurredOn;
+  }
+
 }

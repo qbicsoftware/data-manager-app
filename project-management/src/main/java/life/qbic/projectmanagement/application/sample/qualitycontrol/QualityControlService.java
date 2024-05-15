@@ -11,7 +11,7 @@ import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.event.QualityControlChanged;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 import org.springframework.stereotype.Service;
@@ -65,8 +65,8 @@ public class QualityControlService {
   }
 
   private void dispatchSuccessfulQCUpdate(ProjectId projectReference) {
-    QualityControlChanged qcChanged = QualityControlChanged.create(projectReference);
-    DomainEventDispatcher.instance().dispatch(qcChanged);
+    ProjectChanged projectChanged = ProjectChanged.create(projectReference);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   /**

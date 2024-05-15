@@ -3,7 +3,10 @@ package life.qbic.projectmanagement.domain.model.project.event;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 
 /**
  * Interface for domain events that change projects:
@@ -14,15 +17,25 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * event occurrence timepoint. All other domain event information must be provided by the
  * implementing classes.
  */
-public abstract class ProjectChangedEvent extends DomainEvent {
+public class ProjectChanged extends DomainEvent {
 
   private final ProjectId projectId;
 
-  protected ProjectChangedEvent(ProjectId projectId) {
+  protected ProjectChanged(ProjectId projectId) {
     super();
     this.projectId = Objects.requireNonNull(projectId);
   }
 
+  /**
+   * Creates a new {@link ProjectChanged} object instance.
+   *
+   * @param projectId    the project reference
+   * @return a new instance of this domain event
+   * @since 1.0.0
+   */
+  public static ProjectChanged create(ProjectId projectId) {
+    return new ProjectChanged(projectId);
+  }
   /**
    * The identifier of the project that changed
    *

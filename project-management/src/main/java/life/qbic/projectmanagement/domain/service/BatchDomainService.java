@@ -6,7 +6,7 @@ import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.event.BatchDeleted;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,9 +57,12 @@ public class BatchDomainService {
     return Result.fromValue(result.getValue().batchId());
   }
 
-  private void dispatchRegistration(String name, BatchId id, String projectName, ProjectId projectId) {
+  private void dispatchRegistration(String name, BatchId id, String projectName,
+      ProjectId projectId) {
     BatchRegistered batchRegistered = BatchRegistered.create(name, id, projectName, projectId);
     DomainEventDispatcher.instance().dispatch(batchRegistered);
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId, ProjectId projectId) {
@@ -67,14 +70,14 @@ public class BatchDomainService {
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_DELETION_FAILED);
     } else {
-      dispatchSuccessfulBatchDeletion(batchId, projectId);
+      dispatchSuccessfulBatchDeletion(projectId);
     }
     return Result.fromValue(result.getValue());
   }
 
-  private void dispatchSuccessfulBatchDeletion(BatchId batchId, ProjectId projectId) {
-    BatchDeleted batchDeleted = BatchDeleted.create(batchId, projectId);
-    DomainEventDispatcher.instance().dispatch(batchDeleted);
+  private void dispatchSuccessfulBatchDeletion(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   public enum ResponseCode {

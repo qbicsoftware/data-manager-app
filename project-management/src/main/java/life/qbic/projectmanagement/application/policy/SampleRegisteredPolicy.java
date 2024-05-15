@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 
@@ -29,14 +28,10 @@ public class SampleRegisteredPolicy {
    *
    * @param addSampleToBatch directive to update the affected sample
    *                         {@link Batch}
-   * @param updateProject directive to update the project modified timestamp
    * @since 1.0.0
    */
-  public SampleRegisteredPolicy(AddSampleToBatch addSampleToBatch,
-      UpdateProjectLastModified updateProject) {
+  public SampleRegisteredPolicy(AddSampleToBatch addSampleToBatch) {
     DomainEventDispatcher.instance().subscribe(
         requireNonNull(addSampleToBatch, "addSampleToBatch must not be null"));
-    DomainEventDispatcher.instance().subscribe(
-        requireNonNull(updateProject, "updateProject must not be null"));
   }
 }

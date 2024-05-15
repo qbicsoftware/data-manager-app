@@ -11,6 +11,7 @@ import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -18,7 +19,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
-import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,6 +54,9 @@ public class SampleDomainService {
     result.onValue(
             createdSamples -> createdSamples.forEach(s -> dispatchSuccessfulSampleRegistration(s,
                 project.getId()))).onError(Result::fromError);
+    if(result.isValue()) {
+      dispatchProjectChanged(project.getId());
+    }
     return result;
   }
 
@@ -79,8 +82,8 @@ public class SampleDomainService {
   }
 
   private void dispatchSuccessfulSampleUpdate(ProjectId projectID) {
-    SampleUpdated sampleUpdated = SampleUpdated.create(projectID);
-    DomainEventDispatcher.instance().dispatch(sampleUpdated);
+    ProjectChanged projectChanged = ProjectChanged.create(projectID);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   public void deleteSamples(Project project, BatchId batchId, Collection<SampleId> samples) {
@@ -88,18 +91,26 @@ public class SampleDomainService {
     sampleRepository.deleteAll(project, samples);
     samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, project.getId(),
         batchId));
+    if(!samples.isEmpty()) {
+      dispatchProjectChanged(project.getId());
+    }
   }
 
   private void dispatchSuccessfulSampleDeletion(SampleId sampleId, ProjectId projectID,
       BatchId batchId) {
-    SampleDeleted sampleDeleted = SampleDeleted.create(batchId, sampleId, projectID);
+    SampleDeleted sampleDeleted = SampleDeleted.create(batchId, sampleId);
     DomainEventDispatcher.instance().dispatch(sampleDeleted);
   }
 
   private void dispatchSuccessfulSampleRegistration(Sample sample, ProjectId projectID) {
     SampleRegistered sampleRegistered = SampleRegistered.create(sample.assignedBatch(),
-        sample.sampleId(), projectID);
+        sample.sampleId());
     DomainEventDispatcher.instance().dispatch(sampleRegistered);
+  }
+
+  private void dispatchProjectChanged(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   public boolean isSampleRemovable(SampleId sampleId) {

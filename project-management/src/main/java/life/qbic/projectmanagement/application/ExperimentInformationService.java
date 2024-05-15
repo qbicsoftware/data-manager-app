@@ -25,10 +25,10 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
-import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdated;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -139,7 +139,7 @@ public class ExperimentInformationService {
     experiment.removeAllExperimentalGroups();
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
   /**
@@ -174,7 +174,7 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecies(List.of(species));
     experimentRepository.update(experiment);
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
   /**
@@ -194,7 +194,7 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecimens(List.of(specimens));
     experimentRepository.update(experiment);
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
   /**
@@ -214,7 +214,7 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addAnalytes(List.of(analytes));
     experimentRepository.update(experiment);
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
   /**
@@ -246,7 +246,7 @@ public class ExperimentInformationService {
     }
     experiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(experiment);
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
   /**
@@ -320,7 +320,7 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(id);
     experiment.removeExperimentalGroups(groupIds);
     experimentRepository.update(experiment);
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
   @Transactional
@@ -361,12 +361,12 @@ public class ExperimentInformationService {
         updateExperimentalGroupOfExperiment(experimentId, group);
       }
     }
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
-  private void dispatchSuccessfulExperimentUpdate(ProjectId projectId) {
-    ExperimentUpdated updated = ExperimentUpdated.create(projectId);
-    DomainEventDispatcher.instance().dispatch(updated);
+  private void dispatchProjectChanged(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   private void updateExperimentalGroupOfExperiment(ExperimentId experimentId, ExperimentalGroupDTO group) {
@@ -392,7 +392,7 @@ public class ExperimentInformationService {
     experiment.setAnalytes(analytes);
     experiment.setSpecimens(specimens);
     experimentRepository.update(experiment);
-    dispatchSuccessfulExperimentUpdate(projectId);
+    dispatchProjectChanged(projectId);
   }
 
   /**

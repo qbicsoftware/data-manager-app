@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered;
 
@@ -32,11 +31,8 @@ public class BatchRegisteredPolicy {
    * @param updateProject directive to update the project modified timestamp
    * @since 1.0.0
    */
-  public BatchRegisteredPolicy(InformUsersAboutBatchRegistration informUsers,
-      UpdateProjectLastModified updateProject) {
+  public BatchRegisteredPolicy(InformUsersAboutBatchRegistration informUsers) {
     DomainEventDispatcher.instance().subscribe(
         requireNonNull(informUsers, "informUsers must not be null"));
-    DomainEventDispatcher.instance().subscribe(
-        requireNonNull(updateProject, "updateProject must not be null"));
   }
 }

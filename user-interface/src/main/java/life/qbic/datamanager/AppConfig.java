@@ -34,21 +34,12 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
-import life.qbic.projectmanagement.application.policy.AttachmentsUpdatedPolicy;
-import life.qbic.projectmanagement.application.policy.BatchDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.BatchUpdatedPolicy;
-import life.qbic.projectmanagement.application.policy.ExperimentDeletedPolicy;
-import life.qbic.projectmanagement.application.policy.ExperimentRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.ExperimentUpdatedPolicy;
-import life.qbic.projectmanagement.application.policy.MeasurementsDeletedPolicy;
-import life.qbic.projectmanagement.application.policy.MeasurementsRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.MeasurementsUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.SampleUpdatedPolicy;
+import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
@@ -172,29 +163,14 @@ public class AppConfig {
   Section starts below
   */
   @Bean
-  public BatchRegisteredPolicy batchRegisteredPolicy(ProjectInformationService projectInfoService,
+  public BatchRegisteredPolicy batchRegisteredPolicy(
       life.qbic.projectmanagement.application.communication.EmailService emailService,
       ProjectAccessService accessService,
       UserInformationService userInformationService, AppContextProvider appContextProvider,
       JobScheduler jobScheduler) {
     var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
         userInformationService, appContextProvider, jobScheduler);
-    var updateProject = new UpdateProjectLastModified(projectInfoService, jobScheduler);
-    return new BatchRegisteredPolicy(informUsers, updateProject);
-  }
-
-  @Bean
-  public BatchUpdatedPolicy batchEditedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new BatchUpdatedPolicy(updateProject);
-  }
-
-  @Bean
-  public BatchDeletedPolicy batchDeletedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new BatchDeletedPolicy(updateProject);
+    return new BatchRegisteredPolicy(informUsers);
   }
 
   @Bean
@@ -221,75 +197,24 @@ public class AppConfig {
   }
 
   @Bean
-  public SampleRegisteredPolicy sampleRegisteredPolicy(ProjectInformationService projectInfoService,
+  public SampleRegisteredPolicy sampleRegisteredPolicy(
       BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
     var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
-    var updateProject = new UpdateProjectLastModified(projectInfoService, jobScheduler);
-    return new SampleRegisteredPolicy(addSampleToBatch, updateProject);
-  }
-
-  @Bean
-  public SampleUpdatedPolicy sampleEditedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new SampleUpdatedPolicy(updateProject);
+    return new SampleRegisteredPolicy(addSampleToBatch);
   }
 
   @Bean
   public SampleDeletedPolicy sampleDeletedPolicy(BatchRegistrationService batchRegistrationService,
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
+      JobScheduler jobScheduler) {
     var deleteSampleFromBatch = new DeleteSampleFromBatch(batchRegistrationService, jobScheduler);
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new SampleDeletedPolicy(deleteSampleFromBatch, updateProject);
+    return new SampleDeletedPolicy(deleteSampleFromBatch);
   }
 
   @Bean
-  public ExperimentUpdatedPolicy experimentEditedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
+  public ProjectChangedPolicy projectChangedPolicy(ProjectInformationService projectInformationService,
+      JobScheduler jobScheduler) {
     var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new ExperimentUpdatedPolicy(updateProject);
-  }
-
-  @Bean
-  public ExperimentRegisteredPolicy experimentCreatedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new ExperimentRegisteredPolicy(updateProject);
-  }
-
-  @Bean
-  public ExperimentDeletedPolicy experimentDeletedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new ExperimentDeletedPolicy(updateProject);
-  }
-
-  @Bean
-  public MeasurementsUpdatedPolicy measurementsEditedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new MeasurementsUpdatedPolicy(updateProject);
-  }
-
-  @Bean
-  public MeasurementsRegisteredPolicy measurementsCreatedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new MeasurementsRegisteredPolicy(updateProject);
-  }
-
-  @Bean
-  public MeasurementsDeletedPolicy measurementsDeletedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new MeasurementsDeletedPolicy(updateProject);
-  }
-
-  @Bean
-  public AttachmentsUpdatedPolicy attachmentsChangedPolicy(
-      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
-    return new AttachmentsUpdatedPolicy(updateProject);
+    return new ProjectChangedPolicy(updateProject);
   }
 
   @Bean
