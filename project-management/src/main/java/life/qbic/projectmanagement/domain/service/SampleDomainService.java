@@ -52,8 +52,8 @@ public class SampleDomainService {
     Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.addAll(project,
         samplesToRegister);
     result.onValue(
-            createdSamples -> createdSamples.forEach(s -> dispatchSuccessfulSampleRegistration(s,
-                project.getId()))).onError(Result::fromError);
+            createdSamples -> createdSamples.forEach(s -> dispatchSuccessfulSampleRegistration(s)))
+        .onError(Result::fromError);
     if(result.isValue()) {
       dispatchProjectChanged(project.getId());
     }
@@ -89,28 +89,26 @@ public class SampleDomainService {
   public void deleteSamples(Project project, BatchId batchId, Collection<SampleId> samples) {
     Objects.requireNonNull(samples);
     sampleRepository.deleteAll(project, samples);
-    samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, project.getId(),
-        batchId));
+    samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, batchId));
     if(!samples.isEmpty()) {
       dispatchProjectChanged(project.getId());
     }
   }
 
-  private void dispatchSuccessfulSampleDeletion(SampleId sampleId, ProjectId projectID,
-      BatchId batchId) {
+  private void dispatchSuccessfulSampleDeletion(SampleId sampleId, BatchId batchId) {
     SampleDeleted sampleDeleted = SampleDeleted.create(batchId, sampleId);
     DomainEventDispatcher.instance().dispatch(sampleDeleted);
-  }
-
-  private void dispatchSuccessfulSampleRegistration(Sample sample, ProjectId projectID) {
-    SampleRegistered sampleRegistered = SampleRegistered.create(sample.assignedBatch(),
-        sample.sampleId());
-    DomainEventDispatcher.instance().dispatch(sampleRegistered);
   }
 
   private void dispatchProjectChanged(ProjectId projectId) {
     ProjectChanged projectChanged = ProjectChanged.create(projectId);
     DomainEventDispatcher.instance().dispatch(projectChanged);
+  }
+
+  private void dispatchSuccessfulSampleRegistration(Sample sample) {
+    SampleRegistered sampleRegistered = SampleRegistered.create(sample.assignedBatch(),
+        sample.sampleId());
+    DomainEventDispatcher.instance().dispatch(sampleRegistered);
   }
 
   public boolean isSampleRemovable(SampleId sampleId) {

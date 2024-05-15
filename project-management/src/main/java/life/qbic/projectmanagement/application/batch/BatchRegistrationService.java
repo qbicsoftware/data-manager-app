@@ -181,8 +181,7 @@ public class BatchRegistrationService {
       return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
     }
     Batch batch = searchResult.get();
-    Result<BatchId, ResponseCode> updateResult =
-        updateBatchInformation(batch, projectId, batchLabel, isPilot);
+    updateBatchInformation(batch, projectId, batchLabel, isPilot);
     if (!createdSamples.isEmpty()) {
       sampleRegistrationService.registerSamples(createdSamples, projectId);
     }

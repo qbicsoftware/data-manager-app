@@ -3,10 +3,7 @@ package life.qbic.projectmanagement.domain.model.project.event;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 
 /**
  * Interface for domain events that change projects:
