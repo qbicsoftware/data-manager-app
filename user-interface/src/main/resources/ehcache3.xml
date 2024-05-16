@@ -20,8 +20,8 @@
       </listener>
     </listeners>
     <resources>
-      <!-- heap allows for caching of up to 200 entries-->
-      <heap unit="entries">20000</heap>
+      <!-- heap allows for caching of up to 2000 entries-->
+      <heap unit="entries">2000</heap>
       <offheap unit="MB">10</offheap>
     </resources>
   </cache>
