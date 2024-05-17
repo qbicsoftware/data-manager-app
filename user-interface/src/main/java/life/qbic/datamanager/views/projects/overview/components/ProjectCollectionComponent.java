@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
@@ -36,12 +35,11 @@ import org.springframework.stereotype.Component;
 /**
  * <b>Project Collection</b>
  * <p>
- * A component that displays previews of accessible project previews.
+ * A component that displays cards showing the content of accessible {@link ProjectOverview for the logged-in user.
  * <p>
  * The component also fires {@link ProjectCreationSubmitEvent} to all registered listeners, if a
- * user has the intend to add a new project.
+ * user has the intend to create a new project.
  *
- * @since 1.0.0
  */
 @Component
 @RouteScope
@@ -54,11 +52,11 @@ public class ProjectCollectionComponent extends PageArea {
   final Button createProjectButton = new Button("Create");
   private final Div header = new Div();
   private final transient ProjectInformationService projectInformationService;
-  private String projectPreviewFilter = "";
-  private GridLazyDataView<ProjectOverview> projectPreviewGridLazyDataView;
+  private final Span searchResultInfo = new Span();
+  private String projectOverviewFilter = "";
+  private GridLazyDataView<ProjectOverview> projectOverviewGridLazyDataView;
 
-  public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
-      ProjectInformationService projectInformationService) {
+  public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
     layoutComponent();
@@ -82,20 +80,26 @@ public class ProjectCollectionComponent extends PageArea {
     add(header);
   }
 
+  private void initSearchResultInfo() {
+    searchResultInfo.addClassName("secondary");
+    add(searchResultInfo);
+  }
+
   private void layoutComponent() {
     addClassNames("project-collection-component");
     initHeader();
+    initSearchResultInfo();
     layoutGrid();
   }
 
   private void createLazyProjectView() {
-    projectPreviewGridLazyDataView = projectGrid.setItems(query -> {
+    projectOverviewGridLazyDataView = projectGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (the least priority)
       sortOrders.add(SortOrder.of("lastModified").descending());
-      return projectInformationService.queryOverview(projectPreviewFilter, query.getOffset(),
+      return projectInformationService.queryOverview(projectOverviewFilter, query.getOffset(),
           query.getLimit(), List.copyOf(sortOrders)).stream();
     });
   }
@@ -103,8 +107,9 @@ public class ProjectCollectionComponent extends PageArea {
   private void configureSearch() {
     projectSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     projectSearchField.addValueChangeListener(event -> {
-      projectPreviewFilter = event.getValue().trim();
-      projectPreviewGridLazyDataView.refreshAll();
+      projectOverviewFilter = event.getValue().trim();
+      projectOverviewGridLazyDataView.refreshAll();
+      showSearchResult(!event.getValue().isBlank());
     });
   }
 
@@ -114,7 +119,7 @@ public class ProjectCollectionComponent extends PageArea {
 
   private void layoutGrid() {
     projectGrid.setSelectionMode(SelectionMode.NONE);
-    projectGrid.addComponentColumn(ProjectPreviewItem::new);
+    projectGrid.addComponentColumn(ProjectOverviewItem::new);
     projectGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     projectGrid.addClassName("project-grid");
     add(projectGrid);
@@ -141,9 +146,24 @@ public class ProjectCollectionComponent extends PageArea {
     projectGrid.getDataProvider().refreshAll();
   }
 
+  private void showSearchResult(boolean isVisible) {
+    searchResultInfo.setVisible(isVisible);
+    searchResultInfo.setText(
+        "%s projects found".formatted(projectOverviewGridLazyDataView.getItems().count()));
+  }
+
   /**
-   * Tag color enum is used to set the tag color to one of the predefined values to allow different
-   * coloration of tags as necessary
+   * Resets the value within the searchField, which in turn resets the grid. Additionally, hides the
+   * entire section so the result span is only shown when the user is actively searching for an
+   * ontology
+   */
+  public void resetSearch() {
+    projectSearchField.setValue("");
+  }
+
+  /**
+   * The Measurement Types are employed to set the Tag Color and Tag naming dependent on the
+   * registered measurements within the projectCollection
    */
   public enum MeasurementType {
     PROTEOMICS("Proteomics"),
@@ -161,12 +181,12 @@ public class ProjectCollectionComponent extends PageArea {
   }
 
   /**
-   * ProjectPreviewItem
+   * ProjectOverviewItem
    * <p>
-   * The Project Preview Item is a Div container styled similar to the {@link Card} component,
+   * The Project Overview Item is a Div container styled similar to the {@link Card} component,
    * hosting the project information of interest provided by a {@link ProjectOverview}
    */
-  private static class ProjectPreviewItem extends Div {
+  private static class ProjectOverviewItem extends Div {
 
     private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
     private static final int MAXIMUM_NUMBER_OF_SHOWN_AVATARS = 3;
@@ -175,7 +195,7 @@ public class ProjectCollectionComponent extends PageArea {
     private final AvatarGroup usersWithAccess = new AvatarGroup();
     private final ProjectOverview projectOverview;
 
-    public ProjectPreviewItem(ProjectOverview projectOverview) {
+    public ProjectOverviewItem(ProjectOverview projectOverview) {
       this.projectOverview = Objects.requireNonNull(projectOverview);
       Span header = createHeader(projectOverview.projectCode(), projectOverview.projectTitle());
       add(header);
@@ -198,14 +218,14 @@ public class ProjectCollectionComponent extends PageArea {
       setMeasurementDependentTags();
       projectOverview.collaboratorUserNames().stream().map(AvatarGroupItem::new)
           .forEach(usersWithAccess::add);
-      addClassNames("project-preview-item");
+      addClassNames("project-overview-item");
       addClickListener(event -> getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class,
           new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()))));
     }
 
     private Span createHeader(String projectCode, String projectTitle) {
       Span title = new Span(String.format("%s - %s", projectCode, projectTitle));
-      title.addClassName("project-preview-item-title");
+      title.addClassName("project-overview-item-title");
       tags.addClassNames("tag-collection");
       Span header = new Span(title, tags);
       header.addClassName("header");

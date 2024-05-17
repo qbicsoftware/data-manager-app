@@ -161,6 +161,7 @@ public class ProjectOverviewMain extends Main {
     displaySuccessfulProjectCreationNotification();
     confirmEvent.getSource().close();
     projectCollectionComponent.refresh();
+    projectCollectionComponent.resetSearch();
   }
 
   private void displaySuccessfulProjectCreationNotification() {

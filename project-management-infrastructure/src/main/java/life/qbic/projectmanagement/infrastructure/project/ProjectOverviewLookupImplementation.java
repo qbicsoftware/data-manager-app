@@ -149,8 +149,8 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
 
     public static Specification<ProjectOverview> hasNgsMeasurements(String filter) {
       return (root, query, builder) -> {
-        //If the user does not filter for "genomics" "this specification is irrelevant
-        if (!Objects.equals(filter.strip().toLowerCase(), "genomics")) {
+        //If the user does not filter for a substring of "genomics" this specification is irrelevant
+        if (!"genomics".contains(filter)) {
           return builder.disjunction();
         }
         return builder.greaterThan(root.get("ngsMeasurementCount").as(Integer.class), 0);
@@ -159,8 +159,8 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
 
     public static Specification<ProjectOverview> hasPxPMeasurements(String filter) {
       return (root, query, builder) -> {
-        //If the user does not filter for "proteomics" this specification is irrelevant
-        if (!Objects.equals(filter.strip().toLowerCase(), "proteomics")) {
+        //If the user does not filter for a substring of proteomics this specification is irrelevant
+        if (!"proteomics".contains(filter)) {
           return builder.disjunction();
         }
         return builder.greaterThan(root.get("pxpMeasurementCount").as(Integer.class), 0);
