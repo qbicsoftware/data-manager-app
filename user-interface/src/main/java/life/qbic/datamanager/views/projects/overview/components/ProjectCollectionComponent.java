@@ -17,11 +17,6 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.spring.annotation.RouteScope;
 import java.io.Serial;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,21 +24,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
-import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
-import life.qbic.identity.api.UserInfo;
-import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ProjectPreview;
-import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
-import life.qbic.projectmanagement.application.measurement.MeasurementService;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.project.Project;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.application.ProjectOverview;
 import org.springframework.stereotype.Component;
 
 /**
@@ -63,32 +50,17 @@ public class ProjectCollectionComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = 8579375312838977742L;
   final TextField projectSearchField = new TextField();
-  final Grid<ProjectPreview> projectGrid = new Grid<>(ProjectPreview.class, false);
+  final Grid<ProjectOverview> projectGrid = new Grid<>(ProjectOverview.class, false);
   final Button createProjectButton = new Button("Create");
   private final Div header = new Div();
-  private final ClientDetailsProvider clientDetailsProvider;
   private final transient ProjectInformationService projectInformationService;
-  private final transient ProjectAccessService projectAccessService;
-  private final transient UserInformationService userInformationService;
-  private final transient MeasurementService measurementService;
   private String projectPreviewFilter = "";
-  private GridLazyDataView<ProjectPreview> projectPreviewGridLazyDataView;
+  private GridLazyDataView<ProjectOverview> projectPreviewGridLazyDataView;
 
   public ProjectCollectionComponent(ClientDetailsProvider clientDetailsProvider,
-      ProjectInformationService projectInformationService,
-      ProjectAccessService projectAccessService,
-      UserInformationService userInformationService,
-      MeasurementService measurementService) {
-    this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider,
-        "Client details provider cannot be null");
+      ProjectInformationService projectInformationService) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService,
         "Project information service cannot be null");
-    this.projectAccessService = Objects.requireNonNull(projectAccessService,
-        "Project access service cannot be null");
-    this.userInformationService = Objects.requireNonNull(userInformationService,
-        "User information service cannot be null");
-    this.measurementService = Objects.requireNonNull(measurementService,
-        "Measurement service cannot be null");
     layoutComponent();
     createLazyProjectView();
     configureSearch();
@@ -123,7 +95,7 @@ public class ProjectCollectionComponent extends PageArea {
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (the least priority)
       sortOrders.add(SortOrder.of("lastModified").descending());
-      return projectInformationService.queryPreview(projectPreviewFilter, query.getOffset(),
+      return projectInformationService.queryOverview(projectPreviewFilter, query.getOffset(),
           query.getLimit(), List.copyOf(sortOrders)).stream();
     });
   }
@@ -142,67 +114,15 @@ public class ProjectCollectionComponent extends PageArea {
 
   private void layoutGrid() {
     projectGrid.setSelectionMode(SelectionMode.NONE);
-    projectGrid.addComponentColumn(projectPreview -> {
-      Project project = projectInformationService.find(projectPreview.projectId()).orElseThrow();
-      String lastModified = asClientLocalDateTime(projectPreview.lastModified()).format(
-          DateTimeFormatter.ISO_LOCAL_DATE);
-      ProjectPreviewItem projectPreviewItem = new ProjectPreviewItem(
-          projectPreview.projectId().value(), projectPreview.projectCode(),
-          projectPreview.projectTitle(), lastModified);
-      var userNames = retrieveProjectCollaborators(projectPreview.projectId());
-      projectPreviewItem.setCollaborators(userNames);
-      String projectManagerName = project.getProjectManager().fullName();
-      String responsiblePersonName = "";
-      if (project.getResponsiblePerson().isPresent()) {
-        responsiblePersonName = project.getResponsiblePerson().get().fullName();
-      }
-      projectPreviewItem.setProjectDetails(projectManagerName, responsiblePersonName);
-      var measurementTypesInProject = retrieveRegisteredMeasurementTypes(project.getId(),
-          project.experiments());
-      projectPreviewItem.setMeasurementTypes(measurementTypesInProject);
-      return projectPreviewItem;
-    });
+    projectGrid.addComponentColumn(ProjectPreviewItem::new);
     projectGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     projectGrid.addClassName("project-grid");
     add(projectGrid);
   }
 
-  private Collection<MeasurementType> retrieveRegisteredMeasurementTypes(ProjectId projectId,
-      Collection<ExperimentId> experimentsInProject) {
-    long proteomicsMeasurementCount = experimentsInProject.stream().map(
-            experimentId -> measurementService.countProteomicsMeasurements(experimentId, projectId))
-        .reduce(
-            0L, Long::sum);
-    long ngsMeasurementCount = experimentsInProject.stream()
-        .map(experimentId -> measurementService.countNGSMeasurements(experimentId, projectId))
-        .reduce(
-            0L, Long::sum);
-    Collection<MeasurementType> measurementTypes = new ArrayList<>();
-    if (proteomicsMeasurementCount != 0) {
-      measurementTypes.add(MeasurementType.PROTEOMICS);
-    }
-    if (ngsMeasurementCount != 0) {
-      measurementTypes.add(MeasurementType.GENOMICS);
-    }
-    return measurementTypes;
-  }
-
-  private List<String> retrieveProjectCollaborators(ProjectId projectId) {
-    return projectAccessService.listCollaborators(projectId).stream()
-        .map(projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
-            //We can't throw an exception here since projects can be linked to deleted users
-            .map(UserInfo::userName).orElse("")).toList();
-  }
-
   private void fireCreateClickedEvent() {
     var clickedEvent = new ProjectCreationSubmitEvent(this, true);
     fireEvent(clickedEvent);
-  }
-
-  private LocalDateTime asClientLocalDateTime(Instant instant) {
-    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.of(
-        this.clientDetailsProvider.latestDetails().map(ClientDetails::timeZoneId).orElse("UTC")));
-    return zonedDateTime.toLocalDateTime();
   }
 
   /**
@@ -244,7 +164,7 @@ public class ProjectCollectionComponent extends PageArea {
    * ProjectPreviewItem
    * <p>
    * The Project Preview Item is a Div container styled similar to the {@link Card} component,
-   * hosting the project information of interest provided by a {@link ProjectPreview}
+   * hosting the project information of interest provided by a {@link ProjectOverview}
    */
   private static class ProjectPreviewItem extends Div {
 
@@ -253,20 +173,34 @@ public class ProjectCollectionComponent extends PageArea {
     private final Span tags = new Span();
     private final Div projectDetails = new Div();
     private final AvatarGroup usersWithAccess = new AvatarGroup();
+    private final ProjectOverview projectOverview;
 
-    public ProjectPreviewItem(String projectId, String projectCode,
-        String projectTitle, String lastModificationDate) {
-      add(createHeader(projectCode, projectTitle));
-      Span lastModified = new Span(String.format("Last modified on %s", lastModificationDate));
+    public ProjectPreviewItem(ProjectOverview projectOverview) {
+      this.projectOverview = Objects.requireNonNull(projectOverview);
+      Span header = createHeader(projectOverview.projectCode(), projectOverview.projectTitle());
+      add(header);
+      Span lastModified = new Span(
+          String.format("Last modified on %s", projectOverview.lastModified()));
       lastModified.addClassName("tertiary");
       add(lastModified);
       projectDetails.addClassName("details");
+      Span principalInvestigator = new Span(
+          String.format("Principal Investigator: %s", projectOverview.principalInvestigatorName()));
+      Span projectResponsible = new Span();
+      if (projectOverview.projectResponsibleName() != null) {
+        projectResponsible.setText(
+            String.format("Project Responsible: %s", projectOverview.projectResponsibleName()));
+      }
+      projectDetails.add(principalInvestigator, projectResponsible);
       add(projectDetails);
       usersWithAccess.setMaxItemsVisible(MAXIMUM_NUMBER_OF_SHOWN_AVATARS);
       add(usersWithAccess);
+      setMeasurementDependentTags();
+      projectOverview.collaboratorUserNames().stream().map(AvatarGroupItem::new)
+          .forEach(usersWithAccess::add);
       addClassNames("project-preview-item");
       addClickListener(event -> getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class,
-          new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId))));
+          new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectOverview.projectId().value()))));
     }
 
     private Span createHeader(String projectCode, String projectTitle) {
@@ -278,24 +212,15 @@ public class ProjectCollectionComponent extends PageArea {
       return header;
     }
 
-    public void setCollaborators(List<String> collaboratorNames) {
-      usersWithAccess.getItems().forEach(usersWithAccess::remove);
-      collaboratorNames.stream().map(AvatarGroupItem::new).forEach(usersWithAccess::add);
-    }
-
-    public void setProjectDetails(String principalInvestigatorName, String responsiblePartyName) {
-      projectDetails.removeAll();
-      Span principalInvestigator = new Span(
-          String.format("Principal Investigator: %s", principalInvestigatorName));
-      Span projectResponsible = new Span();
-      if (!responsiblePartyName.isBlank()) {
-        projectResponsible.setText(String.format("Project Responsible: %s", responsiblePartyName));
-      }
-      projectDetails.add(principalInvestigator, projectResponsible);
-    }
-
-    public void setMeasurementTypes(Collection<MeasurementType> measurementTypes) {
+    public void setMeasurementDependentTags() {
       tags.removeAll();
+      Collection<MeasurementType> measurementTypes = new ArrayList<>();
+      if (projectOverview.pxpMeasurementCount() != null) {
+        measurementTypes.add(MeasurementType.PROTEOMICS);
+      }
+      if (projectOverview.ngsMeasurementCount() != null) {
+        measurementTypes.add(MeasurementType.GENOMICS);
+      }
       measurementTypes.forEach(measurementType -> {
         Tag tag = new Tag(measurementType.getType());
         tag.setTagColor(getMeasurementSpecificTagColor(measurementType));
