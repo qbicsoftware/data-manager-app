@@ -340,7 +340,9 @@ public class MeasurementService {
 
   private Result<MeasurementId, ErrorCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
     List<DomainEvent> domainEventsCache = new ArrayList<>();
-    LocalDomainEventDispatcher.instance().subscribe(
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
         new MeasurementUpdatedDomainEventSubscriber(domainEventsCache));
 
     var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
