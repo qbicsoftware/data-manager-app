@@ -16,6 +16,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -32,6 +36,7 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsLabeling;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSamplePreparation;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -334,6 +339,9 @@ public class MeasurementService {
   }
 
   private Result<MeasurementId, ErrorCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    LocalDomainEventDispatcher.instance().subscribe(
+        new MeasurementUpdatedDomainEventSubscriber(domainEventsCache));
 
     var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
     if (result.isEmpty()) {
@@ -377,6 +385,8 @@ public class MeasurementService {
     if (updateResult.isError()) {
       return Result.fromError(ErrorCode.FAILED);
     } else {
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
       return Result.fromValue(updateResult.getValue().measurementId());
     }
   }
@@ -875,7 +885,8 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId, Set<ProteomicsMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId,
+      Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deletePtx(selectedMeasurements);
       return Result.fromValue(null);
@@ -885,13 +896,22 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId, Set<NGSMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId,
+      Set<NGSMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deleteNGS(selectedMeasurements);
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
     }
+  }
+
+  public enum DeletionErrorCode {
+    FAILED, DATA_ATTACHED
+  }
+
+  public enum ErrorCode {
+    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementDeletionException extends RuntimeException {
@@ -907,14 +927,6 @@ public class MeasurementService {
     }
   }
 
-  public enum DeletionErrorCode {
-    FAILED, DATA_ATTACHED
-  }
-
-  public enum ErrorCode {
-    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
-  }
-
   public static final class MeasurementRegistrationException extends RuntimeException {
 
     private final ErrorCode reason;
@@ -928,4 +940,18 @@ public class MeasurementService {
     }
   }
 
+  private record MeasurementUpdatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }
