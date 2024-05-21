@@ -76,18 +76,6 @@ public class MeasurementDomainService {
         .toList();
   }
 
-  public Result<ProteomicsMeasurement, ResponseCode> updateProteomics(
-      ProteomicsMeasurement measurement) {
-    try {
-      measurementRepository.updateProteomics(measurement);
-      return Result.fromValue(measurement);
-    } catch (RuntimeException e) {
-      log.error("Measurement update: Failed for measurement with id " + measurement.measurementId()
-          .value(), e);
-    }
-    return Result.fromError(ResponseCode.FAILED);
-  }
-
   public Result<NGSMeasurement, ResponseCode> updateNGS(NGSMeasurement measurement) {
     try {
       measurementRepository.updateNGS(measurement);
