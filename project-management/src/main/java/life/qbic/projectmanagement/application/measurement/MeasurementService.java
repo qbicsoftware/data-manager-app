@@ -40,6 +40,7 @@ import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpd
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -64,6 +65,7 @@ public class MeasurementService {
   private final OntologyLookupService ontologyLookupService;
   private final OrganisationLookupService organisationLookupService;
   private final ProjectInformationService projectInformationService;
+  private final MeasurementRepository measurementRepository;
 
   @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
@@ -71,13 +73,15 @@ public class MeasurementService {
       OntologyLookupService ontologyLookupService,
       OrganisationLookupService organisationLookupService,
       MeasurementLookupService measurementLookupService,
-      ProjectInformationService projectInformationService) {
+      ProjectInformationService projectInformationService,
+      MeasurementRepository measurementRepository) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.measurementRepository = Objects.requireNonNull(measurementRepository);
   }
 
   /**
@@ -382,14 +386,14 @@ public class MeasurementService {
     measurementToUpdate.setMethod(method);
     measurementToUpdate.setComment(metadata.comment());
 
-    var updateResult = measurementDomainService.updateProteomics(measurementToUpdate);
-
-    if (updateResult.isError()) {
-      return Result.fromError(ErrorCode.FAILED);
-    } else {
+    try {
+      measurementRepository.updateProteomics(measurementToUpdate);
       domainEventsCache.forEach(
           domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
-      return Result.fromValue(updateResult.getValue().measurementId());
+      return Result.fromValue(measurementToUpdate.measurementId());
+    } catch (RuntimeException e) {
+      log.error("Commiting the transaction failed. Measurement ID: " + measurementToUpdate.measurementId(), e);
+      return Result.fromError(ErrorCode.FAILED);
     }
   }
 
