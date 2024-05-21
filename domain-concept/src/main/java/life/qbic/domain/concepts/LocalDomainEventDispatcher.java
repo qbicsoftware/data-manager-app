@@ -24,10 +24,10 @@ import java.util.List;
 public class LocalDomainEventDispatcher {
 
   private static LocalDomainEventDispatcher INSTANCE;
-  private final List<DomainEventSubscriber<?>> subscribers;
+  private static final ThreadLocal<List<DomainEventSubscriber<?>>> subscribers = new ThreadLocal<>();
 
   private LocalDomainEventDispatcher() {
-    subscribers = new ArrayList<>();
+    subscribers.set(new ArrayList<>());
   }
 
   public static LocalDomainEventDispatcher instance() {
@@ -38,11 +38,13 @@ public class LocalDomainEventDispatcher {
   }
 
   public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
-    this.subscribers.add(subscriber);
+    var currentSubscribers = subscribers.get();
+    currentSubscribers.add(subscriber);
+    subscribers.set(currentSubscribers);
   }
 
   public <T extends DomainEvent> void dispatch(T domainEvent) {
-    subscribers.stream()
+    subscribers.get().stream()
         .filter(subscriber -> subscriber.subscribedToEventType() == domainEvent.getClass())
         .map(subscriber -> (DomainEventSubscriber<T>) subscriber)
         .forEach(subscriber -> subscriber.handleEvent(domainEvent));
@@ -54,7 +56,7 @@ public class LocalDomainEventDispatcher {
    * @since 1.0.0
    */
   public void reset() {
-    this.subscribers.clear();
+    subscribers.set(new ArrayList<>());
   }
 
 }
