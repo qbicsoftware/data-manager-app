@@ -600,7 +600,7 @@
   width: 66%;
 }
 
-.user-profile-component .change-alias {
+.user-profile-component .change-name {
   color: var(--lumo-primary-text-color);
   cursor: pointer;
   width: fit-content;

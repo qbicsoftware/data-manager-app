@@ -430,7 +430,7 @@ vaadin-dialog-overlay::part(title) {
   height: 50%;
 }
 
-.change-user-details-dialog .change-user-alias {
+.change-user-details-dialog .change-user-name {
   width: 100%;
 }
 

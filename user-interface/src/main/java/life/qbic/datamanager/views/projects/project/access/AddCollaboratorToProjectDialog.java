@@ -76,10 +76,10 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           .filter(userInfo -> alreadyExistingCollaborators.stream()
               .noneMatch(collaborator -> collaborator.userId().equals(userInfo.id())));
     });
-    userSelection.setItemLabelGenerator(UserInfo::alias);
+    userSelection.setItemLabelGenerator(UserInfo::userDisplayName);
     userSelection.setRenderer(new ComponentRenderer<>(
         userInfo -> {
-          Span userName = new Span(userInfo.alias());
+          Span userName = new Span(userInfo.userDisplayName());
           userName.addClassName("new-collaborator-username");
           return userName;
         }

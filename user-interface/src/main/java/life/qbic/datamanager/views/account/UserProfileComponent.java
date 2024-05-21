@@ -6,6 +6,7 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -31,7 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * User Profile Component
  * <p>
  * This {@link PageArea} allows the user to manage his profile. The user is able to
- * view a tokens expiration date and descripton. Additionally,he is able to delete and create
+ * view a tokens expiration date and description. Additionally,he is able to delete and create
  * personal access tokens. Only after a personal access token is created its raw text is shown to
  * the user with the ability to copy it to the clipboard
  */
@@ -70,7 +71,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   private void setupChangeUserDialog() {
     ChangeUserDetailsDialog dialog = new ChangeUserDetailsDialog();
-    dialog.setCurrentUserName(userInfo.alias());
+    dialog.setCurrentUserName(userInfo.userDisplayName());
     dialog.addConfirmListener(event -> {
       var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
       if (!response.failures().isEmpty()) {
@@ -89,8 +90,9 @@ public class UserProfileComponent extends PageArea implements Serializable {
       }
       if (response.isSuccess()) {
         event.getSource().close();
-        //Trigger reload of information shown in component
-        setUserDetails(userInfo.id());
+        // Trigger reload of UI reloading the username displayed in the datamanager menu
+        // and within this component
+        UI.getCurrent().getPage().reload();
       }
     });
     dialog.addCancelListener(event -> event.getSource().close());
@@ -110,30 +112,30 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   public static class ChangeUserDetailsDialog extends DialogWindow {
 
-    private final TextField userAliasField = new TextField("New username");
+    private final TextField userDisplayNameField = new TextField("New username");
 
     public ChangeUserDetailsDialog() {
       super();
       setHeaderTitle("Change username");
-      add(userAliasField);
+      add(userDisplayNameField);
       setConfirmButtonLabel("Save");
       addClassName("change-user-details-dialog");
-      userAliasField.addClassName("change-user-alias");
+      userDisplayNameField.addClassName("change-user-name");
     }
 
     public void setCurrentUserName(String userName) {
-      userAliasField.setValue(userName);
+      userDisplayNameField.setValue(userName);
     }
 
     public void setUserNameNotAvailable() {
-      userAliasField.setInvalid(true);
-      userAliasField.setErrorMessage(
-          String.format("Username %s is not available", userAliasField.getValue()));
+      userDisplayNameField.setInvalid(true);
+      userDisplayNameField.setErrorMessage(
+          String.format("Username %s is not available", userDisplayNameField.getValue()));
     }
 
     public void setUserNameEmpty() {
-      userAliasField.setInvalid(true);
-      userAliasField.setErrorMessage("Please provide a non empty username");
+      userDisplayNameField.setInvalid(true);
+      userDisplayNameField.setErrorMessage("Please provide a non empty username");
     }
 
     /**
@@ -143,8 +145,9 @@ public class UserProfileComponent extends PageArea implements Serializable {
      */
     @Override
     protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-      if (!userAliasField.isEmpty()) {
-        fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), userAliasField.getValue()));
+      if (!userDisplayNameField.isEmpty()) {
+        fireEvent(
+            new ConfirmEvent(this, clickEvent.isFromClient(), userDisplayNameField.getValue()));
       } else {
         setUserNameEmpty();
       }
@@ -170,7 +173,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     public static class ConfirmEvent extends ComponentEvent<ChangeUserDetailsDialog> {
 
-      private final String userName;
+      private final String userDisplayName;
 
       /**
        * Creates a new event using the given source and indicator whether the event originated from
@@ -179,17 +182,17 @@ public class UserProfileComponent extends PageArea implements Serializable {
        * @param source     the source component
        * @param fromClient <code>true</code> if the event originated from the client
        *                   side, <code>false</code> otherwise
-       * @param userAlias  The valid new userName to be associated with the user
+       * @param userDisplayName  The valid new userName to be associated with the user
        */
       public ConfirmEvent(ChangeUserDetailsDialog source, boolean fromClient,
-          String userAlias) {
+          String userDisplayName) {
         super(source, fromClient);
-        requireNonNull(userAlias, "new user alias must not be null");
-        this.userName = userAlias;
+        requireNonNull(userDisplayName, "new user display name must not be null");
+        this.userDisplayName = userDisplayName;
       }
 
       public String userName() {
-        return userName;
+        return userDisplayName;
       }
     }
 
@@ -211,7 +214,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   private class UserDetailsCard extends Div {
 
-    private final Span userAlias = new Span();
+    private final Span userDisplayName = new Span();
     private final Avatar userAvatar = new Avatar();
     private final Span userFullName = new Span();
     private final Span userEmail = new Span();
@@ -221,10 +224,11 @@ public class UserProfileComponent extends PageArea implements Serializable {
       userAvatar.addClassName("avatar");
       userFullName.addClassName("bold");
       avatarWithName.addClassName("avatar-with-name");
-      Span changeAlias = new Span("Change Username");
-      changeAlias.addClickListener(event -> setupChangeUserDialog());
-      changeAlias.addClassName("change-alias");
-      UserDetail userNameDetail = new UserDetail("Username: ", userAlias, changeAlias);
+      Span changeUserDisplayName = new Span("Change Username");
+      changeUserDisplayName.addClickListener(event -> setupChangeUserDialog());
+      changeUserDisplayName.addClassName("change-name");
+      UserDetail userNameDetail = new UserDetail("Username: ", userDisplayName,
+          changeUserDisplayName);
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
       Div userDetails = new Div(userNameDetail, userEmailDetail);
       userDetails.addClassName("details");
@@ -233,10 +237,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
     }
 
     private void setUserInfo(UserInfo userInfo) {
-      userAlias.setText(userInfo.alias());
+      userDisplayName.setText(userInfo.userDisplayName());
       userEmail.setText(userInfo.emailAddress());
       userFullName.setText(userInfo.fullName());
-      userAvatar.setName(userInfo.alias());
+      userAvatar.setName(userInfo.userDisplayName());
     }
   }
 }
