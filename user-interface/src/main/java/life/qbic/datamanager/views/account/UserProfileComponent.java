@@ -71,7 +71,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   private void setupChangeUserDialog() {
     ChangeUserDetailsDialog dialog = new ChangeUserDetailsDialog();
-    dialog.setCurrentUserName(userInfo.userDisplayName());
+    dialog.setCurrentUserName(userInfo.platformUserName());
     dialog.addConfirmListener(event -> {
       var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
       if (!response.failures().isEmpty()) {
@@ -112,30 +112,30 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   public static class ChangeUserDetailsDialog extends DialogWindow {
 
-    private final TextField userDisplayNameField = new TextField("New username");
+    private final TextField platformUserNameField = new TextField("New username");
 
     public ChangeUserDetailsDialog() {
       super();
       setHeaderTitle("Change username");
-      add(userDisplayNameField);
+      add(platformUserNameField);
       setConfirmButtonLabel("Save");
       addClassName("change-user-details-dialog");
-      userDisplayNameField.addClassName("change-user-name");
+      platformUserNameField.addClassName("change-user-name");
     }
 
     public void setCurrentUserName(String userName) {
-      userDisplayNameField.setValue(userName);
+      platformUserNameField.setValue(userName);
     }
 
     public void setUserNameNotAvailable() {
-      userDisplayNameField.setInvalid(true);
-      userDisplayNameField.setErrorMessage(
-          String.format("Username %s is not available", userDisplayNameField.getValue()));
+      platformUserNameField.setInvalid(true);
+      platformUserNameField.setErrorMessage(
+          String.format("Username %s is not available", platformUserNameField.getValue()));
     }
 
     public void setUserNameEmpty() {
-      userDisplayNameField.setInvalid(true);
-      userDisplayNameField.setErrorMessage("Please provide a non empty username");
+      platformUserNameField.setInvalid(true);
+      platformUserNameField.setErrorMessage("Please provide a non empty username");
     }
 
     /**
@@ -145,9 +145,9 @@ public class UserProfileComponent extends PageArea implements Serializable {
      */
     @Override
     protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-      if (!userDisplayNameField.isEmpty()) {
+      if (!platformUserNameField.isEmpty()) {
         fireEvent(
-            new ConfirmEvent(this, clickEvent.isFromClient(), userDisplayNameField.getValue()));
+            new ConfirmEvent(this, clickEvent.isFromClient(), platformUserNameField.getValue()));
       } else {
         setUserNameEmpty();
       }
@@ -173,7 +173,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     public static class ConfirmEvent extends ComponentEvent<ChangeUserDetailsDialog> {
 
-      private final String userDisplayName;
+      private final String platformUserName;
 
       /**
        * Creates a new event using the given source and indicator whether the event originated from
@@ -182,17 +182,17 @@ public class UserProfileComponent extends PageArea implements Serializable {
        * @param source     the source component
        * @param fromClient <code>true</code> if the event originated from the client
        *                   side, <code>false</code> otherwise
-       * @param userDisplayName  The valid new userName to be associated with the user
+       * @param platformUserName  The valid new platform username to be associated with the user
        */
       public ConfirmEvent(ChangeUserDetailsDialog source, boolean fromClient,
-          String userDisplayName) {
+          String platformUserName) {
         super(source, fromClient);
-        requireNonNull(userDisplayName, "new user display name must not be null");
-        this.userDisplayName = userDisplayName;
+        requireNonNull(platformUserName, "new user display name must not be null");
+        this.platformUserName = platformUserName;
       }
 
       public String userName() {
-        return userDisplayName;
+        return platformUserName;
       }
     }
 
@@ -214,7 +214,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   private class UserDetailsCard extends Div {
 
-    private final Span userDisplayName = new Span();
+    private final Span platformUserName = new Span();
     private final Avatar userAvatar = new Avatar();
     private final Span userFullName = new Span();
     private final Span userEmail = new Span();
@@ -224,11 +224,11 @@ public class UserProfileComponent extends PageArea implements Serializable {
       userAvatar.addClassName("avatar");
       userFullName.addClassName("bold");
       avatarWithName.addClassName("avatar-with-name");
-      Span changeUserDisplayName = new Span("Change Username");
-      changeUserDisplayName.addClickListener(event -> setupChangeUserDialog());
-      changeUserDisplayName.addClassName("change-name");
-      UserDetail userNameDetail = new UserDetail("Username: ", userDisplayName,
-          changeUserDisplayName);
+      Span changePlatformUserName = new Span("Change Username");
+      changePlatformUserName.addClickListener(event -> setupChangeUserDialog());
+      changePlatformUserName.addClassName("change-name");
+      UserDetail userNameDetail = new UserDetail("Username: ", platformUserName,
+          changePlatformUserName);
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
       Div userDetails = new Div(userNameDetail, userEmailDetail);
       userDetails.addClassName("details");
@@ -237,10 +237,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
     }
 
     private void setUserInfo(UserInfo userInfo) {
-      userDisplayName.setText(userInfo.userDisplayName());
+      platformUserName.setText(userInfo.platformUserName());
       userEmail.setText(userInfo.emailAddress());
       userFullName.setText(userInfo.fullName());
-      userAvatar.setName(userInfo.userDisplayName());
+      userAvatar.setName(userInfo.platformUserName());
     }
   }
 }

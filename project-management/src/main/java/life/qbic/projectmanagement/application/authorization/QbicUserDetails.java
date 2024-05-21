@@ -64,8 +64,8 @@ public class QbicUserDetails implements UserDetails {
    *
    * @return the unique user display name defined to the user
    */
-  public String getUserDisplayName() {
-    return user.displayUserName();
+  public String platformUserName() {
+    return user.platformUserName();
   }
 
   public String fullName() {

@@ -5,7 +5,7 @@ package life.qbic.projectmanagement.application.authorization;
  *
  * @since 1.0.0
  */
-public record User(String id, String fullName, String displayUserName, String emailAddress,
+public record User(String id, String fullName, String platformUserName, String emailAddress,
                    String encryptedPassword,
                    boolean isActive) {
 

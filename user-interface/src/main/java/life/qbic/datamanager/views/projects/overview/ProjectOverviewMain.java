@@ -103,7 +103,7 @@ public class ProjectOverviewMain extends Main {
     titleAndDescription.addClassName("title-and-description");
     String userId = SecurityContextHolder.getContext().getAuthentication().getName();
     var user = userInformationService.findById(userId);
-    Span title = new Span(String.format("Welcome Back %s!", user.orElseThrow().userDisplayName()));
+    Span title = new Span(String.format("Welcome Back %s!", user.orElseThrow().platformUserName()));
     title.addClassNames("project-overview-title");
     Span descriptionStart = new Span(
         "Manage all your scientific data in one place with the Data Manager. You can access our ");
