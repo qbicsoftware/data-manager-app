@@ -107,8 +107,7 @@ public class MeasurementService {
         .collect(
             Collectors.toSet());
     var firstEntry = metadata.iterator().next();
-    return Optional.of(
-        life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata.copyWithNewProperties(
+    return Optional.of(ProteomicsMeasurementMetadata.copyWithNewProperties(
             associatedSamples, labels,
             firstEntry));
   }
