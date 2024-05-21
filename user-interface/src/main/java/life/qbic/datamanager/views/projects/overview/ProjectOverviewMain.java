@@ -106,9 +106,9 @@ public class ProjectOverviewMain extends Main {
     Span title = new Span(String.format("Welcome Back %s!", user.orElseThrow().alias()));
     title.addClassNames("project-overview-title");
     Span descriptionStart = new Span(
-        "Manage all your scientific data in one place with the Data Manager. You can access our robust ");
+        "Manage all your scientific data in one place with the Data Manager. You can access our ");
     Anchor descriptionLinkToDoc = new Anchor("https://qbicsoftware.github.io/data-manager-app/",
-        "Documentation", AnchorTarget.BLANK);
+        "documentation", AnchorTarget.BLANK);
     Span descriptionEnd = new Span(
         " and learn more about using the Data Manager.\n"
             + "Start by creating a new project or continue working on an already existing project.");
@@ -161,6 +161,7 @@ public class ProjectOverviewMain extends Main {
     displaySuccessfulProjectCreationNotification();
     confirmEvent.getSource().close();
     projectCollectionComponent.refresh();
+    projectCollectionComponent.resetSearch();
   }
 
   private void displaySuccessfulProjectCreationNotification() {

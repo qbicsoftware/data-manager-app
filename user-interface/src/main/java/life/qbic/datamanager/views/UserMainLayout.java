@@ -24,5 +24,6 @@ public class UserMainLayout extends DataManagerLayout {
     Objects.requireNonNull(logoutService);
     dataManagerMenu = new DataManagerMenu(logoutService);
     addToNavbar(dataManagerMenu);
+
   }
 }
