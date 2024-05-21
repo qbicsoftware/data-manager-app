@@ -8,7 +8,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
+import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.Role;
@@ -34,21 +34,21 @@ import org.springframework.stereotype.Service;
 public class ProjectInformationService {
 
   private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
-  private final ProjectPreviewLookup projectPreviewLookup;
+  private final ProjectOverviewLookup projectOverviewLookup;
   private final ProjectRepository projectRepository;
   private final ProjectAccessService projectAccessService;
 
-  public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
+  public ProjectInformationService(@Autowired ProjectOverviewLookup projectOverviewLookup,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectAccessService projectAccessService) {
-    Objects.requireNonNull(projectPreviewLookup);
-    this.projectPreviewLookup = projectPreviewLookup;
+    Objects.requireNonNull(projectOverviewLookup);
+    this.projectOverviewLookup = projectOverviewLookup;
     this.projectRepository = projectRepository;
     this.projectAccessService = projectAccessService;
   }
 
   /**
-   * Queries {@link ProjectPreview}s with a provided offset and limit that supports pagination.
+   * Queries {@link ProjectOverview}s with a provided offset and limit that supports pagination.
    *
    * @param filter     the results' project title will be applied with this filter
    * @param offset     the offset for the search result to start
@@ -57,10 +57,10 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
+  public List<ProjectOverview> queryOverview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
-    return projectPreviewLookup.query(filter, offset, limit,
+    return projectOverviewLookup.query(filter, offset, limit,
         sortOrders, accessibleProjectIds);
   }
 

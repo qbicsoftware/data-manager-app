@@ -76,7 +76,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Basic implementation to query project preview information
+ * Basic implementation to query project information
  *
  * @since 1.0.0
  */

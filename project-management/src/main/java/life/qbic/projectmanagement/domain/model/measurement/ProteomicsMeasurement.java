@@ -19,10 +19,12 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
@@ -295,6 +297,12 @@ public class ProteomicsMeasurement {
     this.injectionVolume = method.injectionVolume();
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
+    emitUpdatedEvent();
+  }
+
+  private void emitUpdatedEvent() {
+    var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
   }
 
   public void setSamplePoolGroup(String group) {

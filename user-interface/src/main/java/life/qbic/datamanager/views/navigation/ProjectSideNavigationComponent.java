@@ -47,7 +47,7 @@ import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ProjectPreview;
+import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -116,7 +116,7 @@ public class ProjectSideNavigationComponent extends Div implements
         .ifPresent(experimentId -> context = context.with(ExperimentId.parse(experimentId)));
     var project = loadProject(parsedProjectId);
     List<Experiment> experiments = loadExperimentsForProject(project);
-    List<ProjectPreview> lastModifiedProjects = retrieveLastModifiedProjects();
+    List<ProjectOverview> lastModifiedProjects = retrieveLastModifiedProjects();
     boolean canUserAdministrate = userPermissions.changeProjectAccess(parsedProjectId);
     content.add(
         generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
@@ -134,14 +134,14 @@ public class ProjectSideNavigationComponent extends Div implements
         .toList();
   }
 
-  private List<ProjectPreview> retrieveLastModifiedProjects() {
+  private List<ProjectOverview> retrieveLastModifiedProjects() {
     List<SortOrder> sortOrders = Collections.singletonList(
         SortOrder.of("lastModified").descending());
-    return projectInformationService.queryPreview("", 0, 4, sortOrders);
+    return projectInformationService.queryOverview("", 0, 4, sortOrders);
   }
 
   private List<Div> generateNavigationSections(Project project,
-      List<ProjectPreview> lastModifiedProjects, List<Experiment> experiments,
+      List<ProjectOverview> lastModifiedProjects, List<Experiment> experiments,
       boolean canUserAdministrate) {
     Div projectSection = createProjectSection(project, lastModifiedProjects, canUserAdministrate);
     Div experimentSection = createExperimentSection(project.getId().value(), experiments);
@@ -149,7 +149,7 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static Div createProjectSection(Project project,
-      List<ProjectPreview> lastModifiedProjects, boolean canUserAdministrate) {
+      List<ProjectOverview> lastModifiedProjects, boolean canUserAdministrate) {
     Div projectSection = new Div();
     projectSection.add(createProjectHeader(),
         createProjectSelection(project.getProjectIntent().projectTitle().title(),
@@ -168,7 +168,7 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static MenuBar createProjectSelection(String projectTitle,
-      List<ProjectPreview> projectPreviews) {
+      List<ProjectOverview> projectOverviews) {
     MenuBar projectSelection = new MenuBar();
     projectSelection.addClassNames("project-selection-menu");
     Span selectedProjectTitle = new Span(projectTitle);
@@ -179,7 +179,7 @@ public class ProjectSideNavigationComponent extends Div implements
     dropDownField.addClassName("dropdown-field");
     MenuItem item = projectSelection.addItem(dropDownField, projectTitle);
     SubMenu subMenu = createProjectSelectionSubMenu(item);
-    projectPreviews.forEach(preview -> addRecentProjectItemToSubMenu(preview, subMenu));
+    projectOverviews.forEach(preview -> addRecentProjectItemToSubMenu(preview, subMenu));
     return projectSelection;
   }
 
@@ -196,7 +196,7 @@ public class ProjectSideNavigationComponent extends Div implements
     return projectSelectionSubMenu;
   }
 
-  private static void addRecentProjectItemToSubMenu(ProjectPreview preview, SubMenu subMenu) {
+  private static void addRecentProjectItemToSubMenu(ProjectOverview preview, SubMenu subMenu) {
     MenuItem projectItem = subMenu.addItem(
         createRecentProjectItem(preview.projectCode(), preview.projectTitle()));
     projectItem.addClassName("transparent-icon");
