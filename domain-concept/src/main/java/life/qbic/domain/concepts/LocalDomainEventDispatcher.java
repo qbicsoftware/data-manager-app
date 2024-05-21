@@ -23,8 +23,9 @@ import java.util.List;
  */
 public class LocalDomainEventDispatcher {
 
+  private static final ThreadLocal<List<DomainEventSubscriber<?>>> subscribers = ThreadLocal.withInitial(
+      ArrayList::new);
   private static LocalDomainEventDispatcher INSTANCE;
-  private static final ThreadLocal<List<DomainEventSubscriber<?>>> subscribers = new ThreadLocal<>();
 
   private LocalDomainEventDispatcher() {
     subscribers.set(new ArrayList<>());
@@ -56,7 +57,7 @@ public class LocalDomainEventDispatcher {
    * @since 1.0.0
    */
   public void reset() {
-    subscribers.set(new ArrayList<>());
+    subscribers.remove();
   }
 
 }
