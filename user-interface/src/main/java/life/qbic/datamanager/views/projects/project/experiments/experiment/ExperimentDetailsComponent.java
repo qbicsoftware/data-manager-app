@@ -46,8 +46,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.updat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -71,6 +71,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ExperimentDetailsComponent extends PageArea {
 
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
@@ -89,11 +91,9 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
-  private Context context;
   private final DeletionService deletionService;
+  private Context context;
   private int experimentalGroupCount;
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
 
 
   public ExperimentDetailsComponent(
@@ -111,6 +111,22 @@ public class ExperimentDetailsComponent extends PageArea {
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
+  }
+
+  private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
+    return new ComponentRenderer<>(ontologyClassDTO -> {
+      Span ontology = new Span();
+      Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
+      /*Ontology terms are delimited by a column, the underscore is only used in the web environment*/
+      String ontologyLinkName = ontologyClassDTO.getName().replace("_", ":");
+      Span ontologyLink = new Span(ontologyLinkName);
+      ontologyLink.addClassName("ontology-link");
+      Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);
+      ontologyClassIri.setTarget(AnchorTarget.BLANK);
+      ontology.add(ontologyLabel, ontologyClassIri);
+      ontology.addClassName("ontology");
+      return ontology;
+    });
   }
 
   private Notification createSampleRegistrationPossibleNotification() {
@@ -178,7 +194,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void onEditButtonClicked() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    Optional<Experiment> optionalExperiment = experimentInformationService.find(experimentId);
+    Optional<Experiment> optionalExperiment = experimentInformationService.find(
+        context.projectId().orElseThrow().value(), experimentId);
     if (optionalExperiment.isEmpty()) {
       throw new ApplicationException(
           "Experiment information could not be retrieved from service");
@@ -206,7 +223,9 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
 
     ExperimentDraft experimentDraft = event.getExperimentDraft();
-    experimentInformationService.editExperimentInformation(experimentId,
+    experimentInformationService.editExperimentInformation(
+        context.projectId().orElseThrow().value(),
+        experimentId,
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
@@ -214,7 +233,6 @@ public class ExperimentDetailsComponent extends PageArea {
     reloadExperimentInfo(experimentId);
     event.getSource().close();
   }
-
 
   private void listenForExperimentalVariablesComponentEvents() {
     experimentalVariableCollection.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
@@ -231,7 +249,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void reloadExperimentInfo(ExperimentId experimentId) {
-    experimentInformationService.find(experimentId)
+    experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
         .ifPresent(this::loadExperimentInformation);
   }
 
@@ -261,7 +279,8 @@ public class ExperimentDetailsComponent extends PageArea {
     }
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var editDialog = ExperimentalVariablesDialog.prefilled(
-        experimentInformationService.getVariablesOfExperiment(experimentId));
+        experimentInformationService.getVariablesOfExperiment(
+            context.projectId().orElseThrow().value(), experimentId));
     editDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
     editDialog.addConfirmEventListener(this::onExperimentalVariablesEditConfirmed);
     editDialog.open();
@@ -283,6 +302,7 @@ public class ExperimentDetailsComponent extends PageArea {
       return true;
     }
     int numOfExperimentalGroups = experimentInformationService.getExperimentalGroups(
+        context.projectId().orElseThrow().value(),
         context.experimentId().orElseThrow()).size();
     if (numOfExperimentalGroups > 0) {
       showExistingGroupsPreventVariableEdit(numOfExperimentalGroups);
@@ -347,24 +367,6 @@ public class ExperimentDetailsComponent extends PageArea {
     return sampleSource;
   }
 
-
-  private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
-    return new ComponentRenderer<>(ontologyClassDTO -> {
-      Span ontology = new Span();
-      Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
-      /*Ontology terms are delimited by a column, the underscore is only used in the web environment*/
-      String ontologyLinkName = ontologyClassDTO.getName().replace("_", ":");
-      Span ontologyLink = new Span(ontologyLinkName);
-      ontologyLink.addClassName("ontology-link");
-      Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);
-      ontologyClassIri.setTarget(AnchorTarget.BLANK);
-      ontology.add(ontologyLabel, ontologyClassIri);
-      ontology.addClassName("ontology");
-      return ontology;
-    });
-  }
-
-
   private void loadSampleSources(Experiment experiment) {
     sampleSourceComponent.removeAll();
     List<OntologyTerm> speciesTags = new ArrayList<>(experiment.getSpecies());
@@ -395,15 +397,18 @@ public class ExperimentDetailsComponent extends PageArea {
   private void openExperimentalGroupAddDialog() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+        context.projectId().orElseThrow().value(),
         experimentId);
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream())
         .toList();
-    var groups = experimentInformationService.getExperimentalGroups(experimentId)
+    var groups = experimentInformationService.getExperimentalGroups(
+            context.projectId().orElseThrow()
+                .value(), experimentId)
         .stream().map(this::toContent).toList();
 
     ExperimentalGroupsDialog dialog;
-    if(groups.isEmpty()) {
+    if (groups.isEmpty()) {
       dialog = ExperimentalGroupsDialog.empty(levels);
     } else {
       dialog = ExperimentalGroupsDialog.nonEditable(levels, groups);
@@ -416,7 +421,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onExperimentalGroupAddConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
-    if(dialog.isValid()) {
+    if (dialog.isValid()) {
       var groupContents = dialog.experimentalGroups();
       addExperimentalGroups(groupContents);
 
@@ -431,10 +436,12 @@ public class ExperimentDetailsComponent extends PageArea {
     }
     ExperimentId experimentId = context.experimentId().orElseThrow();
     List<ExperimentalVariable> variables = experimentInformationService.getVariablesOfExperiment(
+        context.projectId().orElseThrow().value(),
         experimentId);
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream()).toList();
-    var groups = experimentInformationService.getExperimentalGroups(experimentId)
+    var groups = experimentInformationService.getExperimentalGroups(
+            context.projectId().orElseThrow().value(), experimentId)
         .stream().map(this::toContent).toList();
     var dialog = ExperimentalGroupsDialog.editable(levels, groups);
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
@@ -445,11 +452,12 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onExperimentalGroupEditConfirmed(
       ConfirmEvent<ExperimentalGroupsDialog> confirmEvent) {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
-    if(dialog.isValid()) {
+    if (dialog.isValid()) {
       var groupDTOs = dialog.experimentalGroups().stream()
           .map(this::toExperimentalGroupDTO).toList();
       ExperimentId experimentId = context.experimentId().orElseThrow();
-      experimentInformationService.updateExperimentalGroupsOfExperiment(experimentId, groupDTOs);
+      experimentInformationService.updateExperimentalGroupsOfExperiment(
+          context.projectId().orElseThrow().value(), experimentId, groupDTOs);
       reloadExperimentalGroups();
       confirmEvent.getSource().close();
     }
@@ -461,6 +469,7 @@ public class ExperimentDetailsComponent extends PageArea {
         .map(this::toExperimentalGroupDTO).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
     experimentInformationService.updateExperimentalGroupsOfExperiment(
+        context.projectId().orElseThrow().value(),
         experimentId, experimentalGroupDTOS);
   }
 
@@ -497,6 +506,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void loadExperimentalGroups() {
     // We load the experimental groups of the experiment and render them as cards
     List<ExperimentalGroup> groups = experimentInformationService.experimentalGroupsFor(
+        context.projectId().orElseThrow().value(),
         context.experimentId().orElseThrow());
     Comparator<String> natOrder = Comparator.naturalOrder();
     List<ExperimentalGroupCard> experimentalGroupsCards = groups.stream()
@@ -511,6 +521,7 @@ public class ExperimentDetailsComponent extends PageArea {
       List<ExperimentalVariableContent> experimentalVariableContents) {
     experimentalVariableContents.forEach(
         experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
+            context.projectId().orElseThrow().value(),
             context.experimentId().orElseThrow(),
             experimentalVariableContent.name(), experimentalVariableContent.unit(),
             experimentalVariableContent.levels()));

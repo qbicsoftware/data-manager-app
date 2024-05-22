@@ -46,8 +46,8 @@ public class MeasurementValidationService {
     return null;
   }
 
-  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata,
-      ProjectId projectId) {
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata, ProjectId projectId) {
     return measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
   }
 
@@ -64,8 +64,8 @@ public class MeasurementValidationService {
    * @return a detailed {@link ValidationResult} with information about the validation
    * @since 1.0.0
    */
-  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata,
-      ProjectId projectId) {
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata, ProjectId projectId) {
     return pxpValidator.validate(pxMeasurementMetadata, projectId);
   }
 

@@ -76,8 +76,8 @@ public class MeasurementNGSValidator implements
   }
 
   @Override
-  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
-      ProjectId projectId) {
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(

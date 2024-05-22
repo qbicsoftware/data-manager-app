@@ -100,6 +100,7 @@ public class ProjectInformationService {
     );
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void updateTitle(ProjectId projectId, String newTitle) {
     ProjectTitle projectTitle = ProjectTitle.of(newTitle);
     Project project = loadProject(projectId);
@@ -107,24 +108,28 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void manageProject(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setProjectManager(contact);
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void investigateProject(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setPrincipalInvestigator(contact);
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void setResponsibility(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setResponsiblePerson(contact);
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void stateObjective(ProjectId projectId, String objective) {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
@@ -132,6 +137,7 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void addFunding(ProjectId projectId, String label, String referenceId) {
     Funding funding = Funding.of(label, referenceId);
     var project = loadProject(projectId);
@@ -140,6 +146,7 @@ public class ProjectInformationService {
 
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void removeFunding(ProjectId projectId) {
     var project = loadProject(projectId);
     project.removeFunding();
