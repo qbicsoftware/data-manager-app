@@ -223,7 +223,9 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
 
     ExperimentDraft experimentDraft = event.getExperimentDraft();
-    experimentInformationService.editExperimentInformation(experimentId,
+    experimentInformationService.editExperimentInformation(
+        context.projectId().orElseThrow().value(),
+        experimentId,
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),

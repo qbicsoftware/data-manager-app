@@ -381,7 +381,9 @@ public class ExperimentInformationService {
         .toList();
   }
 
-  public void editExperimentInformation(ExperimentId experimentId, String experimentName,
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void editExperimentInformation(String projectId, ExperimentId experimentId, String experimentName,
       List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.setName(experimentName);

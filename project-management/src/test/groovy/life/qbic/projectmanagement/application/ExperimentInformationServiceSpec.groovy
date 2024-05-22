@@ -32,7 +32,7 @@ class ExperimentInformationServiceSpec extends Specification {
         OntologyTerm specimen1 = new OntologyTerm();
         OntologyTerm specimen2 = new OntologyTerm("ontology", "ontologyVersion",  "ontologyIri",
                 "classLabel", "name", "description", "classIri");
-        experimentInformationService.addSpecimenToExperiment(experiment.experimentId(), specimen1, specimen2)
+        experimentInformationService.addSpecimenToExperiment("", experiment.experimentId(), specimen1, specimen2)
 
         then: "the experiment contains the added specimens"
         experiment.getSpecimens().containsAll(specimen1, specimen2)
@@ -50,7 +50,7 @@ class ExperimentInformationServiceSpec extends Specification {
         OntologyTerm analyte2 = new OntologyTerm();
         OntologyTerm analyte1 = new OntologyTerm("ontology", "ontologyVersion",  "ontologyIri",
                 "classLabel", "name", "description", "classIri");
-        experimentInformationService.addAnalyteToExperiment(experiment.experimentId(), analyte1, analyte2)
+        experimentInformationService.addAnalyteToExperiment("", experiment.experimentId(), analyte1, analyte2)
 
         then: "the experiment contains the added analytes"
         experiment.getAnalytes().containsAll(analyte1, analyte2)
@@ -70,7 +70,7 @@ class ExperimentInformationServiceSpec extends Specification {
                 "classLabel", "name", "description", "classIri");
         OntologyTerm species3 = new OntologyTerm();
 
-        experimentInformationService.addSpeciesToExperiment(experiment.experimentId(), species1, species2, species3)
+        experimentInformationService.addSpeciesToExperiment("", experiment.experimentId(), species1, species2, species3)
 
         then: "the experiment contains the added species"
         experiment.getSpecies().containsAll(species1, species2, species3)
@@ -92,7 +92,7 @@ class ExperimentInformationServiceSpec extends Specification {
         ExperimentalValue experimentalValue1 = ExperimentalValue.create(levels[0], unit)
         ExperimentalValue experimentalValue2 = ExperimentalValue.create(levels[1], unit)
         ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName, experimentalValue1, experimentalValue2)
-        experimentInformationService.addVariableToExperiment(experiment.experimentId(), variableName, unit, levels)
+        experimentInformationService.addVariableToExperiment("", experiment.experimentId(), variableName, unit, levels)
 
         then: "the experiment contains the added variables"
         experiment.variables().contains(experimentalVariable)
