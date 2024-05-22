@@ -46,8 +46,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.updat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -194,7 +194,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void onEditButtonClicked() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    Optional<Experiment> optionalExperiment = experimentInformationService.find(experimentId);
+    Optional<Experiment> optionalExperiment = experimentInformationService.find(
+        context.projectId().orElseThrow().value(), experimentId);
     if (optionalExperiment.isEmpty()) {
       throw new ApplicationException(
           "Experiment information could not be retrieved from service");
@@ -246,7 +247,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void reloadExperimentInfo(ExperimentId experimentId) {
-    experimentInformationService.find(experimentId)
+    experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
         .ifPresent(this::loadExperimentInformation);
   }
 
@@ -518,6 +519,7 @@ public class ExperimentDetailsComponent extends PageArea {
       List<ExperimentalVariableContent> experimentalVariableContents) {
     experimentalVariableContents.forEach(
         experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
+            context.projectId().orElseThrow().value(),
             context.experimentId().orElseThrow(),
             experimentalVariableContent.name(), experimentalVariableContent.unit(),
             experimentalVariableContent.levels()));

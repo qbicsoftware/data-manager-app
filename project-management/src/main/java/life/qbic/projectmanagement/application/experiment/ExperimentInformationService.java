@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.projectmanagement.application.experiment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +15,7 @@ import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -55,7 +56,9 @@ public class ExperimentInformationService {
     this.sampleInformationService = sampleInformationService;
   }
 
-  public Optional<Experiment> find(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Optional<Experiment> find(String projectId, ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     log.debug("Search for experiment with id: " + experimentId.value());
     return experimentRepository.find(experimentId);
@@ -167,7 +170,9 @@ public class ExperimentInformationService {
    * @param species      the species to add
    * @see Experiment#addSpecies(Collection)
    */
-  public void addSpeciesToExperiment(ExperimentId experimentId, OntologyTerm... species) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addSpeciesToExperiment(String projectId, ExperimentId experimentId, OntologyTerm... species) {
     Arrays.stream(species).forEach(Objects::requireNonNull);
     if (species.length < 1) {
       return;
@@ -184,7 +189,9 @@ public class ExperimentInformationService {
    * @param specimens    the specimens to add
    * @see Experiment#addSpecimens(Collection)
    */
-  public void addSpecimenToExperiment(ExperimentId experimentId, OntologyTerm... specimens) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addSpecimenToExperiment(String projectId, ExperimentId experimentId, OntologyTerm... specimens) {
     Arrays.stream(specimens).forEach(Objects::requireNonNull);
     if (specimens.length < 1) {
       return;
@@ -201,7 +208,9 @@ public class ExperimentInformationService {
    * @param analytes     the analytes to add
    * @see Experiment#addAnalytes(Collection)
    */
-  public void addAnalyteToExperiment(ExperimentId experimentId, OntologyTerm... analytes) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addAnalyteToExperiment(String projectId, ExperimentId experimentId, OntologyTerm... analytes) {
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
     if (analytes.length < 1) {
       return;
@@ -222,7 +231,9 @@ public class ExperimentInformationService {
    *                     {@link ExperimentalValue} will be derived for the to be defined
    *                     {@link ExperimentalVariable}
    */
-  public void addVariableToExperiment(ExperimentId experimentId, String variableName, String unit,
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addVariableToExperiment(String projectId, ExperimentId experimentId, String variableName, String unit,
       List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);

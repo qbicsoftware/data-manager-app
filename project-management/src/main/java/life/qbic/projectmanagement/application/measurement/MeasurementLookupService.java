@@ -83,7 +83,7 @@ public class MeasurementLookupService {
    *                  determined
    * @return number of measurements for all domains associated with the provided sampleIds
    */
-  protected long countMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+  public long countMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
     return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds)
         + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
   }

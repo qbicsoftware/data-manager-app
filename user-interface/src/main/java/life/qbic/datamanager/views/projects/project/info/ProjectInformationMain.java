@@ -44,7 +44,7 @@ import life.qbic.datamanager.views.projects.qualityControl.QCItemDeletionConfirm
 import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
@@ -71,6 +71,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 public class ProjectInformationMain extends Main implements BeforeEnterObserver {
 
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 5797835576569148873L;
   private static final Logger log = logger(ProjectInformationMain.class);
@@ -80,8 +82,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final transient ProjectPurchaseService projectPurchaseService;
   private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectDetailsComponent projectDetailsComponent;
   private final ExperimentListComponent experimentListComponent;
   private final OfferDownload offerDownload;
@@ -132,6 +132,14 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         qualityControlListComponent, qualityControlDownload);
   }
 
+  private static void refreshOffers(ProjectPurchaseService projectPurchaseService, String projectId,
+      OfferListComponent offerListComponent) {
+    List<OfferInfo> offers = projectPurchaseService.linkedOffers(projectId)
+        .stream()
+        .map(offer -> new OfferInfo(offer.id(), offer.getFileName(), offer.isSigned()))
+        .toList();
+    offerListComponent.setOffers(offers);
+  }
 
   /**
    * Extracts {@link ProjectId} from the provided URL before the user accesses the page
@@ -201,15 +209,6 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     dialog.open();
   }
 
-  private static void refreshOffers(ProjectPurchaseService projectPurchaseService, String projectId,
-      OfferListComponent offerListComponent) {
-    List<OfferInfo> offers = projectPurchaseService.linkedOffers(projectId)
-        .stream()
-        .map(offer -> new OfferInfo(offer.id(), offer.getFileName(), offer.isSigned()))
-        .toList();
-    offerListComponent.setOffers(offers);
-  }
-
   private QualityControlListComponent getConfiguredQualityControlList() {
     QualityControlListComponent component = new QualityControlListComponent();
     component.addDeleteQualityControlListener(this::onDeleteQualityControlClicked);
@@ -272,7 +271,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
 
   private String getExperimentNameFromQualityControl(QualityControlUpload qualityControl) {
     return qualityControl.experimentId().map(
-        experimentId -> experimentInformationService.find(experimentId).map(Experiment::getName)
+        experimentId -> experimentInformationService.find(context.projectId().orElseThrow().value(),
+                experimentId).map(Experiment::getName)
             .orElse("")).orElse("");
   }
 

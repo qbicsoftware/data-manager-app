@@ -1,10 +1,10 @@
-package life.qbic.projectmanagement.application.measurement;
+package life.qbic.projectmanagement.application.dataset;
 
 import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.measurement.RawDataService.RawData;
-import life.qbic.projectmanagement.application.measurement.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 
 public interface RawDataLookup {

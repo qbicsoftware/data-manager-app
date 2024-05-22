@@ -1,12 +1,12 @@
-package life.qbic.projectmanagement.application.measurement;
+package life.qbic.projectmanagement.application.dataset;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.measurement.RawDataService.RawData;
-import life.qbic.projectmanagement.application.measurement.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import org.springframework.beans.factory.annotation.Autowired;

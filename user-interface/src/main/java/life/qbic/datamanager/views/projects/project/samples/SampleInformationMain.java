@@ -34,11 +34,11 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.S
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -161,7 +161,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void onRegisterBatchClicked() {
     Experiment experiment = context.experimentId()
-        .flatMap(experimentInformationService::find)
+        .flatMap(
+            id -> experimentInformationService.find(context.projectId().orElseThrow().value(), id))
         .orElseThrow();
     if (experiment.getExperimentalGroups().isEmpty()) {
       return;
@@ -260,7 +261,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void onEditBatchClicked(EditBatchEvent editBatchEvent) {
     Experiment experiment = context.experimentId()
-        .flatMap(experimentInformationService::find)
+        .flatMap(
+            id -> experimentInformationService.find(context.projectId().orElseThrow().value(), id))
         .orElseThrow();
     List<Sample> samples = sampleInformationService.retrieveSamplesForBatch(
         editBatchEvent.batchPreview().batchId()).stream().toList();

@@ -30,10 +30,10 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.dataset.RawDataService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
-import life.qbic.projectmanagement.application.measurement.RawDataService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
@@ -58,15 +58,14 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private final DownloadProvider urlDownload;
-  private final transient RawDataURLContentProvider urlDownloadFormatter;
   @Serial
   private static final long serialVersionUID = -4506659645977994192L;
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
+  private final DownloadProvider urlDownload;
+  private final transient RawDataURLContentProvider urlDownloadFormatter;
   private final RawDataDetailsComponent rawdataDetailsComponent;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
   private final TextField rawDataSearchField = new TextField();
-  private transient Context context;
   private final Div content = new Div();
   private final transient ExperimentInformationService experimentInformationService;
   private final transient MeasurementService measurementService;
@@ -74,6 +73,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final Disclaimer registerMeasurementsDisclaimer;
   private final Disclaimer noRawDataRegisteredDisclaimer;
   private final String rawDataSourceURL;
+  private transient Context context;
 
   public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
       @Autowired RawDataDownloadInformationComponent rawDataDownloadInformationComponent,
@@ -154,7 +154,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       notification.open();
     }
     var downloadUrls = generateDownloadUrls(selectedMeasurements);
-    var currentExperiment = experimentInformationService.find(context.experimentId().orElseThrow())
+    var currentExperiment = experimentInformationService.find(
+            context.experimentId().orElseThrow().value(), context.experimentId().orElseThrow())
         .orElseThrow();
     urlDownloadFormatter.updateContext(currentExperiment, downloadUrls);
     urlDownload.trigger();

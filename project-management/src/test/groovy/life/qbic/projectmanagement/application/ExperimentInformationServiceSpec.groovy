@@ -1,7 +1,8 @@
 package life.qbic.projectmanagement.application
 
 import life.qbic.application.commons.Result
-import life.qbic.projectmanagement.application.ExperimentInformationService.ExperimentalGroupDTO
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO
 import life.qbic.projectmanagement.application.sample.SampleInformationService
 import life.qbic.projectmanagement.domain.model.OntologyTerm
 import life.qbic.projectmanagement.domain.model.experiment.Experiment
