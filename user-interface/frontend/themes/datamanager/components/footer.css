@@ -1,0 +1,6 @@
+.data-manager-footer {
+  min-width: 100%;
+  display: inline-flex;
+  column-gap: var(--lumo-space-l);
+  border-top: thin solid var(--lumo-contrast-10pct);
+}

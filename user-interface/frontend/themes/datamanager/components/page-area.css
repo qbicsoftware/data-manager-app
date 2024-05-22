@@ -132,6 +132,25 @@
   gap: var(--lumo-space-m);
 }
 
+.information-component {
+  display: flex;
+  gap: var(--lumo-space-s);
+  justify-content: end;
+  width: 100%;
+}
+
+.information-component .section {
+  display: flex;
+  width: 100%;
+}
+
+.information-component .section .section-title {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-m);
+  font-weight: bold;
+}
+
 .measurement-details-component {
   height: 100%;
   justify-content: center;

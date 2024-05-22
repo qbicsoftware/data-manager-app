@@ -3,6 +3,34 @@
   height: 100%;
 }
 
+.main .main-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.main.about-us {
+  grid-template-columns: minmax(min-content, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas:
+    "about-us-information";
+}
+
+.main.data-protection-agreement {
+  grid-template-columns: minmax(min-content, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas:
+    "data-protection-information";
+}
+
+.main.impressum {
+  grid-template-columns: minmax(min-content, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas:
+    "impressum-information";
+}
+
 .main.experiment {
   grid-template-columns: minmax(max-content, 100%);
   grid-template-rows: auto;

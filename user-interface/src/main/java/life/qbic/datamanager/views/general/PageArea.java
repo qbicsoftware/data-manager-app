@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Tag;
+import com.vaadin.flow.component.html.Span;
 import java.io.Serial;
 
 /**
@@ -18,8 +19,15 @@ public abstract class PageArea extends Component implements HasComponents {
   @Serial
   private static final long serialVersionUID = 4895835532001673549L;
 
+  private final Span title = new Span();
+
   protected PageArea() {
+    title.addClassName("page-area-title");
     this.addClassName("page-area");
+  }
+
+  public void setTitle(String title) {
+    this.title.setText(title);
   }
 
 }
