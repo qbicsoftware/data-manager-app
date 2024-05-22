@@ -10,6 +10,8 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * MeasurementLookupService
@@ -84,10 +86,6 @@ public class MeasurementLookupService {
   protected long countMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
     return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds)
         + measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
-  }
-
-  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
-    return measurementLookup.retrieveAllMeasurementsWithSampleIds(sampleIds);
   }
 
   public List<ProteomicsMeasurement> queryAllProteomicsMeasurements(List<SampleId> sampleIds) {
