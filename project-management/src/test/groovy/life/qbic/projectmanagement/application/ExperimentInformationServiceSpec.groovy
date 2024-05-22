@@ -119,7 +119,7 @@ class ExperimentInformationServiceSpec extends Specification {
         def group1 = new ExperimentalGroupDTO(-1, "name1", List.of(experimentalVariable.levels().get(0)), 5)
         def group2 = new ExperimentalGroupDTO(-1, "name2", List.of(experimentalVariable.levels().get(1)), 6)
 
-        experimentInformationService.updateExperimentalGroupsOfExperiment(experiment.experimentId(), Arrays.asList(group1))
+        experimentInformationService.updateExperimentalGroupsOfExperiment("", experiment.experimentId(), Arrays.asList(group1))
 
 
         then: "the experiment contains the added experimental groups"
