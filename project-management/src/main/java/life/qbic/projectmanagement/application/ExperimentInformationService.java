@@ -114,14 +114,18 @@ public class ExperimentInformationService {
    *                     retrieved
    * @return the list of experimental groups in the active experiment.
    */
-  public List<ExperimentalGroupDTO> getExperimentalGroups(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<ExperimentalGroupDTO> getExperimentalGroups(String projectId, ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream()
         .map(it -> new ExperimentalGroupDTO(it.id(), it.name(), it.condition().getVariableLevels(), it.sampleSize()))
         .toList();
   }
 
-  public List<ExperimentalGroup> experimentalGroupsFor(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<ExperimentalGroup> experimentalGroupsFor(String projectId, ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream().toList();
   }
@@ -277,7 +281,9 @@ public class ExperimentInformationService {
    * @return a list of {@link ExperimentalVariable} associated with the {@link Experiment} with the
    * {@link ExperimentId}
    */
-  public List<ExperimentalVariable> getVariablesOfExperiment(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<ExperimentalVariable> getVariablesOfExperiment(String projectId, ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.variables();
   }
@@ -289,7 +295,9 @@ public class ExperimentInformationService {
    *           deleted.
    * @since 1.0.0
    */
-  public void deleteExperimentalGroupsWithIds(ExperimentId id, List<Long> groupIds) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void deleteExperimentalGroupsWithIds(String projectId, ExperimentId id, List<Long> groupIds) {
     var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
     if (queryResult.isError()) {
       throw new ApplicationException("experiment (%s) converting %s to %s".formatted(id,
@@ -319,7 +327,9 @@ public class ExperimentInformationService {
    * @param experimentalGroupDTOS  the new list of experimental groups including all updates
    * @since 1.0.0
    */
-  public void updateExperimentalGroupsOfExperiment(ExperimentId experimentId,
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void updateExperimentalGroupsOfExperiment(String projectId, ExperimentId experimentId,
       List<ExperimentalGroupDTO> experimentalGroupDTOS) {
 
     // check for duplicates
@@ -331,10 +341,10 @@ public class ExperimentInformationService {
           ErrorParameters.empty());
     }
 
-    List<ExperimentalGroup> existingGroups = experimentalGroupsFor(experimentId);
+    List<ExperimentalGroup> existingGroups = experimentalGroupsFor(projectId, experimentId);
     List<Long> idsToDelete = getGroupIdsToDelete(existingGroups, experimentalGroupDTOS);
     if(!idsToDelete.isEmpty()) {
-      deleteExperimentalGroupsWithIds(experimentId, idsToDelete);
+      deleteExperimentalGroupsWithIds(projectId, experimentId, idsToDelete);
     }
 
     for(ExperimentalGroupDTO group : experimentalGroupDTOS) {
