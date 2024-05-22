@@ -1,13 +1,14 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -16,10 +17,8 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
-import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.CodeBlock;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 
@@ -38,8 +37,6 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
 
   @Serial
   private static final long serialVersionUID = 7161304802207319605L;
-  private static final Logger log = logger(RawDataDownloadInformationComponent.class);
-  private Context context;
   private int sectionNumber;
   private final Button navigateToPatPageButton = new Button("Go to Personal Access Token");
   private final Button generateDownloadUrlsButton = new Button("Download URL list");
@@ -64,7 +61,17 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     Div runCurlCommandSection = generateSection("Run cURL command",
         "Install cURL on your system, open it and enter the following command once for each file you want to download",
         codeBlock);
-    add(generateTokenSection, downloadRawDataSection, runCurlCommandSection);
+    Span additionalInfoSection = generateAdditionalInformationSection();
+    add(generateTokenSection, downloadRawDataSection, runCurlCommandSection, additionalInfoSection);
+  }
+
+  private Span generateAdditionalInformationSection() {
+    Anchor downloadGuideLink = new Anchor(
+        "https://qbicsoftware.github.io/research-data-management/download/introduction/",
+        "here", AnchorTarget.BLANK);
+    Text additionalInformationText = new Text(
+        "Learn more about how to download the datasets ");
+    return new Span(additionalInformationText, downloadGuideLink);
   }
 
   private Div generateSection(String title, String text, Component... components) {

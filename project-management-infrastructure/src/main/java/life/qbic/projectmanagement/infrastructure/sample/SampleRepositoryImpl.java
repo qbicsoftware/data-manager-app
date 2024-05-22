@@ -99,9 +99,9 @@ public class SampleRepositoryImpl implements SampleRepository {
   }
 
   @Override
-  public boolean isSampleRemovable(Project project, SampleId sampleId) {
+  public boolean isSampleRemovable(SampleId sampleId) {
     SampleCode sampleCode = qbicSampleRepository.findById(sampleId).get().sampleCode();
-    return sampleDataRepo.canDeleteSample(project.getProjectCode(), sampleCode);
+    return sampleDataRepo.canDeleteSample(sampleCode);
   }
 
   @Override

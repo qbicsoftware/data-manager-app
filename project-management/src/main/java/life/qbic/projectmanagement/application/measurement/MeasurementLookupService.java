@@ -10,8 +10,6 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * MeasurementLookupService
@@ -68,6 +66,14 @@ public class MeasurementLookupService {
     return new ArrayList<>(termList);
   }
 
+  public long countNGSMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds);
+  }
+
+  public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
+  }
+
   /**
    * Provides the count of the registered measurements for the provided sampleIds
    *
@@ -84,11 +90,23 @@ public class MeasurementLookupService {
     return measurementLookup.retrieveAllMeasurementsWithSampleIds(sampleIds);
   }
 
-  public List<ProteomicsMeasurement> queryAllProteomicsMeasurement(List<SampleId> sampleIds) {
+  public List<ProteomicsMeasurement> queryAllProteomicsMeasurements(List<SampleId> sampleIds) {
     return measurementLookup.findProteomicsMeasurementsBySampleIds(sampleIds);
   }
 
+  public List<NGSMeasurement> queryAllNGSMeasurements(List<SampleId> sampleIds) {
+    return measurementLookup.findNGSMeasurementsBySampleIds(sampleIds);
+  }
+
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
-    return measurementRepository.find(measurementId);
+    return measurementRepository.findProteomicsMeasurement(measurementId);
+  }
+
+  public List<NGSMeasurement> queryAllNGSMeasurement(List<SampleId> sampleIds) {
+    return measurementLookup.findNGSMeasurementsBySampleIds(sampleIds);
+  }
+
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementId) {
+    return measurementRepository.findNGSMeasurement(measurementId);
   }
 }

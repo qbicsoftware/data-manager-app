@@ -21,22 +21,20 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-/**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+/** <b>Proteomics Measurement Content Provider</b>
+ * <p>
+ * Implementation of the {@link DownloadContentProvider} providing the content and file name for any files created
+ * from {@link life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement}
+ * and {@link life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata}
+ * </p>
  */
 public class ProteomicsMeasurementContentProvider implements DownloadContentProvider {
 
   private static final String FILE_NAME = "proteomics_measurements.xlsx";
   private static final Logger log = logger(ProteomicsMeasurementContentProvider.class);
-  private List<ProteomicsMeasurementEntry> measurements = new LinkedList<>();
-
   private static final byte[] DARK_GREY = {119, 119, 119};
-
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
+  private final List<ProteomicsMeasurementEntry> measurements = new LinkedList<>();
 
   private static void setAutoWidth(Sheet sheet) {
     for (int col = 0; col <= 18; col++) {
@@ -100,7 +98,7 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
   private static void createMeasurementEntry(ProteomicsMeasurementEntry pxpEntry, Row entry,
       CellStyle readOnlyStyle) {
     var measureCol = entry.createCell(0);
-    measureCol.setCellValue(pxpEntry.measurementCode().toString());
+    measureCol.setCellValue(pxpEntry.measurementCode());
     measureCol.setCellStyle(readOnlyStyle);
 
     var sampleIdCol = entry.createCell(1);

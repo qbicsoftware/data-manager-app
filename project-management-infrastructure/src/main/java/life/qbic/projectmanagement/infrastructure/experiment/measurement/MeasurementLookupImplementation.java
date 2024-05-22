@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import jakarta.persistence.criteria.Expression;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.OffsetBasedRequest;
@@ -150,21 +149,15 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
   }
 
   @Override
-  public List<MeasurementMetadata> retrieveAllMeasurementsWithSampleIds(Collection<SampleId> sampleIds) {
-    Specification<NGSMeasurement> ngsContainsSampleId = NgsMeasurementSpec.containsSampleId(
-        sampleIds);
-    Specification<ProteomicsMeasurement> proteomicsContainsSampleId = ProteomicsMeasurementSpec.containsSampleId(
-        sampleIds);
-    List<MeasurementMetadata> measurements = new ArrayList<>();
-    measurements.addAll(ngsMeasurementJpaRepo.findAll(ngsContainsSampleId));
-    measurements.addAll(pxpMeasurementJpaRepo.findAll(proteomicsContainsSampleId));
-    return measurements;
-  }
-
-  @Override
   public List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(
       Collection<SampleId> sampleIds) {
     return pxpMeasurementJpaRepo.findAll(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public List<NGSMeasurement> findNGSMeasurementsBySampleIds(
+      Collection<SampleId> sampleIds) {
+    return ngsMeasurementJpaRepo.findAll(NgsMeasurementSpec.containsSampleId(sampleIds));
   }
 
   private Specification<NGSMeasurement> generateNGSFilterSpecification(

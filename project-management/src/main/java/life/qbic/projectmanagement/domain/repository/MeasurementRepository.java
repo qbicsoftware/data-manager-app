@@ -4,7 +4,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -25,12 +27,24 @@ public interface MeasurementRepository {
 
   Result<ProteomicsMeasurement, ResponseCode> save(ProteomicsMeasurement measurement, List<SampleCode> sampleCodes);
 
-  Optional<ProteomicsMeasurement> find(String measurementCode);
+  Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode);
 
-  void update(ProteomicsMeasurement measurement);
+  Optional<NGSMeasurement> findNGSMeasurement(String measurementCode);
 
-  void updateAll(Collection<ProteomicsMeasurement> measurement);
+  void updateProteomics(ProteomicsMeasurement measurement);
 
-  void saveAll(
+  void deleteAllProteomics(Set<ProteomicsMeasurement> measurements);
+
+  void deleteAllNGS(Set<NGSMeasurement> measurements);
+
+  void updateNGS(NGSMeasurement measurement);
+
+  void updateAllProteomics(Collection<ProteomicsMeasurement> measurement);
+
+  void updateAllNGS(Collection<NGSMeasurement> measurement);
+
+  void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
+
+  void saveAllNGS(Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping);
 }

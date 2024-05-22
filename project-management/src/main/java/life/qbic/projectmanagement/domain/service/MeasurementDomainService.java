@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
@@ -48,6 +49,13 @@ public class MeasurementDomainService {
     return Result.fromError(ResponseCode.FAILED);
   }
 
+  public List<MeasurementId> addNGSAll(
+      Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping) {
+    measurementRepository.saveAllNGS(ngsMeasurementsMapping);
+    return ngsMeasurementsMapping.keySet().stream().map(NGSMeasurement::measurementId)
+        .toList();
+  }
+
   public Result<ProteomicsMeasurement, ResponseCode> addProteomics(
       ProteomicsMeasurement measurement, List<SampleCode> sampleCodes) {
     try {
@@ -63,14 +71,14 @@ public class MeasurementDomainService {
 
   public List<MeasurementId> addProteomicsAll(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
-    measurementRepository.saveAll(proteomicsMeasurementsMapping);
+    measurementRepository.saveAllProteomics(proteomicsMeasurementsMapping);
     return proteomicsMeasurementsMapping.keySet().stream().map(ProteomicsMeasurement::measurementId)
         .toList();
   }
 
-  public Result<ProteomicsMeasurement, ResponseCode> update(ProteomicsMeasurement measurement) {
+  public Result<NGSMeasurement, ResponseCode> updateNGS(NGSMeasurement measurement) {
     try {
-      measurementRepository.update(measurement);
+      measurementRepository.updateNGS(measurement);
       return Result.fromValue(measurement);
     } catch (RuntimeException e) {
       log.error("Measurement update: Failed for measurement with id " + measurement.measurementId()
@@ -79,10 +87,23 @@ public class MeasurementDomainService {
     return Result.fromError(ResponseCode.FAILED);
   }
 
+  public void deleteNGS(Set<NGSMeasurement> measurements) {
+    measurementRepository.deleteAllNGS(measurements);
+  }
+
+  public void deletePtx(Set<ProteomicsMeasurement> measurements) {
+    measurementRepository.deleteAllProteomics(measurements);
+  }
+
   public List<MeasurementId> updateProteomicsAll(
       List<ProteomicsMeasurement> proteomicsMeasurements) {
-    measurementRepository.updateAll(proteomicsMeasurements);
+    measurementRepository.updateAllProteomics(proteomicsMeasurements);
     return proteomicsMeasurements.stream().map(ProteomicsMeasurement::measurementId).toList();
+  }
+
+  public List<MeasurementId> updateNGSAll(List<NGSMeasurement> ngsMeasurements) {
+    measurementRepository.updateAllNGS(ngsMeasurements);
+    return ngsMeasurements.stream().map(NGSMeasurement::measurementId).toList();
   }
 
   public enum ResponseCode {

@@ -16,12 +16,15 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
@@ -34,7 +37,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  * @since 1.0.0
  */
 @Entity(name = "proteomics_measurement")
-public class ProteomicsMeasurement implements MeasurementMetadata {
+public class ProteomicsMeasurement {
 
   @Column(name = "lcmsMethod")
   private String lcmsMethod = "";
@@ -216,7 +219,6 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     return measuredSamples.size() > 1;
   }
 
-  @Override
   public MeasurementCode measurementCode() {
     return this.measurementCode;
   }
@@ -295,9 +297,13 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
     this.injectionVolume = method.injectionVolume();
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
+    emitUpdatedEvent();
   }
 
-
+  private void emitUpdatedEvent() {
+    var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
+  }
 
   public void setSamplePoolGroup(String group) {
     this.samplePool = group;
@@ -309,5 +315,22 @@ public class ProteomicsMeasurement implements MeasurementMetadata {
 
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ProteomicsMeasurement that)) {
+      return false;
+    }
+
+    return Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return id != null ? id.hashCode() : 0;
   }
 }

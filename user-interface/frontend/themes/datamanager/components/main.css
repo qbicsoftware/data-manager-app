@@ -81,7 +81,24 @@
   margin-bottom: 0.5rem;
 }
 
-.main.measurement .measurement-main-content .buttonAndField {
+.main.measurement .measurement-main-content .buttonsAndInfo {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+}
+
+.main.measurement .measurement-main-content .buttonsAndInfo .info {
+  border-radius: var(--lumo-border-radius-m);
+  column-gap: var(--lumo-space-s);
+  background-color: var(--lumo-contrast-5pct);
+  align-items: center;
+  width: fit-content;
+  padding-inline: var(--lumo-space-m);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.main.measurement .measurement-main-content .buttonsAndInfo .buttonAndField {
   display: inline-flex;
   justify-content: space-between;
   /*Moves this bar to end of container*/
@@ -130,10 +147,26 @@
 }
 
 .main.project-overview {
-  grid-template-columns: minmax(max-content, 100%);
-  grid-template-rows: auto;
+  grid-template-columns: minmax(min-content, 1fr);
+  grid-template-rows: minmax(min-content, 10%) minmax(min-content, 80%);
   grid-template-areas:
+    "."
     "projectcollection";
+}
+
+.main.project-overview .title-and-description {
+  padding: var(--lumo-space-m);
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-s);
+  white-space: pre-line;
+}
+
+.main.project-overview .project-overview-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
 }
 
 .main .project-overview .project-collection-component {

@@ -105,15 +105,10 @@ public class DeletionService {
    *   <li> data is connected to the sample
    *
    * @param sampleId
-   * @param projectId
    * @return
    */
-  public boolean isSampleRemovable(SampleId sampleId, ProjectId projectId) {
-    var project = projectInformationService.find(projectId);
-    if (project.isEmpty()) {
-      throw new IllegalArgumentException("Could not find project " + projectId);
-    }
-    return sampleDomainService.isSampleRemovable(project.get(), sampleId);
+  public boolean isSampleRemovable(SampleId sampleId) {
+    return sampleDomainService.isSampleRemovable(sampleId);
   }
 
 
