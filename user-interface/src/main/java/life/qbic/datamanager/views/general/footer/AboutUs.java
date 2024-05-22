@@ -29,9 +29,9 @@ public class AboutUs extends Main {
   private static final long serialVersionUID = -7133361843956861809L;
   private static final Logger log = LoggerFactory.logger(AboutUs.class);
   private final InformationComponent aboutUsInformation = new InformationComponent();
-  private final Span title = new Span("About Us");
 
   public AboutUs() {
+    Span title = new Span("About Us");
     title.addClassName("main-title");
     addComponentAsFirst(title);
     setAboutUsInformation();

@@ -29,9 +29,9 @@ public class Impressum extends Main {
   private static final long serialVersionUID = -2176925703483086940L;
   private static final Logger log = LoggerFactory.logger(Impressum.class);
   private final InformationComponent impressumInformation = new InformationComponent();
-  private final Span title = new Span("Impressum");
 
   public Impressum() {
+    Span title = new Span("Impressum");
     title.addClassName("main-title");
     addComponentAsFirst(title);
     setImpressumInformation();

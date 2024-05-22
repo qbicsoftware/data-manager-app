@@ -29,9 +29,9 @@ public class DataProtectionAgreement extends Main {
   private static final long serialVersionUID = 3892163770509236678L;
   private static final Logger log = LoggerFactory.logger(DataProtectionAgreement.class);
   private final InformationComponent dataProtectionInformation = new InformationComponent();
-  private final Span title = new Span("Data Protection Agreement");
 
   public DataProtectionAgreement() {
+    Span title = new Span("Data Protection Agreement");
     title.addClassName("main-title");
     addComponentAsFirst(title);
     setDataProtectionInformation();
