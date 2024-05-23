@@ -22,6 +22,7 @@ import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -54,16 +55,20 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   private final Span navBarTitle = new Span();
 
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
+      @Autowired UserInformationService userInformationService,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired OntologyLookupService ontologyTermInformationService) {
     Objects.requireNonNull(logoutService);
+    Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
+    Objects.requireNonNull(userPermissions);
     Objects.requireNonNull(addExperimentToProjectService);
-    this.dataManagerMenu = new DataManagerMenu(logoutService);
+    Objects.requireNonNull(ontologyTermInformationService);
+    this.dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
     this.experimentInformationService = experimentInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,

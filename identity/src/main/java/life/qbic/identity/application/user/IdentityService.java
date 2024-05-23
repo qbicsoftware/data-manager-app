@@ -150,6 +150,28 @@ public final class IdentityService {
     return ApplicationResponse.successResponse();
   }
 
+  public ApplicationResponse requestUserNameChange(String userId, String userName) {
+    if (isNull(userName) || userName.isBlank()) {
+      return ApplicationResponse.failureResponse(new EmptyUserNameException());
+    }
+    UserId id = UserId.from(userId);
+    var optionalUser = userRepository.findById(id);
+    if (optionalUser.isEmpty()) {
+      return ApplicationResponse.failureResponse(new UserNotFoundException("User not found"));
+    }
+    // get user
+    var user = optionalUser.get();
+    if (user.userName().equals(userName)) {
+      return ApplicationResponse.successResponse();
+    }
+    if (userRepository.findByUserName(userName).isPresent()) {
+      return ApplicationResponse.failureResponse(new UserNameNotAvailableException());
+    }
+    user.setNewUserName(userName);
+    userRepository.updateUser(user);
+    return ApplicationResponse.successResponse();
+  }
+
   /**
    * Sets a new password for a given user.
    * <p>

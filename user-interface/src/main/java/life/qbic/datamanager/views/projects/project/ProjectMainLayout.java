@@ -13,6 +13,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -42,12 +43,14 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
   private final Span projectTitle = new Span();
 
   public ProjectMainLayout(@Autowired LogoutService logoutService,
+      @Autowired UserInformationService userInformationService,
       ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired OntologyLookupService ontologyLookupService) {
     Objects.requireNonNull(logoutService);
+    Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(addExperimentToProjectService);
@@ -57,7 +60,7 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyLookupService);
-    dataManagerMenu = new DataManagerMenu(logoutService);
+    dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
     addToNavbar(createDrawerToggleAndTitleBar(), dataManagerMenu);
     addClassName("project-main-layout");
   }

@@ -423,6 +423,17 @@ vaadin-dialog-overlay::part(title) {
   align-items: baseline;
 }
 
+.change-user-details-dialog::part(overlay) {
+  min-width: fit-content;
+  min-height: fit-content;
+  width: 50%;
+  height: 50%;
+}
+
+.change-user-details-dialog .change-user-name {
+  width: 100%;
+}
+
 .measurement-upload-dialog::part(overlay) {
   min-width: 66%;
   min-height: 66%;
