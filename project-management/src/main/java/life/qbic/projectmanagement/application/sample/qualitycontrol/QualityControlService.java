@@ -12,6 +12,7 @@ import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,6 +38,8 @@ public class QualityControlService {
    * @param projectId      the project the quality control is related to
    * @param qualityControl the quality control information item
    */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addQualityControl(String projectId, QualityControlReport qualityControl) {
     addQualityControls(projectId, List.of(qualityControl));
   }
@@ -47,6 +50,8 @@ public class QualityControlService {
    * @param projectId           the project the quality control is related to
    * @param qualityControlsList list of quality controls information items to be added
    */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addQualityControls(String projectId, List<QualityControlReport> qualityControlsList) {
     var projectReference = ProjectId.parse(projectId);
     var qualityControlUploadDate = Instant.now();
@@ -67,6 +72,8 @@ public class QualityControlService {
    * @param projectId the projectId for which to search quality controls for
    * @return a list of all linked quality controls, can be empty, never null.
    */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public List<QualityControlUpload> linkedQualityControls(String projectId) {
     ProjectId parsedId = ProjectId.parse(projectId);
     return requireNonNull(storage.findQualityControlsForProject(parsedId),
@@ -79,6 +86,8 @@ public class QualityControlService {
    * @param projectId        the projectId for which the {@link QualityControl} should be deleted
    * @param qualityControlId the id of the quality control to be deleted
    */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void deleteQualityControl(String projectId, long qualityControlId) {
     storage.deleteQualityControlForProject(projectId, qualityControlId);
   }
@@ -91,6 +100,8 @@ public class QualityControlService {
    *                         returned
    * @param qualityControlId the id of the quality control to be returned
    */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Optional<QualityControlUpload> getQualityControlWithContent(String projectId,
       Long qualityControlId) {
     return storage.findQualityControlForProject(projectId, qualityControlId);

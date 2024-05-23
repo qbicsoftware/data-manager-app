@@ -24,7 +24,7 @@ import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -99,7 +99,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   private void setExperimentNameAsTitle(ExperimentId experimentId) {
-    experimentInformationService.find(experimentId)
+    experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
         .ifPresent(
             experiment -> navBarTitle.setText(experiment.getName()));
   }

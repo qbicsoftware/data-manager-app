@@ -373,7 +373,7 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   @Override
   @Transactional(readOnly = true)
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'ADMINISTRATION')")
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public List<ProjectCollaborator> listCollaborators(ProjectId projectId) {
     Acl acl = aclService.readAclById(new ObjectIdentityImpl(Project.class, projectId), null);
 

@@ -34,11 +34,11 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.S
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -67,11 +67,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @PermitAll
 public class SampleInformationMain extends Main implements BeforeEnterObserver {
+
+  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
-  public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient BatchRegistrationService batchRegistrationService;
@@ -160,7 +161,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void onRegisterBatchClicked() {
     Experiment experiment = context.experimentId()
-        .flatMap(experimentInformationService::find)
+        .flatMap(
+            id -> experimentInformationService.find(context.projectId().orElseThrow().value(), id))
         .orElseThrow();
     if (experiment.getExperimentalGroups().isEmpty()) {
       return;
@@ -259,15 +261,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void onEditBatchClicked(EditBatchEvent editBatchEvent) {
     Experiment experiment = context.experimentId()
-        .flatMap(experimentInformationService::find)
+        .flatMap(
+            id -> experimentInformationService.find(context.projectId().orElseThrow().value(), id))
         .orElseThrow();
     List<Sample> samples = sampleInformationService.retrieveSamplesForBatch(
         editBatchEvent.batchPreview().batchId()).stream().toList();
     var experimentalGroups = experimentInformationService.experimentalGroupsFor(
+        context.projectId().orElseThrow().value(),
         context.experimentId().get());
     // need to create mutable list to order samples
-    List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = new ArrayList<>(samples.stream()
-        .map(sample -> convertSampleToSampleInfo(sample, experimentalGroups)).toList());
+    List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = new ArrayList<>(
+        samples.stream()
+            .map(sample -> convertSampleToSampleInfo(sample, experimentalGroups)).toList());
     sampleInfos.sort(Comparator.comparing(o -> o.getSampleCode().code()));
     EditBatchDialog editBatchDialog = new EditBatchDialog(experiment.getName(),
         experiment.getSpecies().stream().toList(), experiment.getSpecimens().stream().toList(),
