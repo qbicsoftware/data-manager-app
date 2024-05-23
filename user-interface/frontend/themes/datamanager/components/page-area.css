@@ -134,21 +134,40 @@
 
 .information-component {
   display: flex;
-  gap: var(--lumo-space-s);
-  justify-content: end;
-  width: 100%;
+  gap: var(--lumo-space-m);
+  flex-direction: column;
 }
 
 .information-component .section {
   display: flex;
   width: 100%;
+  flex-direction: column;
 }
 
 .information-component .section .section-title {
   display: inline-flex;
   align-items: center;
-  column-gap: var(--lumo-space-m);
   font-weight: bold;
+  margin-bottom: var(--lumo-space-m);
+}
+
+.information-card-component {
+  display: flex;
+  gap: var(--lumo-space-m);
+  flex-direction: column;
+}
+
+.information-card-component .section {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.information-card-component .section .section-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: var(--lumo-space-m);
 }
 
 .measurement-details-component {

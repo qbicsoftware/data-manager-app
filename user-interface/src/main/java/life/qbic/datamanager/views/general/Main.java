@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import java.io.Serial;
 
 /**
@@ -14,18 +13,11 @@ import java.io.Serial;
 @com.vaadin.flow.component.Tag(Tag.DIV)
 public abstract class Main extends Div {
 
-  private final Span title = new Span();
   @Serial
   private static final long serialVersionUID = 6764184508972422298L;
 
   protected Main() {
-    addComponentAsFirst(title);
-    title.addClassName("main-title");
     addClassName("main");
-  }
-
-  public void setTitle(String title) {
-    this.title.setText(title);
   }
 
 }

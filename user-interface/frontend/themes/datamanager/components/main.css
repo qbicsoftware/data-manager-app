@@ -3,7 +3,7 @@
   height: 100%;
 }
 
-.main .main-title {
+.main .title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-xxl);
@@ -18,17 +18,17 @@
 }
 
 .main.data-protection-agreement {
-  grid-template-columns: minmax(min-content, 1fr);
-  grid-template-rows: auto;
+  grid-template-columns: minmax(min-content, 60%) minmax(min-content, 40%);
+  grid-template-rows: 100%;
   grid-template-areas:
-    "data-protection-information";
+    "data-protection-information data-protection-card-information";
 }
 
 .main.impressum {
-  grid-template-columns: minmax(min-content, 1fr);
-  grid-template-rows: auto;
+  grid-template-columns: minmax(min-content, 60%) minmax(min-content, 40%);
+  grid-template-rows: 100%;
   grid-template-areas:
-    "impressum-information";
+    "impressum-information impressum-card-information";
 }
 
 .main.experiment {

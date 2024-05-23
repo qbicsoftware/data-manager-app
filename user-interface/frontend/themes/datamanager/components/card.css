@@ -218,5 +218,30 @@
 
 .experiment-item.selected vaadin-icon{
   color: var(--lumo-primary-color);
+}
 
+.information-card-component {
+  background-color: var(--lumo-contrast-5pct);
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  overflow: auto;
+  text-overflow: ellipsis;
+  padding: var(--lumo-space-l);
+  margin: var(--lumo-space-l);
+  height: fit-content;
+  margin-top: var(--lumo-space-m);
+}
+
+.information-card-component .section {
+  display: flex;
+  flex-direction: column;
+}
+
+.information-card-component .section .section-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: var(--lumo-space-m);
 }

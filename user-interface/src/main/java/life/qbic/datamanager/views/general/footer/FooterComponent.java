@@ -7,11 +7,10 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 
 /**
- * <class short description - One Line!>
+ * Footer Component
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
- *
- * @since <version tag>
+ * Basic Footer Component routing the user to main components with additional information legal or otherwise
+ * such as {@link Impressum}, {@link AboutUs}, {@link DataProtectionAgreement}
  */
 @SpringComponent
 @UIScope
