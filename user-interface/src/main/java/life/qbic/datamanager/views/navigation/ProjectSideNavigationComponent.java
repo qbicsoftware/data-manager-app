@@ -45,9 +45,9 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.creat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -76,8 +76,8 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
-  private OntologyLookupService ontologyTermInformationService;
   private final transient UserPermissions userPermissions;
+  private OntologyLookupService ontologyTermInformationService;
   private Context context = new Context();
 
   public ProjectSideNavigationComponent(
@@ -103,49 +103,6 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug(
         String.format("New instance for %s(#%s) created",
             this.getClass().getSimpleName(), System.identityHashCode(this)));
-  }
-
-  @Override
-  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
-    content.removeAll();
-    String projectId = beforeEnterEvent.getRouteParameters()
-        .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
-    ProjectId parsedProjectId = ProjectId.parse(projectId);
-    context = new Context().with(parsedProjectId);
-    beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
-        .ifPresent(experimentId -> context = context.with(ExperimentId.parse(experimentId)));
-    var project = loadProject(parsedProjectId);
-    List<Experiment> experiments = loadExperimentsForProject(project);
-    List<ProjectOverview> lastModifiedProjects = retrieveLastModifiedProjects();
-    boolean canUserAdministrate = userPermissions.changeProjectAccess(parsedProjectId);
-    content.add(
-        generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
-            .toArray(Component[]::new));
-    content.add(createOntologyLookupSideNavItem(projectId));
-  }
-
-  private Project loadProject(ProjectId id) {
-    return projectInformationService.find(id).orElseThrow();
-  }
-
-  private List<Experiment> loadExperimentsForProject(Project project) {
-    return project.experiments().stream()
-        .map(experimentInformationService::find).filter(Optional::isPresent).map(Optional::get)
-        .toList();
-  }
-
-  private List<ProjectOverview> retrieveLastModifiedProjects() {
-    List<SortOrder> sortOrders = Collections.singletonList(
-        SortOrder.of("lastModified").descending());
-    return projectInformationService.queryOverview("", 0, 4, sortOrders);
-  }
-
-  private List<Div> generateNavigationSections(Project project,
-      List<ProjectOverview> lastModifiedProjects, List<Experiment> experiments,
-      boolean canUserAdministrate) {
-    Div projectSection = createProjectSection(project, lastModifiedProjects, canUserAdministrate);
-    Div experimentSection = createExperimentSection(project.getId().value(), experiments);
-    return List.of(projectSection, experimentSection);
   }
 
   private static Div createProjectSection(Project project,
@@ -236,12 +193,103 @@ public class ProjectSideNavigationComponent extends Div implements
         VaadinIcon.USERS.create());
   }
 
+  private static SideNavItem createItemFromExperiment(String projectId, String experimentId,
+      String experimentLabel) {
+    String experimentPath = String.format(Projects.EXPERIMENT, projectId,
+        experimentId);
+    SideNavItem sideNavItem = new SideNavItem(experimentLabel, experimentPath);
+    sideNavItem.addClassName("hoverable");
+    return sideNavItem;
+  }
+
+  private static SideNavItem createOntologyLookupSideNavItem(String projectId) {
+    String projectOntologyPath = String.format(Projects.ONTOLOGY, projectId);
+    SideNavItem ontologySearch = new SideNavItem("Ontology Search", projectOntologyPath,
+        LumoIcon.SEARCH.create());
+    ontologySearch.addClassName("hoverable");
+    ontologySearch.addClassName("primary");
+    return ontologySearch;
+  }
+
+  private static void addProjectNavigationListener(ProjectNavigationEvent projectNavigationEvent) {
+    projectNavigationEvent.projectId().ifPresentOrElse(
+        ProjectSideNavigationComponent::routeToProject,
+        ProjectSideNavigationComponent::routeToProjectOverview);
+  }
+
+  private static void routeToProjectOverview() {
+    //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
+    Optional.ofNullable(UI.getCurrent())
+        .ifPresentOrElse(ui -> ui.navigate(ProjectOverviewMain.class),
+            () -> {
+              throw new ApplicationException("No UI present for project navigation");
+            });
+    log.debug("Routing to ProjectOverview page");
+  }
+
+  private static void routeToProject(ProjectId projectId) {
+    RouteParameters routeParameters = new RouteParameters(
+        new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()));
+    //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
+    Optional.ofNullable(UI.getCurrent())
+        .ifPresentOrElse(ui -> ui.navigate(ProjectInformationMain.class, routeParameters), () ->
+        {
+          throw new ApplicationException("No UI present for project navigation");
+        });
+    log.debug("Routing to ProjectDesign page for project " + projectId.value());
+  }
+
+  @Override
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    content.removeAll();
+    String projectId = beforeEnterEvent.getRouteParameters()
+        .get(PROJECT_ID_ROUTE_PARAMETER).orElseThrow();
+    ProjectId parsedProjectId = ProjectId.parse(projectId);
+    context = new Context().with(parsedProjectId);
+    beforeEnterEvent.getRouteParameters().get(EXPERIMENT_ID_ROUTE_PARAMETER)
+        .ifPresent(experimentId -> context = context.with(ExperimentId.parse(experimentId)));
+    var project = loadProject(parsedProjectId);
+    List<Experiment> experiments = loadExperimentsForProject(project);
+    List<ProjectOverview> lastModifiedProjects = retrieveLastModifiedProjects();
+    boolean canUserAdministrate = userPermissions.changeProjectAccess(parsedProjectId);
+    content.add(
+        generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
+            .toArray(Component[]::new));
+    content.add(createOntologyLookupSideNavItem(projectId));
+  }
+
+  private Project loadProject(ProjectId id) {
+    return projectInformationService.find(id).orElseThrow();
+  }
+
+  private List<Experiment> loadExperimentsForProject(Project project) {
+    return project.experiments().stream()
+        .map(experimentId -> experimentInformationService.find(
+            context.projectId().orElseThrow().value(), experimentId)).filter(Optional::isPresent)
+        .map(Optional::get)
+        .toList();
+  }
+
+  private List<ProjectOverview> retrieveLastModifiedProjects() {
+    List<SortOrder> sortOrders = Collections.singletonList(
+        SortOrder.of("lastModified").descending());
+    return projectInformationService.queryOverview("", 0, 4, sortOrders);
+  }
+
+  private List<Div> generateNavigationSections(Project project,
+      List<ProjectOverview> lastModifiedProjects, List<Experiment> experiments,
+      boolean canUserAdministrate) {
+    Div projectSection = createProjectSection(project, lastModifiedProjects, canUserAdministrate);
+    Div experimentSection = createExperimentSection(project.getId().value(), experiments);
+    return List.of(projectSection, experimentSection);
+  }
+
   private Div createExperimentSection(String projectId, List<Experiment> experimentsList) {
     Div experimentSection = new Div();
     SideNavItem expHeader = new SideNavItem("EXPERIMENTS");
     Icon flask = VaadinIcon.FLASK.create();
 
-    if(context.experimentId().isPresent()) {
+    if (context.experimentId().isPresent()) {
       expHeader.addClassName("primary");
     }
 
@@ -323,54 +371,8 @@ public class ProjectSideNavigationComponent extends Div implements
     }
   }
 
-  private static SideNavItem createItemFromExperiment(String projectId, String experimentId,
-      String experimentLabel) {
-    String experimentPath = String.format(Projects.EXPERIMENT, projectId,
-        experimentId);
-    SideNavItem sideNavItem = new SideNavItem(experimentLabel, experimentPath);
-    sideNavItem.addClassName("hoverable");
-    return sideNavItem;
-  }
-
-  private static SideNavItem createOntologyLookupSideNavItem(String projectId) {
-    String projectOntologyPath = String.format(Projects.ONTOLOGY, projectId);
-    SideNavItem ontologySearch = new SideNavItem("Ontology Search", projectOntologyPath,
-        LumoIcon.SEARCH.create());
-    ontologySearch.addClassName("hoverable");
-    ontologySearch.addClassName("primary");
-    return ontologySearch;
-  }
-
-
-  private static void addProjectNavigationListener(ProjectNavigationEvent projectNavigationEvent) {
-    projectNavigationEvent.projectId().ifPresentOrElse(
-        ProjectSideNavigationComponent::routeToProject,
-        ProjectSideNavigationComponent::routeToProjectOverview);
-  }
-
-  private static void routeToProjectOverview() {
-    //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
-    Optional.ofNullable(UI.getCurrent())
-        .ifPresentOrElse(ui -> ui.navigate(ProjectOverviewMain.class),
-            () -> {
-              throw new ApplicationException("No UI present for project navigation");
-            });
-    log.debug("Routing to ProjectOverview page");
-  }
-
-  private static void routeToProject(ProjectId projectId) {
-    RouteParameters routeParameters = new RouteParameters(
-        new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()));
-    //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
-    Optional.ofNullable(UI.getCurrent())
-        .ifPresentOrElse(ui -> ui.navigate(ProjectInformationMain.class, routeParameters), () ->
-        {
-          throw new ApplicationException("No UI present for project navigation");
-        });
-    log.debug("Routing to ProjectDesign page for project " + projectId.value());
-  }
-
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {
+
     @Serial
     private static final long serialVersionUID = 7399764169934605506L;
     private final ProjectId projectId;

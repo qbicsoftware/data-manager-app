@@ -28,7 +28,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.projects.qualityControl.QualityControlItem.ExperimentItem;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
