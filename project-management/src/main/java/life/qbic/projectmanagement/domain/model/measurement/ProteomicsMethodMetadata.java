@@ -9,8 +9,7 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  *
  * @since 1.0.0
  */
-public record ProteomicsMethodMetadata(OntologyTerm instrument, String facility, String fractionName, String digestionMethod,
-                                       String digestionEnzyme, String enrichmentMethod,
-                                       int injectionVolume, String lcColumn, String lcmsMethod) {
+public record ProteomicsMethodMetadata(OntologyTerm instrument, String facility, String digestionMethod,
+                                       String digestionEnzyme, String enrichmentMethod, String lcColumn, String lcmsMethod, int injectionVolume) {
 
 }

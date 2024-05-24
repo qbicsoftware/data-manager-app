@@ -95,7 +95,7 @@ public class MeasurementProteomicsValidator implements
       return mandatoryValidationResult;
     }
     //If all fields were filled then we can validate the entries individually
-    return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
+    return validationPolicy.validateSampleIds(measurementMetadata.sampleCode())
         .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
@@ -112,15 +112,14 @@ public class MeasurementProteomicsValidator implements
   public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
-    return metadata.associatedSamples().stream()
-        .map(sampleCode -> validationPolicy.validationProjectRelation(sampleCode, projectId))
-        .reduce(ValidationResult.successful(0),
-            ValidationResult::combine).combine(validationPolicy.validateMeasurementId(
-                metadata.measurementIdentifier().orElse(""))
+    return validationPolicy.validateSampleId(metadata.associatedSample())
+        .combine(validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId))
+        .combine(validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
             .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
             .combine(validationPolicy.validateOrganisation(metadata.organisationId())
                 .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())
-                    .combine(validationPolicy.validateDigestionMethod(metadata.digestionMethod())))));
+                    .combine(
+                        validationPolicy.validateDigestionMethod(metadata.digestionMethod())))));
   }
 
   public enum PROTEOMICS_PROPERTY {
@@ -154,6 +153,31 @@ public class MeasurementProteomicsValidator implements
 
   }
 
+  /**
+   * Describes Digestion Methods for Samples to be Measured by Proteomics
+   */
+  public enum DigestionMethod {
+    IN_GEL("in gel"),
+    IN_SOLUTION("in solution"),
+    IST_PROTEOMICS_KIT("iST proteomics kit"),
+    ON_BEADS("on beads");
+
+    private final String name;
+
+    DigestionMethod(String name) {
+      this.name = name;
+    }
+
+    public static boolean isDigestionMethod(String input) {
+      return Arrays.stream(DigestionMethod.values()).anyMatch(o ->
+          o.getName().equalsIgnoreCase(input));
+    }
+
+    public String getName() {
+      return name;
+    }
+  }
+
   private class ValidationPolicy {
 
     private static final String UNKNOWN_SAMPLE_MESSAGE = "Unknown sample with sample id \"%s\"";
@@ -168,17 +192,12 @@ public class MeasurementProteomicsValidator implements
     // https://ror.readme.io/docs/ror-identifier-pattern
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
-    ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
-      if (sampleCodes.isEmpty()) {
+    ValidationResult validateSampleIds(SampleCode sampleCode) {
+      if (sampleCode == null) {
         return ValidationResult.withFailures(1,
-            List.of("A measurement must contain at least one sample reference. Provided: none"));
+            List.of("A measurement must contain at a sample reference. Provided: none"));
       }
-      ValidationResult validationResult = ValidationResult.successful(
-          0);
-      for (SampleCode sample : sampleCodes) {
-        validationResult = validationResult.combine(validateSampleId(sample));
-      }
-      return validationResult;
+      return ValidationResult.successful(1);
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
@@ -237,7 +256,7 @@ public class MeasurementProteomicsValidator implements
     }
 
     ValidationResult validateDigestionMethod(String digestionMethod) {
-      if(DigestionMethod.isDigestionMethod(digestionMethod)) {
+      if (DigestionMethod.isDigestionMethod(digestionMethod)) {
         return ValidationResult.successful(1);
       }
       return ValidationResult.withFailures(1,
@@ -306,7 +325,7 @@ public class MeasurementProteomicsValidator implements
     ValidationResult validateMandatoryDataProvided(
         ProteomicsMeasurementMetadata metadata) {
       var validation = ValidationResult.successful(0);
-      if (metadata.sampleCodes().isEmpty()) {
+      if (metadata.sampleCode() == null) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("Sample id: missing sample id reference")));
@@ -369,31 +388,6 @@ public class MeasurementProteomicsValidator implements
       return validation;
     }
 
-  }
-
-  /**
-   * Describes Digestion Methods for Samples to be Measured by Proteomics
-   */
-  public enum DigestionMethod {
-    IN_GEL("in gel"),
-    IN_SOLUTION("in solution"),
-    IST_PROTEOMICS_KIT("iST proteomics kit"),
-    ON_BEADS("on beads");
-
-    private final String name;
-
-    DigestionMethod(String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public static boolean isDigestionMethod(String input) {
-      return Arrays.stream(DigestionMethod.values()).anyMatch(o ->
-              o.getName().equalsIgnoreCase(input));
-    }
   }
 
 }

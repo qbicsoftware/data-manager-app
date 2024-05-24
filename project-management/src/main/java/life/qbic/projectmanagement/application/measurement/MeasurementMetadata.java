@@ -17,8 +17,8 @@ public interface MeasurementMetadata {
     return Optional.empty();
   }
 
-  default List<SampleCode> associatedSamples() {
-    return Collections.emptyList();
+  default SampleCode associatedSample() {
+    return null;
   }
 
   default Optional<String> measurementIdentifier() {

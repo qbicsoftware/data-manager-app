@@ -7,6 +7,6 @@ package life.qbic.projectmanagement.application.measurement;
  *
  * @since 1.0.0
  */
-public record Labeling(String sampleCode, String labelType, String label) {
+public record Labeling(String labelType, String label) {
 
 }

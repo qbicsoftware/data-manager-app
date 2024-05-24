@@ -24,10 +24,9 @@ import org.springframework.stereotype.Component;
  * <b>Measurement NGS Validator</b>
  *
  * <p>Validator employed to check the provided user input for a measurement in the ngs domain.
- *    The validator checks the for the provision of mandatory information, and will return a ValidationResult
- *    dependent on the presence or absence of data
+ * The validator checks the for the provision of mandatory information, and will return a
+ * ValidationResult dependent on the presence or absence of data
  * </p>
- *
  */
 @Component
 public class MeasurementNGSValidator implements
@@ -54,7 +53,8 @@ public class MeasurementNGSValidator implements
    * Given a collection of properties, the validator determines if they mach the expected properties
    * for a QBiC-defined NGS measurement metadata object.
    *
-   * @param properties List of string representing property values in the column headers of the NGS Excel sheet
+   * @param properties List of string representing property values in the column headers of the NGS
+   *                   Excel sheet
    * @return boolean indicating if all expected properties of the ngs sheet could be found
    * @since 1.0.0
    */
@@ -77,7 +77,8 @@ public class MeasurementNGSValidator implements
 
   @Override
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata, ProjectId projectId) {
+  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
+      ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
@@ -96,16 +97,15 @@ public class MeasurementNGSValidator implements
    * Ignores sample ids but validates measurement ids.
    *
    * @param metadata, {@link NGSMeasurementMetadata} of the measurement to be updated
-   * @param projectId Id of the project to which the measurement belongs to, necessary to check user permission
+   * @param projectId Id of the project to which the measurement belongs to, necessary to check user
+   *                  permission
    * @return ValidationResult
    */
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
   public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
-    return metadata.associatedSamples().stream()
-        .map(sampleCode -> validationPolicy.validationProjectRelation(sampleCode, projectId))
-        .reduce(ValidationResult.successful(0),
-            ValidationResult::combine).combine(validationPolicy.validateMeasurementId(
+    return validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId)
+        .combine(validationPolicy.validateMeasurementId(
                 metadata.measurementIdentifier().orElse(""))
             .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())

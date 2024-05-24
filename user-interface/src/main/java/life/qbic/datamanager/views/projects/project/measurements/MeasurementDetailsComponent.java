@@ -223,14 +223,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted())
         .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
-        .setHeader("Label Type")
-        .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""));
-    proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse(""))
-        .setHeader("Comment")
-        .setTooltipGenerator(measurement -> measurement.comment().orElse(""));
     proteomicsMeasurementGrid.setItemDetailsRenderer(
         new ComponentRenderer<>(proteomicsMeasurement -> {
           GridDetailsItem measurementItem = new GridDetailsItem();
@@ -244,8 +236,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               String.valueOf(proteomicsMeasurement.injectionVolume()));
           measurementItem.addEntry("LCMS Method", proteomicsMeasurement.lcmsMethod());
           measurementItem.addEntry("Enrichment Method", proteomicsMeasurement.enrichmentMethod());
-          measurementItem.addEntry("Fraction Name", proteomicsMeasurement.fraction().orElse(""));
-          measurementItem.addEntry("Measurement Label", proteomicsMeasurement.label().orElse(""));
           measurementItem.addEntry("Sample Pool Group",
               proteomicsMeasurement.samplePoolGroup().orElse(""));
           measurementItem.addEntry("Registration Date",
