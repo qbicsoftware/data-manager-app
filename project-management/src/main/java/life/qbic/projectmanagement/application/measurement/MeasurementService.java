@@ -522,7 +522,9 @@ public class MeasurementService {
     var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstMetadataEntry.facility(),
         firstMetadataEntry.digestionMethod(), firstMetadataEntry.digestionEnzyme(),
         firstMetadataEntry.enrichmentMethod(), firstMetadataEntry.lcColumn(),
-        firstMetadataEntry.lcmsMethod(), Integer.parseInt(firstMetadataEntry.injectionVolume()));
+        firstMetadataEntry.lcmsMethod(), Integer.parseInt(firstMetadataEntry.injectionVolume()),
+        firstMetadataEntry.labeling()
+            .labelType());
 
     var measurement = ProteomicsMeasurement.create(projectId, assignedMeasurementCode,
         organisationQuery.get(), method, specificMetadata);
@@ -540,7 +542,6 @@ public class MeasurementService {
         metadataEntry.labeling()
             .labelType(), metadataEntry.labeling().label(), metadataEntry.fractionName())).toList();
   }
-
 
 
   private void runPreRegistrationChecks(

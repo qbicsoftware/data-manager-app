@@ -41,13 +41,20 @@ public class ProteomicsMeasurement {
   @Embedded
   @Column(nullable = false)
   ProjectId projectId;
+
+  @Column(name = "labelType")
+  private String labelType = "";
+
   @Column(name = "lcmsMethod")
   private String lcmsMethod = "";
+
   @Embedded
   private Organisation organisation;
+
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
+
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
 
@@ -106,6 +113,7 @@ public class ProteomicsMeasurement {
     this.enrichmentMethod = method.enrichmentMethod();
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
+    this.labelType = method.labelType();
     this.registration = registration;
     this.injectionVolume = injectionVolume();
     this.specificMetadata = new HashSet<>(proteomicsMeasurementMetadata);
@@ -274,6 +282,10 @@ public class ProteomicsMeasurement {
 
   public int injectionVolume() {
     return injectionVolume;
+  }
+
+  public String labelType() {
+    return labelType;
   }
 
   @Override

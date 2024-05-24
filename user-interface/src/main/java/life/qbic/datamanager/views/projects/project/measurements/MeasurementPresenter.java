@@ -33,11 +33,11 @@ public class MeasurementPresenter {
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
         measurement.instrument().getName().replace("_", ":"),
         measurement.instrument().getLabel(),
-        measurement.samplePoolGroup().orElse(""), measurement.facility(),
+        measurement.samplePoolGroup().orElse(""), measurement.facility(), "",
         measurement.digestionEnzyme(), measurement.digestionMethod(),
         measurement.enrichmentMethod(), String.valueOf(measurement.injectionVolume()),
-        measurement.lcColumn(), measurement.lcmsMethod(), "",
-        "","",  measurement.comment().orElse(""));
+        measurement.lcColumn(), measurement.labelType(), "",
+        measurement.labelType(),"");
   }
 
   public List<ProteomicsMeasurementEntry> expandProteomicsPools(
