@@ -540,7 +540,8 @@ public class MeasurementService {
     return metadata.stream().map(metadataEntry -> ProteomicsSpecificMeasurementMetadata.create(
         sampleIdCodeLookupTable.get(metadataEntry.associatedSample()).sampleId(),
         metadataEntry.labeling()
-            .labelType(), metadataEntry.labeling().label(), metadataEntry.fractionName())).toList();
+            .labelType(), metadataEntry.labeling().label(), metadataEntry.fractionName(),
+        metadataEntry.comment())).toList();
   }
 
 

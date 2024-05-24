@@ -28,15 +28,19 @@ public class ProteomicsSpecificMeasurementMetadata {
   @Column(name = "fractionName")
   private String fractionName;
 
+  @Column(name = "comment")
+  private String comment;
+
   protected ProteomicsSpecificMeasurementMetadata() {
   }
 
   private ProteomicsSpecificMeasurementMetadata(SampleId measuredSample, String labelingType,
-      String label, String fractionName) {
+      String label, String fractionName, String comment) {
     this.measuredSample = measuredSample;
     this.labelingType = labelingType;
     this.label = label;
     this.fractionName = fractionName;
+    this.comment = comment;
   }
 
   @Override
@@ -51,20 +55,21 @@ public class ProteomicsSpecificMeasurementMetadata {
     return Objects.equals(measuredSample,
         that.measuredSample) && Objects.equals(labelingType, that.labelingType)
         && Objects.equals(label, that.label) && Objects.equals(fractionName,
-        that.fractionName);
+        that.fractionName) && Objects.equals(comment, that.comment);
   }
 
   public static ProteomicsSpecificMeasurementMetadata create(SampleId measuredSample, String labelingType,
-      String label, String fractionName) {
+      String label, String fractionName, String comment) {
     if (measuredSample == null) {
       throw new IllegalArgumentException("SampleId was null");
     }
-    return new ProteomicsSpecificMeasurementMetadata(measuredSample, labelingType, label, fractionName);
+    return new ProteomicsSpecificMeasurementMetadata(measuredSample, labelingType, label,
+        fractionName, comment);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(measuredSample, labelingType, label, fractionName);
+    return Objects.hash(measuredSample, labelingType, label, fractionName, comment);
   }
 
   public SampleId measuredSample() {

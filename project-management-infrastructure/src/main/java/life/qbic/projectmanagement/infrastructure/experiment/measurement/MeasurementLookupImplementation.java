@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.OffsetBasedRequest;
@@ -106,23 +107,25 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
             filter);
 
     Specification<ProteomicsMeasurement> filterSpecification =
-        Specification.anyOf(measurementCodeContains,
-            measurementLabelContains,
-            measurementLabelingTypeContains,
-            organisationLabelContains,
-            samplePoolGroupContains,
-            ontologyNameContains,
-            ontologyLabelContains,
-            facilityContains,
-            fractionContains,
+        Specification.anyOf(
+            commentContains,
             digestionMethodContains,
             digestionEnzymeContains,
             enrichmentMethodContains,
+            facilityContains,
+            fractionContains,
             injectionVolumeContains,
             lcColumnContains,
             lcmsMethodContains,
+            measurementCodeContains,
+            measurementLabelContains,
+            measurementLabelingTypeContains,
+            ontologyNameContains,
+            ontologyLabelContains,
+            organisationLabelContains,
             registrationDateContains,
-            commentContains);
+            samplePoolGroupContains
+        );
     return Specification.where(isBlankSpec)
             .and(containsSampleId)
         .and(filterSpecification)
@@ -215,7 +218,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
           //If no sampleId is in the experiment then there can also be no measurement
           return builder.disjunction();
         }
-        return root.join("measuredSamples").in(sampleIds);
+        Join<?, ?> sampleSpecificMetadata = root.join("specificMetadata");
+        return sampleSpecificMetadata.get("measuredSample").in(sampleIds);
       };
     }
 
@@ -263,8 +267,11 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     public static Specification<ProteomicsMeasurement> isFraction(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("fraction"), "%" + filter + "%");
+      return (root, query, builder) -> {
+        Join<?, ?> sampleSpecificMetadata = root.join("specificMetadata");
+        return builder.like(sampleSpecificMetadata.get("fractionName").as(String.class),
+            "%" + filter + "%");
+      };
     }
 
     public static Specification<ProteomicsMeasurement> isDigestionMethod(String filter) {
@@ -298,18 +305,27 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     public static Specification<ProteomicsMeasurement> isComment(String filter) {
-      return (root, query, builder) ->
-              builder.like(root.get("comment"), "%" + filter + "%");
+      return (root, query, builder) -> {
+        Join<?, ?> sampleSpecificMetadata = root.join("specificMetadata");
+        return builder.like(sampleSpecificMetadata.get("comment").as(String.class),
+            "%" + filter + "%");
+      };
     }
 
     public static Specification<ProteomicsMeasurement> isMeasurementLabel(String filter){
-      return (root, query, builder) ->
-              builder.like(root.get("comment"), "%" + filter + "%");
+      return (root, query, builder) -> {
+        Join<?, ?> sampleSpecificMetadata = root.join("specificMetadata");
+        return builder.like(sampleSpecificMetadata.get("label").as(String.class),
+            "%" + filter + "%");
+      };
     }
 
     public static Specification<ProteomicsMeasurement> isMeasurementLabelingType(String filter){
-      return (root, query, builder) ->
-              builder.like(root.get("labelingType"), "%" + filter + "%");
+      return (root, query, builder) -> {
+        Join<?, ?> sampleSpecificMetadata = root.join("specificMetadata");
+        return builder.like(sampleSpecificMetadata.get("labelingType").as(String.class),
+            "%" + filter + "%");
+      };
     }
 
     public static Specification<ProteomicsMeasurement> isSamplePoolGroup(String filter){
