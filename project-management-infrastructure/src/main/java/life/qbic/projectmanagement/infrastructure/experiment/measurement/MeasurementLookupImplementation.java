@@ -321,11 +321,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     }
 
     public static Specification<ProteomicsMeasurement> isMeasurementLabelingType(String filter){
-      return (root, query, builder) -> {
-        Join<?, ?> sampleSpecificMetadata = root.join("specificMetadata");
-        return builder.like(sampleSpecificMetadata.get("labelingType").as(String.class),
-            "%" + filter + "%");
-      };
+      return (root, query, builder) ->
+          builder.like(root.get("labelType"), "%" + filter + "%");
     }
 
     public static Specification<ProteomicsMeasurement> isSamplePoolGroup(String filter){

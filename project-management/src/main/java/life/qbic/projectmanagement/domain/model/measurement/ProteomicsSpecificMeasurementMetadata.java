@@ -72,4 +72,12 @@ public class ProteomicsSpecificMeasurementMetadata {
     return measuredSample;
   }
 
+  public String label() {
+    return label;
+  }
+
+  public String fractionName() {
+    return fractionName;
+  }
+
 }

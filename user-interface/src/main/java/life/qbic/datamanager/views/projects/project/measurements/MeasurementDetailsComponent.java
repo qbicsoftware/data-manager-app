@@ -71,11 +71,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
-  private transient Context context;
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
   private final ClientDetailsProvider clientDetailsProvider;
   private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
+  private transient Context context;
   private String searchTerm = "";
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
@@ -90,7 +90,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
 
-    registeredMeasurementsTabSheet.addSelectedChangeListener(selectedChangeEvent -> resetSelectedMeasurements());
+    registeredMeasurementsTabSheet.addSelectedChangeListener(
+        selectedChangeEvent -> resetSelectedMeasurements());
   }
 
   /**
@@ -119,7 +120,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    *                   be filtered for
    */
   public void setSearchedMeasurementValue(String searchTerm) {
-    if(!this.searchTerm.equals(searchTerm)) {
+    if (!this.searchTerm.equals(searchTerm)) {
       resetSelectedMeasurements();
     }
     this.searchTerm = searchTerm;
@@ -223,6 +224,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted())
         .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::labelType).setHeader("Label Type")
+        .setTooltipGenerator(ProteomicsMeasurement::labelType);
     proteomicsMeasurementGrid.setItemDetailsRenderer(
         new ComponentRenderer<>(proteomicsMeasurement -> {
           GridDetailsItem measurementItem = new GridDetailsItem();
@@ -256,7 +259,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();
         });
-    proteomicsMeasurementGrid.addSelectListener(event -> updateSelectedMeasurementsInfo(event.isFromClient()));
+    proteomicsMeasurementGrid.addSelectListener(
+        event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(proteomicsGridDataView);
   }
 
@@ -339,11 +343,20 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     listeners.add(listener);
   }
 
+  //TODO introduce custom tab with label and updateable count
+  public Optional<String> getSelectedTabName() {
+    if (registeredMeasurementsTabSheet.getSelectedTab() != null) {
+      return Optional.of(registeredMeasurementsTabSheet.getSelectedTab().getLabel());
+    } else {
+      return Optional.empty();
+    }
+  }
+
   /**
    * <b>Measurement Selection Changed Event</b>
    * <p>
-   * Event that indicates that measurements were selected or deselected by the user or a deletion event
-   * {@link MeasurementDetailsComponent}
+   * Event that indicates that measurements were selected or deselected by the user or a deletion
+   * event {@link MeasurementDetailsComponent}
    *
    * @since 1.0.0
    */
@@ -353,17 +366,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     @Serial
     private static final long serialVersionUID = 1213984633337676231L;
 
-    public MeasurementSelectionChangedEvent(MeasurementDetailsComponent source, boolean fromClient) {
+    public MeasurementSelectionChangedEvent(MeasurementDetailsComponent source,
+        boolean fromClient) {
       super(source, fromClient);
-    }
-  }
-
-  //TODO introduce custom tab with label and updateable count
-  public Optional<String> getSelectedTabName() {
-    if(registeredMeasurementsTabSheet.getSelectedTab()!=null) {
-      return Optional.of(registeredMeasurementsTabSheet.getSelectedTab().getLabel());
-    } else {
-      return Optional.empty();
     }
   }
 }

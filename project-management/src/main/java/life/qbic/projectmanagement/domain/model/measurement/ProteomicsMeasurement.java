@@ -86,7 +86,7 @@ public class ProteomicsMeasurement {
   @Column(name = "lcColumn")
   private String lcColumn = "";
 
-  @ElementCollection(targetClass = ProteomicsSpecificMeasurementMetadata.class, fetch = FetchType.LAZY)
+  @ElementCollection(targetClass = ProteomicsSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "specific_measurement_metadata_pxp", joinColumns = @JoinColumn(name = "measurement_id"))
   private Set<ProteomicsSpecificMeasurementMetadata> specificMetadata;
 
