@@ -1,3 +1,28 @@
+#content-area {
+  overflow: auto;
+  grid-area: content-area;
+}
+
+#main-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  height: 100%;
+  grid-template-areas:
+    "content-area"
+    "data-manager-footer";
+}
+
+#data-manager-footer {
+  display: inline-flex;
+  column-gap: var(--lumo-space-l);
+  border-top: thin solid var(--lumo-contrast-10pct);
+  padding-inline: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--lumo-space-s);
+  grid-area: data-manager-footer;
+}
+
 .main {
   display: grid;
   height: 100%;

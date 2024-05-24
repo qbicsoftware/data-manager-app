@@ -1,10 +1,13 @@
 package life.qbic.datamanager.views.general.footer;
 
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Footer;
+import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import life.qbic.datamanager.views.DataManagerLayout;
 
 /**
  * Footer Component
@@ -14,6 +17,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
  */
 @SpringComponent
 @UIScope
+@ParentLayout(DataManagerLayout.class)
 public class FooterComponent extends Footer {
 
   private final RouterLink impressumLink = new RouterLink("Impressum", Impressum.class);
@@ -21,10 +25,10 @@ public class FooterComponent extends Footer {
   private final RouterLink dataProtectionLink = new RouterLink("Data Protection Agreement",
       DataProtectionAgreement.class);
   private final Anchor sourceCodeLink = new Anchor(
-      "https://github.com/qbicsoftware/data-manager-app", "Source");
+      "https://github.com/qbicsoftware/data-manager-app", "Source", AnchorTarget.BLANK);
 
   public FooterComponent() {
-    addClassNames("data-manager-footer");
+    setId("data-manager-footer");
     add(aboutUsLink, dataProtectionLink, impressumLink, sourceCodeLink);
   }
 }

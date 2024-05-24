@@ -4,7 +4,6 @@ package life.qbic.datamanager.views.projects.project.experiments;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -18,6 +17,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
@@ -41,7 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * experiment.
  */
 @PageTitle("Data Manager")
-public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserver {
+public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnterObserver {
 
   private static final Logger log = getLogger(ExperimentMainLayout.class);
   private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
@@ -100,9 +100,10 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   private void initializeNavbar() {
-    addToNavbar(createAppNavigationBar());
-    addToNavbar(createExperimentNavigationBar());
-    navBarTitle.setClassName("experiment-navbar-title");
+    Div experimentNavbar = new Div();
+    experimentNavbar.addClassName("experiment-main-layout-navbar-container");
+    experimentNavbar.add(createAppNavigationBar(), createExperimentNavigationBar());
+    addToNavbar(experimentNavbar);
   }
 
   private void initializeAppDrawer() {
@@ -115,6 +116,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   private Span createDrawerToggleAndTitleBar() {
     Span drawerToggleAndTitleBar = new Span();
     DrawerToggle drawerToggle = new DrawerToggle();
+    navBarTitle.setClassName("navbar-title");
     drawerToggleAndTitleBar.add(drawerToggle, navBarTitle);
     drawerToggleAndTitleBar.addClassName("drawer-title-bar");
     return drawerToggleAndTitleBar;
@@ -122,7 +124,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
 
   private Span createAppNavigationBar() {
     Span appNavigationBar = new Span();
-    appNavigationBar.addClassNames("experiment-app-navbar");
+    appNavigationBar.addClassNames("experiment-main-layout-navbar");
     appNavigationBar.add(createDrawerToggleAndTitleBar(), dataManagerMenu);
     return appNavigationBar;
   }

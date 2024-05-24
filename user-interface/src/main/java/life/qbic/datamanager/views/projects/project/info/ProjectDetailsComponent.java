@@ -16,7 +16,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
@@ -196,7 +195,6 @@ public class ProjectDetailsComponent extends PageArea {
   private void layoutComponent() {
     this.add(header);
     this.add(content);
-    add(new FooterComponent());
     content.add(projectInformationSection, fundingInformationSection, collaboratorSection);
     content.addClassName("project-information-content");
 

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views;
 
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
@@ -19,10 +20,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class UserMainLayout extends DataManagerLayout {
 
   private final DataManagerMenu dataManagerMenu;
+  private final Span navBarTitle = new Span("Data Manager");
 
   public UserMainLayout(@Autowired LogoutService logoutService) {
     Objects.requireNonNull(logoutService);
     dataManagerMenu = new DataManagerMenu(logoutService);
-    addToNavbar(dataManagerMenu);
+    navBarTitle.setClassName("navbar-title");
+    addClassName("user-main-layout");
+    addToNavbar(navBarTitle, dataManagerMenu);
   }
 }
