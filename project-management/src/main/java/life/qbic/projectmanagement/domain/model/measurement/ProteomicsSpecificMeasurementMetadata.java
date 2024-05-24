@@ -19,9 +19,6 @@ public class ProteomicsSpecificMeasurementMetadata {
   @Column(name = "sampleId")
   private SampleId measuredSample;
 
-  @Column(name = "labelingType")
-  private String labelingType;
-
   @Column(name = "label")
   private String label;
 
@@ -34,10 +31,9 @@ public class ProteomicsSpecificMeasurementMetadata {
   protected ProteomicsSpecificMeasurementMetadata() {
   }
 
-  private ProteomicsSpecificMeasurementMetadata(SampleId measuredSample, String labelingType,
+  private ProteomicsSpecificMeasurementMetadata(SampleId measuredSample,
       String label, String fractionName, String comment) {
     this.measuredSample = measuredSample;
-    this.labelingType = labelingType;
     this.label = label;
     this.fractionName = fractionName;
     this.comment = comment;
@@ -53,23 +49,23 @@ public class ProteomicsSpecificMeasurementMetadata {
     }
     ProteomicsSpecificMeasurementMetadata that = (ProteomicsSpecificMeasurementMetadata) o;
     return Objects.equals(measuredSample,
-        that.measuredSample) && Objects.equals(labelingType, that.labelingType)
+        that.measuredSample)
         && Objects.equals(label, that.label) && Objects.equals(fractionName,
         that.fractionName) && Objects.equals(comment, that.comment);
   }
 
-  public static ProteomicsSpecificMeasurementMetadata create(SampleId measuredSample, String labelingType,
+  public static ProteomicsSpecificMeasurementMetadata create(SampleId measuredSample,
       String label, String fractionName, String comment) {
     if (measuredSample == null) {
       throw new IllegalArgumentException("SampleId was null");
     }
-    return new ProteomicsSpecificMeasurementMetadata(measuredSample, labelingType, label,
+    return new ProteomicsSpecificMeasurementMetadata(measuredSample, label,
         fractionName, comment);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(measuredSample, labelingType, label, fractionName, comment);
+    return Objects.hash(measuredSample, label, fractionName, comment);
   }
 
   public SampleId measuredSample() {

@@ -480,7 +480,9 @@ public class MeasurementService {
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
 
     proteomicsMeasurementsMapping.putAll(mergeByPool(measurementsByPool, projectId));
-    proteomicsMeasurementsMapping.putAll(build(singleMeasurements, projectId));
+    singleMeasurements.stream()
+        .map(singleMeasurement -> build(List.of(singleMeasurement), projectId))
+        .forEach(proteomicsMeasurementsMapping::putAll);
 
     return measurementDomainService.addProteomicsAll(proteomicsMeasurementsMapping);
   }
@@ -505,7 +507,7 @@ public class MeasurementService {
       sampleIdLookupTable.put(sampleCode, sampleIdQueryResult);
     }
     var specificMetadata = createSpecificMetadata(metadataList, sampleIdLookupTable);
-    var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.get(0).toString());
+    var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.get(0).code());
     var firstMetadataEntry = metadataList.get(0);
 
     var organisationQuery = organisationLookupService.organisation(
@@ -539,8 +541,7 @@ public class MeasurementService {
       Map<SampleCode, SampleIdCodeEntry> sampleIdCodeLookupTable) {
     return metadata.stream().map(metadataEntry -> ProteomicsSpecificMeasurementMetadata.create(
         sampleIdCodeLookupTable.get(metadataEntry.associatedSample()).sampleId(),
-        metadataEntry.labeling()
-            .labelType(), metadataEntry.labeling().label(), metadataEntry.fractionName(),
+        metadataEntry.labeling().label(), metadataEntry.fractionName(),
         metadataEntry.comment())).toList();
   }
 
