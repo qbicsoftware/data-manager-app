@@ -95,7 +95,7 @@ public class MeasurementProteomicsValidator implements
       return mandatoryValidationResult;
     }
     //If all fields were filled then we can validate the entries individually
-    return validationPolicy.validateSampleIds(measurementMetadata.sampleCode())
+    return validationPolicy.validateSampleId(measurementMetadata.sampleCode())
         .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
@@ -192,14 +192,6 @@ public class MeasurementProteomicsValidator implements
     // https://ror.readme.io/docs/ror-identifier-pattern
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
-    ValidationResult validateSampleIds(SampleCode sampleCode) {
-      if (sampleCode == null) {
-        return ValidationResult.withFailures(1,
-            List.of("A measurement must contain at a sample reference. Provided: none"));
-      }
-      return ValidationResult.successful(1);
-    }
-
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
     ValidationResult validationProjectRelation(SampleCode sampleCode, ProjectId projectId) {
       var projectQuery = projectInformationService.find(projectId);
@@ -222,13 +214,13 @@ public class MeasurementProteomicsValidator implements
           List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
     }
 
-    ValidationResult validateSampleId(SampleCode sampleCodes) {
-      var queriedSampleEntry = sampleInformationService.findSampleId(sampleCodes);
+    ValidationResult validateSampleId(SampleCode sampleCode) {
+      var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
       if (queriedSampleEntry.isPresent()) {
         return ValidationResult.successful(1);
       }
       return ValidationResult.withFailures(1,
-          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCodes.code())));
+          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCode.code())));
     }
 
     ValidationResult validateOrganisation(String organisationId) {
