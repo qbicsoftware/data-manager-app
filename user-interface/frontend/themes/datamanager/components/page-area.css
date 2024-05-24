@@ -615,3 +615,56 @@
   display: inline-flex;
   align-items: end;
 }
+
+.user-profile-component {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-xl);
+}
+
+.user-profile-component .user-details-card {
+  display: flex;
+  flex-direction: row;
+  column-gap: 5rem;
+  background-color: var(--lumo-base-color);
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 5rem;
+  min-width: fit-content;
+  width: 66%;
+}
+
+.user-profile-component .change-name {
+  color: var(--lumo-primary-text-color);
+  cursor: pointer;
+  width: fit-content;
+}
+
+.user-profile-component .user-details-card .details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-l);
+}
+
+.user-profile-component .user-details-card .detail {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.user-profile-component .user-details-card .avatar-with-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: var(--lumo-space-l);
+  justify-content: center;
+}
+
+.user-profile-component .user-details-card .avatar {
+  height: 5rem;
+  width: 5rem;
+}

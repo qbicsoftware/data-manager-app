@@ -16,6 +16,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -32,9 +36,11 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsLabeling;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSamplePreparation;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -59,6 +65,7 @@ public class MeasurementService {
   private final OntologyLookupService ontologyLookupService;
   private final OrganisationLookupService organisationLookupService;
   private final ProjectInformationService projectInformationService;
+  private final MeasurementRepository measurementRepository;
 
   @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
@@ -66,13 +73,15 @@ public class MeasurementService {
       OntologyLookupService ontologyLookupService,
       OrganisationLookupService organisationLookupService,
       MeasurementLookupService measurementLookupService,
-      ProjectInformationService projectInformationService) {
+      ProjectInformationService projectInformationService,
+      MeasurementRepository measurementRepository) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.measurementRepository = Objects.requireNonNull(measurementRepository);
   }
 
   /**
@@ -98,8 +107,7 @@ public class MeasurementService {
         .collect(
             Collectors.toSet());
     var firstEntry = metadata.iterator().next();
-    return Optional.of(
-        life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata.copyWithNewProperties(
+    return Optional.of(ProteomicsMeasurementMetadata.copyWithNewProperties(
             associatedSamples, labels,
             firstEntry));
   }
@@ -334,6 +342,11 @@ public class MeasurementService {
   }
 
   private Result<MeasurementId, ErrorCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementUpdatedDomainEventSubscriber(domainEventsCache));
 
     var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
     if (result.isEmpty()) {
@@ -372,12 +385,15 @@ public class MeasurementService {
     measurementToUpdate.setMethod(method);
     measurementToUpdate.setComment(metadata.comment());
 
-    var updateResult = measurementDomainService.updateProteomics(measurementToUpdate);
-
-    if (updateResult.isError()) {
+    try {
+      measurementRepository.updateProteomics(measurementToUpdate);
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+      return Result.fromValue(measurementToUpdate.measurementId());
+    } catch (RuntimeException e) {
+      log.error("Commiting the transaction failed. Measurement ID: "
+          + measurementToUpdate.measurementId(), e);
       return Result.fromError(ErrorCode.FAILED);
-    } else {
-      return Result.fromValue(updateResult.getValue().measurementId());
     }
   }
 
@@ -875,7 +891,8 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId, Set<ProteomicsMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId,
+      Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deletePtx(selectedMeasurements);
       return Result.fromValue(null);
@@ -885,13 +902,22 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId, Set<NGSMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId,
+      Set<NGSMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deleteNGS(selectedMeasurements);
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
     }
+  }
+
+  public enum DeletionErrorCode {
+    FAILED, DATA_ATTACHED
+  }
+
+  public enum ErrorCode {
+    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementDeletionException extends RuntimeException {
@@ -907,14 +933,6 @@ public class MeasurementService {
     }
   }
 
-  public enum DeletionErrorCode {
-    FAILED, DATA_ATTACHED
-  }
-
-  public enum ErrorCode {
-    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
-  }
-
   public static final class MeasurementRegistrationException extends RuntimeException {
 
     private final ErrorCode reason;
@@ -928,4 +946,18 @@ public class MeasurementService {
     }
   }
 
+  private record MeasurementUpdatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }

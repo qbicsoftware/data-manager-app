@@ -295,6 +295,12 @@
   grid-area: sampledetails;
 }
 
+.main.user-profile {
+  grid-template-columns: minmax(min-content, auto);
+  grid-template-rows: minmax(min-content, auto);
+  grid-template-areas:
+    "user-profile-component"
+}
 
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {

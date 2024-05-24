@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.projectmanagement.application.experiment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +15,7 @@ import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -29,6 +30,8 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,7 +56,9 @@ public class ExperimentInformationService {
     this.sampleInformationService = sampleInformationService;
   }
 
-  public Optional<Experiment> find(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Optional<Experiment> find(String projectId, ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     log.debug("Search for experiment with id: " + experimentId.value());
     return experimentRepository.find(experimentId);
@@ -112,14 +117,20 @@ public class ExperimentInformationService {
    *                     retrieved
    * @return the list of experimental groups in the active experiment.
    */
-  public List<ExperimentalGroupDTO> getExperimentalGroups(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<ExperimentalGroupDTO> getExperimentalGroups(String projectId,
+      ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream()
         .map(it -> new ExperimentalGroupDTO(it.id(), it.name(), it.condition().getVariableLevels(), it.sampleSize()))
         .toList();
   }
 
-  public List<ExperimentalGroup> experimentalGroupsFor(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<ExperimentalGroup> experimentalGroupsFor(String projectId,
+      ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream().toList();
   }
@@ -144,6 +155,7 @@ public class ExperimentInformationService {
    * @param projectId the project the experiment is linked to
    * @return a list of experiments linked to the project
    */
+  @PostAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public List<Experiment> findAllForProject(ProjectId projectId) {
     Project project = projectRepository.find(projectId).orElseThrow();
     List<ExperimentId> experimentIds = project.experiments();
@@ -160,7 +172,10 @@ public class ExperimentInformationService {
    * @param species      the species to add
    * @see Experiment#addSpecies(Collection)
    */
-  public void addSpeciesToExperiment(ExperimentId experimentId, OntologyTerm... species) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addSpeciesToExperiment(String projectId, ExperimentId experimentId,
+      OntologyTerm... species) {
     Arrays.stream(species).forEach(Objects::requireNonNull);
     if (species.length < 1) {
       return;
@@ -177,7 +192,10 @@ public class ExperimentInformationService {
    * @param specimens    the specimens to add
    * @see Experiment#addSpecimens(Collection)
    */
-  public void addSpecimenToExperiment(ExperimentId experimentId, OntologyTerm... specimens) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addSpecimenToExperiment(String projectId, ExperimentId experimentId,
+      OntologyTerm... specimens) {
     Arrays.stream(specimens).forEach(Objects::requireNonNull);
     if (specimens.length < 1) {
       return;
@@ -194,7 +212,10 @@ public class ExperimentInformationService {
    * @param analytes     the analytes to add
    * @see Experiment#addAnalytes(Collection)
    */
-  public void addAnalyteToExperiment(ExperimentId experimentId, OntologyTerm... analytes) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addAnalyteToExperiment(String projectId, ExperimentId experimentId,
+      OntologyTerm... analytes) {
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
     if (analytes.length < 1) {
       return;
@@ -215,7 +236,10 @@ public class ExperimentInformationService {
    *                     {@link ExperimentalValue} will be derived for the to be defined
    *                     {@link ExperimentalVariable}
    */
-  public void addVariableToExperiment(ExperimentId experimentId, String variableName, String unit,
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addVariableToExperiment(String projectId, ExperimentId experimentId,
+      String variableName, String unit,
       List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);
@@ -274,7 +298,10 @@ public class ExperimentInformationService {
    * @return a list of {@link ExperimentalVariable} associated with the {@link Experiment} with the
    * {@link ExperimentId}
    */
-  public List<ExperimentalVariable> getVariablesOfExperiment(ExperimentId experimentId) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<ExperimentalVariable> getVariablesOfExperiment(String projectId,
+      ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.variables();
   }
@@ -286,7 +313,10 @@ public class ExperimentInformationService {
    *           deleted.
    * @since 1.0.0
    */
-  public void deleteExperimentalGroupsWithIds(ExperimentId id, List<Long> groupIds) {
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void deleteExperimentalGroupsWithIds(String projectId, ExperimentId id,
+      List<Long> groupIds) {
     var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
     if (queryResult.isError()) {
       throw new ApplicationException("experiment (%s) converting %s to %s".formatted(id,
@@ -316,7 +346,9 @@ public class ExperimentInformationService {
    * @param experimentalGroupDTOS  the new list of experimental groups including all updates
    * @since 1.0.0
    */
-  public void updateExperimentalGroupsOfExperiment(ExperimentId experimentId,
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void updateExperimentalGroupsOfExperiment(String projectId, ExperimentId experimentId,
       List<ExperimentalGroupDTO> experimentalGroupDTOS) {
 
     // check for duplicates
@@ -328,10 +360,10 @@ public class ExperimentInformationService {
           ErrorParameters.empty());
     }
 
-    List<ExperimentalGroup> existingGroups = experimentalGroupsFor(experimentId);
+    List<ExperimentalGroup> existingGroups = experimentalGroupsFor(projectId, experimentId);
     List<Long> idsToDelete = getGroupIdsToDelete(existingGroups, experimentalGroupDTOS);
     if(!idsToDelete.isEmpty()) {
-      deleteExperimentalGroupsWithIds(experimentId, idsToDelete);
+      deleteExperimentalGroupsWithIds(projectId, experimentId, idsToDelete);
     }
 
     for(ExperimentalGroupDTO group : experimentalGroupDTOS) {
@@ -357,7 +389,10 @@ public class ExperimentInformationService {
         .toList();
   }
 
-  public void editExperimentInformation(ExperimentId experimentId, String experimentName,
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void editExperimentInformation(String projectId, ExperimentId experimentId,
+      String experimentName,
       List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.setName(experimentName);

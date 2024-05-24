@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 /**
@@ -56,24 +57,19 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
   }
 
   @Override
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void handleEvent(BatchRegistered event) {
-    jobScheduler.enqueue(() -> notifyUsersAboutSamples(event.name(), event.projectTitle(),
-        event.projectId()));
+    List<RecipientDTO> recipients = getRecipients(event.projectId());
+    String sampleUri = appContextProvider.urlToSamplePage(event.projectId().value());
+    notifyAllRecipients(recipients, event.projectTitle(), event.name(), sampleUri);
   }
 
-  @Job(name = "Notify users about batch registration")
-  /**
-   * Sends an email with attached spreadsheet of newly registered samples to the users of a project.
-   * The email contains an explanation about sample identifiers and the spreadsheet the known metadata of the samples
-   * @param name - the name of the batch
-   * @param projectTitle - the name of the project the batch was added to
-   * @param projectId - the id of the project
-   */
-  public void notifyUsersAboutSamples(String name, String projectTitle, ProjectId projectId) {
-    List<RecipientDTO> recipients = getRecipients(projectId);
-    String sampleUri = appContextProvider.urlToSamplePage(projectId.value());
+  public void notifyAllRecipients(List<RecipientDTO> recipients, String projectTitle,
+      String batchName, String sampleUri) {
     for (RecipientDTO recipient : recipients) {
-      notifyRecipient(recipient, projectTitle, name, sampleUri);
+      jobScheduler.enqueue(
+          () -> notifyRecipient(recipient.getEmailAddress(), recipient.getFullName(), projectTitle,
+              batchName, sampleUri));
     }
   }
 
@@ -89,15 +85,17 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     return users;
   }
 
-  private void notifyRecipient(RecipientDTO recipient, String projectTitle, String batchName,
+  @Job(name = "Notify users about batch registration")
+  public void notifyRecipient(String emailAddress, String fullName, String projectTitle,
+      String batchName,
       String sampleUri) {
     String subject = "New samples added to project";
 
-    var message = Messages.samplesAddedToProject(recipient.getFullName(), projectTitle,
+    var message = Messages.samplesAddedToProject(fullName, projectTitle,
         batchName, sampleUri);
 
     emailService.send(new Subject(subject),
-        new Recipient(recipient.getEmailAddress(), recipient.getFullName()), new Content(message));
+        new Recipient(emailAddress, fullName), new Content(message));
   }
 
 }

@@ -76,6 +76,7 @@ public class MeasurementNGSValidator implements
   }
 
   @Override
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();

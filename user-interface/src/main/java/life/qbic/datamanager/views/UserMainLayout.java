@@ -7,6 +7,7 @@ import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
+import life.qbic.identity.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -22,11 +23,14 @@ public class UserMainLayout extends DataManagerLayout {
   private final DataManagerMenu dataManagerMenu;
   private final Span navBarTitle = new Span("Data Manager");
 
-  public UserMainLayout(@Autowired LogoutService logoutService) {
+  public UserMainLayout(@Autowired LogoutService logoutService,
+      UserInformationService userInformationService) {
     Objects.requireNonNull(logoutService);
-    dataManagerMenu = new DataManagerMenu(logoutService);
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");
+    Objects.requireNonNull(userInformationService);
+    dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
     addToNavbar(navBarTitle, dataManagerMenu);
+
   }
 }
