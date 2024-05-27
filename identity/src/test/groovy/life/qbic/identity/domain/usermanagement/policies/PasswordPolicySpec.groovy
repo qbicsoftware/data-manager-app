@@ -13,7 +13,7 @@ import spock.lang.Specification
  */
 class PasswordPolicySpec extends Specification {
 
-    def "Given a password length shorter than 8 characters, the policy check shall fail"() {
+    def "Given a password length shorter than 12 characters, the policy check shall fail"() {
         when:
         PolicyCheckReport report = PasswordPolicy.instance().validate(password.toCharArray())
 
@@ -29,11 +29,15 @@ class PasswordPolicySpec extends Specification {
                 "abcd",
                 "abcde",
                 "abcdef",
-                "abcdefg"
+                "abcdefg",
+                "abcdefgh",
+                "abcdefghi",
+                "abcdefghij",
+                "abcdefghijk",
         ]
     }
 
-    def "Given a password length longer or equal to 8 characters, the policy check shall pass"() {
+    def "Given a password length longer or equal to 812 characters, the policy check shall pass"() {
         when:
         PolicyCheckReport report = PasswordPolicy.instance().validate(password.toCharArray())
 
@@ -44,7 +48,8 @@ class PasswordPolicySpec extends Specification {
         where:
         password << [
                 "astrongpassphrase",
-                "whatever"
+                "whatever0001",
+                "123456789012"
         ]
     }
 
