@@ -8,13 +8,13 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
@@ -25,8 +25,8 @@ import life.qbic.logging.service.LoggerFactory;
  */
 @SpringComponent
 @UIScope
-@Route(value = "about-us", layout = UserMainLayout.class)
-@PermitAll
+@Route(value = "about-us", layout = LandingPageLayout.class)
+@AnonymousAllowed
 public class AboutUs extends Main {
 
   @Serial
