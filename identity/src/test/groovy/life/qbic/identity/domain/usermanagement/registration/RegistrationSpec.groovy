@@ -27,6 +27,7 @@ class RegistrationSpec extends Specification {
 
     @Shared
     public TestStorage testStorage
+    private String validPassword = "0123456789012"
 
     def setupSpec() {
         testStorage = new TestStorage()
@@ -37,14 +38,14 @@ class RegistrationSpec extends Specification {
 
     def "When a user is already registered with a given email address, abort the registration and communicate the failure"() {
         given: "A repository with one user entry"
-        def testUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), "svenipopenni", EncryptedPassword.from("test1234".toCharArray()))
+        def testUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), "svenipopenni", EncryptedPassword.from(validPassword.toCharArray()))
         testStorage.save(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
-        def newUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), "svenipopenni", EncryptedPassword.from("test1234".toCharArray()))
+        def newUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), "svenipopenni", EncryptedPassword.from(validPassword.toCharArray()))
 
         and: "a the use case with output"
         def registration = new Registration(new IdentityService(UserRepository.getInstance(testStorage)))
@@ -62,21 +63,21 @@ class RegistrationSpec extends Specification {
 
     def "When a user is not yet registered with a given email address, register the user"() {
         given: "A repository with one user entry"
-        def testUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), "svenipopenni", EncryptedPassword.from("test1234".toCharArray()))
+        def testUser = User.create(FullName.from("Mr Somebody"), EmailAddress.from("some@body.com"), "svenipopenni", EncryptedPassword.from(validPassword.toCharArray()))
         testStorage.save(testUser)
 
         and:
         def useCaseOutput = Mock(RegisterUserOutput.class)
 
         and: "a new user to register"
-        def newUser = User.create(FullName.from("Mr Nobody"), EmailAddress.from("no@body.com"), "svenipopenni2", EncryptedPassword.from("test1234".toCharArray()))
+        def newUser = User.create(FullName.from("Mr Nobody"), EmailAddress.from("no@body.com"), "svenipopenni2", EncryptedPassword.from(validPassword.toCharArray()))
 
         and: "a the use case with output"
         def registration = new Registration(new IdentityService(UserRepository.getInstance(Mock(UserDataStorage))))
         registration.setOutput(useCaseOutput)
 
         when: "a user is registered"
-        registration.register(newUser.fullName().get(), newUser.emailAddress().get(), "12345678".toCharArray(), newUser.userName())
+        registration.register(newUser.fullName().get(), newUser.emailAddress().get(), validPassword.toCharArray(), newUser.userName())
 
         then:
         1 * useCaseOutput.onUserRegistrationSucceeded()
