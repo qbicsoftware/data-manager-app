@@ -9,7 +9,6 @@ import life.qbic.projectmanagement.application.authorization.acl.QbicPermissionE
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -60,9 +59,9 @@ public class AclSecurityConfiguration {
   }
 
   @Bean
-  public MutableAclService mutableAclService() {
+  public MutableAclService mutableAclService(CacheManager cacheManager) {
     JdbcMutableAclService jdbcMutableAclService = new JdbcMutableAclService(dataSource(),
-        lookupStrategy(), aclCache());
+        lookupStrategy(cacheManager), aclCache(cacheManager));
     // allow for non-long type ids
     jdbcMutableAclService.setAclClassIdSupported(true);
     jdbcMutableAclService.setSecurityContextHolderStrategy(securityContextHolderStrategy());
@@ -71,8 +70,7 @@ public class AclSecurityConfiguration {
   }
 
   @Bean
-  protected AclCache aclCache() {
-    CacheManager cacheManager = new ConcurrentMapCacheManager();
+  protected AclCache aclCache(CacheManager cacheManager) {
     return new SpringCacheBasedAclCache(
         cacheManager.getCache("acl_cache"),
         permissionGrantingStrategy(),
@@ -117,10 +115,10 @@ public class AclSecurityConfiguration {
   }
 
   @Bean
-  public LookupStrategy lookupStrategy() {
+  public LookupStrategy lookupStrategy(CacheManager cacheManager) {
     BasicLookupStrategy basicLookupStrategy = new BasicLookupStrategy(
         dataSource(),
-        aclCache(),
+        aclCache(cacheManager),
         aclAuthorizationStrategy(),
         auditLogger()
     );
@@ -129,14 +127,14 @@ public class AclSecurityConfiguration {
   }
 
   @Bean(name = "qbicPermissionEvaluator")
-  AclPermissionEvaluator permissionEvaluator() {
-    return new QbicPermissionEvaluator(mutableAclService());
+  AclPermissionEvaluator permissionEvaluator(CacheManager cacheManager) {
+    return new QbicPermissionEvaluator(mutableAclService(cacheManager));
   }
 
   @Bean
-  public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler() {
+  public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler(CacheManager cacheManager) {
     var expressionHandler = new DefaultMethodSecurityExpressionHandler();
-    expressionHandler.setPermissionEvaluator(permissionEvaluator());
+    expressionHandler.setPermissionEvaluator(permissionEvaluator(cacheManager));
     return expressionHandler;
   }
 }

@@ -57,6 +57,17 @@ public class QbicUserDetails implements UserDetails {
     return user.id();
   }
 
+  /**
+   * Returns the unique user display name displayed to the user. Has to be distinguished from the
+   * Spring default method getUserName() which returns the userId to which the ACL permissions are
+   * linked
+   *
+   * @return the unique user display name defined to the user
+   */
+  public String platformUserName() {
+    return user.platformUserName();
+  }
+
   public String fullName() {
     return user.fullName();
   }

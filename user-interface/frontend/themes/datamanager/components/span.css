@@ -1,3 +1,15 @@
+.code-block {
+  display: inline-flex;
+  border-radius: var(--lumo-border-radius-m);
+  align-items: center;
+  padding-inline: var(--lumo-space-s);
+  justify-content: space-between;
+  border: 1px solid var(--lumo-contrast-20pct);
+  column-gap: var(--lumo-space-l);
+  font-family: "Source Code Pro for Powerline", monospace;
+
+}
+
 .experiment-list-item {
   display: flex;
   gap: var(--lumo-space-s);
@@ -57,16 +69,14 @@ span.secondary {
   font-size: var(--lumo-font-size-s);
 }
 
-span.warning {
-  color: var(--lumo-warning-text-color);
+span.tertiary {
+  color: var(--lumo-tertiary-text-color);
   font-size: var(--lumo-font-size-s);
 }
 
-span.title {
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-l);
-  margin-bottom: 0.5rem;
+span.warning {
+  color: var(--lumo-warning-text-color);
+  font-size: var(--lumo-font-size-s);
 }
 
 .spreadsheet-list-item {
@@ -83,8 +93,6 @@ span.title {
   justify-content: center;
   box-sizing: border-box;
   padding: 0.4em calc(0.5em + var(--lumo-border-radius-s) / 4);
-  color: var(--lumo-primary-text-color);
-  background-color: var(--lumo-primary-color-10pct);
   border-radius: var(--lumo-border-radius-s);
   font-family: var(--lumo-font-family);
   font-size: var(--lumo-font-size-s);
@@ -103,6 +111,36 @@ span.title {
 }
 
 .tag.contrast {
-  color: var(--lumo-contrast-80pct);
   background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-contrast-80pct);
+}
+
+.tag.error {
+  background-color: var(--lumo-error-color-10pct);
+  color: var(--lumo-error-color);
+}
+
+.tag.primary {
+  background-color: var(--lumo-primary-color-10pct);
+  color: var(--lumo-primary-text-color);
+}
+
+.tag.success {
+  background-color: var(--lumo-success-color-10pct);
+  color: var(--lumo-success-text-color);
+}
+
+.tag.violet {
+  background-color: #7B61FF1A;
+  color: #7B61FF;
+}
+
+.tag.pink {
+  background-color: #FF5DD226;
+  color: #DF0B92;
+}
+
+.tag.warning {
+  background-color: var(--lumo-warning-color-10pct);
+  color: var(--lumo-warning-text-color);
 }

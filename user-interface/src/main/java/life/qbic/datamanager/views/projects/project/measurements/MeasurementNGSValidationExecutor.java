@@ -1,9 +1,11 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,12 +28,14 @@ public class MeasurementNGSValidationExecutor implements
     this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
   }
   @Override
-  public ValidationResult validateRegistration(NGSMeasurementMetadata metadata) {
-    return measurementValidationService.validateNGS(metadata);
+  public CompletableFuture<ValidationResult> validateRegistration(NGSMeasurementMetadata metadata,
+      ProjectId projectId) {
+    return CompletableFuture.completedFuture(
+        measurementValidationService.validateNGS(metadata, projectId));
   }
   @Override
-  public ValidationResult validateEdit(NGSMeasurementMetadata metadata) {
-    //Todo provide edit validation for ngs;
-    return null;
+  public CompletableFuture<ValidationResult> validateUpdate(NGSMeasurementMetadata metadata,
+      ProjectId projectId) {
+    return measurementValidationService.validateNGSUpdate(metadata, projectId);
   }
 }

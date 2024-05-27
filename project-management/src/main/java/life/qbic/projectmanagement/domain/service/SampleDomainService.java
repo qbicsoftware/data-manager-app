@@ -92,8 +92,8 @@ public class SampleDomainService {
     DomainEventDispatcher.instance().dispatch(sampleRegistered);
   }
 
-  public boolean isSampleRemovable(Project project, SampleId sampleId) {
-    return sampleRepository.isSampleRemovable(project, sampleId);
+  public boolean isSampleRemovable(SampleId sampleId) {
+    return sampleRepository.isSampleRemovable(sampleId);
   }
 
   /**

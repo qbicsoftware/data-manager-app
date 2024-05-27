@@ -7,6 +7,7 @@ import java.util.Collection;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -105,15 +106,10 @@ public class DeletionService {
    *   <li> data is connected to the sample
    *
    * @param sampleId
-   * @param projectId
    * @return
    */
-  public boolean isSampleRemovable(SampleId sampleId, ProjectId projectId) {
-    var project = projectInformationService.find(projectId);
-    if (project.isEmpty()) {
-      throw new IllegalArgumentException("Could not find project " + projectId);
-    }
-    return sampleDomainService.isSampleRemovable(project.get(), sampleId);
+  public boolean isSampleRemovable(SampleId sampleId) {
+    return sampleDomainService.isSampleRemovable(sampleId);
   }
 
 

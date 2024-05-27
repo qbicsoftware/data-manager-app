@@ -1,10 +1,13 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 
@@ -28,13 +31,16 @@ public class MeasurementProteomicsValidationExecutor implements
   }
 
   @Override
-  public ValidationResult validateRegistration(ProteomicsMeasurementMetadata metadata) {
-    return measurementValidationService.validateProteomics(metadata);
+  public CompletableFuture<ValidationResult> validateRegistration(
+      ProteomicsMeasurementMetadata metadata, ProjectId projectId) {
+    return CompletableFuture.completedFuture(
+        measurementValidationService.validateProteomics(metadata, projectId));
   }
 
   @Override
-  public ValidationResult validateEdit(ProteomicsMeasurementMetadata metadata) {
-    //Todo provide edit validation for proteomics
-    return null;
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public CompletableFuture<ValidationResult> validateUpdate(ProteomicsMeasurementMetadata metadata,
+      ProjectId projectId) {
+    return measurementValidationService.validateProteomicsUpdate(metadata, projectId);
   }
 }

@@ -8,8 +8,8 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 /**
  * Info box
  * <p>
- * Small Info box component based on the {@link Span} component to inform the user- Can be set to be
- * closeable or have additional components if necessary to avoid
+ * Small Info box component based on the {@link Span} component to inform the user. Can be set to be
+ * closeable or have additional components if necessary
  */
 public class InfoBox extends Span {
 

@@ -85,7 +85,7 @@ public class EditProjectInformationForm extends FormLayout {
     projectContactsLayout.add(projectContactsTitle);
     projectContactsLayout.add(projectContactsDescription);
 
-    principalInvestigatorField = new AutocompleteContactField("Principal Investigator");
+    principalInvestigatorField = new AutocompleteContactField("Principal Investigator", "PI");
     principalInvestigatorField.setRequired(true);
     principalInvestigatorField.setId("principal-investigator");
     binder.forField(principalInvestigatorField)
@@ -93,7 +93,7 @@ public class EditProjectInformationForm extends FormLayout {
         .bind((ProjectInformation::getPrincipalInvestigator),
             ProjectInformation::setPrincipalInvestigator);
 
-    responsiblePersonField = new AutocompleteContactField("Project Responsible (optional)");
+    responsiblePersonField = new AutocompleteContactField("Project Responsible (optional)", "Responsible");
     responsiblePersonField.setRequired(false);
     responsiblePersonField.setId("responsible-person");
     responsiblePersonField.setHelperText("Should be contacted about project-related questions");
@@ -103,7 +103,7 @@ public class EditProjectInformationForm extends FormLayout {
         .bind(projectInformation -> projectInformation.getResponsiblePerson().orElse(null),
             ProjectInformation::setResponsiblePerson);
 
-    projectManagerField = new AutocompleteContactField("Project Manager");
+    projectManagerField = new AutocompleteContactField("Project Manager", "Manager");
     projectManagerField.setRequired(true);
     projectManagerField.setId("project-manager");
     binder.forField(projectManagerField)
@@ -176,4 +176,15 @@ public class EditProjectInformationForm extends FormLayout {
     return binder;
   }
 
+  public void setKnownContacts(List<Contact> knownContacts) {
+    principalInvestigatorField.setItems(knownContacts);
+    responsiblePersonField.setItems(knownContacts);
+    projectManagerField.setItems(knownContacts);
+  }
+
+  public void hideContactBox() {
+    principalInvestigatorField.hideContactBox();
+    responsiblePersonField.hideContactBox();
+    projectManagerField.hideContactBox();
+  }
 }

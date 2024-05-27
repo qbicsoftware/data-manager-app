@@ -1,15 +1,12 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import com.vaadin.flow.component.Component;
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.tabs.Tab;
@@ -30,14 +27,19 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.InfoBox;
+import life.qbic.datamanager.views.GridDetailsItem;
+import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -46,8 +48,6 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
-import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -63,11 +63,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
-  private final TabSheet registerMeasurementTabSheet = new TabSheet();
-  private final Div noMeasurementDisclaimer = new Div();
-  private String searchTerm = "";
-  private final Grid<NGSMeasurement> ngsMeasurementGrid = new Grid<>();
-  private final Grid<ProteomicsMeasurement> proteomicsMeasurementGrid = new Grid<>();
+  private static final Logger log = logger(MeasurementDetailsComponent.class);
+  private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
+  private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
+  private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
@@ -75,8 +74,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private transient Context context;
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
-
   private final ClientDetailsProvider clientDetailsProvider;
+  private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
+  private String searchTerm = "";
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
       @Autowired SampleInformationService sampleInformationService,
@@ -84,13 +84,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
-    initNoMeasurementDisclaimer();
     createProteomicsGrid();
     createNGSMeasurementGrid();
-    add(noMeasurementDisclaimer);
-    add(registerMeasurementTabSheet);
-    registerMeasurementTabSheet.addClassName("measurement-tabsheet");
+    add(registeredMeasurementsTabSheet);
+    registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
+
+    registeredMeasurementsTabSheet.addSelectedChangeListener(selectedChangeEvent -> resetSelectedMeasurements());
   }
 
   /**
@@ -98,7 +98,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    * {@link MeasurementMetadata} shown in the grids of this component
    *
    * @param context Context with the projectId and experimentId containing the samples for which
-   *                     measurements could be registered
+   *                measurements could be registered
    */
   public void setContext(Context context) {
     resetTabsInTabsheet();
@@ -106,15 +106,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     List<GridLazyDataView<?>> dataViewsWithItems = measurementsGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();
-    /*If none of the measurement types have items show default state with noMeasurement Disclaimer*/
-    if (dataViewsWithItems.isEmpty()) {
-      noMeasurementDisclaimer.setVisible(true);
-      registerMeasurementTabSheet.setVisible(false);
-      return;
-    }
-    noMeasurementDisclaimer.setVisible(false);
     dataViewsWithItems.forEach(this::addMeasurementTab);
-    registerMeasurementTabSheet.setVisible(true);
   }
 
   /**
@@ -127,37 +119,28 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    *                   be filtered for
    */
   public void setSearchedMeasurementValue(String searchTerm) {
+    if(!this.searchTerm.equals(searchTerm)) {
+      resetSelectedMeasurements();
+    }
     this.searchTerm = searchTerm;
     measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
-  }
-
-
-  /**
-   * Informs the listener that a {@link MeasurementAddClickEvent} has occurred within the disclaimer
-   * of this component
-   *
-   * @param addMeasurementListener listener which will be informed if a
-   *                               {@link MeasurementAddClickEvent} has been fired
-   */
-  public void addRegisterMeasurementClickedListener(
-      ComponentEventListener<MeasurementAddClickEvent> addMeasurementListener) {
-    addListener(MeasurementAddClickEvent.class, addMeasurementListener);
   }
 
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
   private void resetTabsInTabsheet() {
     if (!tabsInTabSheet.isEmpty()) {
-      tabsInTabSheet.forEach(registerMeasurementTabSheet::remove);
+      tabsInTabSheet.forEach(registeredMeasurementsTabSheet::remove);
       tabsInTabSheet.clear();
     }
   }
 
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
-      tabsInTabSheet.add(registerMeasurementTabSheet.add("Proteomics", proteomicsMeasurementGrid));
+      tabsInTabSheet.add(
+          registeredMeasurementsTabSheet.add("Proteomics", proteomicsMeasurementGrid));
     }
     if (gridLazyDataView.getItem(0) instanceof NGSMeasurement) {
-      tabsInTabSheet.add(registerMeasurementTabSheet.add("Genomics", ngsMeasurementGrid));
+      tabsInTabSheet.add(registeredMeasurementsTabSheet.add("Genomics", ngsMeasurementGrid));
     }
   }
 
@@ -165,32 +148,29 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ngsMeasurementGrid.addClassName("measurement-grid");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
         .setHeader("Measurement ID")
-        .setAutoWidth(true)
-        .setTooltipGenerator(
-            ngsMeasurement -> ngsMeasurement.measurementCode().value())
-        .setFlexGrow(0);
-    ngsMeasurementGrid.addComponentColumn(ngsMeasurement -> renderSampleCodes()
-            .createComponent(ngsMeasurement.measuredSamples()))
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.measurementCode().value());
+    ngsMeasurementGrid.addColumn(measurement -> String.join(" ",
+            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())))
         .setHeader("Sample IDs")
-        .setAutoWidth(true);
+        .setTooltipGenerator(measurement -> String.join(" ",
+            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()))).setFlexGrow(1);
     ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
         .setHeader("Facility")
-        .setTooltipGenerator(NGSMeasurement::facility)
-        .setAutoWidth(true);
+        .setTooltipGenerator(NGSMeasurement::facility);
     ngsMeasurementGrid.addComponentColumn(
             ngsMeasurement -> renderInstrument().createComponent(
                 ngsMeasurement.instrument()))
         .setHeader("Instrument")
         .setTooltipGenerator(
             ngsMeasurement -> ngsMeasurement.instrument().formatted())
-        .setAutoWidth(true)
-        .setFlexGrow(0);
+        .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
         .setHeader("Comment")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
-        .setAutoWidth(true);
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.comment().orElse(""));
     ngsMeasurementGrid.setItemDetailsRenderer(new ComponentRenderer<>(ngsMeasurement -> {
-      MeasurementItem measurementItem = new MeasurementItem();
+      GridDetailsItem measurementItem = new GridDetailsItem();
+      measurementItem.addListEntry("Sample Ids",
+          groupSampleInfoIntoCodeAndLabel(ngsMeasurement.measuredSamples()));
       measurementItem.addComponentEntry("Organisation",
           renderOrganisation(ngsMeasurement.organisation()));
       measurementItem.addEntry("Read Type", ngsMeasurement.sequencingReadType());
@@ -199,12 +179,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       measurementItem.addEntry("Run Protocol", ngsMeasurement.sequencingRunProtocol().orElse(""));
       measurementItem.addEntry("Index I7", ngsMeasurement.indexI7().orElse(""));
       measurementItem.addEntry("Index I5", ngsMeasurement.indexI5().orElse(""));
+      measurementItem.addEntry("Sample Pool", ngsMeasurement.samplePoolGroup().orElse(""));
       measurementItem.addEntry("Registration Date",
           asClientLocalDateTime(ngsMeasurement.registrationDate())
               .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
       return measurementItem;
     }));
-    ngsMeasurementGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
@@ -216,6 +196,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
+    ngsMeasurementGrid.addSelectListener(
+        event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(ngsGridDataView);
   }
 
@@ -224,47 +206,43 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setHeader("Measurement ID")
-        .setAutoWidth(true)
         .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
-        .setFlexGrow(0);
-    proteomicsMeasurementGrid.addComponentColumn(proteomicsMeasurement -> renderSampleCodes()
-            .createComponent(proteomicsMeasurement.measuredSamples()))
+            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value());
+    proteomicsMeasurementGrid.addColumn(measurement -> String.join(" ",
+            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())))
         .setHeader("Sample IDs")
-        .setAutoWidth(true);
+        .setTooltipGenerator(measurement -> String.join(" ",
+            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility)
         .setHeader("Facility")
-        .setTooltipGenerator(ProteomicsMeasurement::facility)
-        .setAutoWidth(true);
+        .setTooltipGenerator(ProteomicsMeasurement::facility);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderInstrument().createComponent(
                 proteomicsMeasurement.instrument()))
         .setHeader("Instrument")
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted())
-        .setAutoWidth(true)
-        .setFlexGrow(0);
+        .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(
             proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
-        .setHeader("Measurement Label Type")
+        .setHeader("Label Type")
         .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""))
-        .setAutoWidth(true)
-        .setFlexGrow(1);
+            proteomicsMeasurement -> proteomicsMeasurement.labelingType().orElse(""));
     proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse(""))
         .setHeader("Comment")
-        .setTooltipGenerator(measurement -> measurement.comment().orElse(""))
-        .setAutoWidth(true);
+        .setTooltipGenerator(measurement -> measurement.comment().orElse(""));
     proteomicsMeasurementGrid.setItemDetailsRenderer(
         new ComponentRenderer<>(proteomicsMeasurement -> {
-          MeasurementItem measurementItem = new MeasurementItem();
+          GridDetailsItem measurementItem = new GridDetailsItem();
+          measurementItem.addListEntry("Sample Ids",
+              groupSampleInfoIntoCodeAndLabel(proteomicsMeasurement.measuredSamples()));
           measurementItem.addComponentEntry("Organisation",
               renderOrganisation(proteomicsMeasurement.organisation()));
           measurementItem.addEntry("Digestion Enzyme", proteomicsMeasurement.digestionEnzyme());
           measurementItem.addEntry("Digestion Method", proteomicsMeasurement.digestionMethod());
           measurementItem.addEntry("Injection Volume",
               String.valueOf(proteomicsMeasurement.injectionVolume()));
-          measurementItem.addEntry("LCMS Method", proteomicsMeasurement.lcColumn());
+          measurementItem.addEntry("LCMS Method", proteomicsMeasurement.lcmsMethod());
           measurementItem.addEntry("Enrichment Method", proteomicsMeasurement.enrichmentMethod());
           measurementItem.addEntry("Fraction Name", proteomicsMeasurement.fraction().orElse(""));
           measurementItem.addEntry("Measurement Label", proteomicsMeasurement.label().orElse(""));
@@ -283,39 +261,18 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               .collect(Collectors.toList());
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementCode").ascending());
-          return measurementService.findProteomicsMeasurement(searchTerm,
+          return measurementService.findProteomicsMeasurements(searchTerm,
                   context.experimentId().orElseThrow(),
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();
         });
-    proteomicsMeasurementGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
+    proteomicsMeasurementGrid.addSelectListener(event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(proteomicsGridDataView);
   }
 
-  private static final class MeasurementItem extends Div {
-
-    public MeasurementItem() {
-      addClassName("measurement-item");
-    }
-
-    public void addEntry(String propertyLabel, String propertyValue) {
-      Span propertyLabelSpan = new Span(propertyLabel + ":");
-      Span propertyValueSpan = new Span(propertyValue);
-      propertyLabelSpan.addClassName("bold");
-      Span entry = new Span();
-      entry.addClassName("entry");
-      entry.add(propertyLabelSpan, propertyValueSpan);
-      add(entry);
-    }
-
-    public void addComponentEntry(String propertyLabel, Component propertyValueComponent) {
-      Span propertyLabelSpan = new Span(propertyLabel + ":");
-      propertyLabelSpan.addClassName("bold");
-      Span entry = new Span();
-      entry.addClassName("entry");
-      entry.add(propertyLabelSpan, propertyValueComponent);
-      add(entry);
-    }
+  private void updateSelectedMeasurementsInfo(boolean isFromClient) {
+    listeners.forEach(listener -> listener.onComponentEvent(
+        new MeasurementSelectionChangedEvent(this, isFromClient)));
   }
 
   private LocalDateTime asClientLocalDateTime(Instant instant) {
@@ -326,14 +283,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private Anchor renderOrganisation(Organisation organisation) {
-      SvgIcon svgIcon = new SvgIcon(rorIconResource);
-      svgIcon.addClassName("organisation-icon");
-      Span organisationLabel = new Span(organisation.label());
-      String organisationUrl = organisation.IRI();
-      Anchor organisationAnchor = new Anchor(organisationUrl, organisationLabel, svgIcon);
-      organisationAnchor.setTarget(AnchorTarget.BLANK);
+    SvgIcon svgIcon = new SvgIcon(rorIconResource);
+    svgIcon.addClassName("organisation-icon");
+    Span organisationLabel = new Span(organisation.label());
+    String organisationUrl = organisation.IRI();
+    Anchor organisationAnchor = new Anchor(organisationUrl, organisationLabel, svgIcon);
+    organisationAnchor.setTarget(AnchorTarget.BLANK);
     organisationAnchor.addClassName("organisation-entry");
-      return organisationAnchor;
+    return organisationAnchor;
   }
 
   private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
@@ -349,62 +306,74 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     });
   }
 
-  private ComponentRenderer<Div, Collection<SampleId>> renderSampleCodes() {
-    return new ComponentRenderer<>(sampleIds -> {
-      Div showSampleCodes = new Div();
-      List<SampleCode> sampleCodes = sampleInformationService.retrieveSamplesByIds(sampleIds)
-          .stream().map(Sample::sampleCode).toList();
-      showSampleCodes.addClassName("sample-code-column");
-      sampleCodes.forEach(sampleCode -> showSampleCodes.add(new Span(sampleCode.code())));
-      return showSampleCodes;
-    });
+  private Collection<String> groupSampleInfoIntoCodeAndLabel(Collection<SampleId> sampleIds) {
+    return sampleInformationService.retrieveSamplesByIds(sampleIds).stream()
+        .map(sample -> String.format("%s (%s)", sample.sampleCode().code(), sample.label()))
+        .toList();
   }
 
-  private void initNoMeasurementDisclaimer() {
-    Span disclaimerTitle = new Span("Manage your measurement metadata");
-    disclaimerTitle.addClassName("no-measurement-registered-title");
-    noMeasurementDisclaimer.add(disclaimerTitle);
-    Div noMeasurementDisclaimerContent = new Div();
-    noMeasurementDisclaimerContent.addClassName("no-measurement-registered-content");
-    Span noMeasurementText1 = new Span("Start by downloading the required metadata template");
-    Span noMeasurementText2 = new Span(
-        "Fill the metadata sheet and register your measurement metadata.");
-    noMeasurementDisclaimerContent.add(noMeasurementText1);
-    noMeasurementDisclaimerContent.add(noMeasurementText2);
-    noMeasurementDisclaimer.add(noMeasurementDisclaimerContent);
-    InfoBox availableTemplatesInfo = new InfoBox();
-    availableTemplatesInfo.setInfoText(
-        "You can download the measurement metadata template from the Templates component above");
-    availableTemplatesInfo.setClosable(false);
-    noMeasurementDisclaimer.add(availableTemplatesInfo);
-    Button registerMeasurements = new Button("Register Measurements");
-    registerMeasurements.addClassName("primary");
-    noMeasurementDisclaimer.add(registerMeasurements);
-    registerMeasurements.addClickListener(
-        event -> fireEvent(new MeasurementAddClickEvent(this, event.isFromClient())));
-    noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
+  public int getNumberOfSelectedMeasurements() {
+    Optional<String> tabLabel = getSelectedTabName();
+    if (tabLabel.isPresent()) {
+      String label = tabLabel.get();
+      if (label.equals("Proteomics")) {
+        return getSelectedProteomicsMeasurements().size();
+      }
+      if (label.equals("Genomics")) {
+        return getSelectedNGSMeasurements().size();
+      }
+    }
+    return 0;
   }
 
+  public Set<NGSMeasurement> getSelectedNGSMeasurements() {
+    return new HashSet<>(ngsMeasurementGrid.getSelectedItems());
+  }
+
+  public Set<ProteomicsMeasurement> getSelectedProteomicsMeasurements() {
+    return new HashSet<>(proteomicsMeasurementGrid.getSelectedItems());
+  }
+
+  public void refreshGrids() {
+    resetSelectedMeasurements();
+    measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
+  }
+
+  private void resetSelectedMeasurements() {
+    proteomicsMeasurementGrid.clearSelectedItems();
+    ngsMeasurementGrid.clearSelectedItems();
+    updateSelectedMeasurementsInfo(false);
+  }
+
+  public void addListener(ComponentEventListener<MeasurementSelectionChangedEvent> listener) {
+    listeners.add(listener);
+  }
 
   /**
-   * Measurement Add Click Event
-   * <p></p>
-   * ComponentEvent which informs the system that {@link MeasurementMetadata} is intended to be
-   * added to the system
+   * <b>Measurement Selection Changed Event</b>
+   * <p>
+   * Event that indicates that measurements were selected or deselected by the user or a deletion event
+   * {@link MeasurementDetailsComponent}
+   *
+   * @since 1.0.0
    */
-  public static class MeasurementAddClickEvent extends
+  public static class MeasurementSelectionChangedEvent extends
       ComponentEvent<MeasurementDetailsComponent> {
 
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public MeasurementAddClickEvent(MeasurementDetailsComponent source, boolean fromClient) {
+    @Serial
+    private static final long serialVersionUID = 1213984633337676231L;
+
+    public MeasurementSelectionChangedEvent(MeasurementDetailsComponent source, boolean fromClient) {
       super(source, fromClient);
+    }
+  }
+
+  //TODO introduce custom tab with label and updateable count
+  public Optional<String> getSelectedTabName() {
+    if(registeredMeasurementsTabSheet.getSelectedTab()!=null) {
+      return Optional.of(registeredMeasurementsTabSheet.getSelectedTab().getLabel());
+    } else {
+      return Optional.empty();
     }
   }
 }

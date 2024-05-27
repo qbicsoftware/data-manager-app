@@ -62,7 +62,7 @@ public class AppRoutes {
     /**
      * Path to list registered project samples
      */
-    public static final String SAMPLES = "projects/%s/samples";
+    public static final String SAMPLES = "projects/%s/experiments/%s/samples";
 
     /**
      * Path to investigate a specific sample's properties within a project
@@ -72,7 +72,7 @@ public class AppRoutes {
     /**
      * Path to list all measurements within a project
      */
-    public static final String MEASUREMENTS = "projects/%s/measurements";
+    public static final String MEASUREMENTS = "projects/%s/experiments/%s/measurements";
 
     /**
      * Path to investigate a specific measurement of a project
@@ -80,9 +80,9 @@ public class AppRoutes {
     public static final String MEASUREMENT = "projects/%s/measurements/%s";
 
     /**
-     * Path to list all performed analyses within a project
+     * Path to list the raw data generated within the experiment of a project
      */
-    public static final String ANALYSES = "projects/%s/analyses";
+    public static final String RAWDATA = "projects/%s/experiments/%s/rawdata";
 
     /**
      * Path to investigate the properties of an analysis
@@ -97,5 +97,10 @@ public class AppRoutes {
     public static final String ACCESS = "projects/%s/access";
 
     public static final String ONTOLOGY = "projects/%s/ontology";
+
+    /**
+     * The profile page that displays information for the currently logged-in user
+     */
+    public static final String PROFILE = "profile";
   }
 }

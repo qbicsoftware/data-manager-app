@@ -22,8 +22,11 @@ import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.identity.api.UserInformationService;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.slf4j.Logger;
@@ -52,17 +55,24 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   private final Span navBarTitle = new Span();
 
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
+      @Autowired UserInformationService userInformationService,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired UserPermissions userPermissions) {
+      @Autowired AddExperimentToProjectService addExperimentToProjectService,
+      @Autowired UserPermissions userPermissions,
+      @Autowired OntologyLookupService ontologyTermInformationService) {
     Objects.requireNonNull(logoutService);
+    Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
-    this.dataManagerMenu = new DataManagerMenu(logoutService);
+    Objects.requireNonNull(userPermissions);
+    Objects.requireNonNull(addExperimentToProjectService);
+    Objects.requireNonNull(ontologyTermInformationService);
+    this.dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
     this.experimentInformationService = experimentInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
-        projectInformationService, experimentInformationService,
-        userPermissions);
+        projectInformationService, experimentInformationService, addExperimentToProjectService,
+        userPermissions, ontologyTermInformationService);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");
@@ -89,7 +99,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   private void setExperimentNameAsTitle(ExperimentId experimentId) {
-    experimentInformationService.find(experimentId)
+    experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
         .ifPresent(
             experiment -> navBarTitle.setText(experiment.getName()));
   }

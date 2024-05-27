@@ -32,10 +32,11 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
@@ -62,7 +63,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final long serialVersionUID = 2893730975944372088L;
   private static final Logger log = logger(SampleDetailsComponent.class);
   private final SampleExperimentTab experimentTab;
-  private Context context;
   private final TextField searchField;
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
@@ -71,6 +71,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Grid<SamplePreview> sampleGrid;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient SampleInformationService sampleInformationService;
+  private Context context;
 
   public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
       @Autowired ExperimentInformationService experimentInformationService) {
@@ -130,31 +131,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   }
 
-  private void onDownloadMetadataClicked() {
-    metadataDownload.trigger();
-  }
-
-  private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {
-    updateSampleGridDataProvider(context.experimentId().orElseThrow(), valueChangeEvent.getValue());
-  }
-
-  private void updateSampleGridDataProvider(ExperimentId experimentId, String filter) {
-    sampleGrid.setItems(query -> {
-      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
-          .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (least priority)
-      sortOrders.add(SortOrder.of("sampleCode").ascending());
-      return sampleInformationService.queryPreview(experimentId, query.getOffset(),
-          query.getLimit(), List.copyOf(sortOrders), filter).stream();
-    }, query -> SampleDetailsComponent.this.sampleInformationService.countPreviews(
-        experimentId,
-        filter));
-    sampleGrid.getLazyDataView()
-        .addItemCountChangeListener(
-            countChangeEvent -> experimentTab.setSampleCount(countChangeEvent.getItemCount()));
-  }
-
   private static TextField createSearchField() {
     TextField textField = new TextField();
     textField.setPlaceholder("Search");
@@ -191,6 +167,66 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return tagCollection;
   }
 
+  private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
+    return experiment.getExperimentalGroups().isEmpty();
+  }
+
+  private static Grid<SamplePreview> createSampleGrid() {
+    Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
+    sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample ID")
+        .setSortProperty("sampleCode").setAutoWidth(true).setFlexGrow(0)
+        .setTooltipGenerator(SamplePreview::sampleCode);
+    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
+        .setSortProperty("sampleLabel").setTooltipGenerator(SamplePreview::sampleLabel);
+    sampleGrid.addColumn(SamplePreview::organismId).setHeader("Organism ID")
+        .setSortProperty("organismId").setTooltipGenerator(SamplePreview::organismId);
+    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
+        .setSortProperty("batchLabel").setTooltipGenerator(SamplePreview::batchLabel);
+    sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
+        .setSortProperty("bioReplicateLabel").setTooltipGenerator(SamplePreview::replicateLabel);
+    sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
+        .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
+    sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species")
+        .setSortProperty("species")
+        .setTooltipGenerator(preview -> preview.species().formatted());
+    sampleGrid.addColumn(preview -> preview.specimen().getLabel()).setHeader("Specimen")
+        .setSortProperty("specimen").setTooltipGenerator(preview -> preview.specimen().formatted());
+    sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte")
+        .setSortProperty("analyte")
+        .setTooltipGenerator(preview -> preview.analyte().formatted());
+    sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
+        .setSortProperty("analysisMethod").setTooltipGenerator(SamplePreview::analysisMethod);
+    sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
+        .setTooltipGenerator(SamplePreview::comment);
+    sampleGrid.addClassName("sample-grid");
+    sampleGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
+    return sampleGrid;
+  }
+
+  private void onDownloadMetadataClicked() {
+    metadataDownload.trigger();
+  }
+
+  private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {
+    updateSampleGridDataProvider(context.experimentId().orElseThrow(), valueChangeEvent.getValue());
+  }
+
+  private void updateSampleGridDataProvider(ExperimentId experimentId, String filter) {
+    sampleGrid.setItems(query -> {
+      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
+              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
+          .collect(Collectors.toList());
+      // if no order is provided by the grid order by last modified (least priority)
+      sortOrders.add(SortOrder.of("sampleCode").ascending());
+      return sampleInformationService.queryPreview(experimentId, query.getOffset(),
+          query.getLimit(), List.copyOf(sortOrders), filter).stream();
+    }, query -> SampleDetailsComponent.this.sampleInformationService.countPreviews(
+        experimentId,
+        filter));
+    sampleGrid.getLazyDataView()
+        .addItemCountChangeListener(
+            countChangeEvent -> experimentTab.setSampleCount(countChangeEvent.getItemCount()));
+  }
 
   /**
    * Propagates the context to internal components.
@@ -206,11 +242,16 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     }
     this.context = context;
     ExperimentId experimentId = context.experimentId().get();
-    setExperiment(experimentInformationService.find(experimentId).orElseThrow());
+    setExperiment(
+        experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
+            .orElseThrow());
 
     // we also update the data provider with any samples of this experiment
-    List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(experimentId);
-    metadataDownloadFormatter.updateContext(experimentInformationService.find(experimentId), samples);
+    List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(
+        experimentId);
+    metadataDownloadFormatter.updateContext(
+        experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId),
+        samples);
   }
 
   /**
@@ -262,10 +303,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     routeToExperimentalGroupCreation(event, context.experimentId().orElseThrow().value());
   }
 
-  private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
-    return experiment.getExperimentalGroups().isEmpty();
-  }
-
   private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
     return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
         .map(Collection::isEmpty)
@@ -293,36 +330,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     return noGroupsDefindedDisclaimer;
   }
 
-  private static Grid<SamplePreview> createSampleGrid() {
-    Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
-    sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample ID")
-        .setSortProperty("sampleCode").setAutoWidth(true).setFlexGrow(0)
-        .setTooltipGenerator(SamplePreview::sampleCode);
-    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
-        .setSortProperty("sampleLabel").setTooltipGenerator(SamplePreview::sampleLabel);
-    sampleGrid.addColumn(SamplePreview::organismId).setHeader("Organism ID")
-        .setSortProperty("organismId").setTooltipGenerator(SamplePreview::organismId);
-    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
-        .setSortProperty("batchLabel").setTooltipGenerator(SamplePreview::batchLabel);
-    sampleGrid.addColumn(SamplePreview::replicateLabel).setHeader("Biological Replicate")
-        .setSortProperty("bioReplicateLabel").setTooltipGenerator(SamplePreview::replicateLabel);
-    sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
-        .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
-    sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species").setSortProperty("species")
-        .setTooltipGenerator(preview -> preview.species().formatted());
-    sampleGrid.addColumn(preview -> preview.specimen().getLabel()).setHeader("Specimen")
-        .setSortProperty("specimen").setTooltipGenerator(preview -> preview.specimen().formatted());
-    sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte").setSortProperty("analyte")
-        .setTooltipGenerator(preview -> preview.analyte().formatted());
-    sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
-        .setSortProperty("analysisMethod").setTooltipGenerator(SamplePreview::analysisMethod);
-    sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
-        .setTooltipGenerator(SamplePreview::comment);
-    sampleGrid.addClassName("sample-grid");
-    sampleGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
-    return sampleGrid;
-  }
-
   public static class SampleExperimentTab extends Tab {
 
     private final Span countBadge;
@@ -340,6 +347,15 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     }
 
     /**
+     * Helper method for creating a badge.
+     */
+    private static Span createBadge() {
+      Tag tag = new Tag(String.valueOf(0));
+      tag.setTagColor(TagColor.CONTRAST);
+      return tag;
+    }
+
+    /**
      * Setter method for specifying the number of {@link Sample} of the {@link Experiment} shown in
      * this component
      *
@@ -351,15 +367,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     public void setExperimentName(String experimentName) {
       this.experimentNameComponent.setText(experimentName);
-    }
-
-    /**
-     * Helper method for creating a badge.
-     */
-    private static Span createBadge() {
-      Tag tag = new Tag(String.valueOf(0));
-      tag.addClassName("contrast");
-      return tag;
     }
   }
 

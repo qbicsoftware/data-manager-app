@@ -194,23 +194,9 @@
   column-gap: var(--lumo-space-s);
 }
 
-.measurement-details-component .no-measurements-registered-disclaimer {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-m);
-  align-items: center;
-}
-
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-title {
+.measurement-details-component .measurement-grid .measurement-item .entry .entry-label {
   font-weight: bold;
-  font-size: var(--lumo-font-size-m);
-  margin-bottom: 0.5rem;
-}
-
-.measurement-details-component .no-measurements-registered-disclaimer .no-measurement-registered-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  white-space: nowrap;
 }
 
 .ontology-lookup-component {
@@ -411,6 +397,13 @@
   align-items: baseline;
 }
 
+.project-collection-component {
+  height: 100%;
+  /*Necessary since we currently don't distinguish
+  borders if only one component was provided within a main area*/
+  border-top: none;
+}
+
 .project-collection-component .header {
   display: flex;
   column-gap: var(--lumo-space-xl);
@@ -423,6 +416,52 @@
   gap: 1rem;
 }
 
+.project-collection-component .project-grid {
+  height: 100%;
+  margin-top: var(--lumo-space-s);
+}
+
+.project-collection-component .project-grid vaadin-grid-cell-content {
+  padding: var(--lumo-space-xs);
+}
+
+.project-collection-component .project-overview-item {
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  margin-bottom: var(--lumo-space-s);
+  margin-top: var(--lumo-space-s);
+  overflow: hidden;
+  padding: var(--lumo-space-l);
+  row-gap: var(--lumo-space-s);
+  text-overflow: ellipsis;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.project-collection-component .project-overview-item .header {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  flex-direction: row;
+}
+
+.project-collection-component .project-overview-item .project-overview-item-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+}
+
+.project-collection-component .project-overview-item .details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  color: var(--lumo-secondary-text-color);
+}
+
 .project-details-component .header {
   display: flex;
   justify-content: space-between;
@@ -433,6 +472,71 @@
   display: inline-flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.raw-data-details-component .raw-data-details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .sample-information {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: inline-flex;
+  white-space: nowrap;
+  width: calc(80%);
+}
+
+/*We want to style the cells within the rows containing the components and values within the measurement grid to be clickable*/
+.raw-data-details-component .raw-data-grid > * {
+  cursor: pointer;
+}
+
+/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
+.raw-data-details-component .raw-data-grid ::part(row) {
+  cursor: pointer;
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  cursor: default;
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry .entry-label {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry-value-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.raw-data-details-component .raw-data-grid .raw-data-item .entry-value {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.raw-data-download-information-component {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-l);
+}
+
+.raw-data-download-information-component .section .section-title {
+  display: inline-flex;
+  align-items: center;
+  column-gap: var(--lumo-space-m);
+  font-weight: bold;
 }
 
 .project-details-component .ontology-entry-collection {
@@ -472,4 +576,57 @@
   gap: var(--lumo-space-s);
   display: inline-flex;
   align-items: end;
+}
+
+.user-profile-component {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-xl);
+}
+
+.user-profile-component .user-details-card {
+  display: flex;
+  flex-direction: row;
+  column-gap: 5rem;
+  background-color: var(--lumo-base-color);
+  border: black;
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-s);
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 5rem;
+  min-width: fit-content;
+  width: 66%;
+}
+
+.user-profile-component .change-name {
+  color: var(--lumo-primary-text-color);
+  cursor: pointer;
+  width: fit-content;
+}
+
+.user-profile-component .user-details-card .details {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-l);
+}
+
+.user-profile-component .user-details-card .detail {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+}
+
+.user-profile-component .user-details-card .avatar-with-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: var(--lumo-space-l);
+  justify-content: center;
+}
+
+.user-profile-component .user-details-card .avatar {
+  height: 5rem;
+  width: 5rem;
 }

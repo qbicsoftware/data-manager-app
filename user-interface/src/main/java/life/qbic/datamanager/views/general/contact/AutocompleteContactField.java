@@ -2,8 +2,7 @@ package life.qbic.datamanager.views.general.contact;
 
 import static java.util.Objects.isNull;
 
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
@@ -32,12 +31,12 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
 
   private final ComboBox<Contact> contactSelection;
-  private final Button selfSelect;
+  private final Checkbox selfSelect;
   private final TextField nameField;
   private final TextField emailField;
   private final Binder<Contact> binder;
 
-  public AutocompleteContactField(String label) {
+  public AutocompleteContactField(String label, String shortName) {
     setLabel(label);
     addClassName("contact-field");
     binder = new Binder<>();
@@ -52,9 +51,9 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     contactSelection.setItemLabelGenerator(
         contact -> "%s - %s".formatted(contact.getFullName(), contact.getEmail()));
 
-    selfSelect = new Button("Myself");
+    selfSelect = new Checkbox("Choose myself as %s for this project".formatted(shortName));
     selfSelect.addClassName("contact-self-select");
-    selfSelect.addClickListener(this::onSelfSelected);
+    selfSelect.addValueChangeListener(this::onSelfSelected);
 
     nameField = new TextField();
     nameField.setRequired(false);
@@ -87,7 +86,7 @@ public class AutocompleteContactField extends CustomField<Contact> implements
         .bind(Contact::getEmail,
             Contact::setEmail);
 
-    Div preselectLayout = new Div(contactSelection, selfSelect);
+    Div preselectLayout = new Div(selfSelect, contactSelection);
     preselectLayout.addClassName("prefill-input-fields");
 
     Div layout = new Div(nameField, emailField);
@@ -98,11 +97,13 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     clear();
   }
 
-  private void onSelfSelected(ClickEvent<Button> buttonClickEvent) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    Contact userAsContact = new Contact(details.fullName(), details.getEmailAddress());
-    setContact(userAsContact);
+  private void onSelfSelected(ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
+    if(checkboxvalueChangeEvent.getValue().booleanValue()) {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+      Contact userAsContact = new Contact(details.fullName(), details.getEmailAddress());
+      setContact(userAsContact);
+    }
   }
 
   private void updateValidationProperty() {
@@ -182,4 +183,7 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     return binder;
   }
 
+  public void hideContactBox() {
+    contactSelection.setVisible(false);
+  }
 }

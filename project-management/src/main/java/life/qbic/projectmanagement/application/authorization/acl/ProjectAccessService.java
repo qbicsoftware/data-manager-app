@@ -8,6 +8,8 @@ import java.util.stream.Stream;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.security.acls.domain.BasePermission;
 import org.springframework.security.acls.model.Permission;
+import org.springframework.security.acls.model.Sid;
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * <b>ProjectPermission Service</b>
@@ -15,6 +17,40 @@ import org.springframework.security.acls.model.Permission;
  * A service handling project-scoped permissions.
  */
 public interface ProjectAccessService {
+
+  /**
+   * Initializes an ACL for a given project with the user as owner.
+   *
+   * @param projectId the project id
+   * @param userId the owner
+   */
+  void initializeProject(ProjectId projectId, String userId);
+
+  void addCollaborator(ProjectId projectId, String userId, ProjectRole projectRole);
+
+  void removeCollaborator(ProjectId projectId, String userId);
+
+  void changeRole(ProjectId projectId, String userId, ProjectRole projectRole);
+
+  void addAuthorityAccess(ProjectId projectId, String authority, ProjectRole projectRole);
+
+  void removeAuthorityAccess(ProjectId projectId, String authority);
+
+  void changeAuthorityAccess(ProjectId projectId, String authority, ProjectRole projectRole);
+
+  /**
+   * Retrieves the projects to which the provided sid has access to
+   *
+   * @param sid String representation of the {@link Sid}
+   *            usually contained within the principal of a user as a role within the {@link GrantedAuthority}
+   *            or the Id of the user itself
+   * @return List of {@link ProjectId} which are accessible to the provided Sid
+   */
+  List<ProjectId> getAccessibleProjectsForSid(String sid);
+
+  List<ProjectCollaborator> listCollaborators(ProjectId projectId);
+
+  void removeProject(ProjectId projectId);
 
   enum ProjectRole {
     //the order matters from least powerful to most powerful
@@ -33,14 +69,6 @@ public interface ProjectAccessService {
       this.label = label;
     }
 
-    public String label() {
-      return label;
-    }
-
-    public String description() {
-      return description;
-    }
-
     static Optional<ProjectRole> fromPermissions(Collection<Permission> permissions) {
       ProjectRole[] projectRoles = ProjectRole.values();
       for (int roleIdx = projectRoles.length - 1; roleIdx >= 0; roleIdx--) {
@@ -50,10 +78,6 @@ public interface ProjectAccessService {
         }
       }
       return Optional.empty();
-    }
-
-    public Collection<Permission> toPermissions() {
-      return toPermissions(this);
     }
 
     private static Collection<Permission> toPermissions(ProjectRole projectRole) {
@@ -70,6 +94,18 @@ public interface ProjectAccessService {
         Permission... permissions) {
       return Stream.concat(toPermissions(projectRole).stream(), Stream.of(permissions)).collect(
           Collectors.toUnmodifiableSet());
+    }
+
+    public String label() {
+      return label;
+    }
+
+    public String description() {
+      return description;
+    }
+
+    public Collection<Permission> toPermissions() {
+      return toPermissions(this);
     }
   }
 
@@ -106,28 +142,4 @@ public interface ProjectAccessService {
   record ProjectCollaborator(String userId, ProjectId projectId, ProjectRole projectRole) {
 
   }
-
-  /**
-   * Initializes an ACL for a given project with the user as owner.
-   *
-   * @param projectId the project id
-   * @param userId the owner
-   */
-  void initializeProject(ProjectId projectId, String userId);
-
-  void addCollaborator(ProjectId projectId, String userId, ProjectRole projectRole);
-
-  void removeCollaborator(ProjectId projectId, String userId);
-
-  void changeRole(ProjectId projectId, String userId, ProjectRole projectRole);
-
-  void addAuthorityAccess(ProjectId projectId, String authority, ProjectRole projectRole);
-
-  void removeAuthorityAccess(ProjectId projectId, String authority);
-
-  void changeAuthorityAccess(ProjectId projectId, String authority, ProjectRole projectRole);
-
-  List<ProjectCollaborator> listCollaborators(ProjectId projectId);
-
-  void removeProject(ProjectId projectId);
 }

@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.model.experiment;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.FetchType;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -76,7 +77,7 @@ public class Condition {
       throw new IllegalArgumentException(
           "Variable levels are not from distinct experimental variables.");
     }
-    this.variableLevels = List.copyOf(variableLevels);
+    this.variableLevels = new ArrayList<>(variableLevels);
   }
 
   /**

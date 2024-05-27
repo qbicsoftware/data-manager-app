@@ -1,18 +1,21 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
+import life.qbic.projectmanagement.application.ProjectInformationService
 import life.qbic.projectmanagement.application.measurement.Labeling
+import life.qbic.projectmanagement.application.measurement.MeasurementService
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService
 import life.qbic.projectmanagement.application.sample.SampleInformationService
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.sample.SampleCode
 import spock.lang.Specification
 
 import java.util.stream.Collectors
 
-class MeasurementProteomicsValidatorSpec extends Specification {
+class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
-    final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata([SampleCode.create("QTEST001AE")],
+    final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", [SampleCode.create("QTEST001AE")],
             "https://ror.org/03a1kwz48", //Universität Tübingen,
             "EFO:0004205", //Illumina MiSeq
             "1",
@@ -40,12 +43,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
 
-    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample ids", "sample label", "organisation id", "facility", "instrument",
+    final MeasurementService measurementService = Mock(MeasurementService.class)
+
+    final ProjectInformationService projectInformationService = Mock(ProjectInformationService.class)
+
+    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample label", "organisation id", "facility", "instrument",
                                                     "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "labeling type", "label", "comment"])
-
-    final static Collection<String> optionalPxPProperties = ["labeling type", "label", "comment", "sample pool group"]
 
     def "A complete property set must be valid no matter the letter casing style"() {
 
@@ -104,12 +109,13 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.of(_)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(validMeasurementEntry)
+        def result = validator.validate(validMeasurementEntry, projectId)
 
         then:
         result.allPassed()
@@ -124,7 +130,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
 
     def "An unknown sample code in a proteomics measurement metadata object must return a failed validation "() {
         given:
-        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata([SampleCode.create("QNKWN001AE")],
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", [SampleCode.create("QNKWN001AE")],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -143,12 +149,13 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(_ as SampleCode) >> Optional.empty()
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry, projectId)
 
         then:
         !result.allPassed()
@@ -162,9 +169,10 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         given:
         def sampleToBeFound = SampleCode.create("QNWBY999AE")
         def unknownSample = SampleCode.create("QNKWN001AE")
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata([sampleToBeFound, unknownSample],
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", [sampleToBeFound, unknownSample],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -186,10 +194,10 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         sampleInformationService.findSampleId(sampleToBeFound) >> Optional.of(sampleToBeFound)
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry, projectId)
 
         then:
         !result.allPassed()
@@ -201,7 +209,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
 
     def "If no sample code is provided, the validation must fail"() {
         given:
-        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata([],
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", [],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -219,12 +227,13 @@ class MeasurementProteomicsValidatorSpec extends Specification {
 
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
         when:
-        def result = validator.validate(invalidMeasurementEntry)
+        def result = validator.validate(invalidMeasurementEntry, projectId)
 
         then:
         !result.allPassed()
@@ -242,7 +251,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If an invalid ROR ID for the organisation information is provided, the validation must fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                  invalidRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -261,13 +270,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -288,7 +298,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no RoRId was provided for the organisation information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "", // missing entry
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -307,13 +317,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -326,7 +337,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If an valid ROR ID for the organisation information is provided, the validation must pass"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 validRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -345,13 +356,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(validMetadata)
+        def result = validator.validate(validMetadata, projectId)
 
         then:
         result.allPassed()
@@ -369,7 +381,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no instrument Curie for the instrument information is provided, the validation must fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "", //Illumina MiSeq
                 "1",
@@ -388,13 +400,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -407,7 +420,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If a valid instrument curie for the instrument information is provided, the validation must pass"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 validInstrumentCurie, //Illumina MiSeq
                 "1",
@@ -426,13 +439,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(validMetadata)
+        def result = validator.validate(validMetadata, projectId)
 
         then:
         result.allPassed()
@@ -449,7 +463,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the facility information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -468,13 +482,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -487,7 +502,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the fraction name information the validation will not fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -506,13 +521,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         result.allPassed()
@@ -523,7 +539,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the digestion enzyme information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -542,13 +558,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create();
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -561,7 +578,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the digestion method information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -580,13 +597,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -599,7 +617,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the enrichment method information the validation will not fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -618,13 +636,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         result.allPassed()
@@ -635,7 +654,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the injection volume information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -654,13 +673,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -673,7 +693,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the LC column information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -692,13 +712,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()
@@ -711,7 +732,7 @@ class MeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the LCMS method information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata([validSampleCode],
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", [validSampleCode],
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -730,13 +751,14 @@ class MeasurementProteomicsValidatorSpec extends Specification {
         and:
         SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
         sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
+        ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
 
 
         when:
-        def result = validator.validate(invalidMetadata)
+        def result = validator.validate(invalidMetadata, projectId)
 
         then:
         !result.allPassed()

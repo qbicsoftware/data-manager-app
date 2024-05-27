@@ -15,8 +15,8 @@ import jakarta.persistence.JoinColumn;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -36,28 +36,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
  * @since 1.0.0
  */
 @Entity(name = "ngs_measurements")
-public class NGSMeasurement implements MeasurementMetadata {
+public class NGSMeasurement {
 
-  @EmbeddedId
-  @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
-  private MeasurementId id;
-
-  @Embedded
-  @Column(nullable = false)
-  private ProjectId projectId;
-
-  @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
-  private OntologyTerm instrument;
-
-  @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
-  private MeasurementCode measurementCode;
-  @Column(name = "registrationTime")
-  private Instant registration;
-  @Embedded
-  private Organisation organisation;
-  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "ngs_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
-  private Collection<SampleId> measuredSamples;
   @Column(name = "facility")
   String facility = "";
   @Column(name = "readType")
@@ -74,6 +54,25 @@ public class NGSMeasurement implements MeasurementMetadata {
   String indexI5 = "";
   @Column(name = "comment")
   String comment = "";
+  @EmbeddedId
+  @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
+  private MeasurementId id;
+  @Embedded
+  @Column(nullable = false)
+  private ProjectId projectId;
+  @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
+  private OntologyTerm instrument;
+  @Column(name = "samplePool")
+  private String samplePool = "";
+  @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
+  private MeasurementCode measurementCode;
+  @Column(name = "registrationTime")
+  private Instant registration;
+  @Embedded
+  private Organisation organisation;
+  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
+  @CollectionTable(name = "ngs_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
+  private Collection<SampleId> measuredSamples;
 
   protected NGSMeasurement() {
     // Needed for JPA
@@ -93,7 +92,8 @@ public class NGSMeasurement implements MeasurementMetadata {
     this.instrument = requireNonNull(method.instrument(), "instrument must not be null");
     this.measurementCode = requireNonNull(measurementCode, "measurement code must not be null");
     this.facility = requireNonNull(method.facility(), "facility must not be null");
-    this.sequencingReadType = requireNonNull(method.sequencingReadType(), "read type must not be null");
+    this.sequencingReadType = requireNonNull(method.sequencingReadType(),
+        "read type must not be null");
     this.libraryKit = method.libraryKit();
     this.flowCell = method.flowCell();
     this.sequencingRunProtocol = method.sequencingRunProtocol();
@@ -118,9 +118,9 @@ public class NGSMeasurement implements MeasurementMetadata {
    * with many describing properties about provenance and instrumentation.
    *
    * @param projectId
-   * @param sampleIds  the sample ids of the samples the measurement was performed on. If more than
-   *                   one sample id is provided, the measurement is considered to be performed on a
-   *                   pooled sample
+   * @param sampleIds the sample ids of the samples the measurement was performed on. If more than
+   *                  one sample id is provided, the measurement is considered to be performed on a
+   *                  pooled sample
    * @return
    * @since 1.0.0
    */
@@ -135,12 +135,29 @@ public class NGSMeasurement implements MeasurementMetadata {
     requireNonNull(method, "method must not be null");
     requireNonNull(method.instrument(), "instrument must not be null");
     if (!measurementCode.isNGSDomain()) {
-      throw new IllegalArgumentException("NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode + "\"");
+      throw new IllegalArgumentException(
+          "NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode
+              + "\"");
     }
     var measurementId = MeasurementId.create();
     return new NGSMeasurement(measurementId, projectId, sampleIds, measurementCode, organisation,
         method,
         comment, Instant.now());
+  }
+
+  public void setMethod(NGSMethodMetadata methodMetadata) {
+    this.instrument = methodMetadata.instrument();
+    this.facility = methodMetadata.facility();
+    this.sequencingReadType = methodMetadata.sequencingReadType();
+    this.libraryKit = methodMetadata.libraryKit();
+    this.flowCell = methodMetadata.flowCell();
+    this.sequencingRunProtocol = methodMetadata.sequencingRunProtocol();
+    this.indexI7 = methodMetadata.indexI7();
+    this.indexI5 = methodMetadata.indexI5();
+  }
+
+  public void setComment(String comment) {
+    this.comment = comment;
   }
 
   public MeasurementCode measurementCode() {
@@ -152,11 +169,19 @@ public class NGSMeasurement implements MeasurementMetadata {
   }
 
   public Collection<SampleId> measuredSamples() {
-    return measuredSamples;
+    return measuredSamples.stream().toList();
   }
 
   public OntologyTerm instrument() {
     return instrument;
+  }
+
+  public void setSamplePoolGroup(String group) {
+    this.samplePool = group;
+  }
+
+  public Optional<String> samplePoolGroup() {
+    return samplePool.isBlank() ? Optional.empty() : Optional.of(samplePool);
   }
 
   public Instant registrationDate() {
@@ -197,5 +222,27 @@ public class NGSMeasurement implements MeasurementMetadata {
 
   public Optional<String> comment() {
     return Optional.ofNullable(comment.isBlank() ? null : comment);
+  }
+
+  @Override
+  public String toString() {
+    return measurementCode.value();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof NGSMeasurement that)) {
+      return false;
+    }
+
+    return Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return id != null ? id.hashCode() : 0;
   }
 }

@@ -1,13 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.experiment.measurement;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import jakarta.persistence.criteria.Expression;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookup;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
@@ -26,8 +23,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class MeasurementLookupImplementation implements MeasurementLookup {
-
-  private static final Logger log = logger(MeasurementLookupImplementation.class);
   private final NGSMeasurementJpaRepo ngsMeasurementJpaRepo;
   private final ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo;
   private final MeasurementDataRepo measurementDataRepo;
@@ -41,7 +36,17 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
   }
 
   @Override
-  public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String filter,
+  public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return pxpMeasurementJpaRepo.count(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public long countNgsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return ngsMeasurementJpaRepo.count(NgsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(String filter,
       Collection<SampleId> sampleIds, int offset,
       int limit, List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
@@ -141,6 +146,18 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         sampleIds, filter);
     return ngsMeasurementJpaRepo.findAll(filterSpecification,
         new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
+  }
+
+  @Override
+  public List<ProteomicsMeasurement> findProteomicsMeasurementsBySampleIds(
+      Collection<SampleId> sampleIds) {
+    return pxpMeasurementJpaRepo.findAll(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+  }
+
+  @Override
+  public List<NGSMeasurement> findNGSMeasurementsBySampleIds(
+      Collection<SampleId> sampleIds) {
+    return ngsMeasurementJpaRepo.findAll(NgsMeasurementSpec.containsSampleId(sampleIds));
   }
 
   private Specification<NGSMeasurement> generateNGSFilterSpecification(

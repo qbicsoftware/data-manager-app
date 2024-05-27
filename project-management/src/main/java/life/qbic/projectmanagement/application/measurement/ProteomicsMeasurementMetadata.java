@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.measurement;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -12,7 +13,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
+public record ProteomicsMeasurementMetadata(String measurementId,
+                                            Collection<SampleCode> sampleCodes,
                                             String organisationId, String instrumentCURI,
                                             String samplePoolGroup, String facility,
                                             String fractionName,
@@ -22,19 +24,15 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
                                             String lcmsMethod, Collection<Labeling> labeling,
                                             String comment) implements MeasurementMetadata {
 
-  @Override
-  public Optional<String> assignedSamplePoolGroup() {
-    return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
-  }
 
   @Override
-  public List<SampleCode> associatedSamples() {
-    return sampleCodes.stream().toList();
+  public MeasurementCode measurementCode() {
+    return null;
   }
 
   public static ProteomicsMeasurementMetadata copyWithNewProperties(Collection<SampleCode> associatedSamples, Collection<Labeling> labeling,
       ProteomicsMeasurementMetadata metadata) {
-    return new ProteomicsMeasurementMetadata(
+    return new ProteomicsMeasurementMetadata(metadata.measurementId(),
         associatedSamples.stream().toList(),
         metadata.organisationId(),
         metadata.instrumentCURI(),
@@ -49,5 +47,36 @@ public record ProteomicsMeasurementMetadata(Collection<SampleCode> sampleCodes,
         metadata.lcmsMethod(),
         labeling,
         metadata.comment());
+  }
+
+  @Override
+  public Optional<String> assignedSamplePoolGroup() {
+    return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
+  }
+
+  public Optional<String> measurementIdentifier() {
+    return Optional.ofNullable(measurementId.isBlank() ? null : measurementId);
+  }
+
+  @Override
+  public List<SampleCode> associatedSamples() {
+    return sampleCodes.stream().toList();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ProteomicsMeasurementMetadata that)) {
+      return false;
+    }
+
+    return measurementId.equals(that.measurementId);
+  }
+
+  @Override
+  public int hashCode() {
+    return measurementId.hashCode();
   }
 }

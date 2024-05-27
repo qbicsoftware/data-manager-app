@@ -22,6 +22,42 @@
     "measurementdetails measurementdetails";
 }
 
+/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
+.main.measurement .no-samples-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
+.main.measurement .no-measurements-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+.main.measurement .no-measurements-registered-disclaimer {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+  align-items: center;
+  justify-content: center;
+}
+
+.main.measurement .no-measurements-registered-disclaimer .no-measurement-registered-title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: 0.5rem;
+}
+
+.main.measurement .no-measurements-registered-disclaimer .no-measurement-registered-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .main.measurement .measurement-template-list-component {
   grid-area: measurementtemplatelist;
 }
@@ -38,7 +74,6 @@
   padding: var(--lumo-space-m);
 }
 
-
 .main.measurement .measurement-main-content .title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
@@ -46,11 +81,33 @@
   margin-bottom: 0.5rem;
 }
 
-.main.measurement .measurement-main-content .buttonAndField {
+.main.measurement .measurement-main-content .buttonsAndInfo {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+}
+
+.main.measurement .measurement-main-content .buttonsAndInfo .info {
+  border-radius: var(--lumo-border-radius-m);
+  column-gap: var(--lumo-space-s);
+  background-color: var(--lumo-contrast-5pct);
+  align-items: center;
+  width: fit-content;
+  padding-inline: var(--lumo-space-m);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+}
+
+.main.measurement .measurement-main-content .buttonsAndInfo .buttonAndField {
   display: inline-flex;
   justify-content: space-between;
   /*Moves this bar to end of container*/
   margin-top: auto;
+}
+
+.main.measurement .measurement-main-content .button-bar {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
 }
 
 .main.ontology-lookup-main {
@@ -63,6 +120,7 @@
 .main.ontology-lookup-component {
   grid-area: ontologylookupcomponent;
 }
+
 .main.project {
   grid-template-columns: minmax(min-content, 80%) minmax(min-content, 25%);
   grid-template-rows: auto;
@@ -89,14 +147,83 @@
 }
 
 .main.project-overview {
-  grid-template-columns: minmax(max-content, 100%);
-  grid-template-rows: auto;
+  grid-template-columns: minmax(min-content, 1fr);
+  grid-template-rows: minmax(min-content, 10%) minmax(min-content, 80%);
   grid-template-areas:
+    "."
     "projectcollection";
+}
+
+.main.project-overview .title-and-description {
+  padding: var(--lumo-space-m);
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-s);
+  white-space: pre-line;
+}
+
+.main.project-overview .project-overview-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
 }
 
 .main .project-overview .project-collection-component {
   grid-area: projectcollection;
+}
+
+.main.raw-data {
+  grid-template-columns: minmax(min-content, 80%) minmax(min-content, 20%);
+  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 80%);
+  grid-template-areas:
+    ". rawdatadownloadinformation"
+    "rawdatadetails rawdatadownloadinformation";
+}
+
+.main.raw-data .no-measurements-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+.main.raw-data .no-raw-data-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+.main.raw-data .raw-data-download-information-component {
+  grid-area: rawdatadownloadinformation;
+}
+
+
+.main.raw-data .raw-data-details-component {
+  grid-area: rawdatadetails
+}
+
+.main.raw-data .raw-data-main-content {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+}
+
+
+.main.raw-data .raw-data-main-content .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.main.raw-data .raw-data-main-content .buttonAndField {
+  display: inline-flex;
+  justify-content: space-between;
+  /*Moves this bar to end of container*/
+  margin-top: auto;
 }
 
 .main.sample {
@@ -115,6 +242,12 @@
   grid-area: sampledetails;
 }
 
+.main.user-profile {
+  grid-template-columns: minmax(min-content, auto);
+  grid-template-rows: minmax(min-content, auto);
+  grid-template-areas:
+    "user-profile-component"
+}
 
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
@@ -140,5 +273,23 @@
     "batchdetails"
     "sampledetails";
     grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
+  }
+
+  .main.measurement {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "."
+    "measurementtemplatelist"
+    "measurementdetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
+  }
+
+  .main.raw-data {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "."
+    "rawdatadownloadinformation"
+    "rawdatadetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
   }
 }

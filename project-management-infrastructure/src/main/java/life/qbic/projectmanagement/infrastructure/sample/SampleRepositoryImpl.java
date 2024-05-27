@@ -99,9 +99,9 @@ public class SampleRepositoryImpl implements SampleRepository {
   }
 
   @Override
-  public boolean isSampleRemovable(Project project, SampleId sampleId) {
+  public boolean isSampleRemovable(SampleId sampleId) {
     SampleCode sampleCode = qbicSampleRepository.findById(sampleId).get().sampleCode();
-    return sampleDataRepo.canDeleteSample(project.getProjectCode(), sampleCode);
+    return sampleDataRepo.canDeleteSample(sampleCode);
   }
 
   @Override
@@ -142,6 +142,16 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Optional<Sample> findSample(SampleCode sampleCode) {
     return Optional.ofNullable(qbicSampleRepository.findBySampleCode(sampleCode));
+  }
+
+  @Override
+  public Optional<Sample> findSample(SampleId sampleId) {
+    return qbicSampleRepository.findById(sampleId);
+  }
+
+  @Override
+  public long countSamplesWithExperimentId(ExperimentId experimentId) {
+    return qbicSampleRepository.countAllByExperimentId(experimentId);
   }
 
 

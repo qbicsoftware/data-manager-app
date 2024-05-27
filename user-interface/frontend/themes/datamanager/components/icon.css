@@ -6,6 +6,10 @@ vaadin-icon.error {
   color: var(--lumo-error-color);
 }
 
+vaadin-icon.success {
+  color: var(--lumo-success-color);
+}
+
 vaadin-icon.clickable {
   cursor: pointer;
 }
@@ -14,6 +18,6 @@ vaadin-icon.small {
   width: var(--lumo-icon-size-s);
 }
 
-vaadin-icon.valid {
-  color: var(--lumo-success-color);
+vaadin-icon.copy-icon {
+  color: var(--lumo-contrast-50pct);
 }
