@@ -122,14 +122,6 @@ public class MeasurementService {
     return measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) != 0;
   }
 
-  @PostAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public long countProteomicsMeasurements(ExperimentId experimentId,
-      ProjectId projectId) {
-    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
-    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.countProteomicsMeasurementsBySampleIds(samplesInExperiment);
-  }
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
@@ -154,14 +146,6 @@ public class MeasurementService {
 
   public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
     return measurementLookupService.findProteomicsMeasurement(measurementId);
-  }
-
-  @PostAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public long countNGSMeasurements(ExperimentId experimentId, ProjectId projectId) {
-    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
-    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.countNGSMeasurementsBySampleIds(samplesInExperiment);
   }
 
   @PostAuthorize(
@@ -369,7 +353,6 @@ public class MeasurementService {
   @Async
   public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> registerAll(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    //var mergedSamplePoolGroups = mergeRegisteredBySamplePoolGroup(measurementMetadataList);
 
     List<Result<MeasurementId, ErrorCode>> results;
 
@@ -842,12 +825,6 @@ public class MeasurementService {
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
     return ontologyLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);
-  }
-
-  private Collection<SampleIdCodeEntry> queryIdCodePairs(Collection<SampleCode> sampleCodes) {
-    return sampleCodes.stream().map(sampleInformationService::findSampleId)
-        .filter(Optional::isPresent)
-        .map(Optional::get).toList();
   }
 
   private Optional<SampleIdCodeEntry> queryIdCodePair(SampleCode sampleCode) {
