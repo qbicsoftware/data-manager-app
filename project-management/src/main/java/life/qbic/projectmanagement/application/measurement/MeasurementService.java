@@ -472,14 +472,18 @@ public class MeasurementService {
     }
     Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping = new HashMap<>();
 
+    // Start with the pooled measurements first and group the metadata entries by pool
     Map<String, List<ProteomicsMeasurementMetadata>> measurementsByPool = proteomicsMeasurements.stream()
         .filter(metadata -> metadata.assignedSamplePoolGroup().isPresent())
         .collect(Collectors.groupingBy(metadata -> metadata.assignedSamplePoolGroup().get()));
 
+    // We collect the "single" sample measurements extra
     List<ProteomicsMeasurementMetadata> singleMeasurements = proteomicsMeasurements.stream()
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
 
+    // Then merge and prepare the domain objects by pool
     proteomicsMeasurementsMapping.putAll(mergeByPool(measurementsByPool, projectId));
+    // and last but not least also the single sample measurements
     singleMeasurements.stream()
         .map(singleMeasurement -> build(List.of(singleMeasurement), projectId))
         .forEach(proteomicsMeasurementsMapping::putAll);
@@ -487,7 +491,14 @@ public class MeasurementService {
     return measurementDomainService.addProteomicsAll(proteomicsMeasurementsMapping);
   }
 
-
+  /**
+   * Merges and builds {@link ProteomicsMeasurement} based on the given pool information.
+   *
+   * @param groupedMetadata already grouped measurement metadata by pool
+   * @param projectId       the project the measurement belongs to
+   * @return
+   * @since 1.0.0
+   */
   private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> mergeByPool(
       Map<String, List<ProteomicsMeasurementMetadata>> groupedMetadata, ProjectId projectId) {
     Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> metadataMap = new HashMap<>();
@@ -498,16 +509,37 @@ public class MeasurementService {
     return metadataMap;
   }
 
-  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> build(
-      List<ProteomicsMeasurementMetadata> metadataList, ProjectId projectId) {
+  private Map<SampleCode, SampleIdCodeEntry> buildSampleIdLookupTable(
+      Collection<ProteomicsMeasurementMetadata> metadata) {
     Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = new HashMap<>();
-    var sampleCodes = metadataList.stream().map(ProteomicsMeasurementMetadata::sampleCode).toList();
+    var sampleCodes = metadata.stream().map(ProteomicsMeasurementMetadata::sampleCode).toList();
     for (SampleCode sampleCode : sampleCodes) {
       var sampleIdQueryResult = queryIdCodePair(sampleCode).orElseThrow();
       sampleIdLookupTable.put(sampleCode, sampleIdQueryResult);
     }
+    return sampleIdLookupTable;
+  }
+
+  /**
+   * Builds an instance of {@link ProteomicsMeasurement} and its corresponding
+   * {@link SampleIdCodeEntry}s based on the given list of {@link ProteomicsMethodMetadata} and the
+   * {@link ProjectId}.
+   * <p>
+   * Disclaimer: the method does NOT evaluate, of the entries belong together, e.g. they are part of
+   * the same pool. This grouping needs to be done by the caller.
+   *
+   * @param metadataList A list of pre-grouped metadata of a pool or single measurement representing
+   *                     one unit of a {@link ProteomicsMeasurement}.
+   * @param projectId    the project the measurement belongs to
+   * @return
+   * @since 1.0.0
+   */
+  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> build(
+      List<ProteomicsMeasurementMetadata> metadataList, ProjectId projectId) {
+    Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = buildSampleIdLookupTable(metadataList);
+    var sampleCodes = sampleIdLookupTable.keySet();
     var specificMetadata = createSpecificMetadata(metadataList, sampleIdLookupTable);
-    var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.get(0).code());
+    var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.iterator().next().code());
     var firstMetadataEntry = metadataList.get(0);
 
     var organisationQuery = organisationLookupService.organisation(
@@ -570,6 +602,23 @@ public class MeasurementService {
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     List<Result<MeasurementId, ErrorCode>> results;
 
+    if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(
+        0) instanceof ProteomicsMeasurementMetadata) {
+      List<ProteomicsMeasurementMetadata> metadata = new ArrayList<>();
+      for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
+        metadata.add((ProteomicsMeasurementMetadata) measurementMetadata);
+      }
+      try {
+        results = updateAllPxp(metadata, projectId);
+      } catch (MeasurementRegistrationException e) {
+        log.error("Measurement update failed.", e);
+        return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
+      }
+      return CompletableFuture.completedFuture(results);
+    }
+
+    // Leave this for NGS legacy support, until pooling and multiplexing is solved with
+    // domain experts (aka Morgana)
     var pooledMeasurements = mergeUpdatedBySamplePoolGroup(measurementMetadataList);
     try {
       results = performUpdate(pooledMeasurements, projectId);
@@ -577,6 +626,124 @@ public class MeasurementService {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     }
     return CompletableFuture.completedFuture(results);
+  }
+
+  /**
+   * Bulk update of a list of proteomics measurements.
+   * <p>
+   * This method takes care of two types of measurements:
+   *
+   * <ul>
+   *   <li>single sample measurement</li>
+   *   <li>pooled sample measurement</li>
+   * </ul>
+   * <p>
+   * In the case of pooled sample measurement updates, the method groups
+   * the metadata entries by measurement ID since the pool has already been registered and
+   * cannot be reassigned.
+   * <p>
+   * In the current state of implementation, if a user wants to update the pool label, they have to
+   * delete the measurement and register it properly again.
+   *
+   * @param metadata  the proteomics metadata to update
+   * @param projectId the project the measurement belongs to
+   * @return a list of {@link Result} objects
+   * @since 1.0.0
+   */
+  private List<Result<MeasurementId, ErrorCode>> updateAllPxp(
+      List<ProteomicsMeasurementMetadata> metadata, ProjectId projectId) {
+
+    if (measurementCodeMissing(metadata)) {
+      throw new MeasurementRegistrationException(ErrorCode.MISSING_MEASUREMENT_ID);
+    }
+    if (!allMeasurementCodesExist(
+        metadata.stream().map(ProteomicsMeasurementMetadata::measurementId).toList())) {
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_MEASUREMENT);
+    }
+
+    var singleSampleMeasurements = metadata.stream()
+        .filter(measurement -> measurement.assignedSamplePoolGroup().isEmpty()).toList();
+    var pooledMeasurements = metadata.stream()
+        .filter(measurement -> measurement.assignedSamplePoolGroup().isPresent()).collect(
+            Collectors.groupingBy(ProteomicsMeasurementMetadata::measurementId));
+
+    List<ProteomicsMeasurement> measurementsForUpdate = new ArrayList<>();
+
+    var lookupTable = buildSampleIdLookupTable(metadata);
+
+    for (ProteomicsMeasurementMetadata measurementMetadata : singleSampleMeasurements) {
+      var measurement = measurementRepository.findProteomicsMeasurement(
+          measurementMetadata.measurementId()).orElseThrow();
+      measurement.setSpecificMetadata(
+          createSpecificMetadata(List.of(measurementMetadata), lookupTable));
+      var organisationQuery = organisationLookupService.organisation(
+          measurementMetadata.organisationId());
+      if (organisationQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+      }
+
+      var instrumentQuery = resolveOntologyCURI(measurementMetadata.instrumentCURI());
+      if (instrumentQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      }
+
+      var method = new ProteomicsMethodMetadata(instrumentQuery.get(),
+          measurementMetadata.facility(),
+          measurementMetadata.digestionMethod(), measurementMetadata.digestionEnzyme(),
+          measurementMetadata.enrichmentMethod(), measurementMetadata.lcColumn(),
+          measurementMetadata.lcmsMethod(), Integer.parseInt(measurementMetadata.injectionVolume()),
+          measurementMetadata.labeling()
+              .labelType());
+
+      measurement.setOrganisation(organisationQuery.get());
+      measurement.setMethod(method);
+      measurementsForUpdate.add(measurement);
+    }
+
+    for (String measurementId : pooledMeasurements.keySet()) {
+      var pooledMeasurement = pooledMeasurements.get(measurementId);
+      var firstEntry = pooledMeasurement.get(0);
+      var measurement = measurementRepository.findProteomicsMeasurement(
+          firstEntry.measurementId()).orElseThrow();
+      measurement.setSpecificMetadata(createSpecificMetadata(pooledMeasurement, lookupTable));
+      var organisationQuery = organisationLookupService.organisation(
+          firstEntry.organisationId());
+      if (organisationQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+      }
+
+      var instrumentQuery = resolveOntologyCURI(firstEntry.instrumentCURI());
+      if (instrumentQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      }
+
+      var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstEntry.facility(),
+          firstEntry.digestionMethod(), firstEntry.digestionEnzyme(),
+          firstEntry.enrichmentMethod(), firstEntry.lcColumn(),
+          firstEntry.lcmsMethod(), Integer.parseInt(firstEntry.injectionVolume()),
+          firstEntry.labeling()
+              .labelType());
+
+      measurement.setOrganisation(organisationQuery.get());
+      measurement.setMethod(method);
+      measurementsForUpdate.add(measurement);
+    }
+
+    try {
+      var ids = measurementDomainService.updateProteomicsAll(measurementsForUpdate);
+      return ids.stream().map(Result::<MeasurementId, ErrorCode>fromValue).toList();
+    } catch (RuntimeException e) {
+      return List.of(Result.fromError(ErrorCode.FAILED));
+    }
+  }
+
+  private boolean measurementCodeMissing(List<ProteomicsMeasurementMetadata> metadata) {
+    return metadata.stream().anyMatch(entry -> entry.measurementId().isBlank());
+  }
+
+  private boolean allMeasurementCodesExist(List<String> measurementCode) {
+    return measurementCode.stream().map(measurementRepository::findProteomicsMeasurement)
+        .noneMatch(Optional::isEmpty);
   }
 
   /**

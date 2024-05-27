@@ -288,6 +288,10 @@ public class ProteomicsMeasurement {
     return labelType;
   }
 
+  public void setOrganisation(Organisation organisation) {
+    this.organisation = organisation;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
