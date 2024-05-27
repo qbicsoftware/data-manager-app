@@ -3,7 +3,7 @@ package life.qbic.projectmanagement.application.measurement;
 /**
  * <b>Labeling</b>
  * <p>
- * Describing an association between a sample code and the label strategy for a measurement.
+ * Describes a labeling value with a label type and the label itself.
  *
  * @since 1.0.0
  */
