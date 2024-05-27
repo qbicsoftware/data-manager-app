@@ -12,9 +12,9 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
@@ -25,7 +25,7 @@ import life.qbic.logging.service.LoggerFactory;
  */
 @SpringComponent
 @UIScope
-@Route(value = "about-us", layout = LandingPageLayout.class)
+@Route(value = "about-us", layout = DataManagerLayout.class)
 @AnonymousAllowed
 public class AboutUs extends Main {
 
@@ -56,11 +56,13 @@ public class AboutUs extends Main {
   private Paragraph createIntroduction() {
     Paragraph introduction = new Paragraph();
     introduction.setText(
-        "qPortal is a web-based science gateway providing users with an intuitive way to create (qWizard), manage, and analyze quantitative biological data (qNavigator). "
-            + "The portal comprises a backend consisting of databases, data stores, data models and means of data transfer, as well as front-end solutions to give users access to data management and easy-to-use analysis options. "
-            + "We provide a one-stop-shop solution for biomedical projects, providing up to date analysis pipelines, quality control workflows, and visualization tools. "
-            + "Through intensive user interactions, appropriate data models have been developed. "
-            + "These models build the foundation of our biological data management system and provide possibilities to annotate data, query existing metadata for statistics and future re-analysis on high-performance computing systems via coupling of workflow management systems.");
+        "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. "
+            + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+            + "Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. "
+            + "Lorem ipsum dolor sit amet,");
     return introduction;
   }
 

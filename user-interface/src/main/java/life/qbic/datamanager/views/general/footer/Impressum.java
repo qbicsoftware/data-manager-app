@@ -9,8 +9,8 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
@@ -21,7 +21,7 @@ import life.qbic.logging.service.LoggerFactory;
  */
 @SpringComponent
 @UIScope
-@Route(value = "impressum", layout = LandingPageLayout.class)
+@Route(value = "impressum", layout = DataManagerLayout.class)
 @AnonymousAllowed
 public class Impressum extends Main {
 
@@ -51,32 +51,37 @@ public class Impressum extends Main {
   private void setImpressumInformation() {
     impressumInformation.setTitle("Impressum");
     impressumInformation.addSection("External links",
-        "This website of the Quantitative Biology Center (QBiC) also contains appropriately marked links or references to third-party websites. "
-            + "Through the link, the Quantitative Biology Center (QBiC) merely provides access to the use of this content. "
-            + "This does not imply consent to the content of linked third-party sites. "
-            + "The Quantitative Biology Center (QBiC) therefore assumes no responsibility for the availability or content of such websites and no liability for any damage or injury resulting from the use, regardless of their nature, of such content. "
-            + "The provider of the respective site is solely liable for this.");
+        "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. "
+            + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+            + "Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. "
+            + "Lorem ipsum dolor sit amet,");
     impressumInformation.addSection("Copyright",
-        "Copyright (c), Quantitative Biology Center (QBiC). "
-            + "All rights reserved. "
-            + "All content published on this website (layout, text, images, graphics, video and sound files, etc.) is subject to copyright. "
-            + "Any use not permitted by copyright law requires the prior express consent of the Quantitative Biology Center (QBiC). "
-            + "This applies in particular to the reproduction, editing, translation, storage, processing or reproduction of content in databases or other electronic media and systems. "
-            + "Photocopies and downloads of web pages may be made for private, scientific and non-commercial use. "
-            + "The copyright for the word-image trademark lies expressly with the Quantitative Biology Center (QBiC). "
-            + "We expressly allow and welcome the quoting of our documents and web pages as well as the setting of links to our website.");
+        "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. "
+            + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+            + "Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. "
+            + "Lorem ipsum dolor sit amet,");
     impressumInformation.addSection("Disclaimer",
-        "The information on this website has been carefully compiled and checked to the best of our knowledge and belief. "
-            + "However, no guarantee is given - neither expressly nor tacitly - for the completeness, correctness or timeliness or the availability at all times of the information provided. "
-            + "Liability for damages arising from the use or non-use of the information provided on this website is - to the extent permitted by law - excluded.");
+        "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. "
+            + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+            + "Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. "
+            + "Lorem ipsum dolor sit amet,");
   }
 
 
   private void setImpressumCardInformation() {
     impressumCardInformation.setTitle(
-        "General information in accordance with Section 5 TMG, Section 55 RStVG");
+        "At vero eos et accusam");
     impressumCardInformation.addSection("Address", createAddress());
-    impressumCardInformation.addSection("Switchboard:", new Span("+49 (0) 70 71/29-72163"));
+    impressumCardInformation.addSection("Switchboard:", new Span("01234567890"));
     impressumCardInformation.addSection("Central email address:", createCentralEmail());
     impressumCardInformation.addSection("Internet address:", createCentralWebsiteAnchor());
     impressumCardInformation.addSection("VAT identification number:",
@@ -94,10 +99,9 @@ public class Impressum extends Main {
   private Div createAddress() {
     Div section = new Div();
     section.add("""
-        Quantitative Biology Center (QBiC), University of Tübingen\s
-        Auf der Morgenstelle 10 \s
-        72076 Tübingen\s
-        The Quantitative Biology Center (QBiC) is represented by the managing director Dr. Sven Nahnsen (email: sven.nahnsen [at] uni-tuebingen.de).
+        "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "\s
+            + "At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. "\s
+            + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. "\s
         """);
     return section;
   }
@@ -105,15 +109,14 @@ public class Impressum extends Main {
   private Anchor createCentralWebsiteAnchor() {
     return new Anchor(
         "https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/",
-        "http://www.qbic.uni-tuebingen.de", AnchorTarget.BLANK);
+        "At vero eos et accusam", AnchorTarget.BLANK);
   }
 
   private Div createVatIdentificationSection() {
     Div section = new Div();
     section.add(
-        "in accordance with Section 27a of the Sales Tax Act:8DE812383453 "
-            + "Supervisory authority Ministry of Science, "
-            + "Research and Art Baden Württemberg");
+        "Lorem ipsum dolor sit amet, consetetur sadipscing elitr"
+            + "sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat");
     return section;
   }
 }
