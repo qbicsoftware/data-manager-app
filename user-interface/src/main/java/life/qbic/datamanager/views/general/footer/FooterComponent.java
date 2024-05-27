@@ -12,8 +12,8 @@ import life.qbic.datamanager.views.DataManagerLayout;
 /**
  * Footer Component
  * <p>
- * Basic Footer Component routing the user to main components with additional information legal or otherwise
- * such as {@link Impressum}, {@link AboutUs}, {@link DataProtectionAgreement}
+ * Basic Footer Component routing the user to main components with additional information legal or
+ * otherwise such as {@link Impressum}, {@link AboutUs}, {@link DataProtectionAgreement}
  */
 @SpringComponent
 @UIScope
@@ -29,6 +29,9 @@ public class FooterComponent extends Footer {
 
   public FooterComponent() {
     setId("data-manager-footer");
-    add(aboutUsLink, dataProtectionLink, impressumLink, sourceCodeLink);
+    add(new Anchor(aboutUsLink.getHref(), "About Us", AnchorTarget.BLANK),
+        new Anchor(dataProtectionLink.getHref(), "Data Protection Agreement", AnchorTarget.BLANK),
+        new Anchor(impressumLink.getHref(), "Impressum", AnchorTarget.BLANK),
+        new Anchor(sourceCodeLink.getHref(), "Source", AnchorTarget.BLANK));
   }
 }
