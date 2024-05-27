@@ -11,6 +11,7 @@ import spock.lang.Specification
  * @since 1.0.0
  */
 class UserRepositorySpec extends Specification {
+    static private String validPassword = "0123456789012"
 
     def "Given a repository that contains more than one entry with the same email, throw a runtime exception"() {
         given:
@@ -71,7 +72,7 @@ class UserRepositorySpec extends Specification {
 
 
     static User createDummyUser() {
-        def user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), "svennipopenni", EncryptedPassword.from("test1234".toCharArray()))
+        def user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), "svennipopenni", EncryptedPassword.from(validPassword.toCharArray()))
         return user
     }
 
