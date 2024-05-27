@@ -20,11 +20,12 @@ class UserSpec extends Specification {
 
     @Shared
     Set<String> generatedUserIds = new HashSet<>()
+    private String validPassword = "test123456789012"
 
     @Unroll
     def "When a new user is created, a unique identifier is assigned to the user"() {
         when:
-        User user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), "svenipopenni", EncryptedPassword.from("test1234".toCharArray()))
+        User user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), "svenipopenni", EncryptedPassword.from(validPassword.toCharArray()))
 
         then:
         !generatedUserIds.contains(user.id())
@@ -36,7 +37,7 @@ class UserSpec extends Specification {
 
     def "When a password reset is requested, a password reset domain event is published"() {
         given:
-        User user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"),"svenipopenni", EncryptedPassword.from("test1234".toCharArray()))
+        User user = User.create(FullName.from("Test User"), EmailAddress.from("my.name@example.com"), "svenipopenni", EncryptedPassword.from(validPassword.toCharArray()))
 
         and:
         boolean domainEventPublished = false
