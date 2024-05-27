@@ -245,3 +245,10 @@
   font-weight: bold;
   margin-bottom: var(--lumo-space-m);
 }
+
+.information-card-component .card-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: var(--lumo-font-size-xl);
+}
