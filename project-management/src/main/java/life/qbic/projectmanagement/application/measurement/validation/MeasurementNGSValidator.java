@@ -105,11 +105,10 @@ public class MeasurementNGSValidator implements
   public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId)
-        .combine(validationPolicy.validateMeasurementId(
-                metadata.measurementIdentifier().orElse(""))
-            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)))
+        .combine(validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
+            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-            .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())));
+            .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()))));
   }
 
 
