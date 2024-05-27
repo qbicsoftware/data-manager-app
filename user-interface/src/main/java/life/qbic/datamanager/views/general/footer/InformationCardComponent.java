@@ -19,8 +19,9 @@ public class InformationCardComponent extends Div {
   private final Span cardTitle = new Span();
 
   public InformationCardComponent() {
-    cardTitle.addClassName("information-card-title");
+    cardTitle.addClassName("card-title");
     addClassName("information-card-component");
+    add(cardTitle);
   }
 
   public void setTitle(String title) {
