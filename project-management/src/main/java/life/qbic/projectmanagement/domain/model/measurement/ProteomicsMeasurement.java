@@ -24,6 +24,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -129,6 +130,7 @@ public class ProteomicsMeasurement {
     this.lcmsMethod = method.lcmsMethod();
     this.registration = registration;
     this.fraction = method.fractionName();
+    emitCreatedEvent();
   }
 
   private static void evaluateMandatoryMetadata(ProteomicsMethodMetadata method)
@@ -227,6 +229,10 @@ public class ProteomicsMeasurement {
     return id;
   }
 
+  public ProjectId projectId() {
+    return projectId;
+  }
+
   public Collection<SampleId> measuredSamples() {
     return measuredSamples.stream().toList();
   }
@@ -303,6 +309,11 @@ public class ProteomicsMeasurement {
   private void emitUpdatedEvent() {
     var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.measurementId());
     LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
+  }
+
+  private void emitCreatedEvent() {
+    var measurementCreatedEvent = new MeasurementCreatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementCreatedEvent);
   }
 
   public void setSamplePoolGroup(String group) {

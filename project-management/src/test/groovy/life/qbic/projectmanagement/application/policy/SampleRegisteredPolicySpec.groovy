@@ -2,10 +2,7 @@ package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified
 import life.qbic.projectmanagement.domain.model.batch.BatchId
-import life.qbic.projectmanagement.domain.model.project.ProjectId
-import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged
 import life.qbic.projectmanagement.domain.model.sample.SampleId
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered
 import spock.lang.Specification
@@ -29,7 +26,7 @@ class SampleRegisteredPolicySpec extends Specification {
         addSampleToBatch.subscribedToEventType() >> SampleRegistered.class
 
         and:
-        SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch)
+        SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch, updateProject)
 
         when:
         DomainEventDispatcher.instance().dispatch(sampleRegistered)

@@ -14,18 +14,19 @@ import org.springframework.stereotype.Component;
 /**
  * <b>Directive: Update project modified timestamp</b>
  * <p>
- * After a change has been made in the project, we need to update the timestamp of the lastModified
- * property of the project
+ * After a domain object in a project has been deleted, we need to update the timestamp of the
+ * lastModified property of the project. Since the id of the deleted object cannot be found any more,
+ * this is directive listens to the project changed event that is already aware of the project id
  *
  * @since 1.0.0
  */
 @Component
-public class UpdateProjectLastModified implements DomainEventSubscriber<ProjectChanged> {
+public class UpdateProjectUponDeletionEvent implements DomainEventSubscriber<ProjectChanged> {
 
   private final ProjectInformationService projectInformationService;
   private final JobScheduler jobScheduler;
 
-  public UpdateProjectLastModified(ProjectInformationService projectInformationService,
+  public UpdateProjectUponDeletionEvent(ProjectInformationService projectInformationService,
       JobScheduler jobScheduler) {
     this.projectInformationService = projectInformationService;
     this.jobScheduler = jobScheduler;

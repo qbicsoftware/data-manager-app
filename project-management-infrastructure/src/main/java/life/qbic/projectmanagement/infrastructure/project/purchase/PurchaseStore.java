@@ -11,6 +11,7 @@ import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
+import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -89,5 +90,17 @@ public class PurchaseStore implements ProjectPurchaseStorage {
       throw new ApplicationException(
           "Retrieving offer %d for project %s failed.".formatted(offerId, projectId), e);
     }
+  }
+
+  /**
+   * Returns a {@link ServicePurchase} item with the provided purchaseID, if found. Used when
+   * project id is not available (e.g. for events). For user interactions the Offer object should be
+   * returned by using findOfferForProject
+   *
+   * @param purchaseID the id of the purchase to be returned
+   */
+  @Override
+  public Optional<ServicePurchase> findPurchase(Long purchaseID) {
+    return persistenceStore.findById(purchaseID);
   }
 }

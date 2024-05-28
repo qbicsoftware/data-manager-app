@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.application.policy;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 
 /**
@@ -25,7 +25,7 @@ public class ProjectChangedPolicy {
    * @param updateProject directive to update the project modified timestamp
    * @since 1.0.0
    */
-  public ProjectChangedPolicy(UpdateProjectLastModified updateProject) {
+  public ProjectChangedPolicy(UpdateProjectUponDeletionEvent updateProject) {
     DomainEventDispatcher.instance().subscribe(updateProject);
   }
 }

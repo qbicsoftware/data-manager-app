@@ -4,12 +4,17 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
@@ -50,6 +55,12 @@ public class QualityControlService {
    * @param qualityControlsList list of quality controls information items to be added
    */
   public void addQualityControls(String projectId, List<QualityControlReport> qualityControlsList) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new QualityControlCreatedDomainEventSubscriber(domainEventsCache));
+
     var projectReference = ProjectId.parse(projectId);
     var qualityControlUploadDate = Instant.now();
     List<QualityControl> qualityControls = qualityControlsList.stream()
@@ -58,15 +69,20 @@ public class QualityControlService {
         .toList();
     try {
       storage.storeQualityControls(qualityControls);
-      dispatchSuccessfulQCUpdate(projectReference);
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
   }
 
-  private void dispatchSuccessfulQCUpdate(ProjectId projectReference) {
+  private void dispatchProjectChangedOnQCDeletion(ProjectId projectReference) {
     ProjectChanged projectChanged = ProjectChanged.create(projectReference);
     DomainEventDispatcher.instance().dispatch(projectChanged);
+  }
+
+  public Optional<QualityControl> getQualityControl(Long qualityControlId) {
+    return storage.findQualityControl(qualityControlId);
   }
 
   /**
@@ -89,7 +105,7 @@ public class QualityControlService {
    */
   public void deleteQualityControl(String projectId, long qualityControlId) {
     storage.deleteQualityControlForProject(projectId, qualityControlId);
-    dispatchSuccessfulQCUpdate(ProjectId.parse(projectId));
+    dispatchProjectChangedOnQCDeletion(ProjectId.parse(projectId));
   }
 
   /**
@@ -105,4 +121,18 @@ public class QualityControlService {
     return storage.findQualityControlForProject(projectId, qualityControlId);
   }
 
+  private record QualityControlCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }

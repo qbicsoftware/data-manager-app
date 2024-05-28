@@ -104,4 +104,16 @@ public class QualityControlStore implements QualityControlStorage {
               projectId), e);
     }
   }
+
+  /**
+   * Returns a {@link QualityControl} item with the provided qualityControlId, if found. Used when
+   * project id is not available (e.g. events). For user interactions findQualityControlForProject
+   * should be used.
+   *
+   * @param qualityControlId the id of the quality control to be returned
+   */
+  @Override
+  public Optional<QualityControl> findQualityControl(Long qualityControlId) {
+    return persistenceStore.findById(qualityControlId);
+  }
 }

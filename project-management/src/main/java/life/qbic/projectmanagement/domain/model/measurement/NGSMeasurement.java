@@ -17,8 +17,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
@@ -101,6 +104,7 @@ public class NGSMeasurement {
     this.indexI5 = method.indexI5();
     this.registration = registration;
     this.comment = comment;
+    emitCreatedEvent();
   }
 
   private static void evaluateMandatoryMetadata(NGSMethodMetadata method)
@@ -154,6 +158,7 @@ public class NGSMeasurement {
     this.sequencingRunProtocol = methodMetadata.sequencingRunProtocol();
     this.indexI7 = methodMetadata.indexI7();
     this.indexI5 = methodMetadata.indexI5();
+    emitUpdatedEvent();
   }
 
   public void setComment(String comment) {
@@ -166,6 +171,9 @@ public class NGSMeasurement {
 
   public MeasurementId measurementId() {
     return id;
+  }
+  public ProjectId projectId() {
+    return projectId;
   }
 
   public Collection<SampleId> measuredSamples() {
@@ -222,6 +230,16 @@ public class NGSMeasurement {
 
   public Optional<String> comment() {
     return Optional.ofNullable(comment.isBlank() ? null : comment);
+  }
+
+  private void emitUpdatedEvent() {
+    var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
+  }
+
+  private void emitCreatedEvent() {
+    var measurementCreatedEvent = new MeasurementCreatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementCreatedEvent);
   }
 
   @Override

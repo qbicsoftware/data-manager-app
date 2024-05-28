@@ -10,8 +10,10 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
 
 /**
  * <b>Quality Control Association</b>
@@ -47,6 +49,7 @@ public class QualityControl {
     this.projectId = projectId;
     this.providedOn = providedOn;
     this.qualityControlUpload = qualityControlUpload;
+    emitCreatedEvent();
   }
 
   public static QualityControl create(ProjectId projectId, Instant providedOn,
@@ -64,6 +67,11 @@ public class QualityControl {
 
   public Instant providedOn() {
     return providedOn;
+  }
+
+  private void emitCreatedEvent() {
+    var createdEvent = new QualityControlCreatedEvent(this.id);
+    LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 
   @Override

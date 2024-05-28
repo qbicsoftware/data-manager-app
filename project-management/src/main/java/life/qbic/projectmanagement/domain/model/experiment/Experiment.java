@@ -5,6 +5,7 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +19,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.Ad
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableNotDefinedException;
+import life.qbic.projectmanagement.domain.model.project.Project;
 
 
 /**

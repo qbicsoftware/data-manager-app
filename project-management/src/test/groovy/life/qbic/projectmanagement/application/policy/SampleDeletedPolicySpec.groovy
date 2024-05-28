@@ -2,9 +2,8 @@ package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent
 import life.qbic.projectmanagement.domain.model.batch.BatchId
-import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged
 import life.qbic.projectmanagement.domain.model.sample.SampleId
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted
@@ -27,7 +26,7 @@ class SampleDeletedPolicySpec extends Specification {
         and:
         DeleteSampleFromBatch deleteSampleFromBatch = Mock(DeleteSampleFromBatch.class)
         deleteSampleFromBatch.subscribedToEventType() >> SampleDeleted.class
-        UpdateProjectLastModified modifyProject = Mock(UpdateProjectLastModified.class)
+        UpdateProjectUponDeletionEvent modifyProject = Mock(UpdateProjectUponDeletionEvent.class)
         modifyProject.subscribedToEventType() >> ProjectChanged.class
 
         and:

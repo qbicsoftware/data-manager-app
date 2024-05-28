@@ -4,13 +4,18 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
@@ -46,6 +51,13 @@ public class ProjectPurchaseService {
   }
 
   public void addPurchases(String projectId, List<OfferDTO> offers) {
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new PurchaseCreatedDomainEventSubscriber(domainEventsCache));
+
     var projectReference = ProjectId.parse(projectId);
     var purchaseDate = Instant.now();
     List<ServicePurchase> servicePurchases = offers.stream()
@@ -54,13 +66,14 @@ public class ProjectPurchaseService {
         .toList();
     try {
       storage.storePurchases(servicePurchases);
-      dispatchSuccessfulPurchaseUpdate(projectReference);
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
   }
 
-  private void dispatchSuccessfulPurchaseUpdate(ProjectId projectReference) {
+  private void dispatchProjectChangedOnPurchaseDeletion(ProjectId projectReference) {
     ProjectChanged projectChanged = ProjectChanged.create(projectReference);
     DomainEventDispatcher.instance().dispatch(projectChanged);
   }
@@ -79,11 +92,29 @@ public class ProjectPurchaseService {
 
   public void deleteOffer(String projectId, long offerId) {
     storage.deleteOffer(projectId, offerId);
-    dispatchSuccessfulPurchaseUpdate(ProjectId.parse(projectId));
+    dispatchProjectChangedOnPurchaseDeletion(ProjectId.parse(projectId));
   }
 
   public Optional<Offer> getOfferWithContent(String projectId, Long offerId) {
     return storage.findOfferForProject(projectId, offerId);
   }
 
+  public Optional<ServicePurchase> getServicePurchase(Long purchaseID) {
+    return storage.findPurchase(purchaseID);
+  }
+
+  private record PurchaseCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }

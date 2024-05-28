@@ -32,4 +32,5 @@ public interface ProjectPurchaseStorage {
 
   Optional<Offer> findOfferForProject(String projectId, Long offerId);
 
+  Optional<ServicePurchase> findPurchase(Long purchaseID);
 }

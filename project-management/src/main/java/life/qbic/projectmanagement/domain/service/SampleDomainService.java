@@ -68,14 +68,7 @@ public class SampleDomainService {
       var sampleInfo = updatedSamples.stream()
           .filter(sampleUpdateRequest -> sampleUpdateRequest.sampleId().equals(sample.sampleId()))
           .findFirst().orElseThrow();
-      sample.setLabel(sampleInfo.sampleInformation().sampleLabel());
-      sample.setOrganismId(sampleInfo.sampleInformation().organismId());
-      sample.setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
-      sample.setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
-          sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
-      sample.setComment(sampleInfo.sampleInformation().comment());
-      sample.setBiologicalReplicateId(sampleInfo.sampleInformation().biologicalReplicate().id());
-      sample.setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
+      sample.update(sampleInfo);
     }
     sampleRepository.updateAll(project, samplesToUpdate);
     dispatchSuccessfulSampleUpdate(project.getId());

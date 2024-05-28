@@ -34,9 +34,14 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
+import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.MeasurementCreatedPolicy;
+import life.qbic.projectmanagement.application.policy.MeasurementUpdatedPolicy;
+import life.qbic.projectmanagement.application.policy.OfferAddedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.QCAddedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
@@ -45,8 +50,16 @@ import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleS
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectLastModified;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponMeasurementCreation;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponMeasurementUpdate;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponPurchaseCreation;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponQCCreation;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponSampleCreation;
 import life.qbic.projectmanagement.application.policy.integration.UserActivated;
+import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
@@ -198,9 +211,13 @@ public class AppConfig {
 
   @Bean
   public SampleRegisteredPolicy sampleRegisteredPolicy(
-      BatchRegistrationService batchRegistrationService, JobScheduler jobScheduler) {
+      BatchRegistrationService batchRegistrationService,
+      SampleInformationService sampleInformationService,
+      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
     var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
-    return new SampleRegisteredPolicy(addSampleToBatch);
+    var updateProject = new UpdateProjectUponSampleCreation(sampleInformationService,
+        projectInformationService);
+    return new SampleRegisteredPolicy(addSampleToBatch, updateProject);
   }
 
   @Bean
@@ -213,7 +230,7 @@ public class AppConfig {
   @Bean
   public ProjectChangedPolicy projectChangedPolicy(ProjectInformationService projectInformationService,
       JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectLastModified(projectInformationService, jobScheduler);
+    var updateProject = new UpdateProjectUponDeletionEvent(projectInformationService, jobScheduler);
     return new ProjectChangedPolicy(updateProject);
   }
 
@@ -223,6 +240,42 @@ public class AppConfig {
     UserActivated userActivated = new UserActivated(jobScheduler, authorityService);
     messageRouter.register(userActivated);
     return userActivated;
+  }
+
+  @Bean
+  public MeasurementCreatedPolicy measurementCreatedPolicy(
+      MeasurementLookupService measurementLookupService,
+      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
+    var updateProjectUponMeasurementCreation = new UpdateProjectUponMeasurementCreation(
+        measurementLookupService, projectInformationService, jobScheduler);
+    return new MeasurementCreatedPolicy(updateProjectUponMeasurementCreation);
+  }
+
+  @Bean
+  public MeasurementUpdatedPolicy measurementUpdatedPolicy(
+      MeasurementLookupService measurementLookupService,
+      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
+    var updateProjectUponMeasurementUpdate = new UpdateProjectUponMeasurementUpdate(
+        measurementLookupService, projectInformationService, jobScheduler);
+    return new MeasurementUpdatedPolicy(updateProjectUponMeasurementUpdate);
+  }
+
+  @Bean
+  public QCAddedPolicy qcAddedPolicy(
+      QualityControlService qualityControlService,
+      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
+    var updateProjectUponQCChange = new UpdateProjectUponQCCreation(
+        qualityControlService, projectInformationService, jobScheduler);
+    return new QCAddedPolicy(updateProjectUponQCChange);
+  }
+
+  @Bean
+  public OfferAddedPolicy offerAddedPolicy(
+      ProjectPurchaseService projectPurchaseService,
+      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
+    var updateProjectUponOfferChange = new UpdateProjectUponPurchaseCreation(
+        projectPurchaseService, projectInformationService, jobScheduler);
+    return new OfferAddedPolicy(updateProjectUponOfferChange);
   }
 
   /*
