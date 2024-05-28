@@ -13,7 +13,6 @@ import java.util.Objects;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
 
 /**
  * <b>Quality Control Association</b>

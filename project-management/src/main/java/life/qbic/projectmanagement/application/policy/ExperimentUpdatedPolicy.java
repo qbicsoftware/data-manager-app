@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.policy;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentUpdate;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 

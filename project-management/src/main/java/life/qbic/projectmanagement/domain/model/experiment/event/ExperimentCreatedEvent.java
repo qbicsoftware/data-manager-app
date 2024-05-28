@@ -12,12 +12,11 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
  */
 public class ExperimentCreatedEvent extends DomainEvent {
 
-  private final Instant occurredOn;
   private final ExperimentId experimentId;
 
   public ExperimentCreatedEvent(ExperimentId experimentId) {
+    super();
     this.experimentId = Objects.requireNonNull(experimentId);
-    this.occurredOn = Instant.now();
   }
 
   @Override

@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
-import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**

@@ -224,8 +224,7 @@ public class MeasurementService {
     for (NGSMeasurementMetadata metadata : ngsMeasurements) {
       ngsMeasurementsMapping.putAll(prepareNGSMeasurement(projectId, metadata));
     }
-    List<MeasurementId> result = measurementDomainService.addNGSAll(ngsMeasurementsMapping);
-    return result;
+    return measurementDomainService.addNGSAll(ngsMeasurementsMapping);
   }
 
   private Map<NGSMeasurement, Collection<SampleIdCodeEntry>> prepareNGSMeasurement(
@@ -468,8 +467,8 @@ public class MeasurementService {
     if(results.stream().allMatch(Result::isValue)) {
       Set<MeasurementId> dispatchedIDs = new HashSet<>();
       for(DomainEvent event : domainEventsCache) {
-        if(event instanceof MeasurementUpdatedEvent) {
-          MeasurementId id = ((MeasurementUpdatedEvent) event).measurementId();
+        if(event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
+          MeasurementId id = measurementUpdatedEvent.measurementId();
           if(!dispatchedIDs.contains(id)) {
             DomainEventDispatcher.instance().dispatch(event);
             dispatchedIDs.add(id);
@@ -636,10 +635,9 @@ public class MeasurementService {
         ngsMeasurements.add((NGSMeasurementMetadata) measurementMetadata);
       }
     }
-    List<Result<MeasurementId, ErrorCode>> result = measurementDomainService.updateNGSAll(
+    return measurementDomainService.updateNGSAll(
             ngsMeasurements.stream().map(this::prepareNGSMeasurementUpdate).toList()).stream()
         .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
-    return result;
   }
 
   private NGSMeasurement prepareNGSMeasurementUpdate(NGSMeasurementMetadata metadata) {

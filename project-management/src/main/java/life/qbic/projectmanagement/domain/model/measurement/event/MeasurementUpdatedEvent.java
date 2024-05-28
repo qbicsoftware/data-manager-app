@@ -12,12 +12,11 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
  */
 public class MeasurementUpdatedEvent extends DomainEvent {
 
-  private final Instant occurredOn;
   private final MeasurementId measurementId;
 
   public MeasurementUpdatedEvent(MeasurementId measurementId) {
+    super();
     this.measurementId = Objects.requireNonNull(measurementId);
-    this.occurredOn = Instant.now();
   }
 
   @Override

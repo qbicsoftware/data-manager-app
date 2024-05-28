@@ -11,12 +11,11 @@ import life.qbic.domain.concepts.DomainEvent;
  */
 public class PurchaseCreatedEvent extends DomainEvent {
 
-  private final Instant occurredOn;
   private final Long purchaseID;
 
   public PurchaseCreatedEvent(Long purchaseID) {
+    super();
     this.purchaseID = Objects.requireNonNull(purchaseID);
-    this.occurredOn = Instant.now();
   }
 
   @Override

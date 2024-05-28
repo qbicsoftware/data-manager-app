@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
-import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**

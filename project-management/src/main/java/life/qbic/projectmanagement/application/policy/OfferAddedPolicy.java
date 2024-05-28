@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.application.policy;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponPurchaseCreation;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponQCCreation;
 import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
 
 /**

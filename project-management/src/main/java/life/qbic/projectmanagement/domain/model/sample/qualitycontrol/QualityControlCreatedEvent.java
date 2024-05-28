@@ -11,12 +11,11 @@ import life.qbic.domain.concepts.DomainEvent;
  */
 public class QualityControlCreatedEvent extends DomainEvent {
 
-  private final Instant occurredOn;
   private final Long qualityControlID;
 
   public QualityControlCreatedEvent(Long qcID) {
+    super();
     this.qualityControlID = Objects.requireNonNull(qcID);
-    this.occurredOn = Instant.now();
   }
 
   @Override
