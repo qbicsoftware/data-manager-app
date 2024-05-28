@@ -24,6 +24,4 @@ public interface MeasurementMetadata {
   default Optional<String> measurementIdentifier() {
     return Optional.empty();
   }
-
-  MeasurementCode measurementCode();
 }

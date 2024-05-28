@@ -54,11 +54,6 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
   }
 
   @Override
-  public MeasurementCode measurementCode() {
-    return null;
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
