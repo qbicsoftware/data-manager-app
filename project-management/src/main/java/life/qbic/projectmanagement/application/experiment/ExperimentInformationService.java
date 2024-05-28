@@ -474,8 +474,8 @@ public class ExperimentInformationService {
   private void handleLocalEventCache(List<DomainEvent> domainEventsCache) {
     Set<ExperimentId> dispatchedIDs = new HashSet<>();
     for(DomainEvent event : domainEventsCache) {
-      if(event instanceof ExperimentUpdatedEvent) {
-        ExperimentId id = ((ExperimentUpdatedEvent) event).experimentId();
+      if(event instanceof ExperimentUpdatedEvent experimentUpdatedEvent) {
+        ExperimentId id = experimentUpdatedEvent.experimentId();
         if(!dispatchedIDs.contains(id)) {
           DomainEventDispatcher.instance().dispatch(event);
           dispatchedIDs.add(id);
