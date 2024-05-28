@@ -671,9 +671,6 @@ public class MeasurementService {
       return new ArrayList<>(); // Nothing to do
     }
     try {
-      if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
-        return Collections.emptyList(); // TODO Fix for functionality
-      }
       if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
         return performUpdateNGS(measurementMetadataList, projectId);
       }
