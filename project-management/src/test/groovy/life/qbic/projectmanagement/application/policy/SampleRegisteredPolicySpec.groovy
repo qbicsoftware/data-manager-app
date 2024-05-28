@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponSampleCreation
 import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.sample.SampleId
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered
@@ -24,6 +25,8 @@ class SampleRegisteredPolicySpec extends Specification {
         and:
         AddSampleToBatch addSampleToBatch = Mock(AddSampleToBatch.class)
         addSampleToBatch.subscribedToEventType() >> SampleRegistered.class
+        UpdateProjectUponSampleCreation updateProject = Mock(UpdateProjectUponSampleCreation.class)
+        updateProject.subscribedToEventType() >> SampleRegistered.class
 
         and:
         SampleRegisteredPolicy sampleRegisteredPolicy = new SampleRegisteredPolicy(addSampleToBatch, updateProject)
@@ -33,6 +36,7 @@ class SampleRegisteredPolicySpec extends Specification {
 
         then:
         1 * addSampleToBatch.handleEvent(sampleRegistered)
+        1 * updateProject.handleEvent(sampleRegistered)
     }
 
 

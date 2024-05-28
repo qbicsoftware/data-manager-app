@@ -67,13 +67,13 @@ public class Experiment {
       throw new ApplicationException("An Experiment must have a name");
     }
     this.name = name;
+    this.experimentId = ExperimentId.create();
     emitCreatedEvent();
   }
 
   public static Experiment create(String name) {
     Experiment experiment = new Experiment(name);
     experiment.experimentalDesign = ExperimentalDesign.create();
-    experiment.experimentId = ExperimentId.create();
     return experiment;
   }
 
