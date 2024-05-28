@@ -1,6 +1,7 @@
 package life.qbic.datamanager.configuration;
 
 import javax.sql.DataSource;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
+    basePackages = {"life.qbic.finance"},
     entityManagerFactoryRef = "financeEntityManagerFactory",
     transactionManagerRef = "financeTransactionManager")
 public class FinancingDatasourceConfig {
@@ -30,6 +32,7 @@ public class FinancingDatasourceConfig {
   public DataSource dataSource() {
     return dataSourceProperties()
         .initializeDataSourceBuilder()
+        .type(BasicDataSource.class)
         .build();
   }
 
