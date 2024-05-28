@@ -406,9 +406,8 @@ public class MeasurementService {
   private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> mergeByPool(
       Map<String, List<ProteomicsMeasurementMetadata>> groupedMetadata, ProjectId projectId) {
     Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> metadataMap = new HashMap<>();
-    for (String poolLabel : groupedMetadata.keySet()) {
-      var measurements = groupedMetadata.get(poolLabel);
-      metadataMap.putAll(build(measurements, projectId));
+    for (var metadataGroup : groupedMetadata.entrySet()) {
+      metadataMap.putAll(build(metadataGroup.getValue(), projectId));
     }
     return metadataMap;
   }
