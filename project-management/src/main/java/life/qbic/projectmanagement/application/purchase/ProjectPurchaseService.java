@@ -20,6 +20,8 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
@@ -39,17 +41,8 @@ public class ProjectPurchaseService {
     this.storage = storage;
   }
 
-  /**
-   * Adds an offer to a project.
-   *
-   * @param projectId the project the offer is related to
-   * @param offer     the offer content
-   * @since 1.0.0
-   */
-  public void addPurchase(String projectId, OfferDTO offer) {
-    addPurchases(projectId, List.of(offer));
-  }
-
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addPurchases(String projectId, List<OfferDTO> offers) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
@@ -84,17 +77,23 @@ public class ProjectPurchaseService {
    * @param projectId the projectId for which to search offers for
    * @return a list of all linked offers, can be empty, never null.
    */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public List<Offer> linkedOffers(String projectId) {
     ProjectId parsedId = ProjectId.parse(projectId);
     return requireNonNull(storage.findOffersForProject(parsedId),
         "result must not be null");
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void deleteOffer(String projectId, long offerId) {
     storage.deleteOffer(projectId, offerId);
     dispatchProjectChangedOnPurchaseDeletion(ProjectId.parse(projectId));
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Optional<Offer> getOfferWithContent(String projectId, Long offerId) {
     return storage.findOfferForProject(projectId, offerId);
   }

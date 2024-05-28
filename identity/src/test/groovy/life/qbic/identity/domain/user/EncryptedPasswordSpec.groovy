@@ -29,6 +29,6 @@ class EncryptedPasswordSpec extends Specification {
         encryptedPassword != null
 
         where:
-        rawPassword << ["test1234", "1234!#234", "megastrongpassword"]
+        rawPassword << ["test12340001", "1234!#2340001", "megastrongpassword0001"]
     }
 }

@@ -147,7 +147,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
       case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
       case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-      case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
+      case MISSING_ASSOCIATED_SAMPLE -> "Missing sample information for this measurement.";
       case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
       case SAMPLECODE_NOT_FROM_PROJECT -> "QBiC sample ID does not belong to this project";
       case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
@@ -342,8 +342,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void downloadProteomicsMetadata() {
     var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
-            ErrorCode.GENERAL, null)),
-        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+            ErrorCode.GENERAL, null)));
     var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
         .flatMap(Collection::stream).toList();
     proteomicsMeasurementContentProvider.setMeasurements(result);
@@ -353,8 +352,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void downloadNGSMetadata() {
     var ngsMeasurements = measurementService.findNGSMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
-            ErrorCode.GENERAL, null)),
-        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+            ErrorCode.GENERAL, null)));
     var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
         .flatMap(Collection::stream).toList();
     ngsMeasurementContentProvider.setMeasurements(result);

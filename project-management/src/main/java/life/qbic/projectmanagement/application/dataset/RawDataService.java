@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application.rawdata;
+package life.qbic.projectmanagement.application.dataset;
 
 import java.util.Collection;
 import java.util.Date;

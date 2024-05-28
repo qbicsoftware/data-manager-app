@@ -14,12 +14,13 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
-import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableNotDefinedException;
-import life.qbic.projectmanagement.domain.model.project.Project;
 
 
 /**
@@ -62,9 +63,16 @@ public class Experiment {
     // Please use the create method. This is needed for JPA
   }
 
+  protected Experiment(String name) {
+    if (name.isEmpty()) {
+      throw new ApplicationException("An Experiment must have a name");
+    }
+    this.name = name;
+    emitCreatedEvent();
+  }
+
   public static Experiment create(String name) {
-    Experiment experiment = new Experiment();
-    experiment.name = name;
+    Experiment experiment = new Experiment(name);
     experiment.experimentalDesign = ExperimentalDesign.create();
     experiment.experimentId = ExperimentId.create();
     return experiment;
@@ -95,27 +103,6 @@ public class Experiment {
 
   public List<ExperimentalVariable> variables() {
     return experimentalDesign.variables();
-  }
-
-
-  /**
-   * Adds a level to an experimental variable with the given name. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isValue()}.
-   * <p>
-   * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
-   * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
-   * {@link Result#isError()} if this is the case.
-   *
-   * @param variableName a declarative and unique name for the variable
-   * @param level        the value to be added to the levels of that variable
-   * @return a {@link Result} object containing the added level value or declarative exceptions. The
-   * result will contain an {@link ExperimentalVariableNotDefinedException} if no variable with the
-   * provided name is defined in this design.
-   * @since 1.0.0
-   */
-  public Result<VariableLevel, Exception> addLevelToVariable(String variableName,
-      ExperimentalValue level) {
-    return experimentalDesign.addLevelToVariable(variableName, level);
   }
 
   /**
@@ -161,6 +148,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.specimens.addAll(missingSpecimens);
+    emitUpdatedEvent();
   }
 
   /**
@@ -171,6 +159,7 @@ public class Experiment {
   public void removeAllExperimentalVariables() {
     removeAllExperimentalGroups();
     experimentalDesign.removeAllExperimentalVariables();
+    emitUpdatedEvent();
   }
 
   /**
@@ -191,6 +180,7 @@ public class Experiment {
     for (ExperimentalGroup experimentalGroup : experimentalDesign.getExperimentalGroups()) {
       experimentalDesign.removeExperimentalGroup(experimentalGroup.id());
     }
+    emitUpdatedEvent();
   }
 
   /**
@@ -209,6 +199,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.analytes.addAll(missingAnalytes);
+    emitUpdatedEvent();
   }
 
   /**
@@ -226,6 +217,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.species.addAll(missingSpecies);
+    emitUpdatedEvent();
   }
 
   /**
@@ -245,7 +237,11 @@ public class Experiment {
    */
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    return experimentalDesign.addVariable(variableName, levels);
+    Result<VariableName, Exception> result = experimentalDesign.addVariable(variableName, levels);
+    if(result.isValue()) {
+      emitUpdatedEvent();
+    }
+    return result;
   }
 
   /**
@@ -266,7 +262,12 @@ public class Experiment {
   public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String groupName,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
-    return experimentalDesign.addExperimentalGroup(groupName, variableLevels, sampleSize);
+    Result<ExperimentalGroup, ResponseCode> result = experimentalDesign.addExperimentalGroup(
+        groupName, variableLevels, sampleSize);
+    if(result.isValue()) {
+      emitUpdatedEvent();
+    }
+    return result;
   }
 
   /**
@@ -318,6 +319,7 @@ public class Experiment {
           ErrorParameters.of(species));
     }
     this.species = species;
+    emitUpdatedEvent();
   }
 
   /**
@@ -330,6 +332,7 @@ public class Experiment {
           ErrorParameters.of(specimens));
     }
     this.specimens = specimens;
+    emitUpdatedEvent();
   }
 
   /**
@@ -342,5 +345,16 @@ public class Experiment {
           ErrorParameters.of(analytes));
     }
     this.analytes = analytes;
+    emitUpdatedEvent();
+  }
+
+  private void emitUpdatedEvent() {
+    var updatedEvent = new ExperimentUpdatedEvent(this.experimentId());
+    LocalDomainEventDispatcher.instance().dispatch(updatedEvent);
+  }
+
+  private void emitCreatedEvent() {
+    var createdEvent = new ExperimentCreatedEvent(this.experimentId());
+    LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 }

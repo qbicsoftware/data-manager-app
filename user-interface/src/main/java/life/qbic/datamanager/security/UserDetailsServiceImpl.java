@@ -37,13 +37,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         .orElseThrow(() -> new UsernameNotFoundException("Cannot find user"));
     List<GrantedAuthority> authorities = userAuthorityProvider.getAuthoritiesByUserId(
         userInfo.id());
-    var user = new User(userInfo.id(), userInfo.fullName(), userInfo.emailAddress(),
+    var user = new User(userInfo.id(), userInfo.fullName(), userInfo.platformUserName(),
+        userInfo.emailAddress(),
         userInfo.encryptedPassword(), userInfo.isActive());
     return new QbicUserDetails(user, authorities);
   }
 
   private User convert(UserInfo userInfo) {
     return new User(userInfo.id(), userInfo.fullName(), userInfo.emailAddress(),
+        userInfo.platformUserName(),
         userInfo.encryptedPassword(),
         userInfo.isActive());
   }

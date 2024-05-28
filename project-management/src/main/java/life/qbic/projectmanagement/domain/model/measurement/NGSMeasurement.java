@@ -163,6 +163,7 @@ public class NGSMeasurement {
 
   public void setComment(String comment) {
     this.comment = comment;
+    emitUpdatedEvent();
   }
 
   public MeasurementCode measurementCode() {

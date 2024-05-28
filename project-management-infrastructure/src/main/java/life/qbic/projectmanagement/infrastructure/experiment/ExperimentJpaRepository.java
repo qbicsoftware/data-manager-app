@@ -4,6 +4,7 @@ import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -40,5 +41,10 @@ public class ExperimentJpaRepository implements ExperimentRepository {
   @Override
   public void delete(ExperimentId experimentId) {
     qbicExperimentRepo.deleteById(experimentId);
+  }
+
+  @Override
+  public Optional<ProjectId> findProject(ExperimentId experimentId) {
+    return qbicExperimentRepo.findProjectIDForExperiment(experimentId);
   }
 }

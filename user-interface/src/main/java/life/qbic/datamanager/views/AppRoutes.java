@@ -97,5 +97,10 @@ public class AppRoutes {
     public static final String ACCESS = "projects/%s/access";
 
     public static final String ONTOLOGY = "projects/%s/ontology";
+
+    /**
+     * The profile page that displays information for the currently logged-in user
+     */
+    public static final String PROFILE = "profile";
   }
 }

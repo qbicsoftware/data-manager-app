@@ -4,14 +4,13 @@ import java.time.Instant;
 import java.util.Optional;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
@@ -59,18 +58,8 @@ public class UpdateProjectUponSampleCreation implements DomainEventSubscriber<Sa
   public void updateProjectModified(SampleId sampleID, Instant modifiedOn) throws ProjectNotFoundException {
     Optional<Sample> sample = sampleInformationService.findSample(sampleID);
     if(sample.isPresent()) {
-      experimentInformationService.find(sample.get().experimentId())
-          .ifPresent(experiment -> projectInformationService.updateModifiedDate(
-          experiment..projectId(), modifiedOn));
-    }
-    Optional<NGSMeasurement> ngs = measurementLookupService.findNGSMeasurement(measurementID.value());
-    if(ngs.isPresent()) {
-      projectInformationService.updateModifiedDate(ngs.get().projectId(), modifiedOn);
-    } else {
-      Optional<ProteomicsMeasurement> ptx = measurementLookupService.findProteomicsMeasurement(
-          measurementID.value());
-      ptx.ifPresent(
-    }
-
+        Optional<ProjectId> projectId = experimentInformationService.findProject(sample.get().experimentId());
+        projectId.ifPresent(id -> projectInformationService.updateModifiedDate(id, modifiedOn));
+      }
   }
 }

@@ -34,8 +34,11 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementLookupService;
 import life.qbic.projectmanagement.application.policy.BatchRegisteredPolicy;
+import life.qbic.projectmanagement.application.policy.ExperimentCreatedPolicy;
+import life.qbic.projectmanagement.application.policy.ExperimentUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.MeasurementCreatedPolicy;
 import life.qbic.projectmanagement.application.policy.MeasurementUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.OfferAddedPolicy;
@@ -51,6 +54,8 @@ import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFrom
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentCreation;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentUpdate;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponMeasurementCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponMeasurementUpdate;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponPurchaseCreation;
@@ -213,10 +218,11 @@ public class AppConfig {
   public SampleRegisteredPolicy sampleRegisteredPolicy(
       BatchRegistrationService batchRegistrationService,
       SampleInformationService sampleInformationService,
+      ExperimentInformationService experimentInformationService,
       ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
     var addSampleToBatch = new AddSampleToBatch(batchRegistrationService, jobScheduler);
     var updateProject = new UpdateProjectUponSampleCreation(sampleInformationService,
-        projectInformationService);
+        experimentInformationService, projectInformationService, jobScheduler);
     return new SampleRegisteredPolicy(addSampleToBatch, updateProject);
   }
 
@@ -258,6 +264,24 @@ public class AppConfig {
     var updateProjectUponMeasurementUpdate = new UpdateProjectUponMeasurementUpdate(
         measurementLookupService, projectInformationService, jobScheduler);
     return new MeasurementUpdatedPolicy(updateProjectUponMeasurementUpdate);
+  }
+
+  @Bean
+  public ExperimentCreatedPolicy experimentCreatedPolicy(
+      ProjectInformationService projectInformationService,
+      ExperimentInformationService experimentInformationService, JobScheduler jobScheduler) {
+    var updateProjectUponExperimentCreation = new UpdateProjectUponExperimentCreation(
+        projectInformationService, experimentInformationService, jobScheduler);
+    return new ExperimentCreatedPolicy(updateProjectUponExperimentCreation);
+  }
+
+  @Bean
+  public ExperimentUpdatedPolicy experimentUpdatedPolicy(
+      ProjectInformationService projectInformationService,
+      ExperimentInformationService experimentInformationService, JobScheduler jobScheduler) {
+    var updateProjectUponExperimentUpdate = new UpdateProjectUponExperimentUpdate(
+        projectInformationService, experimentInformationService, jobScheduler);
+    return new ExperimentUpdatedPolicy(updateProjectUponExperimentUpdate);
   }
 
   @Bean

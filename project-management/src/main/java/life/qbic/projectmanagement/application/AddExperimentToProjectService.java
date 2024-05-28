@@ -2,13 +2,17 @@ package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentDomainEventSubscriber;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -18,6 +22,7 @@ import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -47,6 +52,7 @@ public class AddExperimentToProjectService {
    * @param specimens      specimens associated with the experiment
    * @return a result containing the id of the added experiment, a failure result otherwise
    */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<ExperimentId, RuntimeException> addExperimentToProject(ProjectId projectId,
       String experimentName,
       List<OntologyTerm> species,
@@ -57,7 +63,15 @@ public class AddExperimentToProjectService {
         //ToDo Add Iterator for multiple experiments?
         experimentName = "Unnamed Experiment";
       }
-      if (CollectionUtils.isEmpty(species)) {
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentDomainEventSubscriber(domainEventsCache));
+
+
+    if (CollectionUtils.isEmpty(species)) {
         throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
             ErrorParameters.of(species));
       }
@@ -85,14 +99,10 @@ public class AddExperimentToProjectService {
         })
         .map(Experiment::experimentId);
     if(result.isValue()) {
-      dispatchProjectChanged(projectId);
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     }
     return result;
-  }
-
-  private void dispatchProjectChanged(ProjectId projectId) {
-    ProjectChanged projectChanged = ProjectChanged.create(projectId);
-    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
 }
