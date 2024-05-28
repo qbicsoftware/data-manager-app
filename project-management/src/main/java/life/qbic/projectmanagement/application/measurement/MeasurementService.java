@@ -4,7 +4,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -362,7 +361,7 @@ public class MeasurementService {
 
     metadata.assignedSamplePoolGroup()
         .ifPresent(measurement::setSamplePoolGroup);
-    ngsMeasurements.put(measurement, List.of(sampleIdCodeEntries.get()));
+    ngsMeasurements.put(measurement, List.of(sampleIdCodeEntries.orElseThrow()));
     return ngsMeasurements;
   }
 
@@ -500,6 +499,36 @@ public class MeasurementService {
     }
   }
 
+  /**
+   * Based on a list of measurement metadata entries with measurement IDs, the already registered
+   * measurements are queried and updated.
+   * <p>
+   * The update happens async, so the client can continue by handling the {@link CompletableFuture}
+   * object that is returned instantly.
+   * <p>
+   * The update happens atomic, and either was successful for all entries or none.
+   * <p>
+   * Possible reasons for a failing update are:
+   *
+   * <ul>
+   *   <li>the measurement id does not belong to a registered entity</li>
+   *   <li>some provided metadata ontologies or PIDs cannot be resolved</li>
+   *   <li>some technical issue with the persistence layer</li>
+   * </ul>
+   * <p>
+   * The client is advised to check for any result {@link Result#isError()} is present in the returned list.
+   * <p>
+   * Disclaimer: Pooled Measurements
+   * Currently for pooled measurement updates, the pool group label is not updated to make the pool metadata handling less susceptible
+   * to accidental errors.
+   * However, the references of the samples pooled in the measurement have an impact and will lead to a reassignment of the associated measured samples if changed during the update.
+   *
+   * @param measurementMetadataList a list of measurements metadata to be updated
+   * @param projectId               the project id of the project the measurements belong to
+   * @return a {@link CompletableFuture} object with a list of {@link Result} objects, containing
+   * either the measurement id of the updated measurement or an error code.
+   * @since 1.0.0
+   */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
