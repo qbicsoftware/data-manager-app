@@ -12,7 +12,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentDomainEventSubscriber;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentCreatedDomainEventSubscriber;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -67,7 +67,7 @@ public class AddExperimentToProjectService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentCreatedDomainEventSubscriber(domainEventsCache));
 
 
     if (CollectionUtils.isEmpty(species)) {

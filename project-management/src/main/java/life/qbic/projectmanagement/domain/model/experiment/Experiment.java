@@ -348,6 +348,7 @@ public class Experiment {
   }
 
   private void emitUpdatedEvent() {
+    System.err.println("emit updated");
     var updatedEvent = new ExperimentUpdatedEvent(this.experimentId());
     LocalDomainEventDispatcher.instance().dispatch(updatedEvent);
   }

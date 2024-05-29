@@ -30,9 +30,9 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
-import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
@@ -154,7 +154,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
     experiment.removeAllExperimentalGroups();
@@ -199,7 +199,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecies(List.of(species));
@@ -227,7 +227,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecimens(List.of(specimens));
@@ -255,7 +255,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addAnalytes(List.of(analytes));
@@ -289,7 +289,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
     List<ExperimentalValue> experimentalValues = new ArrayList<>();
@@ -367,7 +367,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
     if (queryResult.isError()) {
@@ -409,7 +409,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     // check for duplicates
     List<List<VariableLevel>> distinctLevels = experimentalGroupDTOS.stream()
@@ -459,7 +459,7 @@ public class ExperimentInformationService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new ExperimentDomainEventSubscriber(domainEventsCache));
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
     experiment.setName(experimentName);
@@ -484,8 +484,9 @@ public class ExperimentInformationService {
     }
   }
 
-  public Optional<ProjectId> findProject(ExperimentId experimentId) {
-    return experimentRepository.findProject(experimentId);
+  public Optional<ProjectId> findProjectID(ExperimentId experimentId) {
+    Optional<String> id = experimentRepository.findProjectID(experimentId);
+    return id.map(ProjectId::parse);
   }
 
   /**
@@ -500,13 +501,28 @@ public class ExperimentInformationService {
 
   }
 
-  public record ExperimentDomainEventSubscriber(
+  public record ExperimentUpdatedDomainEventSubscriber(
       List<DomainEvent> domainEventsCache) implements
       DomainEventSubscriber<DomainEvent> {
 
     @Override
     public Class<? extends DomainEvent> subscribedToEventType() {
-      return MeasurementUpdatedEvent.class;
+      return ExperimentUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
+
+  public record ExperimentCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return ExperimentCreatedEvent.class;
     }
 
     @Override

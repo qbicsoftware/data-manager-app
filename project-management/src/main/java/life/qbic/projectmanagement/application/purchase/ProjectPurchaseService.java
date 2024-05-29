@@ -15,10 +15,10 @@ import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
-import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
+import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -107,7 +107,7 @@ public class ProjectPurchaseService {
 
     @Override
     public Class<? extends DomainEvent> subscribedToEventType() {
-      return MeasurementUpdatedEvent.class;
+      return PurchaseCreatedEvent.class;
     }
 
     @Override

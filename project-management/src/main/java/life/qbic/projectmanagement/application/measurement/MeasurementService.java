@@ -34,6 +34,7 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
@@ -167,7 +168,7 @@ public class MeasurementService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new MeasurementDomainEventSubscriber(domainEventsCache));
+        new MeasurementCreatedDomainEventSubscriber(domainEventsCache));
 
     List<Result<MeasurementId, ErrorCode>> results;
 
@@ -438,7 +439,7 @@ public class MeasurementService {
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
-        new MeasurementDomainEventSubscriber(domainEventsCache));
+        new MeasurementUpdatedDomainEventSubscriber(domainEventsCache));
 
     if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(
         0) instanceof ProteomicsMeasurementMetadata) {
@@ -765,13 +766,28 @@ public class MeasurementService {
     }
   }
 
-  private record MeasurementDomainEventSubscriber(
+  private record MeasurementUpdatedDomainEventSubscriber(
       List<DomainEvent> domainEventsCache) implements
       DomainEventSubscriber<DomainEvent> {
 
     @Override
     public Class<? extends DomainEvent> subscribedToEventType() {
       return MeasurementUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
+
+  private record MeasurementCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementCreatedEvent.class;
     }
 
     @Override

@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.model.experiment.repository;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
  * Finds creates and updates Experiment Aggregates.
@@ -18,5 +17,5 @@ public interface ExperimentRepository {
 
   void delete(ExperimentId experimentId);
 
-  Optional<ProjectId> findProject(ExperimentId experimentId);
+  Optional<String> findProjectID(ExperimentId experimentId);
 }

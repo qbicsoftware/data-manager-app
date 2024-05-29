@@ -48,7 +48,7 @@ public class UpdateProjectUponExperimentUpdate implements DomainEventSubscriber<
 
   @Job(name = "Update_Project_Modified")
   public void updateProjectModified(ExperimentId experimentId, Instant modifiedOn) throws ProjectNotFoundException {
-    Optional<ProjectId> projectId = experimentInformationService.findProject(experimentId);
+    Optional<ProjectId> projectId = experimentInformationService.findProjectID(experimentId);
     projectId.ifPresent(id -> projectInformationService.updateModifiedDate(id, modifiedOn));
   }
 }

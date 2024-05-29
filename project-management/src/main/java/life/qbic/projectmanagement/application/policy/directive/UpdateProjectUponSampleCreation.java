@@ -55,7 +55,7 @@ public class UpdateProjectUponSampleCreation implements DomainEventSubscriber<Sa
   public void updateProjectModified(SampleId sampleID, Instant modifiedOn) throws ProjectNotFoundException {
     Optional<Sample> sample = sampleInformationService.findSample(sampleID);
     if(sample.isPresent()) {
-        Optional<ProjectId> projectId = experimentInformationService.findProject(sample.get().experimentId());
+        Optional<ProjectId> projectId = experimentInformationService.findProjectID(sample.get().experimentId());
         projectId.ifPresent(id -> projectInformationService.updateModifiedDate(id, modifiedOn));
       }
   }
