@@ -573,7 +573,7 @@ public class MeasurementService {
               .labelType());
 
       measurement.setOrganisation(organisationQuery.get());
-      measurement.setMethod(method);
+      measurement.updateMethod(method);
       measurementsForUpdate.add(measurement);
     }
 
@@ -602,7 +602,7 @@ public class MeasurementService {
               .labelType());
 
       measurement.setOrganisation(organisationQuery.get());
-      measurement.setMethod(method);
+      measurement.updateMethod(method);
       measurementsForUpdate.add(measurement);
     }
 
