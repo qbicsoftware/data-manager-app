@@ -107,7 +107,7 @@ public class ProteomicsMeasurement {
     this.organisation = organisation;
     this.measurementCode = measurementCode;
     this.registration = registration;
-    setMethod(method, false);
+    setMethodMetadata(method);
     this.specificMetadata = new HashSet<>(proteomicsMeasurementMetadata);
   }
 
@@ -248,11 +248,12 @@ public class ProteomicsMeasurement {
     return registration;
   }
 
-  public void setMethod(ProteomicsMethodMetadata method) {
-    setMethod(method, true);
+  public void updateMethod(ProteomicsMethodMetadata method) {
+    setMethodMetadata(method);
+    emitUpdatedEvent();
   }
 
-  private void setMethod(ProteomicsMethodMetadata methodMetadata, boolean isUpdate) {
+  private void setMethodMetadata(ProteomicsMethodMetadata methodMetadata) {
     this.instrument = methodMetadata.instrument();
     this.facility = methodMetadata.facility();
     this.digestionMethod = methodMetadata.digestionMethod();
@@ -262,9 +263,6 @@ public class ProteomicsMeasurement {
     this.lcmsMethod = methodMetadata.lcmsMethod();
     this.labelType = methodMetadata.labelType();
     this.injectionVolume = methodMetadata.injectionVolume();
-    if (isUpdate) {
-      emitUpdatedEvent();
-    }
   }
 
   private void emitUpdatedEvent() {
