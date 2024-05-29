@@ -140,9 +140,6 @@ public class ProteomicsMeasurement {
     if (method.lcColumn().isBlank()) {
       throw new IllegalArgumentException("LC column: Missing metadata");
     }
-    if (method.lcmsMethod().isBlank()) {
-      throw new IllegalArgumentException("LCMS method: Missing metadata");
-    }
   }
 
   /**
