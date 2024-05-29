@@ -54,7 +54,7 @@ public class ProteomicsMeasurement {
 
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
-  private MeasurementId id;
+  private MeasurementId measurementId;
 
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
@@ -104,7 +104,7 @@ public class ProteomicsMeasurement {
         method); // throws IllegalArgumentException if required properties are missing
     evaluateMandatorySpecificMetadata(
         proteomicsMeasurementMetadata); // throws IllegalArgumentException if required properties are missing
-    this.id = id;
+    this.measurementId = id;
     this.organisation = organisation;
     this.instrument = method.instrument();
     this.measurementCode = measurementCode;
@@ -116,7 +116,7 @@ public class ProteomicsMeasurement {
     this.lcmsMethod = method.lcmsMethod();
     this.labelType = method.labelType();
     this.registration = registration;
-    this.injectionVolume = injectionVolume();
+    this.injectionVolume = method.injectionVolume();
     this.specificMetadata = new HashSet<>(proteomicsMeasurementMetadata);
     emitCreatedEvent();
   }
@@ -214,7 +214,7 @@ public class ProteomicsMeasurement {
   }
 
   public MeasurementId measurementId() {
-    return id;
+    return measurementId;
   }
 
   public ProjectId projectId() {
@@ -270,6 +270,8 @@ public class ProteomicsMeasurement {
     this.enrichmentMethod = method.enrichmentMethod();
     this.lcColumn = method.lcColumn();
     this.lcmsMethod = method.lcmsMethod();
+    this.injectionVolume = method.injectionVolume();
+    this.labelType = method.labelType();
     emitUpdatedEvent();
   }
 
@@ -313,12 +315,12 @@ public class ProteomicsMeasurement {
       return false;
     }
 
-    return Objects.equals(id, that.id);
+    return Objects.equals(measurementId, that.measurementId);
   }
 
   @Override
   public int hashCode() {
-    return id != null ? id.hashCode() : 0;
+    return measurementId != null ? measurementId.hashCode() : 0;
   }
 
   public Optional<String> comment() {

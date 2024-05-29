@@ -100,7 +100,7 @@ public class MeasurementService {
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
-      ExperimentId experimentId, int offset, int limit, List<SortOrder> sortOrder) {
+      ExperimentId experimentId, int offset, int limit, List<SortOrder> sortOrder, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
@@ -109,20 +109,21 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(ExperimentId experimentId) {
+  public Collection<ProteomicsMeasurement> findProteomicsMeasurements(ExperimentId experimentId,
+      ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
-  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
-    return measurementLookupService.findProteomicsMeasurement(measurementId);
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
+    return measurementLookupService.findProteomicsMeasurement(measurementCode);
   }
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
-      int offset, int limit, List<SortOrder> sortOrders) {
+      int offset, int limit, List<SortOrder> sortOrders, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
@@ -131,14 +132,14 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId) {
+  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryAllNGSMeasurement(samplesInExperiment);
   }
 
-  public Optional<NGSMeasurement> findNGSMeasurement(String measurementId) {
-    return measurementLookupService.findNGSMeasurement(measurementId);
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
+    return measurementLookupService.findNGSMeasurement(measurementCode);
   }
 
   /**
@@ -449,6 +450,8 @@ public class MeasurementService {
       }
       try {
         results = updateAllPxp(metadata, projectId);
+        // if the update worked, we forward the unique update events, otherwise it will be rolled back
+        handleUpdateEvents(domainEventsCache, results);
       } catch (MeasurementRegistrationException e) {
         log.error("Measurement update failed.", e);
         return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
@@ -465,6 +468,13 @@ public class MeasurementService {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     }
     // if the update worked, we forward the unique update events, otherwise it will be rolled back
+    handleUpdateEvents(domainEventsCache, results);
+
+    return CompletableFuture.completedFuture(results);
+  }
+
+  private void handleUpdateEvents(List<DomainEvent> domainEventsCache,
+      List<Result<MeasurementId, ErrorCode>> results) {
     if(results.stream().allMatch(Result::isValue)) {
       Set<MeasurementId> dispatchedIDs = new HashSet<>();
       for(DomainEvent event : domainEventsCache) {
@@ -477,7 +487,6 @@ public class MeasurementService {
         }
       }
     }
-    return CompletableFuture.completedFuture(results);
   }
 
   /**

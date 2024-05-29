@@ -31,7 +31,11 @@ public interface MeasurementRepository {
 
   Optional<NGSMeasurement> findNGSMeasurement(String measurementCode);
 
+  Optional<NGSMeasurement> findNGSMeasurementById(String measurementId);
+
   void updateProteomics(ProteomicsMeasurement measurement);
+
+  Optional<ProteomicsMeasurement> findProteomicsMeasurementById(String measurementCode);
 
   void deleteAllProteomics(Set<ProteomicsMeasurement> measurements);
 

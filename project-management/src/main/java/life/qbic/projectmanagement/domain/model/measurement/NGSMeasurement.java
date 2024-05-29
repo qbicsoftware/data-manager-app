@@ -59,7 +59,7 @@ public class NGSMeasurement {
   String comment = "";
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
-  private MeasurementId id;
+  private MeasurementId measurementId;
   @Embedded
   @Column(nullable = false)
   private ProjectId projectId;
@@ -89,7 +89,7 @@ public class NGSMeasurement {
         method); // throws IllegalArgumentException if required properties are missing
     measuredSamples = new ArrayList<>();
     measuredSamples.addAll(sampleIds);
-    this.id = measurementId;
+    this.measurementId = measurementId;
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     this.organisation = requireNonNull(organisation, "organisation must not be null");
     this.instrument = requireNonNull(method.instrument(), "instrument must not be null");
@@ -171,7 +171,7 @@ public class NGSMeasurement {
   }
 
   public MeasurementId measurementId() {
-    return id;
+    return measurementId;
   }
   public ProjectId projectId() {
     return projectId;
@@ -257,11 +257,11 @@ public class NGSMeasurement {
       return false;
     }
 
-    return Objects.equals(id, that.id);
+    return Objects.equals(measurementId, that.measurementId);
   }
 
   @Override
   public int hashCode() {
-    return id != null ? id.hashCode() : 0;
+    return measurementId != null ? measurementId.hashCode() : 0;
   }
 }

@@ -342,7 +342,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void downloadProteomicsMetadata() {
     var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
-            ErrorCode.GENERAL, null)));
+            ErrorCode.GENERAL, null)),
+        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
     var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
         .flatMap(Collection::stream).toList();
     proteomicsMeasurementContentProvider.setMeasurements(result);
@@ -352,7 +353,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void downloadNGSMetadata() {
     var ngsMeasurements = measurementService.findNGSMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
-            ErrorCode.GENERAL, null)));
+            ErrorCode.GENERAL, null)),
+        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
     var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
         .flatMap(Collection::stream).toList();
     ngsMeasurementContentProvider.setMeasurements(result);

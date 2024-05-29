@@ -114,7 +114,7 @@ public class MeasurementProteomicsValidator implements
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validateSampleId(metadata.associatedSample())
         .combine(validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId))
-        .combine(validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
+        .combine(validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
             .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
             .combine(validationPolicy.validateOrganisation(metadata.organisationId())
                 .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())
@@ -231,11 +231,11 @@ public class MeasurementProteomicsValidator implements
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
     }
 
-    ValidationResult validateMeasurementId(String measurementId) {
-      var queryMeasurement = measurementService.findProteomicsMeasurement(measurementId);
+    ValidationResult validateMeasurementCode(String measurementCode) {
+      var queryMeasurement = measurementService.findProteomicsMeasurement(measurementCode);
       return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
           ValidationResult.withFailures(1,
-              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
+              List.of("Measurement Code: Unknown measurement for id '%s'".formatted(measurementCode))));
     }
 
     ValidationResult validateInstrument(String instrument) {

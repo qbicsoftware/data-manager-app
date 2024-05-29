@@ -194,7 +194,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       sortOrders.add(SortOrder.of("measurementCode").ascending());
       return measurementService.findNGSMeasurements(searchTerm,
               context.experimentId().orElseThrow(),
-              query.getOffset(), query.getLimit(), sortOrders)
+              query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
     ngsMeasurementGrid.addSelectListener(
@@ -256,7 +256,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           sortOrders.add(SortOrder.of("measurementCode").ascending());
           return measurementService.findProteomicsMeasurements(searchTerm,
                   context.experimentId().orElseThrow(),
-                  query.getOffset(), query.getLimit(), sortOrders)
+                  query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();
         });
     proteomicsMeasurementGrid.addSelectListener(
