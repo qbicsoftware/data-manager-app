@@ -48,8 +48,8 @@ public class UserRegistrationHandler
     userRegistrationLayout.fullName.setPattern("\\S.*");
     userRegistrationLayout.fullName.setErrorMessage("Please provide your full name here");
     userRegistrationLayout.email.setErrorMessage("Please provide a valid mail address");
-    userRegistrationLayout.password.setHelperText("A password must be at least 8 characters");
-    userRegistrationLayout.password.setPattern(".{8,}");
+    userRegistrationLayout.password.setHelperText("A password must be at least 12 characters");
+    userRegistrationLayout.password.setPattern(".{12,}");
     userRegistrationLayout.password.setErrorMessage("Password too short");
     userRegistrationLayout.username.setHelperText("Your unique username, visible to other users");
     userRegistrationLayout.username.setErrorMessage("Please provide a username");

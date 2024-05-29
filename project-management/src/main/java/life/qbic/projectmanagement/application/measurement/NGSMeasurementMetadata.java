@@ -40,8 +40,8 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
   }
 
   @Override
-  public List<SampleCode> associatedSamples() {
-    return sampleCodes.stream().toList();
+  public SampleCode associatedSample() {
+    return sampleCodes.iterator().next();
   }
 
   @Override
@@ -51,11 +51,6 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
 
   public Optional<String> measurementIdentifier() {
     return Optional.ofNullable(measurementId.isBlank() ? null : measurementId);
-  }
-
-  @Override
-  public MeasurementCode measurementCode() {
-    return null;
   }
 
   @Override

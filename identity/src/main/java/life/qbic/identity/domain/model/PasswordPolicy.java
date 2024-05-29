@@ -15,7 +15,7 @@ import life.qbic.identity.domain.model.policy.PolicyStatus;
  */
 class PasswordPolicy {
 
-  private static final int MIN_LENGTH = 8;
+  private static final int MIN_LENGTH = 12;
 
   private static PasswordPolicy policy;
 
