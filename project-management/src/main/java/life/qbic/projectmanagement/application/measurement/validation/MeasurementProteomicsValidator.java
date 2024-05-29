@@ -293,21 +293,9 @@ public class MeasurementProteomicsValidator implements
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (metadata.injectionVolume().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Injection Volume: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
       if (metadata.lcColumn().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1, List.of("LC Column: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (metadata.lcmsMethod().isBlank()) {
-        validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("LCMS Method: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
@@ -357,23 +345,10 @@ public class MeasurementProteomicsValidator implements
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (metadata.injectionVolume().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
-            List.of("Injection Volume: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
       if (metadata.lcColumn().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
                 List.of("LC Column: missing mandatory metadata")));
-      } else {
-        validation = validation.combine(ValidationResult.successful(1));
-      }
-      if (metadata.lcmsMethod().isBlank()) {
-        validation = validation.combine(
-            ValidationResult.withFailures(1,
-                List.of("LCMS Method: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
