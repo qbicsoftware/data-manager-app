@@ -8,7 +8,8 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.AbstractIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -18,11 +19,13 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -351,7 +354,7 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(sampleSourceComponent);
   }
 
-  private Div createSampleSourceList(String titleText, Icon icon,
+  private Div createSampleSourceList(String titleText, AbstractIcon icon,
       List<OntologyTerm> ontologyClasses) {
     icon.addClassName("primary");
     Div sampleSource = new Div();
@@ -374,11 +377,11 @@ public class ExperimentDetailsComponent extends PageArea {
     List<OntologyTerm> analyteTags = new ArrayList<>(experiment.getAnalytes());
 
     sampleSourceComponent.add(
-        createSampleSourceList("Species", VaadinIcon.BUG.create(), speciesTags));
+        createSampleSourceList("Species", BioIcon.PLANT.getIcon(), speciesTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Specimen", VaadinIcon.DROP.create(), specimenTags));
+        createSampleSourceList("Specimen", BioIcon.BACTERIA.getIcon(), specimenTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Analytes", VaadinIcon.CLUSTER.create(), analyteTags));
+        createSampleSourceList("Analytes", BioIcon.DEFAULT_ANALYTE.getIcon(), analyteTags));
   }
 
   private void layoutTabSheet() {
@@ -583,6 +586,54 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onGroupsDefined() {
     experimentalGroups.removeAll();
     experimentalGroups.add(experimentalGroupsCollection);
+  }
+
+  /**
+   * Describes a species, specimen or analyte icon with name and source.
+   */
+  public enum BioIcon {
+    DEFAULT_SPECIES("Bug", "Species", VaadinIcon.BUG),
+    HUMAN("Human", "Species", VaadinIcon.MALE),
+    PLANT("Plant", "Species", new StreamResource("plant.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/plant.svg"))),
+    BACTERIA("Bacteria", "Species", new StreamResource("bacteria.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/bacteria.svg"))),
+    DEFAULT_SPECIMEN("Drop", "Specimen", VaadinIcon.DROP),
+    DEFAULT_ANALYTE("Cluster", "Analyte", VaadinIcon.CLUSTER);
+
+    private final String name;
+    private final String type;
+    private final AbstractIcon icon;
+
+    BioIcon(String name, String type, VaadinIcon icon) {
+      this.name = name;
+      this.type = type;
+      this.icon = icon.create();
+    }
+
+    BioIcon(String name, String type, StreamResource iconResource) {
+      this.name = name;
+      this.type = type;
+      this.icon = new SvgIcon(iconResource);
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public String getType() {
+      return type;
+    }
+
+    public AbstractIcon getIcon(){
+      return icon;
+    }
+
+    public static List<BioIcon> getOptionsForType(String type) {
+      return Arrays.stream(BioIcon.values()).filter(o ->
+              o.getType().equals(type)).toList();
+    }
+
   }
 
 }
