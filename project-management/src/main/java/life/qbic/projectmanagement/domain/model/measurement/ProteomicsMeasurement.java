@@ -106,17 +106,9 @@ public class ProteomicsMeasurement {
         proteomicsMeasurementMetadata); // throws IllegalArgumentException if required properties are missing
     this.measurementId = id;
     this.organisation = organisation;
-    this.instrument = method.instrument();
     this.measurementCode = measurementCode;
-    this.facility = method.facility();
-    this.digestionMethod = method.digestionMethod();
-    this.digestionEnzyme = method.digestionEnzyme();
-    this.enrichmentMethod = method.enrichmentMethod();
-    this.lcColumn = method.lcColumn();
-    this.lcmsMethod = method.lcmsMethod();
-    this.labelType = method.labelType();
     this.registration = registration;
-    this.injectionVolume = method.injectionVolume();
+    setMethodMetadata(method);
     this.specificMetadata = new HashSet<>(proteomicsMeasurementMetadata);
     emitCreatedEvent();
   }
@@ -261,18 +253,22 @@ public class ProteomicsMeasurement {
   public Instant registrationDate() {
     return registration;
   }
-
-  public void setMethod(ProteomicsMethodMetadata method) {
-    this.instrument = method.instrument();
-    this.facility = method.facility();
-    this.digestionMethod = method.digestionMethod();
-    this.digestionEnzyme = method.digestionEnzyme();
-    this.enrichmentMethod = method.enrichmentMethod();
-    this.lcColumn = method.lcColumn();
-    this.lcmsMethod = method.lcmsMethod();
-    this.injectionVolume = method.injectionVolume();
-    this.labelType = method.labelType();
+  
+  public void updateMethod(ProteomicsMethodMetadata method) {
+    setMethodMetadata(method);
     emitUpdatedEvent();
+  }
+
+  private void setMethodMetadata(ProteomicsMethodMetadata methodMetadata) {
+    this.instrument = methodMetadata.instrument();
+    this.facility = methodMetadata.facility();
+    this.digestionMethod = methodMetadata.digestionMethod();
+    this.digestionEnzyme = methodMetadata.digestionEnzyme();
+    this.enrichmentMethod = methodMetadata.enrichmentMethod();
+    this.lcColumn = methodMetadata.lcColumn();
+    this.lcmsMethod = methodMetadata.lcmsMethod();
+    this.labelType = methodMetadata.labelType();
+    this.injectionVolume = methodMetadata.injectionVolume();
   }
 
   private void emitUpdatedEvent() {
