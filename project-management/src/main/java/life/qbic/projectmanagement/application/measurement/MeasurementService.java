@@ -459,7 +459,7 @@ public class MeasurementService {
     var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstMetadataEntry.facility(),
         firstMetadataEntry.digestionMethod(), firstMetadataEntry.digestionEnzyme(),
         firstMetadataEntry.enrichmentMethod(), firstMetadataEntry.lcColumn(),
-        firstMetadataEntry.lcmsMethod(), Integer.parseInt(firstMetadataEntry.injectionVolume()),
+        firstMetadataEntry.lcmsMethod(), readInjectionVolume(firstMetadataEntry.injectionVolume()),
         firstMetadataEntry.labeling()
             .labelType());
 
@@ -562,6 +562,22 @@ public class MeasurementService {
   }
 
   /**
+   * Reads the injection volume from a character representation.
+   * <p>
+   * If no value is present, it returns -1.
+   *
+   * @param value
+   * @return
+   * @since 1.0.0
+   */
+  private int readInjectionVolume(String value) throws NumberFormatException {
+    if (value.isBlank()) {
+      return -1;
+    }
+    return Integer.parseInt(value);
+  }
+
+  /**
    * Bulk update of a list of proteomics measurements.
    * <p>
    * This method takes care of two types of measurements:
@@ -624,7 +640,7 @@ public class MeasurementService {
           measurementMetadata.facility(),
           measurementMetadata.digestionMethod(), measurementMetadata.digestionEnzyme(),
           measurementMetadata.enrichmentMethod(), measurementMetadata.lcColumn(),
-          measurementMetadata.lcmsMethod(), Integer.parseInt(measurementMetadata.injectionVolume()),
+          measurementMetadata.lcmsMethod(), readInjectionVolume(measurementMetadata.injectionVolume()),
           measurementMetadata.labeling()
               .labelType());
 
@@ -653,7 +669,7 @@ public class MeasurementService {
       var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstEntry.facility(),
           firstEntry.digestionMethod(), firstEntry.digestionEnzyme(),
           firstEntry.enrichmentMethod(), firstEntry.lcColumn(),
-          firstEntry.lcmsMethod(), Integer.parseInt(firstEntry.injectionVolume()),
+          firstEntry.lcmsMethod(), readInjectionVolume(firstEntry.injectionVolume()),
           firstEntry.labeling()
               .labelType());
 

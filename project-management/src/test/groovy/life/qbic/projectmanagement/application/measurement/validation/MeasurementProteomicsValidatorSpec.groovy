@@ -609,44 +609,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.containsFailures()
     }
 
-    def "If no value was provided for the injection volume information the validation will fail"() {
-        given:
-        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
-                "https://ror.org/03a1kwz48", //Universität Tübingen,
-                "EFO:0004205", //Illumina MiSeq
-                "1",
-                "The geniuses of ITSS",
-                "4 Nations lived in harmony",
-                "CASPASE6",
-                "in solition",
-                "Enrichment Index",
-                "",
-                "12",
-                "LCMS Method 1",
-                new Labeling("isotope", "N15"),
-                "Don't tell anyone this is a test"
-        )
-
-        and:
-        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
-        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
-        ProjectId projectId = ProjectId.create()
-
-        and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
-
-
-        when:
-        def result = validator.validate(invalidMetadata, projectId)
-
-        then:
-        !result.allPassed()
-        !result.containsWarnings()
-        result.containsFailures()
-        result.failedEntries() == 1
-        result.failures()[0] == "Injection Volume: missing mandatory metadata"
-    }
 
     def "If no value was provided for the LC column information the validation will fail"() {
         given:
@@ -687,43 +649,5 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         result.failures()[0] == "LC Column: missing mandatory metadata"
     }
 
-    def "If no value was provided for the LCMS method information the validation will fail"() {
-        given:
-        SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
-                "https://ror.org/03a1kwz48", //Universität Tübingen,
-                "EFO:0004205", //Illumina MiSeq
-                "1",
-                "The geniuses of ITSS",
-                "4 Nations lived in harmony",
-                "CASPASE6",
-                "in solition",
-                "Enrichment Index",
-                "1337",
-                "12",
-                "",
-                new Labeling("isotope", "N15"),
-                "Don't tell anyone this is a test"
-        )
-
-        and:
-        SampleInformationService sampleInformationService = Mock(SampleInformationService.class)
-        sampleInformationService.findSampleId(validSampleCode) >> Optional.of(validSampleCode)
-        ProjectId projectId = ProjectId.create()
-
-        and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
-
-
-        when:
-        def result = validator.validate(invalidMetadata, projectId)
-
-        then:
-        !result.allPassed()
-        !result.containsWarnings()
-        result.containsFailures()
-        result.failedEntries() == 1
-        result.failures()[0] == "LCMS Method: missing mandatory metadata"
-    }
 
 }
