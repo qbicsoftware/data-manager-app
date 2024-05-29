@@ -115,7 +115,7 @@ public class ProteomicsMeasurement {
     this.lcmsMethod = method.lcmsMethod();
     this.labelType = method.labelType();
     this.registration = registration;
-    this.injectionVolume = injectionVolume();
+    this.injectionVolume = method.injectionVolume();
     this.specificMetadata = new HashSet<>(proteomicsMeasurementMetadata);
   }
 
