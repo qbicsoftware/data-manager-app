@@ -29,8 +29,8 @@ class SampleDomainServiceSpec extends Specification {
         Contact who = new Contact()
         Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", "patient 1", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, "")
-        sampleCodesToRegistrationRequests.put(SampleCode.create("test"), sampleRegistrationRequest)
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample2", "patient 1", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, "")
+        sampleCodesToRegistrationRequests.put(SampleCode.create("test2"), sampleRegistrationRequest)
 
         and:
         SampleRepository testRepo = Mock(SampleRepository)
@@ -58,10 +58,12 @@ class SampleDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(sampleRegistered)
 
         when:
-        Result<Collection<Sample>, SampleDomainService.ResponseCode> result = sampleDomainService.registerSamples(project, sampleCodesToRegistrationRequests)
+        sampleDomainService.registerSamples(project, sampleCodesToRegistrationRequests)
 
         then:
-        sampleRegistered.batchIdOfEvent.equals(result.getValue()[0].assignedBatch())
-        sampleRegistered.sampleIdOfEvent.equals(result.getValue()[0].sampleId())
+
+        sampleRegistered.batchIdOfEvent.equals(sampleRegistrationRequest.assignedBatch())
+        SampleId.parse(sampleRegistered.sampleIdOfEvent.value())
+        notThrown(IllegalArgumentException)
     }
 }
