@@ -4,11 +4,17 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
@@ -36,7 +42,6 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.logging.api.Logger;
@@ -48,6 +53,8 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -149,15 +156,28 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ngsMeasurementGrid.addClassName("measurement-grid");
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
         .setHeader("Measurement ID")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.measurementCode().value());
-    ngsMeasurementGrid.addColumn(measurement -> String.join(" ",
-            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())))
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.measurementCode().value())
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addComponentColumn(measurement -> {
+          if (measurement.samplePoolGroup().isEmpty()) {
+            return new Span(
+                String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
+          }
+          MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
+              measurement);
+          Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+          expandIcon.addClassName("expand-icon");
+          expandIcon.addClickListener(event -> measurementPooledSamplesDialog.open());
+          Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
+          expandSpan.addClassName("sample-column-cell");
+          return expandSpan;
+        })
         .setHeader("Sample IDs")
-        .setTooltipGenerator(measurement -> String.join(" ",
-            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()))).setFlexGrow(1);
+        .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
         .setHeader("Facility")
-        .setTooltipGenerator(NGSMeasurement::facility);
+        .setTooltipGenerator(NGSMeasurement::facility)
+        .setAutoWidth(true);
     ngsMeasurementGrid.addComponentColumn(
             ngsMeasurement -> renderInstrument().createComponent(
                 ngsMeasurement.instrument()))
@@ -165,27 +185,44 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             ngsMeasurement -> ngsMeasurement.instrument().formatted())
         .setAutoWidth(true);
+    ngsMeasurementGrid.addComponentColumn(
+            ngsMeasurement -> renderOrganisation(ngsMeasurement.organisation()))
+        .setHeader("Organisation")
+        .setTooltipGenerator(measurement -> measurement.organisation().label())
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(NGSMeasurement::sequencingReadType)
+        .setHeader("Read type")
+        .setTooltipGenerator(NGSMeasurement::sequencingReadType)
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.libraryKit().orElse(""))
+        .setHeader("Library kit")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.libraryKit().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
+        .setHeader("Flow cell")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(
+            ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
+        .setHeader("Run protocol")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
+        .setHeader("Flow Cell")
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
+        .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(
+            ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+        .setHeader("Registration Date")
+        .setTooltipGenerator(
+            ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+        .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
         .setHeader("Comment")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.comment().orElse(""));
-    ngsMeasurementGrid.setItemDetailsRenderer(new ComponentRenderer<>(ngsMeasurement -> {
-      GridDetailsItem measurementItem = new GridDetailsItem();
-      measurementItem.addListEntry("Sample Ids",
-          groupSampleInfoIntoCodeAndLabel(ngsMeasurement.measuredSamples()));
-      measurementItem.addComponentEntry("Organisation",
-          renderOrganisation(ngsMeasurement.organisation()));
-      measurementItem.addEntry("Read Type", ngsMeasurement.sequencingReadType());
-      measurementItem.addEntry("Library Kit", ngsMeasurement.libraryKit().orElse(""));
-      measurementItem.addEntry("Flow Cell", ngsMeasurement.flowCell().orElse(""));
-      measurementItem.addEntry("Run Protocol", ngsMeasurement.sequencingRunProtocol().orElse(""));
-      measurementItem.addEntry("Index I7", ngsMeasurement.indexI7().orElse(""));
-      measurementItem.addEntry("Index I5", ngsMeasurement.indexI5().orElse(""));
-      measurementItem.addEntry("Sample Pool", ngsMeasurement.samplePoolGroup().orElse(""));
-      measurementItem.addEntry("Registration Date",
-          asClientLocalDateTime(ngsMeasurement.registrationDate())
-              .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-      return measurementItem;
-    }));
+        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
+        .setAutoWidth(true);
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
@@ -208,15 +245,33 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
         .setHeader("Measurement ID")
         .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value());
-    proteomicsMeasurementGrid.addColumn(measurement -> String.join(" ",
-            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())))
+            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addComponentColumn(measurement -> {
+          if (!measurement.isPooledSampleMeasurement()) {
+            return new Span(
+                String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
+          }
+          MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
+              measurement);
+          Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+          expandIcon.addClassName("expand-icon");
+          expandIcon.addClickListener(event -> measurementPooledSamplesDialog.open());
+          Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
+          expandSpan.addClassName("sample-column-cell");
+          return expandSpan;
+        })
         .setHeader("Sample IDs")
-        .setTooltipGenerator(measurement -> String.join(" ",
-            groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addComponentColumn(
+            proteomicsMeasurement -> renderOrganisation(proteomicsMeasurement.organisation()))
+        .setHeader("Organisation")
+        .setTooltipGenerator(measurement -> measurement.organisation().label())
+        .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::facility)
         .setHeader("Facility")
-        .setTooltipGenerator(ProteomicsMeasurement::facility);
+        .setTooltipGenerator(ProteomicsMeasurement::facility)
+        .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderInstrument().createComponent(
                 proteomicsMeasurement.instrument()))
@@ -224,28 +279,41 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted())
         .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::labelType).setHeader("Label Type")
-        .setTooltipGenerator(ProteomicsMeasurement::labelType);
-    proteomicsMeasurementGrid.setItemDetailsRenderer(
-        new ComponentRenderer<>(proteomicsMeasurement -> {
-          GridDetailsItem measurementItem = new GridDetailsItem();
-          measurementItem.addListEntry("Sample Ids",
-              groupSampleInfoIntoCodeAndLabel(proteomicsMeasurement.measuredSamples()));
-          measurementItem.addComponentEntry("Organisation",
-              renderOrganisation(proteomicsMeasurement.organisation()));
-          measurementItem.addEntry("Digestion Enzyme", proteomicsMeasurement.digestionEnzyme());
-          measurementItem.addEntry("Digestion Method", proteomicsMeasurement.digestionMethod());
-          measurementItem.addEntry("Injection Volume",
-              String.valueOf(proteomicsMeasurement.injectionVolume()));
-          measurementItem.addEntry("LCMS Method", proteomicsMeasurement.lcmsMethod());
-          measurementItem.addEntry("Enrichment Method", proteomicsMeasurement.enrichmentMethod());
-          measurementItem.addEntry("Sample Pool Group",
-              proteomicsMeasurement.samplePoolGroup().orElse(""));
-          measurementItem.addEntry("Registration Date",
-              asClientLocalDateTime(proteomicsMeasurement.registrationDate())
-                  .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-          return measurementItem;
-        }));
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme)
+        .setHeader("Digestion Enzyme").setTooltipGenerator(
+            ProteomicsMeasurement::digestionEnzyme)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod)
+        .setHeader("Digestion Method")
+        .setTooltipGenerator(ProteomicsMeasurement::digestionMethod)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::injectionVolume)
+        .setHeader("Injection Volume")
+        .setTooltipGenerator(measurement -> String.valueOf(measurement.injectionVolume()))
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcmsMethod)
+        .setHeader("LCMS")
+        .setTooltipGenerator(ProteomicsMeasurement::lcmsMethod)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::lcColumn)
+        .setHeader("LC column")
+        .setTooltipGenerator(ProteomicsMeasurement::lcColumn)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::enrichmentMethod)
+        .setHeader("Enrichment")
+        .setTooltipGenerator(ProteomicsMeasurement::enrichmentMethod)
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(
+            measurement -> asClientLocalDateTime(measurement.registrationDate())
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+        .setHeader("Registration Date")
+        .setTooltipGenerator(measurement -> asClientLocalDateTime(measurement.registrationDate())
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse(""))
+        .setHeader("Comment")
+        .setTooltipGenerator(measurement -> measurement.comment().orElse(""))
+        .setAutoWidth(true);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -371,4 +439,139 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       super(source, fromClient);
     }
   }
+
+  public class MeasurementPooledSamplesDialog extends Dialog {
+
+    /**
+     * Creates an empty dialog.
+     */
+    private final Div measurementDetailsDiv = new Div();
+    private final Span measurementIdSpan = new Span();
+
+    public MeasurementPooledSamplesDialog(ProteomicsMeasurement proteomicsMeasurement) {
+      setLayout();
+      setMeasurementId(proteomicsMeasurement.measurementCode().value());
+      setPooledProteomicsMeasurementDetails(proteomicsMeasurement);
+      setPooledProteomicSampleDetails(proteomicsMeasurement.specificMetadata());
+    }
+
+    public MeasurementPooledSamplesDialog(NGSMeasurement ngsMeasurement) {
+      setLayout();
+      setMeasurementId(ngsMeasurement.measurementCode().value());
+      setPooledNgsMeasurementDetails(ngsMeasurement);
+      //Todo Replace with specific metadata
+      setPooledNgsSampleDetails(ngsMeasurement);
+    }
+
+    private void setLayout() {
+      setDialogHeader();
+      measurementIdSpan.addClassName("bold");
+      add(measurementIdSpan);
+      measurementDetailsDiv.addClassName("pooled-measurement-details");
+      add(measurementDetailsDiv);
+      Button closeButton = new Button("Close");
+      closeButton.addClickListener(event -> close());
+      getFooter().add(closeButton);
+      addClassName("measurement-pooled-samples-dialog");
+    }
+
+    private void setMeasurementId(String measurementId) {
+      measurementIdSpan.setText(String.format("Measurement ID: %s", measurementId));
+    }
+
+    private void setPooledProteomicsMeasurementDetails(
+        ProteomicsMeasurement proteomicsMeasurement) {
+      measurementDetailsDiv.add(
+          pooledMeasurementEntry("Sample Pool Group", proteomicsMeasurement.samplePoolGroup()
+              .orElseThrow()));
+      measurementDetailsDiv.add(
+          pooledMeasurementEntry("Labeling Type", proteomicsMeasurement.labelType()));
+    }
+
+    private void setPooledProteomicSampleDetails(
+        Collection<ProteomicsSpecificMeasurementMetadata> proteomicsSpecificMeasurementMetadata) {
+      Grid<ProteomicsSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
+      sampleDetailsGrid.addColumn(
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
+          .setHeader("Sample Label")
+          .setTooltipGenerator(
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
+                  .code())
+          .setHeader("Sample Id")
+          .setTooltipGenerator(
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
+                  .code())
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(ProteomicsSpecificMeasurementMetadata::fractionName)
+          .setHeader("Fraction Name")
+          .setTooltipGenerator(ProteomicsSpecificMeasurementMetadata::fractionName)
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(ProteomicsSpecificMeasurementMetadata::label)
+          .setHeader("Measurement Label")
+          .setTooltipGenerator(ProteomicsSpecificMeasurementMetadata::label)
+          .setAutoWidth(true);
+      sampleDetailsGrid.setItems(proteomicsSpecificMeasurementMetadata);
+      add(sampleDetailsGrid);
+    }
+
+    private void setPooledNgsMeasurementDetails(
+        NGSMeasurement ngsMeasurement) {
+      measurementDetailsDiv.add(
+          pooledMeasurementEntry("Sample Pool Group", ngsMeasurement.samplePoolGroup()
+              .orElseThrow()));
+      //Todo Add measurement specific pooled properties once defined for NGS
+    }
+
+    private void setPooledNgsSampleDetails(NGSMeasurement ngsMeasurement) {
+      Grid<SampleId> sampleDetailsGrid = new Grid<>();
+      //Todo Wire pooled sample specific metadata once defined for NGS
+      sampleDetailsGrid.addColumn(sampleId -> retrieveSampleById(sampleId).orElseThrow().label())
+          .setHeader("Sample Label")
+          .setTooltipGenerator(sampleId -> retrieveSampleById(sampleId).orElseThrow().label())
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(
+              sampleId -> retrieveSampleById(sampleId).orElseThrow().sampleCode().code())
+          .setHeader("Sample Id")
+          .setTooltipGenerator(
+              sampleId -> retrieveSampleById(sampleId).orElseThrow().sampleCode().code())
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(sampleId -> ngsMeasurement.indexI5().orElse(""))
+          .setHeader("Index I5")
+          .setTooltipGenerator(sampleId -> ngsMeasurement.indexI5().orElse(""))
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(sampleId -> ngsMeasurement.indexI7().orElse(""))
+          .setHeader("Index I7")
+          .setTooltipGenerator(sampleId -> ngsMeasurement.indexI7().orElse(""))
+          .setAutoWidth(true);
+      sampleDetailsGrid.setItems(ngsMeasurement.measuredSamples());
+      add(sampleDetailsGrid);
+    }
+
+    //Todo This is non-performant and should be changed
+    private Optional<Sample> retrieveSampleById(SampleId sampleId) {
+      return sampleInformationService.findSample(sampleId);
+    }
+
+    private void setDialogHeader() {
+      setHeaderTitle("View Pooled Measurement");
+      Icon closeIcon = VaadinIcon.CLOSE_SMALL.create();
+      closeIcon.addClassNames("small", "clickable");
+      closeIcon.addClickListener(event -> close());
+      getHeader().add(closeIcon);
+    }
+
+    private Span pooledMeasurementEntry(String propertyLabel, String propertyValue) {
+      Span pooledDetailLabel = new Span(String.format("%s:", propertyLabel));
+      pooledDetailLabel.addClassName("label");
+      Span pooledDetailValue = new Span(propertyValue);
+      pooledDetailValue.addClassName("value");
+      Span pooledDetail = new Span(pooledDetailLabel, pooledDetailValue);
+      pooledDetail.addClassName("pooled-detail");
+      return pooledDetail;
+    }
+  }
+
 }
