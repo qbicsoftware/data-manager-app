@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * @since 1.0.0
  */
-@Service
+@Component
 public class ProjectRepositoryImpl implements ProjectRepository {
 
   private static final Logger log = logger(ProjectRepositoryImpl.class);
