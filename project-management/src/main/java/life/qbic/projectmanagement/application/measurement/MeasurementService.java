@@ -286,8 +286,10 @@ public class MeasurementService {
       results = performRegistration(measurementMetadataList, projectId).stream()
           .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
     } catch (MeasurementRegistrationException e) {
+      log.error("Failed to register measurement", e);
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     } catch (RuntimeException e) {
+      log.error("Failed to register measurement", e);
       return CompletableFuture.completedFuture(List.of(Result.fromError(ErrorCode.FAILED)));
     }
 
