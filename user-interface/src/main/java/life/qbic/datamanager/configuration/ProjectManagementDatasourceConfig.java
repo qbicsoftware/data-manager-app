@@ -44,6 +44,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
     transactionManagerRef = "projectManagementTransactionManager")
 public class ProjectManagementDatasourceConfig {
 
+  @Value("${qbic.project-management.datasource.ddl-auto}")
+  String hibernateDdlAuto;
+
   @Primary
   @Bean(name = "projectManagementDataSourceProperties")
   @ConfigurationProperties("qbic.project-management.datasource")
@@ -68,6 +71,9 @@ public class ProjectManagementDatasourceConfig {
     return builder
         .dataSource(dataSource)
         .packages("life.qbic.projectmanagement")
+        .properties(Map.of(
+            "hibernate.hbm2ddl.auto", hibernateDdlAuto
+        ))
         .build();
   }
 

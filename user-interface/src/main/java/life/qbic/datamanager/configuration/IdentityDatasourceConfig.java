@@ -2,9 +2,11 @@ package life.qbic.datamanager.configuration;
 
 
 import jakarta.persistence.EntityManagerFactory;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -40,6 +42,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
     transactionManagerRef = "identityTransactionManager")
 public class IdentityDatasourceConfig {
 
+  @Value("${qbic.identity.datasource.ddl-auto}")
+  String hibernateDdlAuto;
+
   @Bean(name = "identityDataSourceProperties")
   @ConfigurationProperties("qbic.identity.datasource")
   public DataSourceProperties dataSourceProperties() {
@@ -61,6 +66,9 @@ public class IdentityDatasourceConfig {
     return builder
         .dataSource(dataSource)
         .packages("life.qbic.identity")
+        .properties(Map.of(
+            "hibernate.hbm2ddl.auto", hibernateDdlAuto
+        ))
         .build();
   }
 
