@@ -634,7 +634,7 @@ public class ExperimentDetailsComponent extends PageArea {
     BioIcon(String label, SampleSourceType type, StreamResource svgResource) {
       this.label = label;
       this.type = type;
-      this.iconResource = new IconResource(svgResource);;
+      this.iconResource = new IconResource(svgResource);
     }
 
     public static BioIcon getTypeWithNameOrDefault(SampleSourceType sampleSourceType, String iconName) {
@@ -679,7 +679,7 @@ public class ExperimentDetailsComponent extends PageArea {
       this.streamResource = streamResource;
     }
 
-    public AbstractIcon<?> createIcon() {
+    public AbstractIcon createIcon() {
       if(streamResource!=null) {
         SvgIcon svg = new SvgIcon(streamResource);
         svg.setColor("blue");
