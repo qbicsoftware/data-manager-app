@@ -69,7 +69,6 @@ public class SampleDomainService {
       sample.setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
           sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
       sample.setComment(sampleInfo.sampleInformation().comment());
-      sample.setBiologicalReplicateId(sampleInfo.sampleInformation().biologicalReplicate().id());
       sample.setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
     }
     sampleRepository.updateAll(project, samplesToUpdate);
