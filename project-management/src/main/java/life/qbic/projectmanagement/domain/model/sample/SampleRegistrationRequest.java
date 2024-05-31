@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.domain.model.sample;
 
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 /**
  * Sample registration request.
@@ -14,7 +13,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
  * @param assignedBatch       the assigned batch
  * @param experimentId        the experiment reference
  * @param experimentalGroupId the experimental group id the sample is part of
- * @param replicateReference  the biological replicated reference the sample has been taken from
  * @param sampleOrigin        information about the sample origin.
  * @param analysisMethod      analysis method to be performed
  * @param comment             comment relating to the sample
@@ -23,19 +21,17 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
  */
 public record SampleRegistrationRequest(String label, String organismId, BatchId assignedBatch,
                                         ExperimentId experimentId, Long experimentalGroupId,
-                                        BiologicalReplicateId replicateReference,
                                         SampleOrigin sampleOrigin, AnalysisMethod analysisMethod,
                                         String comment) {
 
   public SampleRegistrationRequest(String label, String organismId, BatchId assignedBatch,
-      ExperimentId experimentId, Long experimentalGroupId, BiologicalReplicateId replicateReference,
+      ExperimentId experimentId, Long experimentalGroupId,
       SampleOrigin sampleOrigin, AnalysisMethod analysisMethod, String comment) {
     this.label = Objects.requireNonNull(label);
     this.organismId = organismId;
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.experimentId = Objects.requireNonNull(experimentId);
     this.experimentalGroupId = Objects.requireNonNull(experimentalGroupId);
-    this.replicateReference = Objects.requireNonNull(replicateReference);
     this.sampleOrigin = Objects.requireNonNull(sampleOrigin);
     this.analysisMethod = Objects.requireNonNull(analysisMethod);
     this.comment = comment;

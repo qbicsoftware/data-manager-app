@@ -26,9 +26,7 @@ import java.util.StringJoiner;
 
 @Entity(name = "experimental_group")
 public class ExperimentalGroup {
-  @OneToMany(orphanRemoval = true, cascade = CascadeType.ALL)
-  @JoinColumn(name = "experimentalGroupId")
-  private List<BiologicalReplicate> biologicalReplicates;
+
   private String name;
   private Condition condition;
   @Id
@@ -36,21 +34,14 @@ public class ExperimentalGroup {
   private Long experimentalGroupId;
   private int sampleSize;
 
-  private ExperimentalGroup(String name, Condition condition, int sampleSize,
-      Collection<BiologicalReplicate> biologicalReplicates) {
+  private ExperimentalGroup(String name, Condition condition, int sampleSize) {
     this.name = name;
     this.condition = condition;
     this.sampleSize = sampleSize;
-    this.biologicalReplicates = biologicalReplicates.stream().toList();
   }
 
   protected ExperimentalGroup() {
     // Please use the create method. This is needed for JPA
-  }
-
-  @PostLoad
-  private void loadReplicates() {
-    this.biologicalReplicates.size();
   }
 
   /**
@@ -70,15 +61,7 @@ public class ExperimentalGroup {
       throw new IllegalArgumentException(
           "The number of biological replicates must be at least one");
     }
-    return new ExperimentalGroup(name, condition, sampleSize, createBiologicalReplicates(sampleSize));
-  }
-
-  private static List<BiologicalReplicate> createBiologicalReplicates(int amount) {
-    List<BiologicalReplicate> replicates = new ArrayList<>(amount);
-    for (int i = 1; i <= amount; i++) {
-      replicates.add(BiologicalReplicate.create("biol-rep-" + i));
-    }
-    return replicates;
+    return new ExperimentalGroup(name, condition, sampleSize);
   }
 
   public Condition condition() {
@@ -107,12 +90,6 @@ public class ExperimentalGroup {
     return this.experimentalGroupId;
   }
 
-  public List<BiologicalReplicate> biologicalReplicates() {
-    return Optional.ofNullable(biologicalReplicates)
-        .map(ArrayList::new)
-        .orElse(new ArrayList<>());
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(experimentalGroupId);
@@ -137,7 +114,6 @@ public class ExperimentalGroup {
   public String toString() {
     return new StringJoiner(", ", ExperimentalGroup.class.getSimpleName() + "[", "]")
         .add("name=" + name)
-        .add("biologicalReplicates=" + biologicalReplicates)
         .add("condition=" + condition)
         .add("experimentalGroupId=" + experimentalGroupId)
         .add("sampleSize=" + sampleSize)
