@@ -98,16 +98,19 @@ public class ProjectDetailsComponent extends PageArea {
 
     var species = new Div();
     species.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).forEach(ontologyClassDTO -> species.add(createOntologyEntryFrom(ontologyClassDTO)));
+    experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct()
+        .forEach(ontologyClassDTO -> species.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Species", "", species));
     var specimen = new Div();
     specimen.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).forEach(ontologyClassDTO -> specimen.add(createOntologyEntryFrom(ontologyClassDTO)));
+    experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct()
+        .forEach(ontologyClassDTO -> specimen.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Specimen", "Tissue, cells or other matrix extracted from the "
         + "species", specimen));
     var analyte = new Div();
     analyte.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).forEach(ontologyClassDTO -> analyte.add(createOntologyEntryFrom(ontologyClassDTO)));
+    experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct()
+        .forEach(ontologyClassDTO -> analyte.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Analyte", "", analyte));
     return entries;
   }
