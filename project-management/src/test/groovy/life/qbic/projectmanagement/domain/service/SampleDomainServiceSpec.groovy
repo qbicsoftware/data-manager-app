@@ -25,11 +25,11 @@ class SampleDomainServiceSpec extends Specification {
 
     def "When a sample has been successfully registered, a sample registered event is dispatched"() {
         given:
-        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", "patient 1", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, ""))
+        Sample testSample = Sample.create(SampleCode.create("test"), new SampleRegistrationRequest("test sample", "patient 1", BatchId.create(), ExperimentId.create(), 1L, new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, ""))
         Contact who = new Contact()
         Project project = Project.create(new ProjectIntent(new ProjectTitle("a title"), new ProjectObjective("an objective")), new ProjectCode("QABCD"), who, who, who)
         Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests = new HashMap<>()
-        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", "patient 1", BatchId.create(), ExperimentId.create(), 1L, BiologicalReplicateId.create(), new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, "")
+        SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("test sample", "patient 1", BatchId.create(), ExperimentId.create(), 1L, new SampleOrigin(new OntologyTerm(), new OntologyTerm(), new OntologyTerm()), AnalysisMethod.WES, "")
         sampleCodesToRegistrationRequests.put(SampleCode.create("test"), sampleRegistrationRequest)
 
         and:
