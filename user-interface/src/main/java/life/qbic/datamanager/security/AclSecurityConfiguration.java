@@ -44,7 +44,7 @@ public class AclSecurityConfiguration {
 
   @Bean
   public MutableAclService mutableAclService(CacheManager cacheManager,
-      @Qualifier("identityDataSource") DataSource dataSource) {
+      @Qualifier("projectManagementDataSource") DataSource dataSource) {
     JdbcMutableAclService jdbcMutableAclService = new JdbcMutableAclService(dataSource,
         lookupStrategy(cacheManager, dataSource), aclCache(cacheManager));
     // allow for non-long type ids
