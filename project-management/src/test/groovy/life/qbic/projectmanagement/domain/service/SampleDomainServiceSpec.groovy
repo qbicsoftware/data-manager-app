@@ -6,7 +6,6 @@ import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.projectmanagement.domain.model.OntologyTerm
 import life.qbic.projectmanagement.domain.model.batch.BatchId
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.model.sample.*
