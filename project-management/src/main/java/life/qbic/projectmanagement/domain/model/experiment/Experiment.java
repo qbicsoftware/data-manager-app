@@ -39,6 +39,12 @@ public class Experiment {
   private String name;
   @Embedded
   private ExperimentalDesign experimentalDesign;
+  @Column(name = "speciesIconName")
+  private String speciesIconName;
+  @Column(name = "specimenIconName")
+  private String specimenIconName;
+  @Column(name = "analyteIconName")
+  private String analyteIconName;
 
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
@@ -65,6 +71,10 @@ public class Experiment {
     experiment.name = name;
     experiment.experimentalDesign = ExperimentalDesign.create();
     experiment.experimentId = ExperimentId.create();
+    experiment.speciesIconName = "default";
+    experiment.specimenIconName = "default";
+    experiment.analyteIconName = "default";
+
     return experiment;
   }
 
@@ -82,6 +92,24 @@ public class Experiment {
    */
   public String getName() {
     return name;
+  }
+
+  public String getSpeciesIconName() {
+    return speciesIconName;
+  }
+
+  public String getSpecimenIconName() {
+    return specimenIconName;
+  }
+
+  public String getAnalyteIconName() {
+    return analyteIconName;
+  }
+
+  public void setIconNames(String speciesIconName, String specimenIconName, String analyteIconName) {
+    this.speciesIconName = speciesIconName;
+    this.specimenIconName = specimenIconName;
+    this.analyteIconName = analyteIconName;
   }
 
   /**

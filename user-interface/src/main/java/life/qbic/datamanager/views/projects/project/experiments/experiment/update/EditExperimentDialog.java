@@ -4,11 +4,14 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.AbstractIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,6 +23,8 @@ import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
@@ -60,11 +65,23 @@ public class EditExperimentDialog extends DialogWindow {
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
+    ComboBox<BioIcon> speciesIconBox = styleIconBox(BioIcon.getOptionsForType(SampleSourceType.SPECIES));
+    speciesIconBox.setHelperText("Select an icon to represent the species in this experiment");
+    binder.forField(speciesIconBox)
+        .bind(ExperimentDraft::getSpeciesIcon,
+    ExperimentDraft::setSpeciesIcon);
+
     MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
+
+    ComboBox<BioIcon> specimenIconBox = styleIconBox(BioIcon.getOptionsForType(SampleSourceType.SPECIMEN));
+    specimenIconBox.setHelperText("Select an icon to represent the specimen(s) in this experiment");
+    binder.forField(specimenIconBox)
+        .bind(ExperimentDraft::getSpecimenIcon,
+            ExperimentDraft::setSpecimenIcon);
 
     MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
     binder.forField(analyteBox)
@@ -84,9 +101,24 @@ public class EditExperimentDialog extends DialogWindow {
         experimentNameField,
         experimentDescription,
         speciesBox,
+        speciesIconBox,
         specimenBox,
+        specimenIconBox,
         analyteBox);
     add(editExperimentContent);
+  }
+
+  private ComboBox<BioIcon> styleIconBox(List<BioIcon> options) {
+    ComboBox<BioIcon> comboBox = new ComboBox<>();
+    comboBox.setItems(options);
+    comboBox.setItemLabelGenerator(
+        BioIcon::getLabel);
+    comboBox.setRenderer(new ComponentRenderer<>(iconResource -> {
+      AbstractIcon<?> icon = iconResource.getIconResource().createIcon();
+      icon.addClassName("primary");
+      return icon;
+    }));
+    return comboBox;
   }
 
   @Override
@@ -176,6 +208,9 @@ public class EditExperimentDialog extends DialogWindow {
     private final List<OntologyTerm> specimen;
     private final List<OntologyTerm> analytes;
 
+    private String speciesIconName;
+    private String specimenIconName;
+
     public ExperimentDraft() {
       species = new ArrayList<>();
       specimen = new ArrayList<>();
@@ -237,6 +272,12 @@ public class EditExperimentDialog extends DialogWindow {
       if (!specimen.equals(that.specimen)) {
         return false;
       }
+      if (!speciesIconName.equals(that.speciesIconName)) {
+        return false;
+      }
+      if (!specimenIconName.equals(that.specimenIconName)) {
+        return false;
+      }
       return analytes.equals(that.analytes);
     }
 
@@ -246,7 +287,25 @@ public class EditExperimentDialog extends DialogWindow {
       result = 31 * result + species.hashCode();
       result = 31 * result + specimen.hashCode();
       result = 31 * result + analytes.hashCode();
+      result = 31 * result + specimenIconName.hashCode();
+      result = 31 * result + speciesIconName.hashCode();
       return result;
+    }
+
+    public BioIcon getSpeciesIcon() {
+      return BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIES, speciesIconName);
+    }
+
+    public void setSpeciesIcon(BioIcon bioIcon) {
+      this.speciesIconName = bioIcon.getLabel();
+    }
+
+    public BioIcon getSpecimenIcon() {
+      return BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN, specimenIconName);
+    }
+
+    public void setSpecimenIcon(BioIcon bioIcon) {
+      this.specimenIconName = bioIcon.getLabel();
     }
   }
 }
