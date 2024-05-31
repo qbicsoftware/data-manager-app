@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 
 /**
