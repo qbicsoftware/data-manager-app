@@ -1,6 +1,7 @@
 package life.qbic.datamanager.configuration;
 
 
+import jakarta.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,6 +16,22 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+/**
+ * Configures the datasource handling entities in package {@link life.qbic.identity}.
+ * <p>
+ * The DataSource configured by this class is called {@code datasource} and is injectable through
+ * {@code @Qualifier("identityDataSource")}.
+ * <p>
+ * Further the configuration registeres a {@link EntityManagerFactory} looking for entities from
+ * {@link life.qbic.identity} and a {@link org.springframework.transaction.TransactionManager}.
+ *
+ * <p>
+ * It is injectable through {@code @Qualifier("identityDataSource")}
+ *
+ * @see <a
+ * href="https://docs.spring.io/spring-boot/docs/2.1.x/reference/html/howto-data-access.html#howto-two-datasources">Spring
+ * Boot multiple datasources</a>
+ */
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
