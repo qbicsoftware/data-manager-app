@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * It is injectable through {@code @Qualifier("financeDataSource")}
  *
  * @see <a
- * href="https://docs.spring.io/spring-boot/docs/2.1.x/reference/html/howto-data-access.html#howto-two-datasources">Spring
+ * href="https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.configure-two-datasources">Spring
  * Boot multiple datasources</a>
  */
 @Configuration

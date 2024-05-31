@@ -3,8 +3,10 @@ package life.qbic.datamanager.configuration;
 
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -31,7 +33,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * It is injectable through {@code @Qualifier("projectManagementDataSource")}
  *
  * @see <a
- * href="https://docs.spring.io/spring-boot/docs/2.1.x/reference/html/howto-data-access.html#howto-two-datasources">Spring
+ * href="https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.configure-two-datasources">Spring
  * Boot multiple datasources</a>
  */
 @Configuration
