@@ -9,14 +9,12 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 
 /**
@@ -128,37 +126,30 @@ public class BatchRegistrationDialog extends DialogWindow {
         });
   }
 
-  private List<SampleInfo> prefilledSampleInfos() {
-    return prefilledSampleInfos(species, specimen, analytes, experimentalGroups);
-  }
-
   private static List<SampleInfo> prefilledSampleInfos(List<OntologyTerm> species,
       List<OntologyTerm> specimen, List<OntologyTerm> analytes,
       List<ExperimentalGroup> experimentalGroups) {
 
     List<SampleInfo> sampleInfos = new ArrayList<>();
     for (ExperimentalGroup experimentalGroup : experimentalGroups) {
-      List<BiologicalReplicate> sortedReplicates = experimentalGroup.biologicalReplicates().stream()
-          .sorted(Comparator.comparing(BiologicalReplicate::label))
-          .toList();
-      for (BiologicalReplicate biologicalReplicate : sortedReplicates) {
-        // new sampleInfo
-        SampleInfo sampleInfo = new SampleInfo();
-        sampleInfo.setBiologicalReplicate(biologicalReplicate);
-        sampleInfo.setExperimentalGroup(experimentalGroup);
-        if (species.size() == 1) {
-          sampleInfo.setSpecies(species.get(0));
-        }
-        if (specimen.size() == 1) {
-          sampleInfo.setSpecimen(specimen.get(0));
-        }
-        if (analytes.size() == 1) {
-          sampleInfo.setAnalyte(analytes.get(0));
-        }
-        sampleInfos.add(sampleInfo);
+      SampleInfo sampleInfo = new SampleInfo();
+      sampleInfo.setExperimentalGroup(experimentalGroup);
+      if (species.size() == 1) {
+        sampleInfo.setSpecies(species.get(0));
       }
+      if (specimen.size() == 1) {
+        sampleInfo.setSpecimen(specimen.get(0));
+      }
+      if (analytes.size() == 1) {
+        sampleInfo.setAnalyte(analytes.get(0));
+      }
+      sampleInfos.add(sampleInfo);
     }
     return sampleInfos;
+  }
+
+  private List<SampleInfo> prefilledSampleInfos() {
+    return prefilledSampleInfos(species, specimen, analytes, experimentalGroups);
   }
 
   private void onBatchNameChanged(
@@ -227,10 +218,6 @@ public class BatchRegistrationDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<BatchRegistrationDialog> {
 
-    public record Data(String batchName, List<SampleInfo> samples) {
-
-    }
-
     private final Data data;
 
     /**
@@ -248,6 +235,10 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     public Data getData() {
       return data;
+    }
+
+    public record Data(String batchName, List<SampleInfo> samples) {
+
     }
   }
 

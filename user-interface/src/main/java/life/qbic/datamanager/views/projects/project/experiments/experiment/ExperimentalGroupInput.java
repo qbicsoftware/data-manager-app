@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Container;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput.ExperimentalGroupBean;
 import life.qbic.projectmanagement.application.VariableValueFormatter;
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
@@ -35,7 +34,7 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableName;
  * <b>ExperimentalGroupInput Field</b>
  * ExperimentalGroupInput is a {@link CustomField} which enables the user to create an
  * {@link ExperimentalGroup} by defining the {@link Condition} and number of
- * {@link BiologicalReplicate} associated with the {@link ExperimentalGroup}
+ * biological replicates associated with the {@link ExperimentalGroup}
  */
 @Tag(Tag.DIV)
 public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
@@ -58,7 +57,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   /**
    * ExperimentalGroupInput is a {@link CustomField} which contains a {@link TextField} to name the
    * group, a {@link MultiSelectComboBox} allowing the user to define the {@link Condition}, and a
-   * {@link NumberField} enabling the user to define the number of {@link BiologicalReplicate}
+   * {@link NumberField} enabling the user to define the number of biological replicates
    * within an {@link ExperimentalGroup}. Stores the id of existing groups in order to allow editing.
    *
    * @param availableLevels Collection of {@link VariableLevel} defined for an {@link Experiment}
