@@ -42,7 +42,6 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;

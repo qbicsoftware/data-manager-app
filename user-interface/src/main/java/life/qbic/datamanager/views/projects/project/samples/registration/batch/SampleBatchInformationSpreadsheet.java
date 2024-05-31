@@ -16,7 +16,6 @@ import life.qbic.datamanager.views.general.spreadsheet.Column;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicate;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
