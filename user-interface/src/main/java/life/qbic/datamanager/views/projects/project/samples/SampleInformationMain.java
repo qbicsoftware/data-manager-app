@@ -209,7 +209,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
             batchId,
             context.experimentId().orElseThrow(),
             sample.getExperimentalGroup().id(),
-            sample.getBiologicalReplicate().id(),
             SampleOrigin.create(sample.getSpecies(), sample.getSpecimen(), sample.getAnalyte()),
             sample.getAnalysisToBePerformed(),
             sample.getCustomerComment()))
@@ -222,7 +221,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
         sampleInfo.getSampleLabel(), sampleInfo.getOrganismId(),
         sampleInfo.getAnalysisToBePerformed(),
-        sampleInfo.getBiologicalReplicate(), sampleInfo.getExperimentalGroup(),
+       sampleInfo.getExperimentalGroup(),
         sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
         sampleInfo.getCustomerComment()));
   }
@@ -295,14 +294,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .filter(expGrp -> expGrp.id() == sample.experimentalGroupId())
         .findFirst().orElseThrow();
     /*We currently allow replicates independent of experimental groups which is why we have to parse all replicates */
-    BiologicalReplicate biologicalReplicate = experimentalGroups.stream()
-        .map(ExperimentalGroup::biologicalReplicates).flatMap(Collection::stream).filter(
-            biologicalReplicate1 -> biologicalReplicate1.id()
-                .equals(sample.biologicalReplicateId())).findFirst().orElseThrow();
     return SampleBatchInformationSpreadsheet.SampleInfo.create(sample.sampleId(),
         sample.sampleCode(), sample.analysisMethod(),
-        sample.label(), sample.organismId(),
-        biologicalReplicate, experimentalGroup, sample.sampleOrigin()
+        sample.label(), sample.organismId(), experimentalGroup, sample.sampleOrigin()
             .getSpecies(), sample.sampleOrigin().getSpecimen(), sample.sampleOrigin().getAnalyte(),
         sample.comment().orElse(""));
   }

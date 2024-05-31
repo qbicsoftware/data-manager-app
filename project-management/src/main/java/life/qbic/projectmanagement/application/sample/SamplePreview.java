@@ -38,8 +38,7 @@ public class SamplePreview {
   private SampleId sampleId;
   @Formula("(select sample_batches.batchLabel from sample_batches where sample_batches.id = assigned_batch_id)")
   private String batchLabel;
-  @Formula("(select bio_replicate.label from bio_replicate where bio_replicate.id = bio_replicate_id)")
-  private String bioReplicateLabel;
+
   @Column(name = "label")
   private String sampleLabel;
 
@@ -60,14 +59,13 @@ public class SamplePreview {
   }
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
-      String batchLabel, String bioReplicateLabel, String sampleLabel, String organismId,
+      String batchLabel, String sampleLabel, String organismId,
       ExperimentalGroup experimentalGroup, OntologyTerm species,
       OntologyTerm specimen, OntologyTerm analyte, String analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
     Objects.requireNonNull(batchLabel);
-    Objects.requireNonNull(bioReplicateLabel);
     Objects.requireNonNull(sampleLabel);
     Objects.requireNonNull(experimentalGroup);
     Objects.requireNonNull(species);
@@ -78,7 +76,6 @@ public class SamplePreview {
     this.sampleId = sampleId;
     this.sampleCode = sampleCode;
     this.batchLabel = batchLabel;
-    this.bioReplicateLabel = bioReplicateLabel;
     this.sampleLabel = sampleLabel;
     this.experimentalGroup = experimentalGroup;
     this.species = species;
@@ -98,7 +95,6 @@ public class SamplePreview {
    * @param sampleCode        the {@link SampleCode} associated with this SamplePreview
    * @param batchLabel        the label of the {@link Batch} which contains the {@link Sample}
    *                          associated with this preview
-   * @param bioReplicateLabel the label of the {@link BiologicalReplicate} for the {@link Sample}
    *                          associated with this preview
    * @param sampleLabel       the label of the {@link Sample} associated with this preview
    * @param organismId        optional identifier of the patient or organism a {@link Sample} was taken of
@@ -116,11 +112,11 @@ public class SamplePreview {
    */
   public static SamplePreview create(ExperimentId experimentId, SampleId sampleId,
       String sampleCode,
-      String batchLabel, String bioReplicateLabel,
+      String batchLabel,
       String sampleLabel, String organismId, ExperimentalGroup experimentalGroup,
       OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
       String analysisMethod, String comment) {
-    return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel, bioReplicateLabel,
+    return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel,
         sampleLabel, organismId, experimentalGroup, species, specimen, analyte, analysisMethod,
         comment);
   }
@@ -139,10 +135,6 @@ public class SamplePreview {
 
   public String batchLabel() {
     return batchLabel;
-  }
-
-  public String replicateLabel() {
-    return bioReplicateLabel;
   }
 
   public String sampleLabel() {
@@ -188,8 +180,7 @@ public class SamplePreview {
     SamplePreview that = (SamplePreview) o;
     return Objects.equals(experimentId, that.experimentId) && Objects.equals(
         sampleCode, that.sampleCode) && Objects.equals(sampleId, that.sampleId)
-        && Objects.equals(batchLabel, that.batchLabel) && Objects.equals(
-        bioReplicateLabel, that.bioReplicateLabel) && Objects.equals(sampleLabel,
+        && Objects.equals(batchLabel, that.batchLabel) && Objects.equals(sampleLabel,
         that.sampleLabel) && Objects.equals(organismId, that.organismId)
         && Objects.equals(species, that.species) && Objects.equals(specimen,
         that.specimen) && Objects.equals(analyte, that.analyte) && Objects.equals(
@@ -199,7 +190,7 @@ public class SamplePreview {
 
   @Override
   public int hashCode() {
-    return Objects.hash(experimentId, sampleCode, sampleId, batchLabel, bioReplicateLabel,
+    return Objects.hash(experimentId, sampleCode, sampleId, batchLabel,
         sampleLabel, organismId,
         species, specimen, analyte, experimentalGroup, analysisMethod, comment);
   }
@@ -211,7 +202,6 @@ public class SamplePreview {
         ", sampleCode='" + sampleCode + '\'' +
         ", sampleId='" + sampleId + '\'' +
         ", batchLabel='" + batchLabel + '\'' +
-        ", sampleSource='" + bioReplicateLabel + '\'' +
         ", sampleLabel='" + sampleLabel + '\'' +
         ", organismId='" + organismId + '\'' +
         ", species='" + species + '\'' +
