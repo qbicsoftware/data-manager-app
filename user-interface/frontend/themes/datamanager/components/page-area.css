@@ -147,6 +147,12 @@
   height: 100%;
 }
 
+.measurement-details-component .measurement-grid .measurement-column-cell {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
 .measurement-details-component .measurement-grid .sample-column-cell {
   display: inline-flex;
   column-gap: var(--lumo-space-s);

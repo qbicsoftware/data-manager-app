@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.logging.api.Logger;
@@ -154,10 +155,23 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private void createNGSMeasurementGrid() {
     ngsMeasurementGrid.addClassName("measurement-grid");
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
+    ngsMeasurementGrid.addComponentColumn(ngsMeasurement -> {
+          Span measurementCell = new Span();
+          String measurementCode = ngsMeasurement.measurementCode().value();
+          CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent(
+              measurementCode);
+          copyToClipBoardComponent.setIconSize("1em");
+          measurementCell.add(new Span(measurementCode), copyToClipBoardComponent);
+          measurementCell.addClassName("measurement-column-cell");
+          copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(
+              event -> System.out.println("Wow i was successful"));
+          copyToClipBoardComponent.addSwitchToCopyIconListener(
+              event -> System.out.println("Wow i was normal"));
+          return measurementCell;
+        })
         .setHeader("Measurement ID")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.measurementCode().value())
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setFlexGrow(0);
     ngsMeasurementGrid.addComponentColumn(measurement -> {
           if (measurement.samplePoolGroup().isEmpty()) {
             return new Span(
@@ -241,12 +255,19 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private void createProteomicsGrid() {
     proteomicsMeasurementGrid.addClassName("measurement-grid");
-    proteomicsMeasurementGrid.addColumn(
-            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
+    proteomicsMeasurementGrid.addComponentColumn(measurement -> {
+          Span measurementCell = new Span();
+          String measurementCode = measurement.measurementCode().value();
+          CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent(
+              measurementCode);
+          copyToClipBoardComponent.setIconSize("1em");
+          measurementCell.add(new Span(measurementCode), copyToClipBoardComponent);
+          measurementCell.addClassName("measurement-column-cell");
+          return measurementCell;
+        })
         .setHeader("Measurement ID")
-        .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.measurementCode().value())
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setFlexGrow(0);
     proteomicsMeasurementGrid.addComponentColumn(measurement -> {
           if (!measurement.isPooledSampleMeasurement()) {
             return new Span(
