@@ -13,8 +13,6 @@ import java.io.Serial;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Copy to Clipboard Component
@@ -28,7 +26,6 @@ import org.slf4j.LoggerFactory;
 @JsModule("./javascript/copytoclipboard.js")
 public class CopyToClipBoardComponent extends Span {
 
-  private static final Logger log = LoggerFactory.getLogger(CopyToClipBoardComponent.class);
   private final Icon copyIcon;
   private final Icon copySuccessIcon;
   private final long showSuccessTime = 1000;
