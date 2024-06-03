@@ -30,10 +30,10 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.infrastructure.project.access.SidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -56,7 +56,6 @@ public class ProjectAccessComponent extends PageArea {
   private static final long serialVersionUID = 6832688939965353201L;
 
   private final transient ProjectAccessService projectAccessService;
-  private final transient SidRepository sidRepository;
   private final transient UserInformationService userInformationService;
   private final UserPermissions userPermissions;
   private final Grid<ProjectAccessService.ProjectCollaborator> projectCollaborators;
@@ -67,12 +66,11 @@ public class ProjectAccessComponent extends PageArea {
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserInformationService userInformationService,
-      @Autowired SidRepository sidRepository, UserPermissions userPermissions) {
+      UserPermissions userPermissions) {
     this.projectAccessService = requireNonNull(projectAccessService,
         "projectAccessService must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
-    this.sidRepository = requireNonNull(sidRepository, "sidRepository must not be null");
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
 
     this.addClassName("project-access-component");
@@ -140,6 +138,15 @@ public class ProjectAccessComponent extends PageArea {
     return grid;
   }
 
+  private Span changeProjectAccessCell(ProjectCollaborator collaborator) {
+    Span changeProjectAccessCell = new Span();
+    Button removeButton = new Button("Remove", clickEvent -> removeCollaborator(collaborator));
+    Button editButton = new Button("Edit", clickEvent -> editCollaborator(collaborator));
+    changeProjectAccessCell.add(editButton, removeButton);
+    changeProjectAccessCell.addClassName("change-project-access-cell");
+    return changeProjectAccessCell;
+  }
+
   private void reloadProjectCollaborators(Grid<ProjectAccessService.ProjectCollaborator> grid,
       ProjectAccessService projectAccessService) {
     List<ProjectAccessService.ProjectCollaborator> collaborators = projectAccessService.listCollaborators(
@@ -200,6 +207,9 @@ public class ProjectAccessComponent extends PageArea {
     ProjectId projectId = context.projectId().orElseThrow();
     projectAccessService.removeCollaborator(projectId, collaborator.userId());
     reloadProjectCollaborators(projectCollaborators, projectAccessService);
+  }
+
+  private void editCollaborator(ProjectAccessService.ProjectCollaborator collaborator) {
   }
 
   private void onProjectRoleSelectionChanged(ProjectAccessService.ProjectCollaborator collaborator,

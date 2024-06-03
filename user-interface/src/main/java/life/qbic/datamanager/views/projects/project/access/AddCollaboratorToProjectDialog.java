@@ -7,10 +7,8 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.combobox.ComboBoxVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -30,24 +28,27 @@ import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessSe
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
- * TODO! next step use this dialog to add people to a project
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Add Collaborator to Project Dialog
+ * <p>
+ * Based on the {@link DialogWindow}, this dialog enables a user with at least edit rights to
+ * specify which collaborator should be granted access to the selected {@link Project} via the
+ * collaborators' username. Additionally, the user is able to specify the {@link ProjectRole} of the
+ * added collaborator should fulfill in the project
+ * <p>
  */
 public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 6582904858073255011L;
-  private final RadioButtonGroup<ProjectRole> projectRoleSelection;
-  private final ComboBox<UserInfo> userSelection;
+  private final Div projectRoleSelectionSection = new Div();
+  private final Div personSelectionSection = new Div();
+  private final RadioButtonGroup<ProjectRole> projectRoleSelection = new RadioButtonGroup<>();
+  private final ComboBox<UserInfo> personSelection = new ComboBox<>();
   private final ProjectId projectId;
-
   private transient ProjectCollaborator projectCollaborator;
 
   public AddCollaboratorToProjectDialog(UserInformationService userInformationService,
@@ -56,13 +57,21 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     requireNonNull(userInformationService, "userInformationService must not be null");
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     this.projectId = requireNonNull(projectId, "projectId must not be null");
+    addClassName("add-user-to-project-dialog");
+    initPersonSelection(userInformationService, alreadyExistingCollaborators);
+    initProjectRoleSelection();
+    add(personSelectionSection, projectRoleSelectionSection);
+  }
 
-    projectRoleSelection = projectRoleRadioButtons();
-    projectRoleSelection.setVisible(false);
-    projectRoleSelection.setHelperText("Please select the role of the person within your project.");
-    userSelection = new ComboBox<>();
-    userSelection.addThemeVariants(ComboBoxVariant.LUMO_HELPER_ABOVE_FIELD);
-    userSelection.setItems(query -> {
+  private void initPersonSelection(UserInformationService userInformationService,
+      List<ProjectCollaborator> alreadyExistingCollaborators) {
+    Span title = new Span("Select the person");
+    title.addClassNames("secondary", "bold");
+    Span description = new Span(
+        "Please select the username of the person you want to grant access to");
+
+    personSelectionSection.add();
+    personSelection.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .collect(Collectors.toCollection(ArrayList::new));
@@ -76,49 +85,30 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           .filter(userInfo -> alreadyExistingCollaborators.stream()
               .noneMatch(collaborator -> collaborator.userId().equals(userInfo.id())));
     });
-    userSelection.setItemLabelGenerator(UserInfo::platformUserName);
-    userSelection.setRenderer(new ComponentRenderer<>(
+    personSelection.setPlaceholder("Please select a username");
+    personSelection.setItemLabelGenerator(UserInfo::platformUserName);
+    personSelection.setRenderer(new ComponentRenderer<>(
         userInfo -> {
           Span userName = new Span(userInfo.platformUserName());
           userName.addClassName("new-collaborator-username");
           return userName;
         }
     ));
-    userSelection.setHelperText("Please select the person you want to add.");
-
-    projectRoleSelection.addValueChangeListener(
-        valueChanged -> this.projectCollaborator = new ProjectCollaborator(
-            userSelection.getValue().id(),
-            this.projectId, valueChanged.getValue()));
-    userSelection.addValueChangeListener(valueChangeEvent -> {
-      if (Objects.isNull(valueChangeEvent.getValue())) {
-        projectRoleSelection.setVisible(false);
-        this.projectCollaborator = null;
-        userSelection.setHelperText("Please select the person you want to add.");
-      } else {
-        userSelection.setHelperText(null);
-        projectRoleSelection.clear();
-        projectRoleSelection.setValue(ProjectRole.READ);
-        projectRoleSelection.setVisible(true);
-      }
-    });
-    this.addClassName("add-user-to-project-dialog");
-    add(new VerticalLayout(userSelection, projectRoleSelection));
   }
 
-  private static RadioButtonGroup<ProjectRole> projectRoleRadioButtons() {
-    RadioButtonGroup<ProjectRole> radioButtonGroup = new RadioButtonGroup<>();
-    radioButtonGroup.setLabel("Project Role");
-    radioButtonGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL,
+  private void initProjectRoleSelection() {
+    Span title = new Span("Assign a Role");
+    Span description = new Span("Please select the role of the person within the project");
+    projectRoleSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL,
         RadioGroupVariant.LUMO_HELPER_ABOVE_FIELD);
-    radioButtonGroup.setItems(List.of(
+    projectRoleSelection.setItems(List.of(
         ProjectRole.READ,
         ProjectRole.WRITE,
         ProjectRole.ADMIN
     ));
-    radioButtonGroup.setRequired(true);
-    radioButtonGroup.setValue(ProjectRole.READ);
-    radioButtonGroup.setRenderer(new ComponentRenderer<>(
+    projectRoleSelection.setRequired(true);
+    projectRoleSelection.setValue(ProjectRole.READ);
+    projectRoleSelection.setRenderer(new ComponentRenderer<>(
         projectRole -> {
           Span roleLabel = new Span(projectRole.label());
           roleLabel.addClassName("project-role-label");
@@ -132,9 +122,24 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           return projectRoleDiv;
         })
     );
-    return radioButtonGroup;
+    projectRoleSelection.setHelperText("Please select the role of the person within the project.");
+    projectRoleSelection.addValueChangeListener(
+        valueChanged -> this.projectCollaborator = new ProjectCollaborator(
+            personSelection.getValue().id(),
+            this.projectId, valueChanged.getValue()));
+    personSelection.addValueChangeListener(valueChangeEvent -> {
+      if (Objects.isNull(valueChangeEvent.getValue())) {
+        projectRoleSelection.setVisible(false);
+        this.projectCollaborator = null;
+        personSelection.setHelperText("Please select the person you want to add.");
+      } else {
+        personSelection.setHelperText(null);
+        projectRoleSelection.clear();
+        projectRoleSelection.setValue(ProjectRole.READ);
+        projectRoleSelection.setVisible(true);
+      }
+    });
   }
-
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
