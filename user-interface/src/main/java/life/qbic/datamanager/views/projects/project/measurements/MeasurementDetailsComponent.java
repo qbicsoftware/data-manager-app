@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -45,7 +43,6 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -71,7 +68,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
-  private static final Logger log = logger(MeasurementDetailsComponent.class);
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
@@ -525,10 +521,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           .setTooltipGenerator(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
                   .code())
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(ProteomicsSpecificMeasurementMetadata::fractionName)
-          .setHeader("Fraction Name")
-          .setTooltipGenerator(ProteomicsSpecificMeasurementMetadata::fractionName)
           .setAutoWidth(true);
       sampleDetailsGrid.addColumn(ProteomicsSpecificMeasurementMetadata::label)
           .setHeader("Measurement Label")
