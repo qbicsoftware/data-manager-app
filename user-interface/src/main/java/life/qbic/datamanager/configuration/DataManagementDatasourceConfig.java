@@ -1,10 +1,10 @@
 package life.qbic.datamanager.configuration;
 
 
+import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
 import javax.sql.DataSource;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
@@ -12,6 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -19,16 +20,17 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
- * Configures the datasource handling entities in package {@link life.qbic.identity}.
+ * Configures the datasource handling entities in package {@link life.qbic.projectmanagement} and {@link life.qbic.identity}.
  * <p>
  * The DataSource configured by this class is called {@code datasource} and is injectable through
- * {@code @Qualifier("identityDataSource")}.
+ * {@code @Qualifier("dataManagementDataSource")}.
  * <p>
  * Further the configuration registeres a {@link EntityManagerFactory} looking for entities from
- * {@link life.qbic.identity} and a {@link org.springframework.transaction.TransactionManager}.
+ * {@link life.qbic.projectmanagement} and a
+ * {@link org.springframework.transaction.TransactionManager}.
  *
  * <p>
- * It is injectable through {@code @Qualifier("identityDataSource")}
+ * It is injectable through {@code @Qualifier("dataManagementDataSource")}
  *
  * @see <a
  * href="https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.configure-two-datasources">Spring
@@ -37,44 +39,48 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-    basePackages = {"life.qbic.identity"},
-    entityManagerFactoryRef = "identityEntityManagerFactory",
-    transactionManagerRef = "identityTransactionManager")
-public class IdentityDatasourceConfig {
+    basePackages = {"life.qbic.projectmanagement", "life.qbic.identity"},
+    entityManagerFactoryRef = "dataManagementEntityManagerFactory",
+    transactionManagerRef = "dataManagementTransactionManager")
+public class DataManagementDatasourceConfig {
 
-  @Value("${qbic.identity.datasource.ddl-auto}")
+  @Value("${qbic.data-management.datasource.ddl-auto}")
   String hibernateDdlAuto;
 
-  @Bean(name = "identityDataSourceProperties")
-  @ConfigurationProperties("qbic.identity.datasource")
+  @Primary
+  @Bean(name = "dataManagementDataSourceProperties")
+  @ConfigurationProperties("qbic.data-management.datasource")
   public DataSourceProperties dataSourceProperties() {
     return new DataSourceProperties();
   }
 
-  @Bean(name = "identityDataSource")
+  @Primary
+  @Bean(name = "dataManagementDataSource")
   public DataSource dataSource() {
     return dataSourceProperties()
         .initializeDataSourceBuilder()
-        .type(BasicDataSource.class)
+        .type(HikariDataSource.class)
         .build();
   }
 
-  @Bean(name = "identityEntityManagerFactory")
+  @Primary
+  @Bean(name = "dataManagementEntityManagerFactory")
   public LocalContainerEntityManagerFactoryBean entityManagerFactory(
       EntityManagerFactoryBuilder builder,
-      @Qualifier("identityDataSource") DataSource dataSource) {
+      @Qualifier("dataManagementDataSource") DataSource dataSource) {
     return builder
         .dataSource(dataSource)
-        .packages("life.qbic.identity")
+        .packages("life.qbic.projectmanagement", "life.qbic.identity")
         .properties(Map.of(
             "hibernate.hbm2ddl.auto", hibernateDdlAuto
         ))
         .build();
   }
 
-  @Bean(name = "identityTransactionManager")
+  @Primary
+  @Bean(name = "dataManagementTransactionManager")
   public PlatformTransactionManager transactionManager(
-      @Qualifier("identityEntityManagerFactory") LocalContainerEntityManagerFactoryBean factoryBean) {
+      @Qualifier("dataManagementEntityManagerFactory") LocalContainerEntityManagerFactoryBean factoryBean) {
     return new JpaTransactionManager(factoryBean.getObject());
   }
 }
