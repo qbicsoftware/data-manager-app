@@ -321,11 +321,15 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     }
   }
 
+
+  /**
+   * Created Personal Access Token Details
+   * <p>
+   * Component based on {@link Div} showing the created Personal access token, providing the
+   * possibility to copy the new token via the {@link CopyToClipBoardComponent}
+   */
   private static class CreatedPersonalAccessTokenDetails extends Div {
 
-    /**
-     * Creates a new empty div.
-     */
     private final Span rawToken = new Span();
     private final Span copyDisclaimerText = new Span();
     private final CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent();
