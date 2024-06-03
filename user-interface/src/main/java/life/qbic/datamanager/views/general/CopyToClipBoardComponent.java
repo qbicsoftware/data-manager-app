@@ -10,6 +10,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +31,7 @@ public class CopyToClipBoardComponent extends Span {
   private static final Logger log = LoggerFactory.getLogger(CopyToClipBoardComponent.class);
   private final Icon copyIcon;
   private final Icon copySuccessIcon;
-  private long showSuccessTime = 1000;
+  private final long showSuccessTime = 1000;
   private String textToBeCopied = "";
 
   public CopyToClipBoardComponent() {
@@ -67,24 +69,14 @@ public class CopyToClipBoardComponent extends Span {
     // reset copy view after a specific time
     UI ui = UI.getCurrent();
     ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
-    new Thread(() -> {
-      try {
-        TimeUnit.MILLISECONDS.sleep(showSuccessTime);
-        fireEvent(new SwitchToCopyIconEvent(this, componentEvent.isFromClient()));
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        log.debug("CopyToClipboard thread interrupted due to{}", ex.getMessage());
-      }
-      ui.access(() -> {
-        copyIcon.setVisible(true);
-        copySuccessIcon.setVisible(false);
-        ui.push();
-      });
-    }).start();
-  }
-
-  public void setSuccessIconTimer(long miliseconds) {
-    showSuccessTime = miliseconds;
+    Executor delayedExecutor = CompletableFuture.delayedExecutor(showSuccessTime,
+        TimeUnit.MILLISECONDS);
+    CompletableFuture.runAsync(() -> ui.access(() -> {
+      copyIcon.setVisible(true);
+      copySuccessIcon.setVisible(false);
+      ui.push();
+    }), delayedExecutor).thenRun(() ->
+        fireEvent(new SwitchToCopyIconEvent(this, componentEvent.isFromClient())));
   }
 
   /**
