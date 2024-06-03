@@ -174,9 +174,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               measurement);
           Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
           expandIcon.addClassName("expand-icon");
-          expandIcon.addClickListener(event -> measurementPooledSamplesDialog.open());
           Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
-          expandSpan.addClassName("sample-column-cell");
+          expandSpan.addClassNames("sample-column-cell", "clickable");
+          expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
         .setHeader("Sample IDs")
@@ -270,9 +270,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               measurement);
           Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
           expandIcon.addClassName("expand-icon");
-          expandIcon.addClickListener(event -> measurementPooledSamplesDialog.open());
           Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
-          expandSpan.addClassName("sample-column-cell");
+          expandSpan.addClassNames("sample-column-cell", "clickable");
+          expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
         .setHeader("Sample IDs")
