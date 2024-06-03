@@ -81,6 +81,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
   private transient Context context;
   private String searchTerm = "";
+  private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
       @Autowired SampleInformationService sampleInformationService,
@@ -159,10 +160,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           copyToClipBoardComponent.setIconSize("1em");
           measurementCell.add(new Span(measurementCode), copyToClipBoardComponent);
           measurementCell.addClassName("measurement-column-cell");
-          copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(
-              event -> System.out.println("Wow i was successful"));
-          copyToClipBoardComponent.addSwitchToCopyIconListener(
-              event -> System.out.println("Wow i was normal"));
           return measurementCell;
         })
         .setHeader("Measurement ID")
@@ -223,11 +220,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(
             ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setHeader("Registration Date")
         .setTooltipGenerator(
             ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
         .setHeader("Comment")
@@ -322,10 +319,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(
             measurement -> asClientLocalDateTime(measurement.registrationDate())
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setHeader("Registration Date")
         .setTooltipGenerator(measurement -> asClientLocalDateTime(measurement.registrationDate())
-            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+            .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse(""))
         .setHeader("Comment")
