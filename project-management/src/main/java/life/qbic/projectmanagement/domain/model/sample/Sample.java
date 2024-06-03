@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import life.qbic.projectmanagement.domain.model.experiment.BiologicalReplicateId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 
 /**
@@ -31,9 +30,7 @@ public class Sample {
   @Embedded
   @AttributeOverride(name = "uuid", column = @Column(name = "assigned_batch_id"))
   private BatchId assignedBatch;
-  @Embedded
-  @AttributeOverride(name = "id", column = @Column(name = "bio_replicate_id"))
-  private BiologicalReplicateId biologicalReplicateId;
+
   @Embedded
   @AttributeOverride(name = "uuid", column = @Column(name = "experiment_id"))
   private ExperimentId experimentId;
@@ -58,7 +55,7 @@ public class Sample {
 
   private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
       String organismId, ExperimentId experimentId, Long experimentalGroupId,
-      SampleOrigin sampleOrigin, BiologicalReplicateId replicateReference,
+      SampleOrigin sampleOrigin,
       AnalysisMethod analysisMethod, String comment) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
@@ -67,7 +64,6 @@ public class Sample {
     this.experimentId = experimentId;
     this.experimentalGroupId = experimentalGroupId;
     this.sampleOrigin = sampleOrigin;
-    this.biologicalReplicateId = replicateReference;
     this.assignedBatch = assignedBatch;
     this.analysisMethod = analysisMethod;
     this.comment = comment;
@@ -90,7 +86,7 @@ public class Sample {
     return new Sample(sampleId, sampleCode, sampleRegistrationRequest.assignedBatch(),
         sampleRegistrationRequest.label(), sampleRegistrationRequest.organismId(),
         sampleRegistrationRequest.experimentId(), sampleRegistrationRequest.experimentalGroupId(),
-        sampleRegistrationRequest.sampleOrigin(), sampleRegistrationRequest.replicateReference(),
+        sampleRegistrationRequest.sampleOrigin(),
         sampleRegistrationRequest.analysisMethod(), sampleRegistrationRequest.comment());
   }
 
@@ -130,20 +126,12 @@ public class Sample {
     return this.experimentalGroupId;
   }
 
-  public BiologicalReplicateId biologicalReplicateId() {
-    return this.biologicalReplicateId;
-  }
-
   public AnalysisMethod analysisMethod() {
     return this.analysisMethod;
   }
 
   public void setAssignedBatch(BatchId assignedBatch) {
     this.assignedBatch = assignedBatch;
-  }
-
-  public void setBiologicalReplicateId(BiologicalReplicateId biologicalReplicateId) {
-    this.biologicalReplicateId = biologicalReplicateId;
   }
 
   public void setExperimentalGroupId(Long experimentalGroupId) {
