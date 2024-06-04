@@ -32,7 +32,6 @@ import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
@@ -142,25 +141,19 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   }
 
   private Span generateEditorButtons(BatchPreview batchPreview) {
-    Icon viewIcon = LumoIcon.EYE.create();
     Icon editIcon = LumoIcon.EDIT.create();
     Icon deleteIcon = VaadinIcon.TRASH.create();
-    Button viewButton = new Button(viewIcon);
     Button editButton = new Button(editIcon);
     Button deleteButton = new Button(deleteIcon);
-    viewButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
-    viewButton.addClickListener(e -> fireEvent(new ViewBatchEvent(this, batchPreview,
-        e.isFromClient())));
     deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
         e.isFromClient())));
     editButton.addClickListener(
         e -> fireEvent(new EditBatchEvent(this, batchPreview, e.isFromClient())));
-    viewButton.setTooltipText("View Samples for Batch");
     editButton.setTooltipText("Edit Batch");
     deleteButton.setTooltipText("Delete Batch");
-    Span buttons = new Span(viewButton, editButton, deleteButton);
+    Span buttons = new Span(editButton, deleteButton);
     buttons.addClassName("editor-buttons");
     return buttons;
   }
@@ -176,17 +169,6 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
         .map(batchStream -> batchStream.map(this::generatePreviewFromBatch))
         .map(Stream::toList)
         .onValue(batchPreviews::addAll);
-  }
-
-  /**
-   * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link ViewBatchEvent}, as soon as a user wants to view a {@link Batch}
-   *
-   * @param batchViewListener a listener on the batch view trigger
-   */
-  public void addBatchViewListener(
-      ComponentEventListener<ViewBatchEvent> batchViewListener) {
-    addListener(ViewBatchEvent.class, batchViewListener);
   }
 
   /**

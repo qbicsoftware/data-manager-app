@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -23,7 +22,6 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
@@ -112,7 +110,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
     batchDetailsComponent.addBatchEditListener(this::onEditBatchClicked);
-    batchDetailsComponent.addBatchViewListener(this::onViewBatchClicked);
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -248,13 +245,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
     StyledNotification notification = new StyledNotification(errorMessage);
     notification.open();
-  }
-
-  private void onViewBatchClicked(ViewBatchEvent viewBatchEvent) {
-    ConfirmDialog confirmDialog = new ConfirmDialog();
-    confirmDialog.setText(("This is where I'd show all of my Samples"));
-    confirmDialog.open();
-    confirmDialog.addConfirmListener(event -> confirmDialog.close());
   }
 
   private void onEditBatchClicked(EditBatchEvent editBatchEvent) {
