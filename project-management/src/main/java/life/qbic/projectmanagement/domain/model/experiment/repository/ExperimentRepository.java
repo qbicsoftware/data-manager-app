@@ -17,5 +17,5 @@ public interface ExperimentRepository {
 
   void delete(ExperimentId experimentId);
 
-  Optional<String> findProjectID(ExperimentId experimentId);
+  Optional<String> findProjectId(ExperimentId experimentId);
 }

@@ -43,7 +43,7 @@ public class ExperimentJpaRepository implements ExperimentRepository {
   }
 
   @Override
-  public Optional<String> findProjectID(ExperimentId experimentId) {
-    return qbicExperimentRepo.findProjectIDForExperiment(experimentId.value());
+  public Optional<String> findProjectId(ExperimentId experimentId) {
+    return qbicExperimentRepo.findProjectIdForExperiment(experimentId.value());
   }
 }

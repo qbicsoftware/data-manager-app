@@ -485,7 +485,7 @@ public class ExperimentInformationService {
   }
 
   public Optional<ProjectId> findProjectID(ExperimentId experimentId) {
-    Optional<String> id = experimentRepository.findProjectID(experimentId);
+    Optional<String> id = experimentRepository.findProjectId(experimentId);
     return id.map(ProjectId::parse);
   }
 

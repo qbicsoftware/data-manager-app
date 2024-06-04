@@ -16,5 +16,5 @@ public interface QbicExperimentRepo extends JpaRepository<Experiment, Experiment
 
   @Query(value = "SELECT project FROM experiments_datamanager WHERE id = ?1",
       nativeQuery = true)
-  Optional<String> findProjectIDForExperiment(String experimentId);
+  Optional<String> findProjectIdForExperiment(String experimentId);
 }
