@@ -22,7 +22,6 @@ import java.util.Objects;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
-import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
