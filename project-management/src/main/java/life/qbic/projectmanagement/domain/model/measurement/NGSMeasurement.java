@@ -66,7 +66,7 @@ public class NGSMeasurement {
   @Embedded
   private Organisation organisation;
 
-  @ElementCollection(targetClass = ProteomicsSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
+  @ElementCollection(targetClass = NGSSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "specific_measurement_metadata_ngs", joinColumns = @JoinColumn(name = "measurement_id"))
   private Set<NGSSpecificMeasurementMetadata> specificMetadata = new HashSet<>();
 
