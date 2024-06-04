@@ -6,6 +6,7 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
+import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
@@ -48,6 +51,7 @@ public class AddExperimentDialog extends DialogWindow {
         "ontologyTermInformationService must not be null");
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService);
+    BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
@@ -62,12 +66,14 @@ public class AddExperimentDialog extends DialogWindow {
             + "values are allowed!");
 
     MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
+    speciesBox.addClassName("box-flexgrow");
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
     MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
+    specimenBox.addClassName("box-flexgrow");
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
@@ -79,17 +85,34 @@ public class AddExperimentDialog extends DialogWindow {
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
 
+    ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(
+        BioIcon.getOptionsForType(SampleSourceType.SPECIES), "Species icon");
+    binder.forField(speciesIconBox)
+        .bind(ExperimentDraft::getSpeciesIcon,
+            ExperimentDraft::setSpeciesIcon);
+
+    ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(
+        BioIcon.getOptionsForType(SampleSourceType.SPECIMEN), "Specimen icon");
+    binder.forField(specimenIconBox)
+        .bind(ExperimentDraft::getSpecimenIcon,
+            ExperimentDraft::setSpecimenIcon);
+
     addClassName("add-experiment-dialog");
     setHeaderTitle("Experimental Design");
     setConfirmButtonLabel("Add");
     setCancelButtonLabel("Cancel");
 
+    Div speciesRow = new Div(speciesIconBox, speciesBox);
+    speciesRow.addClassName("input-with-icon");
+    Div specimenRow = new Div(specimenIconBox, specimenBox);
+    specimenRow.addClassName("input-with-icon");
+
     Div container = new Div(experimentHeader,
         experimentDescription,
         experimentNameField,
         experimentDescription,
-        speciesBox,
-        specimenBox,
+        speciesRow,
+        specimenRow,
         analyteBox);
     container.addClassName("add-experiment-content");
 
@@ -259,8 +282,17 @@ public class AddExperimentDialog extends DialogWindow {
     public BioIcon getSpeciesIcon() {
       return BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIES, speciesIconName);
     }
+
+    public void setSpeciesIcon(BioIcon bioIcon) {
+      this.speciesIconName = bioIcon.getLabel();
+    }
+
     public BioIcon getSpecimenIcon() {
       return BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN, specimenIconName);
+    }
+
+    public void setSpecimenIcon(BioIcon bioIcon) {
+      this.specimenIconName = bioIcon.getLabel();
     }
   }
 }
