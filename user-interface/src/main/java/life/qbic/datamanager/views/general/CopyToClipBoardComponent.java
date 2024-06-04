@@ -35,7 +35,6 @@ public class CopyToClipBoardComponent extends Span {
     copyIcon = VaadinIcon.COPY_O.create();
     copyIcon.setSize(IconSize.SMALL);
     copyIcon.addClassNames("clickable", "copy-icon");
-    copyIcon.setTooltipText("Copy text to clipboard");
     copySuccessIcon = VaadinIcon.CHECK.create();
     copySuccessIcon.addClassName("copy-icon-success");
     add(copyIcon);
