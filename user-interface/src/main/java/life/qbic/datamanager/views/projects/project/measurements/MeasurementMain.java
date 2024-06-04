@@ -297,10 +297,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       completableFuture.thenAccept(results -> {
         var errorResult = results.stream().filter(Result::isError).findAny();
         if (errorResult.isPresent()) {
+          String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
           measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
               () -> measurementMetadataUploadDialog.taskFailed(
                   "Measurement %s could not be completed".formatted(process),
-                  "Please try again")));
+                  detailedMessage)));
         } else {
           measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
               () -> measurementMetadataUploadDialog.taskSucceeded(
