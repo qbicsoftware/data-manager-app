@@ -142,13 +142,25 @@
 
 .measurement-details-component .measurement-grid {
   height: 100%;
-  width: 100%;
 }
 
-.measurement-details-component .measurement-grid .sample-code-column {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-s);
+.measurement-details-component .measurement-grid .measurement-column-cell {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.measurement-details-component .measurement-grid .sample-column-cell {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.measurement-details-component .measurement-grid .sample-column-cell .expand-icon {
+  width: 1em;
+  height: 1em;
+  color: var(--lumo-primary-color);
+  cursor: pointer;
 }
 
 .measurement-details-component .measurement-grid .organisation-entry {
@@ -174,17 +186,6 @@
   row-gap: var(--lumo-space-s);
   cursor: default;
 }
-
-/*We want to style the cells within the rows containing the components and values within the measurement grid to be clickable*/
-.measurement-details-component .measurement-grid > * {
-  cursor: pointer;
-}
-
-/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
-.measurement-details-component .measurement-grid::part(row) {
-  cursor: pointer;
-}
-
 
 .measurement-details-component .measurement-grid .measurement-item .entry {
   display: inline-flex;
