@@ -195,8 +195,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         indexI5Contains,
         registrationDateContains,
         commentContains);
-    return Specification.where(isBlankSpec).and(containsSampleId).and(filterSpecification)
-        .and(isDistinctSpec);
+    return Specification.where(isBlankSpec).and(containsSampleId).and(isDistinctSpec);
   }
 
 
@@ -353,9 +352,9 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
         if (sampleIds.isEmpty()) {
           //If no sampleId is in the experiment then there can also be no measurement
           return builder.disjunction();
-        } else {
-          return root.join("measuredSamples").in(sampleIds);
         }
+        Join<?, ?> sampleSpecificMetadata = root.join("specificMetadata");
+        return sampleSpecificMetadata.get("measuredSample").in(sampleIds);
       };
     }
 
