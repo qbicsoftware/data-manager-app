@@ -316,7 +316,6 @@
   border: 1px solid var(--lumo-contrast-20pct);
 }
 
-
 .personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details {
   display: flex;
   flex-direction: column;
@@ -350,7 +349,6 @@
   flex-direction: column;
   row-gap: var(--lumo-space-m);
 }
-
 
 .personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .copy-disclaimer {
   display: inline-flex;
@@ -395,6 +393,12 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.project-access-component .change-project-access-cell {
+  display: inline-flex;
+  column-gap: var(--lumo-space-l);
+  align-items: center;
 }
 
 .project-collection-component {

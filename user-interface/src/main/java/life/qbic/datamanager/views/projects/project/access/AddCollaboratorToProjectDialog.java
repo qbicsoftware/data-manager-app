@@ -17,8 +17,6 @@ import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -49,7 +47,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
   private final RadioButtonGroup<ProjectRole> projectRoleSelection = new RadioButtonGroup<>();
   private final ComboBox<UserInfo> personSelection = new ComboBox<>();
   private final ProjectId projectId;
-  private transient ProjectCollaborator projectCollaborator;
 
   public AddCollaboratorToProjectDialog(UserInformationService userInformationService,
       ProjectAccessService projectAccessService, ProjectId projectId,
@@ -60,17 +57,17 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     addClassName("add-user-to-project-dialog");
     initPersonSelection(userInformationService, alreadyExistingCollaborators);
     initProjectRoleSelection();
+    setHeaderTitle("Add Collaborator");
     add(personSelectionSection, projectRoleSelectionSection);
   }
 
   private void initPersonSelection(UserInformationService userInformationService,
       List<ProjectCollaborator> alreadyExistingCollaborators) {
     Span title = new Span("Select the person");
-    title.addClassNames("secondary", "bold");
+    title.addClassNames("section-title");
     Span description = new Span(
         "Please select the username of the person you want to grant access to");
-
-    personSelectionSection.add();
+    description.addClassName("secondary");
     personSelection.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
@@ -85,6 +82,8 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           .filter(userInfo -> alreadyExistingCollaborators.stream()
               .noneMatch(collaborator -> collaborator.userId().equals(userInfo.id())));
     });
+    personSelection.setRequired(true);
+    personSelection.setErrorMessage("Please specify the collaborator to be added to the project");
     personSelection.setPlaceholder("Please select a username");
     personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.setRenderer(new ComponentRenderer<>(
@@ -94,11 +93,17 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           return userName;
         }
     ));
+    personSelection.addClassName("person-selection");
+    personSelectionSection.addClassName("person-selection-section");
+    personSelectionSection.add(title, description, personSelection);
+
   }
 
   private void initProjectRoleSelection() {
     Span title = new Span("Assign a Role");
+    title.addClassNames("section-title");
     Span description = new Span("Please select the role of the person within the project");
+    description.addClassName("secondary");
     projectRoleSelection.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL,
         RadioGroupVariant.LUMO_HELPER_ABOVE_FIELD);
     projectRoleSelection.setItems(List.of(
@@ -107,6 +112,8 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
         ProjectRole.ADMIN
     ));
     projectRoleSelection.setRequired(true);
+    projectRoleSelection.setErrorMessage(
+        "Please specify the role for the to be added collaborator");
     projectRoleSelection.setValue(ProjectRole.READ);
     projectRoleSelection.setRenderer(new ComponentRenderer<>(
         projectRole -> {
@@ -122,29 +129,22 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           return projectRoleDiv;
         })
     );
-    projectRoleSelection.setHelperText("Please select the role of the person within the project.");
-    projectRoleSelection.addValueChangeListener(
-        valueChanged -> this.projectCollaborator = new ProjectCollaborator(
-            personSelection.getValue().id(),
-            this.projectId, valueChanged.getValue()));
-    personSelection.addValueChangeListener(valueChangeEvent -> {
-      if (Objects.isNull(valueChangeEvent.getValue())) {
-        projectRoleSelection.setVisible(false);
-        this.projectCollaborator = null;
-        personSelection.setHelperText("Please select the person you want to add.");
-      } else {
-        personSelection.setHelperText(null);
-        projectRoleSelection.clear();
-        projectRoleSelection.setValue(ProjectRole.READ);
-        projectRoleSelection.setVisible(true);
-      }
-    });
+    projectRoleSelection.addClassName("role-selection");
+    projectRoleSelectionSection.addClassName("role-selection-section");
+    projectRoleSelectionSection.add(title, description, projectRoleSelection);
   }
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    Optional.ofNullable(projectCollaborator).ifPresent(it ->
-        fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), it)));
+    personSelection.setInvalid(personSelection.isEmpty());
+    projectRoleSelection.setInvalid(projectRoleSelection.isEmpty());
+    if (!personSelection.isInvalid() && !projectRoleSelection.isInvalid()) {
+      String userId = personSelection.getValue().id();
+      ProjectRole projectRole = projectRoleSelection.getValue();
+      ProjectCollaborator projectCollaborator = new ProjectCollaborator(userId, projectId,
+          projectRole);
+      fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), projectCollaborator));
+    }
   }
 
   @Override

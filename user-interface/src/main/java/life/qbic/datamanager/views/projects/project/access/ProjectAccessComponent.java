@@ -10,9 +10,11 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -24,6 +26,8 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ConfirmEvent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
@@ -60,7 +64,6 @@ public class ProjectAccessComponent extends PageArea {
   private final UserPermissions userPermissions;
   private final Grid<ProjectAccessService.ProjectCollaborator> projectCollaborators;
   private final Span buttonBar;
-
   private Context context;
 
   protected ProjectAccessComponent(
@@ -91,11 +94,17 @@ public class ProjectAccessComponent extends PageArea {
     content.addClassName("content");
     Span userProjectAccessDescription = new Span("Users with access to this project");
 
-    projectCollaborators = projectCollaboratorGrid(userInformationService, this.userPermissions);
+    projectCollaborators = projectCollaboratorGrid();
     Div userProjectAccess = new Div(userProjectAccessDescription, projectCollaborators);
     userProjectAccess.addClassName("user-access");
     content.add(userProjectAccess);
     add(content);
+  }
+
+  private static boolean isCurrentUser(ProjectAccessService.ProjectCollaborator collaborator) {
+    return Objects.equals(collaborator.userId(),
+        ((QbicUserDetails) SecurityContextHolder.getContext()
+            .getAuthentication().getPrincipal()).getUserId());
   }
 
   private Button addCollaboratorButton() {
@@ -113,35 +122,80 @@ public class ProjectAccessComponent extends PageArea {
     buttonBar.removeAll();
   }
 
-  private Grid<ProjectAccessService.ProjectCollaborator> projectCollaboratorGrid(
-      UserInformationService userInformationService, UserPermissions userPermissions) {
+  private Grid<ProjectAccessService.ProjectCollaborator> projectCollaboratorGrid() {
+
     Grid<ProjectAccessService.ProjectCollaborator> grid = new Grid<>();
+    Editor<ProjectCollaborator> editor = grid.getEditor();
+    Binder<ProjectCollaborator> binder = new Binder<>(ProjectCollaborator.class);
+    editor.setBinder(binder);
     Column<ProjectAccessService.ProjectCollaborator> usernameColumn = grid.addColumn(
             projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
                 //We can't throw an exception here since projects can be linked to deleted users
                 .map(UserInfo::platformUserName).orElse(""))
-        .setKey("username");
+        .setKey("username").setHeader("User");
     Column<ProjectAccessService.ProjectCollaborator> projectRoleColumn = grid.addColumn(
-            new ComponentRenderer<>(
-                collaborator -> renderProjectRoleComponent(userPermissions, collaborator)))
-        .setKey("projectRole");
-    grid.addColumn(new ComponentRenderer<>(
-            collaborator ->
-                collaborator.projectRole() == ProjectRole.OWNER || isCurrentUser(collaborator)
-                    ? new Span() // you cannot remove yourself or the owner
-                    : new Button("Remove", clickEvent -> removeCollaborator(collaborator))))
-        .setKey("removeButton");
+            collaborator -> "Role: " + collaborator.projectRole().label())
+        .setKey("projectRole").setHeader("Role").setEditorComponent(
+            this::renderProjectRoleComponent);
+    grid.addComponentColumn(collaborator -> {
+      //You can't remove or edit your own role
+      if (isCurrentUser(collaborator)) {
+        return new Span();
+      }
+      //You can't remove or edit the project owner
+      if (collaborator.projectRole() == ProjectRole.OWNER) {
+        return new Span();
+      }
+      //You don't have the rights to change the user
+      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+        return new Span();
+      }
+      return changeProjectAccessCell(collaborator);
+    }).setHeader("Action");
     grid.sort(
-        List.of(new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING),
-            new GridSortOrder<>(usernameColumn, SortDirection.ASCENDING)));
+        List.of(new GridSortOrder<>(usernameColumn, SortDirection.ASCENDING),
+            new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING)));
     grid.setSelectionMode(SelectionMode.NONE);
     return grid;
   }
 
   private Span changeProjectAccessCell(ProjectCollaborator collaborator) {
     Span changeProjectAccessCell = new Span();
-    Button removeButton = new Button("Remove", clickEvent -> removeCollaborator(collaborator));
-    Button editButton = new Button("Edit", clickEvent -> editCollaborator(collaborator));
+    //We want to ensure that even if the frontend components are shown no event is propagated
+    // if the user doesn't have the correct role or tries to remove himself/the project owner
+    Button removeButton = new Button("Remove", clickEvent -> {
+      if (isCurrentUser(collaborator)) {
+        displayError("Invalid user removal", "You can't remove yourself from a project");
+      }
+      if (collaborator.projectRole() == ProjectRole.OWNER) {
+        displayError("Invalid user removal", "You can't remove the owner of a project");
+      }
+      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+        displayError("Invalid user removal",
+            "You don't have permission to remove the user from this project");
+      }
+      removeCollaborator(collaborator);
+    });
+    //We want to ensure that even if the frontend components are shown no event is propagated
+    // if the user doesn't have the correct role or tries to edit himself/the project owner
+    Button editButton = new Button("Edit", clickEvent -> {
+      if (isCurrentUser(collaborator)) {
+        displayError("Invalid role edit", "You can't change your own project role");
+      }
+      if (collaborator.projectRole() == ProjectRole.OWNER) {
+        displayError("Invalid role edit", "You can't change the owner of this project");
+      }
+      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+        displayError("Invalid role edit",
+            "You don't have permission to change the role of this collaborator");
+      }
+      if (projectCollaborators.getEditor().isOpen()) {
+        projectCollaborators.getEditor().cancel();
+        projectCollaborators.getEditor().closeEditor();
+        return;
+      }
+      projectCollaborators.getEditor().editItem(collaborator);
+    });
     changeProjectAccessCell.add(editButton, removeButton);
     changeProjectAccessCell.addClassName("change-project-access-cell");
     return changeProjectAccessCell;
@@ -154,20 +208,9 @@ public class ProjectAccessComponent extends PageArea {
     grid.setItems(collaborators);
   }
 
-  private Component renderProjectRoleComponent(UserPermissions userPermissions,
+  private Component renderProjectRoleComponent(
       ProjectAccessService.ProjectCollaborator collaborator) {
     String labelPrefix = "Role: ";
-    if (collaborator.projectRole() == ProjectRole.OWNER) {
-      return new Span(labelPrefix + collaborator.projectRole().label()); //can not change owner
-    }
-    if (isCurrentUser(collaborator)) {
-      return new Span(labelPrefix + collaborator.projectRole().label());
-    }
-    if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-      return new Span(labelPrefix + collaborator.projectRole()
-          .label()); //insufficient permissions to change roles
-    }
-
     Select<ProjectRole> roleSelect = new Select<>();
     roleSelect.addClassName("project-role-select");
     roleSelect.setItemLabelGenerator(ProjectRole::label);
@@ -192,24 +235,25 @@ public class ProjectAccessComponent extends PageArea {
         }));
 
     roleSelect.setValue(collaborator.projectRole());
-    roleSelect.addValueChangeListener(
-        valueChanged -> onProjectRoleSelectionChanged(collaborator, valueChanged));
+    roleSelect.addValueChangeListener(valueChanged -> {
+      onProjectRoleSelectionChanged(collaborator, valueChanged);
+      projectCollaborators.getEditor().save();
+      projectCollaborators.getEditor().closeEditor();
+      reloadProjectCollaborators(projectCollaborators, projectAccessService);
+    });
     return roleSelect;
-  }
-
-  private static boolean isCurrentUser(ProjectAccessService.ProjectCollaborator collaborator) {
-    return Objects.equals(collaborator.userId(),
-        ((QbicUserDetails) SecurityContextHolder.getContext()
-            .getAuthentication().getPrincipal()).getUserId());
   }
 
   private void removeCollaborator(ProjectAccessService.ProjectCollaborator collaborator) {
     ProjectId projectId = context.projectId().orElseThrow();
+    if (isCurrentUser(collaborator)) {
+      throw new ApplicationException("You can't remove yourself from this project");
+    }
+    if (collaborator.projectRole() == ProjectRole.OWNER) {
+      throw new ApplicationException("You can't remove the owner of this project");
+    }
     projectAccessService.removeCollaborator(projectId, collaborator.userId());
     reloadProjectCollaborators(projectCollaborators, projectAccessService);
-  }
-
-  private void editCollaborator(ProjectAccessService.ProjectCollaborator collaborator) {
   }
 
   private void onProjectRoleSelectionChanged(ProjectAccessService.ProjectCollaborator collaborator,
@@ -254,6 +298,12 @@ public class ProjectAccessComponent extends PageArea {
             .userId(), event.projectCollaborator().projectRole());
     reloadProjectCollaborators(projectCollaborators, projectAccessService);
     event.getSource().close();
+  }
+
+  private void displayError(String title, String description) {
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
+    StyledNotification notification = new StyledNotification(errorMessage);
+    notification.open();
   }
 
 }
