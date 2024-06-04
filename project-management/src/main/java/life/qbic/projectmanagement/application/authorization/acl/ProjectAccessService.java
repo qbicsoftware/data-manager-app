@@ -123,9 +123,9 @@ public interface ProjectAccessService {
 
     public static String render(ProjectRole role) {
       return switch (role) {
-        case READ -> "View project and download data.";
-        case WRITE -> "View and edit the project";
-        case ADMIN -> "Full project access including project access management";
+        case READ -> "View all project data and metadata.";
+        case WRITE -> "View and edit all project data and metadata";
+        case ADMIN -> "View and edit all project data and metadata, manage access";
         case OWNER -> "Do not assign this role. This person owns the project.";
       };
     }

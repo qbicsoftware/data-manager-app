@@ -89,16 +89,10 @@ public class ProjectAccessComponent extends PageArea {
     buttonBar = new Span();
     header.add(titleField, buttonBar);
     add(header);
-
-    Div content = new Div();
-    content.addClassName("content");
     Span userProjectAccessDescription = new Span("Users with access to this project");
 
     projectCollaborators = projectCollaboratorGrid();
-    Div userProjectAccess = new Div(userProjectAccessDescription, projectCollaborators);
-    userProjectAccess.addClassName("user-access");
-    content.add(userProjectAccess);
-    add(content);
+    add(userProjectAccessDescription, projectCollaborators);
   }
 
   private static boolean isCurrentUser(ProjectAccessService.ProjectCollaborator collaborator) {
@@ -132,11 +126,12 @@ public class ProjectAccessComponent extends PageArea {
             projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
                 //We can't throw an exception here since projects can be linked to deleted users
                 .map(UserInfo::platformUserName).orElse(""))
-        .setKey("username").setHeader("User");
+        .setKey("username").setHeader("User").setAutoWidth(true);
+    ;
     Column<ProjectAccessService.ProjectCollaborator> projectRoleColumn = grid.addColumn(
             collaborator -> "Role: " + collaborator.projectRole().label())
         .setKey("projectRole").setHeader("Role").setEditorComponent(
-            this::renderProjectRoleComponent);
+            this::renderProjectRoleComponent).setAutoWidth(true);
     grid.addComponentColumn(collaborator -> {
       //You can't remove or edit your own role
       if (isCurrentUser(collaborator)) {
@@ -151,7 +146,7 @@ public class ProjectAccessComponent extends PageArea {
         return new Span();
       }
       return changeProjectAccessCell(collaborator);
-    }).setHeader("Action");
+    }).setHeader("Action").setAutoWidth(true);
     grid.sort(
         List.of(new GridSortOrder<>(usernameColumn, SortDirection.ASCENDING),
             new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING)));
