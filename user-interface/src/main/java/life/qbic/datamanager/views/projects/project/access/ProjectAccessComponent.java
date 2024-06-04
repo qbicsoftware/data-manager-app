@@ -166,13 +166,16 @@ public class ProjectAccessComponent extends PageArea {
     Button removeButton = new Button("Remove", clickEvent -> {
       if (isCurrentUser(collaborator)) {
         displayError("Invalid user removal", "You can't remove yourself from a project");
+        return;
       }
       if (collaborator.projectRole() == ProjectRole.OWNER) {
         displayError("Invalid user removal", "You can't remove the owner of a project");
+        return;
       }
       if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
         displayError("Invalid user removal",
             "You don't have permission to remove the user from this project");
+        return;
       }
       removeCollaborator(collaborator);
     });
@@ -181,13 +184,16 @@ public class ProjectAccessComponent extends PageArea {
     Button editButton = new Button("Edit", clickEvent -> {
       if (isCurrentUser(collaborator)) {
         displayError("Invalid role edit", "You can't change your own project role");
+        return;
       }
       if (collaborator.projectRole() == ProjectRole.OWNER) {
         displayError("Invalid role edit", "You can't change the owner of this project");
+        return;
       }
       if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
         displayError("Invalid role edit",
             "You don't have permission to change the role of this collaborator");
+        return;
       }
       if (projectCollaborators.getEditor().isOpen()) {
         projectCollaborators.getEditor().cancel();
@@ -246,12 +252,6 @@ public class ProjectAccessComponent extends PageArea {
 
   private void removeCollaborator(ProjectAccessService.ProjectCollaborator collaborator) {
     ProjectId projectId = context.projectId().orElseThrow();
-    if (isCurrentUser(collaborator)) {
-      throw new ApplicationException("You can't remove yourself from this project");
-    }
-    if (collaborator.projectRole() == ProjectRole.OWNER) {
-      throw new ApplicationException("You can't remove the owner of this project");
-    }
     projectAccessService.removeCollaborator(projectId, collaborator.userId());
     reloadProjectCollaborators(projectCollaborators, projectAccessService);
   }
