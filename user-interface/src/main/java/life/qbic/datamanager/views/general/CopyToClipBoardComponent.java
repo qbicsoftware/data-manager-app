@@ -28,7 +28,7 @@ public class CopyToClipBoardComponent extends Span {
 
   private final Icon copyIcon;
   private final Icon copySuccessIcon;
-  private final long showSuccessTime = 1000;
+  private static final long SHOW_SUCCESS_TIME = 1000;
   private String textToBeCopied = "";
 
   public CopyToClipBoardComponent() {
@@ -65,7 +65,7 @@ public class CopyToClipBoardComponent extends Span {
     // reset copy view after a specific time
     UI ui = UI.getCurrent();
     ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
-    Executor delayedExecutor = CompletableFuture.delayedExecutor(showSuccessTime,
+    Executor delayedExecutor = CompletableFuture.delayedExecutor(SHOW_SUCCESS_TIME,
         TimeUnit.MILLISECONDS);
     CompletableFuture.runAsync(() -> ui.access(() -> {
       copyIcon.setVisible(true);
