@@ -326,7 +326,7 @@ public class MeasurementService {
     Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = buildSampleIdLookupTable(metadataList);
     var sampleCodes = sampleIdLookupTable.keySet();
     var specificMetadata = createSpecificMetadataNGS(metadataList, sampleIdLookupTable);
-    var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.iterator().next().code());
+    var assignedMeasurementCode = MeasurementCode.createNGS(sampleCodes.iterator().next().code());
     var firstMetadataEntry = metadataList.get(0);
 
     var organisationQuery = organisationLookupService.organisation(
