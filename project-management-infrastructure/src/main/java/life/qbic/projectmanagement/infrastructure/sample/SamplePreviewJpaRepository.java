@@ -71,8 +71,6 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     Specification<SamplePreview> sampleCodeSpec = SamplePreviewSpecs.sampleCodeContains(filter);
     Specification<SamplePreview> sampleLabelSpec = SamplePreviewSpecs.sampleLabelContains(filter);
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);
-    Specification<SamplePreview> bioReplicateLabelSpec = SamplePreviewSpecs.bioReplicateLabelContains(
-        filter);
     Specification<SamplePreview> conditionSpec = SamplePreviewSpecs.conditionContains(filter);
     Specification<SamplePreview> speciesSpec = SamplePreviewSpecs.speciesContains(filter);
     Specification<SamplePreview> specimenSpec = SamplePreviewSpecs.specimenContains(filter);
@@ -81,7 +79,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         filter);
     Specification<SamplePreview> commentSpec = SamplePreviewSpecs.commentContains(filter);
     Specification<SamplePreview> containsFilterSpec = Specification.anyOf(sampleCodeSpec,
-        sampleLabelSpec, batchLabelSpec, bioReplicateLabelSpec, conditionSpec, speciesSpec,
+        sampleLabelSpec, batchLabelSpec, conditionSpec, speciesSpec,
         specimenSpec, analyteSpec, analysisMethodContains, commentSpec);
     Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
     return Specification.where(experimentIdSpec).and(isBlankSpec)
@@ -126,11 +124,6 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     public static Specification<SamplePreview> batchLabelContains(String filter) {
       return (root, query, builder) ->
           builder.like(root.get("batchLabel"), "%" + filter + "%");
-    }
-
-    public static Specification<SamplePreview> bioReplicateLabelContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("bioReplicateLabel"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> sampleLabelContains(String filter) {

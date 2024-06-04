@@ -5,7 +5,7 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic</groupId>
-    <version>0.39.0</version>
+    <version>0.40.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>application-commons</artifactId>
@@ -18,6 +18,11 @@
     <dependency>
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-commons</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-core</artifactId>
     </dependency>
   </dependencies>
 </project>

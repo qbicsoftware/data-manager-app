@@ -1,9 +1,6 @@
 package life.qbic.projectmanagement.application.measurement;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -17,13 +14,11 @@ public interface MeasurementMetadata {
     return Optional.empty();
   }
 
-  default List<SampleCode> associatedSamples() {
-    return Collections.emptyList();
+  default SampleCode associatedSample() {
+    return null;
   }
 
   default Optional<String> measurementIdentifier() {
     return Optional.empty();
   }
-
-  MeasurementCode measurementCode();
 }

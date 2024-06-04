@@ -155,7 +155,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     }
     var downloadUrls = generateDownloadUrls(selectedMeasurements);
     var currentExperiment = experimentInformationService.find(
-            context.experimentId().orElseThrow().value(), context.experimentId().orElseThrow())
+            context.projectId().orElseThrow().value(), context.experimentId().orElseThrow())
         .orElseThrow();
     urlDownloadFormatter.updateContext(currentExperiment, downloadUrls);
     urlDownload.trigger();

@@ -104,6 +104,9 @@ public class ApplicationException extends RuntimeException {
     if (e instanceof ApplicationException applicationException) {
       return new ApplicationException(e, applicationException.errorCode(),
           applicationException.errorParameters());
+    }
+    if (e instanceof org.springframework.security.access.AccessDeniedException) {
+      return new ApplicationException(e, ErrorCode.ACCESS_DENIED, ErrorParameters.empty());
     } else {
       return new ApplicationException(e.getMessage(), e);
     }
@@ -133,6 +136,7 @@ public class ApplicationException extends RuntimeException {
    */
   public enum ErrorCode {
     GENERAL,
+    ACCESS_DENIED,
     INVALID_EXPERIMENTAL_DESIGN,
     INVALID_PROJECT_OBJECTIVE,
     INVALID_PROJECT_TITLE,

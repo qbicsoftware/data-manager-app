@@ -13,7 +13,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -39,18 +38,22 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 @Entity(name = "proteomics_measurement")
 public class ProteomicsMeasurement {
 
-  @Column(name = "lcmsMethod")
-  private String lcmsMethod = "";
-  //FIXME do not implement MeasurementMetadata, you are not metadata but the measurement
-  @Embedded
-  private Organisation organisation;
-  @EmbeddedId
-  @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
-  private MeasurementId id;
-
   @Embedded
   @Column(nullable = false)
   ProjectId projectId;
+
+  @Column(name = "labelType")
+  private String labelType = "";
+
+  @Column(name = "lcmsMethod")
+  private String lcmsMethod = "";
+
+  @Embedded
+  private Organisation organisation;
+
+  @EmbeddedId
+  @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
+  private MeasurementId id;
 
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
@@ -78,57 +81,46 @@ public class ProteomicsMeasurement {
   private String enrichmentMethod = "";
 
   @Column(name = "injectionVolume")
-  private int injectionVolume = 0;
+  private int injectionVolume;
 
   @Column(name = "lcColumn")
   private String lcColumn = "";
-  @Column(name = "comment")
-  private String comment = "";
 
-  @Column(name = "measurementLabelingType")
-  private String labelingType = "";
-
-  @Column(name = "measurementLabel")
-  private String label = "";
-
-  @Column(name = "fraction")
-  private String fraction = "";
-
-  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "proteomics_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
-  private Collection<SampleId> measuredSamples;
-
-  @ElementCollection(targetClass = ProteomicsLabeling.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "measurement_labeling_pxp", joinColumns = @JoinColumn(name = "measurement_id"))
-  private Set<ProteomicsLabeling> labeling;
+  @ElementCollection(targetClass = ProteomicsSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
+  @CollectionTable(name = "specific_measurement_metadata_pxp", joinColumns = @JoinColumn(name = "measurement_id"))
+  private Set<ProteomicsSpecificMeasurementMetadata> specificMetadata;
 
   protected ProteomicsMeasurement() {
     // Needed for JPA
   }
 
   private ProteomicsMeasurement(ProjectId projectId, MeasurementId id,
-      Collection<SampleId> sampleIds,
       MeasurementCode measurementCode,
-      Organisation organisation, ProteomicsMethodMetadata method, Instant registration) {
+      Organisation organisation, ProteomicsMethodMetadata method, Instant registration,
+      Collection<ProteomicsSpecificMeasurementMetadata> proteomicsMeasurementMetadata) {
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     evaluateMandatoryMetadata(
         method); // throws IllegalArgumentException if required properties are missing
-    measuredSamples = new ArrayList<>();
-    labeling = new HashSet<>();
-    measuredSamples.addAll(sampleIds);
+    evaluateMandatorySpecificMetadata(
+        proteomicsMeasurementMetadata); // throws IllegalArgumentException if required properties are missing
     this.id = id;
     this.organisation = organisation;
-    this.instrument = method.instrument();
     this.measurementCode = measurementCode;
-    this.facility = method.facility();
-    this.digestionMethod = method.digestionMethod();
-    this.digestionEnzyme = method.digestionEnzyme();
-    this.enrichmentMethod = method.enrichmentMethod();
-    this.injectionVolume = method.injectionVolume();
-    this.lcColumn = method.lcColumn();
-    this.lcmsMethod = method.lcmsMethod();
     this.registration = registration;
-    this.fraction = method.fractionName();
+    setMethodMetadata(method);
+    this.specificMetadata = new HashSet<>(proteomicsMeasurementMetadata);
+  }
+
+  private static void evaluateMandatorySpecificMetadata(
+      Collection<ProteomicsSpecificMeasurementMetadata> metadata) throws IllegalArgumentException {
+    metadata.forEach(ProteomicsMeasurement::evaluateMandatorySpecificMetadata);
+  }
+
+  private static void evaluateMandatorySpecificMetadata(
+      ProteomicsSpecificMeasurementMetadata metadata) throws IllegalArgumentException {
+    if (metadata.measuredSample() == null) {
+      throw new IllegalArgumentException("Measured Sample: Missing metadata");
+    }
   }
 
   private static void evaluateMandatoryMetadata(ProteomicsMethodMetadata method)
@@ -145,15 +137,8 @@ public class ProteomicsMeasurement {
     if (method.digestionEnzyme().isBlank()) {
       throw new IllegalArgumentException("Digestion Enzyme: Missing metadata");
     }
-    if (method.injectionVolume() <= 0) {
-      throw new IllegalArgumentException(
-          "Injection Volume: smaller / equal to zero: %s".formatted(method.injectionVolume()));
-    }
     if (method.lcColumn().isBlank()) {
       throw new IllegalArgumentException("LC column: Missing metadata");
-    }
-    if (method.lcmsMethod().isBlank()) {
-      throw new IllegalArgumentException("LCMS method: Missing metadata");
     }
   }
 
@@ -162,51 +147,43 @@ public class ProteomicsMeasurement {
    * entity with many describing properties about provenance and instrumentation.
    *
    * @param projectId
-   * @param sampleIds the sample ids of the samples the measurement was performed on. If more than
-   *                  one sample id is provided, the measurement is considered to be performed on a
-   *                  pooled sample
    * @return
    * @throws IllegalArgumentException in case there are missing required metadata.
    * @since 1.0.0
    */
-  public static ProteomicsMeasurement create(ProjectId projectId, Collection<SampleId> sampleIds,
-      MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method)
+  public static ProteomicsMeasurement create(ProjectId projectId,
+      MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method,
+      Collection<ProteomicsSpecificMeasurementMetadata> proteomicsSpecificMeasurementMetadata)
       throws IllegalArgumentException {
-    if (sampleIds.isEmpty()) {
-      throw new IllegalArgumentException(
-          "No sample ids provided. At least one sample id must provided for a measurement.");
-    }
     requireNonNull(method.instrument());
     requireNonNull(measurementCode);
+    requireNonNull(proteomicsSpecificMeasurementMetadata);
     if (!measurementCode.isMSDomain()) {
       throw new IllegalArgumentException(
           "Proteomics code is not from the Proteomics domain for: \"" + measurementCode + "\"");
     }
+    if (proteomicsSpecificMeasurementMetadata.isEmpty()) {
+      throw new IllegalArgumentException(
+          "No specific metadata provided: Specific metadata must contain at least one entry with a measured sample reference."
+      );
+    }
     var measurementId = MeasurementId.create();
-    return new ProteomicsMeasurement(projectId, measurementId, sampleIds, measurementCode,
+    return new ProteomicsMeasurement(projectId, measurementId, measurementCode,
         organisation,
-        method, Instant.now());
+        method, Instant.now(), proteomicsSpecificMeasurementMetadata);
   }
 
-  public static ProteomicsMeasurement create(ProjectId projectId, Collection<SampleId> sampleIds,
-      MeasurementCode code,
-      Organisation organisation, ProteomicsMethodMetadata method,
-      ProteomicsSamplePreparation samplePreparation) {
-    var measurement = create(projectId, sampleIds, code, organisation, method);
-    measurement.setSamplePreparation(samplePreparation);
-    return measurement;
+  public void setSpecificMetadata(
+      Collection<ProteomicsSpecificMeasurementMetadata> specificMetadata) {
+    this.specificMetadata = new HashSet<>(specificMetadata);
   }
 
-  public void setSamplePreparation(ProteomicsSamplePreparation samplePreparation) {
-    this.comment = samplePreparation.comment();
+  public Collection<ProteomicsSpecificMeasurementMetadata> specificMetadata() {
+    return new HashSet<>(specificMetadata);
   }
 
-  public void setLabeling(Collection<ProteomicsLabeling> labeling) {
-    this.labeling = new HashSet<>(labeling);
-  }
-
-  public void setFraction(String fraction) {
-    this.fraction = fraction;
+  public void addSpecificMetadata(ProteomicsSpecificMeasurementMetadata specificMetadata) {
+    this.specificMetadata.add(specificMetadata);
   }
 
   /**
@@ -216,7 +193,7 @@ public class ProteomicsMeasurement {
    * @since 1.0.0
    */
   public boolean isPooledSampleMeasurement() {
-    return measuredSamples.size() > 1;
+    return specificMetadata.size() > 1;
   }
 
   public MeasurementCode measurementCode() {
@@ -228,7 +205,8 @@ public class ProteomicsMeasurement {
   }
 
   public Collection<SampleId> measuredSamples() {
-    return measuredSamples.stream().toList();
+    return specificMetadata.stream().map(ProteomicsSpecificMeasurementMetadata::measuredSample)
+        .toList();
   }
 
   public OntologyTerm instrument() {
@@ -255,14 +233,6 @@ public class ProteomicsMeasurement {
     return enrichmentMethod;
   }
 
-  public Optional<String> fraction() {
-    return Optional.ofNullable(fraction.isBlank() ? null : fraction);
-  }
-
-  public int injectionVolume() {
-    return injectionVolume;
-  }
-
   public String lcColumn() {
     return lcColumn;
   }
@@ -271,33 +241,25 @@ public class ProteomicsMeasurement {
     return lcmsMethod;
   }
 
-  public Optional<String> comment() {
-    return Optional.ofNullable(comment.isBlank() ? null : comment);
-  }
-
-  public Optional<String> labelingType() {
-    return Optional.ofNullable(labelingType.isBlank() ? null : labelingType);
-  }
-
-  public Optional<String> label() {
-    return Optional.ofNullable(label.isBlank() ? null : label);
-  }
-
   public Instant registrationDate() {
     return registration;
   }
 
-  public void setMethod(ProteomicsMethodMetadata method) {
-    this.instrument = method.instrument();
-    this.facility = method.facility();
-    this.fraction = method.fractionName();
-    this.digestionMethod = method.digestionMethod();
-    this.digestionEnzyme = method.digestionEnzyme();
-    this.enrichmentMethod = method.enrichmentMethod();
-    this.injectionVolume = method.injectionVolume();
-    this.lcColumn = method.lcColumn();
-    this.lcmsMethod = method.lcmsMethod();
+  public void updateMethod(ProteomicsMethodMetadata method) {
+    setMethodMetadata(method);
     emitUpdatedEvent();
+  }
+
+  private void setMethodMetadata(ProteomicsMethodMetadata methodMetadata) {
+    this.instrument = methodMetadata.instrument();
+    this.facility = methodMetadata.facility();
+    this.digestionMethod = methodMetadata.digestionMethod();
+    this.digestionEnzyme = methodMetadata.digestionEnzyme();
+    this.enrichmentMethod = methodMetadata.enrichmentMethod();
+    this.lcColumn = methodMetadata.lcColumn();
+    this.lcmsMethod = methodMetadata.lcmsMethod();
+    this.labelType = methodMetadata.labelType();
+    this.injectionVolume = methodMetadata.injectionVolume();
   }
 
   private void emitUpdatedEvent() {
@@ -313,8 +275,16 @@ public class ProteomicsMeasurement {
     return samplePool.isBlank() ? Optional.empty() : Optional.of(samplePool);
   }
 
-  public void setComment(String comment) {
-    this.comment = comment;
+  public int injectionVolume() {
+    return injectionVolume;
+  }
+
+  public String labelType() {
+    return labelType;
+  }
+
+  public void setOrganisation(Organisation organisation) {
+    this.organisation = organisation;
   }
 
   @Override
@@ -332,5 +302,9 @@ public class ProteomicsMeasurement {
   @Override
   public int hashCode() {
     return id != null ? id.hashCode() : 0;
+  }
+
+  public Optional<String> comment() {
+    return Optional.empty();
   }
 }

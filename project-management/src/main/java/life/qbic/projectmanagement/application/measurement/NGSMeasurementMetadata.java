@@ -1,9 +1,7 @@
 package life.qbic.projectmanagement.application.measurement;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -40,8 +38,8 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
   }
 
   @Override
-  public List<SampleCode> associatedSamples() {
-    return sampleCodes.stream().toList();
+  public SampleCode associatedSample() {
+    return sampleCodes.iterator().next();
   }
 
   @Override
@@ -51,11 +49,6 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
 
   public Optional<String> measurementIdentifier() {
     return Optional.ofNullable(measurementId.isBlank() ? null : measurementId);
-  }
-
-  @Override
-  public MeasurementCode measurementCode() {
-    return null;
   }
 
   @Override

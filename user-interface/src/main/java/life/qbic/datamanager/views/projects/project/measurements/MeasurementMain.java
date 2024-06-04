@@ -147,7 +147,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
       case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
       case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-      case MISSING_ASSOCIATED_SAMPLES -> "Missing sample information for this measurement.";
+      case MISSING_ASSOCIATED_SAMPLE -> "Missing sample information for this measurement.";
       case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
       case SAMPLECODE_NOT_FROM_PROJECT -> "QBiC sample ID does not belong to this project";
       case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
@@ -297,10 +297,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       completableFuture.thenAccept(results -> {
         var errorResult = results.stream().filter(Result::isError).findAny();
         if (errorResult.isPresent()) {
+          String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
           measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
               () -> measurementMetadataUploadDialog.taskFailed(
                   "Measurement %s could not be completed".formatted(process),
-                  "Please try again")));
+                  detailedMessage)));
         } else {
           measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
               () -> measurementMetadataUploadDialog.taskSucceeded(
