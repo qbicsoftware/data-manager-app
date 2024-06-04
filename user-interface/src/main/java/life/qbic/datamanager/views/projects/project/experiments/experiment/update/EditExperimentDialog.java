@@ -8,10 +8,8 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.AbstractIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -22,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
@@ -46,6 +45,7 @@ public class EditExperimentDialog extends DialogWindow {
   public EditExperimentDialog(OntologyLookupService ontologyTermInformationService) {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService);
+    BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
@@ -60,25 +60,27 @@ public class EditExperimentDialog extends DialogWindow {
             + "values are allowed!");
 
     MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
+    speciesBox.addClassName("box-flexgrow");
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
-    ComboBox<BioIcon> speciesIconBox = styleIconBox(BioIcon.getOptionsForType(SampleSourceType.SPECIES));
-    speciesIconBox.setHelperText("Select an icon to represent the species in this experiment");
+    ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(
+        BioIcon.getOptionsForType(SampleSourceType.SPECIES), "Species icon");
     binder.forField(speciesIconBox)
         .bind(ExperimentDraft::getSpeciesIcon,
     ExperimentDraft::setSpeciesIcon);
 
     MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
+    specimenBox.addClassName("box-flexgrow");
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
 
-    ComboBox<BioIcon> specimenIconBox = styleIconBox(BioIcon.getOptionsForType(SampleSourceType.SPECIMEN));
-    specimenIconBox.setHelperText("Select an icon to represent the specimen(s) in this experiment");
+    ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(
+        BioIcon.getOptionsForType(SampleSourceType.SPECIMEN), "Specimen icon");
     binder.forField(specimenIconBox)
         .bind(ExperimentDraft::getSpecimenIcon,
             ExperimentDraft::setSpecimenIcon);
@@ -94,31 +96,21 @@ public class EditExperimentDialog extends DialogWindow {
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
 
+    Div speciesRow = new Div(speciesIconBox, speciesBox);
+    speciesRow.addClassName("input-with-icon");
+    Div specimenRow = new Div(specimenIconBox, specimenBox);
+    specimenRow.addClassName("input-with-icon");
+
     Div editExperimentContent = new Div();
     editExperimentContent.addClassName("edit-experiment-content");
     editExperimentContent.add(experimentHeader,
         experimentDescription,
         experimentNameField,
         experimentDescription,
-        speciesBox,
-        speciesIconBox,
-        specimenBox,
-        specimenIconBox,
+        speciesRow,
+        specimenRow,
         analyteBox);
     add(editExperimentContent);
-  }
-
-  private ComboBox<BioIcon> styleIconBox(List<BioIcon> options) {
-    ComboBox<BioIcon> comboBox = new ComboBox<>();
-    comboBox.setItems(options);
-    comboBox.setItemLabelGenerator(
-        BioIcon::getLabel);
-    comboBox.setRenderer(new ComponentRenderer<>(iconResource -> {
-      AbstractIcon<?> icon = iconResource.getIconResource().createIcon();
-      icon.addClassName("primary");
-      return icon;
-    }));
-    return comboBox;
   }
 
   @Override
@@ -207,7 +199,6 @@ public class EditExperimentDialog extends DialogWindow {
     private final List<OntologyTerm> species;
     private final List<OntologyTerm> specimen;
     private final List<OntologyTerm> analytes;
-
     private String speciesIconName;
     private String specimenIconName;
 

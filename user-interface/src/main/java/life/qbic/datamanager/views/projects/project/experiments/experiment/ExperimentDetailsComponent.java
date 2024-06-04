@@ -612,15 +612,31 @@ public class ExperimentDetailsComponent extends PageArea {
   public enum BioIcon {
     DEFAULT_SPECIES("default", SampleSourceType.SPECIES, VaadinIcon.BUG),
     HUMAN("Human", SampleSourceType.SPECIES, VaadinIcon.MALE),
+    //Mouse by Graphic Mall
+    MOUSE("Mouse", SampleSourceType.SPECIES, new StreamResource("mouse.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/mouse.svg"))),
     PLANT("Plant", SampleSourceType.SPECIES, new StreamResource("plant.svg",
         () -> BioIcon.class.getResourceAsStream("/icons/plant.svg"))),
+    //Mushroom by Jemis Mali on IconScout
+    FUNGI("Fungi", SampleSourceType.SPECIES, new StreamResource("mushroom.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/mushroom.svg"))),
     BACTERIA("Bacteria", SampleSourceType.SPECIES, new StreamResource("bacteria.svg",
         () -> BioIcon.class.getResourceAsStream("/icons/bacteria.svg"))),
     DEFAULT_SPECIMEN("default", SampleSourceType.SPECIMEN, VaadinIcon.DROP),
-    HEART("Heart", SampleSourceType.SPECIMEN, VaadinIcon.HEART),
+    //Kidneys by Daniel Burka on IconScout
+    KIDNEY("Kidney", SampleSourceType.SPECIMEN, new StreamResource("kidneys.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/kidneys.svg"))),
+    //Liver by Daniel Burka on IconScout
+    LIVER("Liver", SampleSourceType.SPECIMEN, new StreamResource("liver.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/liver.svg"))),
+    //Heart by Vector Stall on IconScout
+    HEART("Heart", SampleSourceType.SPECIMEN, new StreamResource("heart.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/heart.svg"))),
+    //Leaf by Phosphor Icons on IconScout
+    LEAF("Leaf", SampleSourceType.SPECIMEN, new StreamResource("leaf.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/leaf.svg"))),
     EYE("Eye", SampleSourceType.SPECIMEN, VaadinIcon.EYE),
     DEFAULT_ANALYTE("default", SampleSourceType.ANALYTE, VaadinIcon.CLUSTER);
-
     private final String label;
     private final SampleSourceType type;
     private final IconResource iconResource;
@@ -681,9 +697,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
     public AbstractIcon createIcon() {
       if(streamResource!=null) {
-        SvgIcon svg = new SvgIcon(streamResource);
-        svg.setColor("blue");
-        return svg;
+        return new SvgIcon(streamResource);
       } else {
         return vaadinIconResource.create();
       }
