@@ -48,10 +48,10 @@ public class MeasurementPresenter {
         measurement.instrument().getName().replace("_", ":"),
         measurement.instrument().getLabel(),
         measurement.samplePoolGroup().orElse(""), measurement.facility(),
-        measurement.sequencingReadType(),
+        measurement.sequencingReadType(), // TODO: fix index
         measurement.libraryKit().orElse(""), measurement.flowCell().orElse(""),
-        measurement.sequencingRunProtocol().orElse(""), measurement.indexI7().orElse(""),
-        measurement.indexI5().orElse(""), measurement.comment().orElse(""));
+        measurement.sequencingRunProtocol().orElse(""), "",
+        "", "");
   }
 
   public List<ProteomicsMeasurementEntry> expandProteomicsPools(
@@ -70,12 +70,12 @@ public class MeasurementPresenter {
 
   public List<NGSMeasurementEntry> expandNGSPools(NGSMeasurement ngsMeasurement) {
     List<NGSMeasurementEntry> expandedEntries = new ArrayList<>();
-    for (SampleId sampleId : ngsMeasurement.measuredSamples()) {
+    /*for (SampleId sampleId : ngsMeasurement.measuredSamples()) {
       var sampleInfo = sampleInformationService.findSample(sampleId)
           .map(sample -> new SampleInformation(sample.sampleCode().code(), sample.label()))
           .orElse(new SampleInformation("", ""));
       expandedEntries.add(convertNGSMeasurement(ngsMeasurement, sampleInfo));
-    }
+    }*/ // TODO Fix top
     return expandedEntries;
   }
 }

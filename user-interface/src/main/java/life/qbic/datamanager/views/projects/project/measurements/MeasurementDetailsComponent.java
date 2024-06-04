@@ -150,7 +150,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.measurementCode().value())
         .setHeader("Measurement ID")
         .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.measurementCode().value());
-    ngsMeasurementGrid.addColumn(measurement -> String.join(" ",
+    /*ngsMeasurementGrid.addColumn(measurement -> String.join(" ",
             groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())))
         .setHeader("Sample IDs")
         .setTooltipGenerator(measurement -> String.join(" ",
@@ -185,7 +185,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           asClientLocalDateTime(ngsMeasurement.registrationDate())
               .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
       return measurementItem;
-    }));
+    }));*/
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))

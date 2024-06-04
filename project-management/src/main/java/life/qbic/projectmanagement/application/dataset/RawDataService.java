@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -114,7 +115,8 @@ public class RawDataService {
                       .equals(datasetInformation.measurementCode()))
               .findFirst().orElseThrow();
           var sampleInformation = sampleInformationService.retrieveSamplesByIds(
-                  measurement.measuredSamples()).stream()
+                  measurement.specificMeasurementMetadata().stream().map(
+                      NGSSpecificMeasurementMetadata::measuredSample).toList()).stream()
               .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
               .toList();
           return new RawData(measurement.measurementCode(), sampleInformation, datasetInformation);
@@ -136,25 +138,26 @@ public class RawDataService {
   }
 
   /**
-   * Raw Data File information to be employed in the frontend containing information
-   * collected from the connected datastore
+   * Raw Data File information to be employed in the frontend containing information collected from
+   * the connected datastore
    */
   public record RawData(MeasurementCode measurementCode,
                         List<RawDataSampleInformation> sampleInformation,
                         RawDataDatasetInformation rawDataDatasetInformation) {
+
   }
 
   /**
-   * Sample Information associated with the measurements to which the {@link RawData}
-   * is linked and meant to be employed in the frontend
+   * Sample Information associated with the measurements to which the {@link RawData} is linked and
+   * meant to be employed in the frontend
    */
   public record RawDataSampleInformation(SampleCode sampleCode, String sampleLabel) {
 
   }
 
   /**
-   * Sample Information associated with the measurements to which the {@link RawData}
-   * is linked and meant to be employed in the frontend
+   * Sample Information associated with the measurements to which the {@link RawData} is linked and
+   * meant to be employed in the frontend
    */
   public record RawDataDatasetInformation(MeasurementCode measurementCode, String fileSize,
                                           int numberOfFiles, Set<String> fileEndings,
