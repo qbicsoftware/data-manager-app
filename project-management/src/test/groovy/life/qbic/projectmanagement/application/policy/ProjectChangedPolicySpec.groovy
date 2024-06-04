@@ -4,6 +4,7 @@ import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent
 import life.qbic.projectmanagement.domain.model.batch.BatchId
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged
 import life.qbic.projectmanagement.domain.model.sample.SampleId
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted
@@ -17,24 +18,24 @@ import spock.lang.Specification
  * @since <version tag>
  */
 
-class SampleDeletedPolicySpec extends Specification {
+class ProjectChangedPolicySpec extends Specification {
 
-    def "Given a sample deletion event, the delete sample from batch directive is executed"() {
+    def "Given a project changed event, the project update directive is executed"() {
         given:
-        SampleDeleted sampleDeleted = SampleDeleted.create(BatchId.create(), SampleId.create())
+        ProjectChanged projectChanged = ProjectChanged.create(ProjectId.create())
 
         and:
-        DeleteSampleFromBatch deleteSampleFromBatch = Mock(DeleteSampleFromBatch.class)
-        deleteSampleFromBatch.subscribedToEventType() >> SampleDeleted.class
+        UpdateProjectUponDeletionEvent modifyProject = Mock(UpdateProjectUponDeletionEvent.class)
+        modifyProject.subscribedToEventType() >> ProjectChanged.class
 
         and:
-        new SampleDeletedPolicy(deleteSampleFromBatch)
+        new ProjectChangedPolicy(modifyProject)
 
         when:
-        DomainEventDispatcher.instance().dispatch(sampleDeleted)
+        DomainEventDispatcher.instance().dispatch(projectChanged)
 
         then:
-        1 * deleteSampleFromBatch.handleEvent(sampleDeleted)
+        1 * modifyProject.handleEvent(projectChanged)
     }
 
 
