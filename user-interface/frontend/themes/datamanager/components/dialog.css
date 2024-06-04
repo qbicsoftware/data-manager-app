@@ -11,7 +11,7 @@ vaadin-dialog-overlay::part(footer) {
 }
 
 vaadin-dialog-overlay::part(header) {
-  padding: 2rem 1rem 1rem 4rem;
+  padding: 2rem 4rem 1rem 4rem;
 }
 
 vaadin-dialog-overlay::part(title) {
@@ -432,6 +432,32 @@ vaadin-dialog-overlay::part(title) {
 
 .change-user-details-dialog .change-user-name {
   width: 100%;
+}
+
+.measurement-pooled-samples-dialog::part(overlay) {
+  min-width: 50vw;
+}
+
+.measurement-pooled-samples-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details {
+  gap: var(--lumo-space-xs);
+  display: flex;
+  flex-direction: column;
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details .pooled-detail {
+  gap: var(--lumo-space-s);
+  display: inline-flex;
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details .pooled-detail .label {
+  color: var(--lumo-secondary-text-color);
+  font-weight: bold;
 }
 
 .measurement-upload-dialog::part(overlay) {

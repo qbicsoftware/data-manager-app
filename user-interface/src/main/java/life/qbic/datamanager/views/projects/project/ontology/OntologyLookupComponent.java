@@ -3,14 +3,12 @@ package life.qbic.datamanager.views.projects.project.ontology;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -18,13 +16,12 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.general.Card;
+import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -42,7 +39,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SpringComponent
 @UIScope
-@JsModule("./javascript/copytoclipboard.js")
 public class OntologyLookupComponent extends PageArea {
 
   @Serial
@@ -163,52 +159,20 @@ public class OntologyLookupComponent extends PageArea {
       Span title = new Span(label);
       title.addClassName("ontology-item-title");
       Span curie = new Tag(curieText);
-
-      Icon copyIcon = initCopyIcon();
-      Span header = new Span(title, curie, copyIcon);
-
-      copyIcon.addClickListener(
-          event -> handleCopyClicked(header, curieText));
-
-      header.addClassName("header");
-      return header;
-    }
-
-    private void handleCopyClicked(Span header, String curieText) {
-      UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", curieText);
-      Icon copyIcon = (Icon) header.getChildren().filter(c -> c instanceof Icon).toList().get(0);
-      Icon checkIcon = VaadinIcon.CHECK.create();
-      checkIcon.addClassName(IconSize.SMALL);
-      checkIcon.addClassNames("copy-icon-success");
-      removeClassName("base-background");
-      addClassName("success-background-hue");
-      header.remove(copyIcon);
-      header.add(checkIcon);
-
-      // reset copy view after one second
+      CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent(curieText);
+      Span header = new Span(title, curie, copyToClipBoardComponent);
       UI ui = UI.getCurrent();
       ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
-      new Thread(() -> {
-        try {
-          TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-        }
-        ui.access(() -> {
-          removeClassName("success-background-hue");
-          addClassName("base-background");
-          header.remove(checkIcon);
-          header.add(copyIcon);
-          ui.push();
-        });
-      }).start();
-    }
-
-    private Icon initCopyIcon() {
-      Icon copyIcon = VaadinIcon.COPY_O.create();
-      copyIcon.addClassName(IconSize.SMALL);
-      copyIcon.addClassNames("clickable", "copy-icon");
-      return copyIcon;
+      copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(event -> ui.access(() -> {
+        addClassName("success-background-hue");
+        ui.push();
+      }));
+      copyToClipBoardComponent.addSwitchToCopyIconListener(event -> ui.access(() -> {
+        removeClassName("success-background-hue");
+        ui.push();
+      }));
+      header.addClassName("header");
+      return header;
     }
 
     private Span createUrl(String ontologyURL) {
