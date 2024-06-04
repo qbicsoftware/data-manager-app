@@ -13,10 +13,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -48,12 +50,6 @@ public class NGSMeasurement {
   String flowCell = "";
   @Column(name = "runProtocol")
   String sequencingRunProtocol = "";
-  @Column(name = "indexI7")
-  String indexI7 = "";
-  @Column(name = "indexI5")
-  String indexI5 = "";
-  @Column(name = "comment")
-  String comment = "";
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
   private MeasurementId id;
@@ -70,22 +66,27 @@ public class NGSMeasurement {
   private Instant registration;
   @Embedded
   private Organisation organisation;
-  @ElementCollection(targetClass = SampleId.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "ngs_measurement_samples", joinColumns = @JoinColumn(name = "measurement_id"))
-  private Collection<SampleId> measuredSamples;
+
+  @ElementCollection(targetClass = NGSSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
+  @CollectionTable(name = "specific_measurement_metadata_ngs", joinColumns = @JoinColumn(name = "measurement_id"))
+  private Set<NGSSpecificMeasurementMetadata> specificMetadata = new HashSet<>();
 
   protected NGSMeasurement() {
     // Needed for JPA
   }
 
   private NGSMeasurement(MeasurementId measurementId, ProjectId projectId,
-      Collection<SampleId> sampleIds,
+      String samplePool,
       MeasurementCode measurementCode,
-      Organisation organisation, NGSMethodMetadata method, String comment, Instant registration) {
+      Organisation organisation, NGSMethodMetadata method, Instant registration,
+      Collection<NGSSpecificMeasurementMetadata> measurementMetadata) {
+    if (!measurementCode.isNGSDomain()) {
+      throw new IllegalArgumentException(
+          "NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode
+              + "\"");
+    }
     evaluateMandatoryMetadata(
         method); // throws IllegalArgumentException if required properties are missing
-    measuredSamples = new ArrayList<>();
-    measuredSamples.addAll(sampleIds);
     this.id = measurementId;
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     this.organisation = requireNonNull(organisation, "organisation must not be null");
@@ -97,10 +98,9 @@ public class NGSMeasurement {
     this.libraryKit = method.libraryKit();
     this.flowCell = method.flowCell();
     this.sequencingRunProtocol = method.sequencingRunProtocol();
-    this.indexI7 = method.indexI7();
-    this.indexI5 = method.indexI5();
     this.registration = registration;
-    this.comment = comment;
+    this.samplePool = samplePool;
+    this.specificMetadata = new HashSet<>(measurementMetadata);
   }
 
   private static void evaluateMandatoryMetadata(NGSMethodMetadata method)
@@ -114,35 +114,58 @@ public class NGSMeasurement {
   }
 
   /**
-   * Creates a new {@link NGSMeasurement} object instance, that describes an NGS measurement entity
+   * Creates a new pooled {@link NGSMeasurement} object instance, that describes an NGS measurement entity
    * with many describing properties about provenance and instrumentation.
    *
-   * @param projectId
-   * @param sampleIds the sample ids of the samples the measurement was performed on. If more than
-   *                  one sample id is provided, the measurement is considered to be performed on a
-   *                  pooled sample
-   * @return
+   * @param projectId                   the project id the measurement belongs to
+   * @param samplePool                  the sample pool label the measurement represents
+   * @param measurementCode             the assigned measurement code for the measurement
+   * @param organisation                where the measurement has been conducted
+   * @param method                      measurement method related metadata
+   * @param specificMeasurementMetadata sample specific metadata
+   * @return an instance of an {@link NGSMeasurement}
    * @since 1.0.0
    */
-  public static NGSMeasurement create(ProjectId projectId, Collection<SampleId> sampleIds,
+  public static NGSMeasurement createWithPool(ProjectId projectId, String samplePool,
       MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
-      String comment) throws IllegalArgumentException {
-    if (sampleIds.isEmpty()) {
-      throw new IllegalArgumentException(
-          "No sample ids provided. At least one sample id must provided for a measurement.");
+      Collection<NGSSpecificMeasurementMetadata> specificMeasurementMetadata)
+      throws IllegalArgumentException {
+    requireNonNull(measurementCode);
+    requireNonNull(method);
+    requireNonNull(method.instrument());
+    if (samplePool.isBlank()) {
+      throw new IllegalArgumentException("Sample Pool: no value provided");
     }
-    requireNonNull(measurementCode, "measurement code must not be null");
-    requireNonNull(method, "method must not be null");
-    requireNonNull(method.instrument(), "instrument must not be null");
-    if (!measurementCode.isNGSDomain()) {
+    if (specificMeasurementMetadata.stream().map(NGSSpecificMeasurementMetadata::index)
+        .anyMatch(Optional::isEmpty)) {
       throw new IllegalArgumentException(
-          "NGSMeasurementMetadata code is not from the NGS domain for: \"" + measurementCode
-              + "\"");
+          "All specific metadata must have an index in a pooled measurement");
     }
     var measurementId = MeasurementId.create();
-    return new NGSMeasurement(measurementId, projectId, sampleIds, measurementCode, organisation,
-        method,
-        comment, Instant.now());
+    return new NGSMeasurement(measurementId, projectId, samplePool, measurementCode, organisation,
+        method, Instant.now(), specificMeasurementMetadata);
+  }
+
+  /**
+   * Creates a new single {@link NGSMeasurement} object instance, that describes an NGS measurement
+   * entity with many describing properties about provenance and instrumentation.
+   *
+   * @param projectId                   the project id the measurement belongs to
+   * @param measurementCode             the assigned measurement code for the measurement
+   * @param organisation                where the measurement has been conducted
+   * @param method                      measurement method related metadata
+   * @param specificMeasurementMetadata sample specific metadata
+   * @return an instance of an {@link NGSMeasurement}
+   * @since 1.0.0
+   */
+  public static NGSMeasurement createSingleMeasurement(ProjectId projectId,
+      MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
+      NGSSpecificMeasurementMetadata specificMeasurementMetadata) {
+    requireNonNull(measurementCode);
+    requireNonNull(method);
+    requireNonNull(method.instrument());
+    return new NGSMeasurement(MeasurementId.create(), projectId, "", measurementCode, organisation,
+        method, Instant.now(), List.of(specificMeasurementMetadata));
   }
 
   public void setMethod(NGSMethodMetadata methodMetadata) {
@@ -152,13 +175,25 @@ public class NGSMeasurement {
     this.libraryKit = methodMetadata.libraryKit();
     this.flowCell = methodMetadata.flowCell();
     this.sequencingRunProtocol = methodMetadata.sequencingRunProtocol();
-    this.indexI7 = methodMetadata.indexI7();
-    this.indexI5 = methodMetadata.indexI5();
   }
 
-  public void setComment(String comment) {
-    this.comment = comment;
+  public void setSpecificMetadata(Collection<NGSSpecificMeasurementMetadata> specificMetadata) {
+    this.specificMetadata = new HashSet<>(specificMetadata);
   }
+
+  public Collection<NGSSpecificMeasurementMetadata> specificMeasurementMetadata() {
+    return specificMetadata.stream().toList();
+  }
+
+  public void setOrganisation(Organisation organisation) {
+    this.organisation = Objects.requireNonNull(organisation);
+  }
+
+  public void updateMethod(NGSMethodMetadata methodMetadata) {
+    Objects.requireNonNull(methodMetadata);
+    setMethod(methodMetadata);
+  }
+
 
   public MeasurementCode measurementCode() {
     return this.measurementCode;
@@ -166,10 +201,6 @@ public class NGSMeasurement {
 
   public MeasurementId measurementId() {
     return id;
-  }
-
-  public Collection<SampleId> measuredSamples() {
-    return measuredSamples.stream().toList();
   }
 
   public OntologyTerm instrument() {
@@ -212,16 +243,9 @@ public class NGSMeasurement {
     return Optional.ofNullable(sequencingRunProtocol.isBlank() ? null : sequencingRunProtocol);
   }
 
-  public Optional<String> indexI7() {
-    return Optional.ofNullable(indexI7.isBlank() ? null : indexI7);
-  }
-
-  public Optional<String> indexI5() {
-    return Optional.ofNullable(indexI5.isBlank() ? null : indexI5);
-  }
-
-  public Optional<String> comment() {
-    return Optional.ofNullable(comment.isBlank() ? null : comment);
+  public Collection<SampleId> measuredSamples() {
+    return specificMetadata.stream().map(NGSSpecificMeasurementMetadata::measuredSample)
+        .toList();
   }
 
   @Override
