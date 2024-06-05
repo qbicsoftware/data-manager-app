@@ -79,7 +79,7 @@ public class NGSSpecificMeasurementMetadata {
     if (indexI5.isBlank()) {
       return Optional.of(NGSIndex.singleIndexing(indexI7));
     }
-    return Optional.of(new NGSIndex(indexI7, indexI5));
+    return Optional.of(new NGSIndex(indexI5, indexI7));
   }
 
   @Override
