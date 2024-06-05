@@ -18,6 +18,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,6 +37,7 @@ import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupCard;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
@@ -345,8 +347,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
         context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+
+    Comparator<String> natOrder = Comparator.naturalOrder();
+
     var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
-        .flatMap(Collection::stream).toList();
+        .flatMap(Collection::stream)
+        // sort by measurement codes first, then by sample codes
+        .sorted((e1, e2) -> {
+          int res = natOrder.compare(e1.measurementCode(), e2.measurementCode());
+          if(res!=0) {
+            return res;
+          }
+          String e1Code = e1.sampleInformation().sampleId();
+          String e2Code = e2.sampleInformation().sampleId();
+          return natOrder.compare(e1Code, e2Code);
+        }).toList();
     proteomicsMeasurementContentProvider.setMeasurements(result);
     proteomicsDownloadProvider.trigger();
   }
@@ -356,8 +371,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
         context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+
+    Comparator<String> natOrder = Comparator.naturalOrder();
+
     var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
-        .flatMap(Collection::stream).toList();
+        .flatMap(Collection::stream)
+        // sort by measurement codes first, then by sample codes
+        .sorted((e1, e2) -> {
+          int res = natOrder.compare(e1.measurementCode(), e2.measurementCode());
+          if(res!=0) {
+            return res;
+          }
+          String e1Code = e1.sampleInformation().sampleId();
+          String e2Code = e2.sampleInformation().sampleId();
+          return natOrder.compare(e1Code, e2Code);
+        }).toList();
     ngsMeasurementContentProvider.setMeasurements(result);
     ngsDownloadProvider.trigger();
   }
