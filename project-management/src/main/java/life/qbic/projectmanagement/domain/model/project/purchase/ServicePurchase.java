@@ -87,4 +87,8 @@ public class ServicePurchase {
   public int hashCode() {
     return Objects.hash(projectId, purchasedOn, offer, id);
   }
+
+  public Long getId() {
+    return id;
+  }
 }

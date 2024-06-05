@@ -24,7 +24,7 @@ public interface ProjectPurchaseStorage {
    */
   void storePurchase(ServicePurchase purchase) throws PurchaseStoreException;
 
-  void storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException;
+  Iterable<ServicePurchase> storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException;
 
   List<Offer> findOffersForProject(ProjectId projectId);
 

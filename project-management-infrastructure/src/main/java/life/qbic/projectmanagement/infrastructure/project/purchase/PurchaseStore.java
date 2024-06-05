@@ -45,9 +45,9 @@ public class PurchaseStore implements ProjectPurchaseStorage {
   }
 
   @Override
-  public void storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException {
+  public Iterable<ServicePurchase> storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException {
     try {
-      persistenceStore.saveAll(purchases);
+      return persistenceStore.saveAll(purchases);
     } catch (RuntimeException e) {
       throw new PurchaseStoreException("Storing purchases failed.");
     }
