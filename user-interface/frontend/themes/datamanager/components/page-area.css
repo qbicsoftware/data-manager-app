@@ -132,44 +132,6 @@
   gap: var(--lumo-space-m);
 }
 
-.information-component {
-  display: flex;
-  gap: var(--lumo-space-m);
-  flex-direction: column;
-}
-
-.information-component .section {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-}
-
-.information-component .section .section-title {
-  display: inline-flex;
-  align-items: center;
-  font-weight: bold;
-  margin-bottom: var(--lumo-space-m);
-}
-
-.information-card-component {
-  display: flex;
-  gap: var(--lumo-space-m);
-  flex-direction: column;
-}
-
-.information-card-component .section {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-}
-
-.information-card-component .section .section-title {
-  display: inline-flex;
-  align-items: center;
-  font-weight: bold;
-  margin-bottom: var(--lumo-space-m);
-}
-
 .measurement-details-component {
   height: 100%;
   justify-content: center;
