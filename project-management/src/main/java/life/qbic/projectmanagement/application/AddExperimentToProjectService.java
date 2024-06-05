@@ -63,13 +63,6 @@ public class AddExperimentToProjectService {
         experimentName = "Unnamed Experiment";
       }
 
-    List<DomainEvent> domainEventsCache = new ArrayList<>();
-    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
-    localDomainEventDispatcher.reset();
-    localDomainEventDispatcher.subscribe(
-        new ExperimentCreatedDomainEventSubscriber(domainEventsCache));
-
-
     if (CollectionUtils.isEmpty(species)) {
         throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
             ErrorParameters.of(species));
@@ -86,7 +79,14 @@ public class AddExperimentToProjectService {
       if (optionalProject.isEmpty()) {
         return Result.fromError(new ProjectNotFoundException());
       }
-      Project project = optionalProject.get();
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentCreatedDomainEventSubscriber(domainEventsCache));
+
+    Project project = optionalProject.get();
     Result<ExperimentId, RuntimeException> result = Result.<Experiment, RuntimeException>fromValue(
             Experiment.create(experimentName))
         .onValue(exp -> exp.addAnalytes(analytes))
