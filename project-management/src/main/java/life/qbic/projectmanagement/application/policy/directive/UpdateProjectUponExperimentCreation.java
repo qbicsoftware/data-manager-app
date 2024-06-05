@@ -9,7 +9,6 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
@@ -46,10 +45,13 @@ public class UpdateProjectUponExperimentCreation implements DomainEventSubscribe
     jobScheduler.enqueue(() -> updateProjectModified(event.experimentId(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
-  public void updateProjectModified(ExperimentId experimentId, Instant modifiedOn) throws ProjectNotFoundException {
+  @Job(name = "Update project upon experiment creation of experiment %0")
+  public void updateProjectModified(ExperimentId experimentId, Instant modifiedOn) {
     Optional<ProjectId> projectId = experimentInformationService.findProjectID(experimentId);
-    projectId.ifPresent(id -> projectInformationService.updateModifiedDate(id, modifiedOn));
+    if(projectId.isEmpty()) {
+      throw new InvalidEventDataException("Project Id not found.");
+    }
+    projectInformationService.updateModifiedDate(projectId.get(), modifiedOn);
   }
 
 }

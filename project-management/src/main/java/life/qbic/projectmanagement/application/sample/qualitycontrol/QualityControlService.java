@@ -16,8 +16,6 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
-import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
-import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlCreatedEvent;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
@@ -77,7 +75,7 @@ public class QualityControlService {
     try {
       Iterable<QualityControl> storedQcs = storage.storeQualityControls(qualityControls);
       for (QualityControl storedQc : storedQcs) {
-        DomainEventDispatcher.instance().dispatch(new PurchaseCreatedEvent(storedQc.getId()));
+        DomainEventDispatcher.instance().dispatch(new QualityControlCreatedEvent(storedQc.getId()));
       }
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);

@@ -83,7 +83,7 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     return users;
   }
 
-  @Job(name = "Notify users about batch registration")
+  @Job(name = "Notify users about batch registration of batch %3 in project %2")
   public void notifyRecipient(String emailAddress, String fullName, String projectTitle, String batchName,
       String sampleUri) {
     String subject = "New samples added to project";

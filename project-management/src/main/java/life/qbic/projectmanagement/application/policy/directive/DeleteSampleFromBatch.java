@@ -46,7 +46,7 @@ public class DeleteSampleFromBatch implements DomainEventSubscriber<SampleDelete
     jobScheduler.enqueue(() -> deleteSampleFromBatch(event.deletedSample(), event.assignedBatch()));
   }
 
-  @Job(name = "Delete_Sample_From_Batch")
+  @Job(name = "Delete sample %0 from batch %1")
   public void deleteSampleFromBatch(SampleId sample, BatchId batch) throws RuntimeException {
     batchRegistrationService.deleteSampleFromBatch(sample, batch).onError(responseCode -> {
       if (Objects.requireNonNull(responseCode) == ResponseCode.UNKNOWN_BATCH) {

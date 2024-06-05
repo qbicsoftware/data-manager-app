@@ -46,9 +46,12 @@ public class UpdateProjectUponExperimentUpdate implements DomainEventSubscriber<
     jobScheduler.enqueue(() -> updateProjectModified(event.experimentId(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
+  @Job(name = "Update project upon update of experiment %0")
   public void updateProjectModified(ExperimentId experimentId, Instant modifiedOn) throws ProjectNotFoundException {
     Optional<ProjectId> projectId = experimentInformationService.findProjectID(experimentId);
-    projectId.ifPresent(id -> projectInformationService.updateModifiedDate(id, modifiedOn));
+    if(projectId.isEmpty()) {
+      throw new InvalidEventDataException("Project Id not found.");
+    }
+    projectInformationService.updateModifiedDate(projectId.get(), modifiedOn);
   }
 }

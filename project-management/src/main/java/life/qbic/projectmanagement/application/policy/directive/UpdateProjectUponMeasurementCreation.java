@@ -47,7 +47,7 @@ public class UpdateProjectUponMeasurementCreation implements DomainEventSubscrib
     jobScheduler.enqueue(() -> updateProjectModified(event.measurementId(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
+  @Job(name = "Update project upon creation of measurement %0")
   public void updateProjectModified(MeasurementId measurementID, Instant modifiedOn) throws ProjectNotFoundException {
     Optional<NGSMeasurement> ngs = measurementLookupService.findNGSMeasurementById(measurementID.value());
     if(ngs.isPresent()) {
@@ -55,9 +55,10 @@ public class UpdateProjectUponMeasurementCreation implements DomainEventSubscrib
     } else {
       Optional<ProteomicsMeasurement> ptx = measurementLookupService.findProteomicsMeasurementById(
           measurementID.value());
-      ptx.ifPresent(proteomicsMeasurement -> projectInformationService.updateModifiedDate(
-          proteomicsMeasurement.projectId(), modifiedOn));
+      if(ptx.isEmpty()) {
+        throw new InvalidEventDataException("Measurement not found.");
+      }
+      projectInformationService.updateModifiedDate(ptx.get().projectId(), modifiedOn);
     }
-
   }
 }

@@ -55,9 +55,10 @@ public class UpdateProjectUponMeasurementUpdate implements DomainEventSubscriber
     } else {
       Optional<ProteomicsMeasurement> ptx = measurementLookupService.findProteomicsMeasurementById(
           measurementID.value());
-      ptx.ifPresent(proteomicsMeasurement -> projectInformationService.updateModifiedDate(
-          proteomicsMeasurement.projectId(), modifiedOn));
+      if(ptx.isEmpty()) {
+        throw new InvalidEventDataException("Measurement not found.");
+      }
+      projectInformationService.updateModifiedDate(ptx.get().projectId(), modifiedOn);
     }
-
   }
 }

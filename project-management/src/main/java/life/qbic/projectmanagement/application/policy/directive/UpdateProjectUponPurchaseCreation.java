@@ -8,7 +8,6 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
-import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
@@ -46,10 +45,12 @@ public class UpdateProjectUponPurchaseCreation implements
     jobScheduler.enqueue(() -> updateProjectModified(event.purchaseID(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
+  @Job(name = "Update project upon creation of purchase item %0")
   public void updateProjectModified(Long purchaseID, Instant modifiedOn) {
-    Optional<ProjectId> optionalId = projectPurchaseService.findProjectIdOfPurchase(purchaseID);
-    optionalId.ifPresent(it -> projectInformationService
-        .updateModifiedDate(it, modifiedOn));
+    Optional<ProjectId> projectId = projectPurchaseService.findProjectIdOfPurchase(purchaseID);
+    if(projectId.isEmpty()) {
+      throw new InvalidEventDataException("Purchase item not found.");
+    }
+    projectInformationService.updateModifiedDate(projectId.get(), modifiedOn);
   }
 }

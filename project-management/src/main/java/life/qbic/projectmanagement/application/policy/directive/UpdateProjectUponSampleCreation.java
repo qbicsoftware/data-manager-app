@@ -11,7 +11,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
-import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.stereotype.Component;
@@ -51,12 +50,14 @@ public class UpdateProjectUponSampleCreation implements DomainEventSubscriber<Sa
     jobScheduler.enqueue(() -> updateProjectModified(event.registeredSample(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
-  public void updateProjectModified(SampleId sampleID, Instant modifiedOn) throws ProjectNotFoundException {
+  @Job(name = "Update project upon sample creation of sample %0")
+  public void updateProjectModified(SampleId sampleID, Instant modifiedOn) {
     Optional<Sample> sample = sampleInformationService.findSample(sampleID);
-    if(sample.isPresent()) {
-        Optional<ProjectId> projectId = experimentInformationService.findProjectID(sample.get().experimentId());
-        projectId.ifPresent(id -> projectInformationService.updateModifiedDate(id, modifiedOn));
-      }
+    if (sample.isEmpty()) {
+      throw new InvalidEventDataException("Sample not found.");
+    }
+    ProjectId projectId = experimentInformationService.findProjectID(sample.get().experimentId())
+        .orElseThrow(() -> new InvalidEventDataException("Project Id not found"));
+    projectInformationService.updateModifiedDate(projectId, modifiedOn);
   }
 }

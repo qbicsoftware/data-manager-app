@@ -45,10 +45,12 @@ public class UpdateProjectUponQCCreation implements
     jobScheduler.enqueue(() -> updateProjectModified(event.qualityControlID(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
+  @Job(name = "Update project upon QC item creation of item %0")
   public void updateProjectModified(Long qcID, Instant modifiedOn) {
     Optional<QualityControl> qc = qualityControlService.getQualityControl(qcID);
-    qc.ifPresent(qualityControl -> projectInformationService
-        .updateModifiedDate(qualityControl.project(), modifiedOn));
+    if (qc.isEmpty()) {
+      throw new InvalidEventDataException("QC item not found.");
+    }
+    projectInformationService.updateModifiedDate(qc.get().project(), modifiedOn);
   }
 }
