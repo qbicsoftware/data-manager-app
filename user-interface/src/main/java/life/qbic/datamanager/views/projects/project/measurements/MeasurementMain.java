@@ -351,16 +351,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
         .flatMap(Collection::stream)
-        // sort by measurement codes first, then by sample codes
-        .sorted((e1, e2) -> {
-          int res = natOrder.compare(e1.measurementCode(), e2.measurementCode());
-          if(res!=0) {
-            return res;
-          }
-          String e1Code = e1.sampleInformation().sampleId();
-          String e2Code = e2.sampleInformation().sampleId();
-          return natOrder.compare(e1Code, e2Code);
-        }).toList();
+        .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
+            .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
     proteomicsMeasurementContentProvider.setMeasurements(result);
     proteomicsDownloadProvider.trigger();
   }
@@ -376,15 +368,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
         .flatMap(Collection::stream)
         // sort by measurement codes first, then by sample codes
-        .sorted((e1, e2) -> {
-          int res = natOrder.compare(e1.measurementCode(), e2.measurementCode());
-          if(res!=0) {
-            return res;
-          }
-          String e1Code = e1.sampleInformation().sampleId();
-          String e2Code = e2.sampleInformation().sampleId();
-          return natOrder.compare(e1Code, e2Code);
-        }).toList();
+        .sorted(Comparator.comparing(NGSMeasurementEntry::measurementCode, natOrder)
+            .thenComparing(ngs -> ngs.sampleInformation().sampleId(), natOrder)).toList();
     ngsMeasurementContentProvider.setMeasurements(result);
     ngsDownloadProvider.trigger();
   }
