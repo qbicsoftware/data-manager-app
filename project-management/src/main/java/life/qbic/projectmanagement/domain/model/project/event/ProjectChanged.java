@@ -19,7 +19,6 @@ public class ProjectChanged extends DomainEvent {
   private final ProjectId projectId;
 
   protected ProjectChanged(ProjectId projectId) {
-    super();
     this.projectId = Objects.requireNonNull(projectId);
   }
 

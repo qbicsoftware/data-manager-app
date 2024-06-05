@@ -23,7 +23,6 @@ public class UserActivated extends DomainEvent {
   }
 
   private UserActivated(String userId) {
-    super();
     this.userId = userId;
   }
 

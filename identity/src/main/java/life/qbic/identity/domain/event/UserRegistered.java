@@ -23,10 +23,6 @@ public class UserRegistered extends DomainEvent {
 
   private String userId;
 
-  private UserRegistered() {
-
-  }
-
   public static UserRegistered create(final String userId, final String fullName,
       final String email) {
     return new UserRegistered(userId, fullName, email);
@@ -37,7 +33,6 @@ public class UserRegistered extends DomainEvent {
    * @since 1.0.0
    */
   private UserRegistered(final String userId, final String fullName, final String email) {
-    super();
     this.userId = userId;
     this.fullName = fullName;
     this.email = email;

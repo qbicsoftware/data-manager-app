@@ -15,7 +15,6 @@ public class ExperimentUpdatedEvent extends DomainEvent {
   private final ExperimentId experimentId;
 
   public ExperimentUpdatedEvent(ExperimentId experimentId) {
-    super();
     this.experimentId = Objects.requireNonNull(experimentId);
   }
 

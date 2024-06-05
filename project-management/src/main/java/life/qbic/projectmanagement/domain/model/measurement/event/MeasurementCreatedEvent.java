@@ -15,7 +15,6 @@ public class MeasurementCreatedEvent extends DomainEvent {
   private final MeasurementId measurementId;
 
   public MeasurementCreatedEvent(MeasurementId measurementId) {
-    super();
     this.measurementId = Objects.requireNonNull(measurementId);
   }
 

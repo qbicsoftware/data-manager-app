@@ -57,28 +57,28 @@ public class AddExperimentToProjectService {
       List<OntologyTerm> species,
       List<OntologyTerm> specimens,
       List<OntologyTerm> analytes) {
-      requireNonNull(projectId, "project id must not be null during experiment creation");
-      if (experimentName.isBlank()) {
-        //ToDo Add Iterator for multiple experiments?
-        experimentName = "Unnamed Experiment";
-      }
+    requireNonNull(projectId, "project id must not be null during experiment creation");
+    if (experimentName.isBlank()) {
+      //ToDo Add Iterator for multiple experiments?
+      experimentName = "Unnamed Experiment";
+    }
 
     if (CollectionUtils.isEmpty(species)) {
-        throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
-            ErrorParameters.of(species));
-      }
-      if (CollectionUtils.isEmpty(specimens)) {
-        throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
-            ErrorParameters.of(specimens));
-      }
-      if (CollectionUtils.isEmpty(analytes)) {
-        throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
-            ErrorParameters.of(analytes));
-      }
-      Optional<Project> optionalProject = projectRepository.find(projectId);
-      if (optionalProject.isEmpty()) {
-        return Result.fromError(new ProjectNotFoundException());
-      }
+      throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
+          ErrorParameters.of(species));
+    }
+    if (CollectionUtils.isEmpty(specimens)) {
+      throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
+          ErrorParameters.of(specimens));
+    }
+    if (CollectionUtils.isEmpty(analytes)) {
+      throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
+          ErrorParameters.of(analytes));
+    }
+    Optional<Project> optionalProject = projectRepository.find(projectId);
+    if (optionalProject.isEmpty()) {
+      return Result.fromError(new ProjectNotFoundException());
+    }
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
@@ -87,7 +87,7 @@ public class AddExperimentToProjectService {
         new ExperimentCreatedDomainEventSubscriber(domainEventsCache));
 
     Project project = optionalProject.get();
-    Result<ExperimentId, RuntimeException> result = Result.<Experiment, RuntimeException>fromValue(
+    return Result.<Experiment, RuntimeException>fromValue(
             Experiment.create(experimentName))
         .onValue(exp -> exp.addAnalytes(analytes))
         .onValue(exp -> exp.addSpecies(species))
@@ -98,10 +98,8 @@ public class AddExperimentToProjectService {
         })
         .map(Experiment::experimentId)
         .onValue(experimentId ->
-      domainEventsCache.forEach(
-          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent)));
-    }
-    return result;
+            domainEventsCache.forEach(
+                domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent)));
   }
 
 }

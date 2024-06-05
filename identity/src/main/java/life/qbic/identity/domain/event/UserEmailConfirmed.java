@@ -26,7 +26,6 @@ public class UserEmailConfirmed extends DomainEvent {
    * @since 1.0.0
    */
   private UserEmailConfirmed(final String userId, final String email) {
-    super();
     this.userId = userId;
     this.email = email;
   }

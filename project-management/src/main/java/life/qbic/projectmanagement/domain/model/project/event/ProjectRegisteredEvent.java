@@ -2,7 +2,6 @@ package life.qbic.projectmanagement.domain.model.project.event;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -21,7 +20,6 @@ public class ProjectRegisteredEvent extends DomainEvent {
   private final String createdProject;
 
   private ProjectRegisteredEvent(ProjectId projectId) {
-    super();
     this.createdProject = Objects.requireNonNull(projectId.value());
   }
 
