@@ -22,7 +22,6 @@ public class BatchDeleted extends DomainEvent {
   private final BatchId batchId;
 
   private BatchDeleted(BatchId batchId) {
-    super();
     this.batchId = Objects.requireNonNull(batchId);
   }
 

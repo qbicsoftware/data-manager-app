@@ -14,7 +14,6 @@ public class QualityControlCreatedEvent extends DomainEvent {
   private final Long qualityControlID;
 
   public QualityControlCreatedEvent(Long qcID) {
-    super();
     this.qualityControlID = Objects.requireNonNull(qcID);
   }
 

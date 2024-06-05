@@ -25,7 +25,6 @@ public class BatchRegistered extends DomainEvent {
   private final ProjectId projectId;
 
   private BatchRegistered(BatchId batchId, String batchName, String projectTitle, ProjectId projectId) {
-    super();
     this.batchId = Objects.requireNonNull(batchId);
     this.projectTitle = Objects.requireNonNull(projectTitle);
     this.batchName = Objects.requireNonNull(batchName);

@@ -6,6 +6,7 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
 import org.jobrunr.jobs.annotations.Job;
@@ -47,8 +48,8 @@ public class UpdateProjectUponPurchaseCreation implements
 
   @Job(name = "Update_Project_Modified")
   public void updateProjectModified(Long purchaseID, Instant modifiedOn) {
-    Optional<ServicePurchase> optionalPurchase = projectPurchaseService.getServicePurchase(purchaseID);
-    optionalPurchase.ifPresent(purchase -> projectInformationService
-        .updateModifiedDate(purchase.project(), modifiedOn));
+    Optional<ProjectId> optionalId = projectPurchaseService.findProjectIdOfPurchase(purchaseID);
+    optionalId.ifPresent(it -> projectInformationService
+        .updateModifiedDate(it, modifiedOn));
   }
 }

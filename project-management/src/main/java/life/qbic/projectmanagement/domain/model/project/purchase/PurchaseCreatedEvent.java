@@ -14,7 +14,6 @@ public class PurchaseCreatedEvent extends DomainEvent {
   private final Long purchaseID;
 
   public PurchaseCreatedEvent(Long purchaseID) {
-    super();
     this.purchaseID = Objects.requireNonNull(purchaseID);
   }
 

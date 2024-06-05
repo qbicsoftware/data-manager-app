@@ -20,7 +20,6 @@ public class ProjectAccessGranted extends DomainEvent {
   private final String projectId;
 
   private ProjectAccessGranted(String userId, String projectId) {
-    super();
     this.userId = Objects.requireNonNull(userId);
     this.projectId = Objects.requireNonNull(projectId);
   }

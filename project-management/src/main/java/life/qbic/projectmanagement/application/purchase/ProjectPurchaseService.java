@@ -97,8 +97,8 @@ public class ProjectPurchaseService {
     return storage.findOfferForProject(projectId, offerId);
   }
 
-  public Optional<ServicePurchase> getServicePurchase(Long purchaseID) {
-    return storage.findPurchase(purchaseID);
+  public Optional<ProjectId> findProjectIdOfPurchase(Long purchaseID) {
+    return storage.findProjectIdOfPurchase(purchaseID);
   }
 
   private record PurchaseCreatedDomainEventSubscriber(

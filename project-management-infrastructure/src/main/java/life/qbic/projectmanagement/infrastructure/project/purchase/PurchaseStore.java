@@ -91,16 +91,9 @@ public class PurchaseStore implements ProjectPurchaseStorage {
     }
   }
 
-  /**
-   * Returns a {@link ServicePurchase} item with the provided purchaseID, if found.
-   * This method is intended to be used when no project id in available.
-   * For user interactions use {@link #findOfferForProject}
-   *
-   * @param purchaseID the id of the purchase to be returned
-   * @see #findOfferForProject
-   */
   @Override
-  public Optional<ServicePurchase> findPurchase(Long purchaseID) {
-    return persistenceStore.findById(purchaseID);
+  public Optional<ProjectId> findProjectIdOfPurchase(Long purchaseID) {
+    return persistenceStore.findById(purchaseID).map(ServicePurchase::project);
   }
+
 }

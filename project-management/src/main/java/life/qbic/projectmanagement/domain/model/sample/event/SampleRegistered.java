@@ -27,7 +27,6 @@ public class SampleRegistered extends DomainEvent {
   private final SampleId registeredSample;
 
   private SampleRegistered(BatchId assignedBatch, SampleId registeredSample) {
-    super();
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.registeredSample = Objects.requireNonNull(registeredSample);
   }

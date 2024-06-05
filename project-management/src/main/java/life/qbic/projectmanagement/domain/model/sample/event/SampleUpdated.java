@@ -22,7 +22,6 @@ public class SampleUpdated extends DomainEvent {
   private final SampleId sampleID;
 
   private SampleUpdated(SampleId sampleID) {
-    super();
     this.sampleID = Objects.requireNonNull(sampleID);
   }
 

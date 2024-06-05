@@ -25,7 +25,6 @@ public class SampleDeleted extends DomainEvent {
   private final SampleId deletedSample;
 
   private SampleDeleted(BatchId assignedBatch, SampleId deletedSample) {
-    super();
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.deletedSample = Objects.requireNonNull(deletedSample);
   }
