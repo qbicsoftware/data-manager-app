@@ -524,5 +524,4 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           String.valueOf(selectedMeasurements));
       measurementsSelectedInfoBox.setText(text);
   }
-
 }
