@@ -154,6 +154,6 @@ public class ProjectInformationService {
   }
 
   public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) {
-    projectRepository.updateLastModified(projectID, modifiedOn);
+    projectRepository.unsafeUpdateLastModified(projectID, modifiedOn);
   }
 }

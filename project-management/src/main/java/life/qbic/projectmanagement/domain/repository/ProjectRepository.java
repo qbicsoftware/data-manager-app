@@ -44,7 +44,7 @@ public interface ProjectRepository {
 
   Optional<Project> find(ProjectId projectId);
 
-  void updateLastModified(ProjectId projectId, Instant modifiedOn);
+  void unsafeUpdateLastModified(ProjectId projectId, Instant modifiedOn);
 
   /**
    * Is thrown if a project that should be created already exists, as denoted by the project id

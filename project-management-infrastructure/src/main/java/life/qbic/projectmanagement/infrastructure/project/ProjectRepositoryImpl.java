@@ -109,7 +109,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
    * @param modifiedOn the Instant object denoting the time the project was updated
    */
   @Override
-  public void updateLastModified(ProjectId projectId, Instant modifiedOn) {
+  public void unsafeUpdateLastModified(ProjectId projectId, Instant modifiedOn) {
     var project = projectRepo.findById(projectId).orElseThrow(ProjectNotFoundException::new);
     project.setLastModified(modifiedOn);
     projectRepo.save(project);
