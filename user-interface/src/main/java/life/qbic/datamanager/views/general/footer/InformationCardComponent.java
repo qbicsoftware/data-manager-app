@@ -9,7 +9,7 @@ import java.io.Serial;
  * Information Card Component
  * <p>
  * Basic card styled {@link Div} which provides the possibility to add Sections with text to be used
- * in Components with a lot of text without interactivity the {@link Impressum}
+ * in Components with a lot of text without interactivity the {@link LegalNotice}
  */
 
 public class InformationCardComponent extends Div {
