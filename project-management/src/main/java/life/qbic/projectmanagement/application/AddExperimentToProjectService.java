@@ -96,10 +96,10 @@ public class AddExperimentToProjectService {
           project.addExperiment(experiment);
           projectRepository.update(project);
         })
-        .map(Experiment::experimentId);
-    if(result.isValue()) {
+        .map(Experiment::experimentId)
+        .onValue(experimentId ->
       domainEventsCache.forEach(
-          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent)));
     }
     return result;
   }
