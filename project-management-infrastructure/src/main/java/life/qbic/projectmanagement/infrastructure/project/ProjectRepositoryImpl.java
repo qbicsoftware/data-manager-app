@@ -102,7 +102,9 @@ public class ProjectRepositoryImpl implements ProjectRepository {
 
   /**
    * Updates the lastModified time of the project. Does not check credentials, as the jobrunner
-   * needs to call it. Use with care.
+   * needs to call it. 
+   * <p>
+   * <b>Use with care!</b>
    * @param projectId  the id of the project to update
    * @param modifiedOn the Instant object denoting the time the project was updated
    */
