@@ -476,10 +476,11 @@ public class ExperimentInformationService {
     for(DomainEvent event : domainEventsCache) {
       if(event instanceof ExperimentUpdatedEvent experimentUpdatedEvent) {
         ExperimentId id = experimentUpdatedEvent.experimentId();
-        if(!dispatchedIDs.contains(id)) {
-          DomainEventDispatcher.instance().dispatch(event);
-          dispatchedIDs.add(id);
+        if(dispatchedIDs.contains(id)) {
+          continue;
         }
+        DomainEventDispatcher.instance().dispatch(event);
+        dispatchedIDs.add(id);
       }
     }
   }
