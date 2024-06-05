@@ -52,10 +52,10 @@ public class QualityControlStore implements QualityControlStorage {
   }
 
   @Override
-  public void storeQualityControls(List<QualityControl> qualityControls)
+  public Iterable<QualityControl> storeQualityControls(List<QualityControl> qualityControls)
       throws QualityControlStorageException {
     try {
-      persistenceStore.saveAll(qualityControls);
+      return persistenceStore.saveAll(qualityControls);
     } catch (RuntimeException e) {
       throw new QualityControlStorageException((
           "Storing the quality control for project %s failed".formatted(

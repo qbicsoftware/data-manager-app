@@ -47,7 +47,7 @@ public class UpdateProjectUponMeasurementUpdate implements DomainEventSubscriber
     jobScheduler.enqueue(() -> updateProjectModified(event.measurementId(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
+  @Job(name = "update project upon measurement update of measurement %0")
   public void updateProjectModified(MeasurementId measurementID, Instant modifiedOn) throws ProjectNotFoundException {
     Optional<NGSMeasurement> ngs = measurementLookupService.findNGSMeasurementById(measurementID.value());
     if(ngs.isPresent()) {

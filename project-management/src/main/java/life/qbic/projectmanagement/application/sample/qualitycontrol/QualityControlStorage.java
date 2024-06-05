@@ -28,9 +28,10 @@ public interface QualityControlStorage {
    * Stores a list of {@link QualityControl} item persistently.
    *
    * @param qualityControls the QualityControl item list to store
+   * @return
    * @throws QualityControlStorageException is thrown if the storage fails
    */
-  void storeQualityControls(List<QualityControl> qualityControls)
+  Iterable<QualityControl> storeQualityControls(List<QualityControl> qualityControls)
       throws QualityControlStorageException;
 
   /**

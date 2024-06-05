@@ -48,7 +48,6 @@ public class QualityControl {
     this.projectId = projectId;
     this.providedOn = providedOn;
     this.qualityControlUpload = qualityControlUpload;
-    emitCreatedEvent();
   }
 
   public static QualityControl create(ProjectId projectId, Instant providedOn,
@@ -66,11 +65,6 @@ public class QualityControl {
 
   public Instant providedOn() {
     return providedOn;
-  }
-
-  private void emitCreatedEvent() {
-    var createdEvent = new QualityControlCreatedEvent(this.id);
-    LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 
   @Override
@@ -91,5 +85,9 @@ public class QualityControl {
   @Override
   public int hashCode() {
     return Objects.hash(projectId, providedOn, qualityControlUpload, id);
+  }
+
+  public Long getId() {
+    return id;
   }
 }
