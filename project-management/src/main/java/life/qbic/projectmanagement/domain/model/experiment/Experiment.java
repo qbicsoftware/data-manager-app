@@ -236,11 +236,8 @@ public class Experiment {
    */
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    Result<VariableName, Exception> result = experimentalDesign.addVariable(variableName, levels);
-    if(result.isValue()) {
-      emitUpdatedEvent();
-    }
-    return result;
+    return experimentalDesign.addVariable(variableName, levels)
+    .onValue( _ -> emitUpdatedEvent());
   }
 
   /**
