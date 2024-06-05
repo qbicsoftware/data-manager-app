@@ -139,6 +139,7 @@ public class Project {
 
   public void setFunding(Funding funding) {
     this.funding = funding;
+    this.lastModified = Instant.now();
   }
 
   private void setProjectCode(ProjectCode projectCode) {
