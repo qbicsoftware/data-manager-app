@@ -237,7 +237,7 @@ public class Experiment {
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
     return experimentalDesign.addVariable(variableName, levels)
-    .onValue( _ -> emitUpdatedEvent());
+    .onValue(x -> emitUpdatedEvent());
   }
 
   /**
@@ -258,12 +258,8 @@ public class Experiment {
   public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String groupName,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
-    Result<ExperimentalGroup, ResponseCode> result = experimentalDesign.addExperimentalGroup(
-        groupName, variableLevels, sampleSize);
-    if(result.isValue()) {
-      emitUpdatedEvent();
-    }
-    return result;
+    return experimentalDesign.addExperimentalGroup(groupName, variableLevels, sampleSize)
+        .onValue(x -> emitUpdatedEvent());
   }
 
   /**
