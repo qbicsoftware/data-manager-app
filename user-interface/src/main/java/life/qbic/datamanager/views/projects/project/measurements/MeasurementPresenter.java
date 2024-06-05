@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -42,16 +44,16 @@ public class MeasurementPresenter {
   }
 
   private static NGSMeasurementEntry convertNGSMeasurement(NGSMeasurement measurement,
-      SampleInformation sampleInfo) {
+      SampleInformation sampleInfo, NGSSpecificMeasurementMetadata specificMeasurementMetadata) {
     return new NGSMeasurementEntry(measurement.measurementCode().value(),
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
         measurement.instrument().getName().replace("_", ":"),
         measurement.instrument().getLabel(),
         measurement.samplePoolGroup().orElse(""), measurement.facility(),
-        measurement.sequencingReadType(), // TODO: fix index
+        measurement.sequencingReadType(),
         measurement.libraryKit().orElse(""), measurement.flowCell().orElse(""),
-        measurement.sequencingRunProtocol().orElse(""), "",
-        "", "");
+        measurement.sequencingRunProtocol().orElse(""), specificMeasurementMetadata.index().orElse(new NGSIndex("", "")).indexI7(),
+        specificMeasurementMetadata.index().orElse(new NGSIndex("", "")).indexI5(), specificMeasurementMetadata.comment().orElse(""));
   }
 
   public List<ProteomicsMeasurementEntry> expandProteomicsPools(
@@ -70,12 +72,11 @@ public class MeasurementPresenter {
 
   public List<NGSMeasurementEntry> expandNGSPools(NGSMeasurement ngsMeasurement) {
     List<NGSMeasurementEntry> expandedEntries = new ArrayList<>();
-    /*for (SampleId sampleId : ngsMeasurement.measuredSamples()) {
-      var sampleInfo = sampleInformationService.findSample(sampleId)
-          .map(sample -> new SampleInformation(sample.sampleCode().code(), sample.label()))
-          .orElse(new SampleInformation("", ""));
-      expandedEntries.add(convertNGSMeasurement(ngsMeasurement, sampleInfo));
-    }*/ // TODO Fix top
+    for (NGSSpecificMeasurementMetadata specificMeasurementMetadata : ngsMeasurement.specificMeasurementMetadata()) {
+      var sampleInfo = sampleInformationService.findSample(specificMeasurementMetadata.measuredSample()).map(sample -> new SampleInformation(sample.sampleCode().code(),
+          sample.label())).orElse(new SampleInformation("", ""));
+      expandedEntries.add(convertNGSMeasurement(ngsMeasurement, sampleInfo, specificMeasurementMetadata));
+    }
     return expandedEntries;
   }
 }
