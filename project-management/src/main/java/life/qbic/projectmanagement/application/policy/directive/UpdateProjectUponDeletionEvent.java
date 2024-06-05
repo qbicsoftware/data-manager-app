@@ -42,7 +42,7 @@ public class UpdateProjectUponDeletionEvent implements DomainEventSubscriber<Pro
     jobScheduler.enqueue(() -> updateProjectModified(event.projectId(), event.occurredOn()));
   }
 
-  @Job(name = "Update_Project_Modified")
+  @Job(name = "Update project modification upon deletion event for project %0")
   public void updateProjectModified(ProjectId projectID, Instant modifiedOn) throws ProjectNotFoundException {
     projectInformationService.updateModifiedDate(projectID, modifiedOn);
   }
