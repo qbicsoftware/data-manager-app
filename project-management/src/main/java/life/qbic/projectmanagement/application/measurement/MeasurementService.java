@@ -477,18 +477,21 @@ public class MeasurementService {
 
   private void handleUpdateEvents(List<DomainEvent> domainEventsCache,
       List<Result<MeasurementId, ErrorCode>> results) {
-    if(results.stream().allMatch(Result::isValue)) {
-      Set<MeasurementId> dispatchedIDs = new HashSet<>();
-      for(DomainEvent event : domainEventsCache) {
-        if(event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
-          MeasurementId id = measurementUpdatedEvent.measurementId();
-          if(!dispatchedIDs.contains(id)) {
-            DomainEventDispatcher.instance().dispatch(event);
-            dispatchedIDs.add(id);
-          }
-        }
+    if(results.stream().anyMatch(Result::isError)) {
+      return;
+    }
+    Set<MeasurementId> dispatchedIDs = new HashSet<>();
+    for(DomainEvent event : domainEventsCache) {
+      if(event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
+        MeasurementId id = measurementUpdatedEvent.measurementId();        
+        if(dispatchedIDs.contains(id)) {
+          continue;
+        }        
+        DomainEventDispatcher.instance().dispatch(event);
+        dispatchedIDs.add(id);
       }
     }
+   
   }
 
   /**
