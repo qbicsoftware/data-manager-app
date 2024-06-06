@@ -81,7 +81,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
-  private final List<Tab> tabsInTabSheet = new ArrayList<>();
+  private final List<MeasurementTechnologyTab> tabsInTabSheet = new ArrayList<>();
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
   private final ClientDetailsProvider clientDetailsProvider;
@@ -120,7 +120,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     List<GridLazyDataView<?>> dataViewsWithItems = measurementsGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();
-    System.err.println(dataViewsWithItems.size());
 
     dataViewsWithItems.forEach(this::addMeasurementTab);
   }
@@ -151,15 +150,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
-    System.err.println("new view");
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
-      System.err.println("ptx view");
-      tabsInTabSheet.add(
-          registeredMeasurementsTabSheet.add(proteomicsTab, proteomicsMeasurementGrid));
+      tabsInTabSheet.add(proteomicsTab);
+      registeredMeasurementsTabSheet.add(proteomicsTab, proteomicsMeasurementGrid);
     }
     if (gridLazyDataView.getItem(0) instanceof NGSMeasurement) {
-      System.err.println("ngs view");
-      tabsInTabSheet.add(registeredMeasurementsTabSheet.add(genomicsTab, ngsMeasurementGrid));
+      tabsInTabSheet.add(genomicsTab);
+      registeredMeasurementsTabSheet.add(genomicsTab, ngsMeasurementGrid);
     }
   }
 
@@ -250,7 +247,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
-    System.err.println("new ngs view created");
     ngsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(ngsGridDataView);
@@ -437,8 +433,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   //TODO introduce custom tab with label and updateable count
   public Optional<String> getSelectedTabName() {
-    if (registeredMeasurementsTabSheet.getSelectedTab() != null) {
-      return Optional.of(registeredMeasurementsTabSheet.getSelectedTab().getLabel());
+    if (registeredMeasurementsTabSheet.getSelectedTab() != null && !tabsInTabSheet.isEmpty()) {
+      return Optional.of(tabsInTabSheet.get(registeredMeasurementsTabSheet.getSelectedIndex()).getTabLabel());
     } else {
       return Optional.empty();
     }
@@ -606,8 +602,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final Span countBadge;
     private final Span technologyNameComponent;
+    private final String technology;
 
     public MeasurementTechnologyTab(String technology, int measurementCount) {
+      this.technology = technology;
       technologyNameComponent = new Span();
       this.countBadge = createBadge();
       Span sampleCountComponent = new Span();
@@ -616,6 +614,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
       setTechnologyName(technology);
       setMeasurementCount(measurementCount);
+    }
+
+    public String getTabLabel() {
+      return technology;
     }
 
     /**
