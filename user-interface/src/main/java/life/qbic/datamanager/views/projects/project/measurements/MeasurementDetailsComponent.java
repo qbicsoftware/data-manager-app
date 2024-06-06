@@ -45,7 +45,6 @@ import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
-import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleExperimentTab;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -119,6 +118,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     List<GridLazyDataView<?>> dataViewsWithItems = measurementsGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();
+    System.err.println(dataViewsWithItems.size());
+
     dataViewsWithItems.forEach(this::addMeasurementTab);
   }
 
@@ -148,11 +149,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
+    System.err.println("new view");
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
+      System.err.println("ptx view");
       tabsInTabSheet.add(
           registeredMeasurementsTabSheet.add(proteomicsTab, proteomicsMeasurementGrid));
     }
     if (gridLazyDataView.getItem(0) instanceof NGSMeasurement) {
+      System.err.println("ngs view");
       tabsInTabSheet.add(registeredMeasurementsTabSheet.add(genomicsTab, ngsMeasurementGrid));
     }
   }
@@ -248,6 +252,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
+    System.err.println("new ngs view created");
     ngsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(ngsGridDataView);
