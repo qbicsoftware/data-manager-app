@@ -3,7 +3,7 @@ package life.qbic.projectmanagement.application.policy.integration;
 import static java.util.Objects.requireNonNull;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchCreation;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchUpdate;
 import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
 
 /**
@@ -27,7 +27,7 @@ public class BatchUpdatedPolicy {
    * @param updateProject directive to update the project modified timestamp
    * @since 1.0.0
    */
-  public BatchUpdatedPolicy(UpdateProjectUponBatchCreation updateProject) {
+  public BatchUpdatedPolicy(UpdateProjectUponBatchUpdate updateProject) {
     DomainEventDispatcher.instance().subscribe(
         requireNonNull(updateProject, "updateProject must not be null"));
   }

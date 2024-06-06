@@ -54,6 +54,7 @@ import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFrom
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchCreation;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchUpdate;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentUpdate;
@@ -197,7 +198,7 @@ public class AppConfig {
   @Bean
   public BatchUpdatedPolicy batchUpdatedPolicy(
       ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
-    var updateProject = new UpdateProjectUponBatchCreation(projectInformationService, jobScheduler);
+    var updateProject = new UpdateProjectUponBatchUpdate(projectInformationService, jobScheduler);
     return new BatchUpdatedPolicy(updateProject);
   }
 
