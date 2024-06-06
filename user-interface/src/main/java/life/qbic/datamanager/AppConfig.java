@@ -53,6 +53,7 @@ import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleS
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
 import life.qbic.projectmanagement.application.policy.directive.InformUserAboutGrantedAccess;
 import life.qbic.projectmanagement.application.policy.directive.InformUsersAboutBatchRegistration;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponExperimentUpdate;
@@ -183,12 +184,13 @@ public class AppConfig {
   @Bean
   public BatchRegisteredPolicy batchRegisteredPolicy(
       life.qbic.projectmanagement.application.communication.EmailService emailService,
-      ProjectAccessService accessService,
+      ProjectAccessService accessService, ProjectInformationService projectInformationService,
       UserInformationService userInformationService, AppContextProvider appContextProvider,
       JobScheduler jobScheduler) {
     var informUsers = new InformUsersAboutBatchRegistration(emailService, accessService,
         userInformationService, appContextProvider, jobScheduler);
-    return new BatchRegisteredPolicy(informUsers);
+    var updateProject = new UpdateProjectUponBatchCreation(projectInformationService, jobScheduler);
+    return new BatchRegisteredPolicy(informUsers, updateProject);
   }
 
   @Bean

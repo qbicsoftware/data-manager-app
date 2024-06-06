@@ -62,8 +62,6 @@ public class BatchDomainService {
       ProjectId projectId) {
     BatchRegistered batchRegistered = BatchRegistered.create(name, id, projectName, projectId);
     DomainEventDispatcher.instance().dispatch(batchRegistered);
-    ProjectChanged projectChanged = ProjectChanged.create(projectId);
-    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   public Result<BatchId, ResponseCode> deleteBatch(BatchId batchId, ProjectId projectId) {
