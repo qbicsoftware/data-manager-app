@@ -91,7 +91,7 @@ public class MeasurementDomainService {
     measurementRepository.deleteAllNGS(measurements);
   }
 
-  public void deletePtx(Set<ProteomicsMeasurement> measurements) {
+  public void deletePxP(Set<ProteomicsMeasurement> measurements) {
     measurementRepository.deleteAllProteomics(measurements);
   }
 

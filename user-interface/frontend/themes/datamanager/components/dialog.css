@@ -92,14 +92,33 @@ vaadin-dialog-overlay::part(title) {
   width: 50%;
 }
 
-
 .add-user-to-project-dialog::part(overlay) {
-  height: 100%;
-  min-width: 66vw;
+  height: fit-content;
+  min-width: fit-content;
 }
 
-.add-user-to-project-dialog vaadin-grid {
-  height: 100%
+.add-user-to-project-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xl);
+}
+
+.add-user-to-project-dialog .person-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.add-user-to-project-dialog .role-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.add-user-to-project-dialog .section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  font-weight: bold;
 }
 
 .batch-registration-dialog::part(content),
