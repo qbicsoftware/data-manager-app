@@ -43,6 +43,8 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -143,10 +145,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
       tabsInTabSheet.add(
-          registeredMeasurementsTabSheet.add("Proteomics", proteomicsMeasurementGrid));
+          registeredMeasurementsTabSheet.add(proteomicsTab, proteomicsMeasurementGrid));
     }
     if (gridLazyDataView.getItem(0) instanceof NGSMeasurement) {
-      tabsInTabSheet.add(registeredMeasurementsTabSheet.add("Genomics", ngsMeasurementGrid));
+      tabsInTabSheet.add(registeredMeasurementsTabSheet.add(genomicsTab, ngsMeasurementGrid));
     }
   }
 
@@ -581,6 +583,46 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Span pooledDetail = new Span(pooledDetailLabel, pooledDetailValue);
       pooledDetail.addClassName("pooled-detail");
       return pooledDetail;
+    }
+  }
+
+  public static class MeasurementTechnologyTab extends Tab {
+
+    private final Span countBadge;
+    private final Span technologyNameComponent;
+
+    public MeasurementTechnologyTab(String technology, int measurementCount) {
+      technologyNameComponent = new Span();
+      this.countBadge = createBadge();
+      Span sampleCountComponent = new Span();
+      sampleCountComponent.add(countBadge);
+      this.add(technologyNameComponent, sampleCountComponent);
+
+      setTechnologyName(technology);
+      setMeasurementCount(measurementCount);
+    }
+
+    /**
+     * Helper method for creating a badge.
+     */
+    private static Span createBadge() {
+      Tag tag = new Tag(String.valueOf(0));
+      tag.setTagColor(TagColor.CONTRAST);
+      return tag;
+    }
+
+    /**
+     * Setter method for specifying the number of measurements of the technology type shown in
+     * this component
+     *
+     * @param measurementCount number of samples associated with the experiment shown in this component
+     */
+    public void setMeasurementCount(int measurementCount) {
+      countBadge.setText(String.valueOf(measurementCount));
+    }
+
+    public void setTechnologyName(String technologyName) {
+      this.technologyNameComponent.setText(technologyName);
     }
   }
 
