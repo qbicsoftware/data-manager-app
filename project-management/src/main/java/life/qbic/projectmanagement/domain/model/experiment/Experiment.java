@@ -68,7 +68,7 @@ public class Experiment {
     }
     this.name = name;
     this.experimentId = ExperimentId.create();
-    emitCreatedEvent();
+    emitExperimentCreatedEvent();
   }
 
   public static Experiment create(String name) {
@@ -147,7 +147,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.specimens.addAll(missingSpecimens);
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -158,7 +158,7 @@ public class Experiment {
   public void removeAllExperimentalVariables() {
     removeAllExperimentalGroups();
     experimentalDesign.removeAllExperimentalVariables();
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -168,6 +168,7 @@ public class Experiment {
    */
   public void removeExperimentalGroups(List<Long> ids) {
     ids.forEach(experimentalDesign::removeExperimentalGroup);
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -179,7 +180,7 @@ public class Experiment {
     for (ExperimentalGroup experimentalGroup : experimentalDesign.getExperimentalGroups()) {
       experimentalDesign.removeExperimentalGroup(experimentalGroup.id());
     }
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -198,7 +199,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.analytes.addAll(missingAnalytes);
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -216,7 +217,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.species.addAll(missingSpecies);
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -237,7 +238,7 @@ public class Experiment {
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
     return experimentalDesign.addVariable(variableName, levels)
-    .onValue(x -> emitUpdatedEvent());
+    .onValue(x -> emitExperimentUpdatedEvent());
   }
 
   /**
@@ -259,7 +260,7 @@ public class Experiment {
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
     return experimentalDesign.addExperimentalGroup(groupName, variableLevels, sampleSize)
-        .onValue(x -> emitUpdatedEvent());
+        .onValue(x -> emitExperimentUpdatedEvent());
   }
 
   /**
@@ -311,7 +312,7 @@ public class Experiment {
           ErrorParameters.of(species));
     }
     this.species = species;
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -324,7 +325,7 @@ public class Experiment {
           ErrorParameters.of(specimens));
     }
     this.specimens = specimens;
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -337,15 +338,15 @@ public class Experiment {
           ErrorParameters.of(analytes));
     }
     this.analytes = analytes;
-    emitUpdatedEvent();
+    emitExperimentUpdatedEvent();
   }
 
-  private void emitUpdatedEvent() {
+  private void emitExperimentUpdatedEvent() {
     var updatedEvent = new ExperimentUpdatedEvent(this.experimentId());
     LocalDomainEventDispatcher.instance().dispatch(updatedEvent);
   }
 
-  private void emitCreatedEvent() {
+  private void emitExperimentCreatedEvent() {
     var createdEvent = new ExperimentCreatedEvent(this.experimentId());
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }

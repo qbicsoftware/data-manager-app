@@ -98,23 +98,24 @@ public class ExperimentInformationService {
           ErrorParameters.empty());
     }
 
-      Experiment experiment = loadExperimentById(experimentId);
-      Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
-          experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
-      if (result.isValue()) {
-        experimentRepository.update(experiment);
+    Experiment experiment = loadExperimentById(experimentId);
+    Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
+        experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
+    if (result.isValue()) {
+      experimentRepository.update(experiment);
+    } else {
+      ResponseCode responseCode = result.getError();
+      if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
+        throw new ApplicationException(
+            "A group with the variable levels %s already exists.".formatted(varLevels.toString()),
+            ErrorCode.DUPLICATE_GROUP_SELECTED,
+            ErrorParameters.empty());
       } else {
-        ResponseCode responseCode = result.getError();
-        if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
-          throw new ApplicationException("A group with the variable levels %s already exists.".formatted(varLevels.toString()),
-              ErrorCode.DUPLICATE_GROUP_SELECTED,
-              ErrorParameters.empty());
-        } else {
-          throw new ApplicationException(
-              "Could not save one or more experimental groups %s %nReason: %s".formatted(
-                  experimentalGroup.toString(), responseCode));
-        }
+        throw new ApplicationException(
+            "Could not save one or more experimental groups %s %nReason: %s".formatted(
+                experimentalGroup.toString(), responseCode));
       }
+    }
   }
 
   /**
