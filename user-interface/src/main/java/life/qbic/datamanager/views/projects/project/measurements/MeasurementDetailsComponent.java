@@ -49,6 +49,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -549,36 +550,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
                   .code())
           .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(metadata -> {
-            if (metadata.index().isEmpty()) {
-              return "";
-            } else {
-              return metadata.index().get().indexI7();
-            }
-          })
+      sampleDetailsGrid.addColumn(metadata -> metadata.index().map(NGSIndex::indexI7).orElse(""))
           .setHeader("Index I7")
-          .setTooltipGenerator(metadata -> {
-            if (metadata.index().isEmpty()) {
-              return "";
-            } else {
-              return metadata.index().get().indexI7();
-            }
-          }).setAutoWidth(true);
-      sampleDetailsGrid.addColumn(metadata -> {
-            if (metadata.index().isEmpty()) {
-              return "";
-            } else {
-              return metadata.index().get().indexI5();
-            }
-          })
+          .setTooltipGenerator(metadata -> metadata.index().map(NGSIndex::indexI7).orElse(""))
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(metadata -> metadata.index().map(NGSIndex::indexI5).orElse(""))
           .setHeader("Index I5")
-          .setTooltipGenerator(metadata -> {
-            if (metadata.index().isEmpty()) {
-              return "";
-            } else {
-              return metadata.index().get().indexI5();
-            }
-          }).setAutoWidth(true);
+          .setTooltipGenerator(metadata -> metadata.index().map(NGSIndex::indexI5).orElse(""))
+          .setAutoWidth(true);
       sampleDetailsGrid.addColumn(metadata -> metadata.comment().orElse(""))
           .setHeader("comment")
           .setTooltipGenerator(metadata -> metadata.comment().orElse(""))
