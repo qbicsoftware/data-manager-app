@@ -35,13 +35,6 @@
   margin-bottom: 0.5rem;
 }
 
-.main.about-us {
-  grid-template-columns: minmax(min-content, 1fr);
-  grid-template-rows: auto;
-  grid-template-areas:
-    "about-us-information";
-}
-
 .main.experiment {
   grid-template-columns: minmax(max-content, 100%);
   grid-template-rows: auto;

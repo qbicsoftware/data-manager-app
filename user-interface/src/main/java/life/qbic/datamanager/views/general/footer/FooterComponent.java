@@ -13,7 +13,7 @@ import life.qbic.datamanager.views.DataManagerLayout;
  * Footer Component
  * <p>
  * Basic Footer Component routing the user to main components with additional information legal or
- * otherwise such as {@link LegalNotice}, {@link AboutUs}, {@link PrivacyAgreement}
+ * otherwise such as {@link LegalNotice} and {@link PrivacyAgreement}
  */
 @SpringComponent
 @UIScope
@@ -21,7 +21,6 @@ import life.qbic.datamanager.views.DataManagerLayout;
 public class FooterComponent extends Footer {
 
   private final RouterLink legalNoticeLink = new RouterLink("LegalNotice", LegalNotice.class);
-  private final RouterLink aboutUsLink = new RouterLink("About Us", AboutUs.class);
   private final RouterLink privacyAgreementLink = new RouterLink("Privacy Agreement",
       PrivacyAgreement.class);
   private final Anchor sourceCodeLink = new Anchor(
@@ -29,8 +28,7 @@ public class FooterComponent extends Footer {
 
   public FooterComponent() {
     setId("data-manager-footer");
-    add(new Anchor(aboutUsLink.getHref(), "About Us", AnchorTarget.BLANK),
-        new Anchor(privacyAgreementLink.getHref(), "Privacy Agreement", AnchorTarget.BLANK),
+    add(new Anchor(privacyAgreementLink.getHref(), "Privacy Agreement", AnchorTarget.BLANK),
         new Anchor(legalNoticeLink.getHref(), "Legal Notice", AnchorTarget.BLANK),
         new Anchor(sourceCodeLink.getHref(), "Source", AnchorTarget.BLANK));
   }
