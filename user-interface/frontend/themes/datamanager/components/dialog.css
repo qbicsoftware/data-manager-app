@@ -186,7 +186,7 @@ vaadin-dialog-overlay::part(title) {
   width: 100%;
 }
 
-.input-with-icon {
+.input-with-icon-selection {
   display: inline-flex;
   column-gap: 1rem;
 }

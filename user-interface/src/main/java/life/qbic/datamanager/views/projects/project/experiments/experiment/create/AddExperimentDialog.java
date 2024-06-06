@@ -102,9 +102,9 @@ public class AddExperimentDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
 
     Div speciesRow = new Div(speciesIconBox, speciesBox);
-    speciesRow.addClassName("input-with-icon");
+    speciesRow.addClassName("input-with-icon-selection");
     Div specimenRow = new Div(specimenIconBox, specimenBox);
-    specimenRow.addClassName("input-with-icon");
+    specimenRow.addClassName("input-with-icon-selection");
 
     Div container = new Div(experimentHeader,
         experimentDescription,

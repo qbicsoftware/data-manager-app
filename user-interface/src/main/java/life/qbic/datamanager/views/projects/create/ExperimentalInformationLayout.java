@@ -82,9 +82,9 @@ public class ExperimentalInformationLayout extends Div implements
             ExperimentalInformation::setExperimentName);
 
     Div speciesRow = new Div(speciesIconBox, speciesBox);
-    speciesRow.addClassName("input-with-icon");
+    speciesRow.addClassName("input-with-icon-selection");
     Div specimenRow = new Div(specimenIconBox, specimenBox);
-    specimenRow.addClassName("input-with-icon");
+    specimenRow.addClassName("input-with-icon-selection");
 
     add(title(),
         description(),
