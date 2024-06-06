@@ -45,6 +45,7 @@ import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.projects.project.samples.SampleDetailsComponent.SampleExperimentTab;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -73,6 +74,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
+  private final MeasurementTechnologyTab proteomicsTab;
+  private final MeasurementTechnologyTab genomicsTab;
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
@@ -91,6 +94,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
+    proteomicsTab = new MeasurementTechnologyTab("Proteomics", 0);
+    genomicsTab = new MeasurementTechnologyTab("Genomics", 0);
     createProteomicsGrid();
     createNGSMeasurementGrid();
     add(registeredMeasurementsTabSheet);
