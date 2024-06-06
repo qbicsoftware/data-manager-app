@@ -98,11 +98,18 @@ public class ExperimentInformationService {
           ErrorParameters.empty());
     }
 
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
     Experiment experiment = loadExperimentById(experimentId);
     Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
         experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
     if (result.isValue()) {
       experimentRepository.update(experiment);
+      handleLocalEventCache(domainEventsCache);
     } else {
       ResponseCode responseCode = result.getError();
       if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
@@ -406,12 +413,6 @@ public class ExperimentInformationService {
   public void updateExperimentalGroupsOfExperiment(String projectId, ExperimentId experimentId,
       List<ExperimentalGroupDTO> experimentalGroupDTOS) {
 
-    List<DomainEvent> domainEventsCache = new ArrayList<>();
-    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
-    localDomainEventDispatcher.reset();
-    localDomainEventDispatcher.subscribe(
-        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
-
     // check for duplicates
     List<List<VariableLevel>> distinctLevels = experimentalGroupDTOS.stream()
         .map(ExperimentalGroupDTO::levels).distinct().toList();
@@ -434,12 +435,19 @@ public class ExperimentInformationService {
         updateExperimentalGroupOfExperiment(experimentId, group);
       }
     }
-    handleLocalEventCache(domainEventsCache);
   }
 
   private void updateExperimentalGroupOfExperiment(ExperimentId experimentId, ExperimentalGroupDTO group) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
     Experiment experiment = loadExperimentById(experimentId);
-    experiment.updateExperimentalGroup(group.id(), group.name(), group.levels(), group.replicateCount());
+    Result<ExperimentalGroup, ResponseCode> result = experiment.updateExperimentalGroup(group.id(),
+        group.name(), group.levels(), group.replicateCount());
+    result.onValue(ignore -> handleLocalEventCache(domainEventsCache));
   }
 
   private List<Long> getGroupIdsToDelete(List<ExperimentalGroup> existingGroups,
