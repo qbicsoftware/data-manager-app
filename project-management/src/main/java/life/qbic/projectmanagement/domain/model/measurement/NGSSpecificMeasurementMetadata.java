@@ -49,15 +49,17 @@ public class NGSSpecificMeasurementMetadata {
     // - Double indexing i5 +i7
     // - Single indexing i7
     // - no indexing (if no multiplexing is done)
+
+    // Double indexing
     if (!indexI5.isBlank() && !indexI7.isBlank()) {
-      // Double indexing
       return new NGSSpecificMeasurementMetadata(sampleId, indexI5, indexI7, comment);
     }
-    if (!indexI7.isBlank()) {
-      // Single indexing
+    // Single indexing
+    if (indexI5.isBlank() && !indexI7.isBlank()) {
+
       return new NGSSpecificMeasurementMetadata(sampleId, indexI5, indexI7, comment);
     }
-    if (!indexI5.isBlank()) {
+    if (!indexI5.isBlank() && indexI7.isBlank()) {
       throw new IllegalArgumentException("Index i5 cannot be set as single index");
     }
     // No indexing provided
