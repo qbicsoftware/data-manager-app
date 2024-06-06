@@ -16,6 +16,7 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -89,11 +90,14 @@ public class RawDataService {
                   proteomicsMeasurement -> proteomicsMeasurement.measurementCode()
                       .equals(datasetInformation.measurementCode()))
               .findFirst().orElseThrow();
-          var sampleInformation = sampleInformationService.retrieveSamplesByIds(
-                  measurement.measuredSamples()).stream()
+          var metadataSampleInformation = sampleInformationService.retrieveSamplesByIds(
+              measurement.specificMetadata().stream()
+                  .map(ProteomicsSpecificMeasurementMetadata::measuredSample).toList());
+          var rawDataSampleInformation = metadataSampleInformation.stream()
               .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
               .toList();
-          return new RawData(measurement.measurementCode(), sampleInformation, datasetInformation);
+          return new RawData(measurement.measurementCode(), rawDataSampleInformation,
+              datasetInformation);
         }).toList();
   }
 
@@ -114,14 +118,14 @@ public class RawDataService {
                   proteomicsMeasurement -> proteomicsMeasurement.measurementCode()
                       .equals(datasetInformation.measurementCode()))
               .findFirst().orElseThrow();
-          var sampleInformation = sampleInformationService.retrieveSamplesByIds(
+          var metadataSampleInformation = sampleInformationService.retrieveSamplesByIds(
                   measurement.specificMeasurementMetadata().stream()
-                  .map(NGSSpecificMeasurementMetadata::measuredSample)
-                  .toList())
-                  .stream()
+                      .map(NGSSpecificMeasurementMetadata::measuredSample).toList());
+          var rawDataSampleInformation = metadataSampleInformation.stream()
               .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
               .toList();
-          return new RawData(measurement.measurementCode(), sampleInformation, datasetInformation);
+          return new RawData(measurement.measurementCode(), rawDataSampleInformation,
+              datasetInformation);
         }).toList();
   }
 
