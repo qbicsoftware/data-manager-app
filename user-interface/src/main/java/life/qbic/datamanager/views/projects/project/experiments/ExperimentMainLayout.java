@@ -4,16 +4,20 @@ package life.qbic.datamanager.views.projects.project.experiments;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
@@ -28,6 +32,7 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +56,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   private final ExperimentNavigationComponent experimentNavigationComponent = new ExperimentNavigationComponent();
   private final DataManagerMenu dataManagerMenu;
   private final transient ExperimentInformationService experimentInformationService;
+  private final transient ProjectInformationService projectInformationService;
   private Context context = new Context();
   private final Span navBarTitle = new Span();
 
@@ -70,6 +76,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     Objects.requireNonNull(ontologyTermInformationService);
     this.dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
     this.experimentInformationService = experimentInformationService;
+    this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyTermInformationService);
@@ -94,14 +101,28 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     context = context.with(parsedExperimentId);
-    setExperimentNameAsTitle(context.experimentId().orElseThrow());
+    setProjectAndExperimentAsTitle(projectId, context.experimentId().orElseThrow());
     setSelectedExperimentTab(beforeEnterEvent.getNavigationTarget());
   }
 
-  private void setExperimentNameAsTitle(ExperimentId experimentId) {
-    experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
+  private void setProjectAndExperimentAsTitle(String projectId, ExperimentId experimentId) {
+    Optional<Project> project = projectInformationService.find(projectId);
+    experimentInformationService.find(projectId, experimentId)
         .ifPresent(
-            experiment -> navBarTitle.setText(experiment.getName()));
+            experiment -> {
+              Text projectCode = new Text(project.orElseThrow().getProjectCode().value()+"  /");
+              Text expName = new Text(experiment.getName());
+              Icon book = styleIcon(VaadinIcon.NOTEBOOK);
+              Icon beaker = styleIcon(VaadinIcon.FLASK);
+              navBarTitle.add(book, projectCode, beaker, expName);
+            });
+  }
+
+  private Icon styleIcon(VaadinIcon vaadinIcon) {
+    Icon icon = vaadinIcon.create();
+    icon.addClassName("primary");
+    icon.setSize("1em");
+    return icon;
   }
 
   private void initializeNavbar() {
