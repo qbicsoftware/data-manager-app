@@ -115,8 +115,10 @@ public class RawDataService {
                       .equals(datasetInformation.measurementCode()))
               .findFirst().orElseThrow();
           var sampleInformation = sampleInformationService.retrieveSamplesByIds(
-                  measurement.specificMeasurementMetadata().stream().map(
-                      NGSSpecificMeasurementMetadata::measuredSample).toList()).stream()
+                  measurement.specificMeasurementMetadata().stream()
+                  .map(NGSSpecificMeasurementMetadata::measuredSample)
+                  .toList())
+                  .stream()
               .map(sample -> new RawDataSampleInformation(sample.sampleCode(), sample.label()))
               .toList();
           return new RawData(measurement.measurementCode(), sampleInformation, datasetInformation);
