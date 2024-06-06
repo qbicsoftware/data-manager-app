@@ -240,8 +240,8 @@ public class MeasurementService {
       ProjectId projectId) {
     List<NGSMeasurementMetadata> ngsMeasurementMetadata = new ArrayList<>();
     for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
-      if (measurementMetadata instanceof NGSMeasurementMetadata) {
-        ngsMeasurementMetadata.add((NGSMeasurementMetadata) measurementMetadata);
+      if (measurementMetadata instanceof NGSMeasurementMetadata ngsMetadata) {
+        ngsMeasurementMetadata.add(ngsMetadata);
       }
     }
     Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping = new HashMap<>();
@@ -256,13 +256,13 @@ public class MeasurementService {
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
 
     // Then merge and prepare the domain objects by pool
-    NGSmeasurementsMapping.putAll(mergeByPoolNGS(measurementsByPool, projectId));
+    ngsMeasurementsMapping.putAll(mergeByPoolNGS(measurementsByPool, projectId));
     // and last but not least also the single sample measurements
     singleMeasurements.stream()
         .map(singleMeasurement -> buildNGS(List.of(singleMeasurement), projectId))
-        .forEach(NGSmeasurementsMapping::putAll);
+        .forEach(ngsMeasurementsMapping::putAll);
 
-    return measurementDomainService.addNGSAll(NGSmeasurementsMapping);
+    return measurementDomainService.addNGSAll(ngsMeasurementsMapping);
   }
 
   private List<MeasurementId> performRegistrationPxp(
@@ -270,8 +270,8 @@ public class MeasurementService {
       ProjectId projectId) {
     List<ProteomicsMeasurementMetadata> proteomicsMeasurements = new ArrayList<>();
     for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
-      if (measurementMetadata instanceof ProteomicsMeasurementMetadata) {
-        proteomicsMeasurements.add((ProteomicsMeasurementMetadata) measurementMetadata);
+      if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMetadata) {
+        proteomicsMeasurements.add(proteomicsMetadata);
       }
     }
     Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping = new HashMap<>();
