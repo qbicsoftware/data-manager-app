@@ -230,4 +230,12 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       throw e;
     }
   }
+
+  @Override
+  public boolean existsMeasurement(String measurementCode) {
+    return ngsMeasurementJpaRepo.findNGSMeasurementByMeasurementCode(
+        MeasurementCode.parse(measurementCode)).isPresent() ||
+        pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(
+            MeasurementCode.parse(measurementCode)).isPresent();
+  }
 }
