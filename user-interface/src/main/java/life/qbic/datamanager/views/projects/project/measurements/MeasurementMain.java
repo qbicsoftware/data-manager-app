@@ -247,7 +247,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void deletePtxMeasurements(Set<ProteomicsMeasurement> measurements) {
-    Result<Void, MeasurementDeletionException> result = measurementService.deletePtxMeasurements(
+    Result<Void, MeasurementDeletionException> result = measurementService.deletePxPMeasurements(
         context.projectId().orElseThrow(), measurements);
     handleDeletionResults(result);
   }

@@ -226,7 +226,7 @@ public class MeasurementService {
       return new ArrayList<>(); // Nothing to do
     }
     if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
-      return performRegistrationPxp((List<MeasurementMetadata>) measurementMetadataList, projectId);
+      return performRegistrationPxP((List<MeasurementMetadata>) measurementMetadataList, projectId);
 
     }
     if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
@@ -265,7 +265,7 @@ public class MeasurementService {
     return measurementDomainService.addNGSAll(ngsMeasurementsMapping);
   }
 
-  private List<MeasurementId> performRegistrationPxp(
+  private List<MeasurementId> performRegistrationPxP(
       List<MeasurementMetadata> measurementMetadataList,
       ProjectId projectId) {
     List<ProteomicsMeasurementMetadata> proteomicsMeasurements = new ArrayList<>();
@@ -386,7 +386,7 @@ public class MeasurementService {
       List<ProteomicsMeasurementMetadata> metadataList, ProjectId projectId) {
     Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = buildSampleIdLookupTable(metadataList);
     var sampleCodes = sampleIdLookupTable.keySet();
-    var specificMetadata = createSpecificMetadata(metadataList, sampleIdLookupTable);
+    var specificMetadata = createSpecificMetadataPxP(metadataList, sampleIdLookupTable);
     var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.iterator().next().code());
     var firstMetadataEntry = metadataList.get(0);
 
@@ -416,7 +416,7 @@ public class MeasurementService {
     return Map.of(measurement, sampleIdLookupTable.values());
   }
 
-  private List<ProteomicsSpecificMeasurementMetadata> createSpecificMetadata(
+  private List<ProteomicsSpecificMeasurementMetadata> createSpecificMetadataPxP(
       List<ProteomicsMeasurementMetadata> metadata,
       Map<SampleCode, SampleIdCodeEntry> sampleIdCodeLookupTable) {
     return metadata.stream().map(metadataEntry -> ProteomicsSpecificMeasurementMetadata.create(
@@ -496,7 +496,7 @@ public class MeasurementService {
         metadata.add((ProteomicsMeasurementMetadata) measurementMetadata);
       }
       try {
-        results = updateAllPxp(metadata, projectId);
+        results = updateAllPxP(metadata, projectId);
       } catch (MeasurementRegistrationException e) {
         log.error("Measurement update failed.", e);
         return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
@@ -559,7 +559,7 @@ public class MeasurementService {
    * @return a list of {@link Result} objects
    * @since 1.0.0
    */
-  private List<Result<MeasurementId, ErrorCode>> updateAllPxp(
+  private List<Result<MeasurementId, ErrorCode>> updateAllPxP(
       List<ProteomicsMeasurementMetadata> metadata, ProjectId projectId) {
 
     if (measurementCodeMissing(metadata)) {
@@ -584,7 +584,7 @@ public class MeasurementService {
       var measurement = measurementRepository.findProteomicsMeasurement(
           measurementMetadata.measurementId()).orElseThrow();
       measurement.setSpecificMetadata(
-          createSpecificMetadata(List.of(measurementMetadata), lookupTable));
+          createSpecificMetadataPxP(List.of(measurementMetadata), lookupTable));
       var organisationQuery = organisationLookupService.organisation(
           measurementMetadata.organisationId());
       if (organisationQuery.isEmpty()) {
@@ -615,7 +615,7 @@ public class MeasurementService {
       var firstEntry = pooledMeasurement.get(0);
       var measurement = measurementRepository.findProteomicsMeasurement(
           firstEntry.measurementId()).orElseThrow();
-      measurement.setSpecificMetadata(createSpecificMetadata(pooledMeasurement, lookupTable));
+      measurement.setSpecificMetadata(createSpecificMetadataPxP(pooledMeasurement, lookupTable));
       var organisationQuery = organisationLookupService.organisation(
           firstEntry.organisationId());
       if (organisationQuery.isEmpty()) {
@@ -768,10 +768,10 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId,
+  public Result<Void, MeasurementDeletionException> deletePxPMeasurements(ProjectId projectId,
       Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
-      measurementDomainService.deletePtx(selectedMeasurements);
+      measurementDomainService.deletePxP(selectedMeasurements);
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
