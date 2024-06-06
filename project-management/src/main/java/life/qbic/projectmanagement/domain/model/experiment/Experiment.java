@@ -41,13 +41,13 @@ public class Experiment {
   private String name;
   @Embedded
   private ExperimentalDesign experimentalDesign;
-  @Column(name = "speciesIconName")
+  @Column(name = "speciesIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
   private String speciesIconName;
-  @Column(name = "specimenIconName")
+  @Column(name = "specimenIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
   private String specimenIconName;
-  @Column(name = "analyteIconName")
+  @Column(name = "analyteIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
   private String analyteIconName;
-
+  
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
   //FIXME should be `analyte`in the database and here
