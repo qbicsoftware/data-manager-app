@@ -161,9 +161,9 @@ public class NGSMeasurement {
   public static NGSMeasurement createSingleMeasurement(ProjectId projectId,
       MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
       NGSSpecificMeasurementMetadata specificMeasurementMetadata) {
-    requireNonNull(measurementCode);
-    requireNonNull(method);
-    requireNonNull(method.instrument());
+    requireNonNull(measurementCode, "Measurement Code cannot be null");
+    requireNonNull(method, "NGsMethodMetadata cannot be null");
+    requireNonNull(method.instrument(), "Instrument cannot be null");
     return new NGSMeasurement(MeasurementId.create(), projectId, "", measurementCode, organisation,
         method, Instant.now(), List.of(specificMeasurementMetadata));
   }
