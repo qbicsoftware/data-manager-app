@@ -31,6 +31,8 @@ public class BioIconComboboxFactory {
       element.add(iconResource.getLabel());
       return element;
     }));
+    comboBox.addValueChangeListener(valueChanged -> valueChanged.getSource()
+        .setPrefixComponent(valueChanged.getValue().getIconResource().createIcon()));
     return comboBox;
   }
 
