@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
+import static java.util.Objects.requireNonNull;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
@@ -57,7 +59,7 @@ public class Experiment {
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
   //FIXME should be `specimen`in the database and here
   private List<OntologyTerm> specimens = new ArrayList<>();
-
+  private static final String defaultIconName = "default";
 
   /**
    * Please use {@link Experiment#create(String)} instead
@@ -71,9 +73,9 @@ public class Experiment {
     experiment.name = name;
     experiment.experimentalDesign = ExperimentalDesign.create();
     experiment.experimentId = ExperimentId.create();
-    experiment.speciesIconName = "default";
-    experiment.specimenIconName = "default";
-    experiment.analyteIconName = "default";
+    experiment.speciesIconName = defaultIconName;
+    experiment.specimenIconName = defaultIconName;
+    experiment.analyteIconName = defaultIconName;
 
     return experiment;
   }
@@ -107,9 +109,17 @@ public class Experiment {
   }
 
   public void setIconNames(String speciesIconName, String specimenIconName, String analyteIconName) {
-    this.speciesIconName = speciesIconName;
-    this.specimenIconName = specimenIconName;
-    this.analyteIconName = analyteIconName;
+    this.speciesIconName = validateIconName(speciesIconName);
+    this.specimenIconName = validateIconName(specimenIconName);
+    this.analyteIconName = validateIconName(analyteIconName);
+  }
+
+  private String validateIconName(String iconName) {
+    requireNonNull(iconName, "Icon names must not be null");
+    if(iconName.isBlank()) {
+      throw new ApplicationException("Icon names must not be blank");
+    }
+    return iconName;
   }
 
   /**
