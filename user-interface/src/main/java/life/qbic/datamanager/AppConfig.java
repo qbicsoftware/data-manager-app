@@ -62,6 +62,7 @@ import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUpo
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponPurchaseCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponQCCreation;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponSampleCreation;
+import life.qbic.projectmanagement.application.policy.integration.BatchUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.integration.UserActivated;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -191,6 +192,13 @@ public class AppConfig {
         userInformationService, appContextProvider, jobScheduler);
     var updateProject = new UpdateProjectUponBatchCreation(projectInformationService, jobScheduler);
     return new BatchRegisteredPolicy(informUsers, updateProject);
+  }
+
+  @Bean
+  public BatchUpdatedPolicy batchUpdatedPolicy(
+      ProjectInformationService projectInformationService, JobScheduler jobScheduler) {
+    var updateProject = new UpdateProjectUponBatchCreation(projectInformationService, jobScheduler);
+    return new BatchUpdatedPolicy(updateProject);
   }
 
   @Bean

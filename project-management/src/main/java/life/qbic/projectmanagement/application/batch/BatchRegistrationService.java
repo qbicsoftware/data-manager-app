@@ -18,6 +18,7 @@ import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import org.slf4j.Logger;
@@ -197,9 +198,9 @@ public class BatchRegistrationService {
     return Result.fromValue(batch.batchId());
   }
 
-  private void dispatchSuccessfulBatchUpdate(ProjectId projectId) {
-    ProjectChanged projectChanged = ProjectChanged.create(projectId);
-    DomainEventDispatcher.instance().dispatch(projectChanged);
+  private void dispatchSuccessfulBatchUpdate(BatchId batchId, ProjectId projectId) {
+    BatchUpdated batchUpdated = BatchUpdated.create(batchId, projectId);
+    DomainEventDispatcher.instance().dispatch(batchUpdated);
   }
 
   private Result<BatchId, ResponseCode> updateBatchInformation(Batch batch, ProjectId projectId,
@@ -208,7 +209,7 @@ public class BatchRegistrationService {
     batch.setLabel(updatedBatchLabel);
     var result = batchRepository.update(batch);
     if (result.isValue()) {
-      dispatchSuccessfulBatchUpdate(projectId);
+      dispatchSuccessfulBatchUpdate(batch.batchId(), projectId);
       return Result.fromValue(batch.batchId());
     } else {
       return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
