@@ -286,10 +286,10 @@ public class MeasurementService {
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
 
     // Then merge and prepare the domain objects by pool
-    proteomicsMeasurementsMapping.putAll(mergeByPool(measurementsByPool, projectId));
+    proteomicsMeasurementsMapping.putAll(mergeByPoolPxP(measurementsByPool, projectId));
     // and last but not least also the single sample measurements
     singleMeasurements.stream()
-        .map(singleMeasurement -> build(List.of(singleMeasurement), projectId))
+        .map(singleMeasurement -> buildPxP(List.of(singleMeasurement), projectId))
         .forEach(proteomicsMeasurementsMapping::putAll);
 
     return measurementDomainService.addProteomicsAll(proteomicsMeasurementsMapping);
@@ -303,11 +303,11 @@ public class MeasurementService {
    * @return
    * @since 1.0.0
    */
-  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> mergeByPool(
+  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> mergeByPoolPxP(
       Map<String, List<ProteomicsMeasurementMetadata>> groupedMetadata, ProjectId projectId) {
     Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> metadataMap = new HashMap<>();
     for (var metadataGroup : groupedMetadata.entrySet()) {
-      metadataMap.putAll(build(metadataGroup.getValue(), projectId));
+      metadataMap.putAll(buildPxP(metadataGroup.getValue(), projectId));
     }
     return metadataMap;
   }
@@ -382,7 +382,7 @@ public class MeasurementService {
    * @return
    * @since 1.0.0
    */
-  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> build(
+  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> buildPxP(
       List<ProteomicsMeasurementMetadata> metadataList, ProjectId projectId) {
     Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = buildSampleIdLookupTable(metadataList);
     var sampleCodes = sampleIdLookupTable.keySet();
