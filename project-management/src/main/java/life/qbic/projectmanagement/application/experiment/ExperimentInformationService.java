@@ -462,9 +462,10 @@ public class ExperimentInformationService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void editExperimentInformation(String projectId, ExperimentId experimentId, String experimentName,
-      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
-
-    List<DomainEvent> domainEventsCache = new ArrayList<>();
+      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
+      String speciesIconName, String specimenIconName) {
+  
+   List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
@@ -475,6 +476,7 @@ public class ExperimentInformationService {
     experiment.setSpecies(species);
     experiment.setSpecimens(specimens);
     experiment.setAnalytes(analytes);
+    experiment.setIconNames(speciesIconName, specimenIconName, "default");
     experimentRepository.update(experiment);
 
     handleLocalEventCache(domainEventsCache);

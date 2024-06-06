@@ -342,7 +342,9 @@ public class ProjectSideNavigationComponent extends Div implements
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes());
+        experimentDraft.getAnalytes(),
+        experimentDraft.getSpeciesIcon().getLabel(),
+        experimentDraft.getSpecimenIcon().getLabel());
     if (result.isValue()) {
 
       return result.getValue();
