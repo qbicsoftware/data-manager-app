@@ -484,8 +484,6 @@ public class MeasurementService {
       }
       try {
         results = updateAllPxP(metadata, projectId);
-        // if the update worked, we forward the unique update events, otherwise it will be rolled back
-        handleUpdateEvents(domainEventsCache, results);
       } catch (MeasurementRegistrationException e) {
         log.error("Measurement update failed.", e);
         return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
@@ -520,10 +518,10 @@ public class MeasurementService {
     Set<MeasurementId> dispatchedIDs = new HashSet<>();
     for(DomainEvent event : domainEventsCache) {
       if(event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
-        MeasurementId id = measurementUpdatedEvent.measurementId();        
+        MeasurementId id = measurementUpdatedEvent.measurementId();
         if(dispatchedIDs.contains(id)) {
           continue;
-        }        
+        }
         DomainEventDispatcher.instance().dispatch(event);
         dispatchedIDs.add(id);
       }
