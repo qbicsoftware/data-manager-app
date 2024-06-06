@@ -62,9 +62,12 @@ public class MeasurementProteomicsValidator implements
    */
   public static boolean isProteomics(Collection<String> properties) {
     if (properties.isEmpty()) {
+      log.debug("no properties found");
       return false;
     }
     if (properties.size() < PROTEOMICS_PROPERTY.values().length) {
+      log.debug("wrong length of property header: "+properties().size());
+      log.debug("expected: "+PROTEOMICS_PROPERTY.values().length);
       return false;
     }
     for (PROTEOMICS_PROPERTY pxpProperty : PROTEOMICS_PROPERTY.values()) {
