@@ -132,7 +132,7 @@ public class NGSMeasurement {
       throws IllegalArgumentException {
     requireNonNull(measurementCode, "measurement Code must not be null");
     requireNonNull(method, "method must not be null");
-    requireNonNull(method.instrument());
+    requireNonNull(method.instrument(), "instrument must not be null");
     if (samplePool.isBlank()) {
       throw new IllegalArgumentException("Sample Pool: no value provided");
     }
