@@ -11,7 +11,6 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  */
 public record NGSMethodMetadata(OntologyTerm instrument, String facility, String sequencingReadType,
                                 String libraryKit,
-                                String flowCell, String sequencingRunProtocol,
-                                String indexI7, String indexI5) {
+                                String flowCell, String sequencingRunProtocol) {
 
 }

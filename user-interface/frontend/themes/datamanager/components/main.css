@@ -22,6 +22,12 @@
     "measurementdetails measurementdetails";
 }
 
+.main.measurement .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
 /*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
 .main.measurement .no-samples-registered-disclaimer {
   grid-column-start: 1;
@@ -130,6 +136,12 @@
     "projectdetails qualitycontrollist";
 }
 
+.main.project .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
 .main.project .project-details-component {
   grid-area: projectdetails;
 }
@@ -179,6 +191,12 @@
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";
+}
+
+.main.raw-data .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
 }
 
 .main.raw-data .no-measurements-registered-disclaimer {
@@ -234,6 +252,12 @@
     "sampledetails sampledetails";
 }
 
+.main.sample .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
 .main.sample .batch-details-component {
   grid-area: batchdetails;
 }
@@ -263,7 +287,8 @@
     grid-template-areas:
     "projectdetails"
     "experimentlist"
-    "projectlinks";
+    "offerlist"
+    "qualitycontrollist";
     grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
   }
 
