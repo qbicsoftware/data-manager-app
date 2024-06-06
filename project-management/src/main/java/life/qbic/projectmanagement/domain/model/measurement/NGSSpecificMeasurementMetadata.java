@@ -7,11 +7,11 @@ import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * <b>NGS Specific Measurement Metadata</b>
+ * <p>
+ * A {@link NGSMeasurement} can contain multiple specific properties, that are associated with the
+ * sample that has been measured. Mostly relevant if the measurement was generated in a pooling
+ * context
  */
 @Embeddable
 public class NGSSpecificMeasurementMetadata {
