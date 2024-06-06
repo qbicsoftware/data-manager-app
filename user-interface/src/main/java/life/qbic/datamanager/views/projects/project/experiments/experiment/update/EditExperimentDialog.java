@@ -45,7 +45,7 @@ public class EditExperimentDialog extends DialogWindow {
   public EditExperimentDialog(OntologyLookupService ontologyTermInformationService) {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService);
-    BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
+    final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
