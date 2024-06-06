@@ -23,6 +23,10 @@ public class UserRegistered extends DomainEvent {
 
   private String userId;
 
+  protected UserRegistered() {
+
+  }
+
   public static UserRegistered create(final String userId, final String fullName,
       final String email) {
     return new UserRegistered(userId, fullName, email);
