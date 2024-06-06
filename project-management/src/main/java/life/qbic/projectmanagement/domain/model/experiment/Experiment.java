@@ -281,7 +281,8 @@ public class Experiment {
   public Result<ExperimentalGroup, ResponseCode> updateExperimentalGroup(long id, String groupName,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
-    return experimentalDesign.updateExperimentalGroup(id, groupName, variableLevels, sampleSize);
+    return experimentalDesign.updateExperimentalGroup(id, groupName, variableLevels, sampleSize)
+        .onValue(ignored -> emitExperimentUpdatedEvent());
   }
 
   public List<ExperimentalGroup> getExperimentalGroups() {
