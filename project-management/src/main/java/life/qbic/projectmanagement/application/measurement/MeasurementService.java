@@ -516,6 +516,7 @@ public class MeasurementService {
         log.error("Measurement update failed.", e);
         return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
       }
+      return CompletableFuture.completedFuture(results);
     }
 
     return CompletableFuture.completedFuture(List.of(Result.fromError(ErrorCode.FAILED)));
@@ -736,8 +737,8 @@ public class MeasurementService {
   }
 
   private boolean allMeasurementCodesExist(List<String> measurementCode) {
-    return measurementCode.stream().map(measurementRepository::findProteomicsMeasurement)
-        .noneMatch(Optional::isEmpty);
+    return measurementCode.stream()
+        .allMatch(measurementRepository::existsMeasurement);
   }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
