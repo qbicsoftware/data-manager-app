@@ -49,7 +49,9 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -68,6 +70,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
+  private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
@@ -81,7 +84,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
   private transient Context context;
   private String searchTerm = "";
-  private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
       @Autowired SampleInformationService sampleInformationService,
@@ -225,10 +227,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(
             ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
                 .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
-        .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
-        .setHeader("Comment")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.comment().orElse(""))
         .setAutoWidth(true);
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -474,7 +472,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       setMeasurementId(ngsMeasurement.measurementCode().value());
       setPooledNgsMeasurementDetails(ngsMeasurement);
       //Todo Replace with specific metadata
-      setPooledNgsSampleDetails(ngsMeasurement);
+      setPooledNgsSampleDetails(ngsMeasurement.specificMeasurementMetadata());
     }
 
     private void setLayout() {
@@ -535,28 +533,36 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       //Todo Add measurement specific pooled properties once defined for NGS
     }
 
-    private void setPooledNgsSampleDetails(NGSMeasurement ngsMeasurement) {
-      Grid<SampleId> sampleDetailsGrid = new Grid<>();
-      //Todo Wire pooled sample specific metadata once defined for NGS
-      sampleDetailsGrid.addColumn(sampleId -> retrieveSampleById(sampleId).orElseThrow().label())
+    private void setPooledNgsSampleDetails(
+        Collection<NGSSpecificMeasurementMetadata> ngsSpecificMeasurementMetadata) {
+      Grid<NGSSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
+      sampleDetailsGrid.addColumn(
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
           .setHeader("Sample Label")
-          .setTooltipGenerator(sampleId -> retrieveSampleById(sampleId).orElseThrow().label())
+          .setTooltipGenerator(
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
           .setAutoWidth(true);
       sampleDetailsGrid.addColumn(
-              sampleId -> retrieveSampleById(sampleId).orElseThrow().sampleCode().code())
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
+                  .code())
           .setHeader("Sample Id")
           .setTooltipGenerator(
-              sampleId -> retrieveSampleById(sampleId).orElseThrow().sampleCode().code())
+              metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().sampleCode()
+                  .code())
           .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(sampleId -> ngsMeasurement.indexI5().orElse(""))
-          .setHeader("Index I5")
-          .setTooltipGenerator(sampleId -> ngsMeasurement.indexI5().orElse(""))
-          .setAutoWidth(true);
-      sampleDetailsGrid.addColumn(sampleId -> ngsMeasurement.indexI7().orElse(""))
+      sampleDetailsGrid.addColumn(metadata -> metadata.index().map(NGSIndex::indexI7).orElse(""))
           .setHeader("Index I7")
-          .setTooltipGenerator(sampleId -> ngsMeasurement.indexI7().orElse(""))
+          .setTooltipGenerator(metadata -> metadata.index().map(NGSIndex::indexI7).orElse(""))
           .setAutoWidth(true);
-      sampleDetailsGrid.setItems(ngsMeasurement.measuredSamples());
+      sampleDetailsGrid.addColumn(metadata -> metadata.index().map(NGSIndex::indexI5).orElse(""))
+          .setHeader("Index I5")
+          .setTooltipGenerator(metadata -> metadata.index().map(NGSIndex::indexI5).orElse(""))
+          .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(metadata -> metadata.comment().orElse(""))
+          .setHeader("comment")
+          .setTooltipGenerator(metadata -> metadata.comment().orElse(""))
+          .setAutoWidth(true);
+      sampleDetailsGrid.setItems(ngsSpecificMeasurementMetadata);
       add(sampleDetailsGrid);
     }
 

@@ -151,7 +151,9 @@ public class ProjectOverviewMain extends Main {
         confirmEvent.getExperimentalInformation().getExperimentName(),
         confirmEvent.getExperimentalInformation().getSpecies(),
         confirmEvent.getExperimentalInformation().getSpecimens(),
-        confirmEvent.getExperimentalInformation().getAnalytes());
+        confirmEvent.getExperimentalInformation().getAnalytes(),
+        confirmEvent.getExperimentalInformation().getSpeciesIcon().getLabel(),
+        confirmEvent.getExperimentalInformation().getSpecimenIcon().getLabel());
     experiment.onError(e -> {
       throw e;
     });

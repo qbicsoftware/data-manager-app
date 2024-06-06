@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serial;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -128,7 +129,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private static MetadataContent read(InputStream inputStream) {
-    var content = new BufferedReader(new InputStreamReader(inputStream)).lines().toList();
+    var content = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_16)).lines().toList();
 
     return new MetadataContent(content.isEmpty() ? null : content.get(0),
         content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
@@ -808,7 +809,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       uploadSectionTitle.addClassName("section-title");
 
       var saveYourFileInfo = new InfoBox().setInfoText(
-              "Please save your excel file as Text (Tab delimited) (*.txt) before uploading.")
+              "Please save your excel file as UTF-16 Unicode Text (*.txt) before uploading.")
           .setClosable(false);
 
       var restrictions = new Div();
