@@ -244,7 +244,7 @@ public class MeasurementService {
         ngsMeasurementMetadata.add((NGSMeasurementMetadata) measurementMetadata);
       }
     }
-    Map<NGSMeasurement, Collection<SampleIdCodeEntry>> NGSmeasurementsMapping = new HashMap<>();
+    Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping = new HashMap<>();
 
     // Start with the pooled measurements first and group the metadata entries by pool
     Map<String, List<NGSMeasurementMetadata>> measurementsByPool = ngsMeasurementMetadata.stream()
