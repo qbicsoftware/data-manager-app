@@ -51,7 +51,9 @@ public class AddExperimentToProjectService {
       String experimentName,
       List<OntologyTerm> species,
       List<OntologyTerm> specimens,
-      List<OntologyTerm> analytes) {
+      List<OntologyTerm> analytes,
+      String speciesIconLabel,
+      String specimenIconLabel) {
       requireNonNull(projectId, "project id must not be null during experiment creation");
       if (experimentName.isBlank()) {
         //ToDo Add Iterator for multiple experiments?
@@ -79,6 +81,7 @@ public class AddExperimentToProjectService {
           .onValue(exp -> exp.addAnalytes(analytes))
           .onValue(exp -> exp.addSpecies(species))
           .onValue(exp -> exp.addSpecimens(specimens))
+          .onValue(exp -> exp.setIconNames(speciesIconLabel, specimenIconLabel, "default"))
           .onValue(experiment -> {
             project.addExperiment(experiment);
             projectRepository.update(project);

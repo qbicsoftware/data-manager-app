@@ -186,6 +186,22 @@ vaadin-dialog-overlay::part(title) {
   width: 100%;
 }
 
+.input-with-icon-selection {
+  display: inline-flex;
+  column-gap: 1rem;
+}
+
+.icon-and-component {
+  display: inline-flex;
+  justify-content: start;
+  align-items: flex-end;
+  column-gap: var(--lumo-space-m);
+}
+
+.box-flexgrow {
+  flex-grow: 1;
+}
+
 .edit-project-dialog .content {
   max-width: 60vw;
   padding-bottom: 1em;
