@@ -130,8 +130,8 @@ public class NGSMeasurement {
       MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
       Collection<NGSSpecificMeasurementMetadata> specificMeasurementMetadata)
       throws IllegalArgumentException {
-    requireNonNull(measurementCode);
-    requireNonNull(method);
+    requireNonNull(measurementCode, "measurement Code must not be null");
+    requireNonNull(method, "method must not be null");
     requireNonNull(method.instrument());
     if (samplePool.isBlank()) {
       throw new IllegalArgumentException("Sample Pool: no value provided");
