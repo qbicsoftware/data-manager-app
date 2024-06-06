@@ -43,8 +43,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
                 sampleCodeString.isBlank() ? null : SampleCode.create(sampleCodeString);
             sampleInfo.setSampleCode(sampleCode);
           })
-          .requireDistinctValues()
-          .setRequired();
+          .requireDistinctValues();
       lockColumn(sampleCodeColumn);
     }
 
