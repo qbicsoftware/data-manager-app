@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.create;
 
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.AbstractIcon;
@@ -19,11 +20,10 @@ public class BioIconComboboxFactory {
     comboBox.setItemLabelGenerator(
         BioIcon::getLabel);
     comboBox.setRenderer(new ComponentRenderer<>(bioIcon -> {
-      Span element = new Span();
+
+      Span element = new Span(styleIcon(bioIcon), new Text(bioIcon.getLabel()));
       element.addClassName("icon-and-component");
-      AbstractIcon<?> icon = styleIcon(bioIcon);
-      element.add(icon);
-      element.add(bioIcon.getLabel());
+
       return element;
     }));
     comboBox.addValueChangeListener(valueChanged -> valueChanged.getSource()
