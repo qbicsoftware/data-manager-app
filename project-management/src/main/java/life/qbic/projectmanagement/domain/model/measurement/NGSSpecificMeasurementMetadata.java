@@ -41,10 +41,10 @@ public class NGSSpecificMeasurementMetadata {
 
   public static NGSSpecificMeasurementMetadata create(SampleId sampleId, String indexI5,
       String indexI7, String comment) {
-    Objects.requireNonNull(sampleId);
-    Objects.requireNonNull(indexI5);
-    Objects.requireNonNull(indexI7);
-    Objects.requireNonNull(comment);
+    Objects.requireNonNull(sampleId, "Sample Id cannot be null");
+    Objects.requireNonNull(indexI5, "Index I5 cannot be null");
+    Objects.requireNonNull(indexI7, "Index I7 cannot be null");
+    Objects.requireNonNull(comment, "comment cannot be null");
     // According to the NGS experts, there can be
     // - Double indexing i5 +i7
     // - Single indexing i7
