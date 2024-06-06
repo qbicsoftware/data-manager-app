@@ -33,7 +33,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
  */
 public class Column<T, C> {
 
-  private final String name;
+  private String name;
   private final List<SpreadsheetCellValidator<String>> cellValidators;
   private final List<SpreadsheetObjectValidator<T, String>> objectValidators;
 
@@ -270,6 +270,7 @@ public class Column<T, C> {
    */
   public Column<T, C> setRequired() {
     this.required = true;
+    this.name = this.name + "*";
     cellValidators.add(0, new SpreadsheetCellValidator<>(
         object -> (Objects.nonNull(object) && !object.isBlank()) || !this.isRequired(),
         "The column '" + getName() + "' does not allow empty values.\nPlease enter a value."));

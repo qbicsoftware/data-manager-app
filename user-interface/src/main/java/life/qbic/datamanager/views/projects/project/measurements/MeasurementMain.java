@@ -18,6 +18,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -345,8 +346,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
         context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+
+    Comparator<String> natOrder = Comparator.naturalOrder();
+
     var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
-        .flatMap(Collection::stream).toList();
+        .flatMap(Collection::stream)
+        .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
+            .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
     proteomicsMeasurementContentProvider.setMeasurements(result);
     proteomicsDownloadProvider.trigger();
   }
@@ -356,8 +362,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
         context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+
+    Comparator<String> natOrder = Comparator.naturalOrder();
+
     var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
-        .flatMap(Collection::stream).toList();
+        .flatMap(Collection::stream)
+        // sort by measurement codes first, then by sample codes
+        .sorted(Comparator.comparing(NGSMeasurementEntry::measurementCode, natOrder)
+            .thenComparing(ngs -> ngs.sampleInformation().sampleId(), natOrder)).toList();
     ngsMeasurementContentProvider.setMeasurements(result);
     ngsDownloadProvider.trigger();
   }
