@@ -31,7 +31,6 @@ public class CodeBlock extends Span {
 
   private static Icon generateCopyIcon(String copyContent) {
     Icon copyIcon = VaadinIcon.COPY_O.create();
-    copyIcon.addClassName(IconSize.SMALL);
     copyIcon.addClassNames("clickable", "copy-icon");
     copyIcon.addClickListener(
         event -> UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", copyContent));
