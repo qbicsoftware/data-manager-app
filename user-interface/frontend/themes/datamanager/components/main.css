@@ -1,16 +1,50 @@
 #content-area {
-  overflow: auto;
   grid-area: content-area;
 }
 
 #main-layout {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
+  grid-template-rows: minmax(max-content, 95%) minmax(min-content, 5%);
   height: 100%;
   grid-template-areas:
     "content-area"
     "data-manager-footer";
+}
+
+#landing-page-layout .landing-page-content {
+  /*Static resources have to be loaded in css form the Meta-INF directory see vaadin cheatsheet
+  https://vaadin.com/vaadin-reference-card#static-content */
+  background-image: url('../images/data-manager-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100%;
+}
+
+#landing-page-layout .landing-page-title-and-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  margin-bottom: var(--lumo-space-l);
+  padding-top: var(--lumo-space-xl);
+}
+
+#landing-page-layout .landing-page-title-and-logo .title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-xxl);
+}
+
+#landing-page-layout .landing-page-title-and-logo .subtitle {
+  color: var(--lumo-tertiary-text-color);
+  font-weight: bold;
+}
+
+#landing-page-layout .landing-page-title-and-logo .ut-logo {
+  height: 2.5em;
+  margin-bottom: var(--lumo-space-xl);
 }
 
 #data-manager-footer {
