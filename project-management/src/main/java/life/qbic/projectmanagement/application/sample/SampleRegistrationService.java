@@ -41,6 +41,7 @@ public class SampleRegistrationService {
     this.sampleDomainService = Objects.requireNonNull(sampleDomainService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
   }
+
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<Collection<Sample>, ResponseCode> registerSamples(
       Collection<SampleRegistrationRequest> sampleRegistrationRequests, ProjectId projectId) {
