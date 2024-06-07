@@ -73,6 +73,14 @@
   align-items: center;
 }
 
+.project-navbar-title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-l);
+  display: inline-flex;
+  align-items: inherit;
+  column-gap: var(--lumo-space-s);
+}
+
 .experiment-main-layout .experiment-main-layout-navbar-container {
   display: flex;
   flex-direction: column;
@@ -89,5 +97,7 @@
 
 .navbar-title {
   font-weight: bold;
-  font-size: var(--lumo-font-size-l);
+  display: inline-flex;
+  align-items: inherit;
+  column-gap: var(--lumo-space-s);
 }
