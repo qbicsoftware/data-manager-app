@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project;
 
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
