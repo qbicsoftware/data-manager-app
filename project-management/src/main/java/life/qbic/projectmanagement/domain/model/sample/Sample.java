@@ -9,9 +9,13 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
+import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
+import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
 
 /**
  * <b>Sample Entity</b>
@@ -67,6 +71,7 @@ public class Sample {
     this.assignedBatch = assignedBatch;
     this.analysisMethod = analysisMethod;
     this.comment = comment;
+    emitCreatedEvent();
   }
 
   protected Sample() {
@@ -158,6 +163,17 @@ public class Sample {
     this.sampleOrigin = sampleOrigin;
   }
 
+  public void update(SampleUpdateRequest sampleInfo) {
+    setLabel(sampleInfo.sampleInformation().sampleLabel());
+    setOrganismId(sampleInfo.sampleInformation().organismId());
+    setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
+    setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
+        sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
+    setComment(sampleInfo.sampleInformation().comment());
+    setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
+    emitUpdatedEvent();
+  }
+
   static class AnalysisMethodConverter implements AttributeConverter<AnalysisMethod, String> {
 
     @Override
@@ -171,5 +187,14 @@ public class Sample {
     }
   }
 
+  private void emitUpdatedEvent() {
+    var updatedEvent = SampleUpdated.create(this.id);
+    LocalDomainEventDispatcher.instance().dispatch(updatedEvent);
+  }
+
+  private void emitCreatedEvent() {
+    var createdEvent = SampleRegistered.create(this.assignedBatch(), this.id);
+    LocalDomainEventDispatcher.instance().dispatch(createdEvent);
+  }
 
 }

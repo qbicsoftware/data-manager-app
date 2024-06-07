@@ -22,4 +22,6 @@ public interface ProteomicsMeasurementJpaRepo extends
   Optional<ProteomicsMeasurement> findProteomicsMeasurementByMeasurementCode(
       MeasurementCode measurementCode);
 
+  Optional<ProteomicsMeasurement> findProteomicsMeasurementByMeasurementId(
+      MeasurementId measurementId);
 }

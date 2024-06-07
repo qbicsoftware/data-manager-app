@@ -13,13 +13,14 @@ import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -34,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  */
 @PageTitle("Data Manager")
-public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver {
+public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterObserver {
 
   private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -64,7 +65,9 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
         experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyLookupService);
     dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
-    addToNavbar(createDrawerToggleAndTitleBar(), dataManagerMenu);
+    Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
+    projectMainNavbar.addClassName("project-main-layout-navbar");
+    addToNavbar(projectMainNavbar);
     addClassName("project-main-layout");
   }
 
@@ -104,8 +107,9 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
     Span drawerToggleAndTitleBar = new Span();
     drawerToggleAndTitleBar.addClassName("drawer-title-bar");
     DrawerToggle drawerToggle = new DrawerToggle();
+    projectTitle.setClassName("navbar-title");
     drawerToggleAndTitleBar.add(drawerToggle, projectTitle);
-    projectTitle.setClassName("project-navbar-title");
+
     initializeDrawer();
     return drawerToggleAndTitleBar;
   }

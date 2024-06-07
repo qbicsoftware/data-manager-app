@@ -26,7 +26,8 @@ public class AsyncConfig implements AsyncConfigurer {
   }
 
   @Bean
-  public DelegatingSecurityContextAsyncTaskExecutor taskExecutor(@Qualifier("asyncTaskExecutor") ThreadPoolTaskExecutor delegate) {
+  public DelegatingSecurityContextAsyncTaskExecutor taskExecutor(
+      @Qualifier("asyncTaskExecutor") ThreadPoolTaskExecutor delegate) {
     return new DelegatingSecurityContextAsyncTaskExecutor(delegate);
   }
 

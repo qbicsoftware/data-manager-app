@@ -346,6 +346,7 @@ public class ProjectSideNavigationComponent extends Div implements
         experimentDraft.getSpeciesIcon().getLabel(),
         experimentDraft.getSpecimenIcon().getLabel());
     if (result.isValue()) {
+
       return result.getValue();
     } else {
       throw new ApplicationException("Experiment Creation failed");

@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -95,7 +96,7 @@ public class ProjectInformationService {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId.value());
     return projectRepository.find(projectId).orElseThrow(() -> new ApplicationException(
-            "Project with id" + projectId + "does not exit anymore")
+            "Project with id" + projectId + "does not exist anymore")
         // should never happen; indicates dirty removal of project from db
     );
   }
@@ -143,7 +144,6 @@ public class ProjectInformationService {
     var project = loadProject(projectId);
     project.setFunding(funding);
     projectRepository.update(project);
-
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -151,5 +151,9 @@ public class ProjectInformationService {
     var project = loadProject(projectId);
     project.removeFunding();
     projectRepository.update(project);
+  }
+
+  public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) {
+    projectRepository.unsafeUpdateLastModified(projectID, modifiedOn);
   }
 }
