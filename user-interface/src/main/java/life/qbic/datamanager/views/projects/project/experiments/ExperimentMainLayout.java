@@ -110,6 +110,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     experimentInformationService.find(projectId, experimentId)
         .ifPresent(
             experiment -> {
+              navBarTitle.removeAll();
               Text projectCode = new Text(project.orElseThrow().getProjectCode().value()+"  /");
               Text expName = new Text(experiment.getName());
               Icon book = styleIcon(VaadinIcon.NOTEBOOK);
