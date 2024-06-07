@@ -122,7 +122,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
   private Icon styleIcon(VaadinIcon vaadinIcon) {
     Icon icon = vaadinIcon.create();
     icon.addClassName("primary");
-    icon.setSize("1em");
+    icon.addClassName("smallest");
     return icon;
   }
 

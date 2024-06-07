@@ -98,7 +98,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
   private Icon styleIcon(VaadinIcon vaadinIcon) {
     Icon icon = vaadinIcon.create();
     icon.addClassName("primary");
-    icon.setSize("1em");
+    icon.addClassName("smallest");
     return icon;
   }
 
