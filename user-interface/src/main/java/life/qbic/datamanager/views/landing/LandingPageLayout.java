@@ -28,7 +28,7 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   public Button register;
   public Button login;
   private final Div landingPageContent = new Div();
-  private LandingPageTitleAndLogo landingPageTitleAndLogo = new LandingPageTitleAndLogo();
+  private final LandingPageTitleAndLogo landingPageTitleAndLogo = new LandingPageTitleAndLogo();
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     Objects.requireNonNull(handlerInterface);

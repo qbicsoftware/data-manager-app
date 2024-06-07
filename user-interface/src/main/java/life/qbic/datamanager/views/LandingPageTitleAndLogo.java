@@ -14,8 +14,8 @@ import com.vaadin.flow.server.StreamResource;
  */
 public class LandingPageTitleAndLogo extends Div {
 
-  private Span title = new Span("Data Manager");
-  private Span subTitle = new Span("University of Tübingen Life Science Data Management");
+  private final Span title = new Span("Data Manager");
+  private final Span subTitle = new Span("University of Tübingen Life Science Data Management");
   private final static String UT_LOGO_PATH = "login/university-tuebingen-logo.svg";
 
   public LandingPageTitleAndLogo() {
