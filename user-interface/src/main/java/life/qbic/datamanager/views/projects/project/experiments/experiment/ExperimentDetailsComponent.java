@@ -655,7 +655,8 @@ public class ExperimentDetailsComponent extends PageArea {
       this.iconResource = new IconResource(svgResource);
     }
 
-    public static BioIcon getTypeWithNameOrDefault(SampleSourceType sampleSourceType, String iconName) {
+    public static BioIcon getTypeWithNameOrDefault(SampleSourceType sampleSourceType,
+        String iconName) {
       Optional<BioIcon> searchResult = getOptionsForType(sampleSourceType).stream()
           .filter(icon -> icon.label.equals(iconName)).findFirst();
       return searchResult.orElseGet(() -> getOptionsForType(sampleSourceType).stream()
@@ -670,13 +671,13 @@ public class ExperimentDetailsComponent extends PageArea {
       return type;
     }
 
-    public IconResource getIconResource(){
+    public IconResource getIconResource() {
       return iconResource;
     }
 
     public static List<BioIcon> getOptionsForType(SampleSourceType type) {
       return Arrays.stream(BioIcon.values()).filter(o ->
-              o.getType().equals(type)).toList();
+          o.getType().equals(type)).toList();
     }
 
   }
@@ -686,6 +687,7 @@ public class ExperimentDetailsComponent extends PageArea {
    * to create the respective Icon component.
    */
   public static class IconResource {
+
     private StreamResource streamResource = null;
     private VaadinIcon vaadinIconResource = null;
 
@@ -698,7 +700,7 @@ public class ExperimentDetailsComponent extends PageArea {
     }
 
     public AbstractIcon createIcon() {
-      if(streamResource!=null) {
+      if (streamResource != null) {
         return new SvgIcon(streamResource);
       } else {
         return vaadinIconResource.create();

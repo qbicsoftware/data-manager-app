@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.landing;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
 import java.io.Serial;
@@ -25,6 +26,7 @@ public class LandingPageLayout extends DataManagerLayout {
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
     Objects.requireNonNull(handlerInterface);
+    addClassName("landing-page-layout");
 
     createNavBarContent();
     registerToHandler(handlerInterface);
@@ -36,8 +38,9 @@ public class LandingPageLayout extends DataManagerLayout {
   }
 
   private void createNavBarContent() {
-
-    addToNavbar(createHeaderButtonLayout());
+    Span dataManagerTitle = new Span("Data Manager");
+    dataManagerTitle.setClassName("navbar-title");
+    addToNavbar(dataManagerTitle, createHeaderButtonLayout());
   }
 
   private HorizontalLayout createHeaderButtonLayout() {

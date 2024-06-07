@@ -119,7 +119,8 @@ public class Experiment {
     return analyteIconName;
   }
 
-  public void setIconNames(String speciesIconName, String specimenIconName, String analyteIconName) {
+  public void setIconNames(String speciesIconName, String specimenIconName,
+      String analyteIconName) {
     this.speciesIconName = validateIconName(speciesIconName);
     this.specimenIconName = validateIconName(specimenIconName);
     this.analyteIconName = validateIconName(analyteIconName);
@@ -127,7 +128,7 @@ public class Experiment {
 
   private String validateIconName(String iconName) {
     requireNonNull(iconName, "Icon names must not be null");
-    if(iconName.isBlank()) {
+    if (iconName.isBlank()) {
       throw new ApplicationException("Icon names must not be blank");
     }
     return iconName;

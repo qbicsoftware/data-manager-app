@@ -70,7 +70,7 @@ public class EditExperimentDialog extends DialogWindow {
         BioIcon.getOptionsForType(SampleSourceType.SPECIES), "Species icon");
     binder.forField(speciesIconBox)
         .bind(ExperimentDraft::getSpeciesIcon,
-    ExperimentDraft::setSpeciesIcon);
+            ExperimentDraft::setSpeciesIcon);
 
     MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
     specimenBox.addClassName("box-flexgrow");

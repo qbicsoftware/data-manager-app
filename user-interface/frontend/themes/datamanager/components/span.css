@@ -79,6 +79,11 @@ span.warning {
   font-size: var(--lumo-font-size-s);
 }
 
+span.inline {
+  display: inline-flex;
+  column-gap: var(--lumo-space-xs);
+}
+
 .spreadsheet-list-item {
   display: inline-flex;
   width: 100%;

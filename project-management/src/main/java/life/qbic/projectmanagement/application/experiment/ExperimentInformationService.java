@@ -134,7 +134,8 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public List<ExperimentalGroupDTO> getExperimentalGroups(String projectId, ExperimentId experimentId) {
+  public List<ExperimentalGroupDTO> getExperimentalGroups(String projectId,
+      ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream()
         .map(it -> new ExperimentalGroupDTO(it.id(), it.name(), it.condition().getVariableLevels(), it.sampleSize()))
@@ -143,7 +144,8 @@ public class ExperimentInformationService {
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public List<ExperimentalGroup> experimentalGroupsFor(String projectId, ExperimentId experimentId) {
+  public List<ExperimentalGroup> experimentalGroupsFor(String projectId,
+      ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream().toList();
   }
@@ -197,7 +199,8 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  public void addSpeciesToExperiment(String projectId, ExperimentId experimentId, OntologyTerm... species) {
+  public void addSpeciesToExperiment(String projectId, ExperimentId experimentId,
+      OntologyTerm... species) {
     Arrays.stream(species).forEach(Objects::requireNonNull);
     if (species.length < 1) {
       return;
@@ -225,7 +228,8 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  public void addSpecimenToExperiment(String projectId, ExperimentId experimentId, OntologyTerm... specimens) {
+  public void addSpecimenToExperiment(String projectId, ExperimentId experimentId,
+      OntologyTerm... specimens) {
     Arrays.stream(specimens).forEach(Objects::requireNonNull);
     if (specimens.length < 1) {
       return;
@@ -253,7 +257,8 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  public void addAnalyteToExperiment(String projectId, ExperimentId experimentId, OntologyTerm... analytes) {
+  public void addAnalyteToExperiment(String projectId, ExperimentId experimentId,
+      OntologyTerm... analytes) {
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
     if (analytes.length < 1) {
       return;
@@ -285,7 +290,8 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  public void addVariableToExperiment(String projectId, ExperimentId experimentId, String variableName, String unit,
+  public void addVariableToExperiment(String projectId, ExperimentId experimentId,
+      String variableName, String unit,
       List<String> levels) {
     Objects.requireNonNull(variableName);
     Objects.requireNonNull(levels);
@@ -354,7 +360,8 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public List<ExperimentalVariable> getVariablesOfExperiment(String projectId, ExperimentId experimentId) {
+  public List<ExperimentalVariable> getVariablesOfExperiment(String projectId,
+      ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.variables();
   }
@@ -369,6 +376,7 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  
   public void deleteExperimentalGroupsWithIds(String projectId, ExperimentId id, List<Long> groupIds) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
@@ -461,7 +469,8 @@ public class ExperimentInformationService {
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  public void editExperimentInformation(String projectId, ExperimentId experimentId, String experimentName,
+  public void editExperimentInformation(String projectId, ExperimentId experimentId,
+      String experimentName,
       List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
       String speciesIconName, String specimenIconName) {
   
