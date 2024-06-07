@@ -86,7 +86,7 @@ public class ProjectDetailsComponent extends PageArea {
 
     var projectCode = new Div();
     projectCode.setText(project.getProjectCode().value());
-    entries.add(new Entry("ID", "The unique identifier of the project", projectCode));
+    entries.add(new Entry("Project ID", "The unique identifier of the project", projectCode));
 
     var projectTitle = new Div();
     projectTitle.setText(project.getProjectIntent().projectTitle().title());

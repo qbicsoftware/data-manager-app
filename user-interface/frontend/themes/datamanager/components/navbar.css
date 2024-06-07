@@ -66,6 +66,7 @@
 
 .experiment-main-layout .experiment-main-layout-navbar {
   padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
   display: inline-flex;
   justify-content: space-between;
   padding-right: var(--lumo-space-m);

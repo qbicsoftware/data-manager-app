@@ -57,10 +57,16 @@
 
 .main.measurement {
   grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
-  grid-template-rows: minmax(max-content, 20%) minmax(max-content, 75%);
+  grid-template-rows: minmax(max-content, 25%) minmax(max-content, 70%);
   grid-template-areas:
     ". measurementtemplatelist"
     "measurementdetails measurementdetails";
+}
+
+.main.measurement .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
 }
 
 /*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
@@ -171,6 +177,12 @@
     "projectdetails qualitycontrollist";
 }
 
+.main.project .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
 .main.project .project-details-component {
   grid-area: projectdetails;
 }
@@ -220,6 +232,12 @@
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";
+}
+
+.main.raw-data .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
 }
 
 .main.raw-data .no-measurements-registered-disclaimer {
@@ -275,6 +293,12 @@
     "sampledetails sampledetails";
 }
 
+.main.sample .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
 .main.sample .batch-details-component {
   grid-area: batchdetails;
 }
@@ -292,27 +316,11 @@
 
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
-  .main.data-protection-agreement {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-rows: auto;
-    grid-template-areas:
-    "data-protection-information"
-    "data-protection-card-information";
-  }
-
   .main.experiment {
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
     "experimentdetails";
     grid-template-rows: minmax(min-content, 1fr);
-  }
-
-  .main.impressum {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-rows: auto;
-    grid-template-areas:
-    "data-protection-information"
-    "data-protection-card-information";
   }
 
   .main.measurement {
@@ -329,7 +337,8 @@
     grid-template-areas:
     "projectdetails"
     "experimentlist"
-    "projectlinks";
+    "offerlist"
+    "qualitycontrollist";
     grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
   }
 

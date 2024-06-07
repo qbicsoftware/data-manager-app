@@ -393,12 +393,14 @@ public class ExperimentInformationService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void editExperimentInformation(String projectId, ExperimentId experimentId,
       String experimentName,
-      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
+      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
+      String speciesIconName, String specimenIconName) {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.setName(experimentName);
     experiment.setSpecies(species);
     experiment.setAnalytes(analytes);
     experiment.setSpecimens(specimens);
+    experiment.setIconNames(speciesIconName, specimenIconName, "default");
     experimentRepository.update(experiment);
   }
 

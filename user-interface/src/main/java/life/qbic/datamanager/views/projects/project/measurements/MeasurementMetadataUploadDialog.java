@@ -811,7 +811,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       uploadSectionTitle.addClassName("section-title");
 
       var saveYourFileInfo = new InfoBox().setInfoText(
-              "Please save your excel file as Text (Tab delimited) (*.txt) before uploading.")
+              "Please save your excel file as UTF-16 Unicode Text (*.txt) before uploading.")
           .setClosable(false);
 
       var restrictions = new Div();
