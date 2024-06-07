@@ -61,6 +61,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -251,7 +252,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void deleteExistingExperimentalVariables() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    var result = deletionService.deleteAllExperimentalVariables(experimentId);
+    ProjectId projectId = context.projectId().orElseThrow();
+    var result = deletionService.deleteAllExperimentalVariables(experimentId, projectId);
     result.onError(responseCode -> {
       throw new ApplicationException("variable deletion failed: " + responseCode);
     });

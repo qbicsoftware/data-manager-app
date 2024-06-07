@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -42,6 +43,8 @@ public interface ProjectRepository {
   List<Project> find(ProjectCode projectCode);
 
   Optional<Project> find(ProjectId projectId);
+
+  void unsafeUpdateLastModified(ProjectId projectId, Instant modifiedOn);
 
   /**
    * Is thrown if a project that should be created already exists, as denoted by the project id

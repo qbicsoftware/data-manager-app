@@ -57,10 +57,12 @@ class SampleDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(sampleRegistered)
 
         when:
-        Result<Collection<Sample>, SampleDomainService.ResponseCode> result = sampleDomainService.registerSamples(project, sampleCodesToRegistrationRequests)
+        sampleDomainService.registerSamples(project, sampleCodesToRegistrationRequests)
 
         then:
-        sampleRegistered.batchIdOfEvent.equals(result.getValue()[0].assignedBatch())
-        sampleRegistered.sampleIdOfEvent.equals(result.getValue()[0].sampleId())
+
+        sampleRegistered.batchIdOfEvent.equals(sampleRegistrationRequest.assignedBatch())
+        SampleId.parse(sampleRegistered.sampleIdOfEvent.value())
+        notThrown(IllegalArgumentException)
     }
 }

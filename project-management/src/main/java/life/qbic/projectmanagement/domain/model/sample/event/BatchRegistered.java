@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.domain.model.sample.event;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -21,37 +21,33 @@ public class BatchRegistered extends DomainEvent {
 
   private final BatchId batchId;
   private final String projectTitle;
-  private final ProjectId projectId;
   private final String batchName;
-  private final Instant occurredOn;
+  private final ProjectId projectId;
 
-  private BatchRegistered(BatchId batchId, Instant occurredOn, String batchName, String projectTitle,
-      ProjectId projectId) {
+  private BatchRegistered(BatchId batchId, String batchName, String projectTitle, ProjectId projectId) {
     this.batchId = Objects.requireNonNull(batchId);
-    this.occurredOn = Objects.requireNonNull(occurredOn);
     this.projectTitle = Objects.requireNonNull(projectTitle);
-    this.projectId = Objects.requireNonNull(projectId);
     this.batchName = Objects.requireNonNull(batchName);
+    this.projectId = Objects.requireNonNull(projectId);
   }
 
   public static BatchRegistered create(String batchName, BatchId id, String projectTitle,
       ProjectId projectId) {
-    return new BatchRegistered(id, Instant.now(), batchName, projectTitle, projectId);
+    return new BatchRegistered(id, batchName, projectTitle, projectId);
   }
 
-  @Override
-  public Instant occurredOn() {
-    return occurredOn;
-  }
-
+  @JsonGetter("batchId")
   public BatchId batchId() {
     return this.batchId;
   }
 
+  @JsonGetter("name")
   public String name() { return batchName; }
 
+  @JsonGetter("projectTitle")
   public String projectTitle() { return projectTitle; }
 
+  @JsonGetter("projectId")
   public ProjectId projectId() { return projectId; }
 
 }

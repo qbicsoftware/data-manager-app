@@ -18,8 +18,6 @@ import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
  */
 public class SampleDeletedPolicy {
 
-  private final DeleteSampleFromBatch deleteSampleFromBatch;
-
   /**
    * Creates an instance of a {@link SampleDeletedPolicy} object.
    * <p>
@@ -30,7 +28,6 @@ public class SampleDeletedPolicy {
    * @since 1.0.0
    */
   public SampleDeletedPolicy(DeleteSampleFromBatch deleteSampleFromBatch) {
-    this.deleteSampleFromBatch = deleteSampleFromBatch;
-    DomainEventDispatcher.instance().subscribe(this.deleteSampleFromBatch);
+    DomainEventDispatcher.instance().subscribe(deleteSampleFromBatch);
   }
 }

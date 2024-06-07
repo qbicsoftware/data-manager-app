@@ -85,4 +85,8 @@ public class QualityControl {
   public int hashCode() {
     return Objects.hash(projectId, providedOn, qualityControlUpload, id);
   }
+
+  public Long getId() {
+    return id;
+  }
 }

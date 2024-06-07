@@ -41,4 +41,9 @@ public class ExperimentJpaRepository implements ExperimentRepository {
   public void delete(ExperimentId experimentId) {
     qbicExperimentRepo.deleteById(experimentId);
   }
+
+  @Override
+  public Optional<String> findProjectId(ExperimentId experimentId) {
+    return qbicExperimentRepo.findProjectIdForExperiment(experimentId.value());
+  }
 }

@@ -20,4 +20,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface QbicProjectRepo extends CrudRepository<Project, ProjectId> {
 
   List<Project> findProjectByProjectCode(ProjectCode projectCode);
+
 }
