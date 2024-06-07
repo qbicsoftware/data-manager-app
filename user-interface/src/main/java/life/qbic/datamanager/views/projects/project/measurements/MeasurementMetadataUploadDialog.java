@@ -226,7 +226,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     }
 
     String measurementId = safeArrayAccess(columnValues, measurementIdIndex).orElse("");
-    SampleCode sampleCode = SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse(""));
+    SampleCode sampleCode = SampleCode.create(
+        safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse(""));
     String organisationRoRId = safeArrayAccess(columnValues, organisationColumnIndex).orElse("");
     String instrumentCURIE = safeArrayAccess(columnValues, instrumentColumnIndex).orElse("");
     String samplePoolGroup = safeArrayAccess(columnValues, samplePoolGroupIndex).orElse("");
@@ -572,7 +573,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     var metadata = new ProteomicsMeasurementMetadata(measurementId, sampleCode,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod, new Labeling(labelingType, label), note);
+        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
+        new Labeling(labelingType, label), note);
     var measurementProteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
         measurementValidationService);
     var finalValidationResult = generateModeDependentValidationResult(

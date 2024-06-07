@@ -16,11 +16,6 @@ class TestEvent extends DomainEvent {
 
     private String test = "TEST"
 
-    @Override
-    Instant occurredOn() {
-        return Instant.now()
-    }
-
     boolean equals(o) {
         if (this.is(o)) return true
         if (o == null || getClass() != o.class) return false

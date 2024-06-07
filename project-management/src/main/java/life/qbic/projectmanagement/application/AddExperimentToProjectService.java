@@ -2,12 +2,17 @@ package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentCreatedDomainEventSubscriber;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -75,6 +80,12 @@ public class AddExperimentToProjectService {
       if (optionalProject.isEmpty()) {
         return Result.fromError(new ProjectNotFoundException());
       }
+        
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentCreatedDomainEventSubscriber(domainEventsCache));
       Project project = optionalProject.get();
       return Result.<Experiment, RuntimeException>fromValue(
               Experiment.create(experimentName))
@@ -86,7 +97,10 @@ public class AddExperimentToProjectService {
             project.addExperiment(experiment);
             projectRepository.update(project);
           })
-          .map(Experiment::experimentId);
+        .map(Experiment::experimentId)
+        .onValue(experimentId ->
+            domainEventsCache.forEach(
+                domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent)));
   }
 
 }

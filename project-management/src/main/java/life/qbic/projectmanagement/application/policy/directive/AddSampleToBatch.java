@@ -44,7 +44,7 @@ public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered>
     jobScheduler.enqueue(() -> addSampleToBatch(event.registeredSample(), event.assignedBatch()));
   }
 
-  @Job(name = "Add_Sample_To_Batch")
+  @Job(name = "Add sample %0 to batch %1")
   public void addSampleToBatch(SampleId sample, BatchId batch) throws RuntimeException {
     batchRegistrationService.addSampleToBatch(sample, batch).onError(responseCode -> {
       throw new RuntimeException(

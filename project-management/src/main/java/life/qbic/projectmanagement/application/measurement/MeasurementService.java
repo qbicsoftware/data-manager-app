@@ -16,7 +16,9 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -33,8 +35,10 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasureme
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
@@ -81,33 +85,6 @@ public class MeasurementService {
     this.measurementRepository = Objects.requireNonNull(measurementRepository);
   }
 
-
-  /**
-   * Merges a collection of {@link NGSMeasurementMetadata} items into one single
-   * {@link NGSMeasurementMetadata} item.
-   * <p>
-   * The method currently considers the sample codes as preservable.
-   * <p>
-   * For all other properties, there is no guarantee from which item they are derived.
-   *
-   * @param metadata a collection of metadata items to be merged into a single item
-   * @return
-   */
-  private static Optional<NGSMeasurementMetadata> mergeNGS(
-      Collection<NGSMeasurementMetadata> metadata) {
-    if (metadata.isEmpty()) {
-      return Optional.empty();
-    }
-    List<SampleCode> associatedSamples = metadata.stream().map(
-        NGSMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
-    var indexI7 = metadata.stream().map(NGSMeasurementMetadata::indexI7).findFirst().orElseThrow();
-    var indexI5 = metadata.stream().map(NGSMeasurementMetadata::indexI5).findFirst().orElseThrow();
-    var firstEntry = metadata.iterator().next();
-    return Optional.of(
-        NGSMeasurementMetadata.copyWithNewProperties(associatedSamples, indexI7, indexI5,
-            firstEntry));
-  }
-
   /**
    * Checks if there are measurements registered for the provided experimentId
    *
@@ -121,13 +98,10 @@ public class MeasurementService {
     return measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) != 0;
   }
 
-
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
-      ExperimentId experimentId,
-      int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {
+      ExperimentId experimentId, int offset, int limit, List<SortOrder> sortOrder, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
@@ -143,16 +117,14 @@ public class MeasurementService {
     return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
-  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
-    return measurementLookupService.findProteomicsMeasurement(measurementId);
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
+    return measurementLookupService.findProteomicsMeasurement(measurementCode);
   }
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
-      int offset,
-      int limit,
-      List<SortOrder> sortOrders, ProjectId projectId) {
+      int offset, int limit, List<SortOrder> sortOrders, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
@@ -161,17 +133,15 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId,
-      ProjectId projectId) {
+  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryAllNGSMeasurement(samplesInExperiment);
   }
 
-  public Optional<NGSMeasurement> findNGSMeasurement(String measurementId) {
-    return measurementLookupService.findNGSMeasurement(measurementId);
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
+    return measurementLookupService.findNGSMeasurement(measurementCode);
   }
-
 
   /**
    * Registers a collection of {@link MeasurementMetadata} items.
@@ -196,6 +166,12 @@ public class MeasurementService {
   public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> registerAll(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
 
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementCreatedDomainEventSubscriber(domainEventsCache));
+
     List<Result<MeasurementId, ErrorCode>> results;
 
     try {
@@ -212,6 +188,11 @@ public class MeasurementService {
     } catch (RuntimeException e) {
       log.error("Failed to register measurement", e);
       return CompletableFuture.completedFuture(List.of(Result.fromError(ErrorCode.FAILED)));
+    }
+    // if the creation worked, we forward the events, otherwise it will be rolled back
+    if(results.stream().allMatch(Result::isValue)) {
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     }
 
     return CompletableFuture.completedFuture(results);
@@ -489,6 +470,12 @@ public class MeasurementService {
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     List<Result<MeasurementId, ErrorCode>> results;
 
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementUpdatedDomainEventSubscriber(domainEventsCache));
+
     if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(
         0) instanceof ProteomicsMeasurementMetadata) {
       List<ProteomicsMeasurementMetadata> metadata = new ArrayList<>();
@@ -501,6 +488,7 @@ public class MeasurementService {
         log.error("Measurement update failed.", e);
         return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
       }
+      handleUpdateEvents(domainEventsCache, results);
       return CompletableFuture.completedFuture(results);
     }
 
@@ -516,10 +504,29 @@ public class MeasurementService {
         log.error("Measurement update failed.", e);
         return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
       }
+      handleUpdateEvents(domainEventsCache, results);
       return CompletableFuture.completedFuture(results);
     }
-
     return CompletableFuture.completedFuture(List.of(Result.fromError(ErrorCode.FAILED)));
+  }
+
+  private void handleUpdateEvents(List<DomainEvent> domainEventsCache,
+      List<Result<MeasurementId, ErrorCode>> results) {
+    if(results.stream().anyMatch(Result::isError)) {
+      return;
+    }
+    Set<MeasurementId> dispatchedIDs = new HashSet<>();
+    for(DomainEvent event : domainEventsCache) {
+      if(event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
+        MeasurementId id = measurementUpdatedEvent.measurementId();
+        if(dispatchedIDs.contains(id)) {
+          continue;
+        }
+        DomainEventDispatcher.instance().dispatch(event);
+        dispatchedIDs.add(id);
+      }
+    }
+   
   }
 
   /**
@@ -773,6 +780,9 @@ public class MeasurementService {
       Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deletePxP(selectedMeasurements);
+      if(!selectedMeasurements.isEmpty()) {
+        dispatchProjectChangedOnMeasurementDeleted(projectId);
+      }
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
@@ -784,18 +794,27 @@ public class MeasurementService {
       Set<NGSMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deleteNGS(selectedMeasurements);
+      if(!selectedMeasurements.isEmpty()) {
+        dispatchProjectChangedOnMeasurementDeleted(projectId);
+      }
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
     }
   }
 
+  private void dispatchProjectChangedOnMeasurementDeleted(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
+}
   public enum DeletionErrorCode {
     FAILED, DATA_ATTACHED
   }
 
   public enum ErrorCode {
-    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLE, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
+    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT,
+    MISSING_ASSOCIATED_SAMPLE, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT,
+    UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementDeletionException extends RuntimeException {
@@ -831,6 +850,21 @@ public class MeasurementService {
     @Override
     public Class<? extends DomainEvent> subscribedToEventType() {
       return MeasurementUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
+
+  private record MeasurementCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementCreatedEvent.class;
     }
 
     @Override

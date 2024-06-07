@@ -23,7 +23,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -42,8 +41,7 @@ import org.springframework.context.annotation.ComponentScan;
     shortName = "Data Manager",
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
-@ComponentScan({"life.qbic"})
-@EntityScan(basePackages = "life.qbic")
+@ComponentScan(value = {"life.qbic"})
 @Push
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 

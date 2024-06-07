@@ -4,7 +4,6 @@ package life.qbic.identity.domain.event;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
-import java.time.Instant;
 import life.qbic.domain.concepts.DomainEvent;
 
 /**
@@ -17,8 +16,6 @@ public class UserRegistered extends DomainEvent {
   @Serial
   private static final long serialVersionUID = 2581827831168895067L;
 
-  private Instant occurredOn;
-
   @JsonProperty("fullName")
   private String fullName;
   @JsonProperty("email")
@@ -26,7 +23,7 @@ public class UserRegistered extends DomainEvent {
 
   private String userId;
 
-  private UserRegistered() {
+  protected UserRegistered() {
 
   }
 
@@ -43,13 +40,6 @@ public class UserRegistered extends DomainEvent {
     this.userId = userId;
     this.fullName = fullName;
     this.email = email;
-    this.occurredOn = Instant.now();
-  }
-
-  @JsonGetter("occurredOn")
-  @Override
-  public Instant occurredOn() {
-    return occurredOn;
   }
 
   @JsonGetter("userId")

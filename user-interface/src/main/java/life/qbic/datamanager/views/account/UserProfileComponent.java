@@ -31,10 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * User Profile Component
  * <p>
- * This {@link PageArea} allows the user to manage his profile. The user is able to
- * view a tokens expiration date and description. Additionally,he is able to delete and create
- * personal access tokens. Only after a personal access token is created its raw text is shown to
- * the user with the ability to copy it to the clipboard
+ * This {@link PageArea} allows the user to manage his profile. The user is able to view a tokens
+ * expiration date and description. Additionally,he is able to delete and create personal access
+ * tokens. Only after a personal access token is created its raw text is shown to the user with the
+ * ability to copy it to the clipboard
  */
 
 @SpringComponent
@@ -179,10 +179,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
        * Creates a new event using the given source and indicator whether the event originated from
        * the client side or the server side.
        *
-       * @param source     the source component
-       * @param fromClient <code>true</code> if the event originated from the client
-       *                   side, <code>false</code> otherwise
-       * @param platformUserName  The valid new platform username to be associated with the user
+       * @param source           the source component
+       * @param fromClient       <code>true</code> if the event originated from the client
+       *                         side, <code>false</code> otherwise
+       * @param platformUserName The valid new platform username to be associated with the user
        */
       public ConfirmEvent(ChangeUserDetailsDialog source, boolean fromClient,
           String platformUserName) {

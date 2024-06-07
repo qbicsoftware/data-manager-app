@@ -390,7 +390,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private Collection<String> groupSampleInfoIntoCodeAndLabel(Collection<SampleId> sampleIds) {
     return sampleInformationService.retrieveSamplesByIds(sampleIds).stream()
-        .map(sample -> String.format("%s (%s)", sample.sampleCode().code(), sample.label()))
+        .map(sample -> String.format("%s (%s)", sample.label(), sample.sampleCode().code()))
         .toList();
   }
 

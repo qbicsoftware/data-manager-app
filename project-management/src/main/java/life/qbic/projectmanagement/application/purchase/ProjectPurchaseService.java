@@ -7,13 +7,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
+import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +39,7 @@ public class ProjectPurchaseService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addPurchases(String projectId, List<OfferDTO> offers) {
+
     var projectReference = ProjectId.parse(projectId);
     var purchaseDate = Instant.now();
     List<ServicePurchase> servicePurchases = offers.stream()
@@ -44,10 +47,18 @@ public class ProjectPurchaseService {
         .map(it -> ServicePurchase.create(projectReference, purchaseDate, it))
         .toList();
     try {
-      storage.storePurchases(servicePurchases);
+      Iterable<ServicePurchase> storedPurchases = storage.storePurchases(servicePurchases);
+      for (ServicePurchase storedPurchase : storedPurchases) {
+        DomainEventDispatcher.instance().dispatch(new PurchaseCreatedEvent(storedPurchase.getId()));
+      }
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
+  }
+
+  private void dispatchProjectChangedOnPurchaseDeletion(ProjectId projectReference) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectReference);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   /**
@@ -68,12 +79,17 @@ public class ProjectPurchaseService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void deleteOffer(String projectId, long offerId) {
     storage.deleteOffer(projectId, offerId);
+    dispatchProjectChangedOnPurchaseDeletion(ProjectId.parse(projectId));
   }
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Optional<Offer> getOfferWithContent(String projectId, Long offerId) {
     return storage.findOfferForProject(projectId, offerId);
+  }
+
+  public Optional<ProjectId> findProjectIdOfPurchase(Long purchaseID) {
+    return storage.findProjectIdOfPurchase(purchaseID);
   }
 
 }

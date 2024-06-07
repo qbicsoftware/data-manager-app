@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.project;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
@@ -19,7 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -97,6 +97,21 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   @Override
   public Optional<Project> find(ProjectId projectId) {
     return projectRepo.findById(projectId);
+  }
+
+  /**
+   * Updates the lastModified time of the project. Does not check credentials, as the jobrunner
+   * needs to call it. 
+   * <p>
+   * <b>Use with care!</b>
+   * @param projectId  the id of the project to update
+   * @param modifiedOn the Instant object denoting the time the project was updated
+   */
+  @Override
+  public void unsafeUpdateLastModified(ProjectId projectId, Instant modifiedOn) {
+    var project = projectRepo.findById(projectId).orElseThrow(ProjectNotFoundException::new);
+    project.setLastModified(modifiedOn);
+    projectRepo.save(project);
   }
 
   private boolean doesProjectExistWithId(ProjectId id) {
