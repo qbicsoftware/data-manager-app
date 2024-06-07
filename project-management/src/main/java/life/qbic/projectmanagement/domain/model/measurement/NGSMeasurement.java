@@ -18,9 +18,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import java.util.Set;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
@@ -52,7 +55,7 @@ public class NGSMeasurement {
   String sequencingRunProtocol = "";
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
-  private MeasurementId id;
+  private MeasurementId measurementId;
   @Embedded
   @Column(nullable = false)
   private ProjectId projectId;
@@ -87,7 +90,7 @@ public class NGSMeasurement {
     }
     evaluateMandatoryMetadata(
         method); // throws IllegalArgumentException if required properties are missing
-    this.id = measurementId;
+    this.measurementId = measurementId;
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     this.organisation = requireNonNull(organisation, "organisation must not be null");
     this.instrument = requireNonNull(method.instrument(), "instrument must not be null");
@@ -101,6 +104,7 @@ public class NGSMeasurement {
     this.registration = registration;
     this.samplePool = samplePool;
     this.specificMetadata = new HashSet<>(measurementMetadata);
+    emitCreatedEvent();
   }
 
   private static void evaluateMandatoryMetadata(NGSMethodMetadata method)
@@ -175,10 +179,12 @@ public class NGSMeasurement {
     this.libraryKit = methodMetadata.libraryKit();
     this.flowCell = methodMetadata.flowCell();
     this.sequencingRunProtocol = methodMetadata.sequencingRunProtocol();
+    emitUpdatedEvent();
   }
 
   public void setSpecificMetadata(Collection<NGSSpecificMeasurementMetadata> specificMetadata) {
     this.specificMetadata = new HashSet<>(specificMetadata);
+    emitUpdatedEvent();
   }
 
   public Collection<NGSSpecificMeasurementMetadata> specificMeasurementMetadata() {
@@ -187,6 +193,7 @@ public class NGSMeasurement {
 
   public void setOrganisation(Organisation organisation) {
     this.organisation = Objects.requireNonNull(organisation);
+    emitUpdatedEvent();
   }
 
   public void updateMethod(NGSMethodMetadata methodMetadata) {
@@ -200,7 +207,10 @@ public class NGSMeasurement {
   }
 
   public MeasurementId measurementId() {
-    return id;
+    return measurementId;
+  }
+  public ProjectId projectId() {
+    return projectId;
   }
 
   public OntologyTerm instrument() {
@@ -248,6 +258,16 @@ public class NGSMeasurement {
         .toList();
   }
 
+  private void emitUpdatedEvent() {
+    var measurementUpdatedEvent = new MeasurementUpdatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
+  }
+
+  private void emitCreatedEvent() {
+    var measurementCreatedEvent = new MeasurementCreatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementCreatedEvent);
+  }
+
   @Override
   public String toString() {
     return measurementCode.value();
@@ -262,11 +282,11 @@ public class NGSMeasurement {
       return false;
     }
 
-    return Objects.equals(id, that.id);
+    return Objects.equals(measurementId, that.measurementId);
   }
 
   @Override
   public int hashCode() {
-    return id != null ? id.hashCode() : 0;
+    return measurementId != null ? measurementId.hashCode() : 0;
   }
 }

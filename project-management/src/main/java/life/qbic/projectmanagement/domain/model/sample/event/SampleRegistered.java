@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.model.sample.event;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -20,7 +19,6 @@ public class SampleRegistered extends DomainEvent {
 
   @Serial
   private static final long serialVersionUID = -1338442721083240618L;
-  private final Instant occurredOn;
 
   @JsonProperty("batchId")
   private final BatchId assignedBatch;
@@ -28,8 +26,7 @@ public class SampleRegistered extends DomainEvent {
   @JsonProperty("sampleId")
   private final SampleId registeredSample;
 
-  private SampleRegistered(Instant occurredOn, BatchId assignedBatch, SampleId registeredSample) {
-    this.occurredOn = Objects.requireNonNull(occurredOn);
+  private SampleRegistered(BatchId assignedBatch, SampleId registeredSample) {
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.registeredSample = Objects.requireNonNull(registeredSample);
   }
@@ -43,13 +40,7 @@ public class SampleRegistered extends DomainEvent {
    * @since 1.0.0
    */
   public static SampleRegistered create(BatchId assignedBatch, SampleId registeredSample) {
-    return new SampleRegistered(Instant.now(), assignedBatch, registeredSample);
-  }
-
-  @JsonGetter("occurredOn")
-  @Override
-  public Instant occurredOn() {
-    return this.occurredOn;
+    return new SampleRegistered(assignedBatch, registeredSample);
   }
 
   @JsonGetter("assignedBatch")
