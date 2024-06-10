@@ -8,6 +8,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.hibernate.annotations.Immutable;
@@ -55,7 +56,7 @@ public class ProjectOverview {
 //  @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
 //  @CollectionTable(name = "project_usernames", joinColumns = @JoinColumn(name = "projectId"))
   @Column(name = "usernames")
-  private Collection<String> collaboratorUserNames = new ArrayList<>();
+  private List<String> collaboratorUserNames = new ArrayList<>();
 
   protected ProjectOverview() {
 
