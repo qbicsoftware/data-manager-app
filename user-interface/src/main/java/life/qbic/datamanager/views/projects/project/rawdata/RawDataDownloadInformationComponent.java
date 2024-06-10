@@ -58,7 +58,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
         "Download the file with a list of URLs corresponding to the measurement you want to download.",
         generateDownloadUrlsButton);
     CodeBlock codeBlock = new CodeBlock("curl", "-OJ", "-H",
-        "Authorization: Bearer <ACCESS_TOKEN>",
+        "\"Authorization: Bearer <ACCESS_TOKEN>\"",
         "<DOWNLOAD_URL>");
     Div runCurlCommandSection = generateSection("Run cURL command",
         "Install cURL on your system, open it and enter the following command once for each file you want to download",
