@@ -1,12 +1,9 @@
 package life.qbic.projectmanagement.application;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Convert;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -54,8 +51,10 @@ public class ProjectOverview {
   @Column(name = "amountPxpMeasurements")
   private String pxpMeasurementCount;
 
-  @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
-  @CollectionTable(name = "project_usernames", joinColumns = @JoinColumn(name = "projectId"))
+  @Convert(converter = CollaboratorUserNamesConverter.class)
+//  @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
+//  @CollectionTable(name = "project_usernames", joinColumns = @JoinColumn(name = "projectId"))
+  @Column(name = "usernames")
   private Collection<String> collaboratorUserNames = new ArrayList<>();
 
   protected ProjectOverview() {
