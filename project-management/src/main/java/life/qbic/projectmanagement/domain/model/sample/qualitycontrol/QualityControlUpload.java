@@ -35,7 +35,7 @@ public class QualityControlUpload {
   private ExperimentId experimentId;
   private String fileName;
   @Lob
-  @Column(name = "file_content", columnDefinition = "BLOB")
+  @Column(name = "file_content", columnDefinition = "LONGBLOB")
   @Basic(fetch = LAZY)
   private byte[] fileContent;
 
