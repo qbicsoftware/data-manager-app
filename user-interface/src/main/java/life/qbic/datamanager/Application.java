@@ -21,6 +21,7 @@ import life.qbic.identity.domain.service.UserDomainService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
+import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
@@ -55,9 +56,16 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
     var appContext = SpringApplication.run(Application.class, args);
 
-    var connectionTester = appContext.getBean(DataRepoConnectionTester.class);
-    connectionTester.testApplicationServer();
-    connectionTester.testDatastoreServer();
+    try {
+      var connectionTester = appContext.getBean(DataRepoConnectionTester.class);
+      connectionTester.testApplicationServer();
+      connectionTester.testDatastoreServer();
+    } catch (Exception e) {
+      log.error(
+          "Unexpected error occurred while starting data manager app during openBis connection.",
+          e);
+      SpringApplication.exit(appContext, () -> 1);
+    }
 
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);

@@ -1,7 +1,10 @@
 package life.qbic.datamanager.views.projects.project;
 
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -81,7 +84,22 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
   private void setProjectNameAsTitle(ProjectId projectId) {
     projectInformationService.find(projectId)
         .ifPresent(
-            project -> projectTitle.setText(project.getProjectIntent().projectTitle().title()));
+            project -> {
+              projectTitle.removeAll();
+
+              Text projectCode = new Text(project.getProjectCode().value() + " - ");
+              Text projectName = new Text(project.getProjectIntent().projectTitle().title());
+              Icon book = styleIcon(VaadinIcon.NOTEBOOK);
+
+              projectTitle.add(book, projectCode, projectName);
+            });
+  }
+
+  private Icon styleIcon(VaadinIcon vaadinIcon) {
+    Icon icon = vaadinIcon.create();
+    icon.addClassName("primary");
+    icon.addClassName("smallest");
+    return icon;
   }
 
   private Span createDrawerToggleAndTitleBar() {

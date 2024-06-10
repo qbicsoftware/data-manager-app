@@ -36,8 +36,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Raw Data Details Component
  * <p></p>
- * Enables the user to manage the registered RawData by providing the ability to
- * access and search the raw data, and enabling them to download the raw data of interest
+ * Enables the user to manage the registered RawData by providing the ability to access and search
+ * the raw data, and enabling them to download the raw data of interest
  */
 
 @SpringComponent
@@ -46,14 +46,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private final TabSheet registeredRawDataTabSheet = new TabSheet();
-  private String searchTerm = "";
   private final Grid<RawData> ngsRawDataGrid = new Grid<>();
   private final Grid<RawData> proteomicsRawDataGrid = new Grid<>();
   private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
   private final transient RawDataService rawDataService;
   private final List<Tab> tabsInTabSheet = new ArrayList<>();
-  private transient Context context;
   private final transient ClientDetailsProvider clientDetailsProvider;
+  private String searchTerm = "";
+  private transient Context context;
 
   public RawDataDetailsComponent(@Autowired RawDataService rawDataService,
       ClientDetailsProvider clientDetailsProvider) {
@@ -69,8 +69,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   /**
    * Propagates the search Term provided by the user
    * <p>
-   * The string based search term is used to filter the raw Data information shown in the
-   * grid of each individual tab of the Tabsheet within this component
+   * The string based search term is used to filter the raw Data information shown in the grid of
+   * each individual tab of the Tabsheet within this component
    *
    * @param searchTerm String based searchTerm for which the properties of each raw data item should
    *                   be filtered for
@@ -81,10 +81,11 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   }
 
   /**
-   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to query the
-   * raw data information shown in the grids of this component
+   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to query the raw data
+   * information shown in the grids of this component
    *
-   * @param context Context with the projectId and experimentId which contains the measurements with which the raw data is associated
+   * @param context Context with the projectId and experimentId which contains the measurements with
+   *                which the raw data is associated
    */
   public void setContext(Context context) {
     resetTabsInTabsheet();
@@ -201,8 +202,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private Collection<String> groupSampleInfoIntoCodeAndLabel(
       Collection<RawDataSampleInformation> sampleInformationCollection) {
     return sampleInformationCollection.stream().map(
-        sampleInformation -> String.format("%s (%s)", sampleInformation.sampleCode().code(),
-            sampleInformation.sampleLabel())).toList();
+        sampleInformation -> String.format("%s (%s)",
+            sampleInformation.sampleLabel(), sampleInformation.sampleCode().code())).toList();
   }
 
   private String convertToLocalDate(Date date) {

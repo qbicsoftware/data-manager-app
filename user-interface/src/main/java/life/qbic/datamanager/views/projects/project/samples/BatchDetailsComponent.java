@@ -142,25 +142,20 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   }
 
   private Span generateEditorButtons(BatchPreview batchPreview) {
-    Icon viewIcon = LumoIcon.EYE.create();
     Icon editIcon = LumoIcon.EDIT.create();
     Icon deleteIcon = VaadinIcon.TRASH.create();
-    Button viewButton = new Button(viewIcon);
     Button editButton = new Button(editIcon);
     Button deleteButton = new Button(deleteIcon);
-    viewButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
-    deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
-    viewButton.addClickListener(e -> fireEvent(new ViewBatchEvent(this, batchPreview,
-        e.isFromClient())));
+    deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE,
+        ButtonVariant.LUMO_ERROR);
     deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
         e.isFromClient())));
     editButton.addClickListener(
         e -> fireEvent(new EditBatchEvent(this, batchPreview, e.isFromClient())));
-    viewButton.setTooltipText("View Samples for Batch");
     editButton.setTooltipText("Edit Batch");
     deleteButton.setTooltipText("Delete Batch");
-    Span buttons = new Span(viewButton, editButton, deleteButton);
+    Span buttons = new Span(editButton, deleteButton);
     buttons.addClassName("editor-buttons");
     return buttons;
   }
