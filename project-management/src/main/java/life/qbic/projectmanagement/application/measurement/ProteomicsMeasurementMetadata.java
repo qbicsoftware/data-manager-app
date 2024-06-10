@@ -1,9 +1,6 @@
 package life.qbic.projectmanagement.application.measurement;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -14,26 +11,22 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  * @since 1.0.0
  */
 public record ProteomicsMeasurementMetadata(String measurementId,
-                                            Collection<SampleCode> sampleCodes,
+                                            SampleCode sampleCode,
                                             String organisationId, String instrumentCURI,
                                             String samplePoolGroup, String facility,
                                             String fractionName,
                                             String digestionEnzyme,
                                             String digestionMethod, String enrichmentMethod,
                                             String injectionVolume, String lcColumn,
-                                            String lcmsMethod, Collection<Labeling> labeling,
+                                            String lcmsMethod, Labeling labeling,
                                             String comment) implements MeasurementMetadata {
 
 
-  @Override
-  public MeasurementCode measurementCode() {
-    return null;
-  }
-
-  public static ProteomicsMeasurementMetadata copyWithNewProperties(Collection<SampleCode> associatedSamples, Collection<Labeling> labeling,
+  public static ProteomicsMeasurementMetadata copyWithNewProperties(SampleCode associatedSample,
+      Labeling labeling,
       ProteomicsMeasurementMetadata metadata) {
     return new ProteomicsMeasurementMetadata(metadata.measurementId(),
-        associatedSamples.stream().toList(),
+        associatedSample,
         metadata.organisationId(),
         metadata.instrumentCURI(),
         metadata.samplePoolGroup(),
@@ -59,8 +52,8 @@ public record ProteomicsMeasurementMetadata(String measurementId,
   }
 
   @Override
-  public List<SampleCode> associatedSamples() {
-    return sampleCodes.stream().toList();
+  public SampleCode associatedSample() {
+    return sampleCode;
   }
 
   @Override

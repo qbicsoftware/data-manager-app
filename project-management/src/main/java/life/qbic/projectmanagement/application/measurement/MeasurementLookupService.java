@@ -39,7 +39,7 @@ public class MeasurementLookupService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    */
-  public List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String termFilter,
+  protected List<ProteomicsMeasurement> queryProteomicsMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<ProteomicsMeasurement> termList = measurementLookup.findProteomicsMeasurementsBySampleIds(
@@ -58,7 +58,7 @@ public class MeasurementLookupService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    */
-  public List<NGSMeasurement> queryNGSMeasurementsBySampleIds(String termFilter,
+  protected List<NGSMeasurement> queryNGSMeasurementsBySampleIds(String termFilter,
       List<SampleId> sampleIds, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<NGSMeasurement> termList = measurementLookup.queryNGSMeasurementsBySampleIds(termFilter,
@@ -66,6 +66,14 @@ public class MeasurementLookupService {
         limit, sortOrders);
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(termList);
+  }
+
+  public long countNGSMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.countNgsMeasurementsBySampleIds(sampleIds);
+  }
+
+  public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
+    return measurementLookup.countProteomicsMeasurementsBySampleIds(sampleIds);
   }
 
   /**
@@ -88,8 +96,16 @@ public class MeasurementLookupService {
     return measurementLookup.findNGSMeasurementsBySampleIds(sampleIds);
   }
 
-  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
-    return measurementRepository.findProteomicsMeasurement(measurementId);
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurementById(String measurementId) {
+    return measurementRepository.findProteomicsMeasurementById(measurementId);
+  }
+
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
+    return measurementRepository.findProteomicsMeasurement(measurementCode);
+  }
+
+  public Optional<NGSMeasurement> findNGSMeasurementById(String measurementId) {
+    return measurementRepository.findNGSMeasurementById(measurementId);
   }
 
   public List<NGSMeasurement> queryAllNGSMeasurement(List<SampleId> sampleIds) {

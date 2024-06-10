@@ -57,9 +57,9 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
-import life.qbic.projectmanagement.application.rawdata.RawDataLookup;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.RawData;
-import life.qbic.projectmanagement.application.rawdata.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.dataset.RawDataLookup;
+import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
@@ -76,7 +76,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Basic implementation to query project preview information
+ * Basic implementation to query project information
  *
  * @since 1.0.0
  */

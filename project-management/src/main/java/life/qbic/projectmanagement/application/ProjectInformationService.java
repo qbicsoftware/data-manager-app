@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -7,7 +8,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.api.ProjectPreviewLookup;
+import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.Role;
@@ -33,21 +34,21 @@ import org.springframework.stereotype.Service;
 public class ProjectInformationService {
 
   private static final Logger log = LoggerFactory.logger(ProjectInformationService.class);
-  private final ProjectPreviewLookup projectPreviewLookup;
+  private final ProjectOverviewLookup projectOverviewLookup;
   private final ProjectRepository projectRepository;
   private final ProjectAccessService projectAccessService;
 
-  public ProjectInformationService(@Autowired ProjectPreviewLookup projectPreviewLookup,
+  public ProjectInformationService(@Autowired ProjectOverviewLookup projectOverviewLookup,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectAccessService projectAccessService) {
-    Objects.requireNonNull(projectPreviewLookup);
-    this.projectPreviewLookup = projectPreviewLookup;
+    Objects.requireNonNull(projectOverviewLookup);
+    this.projectOverviewLookup = projectOverviewLookup;
     this.projectRepository = projectRepository;
     this.projectAccessService = projectAccessService;
   }
 
   /**
-   * Queries {@link ProjectPreview}s with a provided offset and limit that supports pagination.
+   * Queries {@link ProjectOverview}s with a provided offset and limit that supports pagination.
    *
    * @param filter     the results' project title will be applied with this filter
    * @param offset     the offset for the search result to start
@@ -56,10 +57,10 @@ public class ProjectInformationService {
    * @return the results in the provided range
    * @since 1.0.0
    */
-  public List<ProjectPreview> queryPreview(String filter, int offset, int limit,
+  public List<ProjectOverview> queryOverview(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     var accessibleProjectIds = retrieveAccessibleProjectIdsForUser();
-    return projectPreviewLookup.query(filter, offset, limit,
+    return projectOverviewLookup.query(filter, offset, limit,
         sortOrders, accessibleProjectIds);
   }
 
@@ -95,11 +96,12 @@ public class ProjectInformationService {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId.value());
     return projectRepository.find(projectId).orElseThrow(() -> new ApplicationException(
-            "Project with id" + projectId + "does not exit anymore")
+            "Project with id" + projectId + "does not exist anymore")
         // should never happen; indicates dirty removal of project from db
     );
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void updateTitle(ProjectId projectId, String newTitle) {
     ProjectTitle projectTitle = ProjectTitle.of(newTitle);
     Project project = loadProject(projectId);
@@ -107,24 +109,28 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void manageProject(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setProjectManager(contact);
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void investigateProject(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setPrincipalInvestigator(contact);
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void setResponsibility(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setResponsiblePerson(contact);
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void stateObjective(ProjectId projectId, String objective) {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
@@ -132,17 +138,22 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void addFunding(ProjectId projectId, String label, String referenceId) {
     Funding funding = Funding.of(label, referenceId);
     var project = loadProject(projectId);
     project.setFunding(funding);
     projectRepository.update(project);
-
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void removeFunding(ProjectId projectId) {
     var project = loadProject(projectId);
     project.removeFunding();
     projectRepository.update(project);
+  }
+
+  public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) {
+    projectRepository.unsafeUpdateLastModified(projectID, modifiedOn);
   }
 }

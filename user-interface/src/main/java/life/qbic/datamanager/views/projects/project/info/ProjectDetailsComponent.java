@@ -22,8 +22,8 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
 import life.qbic.projectmanagement.application.ContactRepository;
-import life.qbic.projectmanagement.application.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -86,7 +86,7 @@ public class ProjectDetailsComponent extends PageArea {
 
     var projectCode = new Div();
     projectCode.setText(project.getProjectCode().value());
-    entries.add(new Entry("ID", "The unique identifier of the project", projectCode));
+    entries.add(new Entry("Project ID", "The unique identifier of the project", projectCode));
 
     var projectTitle = new Div();
     projectTitle.setText(project.getProjectIntent().projectTitle().title());
@@ -98,16 +98,19 @@ public class ProjectDetailsComponent extends PageArea {
 
     var species = new Div();
     species.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).forEach(ontologyClassDTO -> species.add(createOntologyEntryFrom(ontologyClassDTO)));
+    experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct()
+        .forEach(ontologyClassDTO -> species.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Species", "", species));
     var specimen = new Div();
     specimen.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).forEach(ontologyClassDTO -> specimen.add(createOntologyEntryFrom(ontologyClassDTO)));
+    experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct()
+        .forEach(ontologyClassDTO -> specimen.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Specimen", "Tissue, cells or other matrix extracted from the "
         + "species", specimen));
     var analyte = new Div();
     analyte.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).forEach(ontologyClassDTO -> analyte.add(createOntologyEntryFrom(ontologyClassDTO)));
+    experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct()
+        .forEach(ontologyClassDTO -> analyte.add(createOntologyEntryFrom(ontologyClassDTO)));
     entries.add(new Entry("Analyte", "", analyte));
     return entries;
   }
@@ -158,7 +161,11 @@ public class ProjectDetailsComponent extends PageArea {
     var projectResponsible = new Div();
     project.getResponsiblePerson()
         .ifPresentOrElse(person -> projectResponsible.add(generateContactContainer(person)),
-            () -> projectResponsible.add(createNoPersonAssignedSpan()));
+            () -> {
+              Span noProjectResponsibleSelected = new Span("No Project Responsible Selected");
+              noProjectResponsibleSelected.addClassName("tertiary");
+              projectResponsible.add(noProjectResponsibleSelected);
+            });
     entries.add(new Entry("Project Responsible", "", projectResponsible));
 
     var projectManager = new Div();
@@ -176,12 +183,6 @@ public class ProjectDetailsComponent extends PageArea {
     emailSpan.addClassNames("email");
     nameSpan.addClassName("name");
     return personContainer;
-  }
-
-  private static Span createNoPersonAssignedSpan() {
-    Span noPersonAssignedSpan = new Span("-");
-    noPersonAssignedSpan.addClassName("no-person-assigned");
-    return noPersonAssignedSpan;
   }
 
   public void setContext(Context context) {

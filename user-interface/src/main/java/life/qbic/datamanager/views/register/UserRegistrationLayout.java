@@ -85,7 +85,6 @@ public class UserRegistrationLayout extends VerticalLayout {
     styleNotificationLayout();
     styleRegisterButton();
     styleFormLayout();
-    setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }

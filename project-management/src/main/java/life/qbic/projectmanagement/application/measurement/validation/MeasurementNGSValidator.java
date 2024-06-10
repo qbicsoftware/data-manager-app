@@ -24,10 +24,9 @@ import org.springframework.stereotype.Component;
  * <b>Measurement NGS Validator</b>
  *
  * <p>Validator employed to check the provided user input for a measurement in the ngs domain.
- *    The validator checks the for the provision of mandatory information, and will return a ValidationResult
- *    dependent on the presence or absence of data
+ * The validator checks the for the provision of mandatory information, and will return a
+ * ValidationResult dependent on the presence or absence of data
  * </p>
- *
  */
 @Component
 public class MeasurementNGSValidator implements
@@ -54,7 +53,8 @@ public class MeasurementNGSValidator implements
    * Given a collection of properties, the validator determines if they mach the expected properties
    * for a QBiC-defined NGS measurement metadata object.
    *
-   * @param properties List of string representing property values in the column headers of the NGS Excel sheet
+   * @param properties List of string representing property values in the column headers of the NGS
+   *                   Excel sheet
    * @return boolean indicating if all expected properties of the ngs sheet could be found
    * @since 1.0.0
    */
@@ -76,6 +76,7 @@ public class MeasurementNGSValidator implements
   }
 
   @Override
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
@@ -96,20 +97,18 @@ public class MeasurementNGSValidator implements
    * Ignores sample ids but validates measurement ids.
    *
    * @param metadata, {@link NGSMeasurementMetadata} of the measurement to be updated
-   * @param projectId Id of the project to which the measurement belongs to, necessary to check user permission
+   * @param projectId Id of the project to which the measurement belongs to, necessary to check user
+   *                  permission
    * @return ValidationResult
    */
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
   public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
-    return metadata.associatedSamples().stream()
-        .map(sampleCode -> validationPolicy.validationProjectRelation(sampleCode, projectId))
-        .reduce(ValidationResult.successful(0),
-            ValidationResult::combine).combine(validationPolicy.validateMeasurementId(
-                metadata.measurementIdentifier().orElse(""))
-            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata)))
+    return validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId)
+        .combine(validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
+            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-            .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())));
+            .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()))));
   }
 
 
@@ -151,11 +150,11 @@ public class MeasurementNGSValidator implements
     // https://ror.readme.io/docs/ror-identifier-pattern
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
-    ValidationResult validateMeasurementId(String measurementId) {
-      var queryMeasurement = measurementService.findNGSMeasurement(measurementId);
+    ValidationResult validateMeasurementCode(String measurementCode) {
+      var queryMeasurement = measurementService.findNGSMeasurement(measurementCode);
       return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
           ValidationResult.withFailures(1,
-              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
+              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementCode))));
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")

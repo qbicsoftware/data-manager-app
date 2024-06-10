@@ -2,10 +2,12 @@ package life.qbic.projectmanagement.application.policy.directive;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
@@ -44,13 +46,19 @@ public class DeleteSampleFromBatch implements DomainEventSubscriber<SampleDelete
     jobScheduler.enqueue(() -> deleteSampleFromBatch(event.deletedSample(), event.assignedBatch()));
   }
 
-  @Job(name = "Delete_Sample_From_Batch")
+  @Job(name = "Delete sample %0 from batch %1")
   public void deleteSampleFromBatch(SampleId sample, BatchId batch) throws RuntimeException {
     batchRegistrationService.deleteSampleFromBatch(sample, batch).onError(responseCode -> {
-      throw new RuntimeException(
-          String.format("Deletion of sample %s from batch %s failed, response code was %s ", sample,
-              batch,
-              responseCode));
+      if (Objects.requireNonNull(responseCode) == ResponseCode.UNKNOWN_BATCH) {
+        // This accounts for a batch that might have already been deleted, so nothing is to be done
+        log.warn("Cannot delete sample from unknown batch: %s".formatted(batch.value()));
+      } else {
+        throw new RuntimeException(
+            String.format("Deletion of sample %s from batch %s failed, response code was %s ",
+                sample,
+                batch,
+                responseCode));
+      }
     });
   }
 }

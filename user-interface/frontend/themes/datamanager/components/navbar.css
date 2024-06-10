@@ -1,16 +1,15 @@
 .data-manager-layout::part(navbar) {
   display: inline-flex;
   justify-content: space-between;
+  background-image: linear-gradient(var(--lumo-contrast-5pct), var(--lumo-contrast-5pct));
 }
 
 .data-manager-layout .data-manager-title {
   font-size: var(--lumo-font-size-l);
-  margin: var(--lumo-space-m);
   color: var(--lumo-header-text-color);
   font-weight: 600;
   line-height: var(--lumo-line-height-xs);
   margin-block: 0;
-  padding-inline: var(--lumo-space-m);
 }
 
 .data-manager-menu {
@@ -30,23 +29,10 @@
 }
 
 /*Increase gap between menu items*/
-.experiment-main-layout::part(navbar) {
-  display: flex;
-  flex-direction: column;
-  /*Ensure proper padding even if secondary experiment tab based navigation is present*/
-  padding-top: var(--lumo-space-s);
-}
-
-/*Increase gap between menu items*/
 .experiment-main-layout .experiment-app-navbar {
   display: inline-flex;
   justify-content: space-between;
-  width: 100%;
-}
-
-.project-main-layout::part(navbar) {
-  display: inline-flex;
-  justify-content: space-between;
+  padding-right: var(--lumo-space-m);
 }
 
 .drawer-title-bar {
@@ -54,18 +40,64 @@
   align-items: center;
 }
 
+.experiment-navigation-component {
+  width: 100%;
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+  background-color: var(--lumo-base-color);
+}
+
+.experiment-navigation-component .experiment-navigation-tabs {
+  width: 100%;
+}
+
+.experiment-navigation-component .experiment-navigation-tabs .arrow-tab {
+  align-items: end;
+  color: var(--lumo-contrast-60pct);
+}
+
+.project-main-layout .project-main-layout-navbar {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 100%;
+  padding-right: var(--lumo-space-m);
+  align-items: center;
+}
+
+.experiment-main-layout .experiment-main-layout-navbar {
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+  display: inline-flex;
+  justify-content: space-between;
+  padding-right: var(--lumo-space-m);
+  align-items: center;
+}
+
 .project-navbar-title {
   font-weight: bold;
   font-size: var(--lumo-font-size-l);
-}
-
-.experiment-navbar-drawer-bar {
   display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: inherit;
+  column-gap: var(--lumo-space-s);
 }
 
-.experiment-navbar-title {
+.experiment-main-layout .experiment-main-layout-navbar-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+#landing-page-layout::part(navbar) {
+  padding-inline: var(--lumo-space-m);
+}
+
+.user-main-layout::part(navbar) {
+  padding-inline: var(--lumo-space-m);
+}
+
+.navbar-title {
   font-weight: bold;
-  font-size: var(--lumo-font-size-l);
+  display: inline-flex;
+  align-items: inherit;
+  column-gap: var(--lumo-space-s);
 }

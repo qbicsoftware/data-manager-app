@@ -1,6 +1,72 @@
+#content-area {
+  grid-area: content-area;
+}
+
+#main-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(max-content, 95%) minmax(min-content, 5%);
+  height: 100%;
+  grid-template-areas:
+    "content-area"
+    "data-manager-footer";
+}
+
+#landing-page-layout .landing-page-content {
+  /*Static resources have to be loaded in css form the Meta-INF directory see vaadin cheatsheet
+  https://vaadin.com/vaadin-reference-card#static-content */
+  /*Provide Background image here once a valid one is provided*/
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100%;
+}
+
+#landing-page-layout .landing-page-title-and-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  row-gap: var(--lumo-space-s);
+  margin-bottom: var(--lumo-space-l);
+  padding-top: var(--lumo-space-xl);
+}
+
+#landing-page-layout .landing-page-title-and-logo .title {
+  font-weight: bold;
+  font-size: var(--lumo-font-size-xxl);
+}
+
+#landing-page-layout .landing-page-title-and-logo .subtitle {
+  color: var(--lumo-tertiary-text-color);
+  font-weight: bold;
+}
+
+#landing-page-layout .landing-page-title-and-logo .ut-logo {
+  height: 2.5em;
+  margin-bottom: var(--lumo-space-xl);
+}
+
+#data-manager-footer {
+  display: inline-flex;
+  column-gap: var(--lumo-space-l);
+  border-top: thin solid var(--lumo-contrast-10pct);
+  padding-inline: var(--lumo-space-m);
+  padding-bottom: var(--lumo-space-s);
+  padding-top: var(--lumo-space-s);
+  grid-area: data-manager-footer;
+}
+
 .main {
   display: grid;
   height: 100%;
+}
+
+.main .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
 }
 
 .main.experiment {
@@ -14,12 +80,27 @@
   grid-area: experimentdetails;
 }
 
+.main.legal-notice {
+  padding: var(--lumo-space-m);
+}
+
+
+.main.privacy-agreement {
+  padding: var(--lumo-space-m);
+}
+
 .main.measurement {
   grid-template-columns: minmax(max-content, 70%) minmax(max-content, 30%);
-  grid-template-rows: minmax(max-content, 20%) minmax(max-content, 75%);
+  grid-template-rows: minmax(max-content, 25%) minmax(max-content, 70%);
   grid-template-areas:
     ". measurementtemplatelist"
     "measurementdetails measurementdetails";
+}
+
+.main.measurement .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
 }
 
 /*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
@@ -130,6 +211,12 @@
     "projectdetails qualitycontrollist";
 }
 
+.main.project .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
 .main.project .project-details-component {
   grid-area: projectdetails;
 }
@@ -147,10 +234,26 @@
 }
 
 .main.project-overview {
-  grid-template-columns: minmax(max-content, 100%);
-  grid-template-rows: auto;
+  grid-template-columns: minmax(min-content, 1fr);
+  grid-template-rows: minmax(min-content, 10%) minmax(min-content, 80%);
   grid-template-areas:
+    "."
     "projectcollection";
+}
+
+.main.project-overview .title-and-description {
+  padding: var(--lumo-space-m);
+  flex-direction: column;
+  display: flex;
+  gap: var(--lumo-space-s);
+  white-space: pre-line;
+}
+
+.main.project-overview .project-overview-title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
 }
 
 .main .project-overview .project-collection-component {
@@ -163,6 +266,12 @@
   grid-template-areas:
     ". rawdatadownloadinformation"
     "rawdatadetails rawdatadownloadinformation";
+}
+
+.main.raw-data .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
 }
 
 .main.raw-data .no-measurements-registered-disclaimer {
@@ -218,6 +327,12 @@
     "sampledetails sampledetails";
 }
 
+.main.sample .page-area {
+  border: 1px solid;
+  border-color: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
 .main.sample .batch-details-component {
   grid-area: batchdetails;
 }
@@ -226,6 +341,12 @@
   grid-area: sampledetails;
 }
 
+.main.user-profile {
+  grid-template-columns: minmax(min-content, auto);
+  grid-template-rows: minmax(min-content, auto);
+  grid-template-areas:
+    "user-profile-component"
+}
 
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
@@ -234,23 +355,6 @@
     grid-template-areas:
     "experimentdetails";
     grid-template-rows: minmax(min-content, 1fr);
-  }
-
-  .main.project {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "projectdetails"
-    "experimentlist"
-    "projectlinks";
-    grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
-  }
-
-  .main.sample {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-areas:
-    "batchdetails"
-    "sampledetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
   }
 
   .main.measurement {
@@ -262,6 +366,24 @@
     grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
   }
 
+  .main.project {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "projectdetails"
+    "experimentlist"
+    "offerlist"
+    "qualitycontrollist";
+    grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
+  }
+
+  .main.project-overview {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-rows:  minmax(min-content, 10%) minmax(min-content, 80%);
+    grid-template-areas:
+    "."
+    "projectcollection";
+  }
+
   .main.raw-data {
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
@@ -270,4 +392,14 @@
     "rawdatadetails";
     grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
   }
+
+  .main.sample {
+    grid-template-columns: minmax(min-content, 1fr);
+    grid-template-areas:
+    "batchdetails"
+    "sampledetails";
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
+  }
+
+
 }

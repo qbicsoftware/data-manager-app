@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serial;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -128,7 +129,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private static MetadataContent read(InputStream inputStream) {
-    var content = new BufferedReader(new InputStreamReader(inputStream)).lines().toList();
+    var content = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_16)).lines().toList();
 
     return new MetadataContent(content.isEmpty() ? null : content.get(0),
         content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
@@ -225,8 +226,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     }
 
     String measurementId = safeArrayAccess(columnValues, measurementIdIndex).orElse("");
-    List<SampleCode> sampleCodes = List.of(
-        SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
+    SampleCode sampleCode = SampleCode.create(
+        safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse(""));
     String organisationRoRId = safeArrayAccess(columnValues, organisationColumnIndex).orElse("");
     String instrumentCURIE = safeArrayAccess(columnValues, instrumentColumnIndex).orElse("");
     String samplePoolGroup = safeArrayAccess(columnValues, samplePoolGroupIndex).orElse("");
@@ -243,11 +244,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     String note = safeArrayAccess(columnValues, noteIndex).orElse("");
 
     ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(measurementId,
-        sampleCodes,
+        sampleCode,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
-        List.of(new Labeling(sampleCodes.get(0).code(), labelingType, label)), note);
+        new Labeling(labelingType, label), note);
     return Result.fromValue(metadata);
   }
 
@@ -551,7 +552,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     }
 
     var measurementId = safeArrayAccess(metaDataValues, measurementIdIndex).orElse("");
-    var sampleCodes = SampleCode.create(
+    var sampleCode = SampleCode.create(
         safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
     var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
     var instrumentCURIE = safeArrayAccess(metaDataValues, instrumentColumnIndex).orElse("");
@@ -569,11 +570,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
     var note = safeArrayAccess(metaDataValues, noteIndex).orElse("");
 
-    var metadata = new ProteomicsMeasurementMetadata(measurementId, List.of(sampleCodes),
+    var metadata = new ProteomicsMeasurementMetadata(measurementId, sampleCode,
         organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
         digestionEnzyme,
         digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
-        List.of(new Labeling(sampleCodes.code(), labelingType, label)), note);
+        new Labeling(labelingType, label), note);
     var measurementProteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
         measurementValidationService);
     var finalValidationResult = generateModeDependentValidationResult(
@@ -810,7 +811,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       uploadSectionTitle.addClassName("section-title");
 
       var saveYourFileInfo = new InfoBox().setInfoText(
-              "Please save your excel file as Text (Tab delimited) (*.txt) before uploading.")
+              "Please save your excel file as UTF-16 Unicode Text (*.txt) before uploading.")
           .setClosable(false);
 
       var restrictions = new Div();

@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,17 +31,33 @@ public class MeasurementPresenter {
 
   private static ProteomicsMeasurementEntry convertProteomicsMeasurement(
       ProteomicsMeasurement measurement,
-      SampleInformation sampleInfo) {
+      SampleInformation sampleInfo,
+      ProteomicsSpecificMeasurementMetadata specificMeasurementMetadata) {
     return new ProteomicsMeasurementEntry(measurement.measurementCode().value(),
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
         measurement.instrument().getName().replace("_", ":"),
         measurement.instrument().getLabel(),
         measurement.samplePoolGroup().orElse(""), measurement.facility(),
-        measurement.fraction().orElse(""),
+        specificMeasurementMetadata.fractionName(),
         measurement.digestionEnzyme(), measurement.digestionMethod(),
         measurement.enrichmentMethod(), String.valueOf(measurement.injectionVolume()),
-        measurement.lcColumn(), measurement.lcmsMethod(), measurement.labelingType().orElse(""),
-        measurement.label().orElse(""), measurement.comment().orElse(""));
+        measurement.lcColumn(), measurement.lcmsMethod(), measurement.labelType(),
+        specificMeasurementMetadata.label(), "");
+  }
+
+  private static NGSMeasurementEntry convertNGSMeasurement(NGSMeasurement measurement,
+      SampleInformation sampleInfo, NGSSpecificMeasurementMetadata specificMeasurementMetadata) {
+    return new NGSMeasurementEntry(measurement.measurementCode().value(),
+        sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
+        measurement.instrument().getName().replace("_", ":"),
+        measurement.instrument().getLabel(),
+        measurement.samplePoolGroup().orElse(""), measurement.facility(),
+        measurement.sequencingReadType(),
+        measurement.libraryKit().orElse(""), measurement.flowCell().orElse(""),
+        measurement.sequencingRunProtocol().orElse(""),
+        specificMeasurementMetadata.index().orElse(new NGSIndex("", "")).indexI7(),
+        specificMeasurementMetadata.index().orElse(new NGSIndex("", "")).indexI5(),
+        specificMeasurementMetadata.comment().orElse(""));
   }
 
   public List<ProteomicsMeasurementEntry> expandProteomicsPools(
@@ -48,31 +67,23 @@ public class MeasurementPresenter {
       var sampleInfo = sampleInformationService.findSample(sampleId)
           .map(sample -> new SampleInformation(sample.sampleCode().code(), sample.label()))
           .orElse(new SampleInformation("", ""));
-      expandedEntries.add(convertProteomicsMeasurement(proteomicsMeasurement, sampleInfo));
+      var specificMetadata = proteomicsMeasurement.specificMetadata().stream()
+          .filter(metadata -> metadata.measuredSample().equals(sampleId)).findFirst().orElse(null);
+      expandedEntries.add(
+          convertProteomicsMeasurement(proteomicsMeasurement, sampleInfo, specificMetadata));
     }
     return expandedEntries;
   }
 
-  private static NGSMeasurementEntry convertNGSMeasurement(NGSMeasurement measurement,
-      SampleInformation sampleInfo) {
-    return new NGSMeasurementEntry(measurement.measurementCode().value(),
-        sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
-        measurement.instrument().getName().replace("_", ":"),
-        measurement.instrument().getLabel(),
-        measurement.samplePoolGroup().orElse(""), measurement.facility(),
-        measurement.sequencingReadType(),
-        measurement.libraryKit().orElse(""), measurement.flowCell().orElse(""),
-        measurement.sequencingRunProtocol().orElse(""), measurement.indexI7().orElse(""),
-        measurement.indexI5().orElse(""), measurement.comment().orElse(""));
-  }
-
   public List<NGSMeasurementEntry> expandNGSPools(NGSMeasurement ngsMeasurement) {
     List<NGSMeasurementEntry> expandedEntries = new ArrayList<>();
-    for (SampleId sampleId : ngsMeasurement.measuredSamples()) {
-      var sampleInfo = sampleInformationService.findSample(sampleId)
-          .map(sample -> new SampleInformation(sample.sampleCode().code(), sample.label()))
-          .orElse(new SampleInformation("", ""));
-      expandedEntries.add(convertNGSMeasurement(ngsMeasurement, sampleInfo));
+    for (NGSSpecificMeasurementMetadata specificMeasurementMetadata : ngsMeasurement.specificMeasurementMetadata()) {
+      var sampleInfo = sampleInformationService.findSample(
+              specificMeasurementMetadata.measuredSample())
+          .map(sample -> new SampleInformation(sample.sampleCode().code(),
+              sample.label())).orElse(new SampleInformation("", ""));
+      expandedEntries.add(
+          convertNGSMeasurement(ngsMeasurement, sampleInfo, specificMeasurementMetadata));
     }
     return expandedEntries;
   }

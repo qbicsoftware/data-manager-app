@@ -13,9 +13,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -28,13 +31,17 @@ import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMethodMetadata;
-import life.qbic.projectmanagement.domain.model.measurement.ProteomicsLabeling;
+import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMethodMetadata;
-import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSamplePreparation;
+import life.qbic.projectmanagement.domain.model.measurement.ProteomicsSpecificMeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -59,6 +66,7 @@ public class MeasurementService {
   private final OntologyLookupService ontologyLookupService;
   private final OrganisationLookupService organisationLookupService;
   private final ProjectInformationService projectInformationService;
+  private final MeasurementRepository measurementRepository;
 
   @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
@@ -66,68 +74,15 @@ public class MeasurementService {
       OntologyLookupService ontologyLookupService,
       OrganisationLookupService organisationLookupService,
       MeasurementLookupService measurementLookupService,
-      ProjectInformationService projectInformationService) {
+      ProjectInformationService projectInformationService,
+      MeasurementRepository measurementRepository) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
-  }
-
-  /**
-   * Merges a collection of {@link ProteomicsMeasurementMetadata} items into one single
-   * {@link ProteomicsMeasurementMetadata} item.
-   * <p>
-   * The method currently considers labels to be distinctly preserved, as well as the sample codes.
-   * <p>
-   * For all other properties, there is no guarantee from which item they are derived.
-   *
-   * @param metadata a collection of metadata items to be merged into a single item
-   * @return
-   * @since 1.0.0
-   */
-  private static Optional<ProteomicsMeasurementMetadata> mergePxP(
-      Collection<ProteomicsMeasurementMetadata> metadata) {
-    if (metadata.isEmpty()) {
-      return Optional.empty();
-    }
-    List<SampleCode> associatedSamples = metadata.stream().map(
-        ProteomicsMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
-    var labels = metadata.stream().flatMap(theMetadata -> theMetadata.labeling().stream())
-        .collect(
-            Collectors.toSet());
-    var firstEntry = metadata.iterator().next();
-    return Optional.of(
-        life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata.copyWithNewProperties(
-            associatedSamples, labels,
-            firstEntry));
-  }
-
-  /**
-   * Merges a collection of {@link NGSMeasurementMetadata} items into one single
-   * {@link NGSMeasurementMetadata} item.
-   * <p>
-   * The method currently considers the sample codes as preservable.
-   * <p>
-   * For all other properties, there is no guarantee from which item they are derived.
-   *
-   * @param metadata a collection of metadata items to be merged into a single item
-   * @return
-   */
-  private static Optional<NGSMeasurementMetadata> mergeNGS(
-      Collection<NGSMeasurementMetadata> metadata) {
-    if (metadata.isEmpty()) {
-      return Optional.empty();
-    }
-    List<SampleCode> associatedSamples = metadata.stream().map(
-        NGSMeasurementMetadata::sampleCodes).flatMap(Collection::stream).toList();
-    var indexI7 = metadata.stream().map(NGSMeasurementMetadata::indexI7).findFirst().orElseThrow();
-    var indexI5 = metadata.stream().map(NGSMeasurementMetadata::indexI5).findFirst().orElseThrow();
-    var firstEntry = metadata.iterator().next();
-    return Optional.of(
-        NGSMeasurementMetadata.copyWithNewProperties(associatedSamples, indexI7, indexI5,
-            firstEntry));
+    this.measurementRepository = Objects.requireNonNull(measurementRepository);
   }
 
   /**
@@ -145,22 +100,8 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
-      int offset,
-      int limit,
-      List<SortOrder> sortOrders, ProjectId projectId) {
-    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
-    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
-    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
-        offset, limit, sortOrders);
-  }
-
-  @PostAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
-      ExperimentId experimentId,
-      int offset, int limit,
-      List<SortOrder> sortOrder, ProjectId projectId) {
+      ExperimentId experimentId, int offset, int limit, List<SortOrder> sortOrder, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
@@ -176,249 +117,30 @@ public class MeasurementService {
     return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
-  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementId) {
-    return measurementLookupService.findProteomicsMeasurement(measurementId);
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurement(String measurementCode) {
+    return measurementLookupService.findProteomicsMeasurement(measurementCode);
   }
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId,
-      ProjectId projectId) {
+  public Collection<NGSMeasurement> findNGSMeasurements(String filter, ExperimentId experimentId,
+      int offset, int limit, List<SortOrder> sortOrders, ProjectId projectId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.queryNGSMeasurementsBySampleIds(filter, samplesInExperiment,
+        offset, limit, sortOrders);
+  }
+
+  @PostAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId, ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryAllNGSMeasurement(samplesInExperiment);
   }
 
-  public Optional<NGSMeasurement> findNGSMeasurement(String measurementId) {
-    return measurementLookupService.findNGSMeasurement(measurementId);
-  }
-
-  private Result<MeasurementId, ErrorCode> registerNGS(
-      ProjectId projectId, NGSMeasurementMetadata metadata) {
-
-    var associatedSampleCodes = metadata.associatedSamples();
-    var selectedSampleCode = MeasurementCode.createNGS(
-        String.valueOf(metadata.associatedSamples().get(0).code()));
-    var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
-
-    if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
-      log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      return Result.fromError(ErrorCode.FAILED);
-    }
-
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
-    }
-
-    var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
-    if (organisationQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
-    }
-
-    var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.sequencingReadType(), metadata.libraryKit(), metadata.flowCell(),
-        metadata.sequencingRunProtocol(),
-        metadata.indexI7(), metadata.indexI5());
-
-    var measurement = NGSMeasurement.create(projectId,
-        sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
-        selectedSampleCode, organisationQuery.get(), method, metadata.comment());
-
-    metadata.assignedSamplePoolGroup()
-        .ifPresent(measurement::setSamplePoolGroup);
-
-    var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
-
-    var result = measurementDomainService.addNGS(measurement, parentCodes);
-
-    if (result.isError()) {
-      return Result.fromError(ErrorCode.FAILED);
-    } else {
-      return Result.fromValue(result.getValue().measurementId());
-    }
-  }
-
-  private Result<MeasurementId, ErrorCode> registerPxP(
-      ProjectId projectId, ProteomicsMeasurementMetadata metadata) {
-    var associatedSampleCodes = metadata.associatedSamples();
-    var selectedSampleCode = MeasurementCode.createMS(
-        String.valueOf(metadata.associatedSamples().get(0).code()));
-    var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
-
-    if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
-      log.error("Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      throw new MeasurementRegistrationException(ErrorCode.FAILED);
-    }
-
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
-    }
-
-    var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
-    if (organisationQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
-    }
-
-    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.fractionName(),
-        metadata.digestionMethod(), metadata.digestionEnzyme(),
-        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
-        metadata.lcColumn(), metadata.lcmsMethod());
-
-    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
-    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
-        label.sampleCode(), label.labelType(), label.label())).toList();
-
-    var measurement = ProteomicsMeasurement.create(
-        projectId,
-        sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
-        selectedSampleCode,
-        organisationQuery.get(),
-        method, samplePreparation);
-
-    metadata.assignedSamplePoolGroup()
-        .ifPresent(measurement::setSamplePoolGroup);
-
-    measurement.setLabeling(labelingMethod);
-
-    measurement.setFraction(metadata.fractionName());
-
-    var parentCodes = sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleCode).toList();
-
-    var result = measurementDomainService.addProteomics(measurement, parentCodes);
-
-    if (result.isError()) {
-      throw new MeasurementRegistrationException(ErrorCode.FAILED);
-    }
-    return Result.fromValue(result.getValue().measurementId());
-  }
-
-  @Transactional
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<MeasurementId, ErrorCode> update(ProjectId projectId,
-      MeasurementMetadata metadata) {
-    if (metadata.measurementIdentifier().isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.MISSING_MEASUREMENT_ID);
-    }
-    if (!areSamplesFromProject(projectId, metadata.associatedSamples())) {
-      throw new MeasurementRegistrationException(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
-    }
-    if (metadata instanceof ProteomicsMeasurementMetadata pxpMetadata) {
-      return updatePxP(pxpMetadata);
-    }
-    if (metadata instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
-      return updateNGS(ngsMeasurementMetadata);
-    }
-    throw new MeasurementRegistrationException(ErrorCode.FAILED);
-  }
-
-  private Result<MeasurementId, ErrorCode> updatePxP(ProteomicsMeasurementMetadata metadata) {
-
-    var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
-    if (result.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_MEASUREMENT);
-    }
-    var measurementToUpdate = result.get();
-
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
-    }
-
-    var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
-    if (organisationQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
-    }
-
-    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.fractionName(),
-        metadata.digestionMethod(), metadata.digestionEnzyme(),
-        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
-        metadata.lcColumn(), metadata.lcmsMethod());
-
-    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
-    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
-        label.sampleCode(), label.labelType(), label.label())).collect(Collectors.toList());
-
-    measurementToUpdate.setSamplePreparation(samplePreparation);
-    measurementToUpdate.setLabeling(labelingMethod);
-
-    metadata.assignedSamplePoolGroup()
-        .ifPresent(measurementToUpdate::setSamplePoolGroup);
-
-    measurementToUpdate.setLabeling(labelingMethod);
-    measurementToUpdate.setMethod(method);
-    measurementToUpdate.setComment(metadata.comment());
-
-    var updateResult = measurementDomainService.updateProteomics(measurementToUpdate);
-
-    if (updateResult.isError()) {
-      return Result.fromError(ErrorCode.FAILED);
-    } else {
-      return Result.fromValue(updateResult.getValue().measurementId());
-    }
-  }
-
-  private Result<MeasurementId, ErrorCode> updateNGS(NGSMeasurementMetadata metadata) {
-    var result = measurementLookupService.findNGSMeasurement(metadata.measurementId());
-    if (result.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_MEASUREMENT);
-    }
-    var measurementToUpdate = result.get();
-
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
-    }
-
-    var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
-    if (organisationQuery.isEmpty()) {
-      return Result.fromError(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
-    }
-
-    var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.sequencingReadType(),
-        metadata.libraryKit(), metadata.flowCell(),
-        metadata.sequencingRunProtocol(),
-        metadata.indexI7(), metadata.indexI5());
-
-    metadata.assignedSamplePoolGroup()
-        .ifPresent(measurementToUpdate::setSamplePoolGroup);
-
-    measurementToUpdate.setMethod(method);
-    measurementToUpdate.setComment(metadata.comment());
-    var updateResult = measurementDomainService.updateNGS(measurementToUpdate);
-
-    if (updateResult.isError()) {
-      return Result.fromError(ErrorCode.FAILED);
-    } else {
-      return Result.fromValue(updateResult.getValue().measurementId());
-    }
-  }
-
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  @Transactional
-  protected Result<MeasurementId, ErrorCode> register(ProjectId projectId,
-      MeasurementMetadata measurementMetadata) {
-    if (measurementMetadata.associatedSamples().isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
-    }
-    if (!areSamplesFromProject(projectId, measurementMetadata.associatedSamples())) {
-      throw new MeasurementRegistrationException(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
-    }
-    if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMeasurementMetadata) {
-      return registerPxP(projectId, proteomicsMeasurementMetadata);
-    }
-    if (measurementMetadata instanceof NGSMeasurementMetadata ngsMeasurementMetadata) {
-      return registerNGS(projectId, ngsMeasurementMetadata);
-    }
-    throw new MeasurementRegistrationException(ErrorCode.FAILED);
+  public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
+    return measurementLookupService.findNGSMeasurement(measurementCode);
   }
 
   /**
@@ -443,21 +165,34 @@ public class MeasurementService {
   @Async
   public CompletableFuture<List<Result<MeasurementId, ErrorCode>>> registerAll(
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    var mergedSamplePoolGroups = mergeRegisteredBySamplePoolGroup(measurementMetadataList);
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementCreatedDomainEventSubscriber(domainEventsCache));
+
     List<Result<MeasurementId, ErrorCode>> results;
 
     try {
-      runPreRegistrationChecks(mergedSamplePoolGroups, projectId);
+      runPreRegistrationChecks(measurementMetadataList, projectId);
     } catch (MeasurementRegistrationException e) {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     }
     try {
-      results = performRegistration(mergedSamplePoolGroups, projectId).stream()
+      results = performRegistration(measurementMetadataList, projectId).stream()
           .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
     } catch (MeasurementRegistrationException e) {
+      log.error("Failed to register measurement", e);
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     } catch (RuntimeException e) {
+      log.error("Failed to register measurement", e);
       return CompletableFuture.completedFuture(List.of(Result.fromError(ErrorCode.FAILED)));
+    }
+    // if the creation worked, we forward the events, otherwise it will be rolled back
+    if(results.stream().allMatch(Result::isValue)) {
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     }
 
     return CompletableFuture.completedFuture(results);
@@ -472,7 +207,7 @@ public class MeasurementService {
       return new ArrayList<>(); // Nothing to do
     }
     if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
-      return performRegistrationPxp((List<MeasurementMetadata>) measurementMetadataList, projectId);
+      return performRegistrationPxP((List<MeasurementMetadata>) measurementMetadataList, projectId);
 
     }
     if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
@@ -484,148 +219,250 @@ public class MeasurementService {
   private List<MeasurementId> performRegistrationNGS(
       List<MeasurementMetadata> measurementMetadataList,
       ProjectId projectId) {
-    List<NGSMeasurementMetadata> ngsMeasurements = new ArrayList<>();
+    List<NGSMeasurementMetadata> ngsMeasurementMetadata = new ArrayList<>();
     for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
-      if (measurementMetadata instanceof NGSMeasurementMetadata) {
-        ngsMeasurements.add((NGSMeasurementMetadata) measurementMetadata);
+      if (measurementMetadata instanceof NGSMeasurementMetadata ngsMetadata) {
+        ngsMeasurementMetadata.add(ngsMetadata);
       }
     }
     Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping = new HashMap<>();
-    for (NGSMeasurementMetadata metadata : ngsMeasurements) {
-      ngsMeasurementsMapping.putAll(prepareNGSMeasurement(projectId, metadata));
-    }
+
+    // Start with the pooled measurements first and group the metadata entries by pool
+    Map<String, List<NGSMeasurementMetadata>> measurementsByPool = ngsMeasurementMetadata.stream()
+        .filter(metadata -> metadata.assignedSamplePoolGroup().isPresent())
+        .collect(Collectors.groupingBy(metadata -> metadata.assignedSamplePoolGroup().get()));
+
+    // We collect the "single" sample measurements extra
+    List<NGSMeasurementMetadata> singleMeasurements = ngsMeasurementMetadata.stream()
+        .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
+
+    // Then merge and prepare the domain objects by pool
+    ngsMeasurementsMapping.putAll(mergeByPoolNGS(measurementsByPool, projectId));
+    // and last but not least also the single sample measurements
+    singleMeasurements.stream()
+        .map(singleMeasurement -> buildNGS(List.of(singleMeasurement), projectId))
+        .forEach(ngsMeasurementsMapping::putAll);
+
     return measurementDomainService.addNGSAll(ngsMeasurementsMapping);
   }
 
-  private Map<NGSMeasurement, Collection<SampleIdCodeEntry>> prepareNGSMeasurement(
-      ProjectId projectId, NGSMeasurementMetadata metadata) {
-    Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurements = new HashMap<>();
-    var associatedSampleCodes = metadata.associatedSamples();
-    var selectedSampleCode = MeasurementCode.createNGS(
-        String.valueOf(metadata.associatedSamples().get(0).code()));
-    var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
-
-    if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
-      log.error(
-          "Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      throw new MeasurementRegistrationException(ErrorCode.FAILED);
-    }
-
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
-    }
-
-    var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
-    if (organisationQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
-    }
-
-    var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.sequencingReadType(),
-        metadata.libraryKit(), metadata.flowCell(), metadata.sequencingRunProtocol(),
-        metadata.indexI7(), metadata.indexI5());
-
-    var measurement = NGSMeasurement.create(
-        projectId,
-        sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
-        selectedSampleCode,
-        organisationQuery.get(),
-        method, metadata.comment());
-
-    metadata.assignedSamplePoolGroup()
-        .ifPresent(measurement::setSamplePoolGroup);
-    ngsMeasurements.put(measurement, sampleIdCodeEntries);
-    return ngsMeasurements;
-  }
-
-  private List<MeasurementId> performRegistrationPxp(
+  private List<MeasurementId> performRegistrationPxP(
       List<MeasurementMetadata> measurementMetadataList,
       ProjectId projectId) {
     List<ProteomicsMeasurementMetadata> proteomicsMeasurements = new ArrayList<>();
     for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
-      if (measurementMetadata instanceof ProteomicsMeasurementMetadata) {
-        proteomicsMeasurements.add((ProteomicsMeasurementMetadata) measurementMetadata);
+      if (measurementMetadata instanceof ProteomicsMeasurementMetadata proteomicsMetadata) {
+        proteomicsMeasurements.add(proteomicsMetadata);
       }
     }
     Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping = new HashMap<>();
-    for (ProteomicsMeasurementMetadata metadata : proteomicsMeasurements) {
-      proteomicsMeasurementsMapping.putAll(preparePxpMeasurement(projectId, metadata));
-    }
+
+    // Start with the pooled measurements first and group the metadata entries by pool
+    Map<String, List<ProteomicsMeasurementMetadata>> measurementsByPool = proteomicsMeasurements.stream()
+        .filter(metadata -> metadata.assignedSamplePoolGroup().isPresent())
+        .collect(Collectors.groupingBy(metadata -> metadata.assignedSamplePoolGroup().get()));
+
+    // We collect the "single" sample measurements extra
+    List<ProteomicsMeasurementMetadata> singleMeasurements = proteomicsMeasurements.stream()
+        .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
+
+    // Then merge and prepare the domain objects by pool
+    proteomicsMeasurementsMapping.putAll(mergeByPoolPxP(measurementsByPool, projectId));
+    // and last but not least also the single sample measurements
+    singleMeasurements.stream()
+        .map(singleMeasurement -> buildPxP(List.of(singleMeasurement), projectId))
+        .forEach(proteomicsMeasurementsMapping::putAll);
+
     return measurementDomainService.addProteomicsAll(proteomicsMeasurementsMapping);
   }
 
-  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> preparePxpMeasurement(
-      ProjectId projectId, ProteomicsMeasurementMetadata metadata) {
-    Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurements = new HashMap<>();
-    var associatedSampleCodes = metadata.associatedSamples();
-    var selectedSampleCode = MeasurementCode.createMS(
-        String.valueOf(metadata.associatedSamples().get(0).code()));
-    var sampleIdCodeEntries = queryIdCodePairs(associatedSampleCodes);
-
-    if (sampleIdCodeEntries.size() != associatedSampleCodes.size()) {
-      log.error(
-          "Could not find all corresponding sample ids for input: " + associatedSampleCodes);
-      throw new MeasurementRegistrationException(ErrorCode.FAILED);
+  /**
+   * Merges and builds {@link ProteomicsMeasurement} based on the given pool information.
+   *
+   * @param groupedMetadata already grouped measurement metadata by pool
+   * @param projectId       the project the measurement belongs to
+   * @return
+   * @since 1.0.0
+   */
+  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> mergeByPoolPxP(
+      Map<String, List<ProteomicsMeasurementMetadata>> groupedMetadata, ProjectId projectId) {
+    Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> metadataMap = new HashMap<>();
+    for (var metadataGroup : groupedMetadata.entrySet()) {
+      metadataMap.putAll(buildPxP(metadataGroup.getValue(), projectId));
     }
+    return metadataMap;
+  }
 
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+  private Map<NGSMeasurement, Collection<SampleIdCodeEntry>> mergeByPoolNGS(
+      Map<String, List<NGSMeasurementMetadata>> groupedMetadata, ProjectId projectId) {
+    Map<NGSMeasurement, Collection<SampleIdCodeEntry>> metadataMap = new HashMap<>();
+    for (var metadataGroup : groupedMetadata.entrySet()) {
+      metadataMap.putAll(buildNGS(metadataGroup.getValue(), projectId));
     }
+    return metadataMap;
+  }
+
+  private Map<NGSMeasurement, Collection<SampleIdCodeEntry>> buildNGS(
+      List<NGSMeasurementMetadata> metadataList, ProjectId projectId) {
+    Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = buildSampleIdLookupTable(metadataList);
+    var sampleCodes = sampleIdLookupTable.keySet();
+    var specificMetadata = createSpecificMetadataNGS(metadataList, sampleIdLookupTable);
+    var assignedMeasurementCode = MeasurementCode.createNGS(sampleCodes.iterator().next().code());
+    var firstMetadataEntry = metadataList.get(0);
 
     var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
+        firstMetadataEntry.organisationId());
     if (organisationQuery.isEmpty()) {
       throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
-    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.fractionName(),
-        metadata.digestionMethod(), metadata.digestionEnzyme(),
-        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
-        metadata.lcColumn(), metadata.lcmsMethod());
+    var instrumentQuery = resolveOntologyCURI(firstMetadataEntry.instrumentCURI());
+    if (instrumentQuery.isEmpty()) {
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+    }
 
-    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
-    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
-        label.sampleCode(), label.labelType(), label.label())).toList();
+    var method = new NGSMethodMetadata(instrumentQuery.get(), firstMetadataEntry.facility(),
+        firstMetadataEntry.sequencingReadType(), firstMetadataEntry.libraryKit(),
+        firstMetadataEntry.flowCell(), firstMetadataEntry.sequencingRunProtocol());
 
-    var measurement = ProteomicsMeasurement.create(
-        projectId,
-        sampleIdCodeEntries.stream().map(SampleIdCodeEntry::sampleId).toList(),
-        selectedSampleCode,
-        organisationQuery.get(),
-        method, samplePreparation);
+    NGSMeasurement measurement;
+    if (firstMetadataEntry.assignedSamplePoolGroup().isPresent()) {
+      measurement = NGSMeasurement.createWithPool(projectId,
+          firstMetadataEntry.assignedSamplePoolGroup().get(), assignedMeasurementCode,
+          organisationQuery.get(), method, specificMetadata);
+    } else {
+      measurement = NGSMeasurement.createSingleMeasurement(projectId, assignedMeasurementCode,
+          organisationQuery.get(), method, specificMetadata.get(0));
+    }
 
-    metadata.assignedSamplePoolGroup()
-        .ifPresent(measurement::setSamplePoolGroup);
-
-    measurement.setLabeling(labelingMethod);
-
-    measurement.setFraction(metadata.fractionName());
-    proteomicsMeasurements.put(measurement, sampleIdCodeEntries);
-    return proteomicsMeasurements;
+    return Map.of(measurement, sampleIdLookupTable.values());
   }
 
+  private Map<SampleCode, SampleIdCodeEntry> buildSampleIdLookupTable(
+      Collection<? extends MeasurementMetadata> metadata) {
+    Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = new HashMap<>();
+    var sampleCodes = metadata.stream().map(MeasurementMetadata::associatedSample).toList();
+    for (SampleCode sampleCode : sampleCodes) {
+      var sampleIdQueryResult = queryIdCodePair(sampleCode).orElseThrow();
+      sampleIdLookupTable.put(sampleCode, sampleIdQueryResult);
+    }
+    return sampleIdLookupTable;
+  }
+
+  /**
+   * Builds an instance of {@link ProteomicsMeasurement} and its corresponding
+   * {@link SampleIdCodeEntry}s based on the given list of {@link ProteomicsMethodMetadata} and the
+   * {@link ProjectId}.
+   * <p>
+   * Disclaimer: the method does NOT evaluate, of the entries belong together, e.g. they are part of
+   * the same pool. This grouping needs to be done by the caller.
+   *
+   * @param metadataList A list of pre-grouped metadata of a pool or single measurement representing
+   *                     one unit of a {@link ProteomicsMeasurement}.
+   * @param projectId    the project the measurement belongs to
+   * @return
+   * @since 1.0.0
+   */
+  private Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> buildPxP(
+      List<ProteomicsMeasurementMetadata> metadataList, ProjectId projectId) {
+    Map<SampleCode, SampleIdCodeEntry> sampleIdLookupTable = buildSampleIdLookupTable(metadataList);
+    var sampleCodes = sampleIdLookupTable.keySet();
+    var specificMetadata = createSpecificMetadataPxP(metadataList, sampleIdLookupTable);
+    var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.iterator().next().code());
+    var firstMetadataEntry = metadataList.get(0);
+
+    var organisationQuery = organisationLookupService.organisation(
+        firstMetadataEntry.organisationId());
+    if (organisationQuery.isEmpty()) {
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var instrumentQuery = resolveOntologyCURI(firstMetadataEntry.instrumentCURI());
+    if (instrumentQuery.isEmpty()) {
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstMetadataEntry.facility(),
+        firstMetadataEntry.digestionMethod(), firstMetadataEntry.digestionEnzyme(),
+        firstMetadataEntry.enrichmentMethod(), firstMetadataEntry.lcColumn(),
+        firstMetadataEntry.lcmsMethod(), readInjectionVolume(firstMetadataEntry.injectionVolume()),
+        firstMetadataEntry.labeling()
+            .labelType());
+
+    var measurement = ProteomicsMeasurement.create(projectId, assignedMeasurementCode,
+        organisationQuery.get(), method, specificMetadata);
+
+    measurement.setSamplePoolGroup(firstMetadataEntry.samplePoolGroup());
+
+    return Map.of(measurement, sampleIdLookupTable.values());
+  }
+
+  private List<ProteomicsSpecificMeasurementMetadata> createSpecificMetadataPxP(
+      List<ProteomicsMeasurementMetadata> metadata,
+      Map<SampleCode, SampleIdCodeEntry> sampleIdCodeLookupTable) {
+    return metadata.stream().map(metadataEntry -> ProteomicsSpecificMeasurementMetadata.create(
+        sampleIdCodeLookupTable.get(metadataEntry.associatedSample()).sampleId(),
+        metadataEntry.labeling().label(), metadataEntry.fractionName(),
+        metadataEntry.comment())).toList();
+  }
+
+  private List<NGSSpecificMeasurementMetadata> createSpecificMetadataNGS(
+      List<NGSMeasurementMetadata> metadata,
+      Map<SampleCode, SampleIdCodeEntry> sampleIdCodeLookupTable) {
+    return metadata.stream().map(metadataEntry -> NGSSpecificMeasurementMetadata.create(
+        sampleIdCodeLookupTable.get(metadataEntry.associatedSample()).sampleId(),
+        metadataEntry.indexI5(), metadataEntry.indexI7(),
+        metadataEntry.comment())).toList();
+  }
+
+
   private void runPreRegistrationChecks(
-      List<? extends MeasurementMetadata> mergedSamplePoolGroups, ProjectId projectId)
+      List<? extends MeasurementMetadata> measurements, ProjectId projectId)
       throws MeasurementRegistrationException {
 
-    for (MeasurementMetadata measurementMetadata : mergedSamplePoolGroups) {
-      if (measurementMetadata.associatedSamples().isEmpty()) {
-        throw new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
+    for (MeasurementMetadata measurementMetadata : measurements) {
+      if (measurementMetadata.associatedSample() == null) {
+        throw new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLE);
       }
-      if (!areSamplesFromProject(projectId, measurementMetadata.associatedSamples())) {
+      if (!isSampleFromProject(projectId, measurementMetadata.associatedSample())) {
         throw new MeasurementRegistrationException(ErrorCode.SAMPLECODE_NOT_FROM_PROJECT);
       }
-      if (queryIdCodePairs(measurementMetadata.associatedSamples()).size()
-          != measurementMetadata.associatedSamples().size()) {
-        throw new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLES);
+      if (queryIdCodePair(measurementMetadata.associatedSample()).isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLE);
       }
     }
   }
 
+  /**
+   * Based on a list of measurement metadata entries with measurement IDs, the already registered
+   * measurements are queried and updated.
+   * <p>
+   * The update happens async, so the client can continue by handling the {@link CompletableFuture}
+   * object that is returned instantly.
+   * <p>
+   * The update happens atomic, and either was successful for all entries or none.
+   * <p>
+   * Possible reasons for a failing update are:
+   *
+   * <ul>
+   *   <li>the measurement id does not belong to a registered entity</li>
+   *   <li>some provided metadata ontologies or PIDs cannot be resolved</li>
+   *   <li>some technical issue with the persistence layer</li>
+   * </ul>
+   * <p>
+   * The client is advised to check for any result {@link Result#isError()} is present in the returned list.
+   * <p>
+   * Disclaimer: Pooled Measurements
+   * Currently for pooled measurement updates, the pool group label is not updated to make the pool metadata handling less susceptible
+   * to accidental errors.
+   * However, the references of the samples pooled in the measurement have an impact and will lead to a reassignment of the associated measured samples if changed during the update.
+   *
+   * @param measurementMetadataList a list of measurements metadata to be updated
+   * @param projectId               the project id of the project the measurements belong to
+   * @return a {@link CompletableFuture} object with a list of {@link Result} objects, containing
+   * either the measurement id of the updated measurement or an error code.
+   * @since 1.0.0
+   */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
@@ -633,222 +470,303 @@ public class MeasurementService {
       List<MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     List<Result<MeasurementId, ErrorCode>> results;
 
-    var pooledMeasurements = mergeUpdatedBySamplePoolGroup(measurementMetadataList);
-    try {
-      results = performUpdate(pooledMeasurements, projectId);
-    } catch (MeasurementRegistrationException e) {
-      return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementUpdatedDomainEventSubscriber(domainEventsCache));
+
+    if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(
+        0) instanceof ProteomicsMeasurementMetadata) {
+      List<ProteomicsMeasurementMetadata> metadata = new ArrayList<>();
+      for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
+        metadata.add((ProteomicsMeasurementMetadata) measurementMetadata);
+      }
+      try {
+        results = updateAllPxP(metadata, projectId);
+      } catch (MeasurementRegistrationException e) {
+        log.error("Measurement update failed.", e);
+        return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
+      }
+      handleUpdateEvents(domainEventsCache, results);
+      return CompletableFuture.completedFuture(results);
     }
-    return CompletableFuture.completedFuture(results);
+
+    if (!measurementMetadataList.isEmpty() && measurementMetadataList.get(
+        0) instanceof NGSMeasurementMetadata) {
+      List<NGSMeasurementMetadata> metadata = new ArrayList<>();
+      for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
+        metadata.add((NGSMeasurementMetadata) measurementMetadata);
+      }
+      try {
+        results = updateAllNGS(metadata, projectId);
+      } catch (MeasurementRegistrationException e) {
+        log.error("Measurement update failed.", e);
+        return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
+      }
+      handleUpdateEvents(domainEventsCache, results);
+      return CompletableFuture.completedFuture(results);
+    }
+    return CompletableFuture.completedFuture(List.of(Result.fromError(ErrorCode.FAILED)));
+  }
+
+  private void handleUpdateEvents(List<DomainEvent> domainEventsCache,
+      List<Result<MeasurementId, ErrorCode>> results) {
+    if(results.stream().anyMatch(Result::isError)) {
+      return;
+    }
+    Set<MeasurementId> dispatchedIDs = new HashSet<>();
+    for(DomainEvent event : domainEventsCache) {
+      if(event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
+        MeasurementId id = measurementUpdatedEvent.measurementId();
+        if(dispatchedIDs.contains(id)) {
+          continue;
+        }
+        DomainEventDispatcher.instance().dispatch(event);
+        dispatchedIDs.add(id);
+      }
+    }
+   
   }
 
   /**
-   * In an edit context, a measurement with a pooled sample group appears multiple times (once per
-   * row per sample). Since the user cannot change the sample group of a measurement within the edit
-   * context, we assume that the provided values for the first row of the pooled measurement are the
-   * ones were interested and discard the rest.
+   * Reads the injection volume from a character representation.
+   * <p>
+   * If no value is present, it returns -1.
+   *
+   * @param value
+   * @return
+   * @since 1.0.0
    */
-  private List<MeasurementMetadata> mergeUpdatedBySamplePoolGroup(
-      List<MeasurementMetadata> measurementMetadata) {
-    return measurementMetadata.stream().distinct().toList();
+  private int readInjectionVolume(String value) throws NumberFormatException {
+    if (value.isBlank()) {
+      return -1;
+    }
+    return Integer.parseInt(value);
   }
 
-  @PreAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  @Transactional
-  protected List<Result<MeasurementId, ErrorCode>> performUpdate(
-      List<? extends MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    if (measurementMetadataList.isEmpty()) {
-      return new ArrayList<>(); // Nothing to do
+  /**
+   * Bulk update of a list of proteomics measurements.
+   * <p>
+   * This method takes care of two types of measurements:
+   *
+   * <ul>
+   *   <li>single sample measurement</li>
+   *   <li>pooled sample measurement</li>
+   * </ul>
+   * <p>
+   * In the case of pooled sample measurement updates, the method groups
+   * the metadata entries by measurement ID since the pool has already been registered and
+   * cannot be reassigned.
+   * <p>
+   * In the current state of implementation, if a user wants to update the pool label, they have to
+   * delete the measurement and register it properly again.
+   *
+   * @param metadata  the proteomics metadata to update
+   * @param projectId the project the measurement belongs to
+   * @return a list of {@link Result} objects
+   * @since 1.0.0
+   */
+  private List<Result<MeasurementId, ErrorCode>> updateAllPxP(
+      List<ProteomicsMeasurementMetadata> metadata, ProjectId projectId) {
+
+    if (measurementCodeMissing(metadata)) {
+      throw new MeasurementRegistrationException(ErrorCode.MISSING_MEASUREMENT_ID);
     }
+    if (!allMeasurementCodesExist(
+        metadata.stream().map(ProteomicsMeasurementMetadata::measurementId).toList())) {
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_MEASUREMENT);
+    }
+
+    var singleSampleMeasurements = metadata.stream()
+        .filter(measurement -> measurement.assignedSamplePoolGroup().isEmpty()).toList();
+    var pooledMeasurements = metadata.stream()
+        .filter(measurement -> measurement.assignedSamplePoolGroup().isPresent()).collect(
+            Collectors.groupingBy(ProteomicsMeasurementMetadata::measurementId));
+
+    List<ProteomicsMeasurement> measurementsForUpdate = new ArrayList<>();
+
+    var lookupTable = buildSampleIdLookupTable(metadata);
+
+    for (ProteomicsMeasurementMetadata measurementMetadata : singleSampleMeasurements) {
+      var measurement = measurementRepository.findProteomicsMeasurement(
+          measurementMetadata.measurementId()).orElseThrow();
+      measurement.setSpecificMetadata(
+          createSpecificMetadataPxP(List.of(measurementMetadata), lookupTable));
+      var organisationQuery = organisationLookupService.organisation(
+          measurementMetadata.organisationId());
+      if (organisationQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+      }
+
+      var instrumentQuery = resolveOntologyCURI(measurementMetadata.instrumentCURI());
+      if (instrumentQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      }
+
+      var method = new ProteomicsMethodMetadata(instrumentQuery.get(),
+          measurementMetadata.facility(),
+          measurementMetadata.digestionMethod(), measurementMetadata.digestionEnzyme(),
+          measurementMetadata.enrichmentMethod(), measurementMetadata.lcColumn(),
+          measurementMetadata.lcmsMethod(),
+          readInjectionVolume(measurementMetadata.injectionVolume()),
+          measurementMetadata.labeling()
+              .labelType());
+
+      measurement.setOrganisation(organisationQuery.get());
+      measurement.updateMethod(method);
+      measurementsForUpdate.add(measurement);
+    }
+
+    for (String measurementId : pooledMeasurements.keySet()) {
+      var pooledMeasurement = pooledMeasurements.get(measurementId);
+      var firstEntry = pooledMeasurement.get(0);
+      var measurement = measurementRepository.findProteomicsMeasurement(
+          firstEntry.measurementId()).orElseThrow();
+      measurement.setSpecificMetadata(createSpecificMetadataPxP(pooledMeasurement, lookupTable));
+      var organisationQuery = organisationLookupService.organisation(
+          firstEntry.organisationId());
+      if (organisationQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+      }
+
+      var instrumentQuery = resolveOntologyCURI(firstEntry.instrumentCURI());
+      if (instrumentQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      }
+
+      var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstEntry.facility(),
+          firstEntry.digestionMethod(), firstEntry.digestionEnzyme(),
+          firstEntry.enrichmentMethod(), firstEntry.lcColumn(),
+          firstEntry.lcmsMethod(), readInjectionVolume(firstEntry.injectionVolume()),
+          firstEntry.labeling()
+              .labelType());
+
+      measurement.setOrganisation(organisationQuery.get());
+      measurement.updateMethod(method);
+      measurementsForUpdate.add(measurement);
+    }
+
     try {
-      if (measurementMetadataList.get(0) instanceof ProteomicsMeasurementMetadata) {
-        return performUpdatePxp(measurementMetadataList, projectId);
-      }
-      if (measurementMetadataList.get(0) instanceof NGSMeasurementMetadata) {
-        return performUpdateNGS(measurementMetadataList, projectId);
-      }
-    } catch (Exception exception) {
-      throw new MeasurementRegistrationException(ErrorCode.FAILED);
+      var ids = measurementDomainService.updateProteomicsAll(measurementsForUpdate);
+      return ids.stream().map(Result::<MeasurementId, ErrorCode>fromValue).toList();
+    } catch (RuntimeException e) {
+      return List.of(Result.fromError(ErrorCode.FAILED));
     }
-
-    throw new MeasurementRegistrationException(ErrorCode.FAILED);
   }
 
-  private List<Result<MeasurementId, ErrorCode>> performUpdateNGS(
-      List<? extends MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    List<NGSMeasurementMetadata> ngsMeasurements = new ArrayList<>();
-    for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
-      if (measurementMetadata instanceof NGSMeasurementMetadata) {
-        ngsMeasurements.add((NGSMeasurementMetadata) measurementMetadata);
-      }
-    }
-    return measurementDomainService.updateNGSAll(
-            ngsMeasurements.stream().map(this::prepareNGSMeasurementUpdate).toList()).stream()
-        .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
-  }
 
-  private NGSMeasurement prepareNGSMeasurementUpdate(NGSMeasurementMetadata metadata) {
-    var result = measurementLookupService.findNGSMeasurement(metadata.measurementId());
-    if (result.isEmpty()) {
+  private List<Result<MeasurementId, ErrorCode>> updateAllNGS(
+      List<NGSMeasurementMetadata> metadata, ProjectId projectId) {
+
+    if (measurementCodeMissing(metadata)) {
+      throw new MeasurementRegistrationException(ErrorCode.MISSING_MEASUREMENT_ID);
+    }
+    if (!allMeasurementCodesExist(
+        metadata.stream().map(NGSMeasurementMetadata::measurementId).toList())) {
       throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_MEASUREMENT);
     }
-    var measurementToUpdate = result.get();
 
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
-    }
+    var singleSampleMeasurements = metadata.stream()
+        .filter(measurement -> measurement.assignedSamplePoolGroup().isEmpty()).toList();
+    var pooledMeasurements = metadata.stream()
+        .filter(measurement -> measurement.assignedSamplePoolGroup().isPresent()).collect(
+            Collectors.groupingBy(NGSMeasurementMetadata::measurementId));
 
-    var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
-    if (organisationQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
-    }
+    List<NGSMeasurement> measurementsForUpdate = new ArrayList<>();
 
-    var method = new NGSMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.sequencingReadType(),
-        metadata.libraryKit(),
-        metadata.flowCell(), metadata.sequencingRunProtocol(),
-        metadata.indexI7(), metadata.indexI5());
+    var lookupTable = buildSampleIdLookupTable(metadata);
 
-    measurementToUpdate.setComment(metadata.comment());
-    measurementToUpdate.setSamplePoolGroup(metadata.samplePoolGroup());
-    measurementToUpdate.setMethod(method);
-    return measurementToUpdate;
-  }
-
-  private List<Result<MeasurementId, ErrorCode>> performUpdatePxp(
-      List<? extends MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
-    List<ProteomicsMeasurementMetadata> proteomicsMeasurements = new ArrayList<>();
-    for (MeasurementMetadata measurementMetadata : measurementMetadataList) {
-      if (measurementMetadata instanceof ProteomicsMeasurementMetadata) {
-        proteomicsMeasurements.add((ProteomicsMeasurementMetadata) measurementMetadata);
+    for (NGSMeasurementMetadata measurementMetadata : singleSampleMeasurements) {
+      var measurement = measurementRepository.findNGSMeasurement(
+          measurementMetadata.measurementId()).orElseThrow();
+      measurement.setSpecificMetadata(
+          createSpecificMetadataNGS(List.of(measurementMetadata), lookupTable));
+      var organisationQuery = organisationLookupService.organisation(
+          measurementMetadata.organisationId());
+      if (organisationQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
       }
-    }
-    return measurementDomainService.updateProteomicsAll(
-            proteomicsMeasurements.stream().map(this::preparePxpMeasurementUpdate).toList()).stream()
-        .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
-  }
 
-  private ProteomicsMeasurement preparePxpMeasurementUpdate(
-      ProteomicsMeasurementMetadata metadata) {
-    var result = measurementLookupService.findProteomicsMeasurement(metadata.measurementId());
-    if (result.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_MEASUREMENT);
-    }
-    var measurementToUpdate = result.get();
+      var instrumentQuery = resolveOntologyCURI(measurementMetadata.instrumentCURI());
+      if (instrumentQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      }
 
-    var instrumentQuery = resolveOntologyCURI(metadata.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      var method = new NGSMethodMetadata(instrumentQuery.get(),
+          measurementMetadata.facility(), measurementMetadata.sequencingReadType(),
+          measurementMetadata.libraryKit(), measurementMetadata.flowCell(),
+          measurementMetadata.sequencingRunProtocol());
+
+      measurement.setOrganisation(organisationQuery.get());
+      measurement.updateMethod(method);
+      measurementsForUpdate.add(measurement);
     }
 
-    var organisationQuery = organisationLookupService.organisation(
-        metadata.organisationId());
-    if (organisationQuery.isEmpty()) {
-      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+    for (String measurementId : pooledMeasurements.keySet()) {
+      var pooledMeasurement = pooledMeasurements.get(measurementId);
+      var firstEntry = pooledMeasurement.get(0);
+      var measurement = measurementRepository.findNGSMeasurement(
+          firstEntry.measurementId()).orElseThrow();
+      measurement.setSpecificMetadata(createSpecificMetadataNGS(pooledMeasurement, lookupTable));
+      var organisationQuery = organisationLookupService.organisation(
+          firstEntry.organisationId());
+      if (organisationQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+      }
+
+      var instrumentQuery = resolveOntologyCURI(firstEntry.instrumentCURI());
+      if (instrumentQuery.isEmpty()) {
+        throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+      }
+
+      var method = new NGSMethodMetadata(instrumentQuery.get(),
+          firstEntry.facility(), firstEntry.sequencingReadType(),
+          firstEntry.libraryKit(), firstEntry.flowCell(),
+          firstEntry.sequencingRunProtocol());
+
+      measurement.setOrganisation(organisationQuery.get());
+      measurement.updateMethod(method);
+      measurementsForUpdate.add(measurement);
     }
 
-    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), metadata.facility(),
-        metadata.fractionName(),
-        metadata.digestionMethod(), metadata.digestionEnzyme(),
-        metadata.enrichmentMethod(), Integer.parseInt(metadata.injectionVolume()),
-        metadata.lcColumn(), metadata.lcmsMethod());
-
-    var samplePreparation = new ProteomicsSamplePreparation(metadata.comment());
-    var labelingMethod = metadata.labeling().stream().map(label -> new ProteomicsLabeling(
-        label.sampleCode(), label.labelType(), label.label())).collect(Collectors.toList());
-
-    measurementToUpdate.setSamplePreparation(samplePreparation);
-    measurementToUpdate.setLabeling(labelingMethod);
-
-    metadata.assignedSamplePoolGroup()
-        .ifPresent(measurementToUpdate::setSamplePoolGroup);
-
-    measurementToUpdate.setLabeling(labelingMethod);
-    measurementToUpdate.setMethod(method);
-
-    return measurementToUpdate;
-  }
-
-
-  private List<? extends MeasurementMetadata> mergeRegisteredBySamplePoolGroup(
-      List<? extends MeasurementMetadata> measurementMetadataList) {
-    if (measurementMetadataList.isEmpty()) {
-      return measurementMetadataList;
-    }
-    if (measurementMetadataList.stream()
-        .allMatch(NGSMeasurementMetadata.class::isInstance)) {
-      var ngsMeasurementMetadataList = measurementMetadataList.stream()
-          .map(NGSMeasurementMetadata.class::cast).toList();
-      return mergeBySamplePoolGroupNGS(ngsMeasurementMetadataList);
-    }
-    if (measurementMetadataList.stream()
-        .allMatch(ProteomicsMeasurementMetadata.class::isInstance)) {
-      var proteomicsMeasurementMetadataList = measurementMetadataList.stream()
-          .map(ProteomicsMeasurementMetadata.class::cast).toList();
-      return mergeBySamplePoolGroupProteomics(proteomicsMeasurementMetadataList);
-    } else {
-      throw new RuntimeException(
-          "Merging measurement metadata: expected proteomics or ngs metadata only.");
+    try {
+      var ids = measurementDomainService.updateNGSAll(measurementsForUpdate);
+      return ids.stream().map(Result::<MeasurementId, ErrorCode>fromValue).toList();
+    } catch (RuntimeException e) {
+      return List.of(Result.fromError(ErrorCode.FAILED));
     }
   }
 
-  private List<ProteomicsMeasurementMetadata> mergeBySamplePoolGroupProteomics(
-      List<ProteomicsMeasurementMetadata> proteomicsMeasurementMetadataList) {
-    var poolingGroups = proteomicsMeasurementMetadataList.stream().filter(
-        proteomicsMeasurementMetadata -> proteomicsMeasurementMetadata.assignedSamplePoolGroup()
-            .isPresent()).collect(Collectors.groupingBy(
-        metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
-    List<ProteomicsMeasurementMetadata> mergedPooledMeasurements = poolingGroups.values().stream()
-        .map(MeasurementService::mergePxP).filter(Optional::isPresent).map(Optional::get).toList();
-
-    var singleMeasurements = proteomicsMeasurementMetadataList.stream()
-        .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
-
-    return Stream.concat(singleMeasurements.stream(),
-        mergedPooledMeasurements.stream()).toList();
+  private boolean measurementCodeMissing(List<? extends MeasurementMetadata> metadata) {
+    return metadata.stream().map(MeasurementMetadata::measurementIdentifier)
+        .anyMatch(Optional::isEmpty);
   }
 
-  private List<NGSMeasurementMetadata> mergeBySamplePoolGroupNGS(
-      List<NGSMeasurementMetadata> ngsMeasurementMetadataList) {
-    var poolingGroups = ngsMeasurementMetadataList.stream().filter(
-        ngsMeasurementMetadata -> ngsMeasurementMetadata.assignedSamplePoolGroup()
-            .isPresent()).collect(Collectors.groupingBy(
-        metadata -> metadata.assignedSamplePoolGroup().orElseThrow()));
-    List<NGSMeasurementMetadata> mergedPooledMeasurements = poolingGroups.values().stream()
-        .map(MeasurementService::mergeNGS).filter(Optional::isPresent).map(Optional::get).toList();
-
-    var singleMeasurements = ngsMeasurementMetadataList.stream()
-        .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
-
-    return Stream.concat(singleMeasurements.stream(),
-        mergedPooledMeasurements.stream()).toList();
+  private boolean allMeasurementCodesExist(List<String> measurementCode) {
+    return measurementCode.stream()
+        .allMatch(measurementRepository::existsMeasurement);
   }
-
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
     return ontologyLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);
   }
 
-  private Collection<SampleIdCodeEntry> queryIdCodePairs(Collection<SampleCode> sampleCodes) {
-    return sampleCodes.stream().map(sampleInformationService::findSampleId)
-        .filter(Optional::isPresent)
-        .map(Optional::get).toList();
+  private Optional<SampleIdCodeEntry> queryIdCodePair(SampleCode sampleCode) {
+    return sampleInformationService.findSampleId(sampleCode);
   }
 
   /*Ensures that the provided sample code belong to one of the experiments within the project*/
-  private boolean areSamplesFromProject(ProjectId projectId, List<SampleCode> sampleCodes) {
-    var possibleSampleIds = sampleCodes.stream().map(sampleInformationService::findSampleId)
-        .toList();
-    //If an invalid sampleCode was provided we fail early
-    if (possibleSampleIds.stream().anyMatch(Optional::isEmpty)) {
+  private boolean isSampleFromProject(ProjectId projectId, SampleCode sampleCodes) {
+    var sampleIdQueryResult = sampleInformationService.findSampleId(sampleCodes);
+
+    if (sampleIdQueryResult.isEmpty()) {
       return false;
     }
-    var sampleIds = possibleSampleIds.stream().map(Optional::get).map(SampleIdCodeEntry::sampleId)
-        .toList();
-    var samples = sampleInformationService.retrieveSamplesByIds(sampleIds);
+
+    var sampleId = sampleIdQueryResult.map(SampleIdCodeEntry::sampleId).orElseThrow();
+
+    var samples = sampleInformationService.retrieveSamplesByIds(List.of(sampleId));
     var associatedExperimentsFromSamples = samples.stream().map(Sample::experimentId).toList();
 
     var associatedExperimentsFromProject = projectInformationService.find(projectId).orElseThrow()
@@ -858,9 +776,13 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deletePtxMeasurements(ProjectId projectId, Set<ProteomicsMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deletePxPMeasurements(ProjectId projectId,
+      Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
-      measurementDomainService.deletePtx(selectedMeasurements);
+      measurementDomainService.deletePxP(selectedMeasurements);
+      if(!selectedMeasurements.isEmpty()) {
+        dispatchProjectChangedOnMeasurementDeleted(projectId);
+      }
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
@@ -868,13 +790,31 @@ public class MeasurementService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId, Set<NGSMeasurement> selectedMeasurements) {
+  public Result<Void, MeasurementDeletionException> deleteNGSMeasurements(ProjectId projectId,
+      Set<NGSMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deleteNGS(selectedMeasurements);
+      if(!selectedMeasurements.isEmpty()) {
+        dispatchProjectChangedOnMeasurementDeleted(projectId);
+      }
       return Result.fromValue(null);
     } catch (MeasurementDeletionException e) {
       return Result.fromError(e);
     }
+  }
+
+  private void dispatchProjectChangedOnMeasurementDeleted(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
+}
+  public enum DeletionErrorCode {
+    FAILED, DATA_ATTACHED
+  }
+
+  public enum ErrorCode {
+    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT,
+    MISSING_ASSOCIATED_SAMPLE, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT,
+    UNKNOWN_MEASUREMENT
   }
 
   public static final class MeasurementDeletionException extends RuntimeException {
@@ -890,14 +830,6 @@ public class MeasurementService {
     }
   }
 
-  public enum DeletionErrorCode {
-    FAILED, DATA_ATTACHED
-  }
-
-  public enum ErrorCode {
-    FAILED, UNKNOWN_ORGANISATION_ROR_ID, UNKNOWN_ONTOLOGY_TERM, WRONG_EXPERIMENT, MISSING_ASSOCIATED_SAMPLES, MISSING_MEASUREMENT_ID, SAMPLECODE_NOT_FROM_PROJECT, UNKNOWN_MEASUREMENT
-  }
-
   public static final class MeasurementRegistrationException extends RuntimeException {
 
     private final ErrorCode reason;
@@ -911,4 +843,33 @@ public class MeasurementService {
     }
   }
 
+  private record MeasurementUpdatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementUpdatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
+
+  private record MeasurementCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return MeasurementCreatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }

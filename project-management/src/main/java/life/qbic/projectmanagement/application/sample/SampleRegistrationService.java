@@ -17,6 +17,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
@@ -41,6 +42,7 @@ public class SampleRegistrationService {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<Collection<Sample>, ResponseCode> registerSamples(
       Collection<SampleRegistrationRequest> sampleRegistrationRequests, ProjectId projectId) {
     Objects.requireNonNull(sampleRegistrationRequests);
@@ -67,6 +69,7 @@ public class SampleRegistrationService {
         .flatMapError(responseCode -> Result.fromError(ResponseCode.SAMPLE_REGISTRATION_FAILED));
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void updateSamples(ProjectId projectId,
       Collection<SampleUpdateRequest> updatedSamples) {
     Objects.requireNonNull(projectId);
