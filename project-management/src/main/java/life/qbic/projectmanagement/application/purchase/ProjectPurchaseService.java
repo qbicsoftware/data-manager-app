@@ -4,10 +4,14 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
@@ -42,14 +46,21 @@ public class ProjectPurchaseService {
 
     var projectReference = ProjectId.parse(projectId);
     var purchaseDate = Instant.now();
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new PurchaseCreatedDomainEventSubscriber(domainEventsCache));
+
     List<ServicePurchase> servicePurchases = offers.stream()
         .map(it -> Offer.create(it.signed(), it.fileName(), it.content()))
         .map(it -> ServicePurchase.create(projectReference, purchaseDate, it))
         .toList();
     try {
-      Iterable<ServicePurchase> storedPurchases = storage.storePurchases(servicePurchases);
-      for (ServicePurchase storedPurchase : storedPurchases) {
-        DomainEventDispatcher.instance().dispatch(new PurchaseCreatedEvent(storedPurchase.getId()));
+      Iterable<ServicePurchase> results = storage.storePurchases(servicePurchases);
+      for(ServicePurchase servicePurchase : results) {
+        DomainEventDispatcher.instance().dispatch(new PurchaseCreatedEvent(servicePurchase.getId()));
       }
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
@@ -91,5 +102,18 @@ public class ProjectPurchaseService {
   public Optional<ProjectId> findProjectIdOfPurchase(Long purchaseID) {
     return storage.findProjectIdOfPurchase(purchaseID);
   }
+  private record PurchaseCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
 
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return PurchaseCreatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }
