@@ -60,8 +60,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
       var connectionTester = appContext.getBean(DataRepoConnectionTester.class);
       connectionTester.testApplicationServer();
       connectionTester.testDatastoreServer();
-    } catch (BeansException e) {
-      throw new RuntimeException(e);
     } catch (Exception e) {
       log.error(
           "Unexpected error occurred while starting data manager app during openBis connection.",
