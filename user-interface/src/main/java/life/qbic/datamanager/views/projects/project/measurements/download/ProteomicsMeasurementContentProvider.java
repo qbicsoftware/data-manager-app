@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.measurements;
+package life.qbic.datamanager.views.projects.project.measurements.download;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -9,6 +9,7 @@ import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.views.projects.project.measurements.ProteomicsMeasurementEntry;
 import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
