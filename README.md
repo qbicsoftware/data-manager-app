@@ -5,8 +5,6 @@
 Data Manager - A web-based multi-omics data management platform for the biomedical life sciences
 that enables FAIR-compliant data access.
 
-**Disclaimer**: _this project is still under heavy development and not yet officially released._
-
 [![Build Maven Package](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/build_package.yml)
 [![Run Maven Tests](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/run_tests.yml)
 [![CodeQL](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/qbicsoftware/data-manager-app/actions/workflows/codeql-analysis.yml)
@@ -334,3 +332,5 @@ This work is licensed under the [MIT license](https://mit-license.org/).
 
 This work uses the [Vaadin Framework](https://github.com/vaadin), which is licensed
 under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+The University of Tübingen logo is a registered trademark and the copyright is owned by the [University of Tübingen](https://uni-tuebingen.de/).

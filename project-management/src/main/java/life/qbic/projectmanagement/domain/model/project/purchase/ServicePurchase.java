@@ -65,8 +65,9 @@ public class ServicePurchase {
   }
 
   private void emitCreatedEvent() {
-    var createdEvent = new PurchaseCreatedEvent(this.id);
-    LocalDomainEventDispatcher.instance().dispatch(createdEvent);
+    //FIXME id is null
+    //var createdEvent = new PurchaseCreatedEvent(this.id);
+    //LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 
   @Override

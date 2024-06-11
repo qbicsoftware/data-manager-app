@@ -44,7 +44,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private final transient LoginHandlerInterface viewHandler;
 
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
-    this.addClassName("grid");
     initLayout();
     styleLayout();
     viewHandler = loginHandlerInterface;
@@ -68,7 +67,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private void styleLayout() {
     styleNotificationLayout();
     styleFormLayout();
-    setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }

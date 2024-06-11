@@ -87,7 +87,7 @@
   width: 100%;
 }
 
-.landing-page-layout::part(navbar) {
+#landing-page-layout::part(navbar) {
   padding-inline: var(--lumo-space-m);
 }
 
