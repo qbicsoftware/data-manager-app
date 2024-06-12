@@ -15,7 +15,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -89,7 +88,6 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
-  @PostFilter("hasPermission(filterObject, 'READ')")
   public List<Project> find(ProjectCode projectCode) {
     return projectRepo.findProjectByProjectCode(projectCode);
   }

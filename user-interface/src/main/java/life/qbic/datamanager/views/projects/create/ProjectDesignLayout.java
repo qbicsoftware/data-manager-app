@@ -15,11 +15,14 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
@@ -27,6 +30,7 @@ import life.qbic.finances.api.FinanceService;
 import life.qbic.finances.api.Offer;
 import life.qbic.finances.api.OfferSummary;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
@@ -49,15 +53,42 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   private final TextArea projectDescription = new TextArea("Description");
   private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
   private final Binder<ProjectDesign> projectDesignBinder = new Binder<>(ProjectDesign.class);
-  private final FinanceService financeService;
+  private final transient ProjectInformationService projectInformationService;
+  private final transient FinanceService financeService;
   private final Span projectDesignDescription = new Span(
       "Specify the name and objective of the research project.");
 
-  public ProjectDesignLayout(FinanceService financeService) {
-    this.financeService = financeService;
+  public ProjectDesignLayout(ProjectInformationService projectInformationService,
+      FinanceService financeService) {
+    this.projectInformationService = Objects.requireNonNull(projectInformationService,
+        "Project Information service cannot be null");
+    this.financeService = Objects.requireNonNull(financeService, "Finance Service cannot be null");
     initLayout();
     initFieldValidators();
     bindOfferDataProvider(financeService);
+  }
+
+  private static void addConsumedLengthHelper(TextField textField, String newValue) {
+    int maxLength = textField.getMaxLength();
+    int consumedLength = newValue.length();
+    textField.setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  private static void addConsumedLengthHelper(TextArea textArea, String newValue) {
+    int maxLength = textArea.getMaxLength();
+    int consumedLength = newValue.length();
+    textArea.setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  /**
+   * Render the preview like `#offer-id, #project title`
+   *
+   * @param offerSummary the offer preview
+   * @return the formatted String representation
+   * @since 1.0.0
+   */
+  private static String previewToString(OfferSummary offerSummary) {
+    return offerSummary.offerId() + ", " + offerSummary.title();
   }
 
   private void initLayout() {
@@ -97,7 +128,16 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     generateCodeButton.setTooltipText("Generate Project ID");
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
     generateCodeButton.addClickListener(
-        buttonClickEvent -> codeField.setValue(ProjectCode.random().value()));
+        //Only non-used project code should be provided
+        buttonClickEvent -> {
+          String newProjectCode = ProjectCode.random().value();
+          boolean isProjectCodeDuplicated = !isProjectCodeUnique(newProjectCode);
+          while (isProjectCodeDuplicated) {
+            newProjectCode = ProjectCode.random().value();
+            isProjectCodeDuplicated = isProjectCodeUnique(newProjectCode);
+          }
+          codeField.setValue(newProjectCode);
+        });
   }
 
   private void initFieldValidators() {
@@ -105,8 +145,15 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     titleField.setRequired(true);
     projectDescription.setRequired(true);
     projectDesignBinder.forField(codeField).withValidator(ProjectCode::isValid,
-            "A project code starts with Q followed by 4 letters/numbers").
-        bind(ProjectDesign::getProjectCode, ProjectDesign::setProjectCode);
+            "A project code starts with Q followed by 4 letters/numbers")
+        .withValidator((Validator<String>) (value, context) -> {
+          if (isProjectCodeUnique(value)) {
+            return ValidationResult.ok();
+          } else {
+            return ValidationResult.error(String.format("Project code %s is not unique", value));
+          }
+        })
+        .bind(ProjectDesign::getProjectCode, ProjectDesign::setProjectCode);
     projectDesignBinder.forField(titleField)
         .withValidator(it -> !it.isBlank(), "Please provide a project title")
         .bind((ProjectDesign::getProjectTitle),
@@ -132,18 +179,6 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     addConsumedLengthHelper(projectDescription, projectDescription.getValue());
     projectDescription.addValueChangeListener(
         e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
-  }
-
-  private static void addConsumedLengthHelper(TextField textField, String newValue) {
-    int maxLength = textField.getMaxLength();
-    int consumedLength = newValue.length();
-    textField.setHelperText(consumedLength + "/" + maxLength);
-  }
-
-  private static void addConsumedLengthHelper(TextArea textArea, String newValue) {
-    int maxLength = textArea.getMaxLength();
-    int consumedLength = newValue.length();
-    textArea.setHelperText(consumedLength + "/" + maxLength);
   }
 
   private void bindOfferDataProvider(FinanceService financeService) {
@@ -173,20 +208,14 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
         () -> log.error("No offer found with id: " + offerId));
   }
 
-  /**
-   * Render the preview like `#offer-id, #project title`
-   *
-   * @param offerSummary the offer preview
-   * @return the formatted String representation
-   * @since 1.0.0
-   */
-  private static String previewToString(OfferSummary offerSummary) {
-    return offerSummary.offerId() + ", " + offerSummary.title();
-  }
-
   private void fillProjectInformationFromOffer(Offer offer) {
     titleField.setValue(offer.title());
     projectDescription.setValue(offer.objective().replace("\n", " "));
+  }
+
+  private boolean isProjectCodeUnique(String projectCode) {
+    return projectInformationService.isProjectCodeUnique(projectCode);
+
   }
 
 
@@ -233,36 +262,36 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     @NotEmpty
     private String projectObjective = "";
 
-    public void setOfferId(String offerId) {
-      this.offerId = offerId;
-    }
-
-    public void setProjectTitle(String projectTitle) {
-      this.projectTitle = projectTitle;
-    }
-
-    public void setProjectObjective(String projectObjective) {
-      this.projectObjective = projectObjective;
-    }
-
-    public void setProjectCode(String projectCode) {
-      this.projectCode = projectCode;
-    }
-
     public String getOfferId() {
       return offerId;
+    }
+
+    public void setOfferId(String offerId) {
+      this.offerId = offerId;
     }
 
     public String getProjectCode() {
       return projectCode;
     }
 
+    public void setProjectCode(String projectCode) {
+      this.projectCode = projectCode;
+    }
+
     public String getProjectTitle() {
       return projectTitle;
     }
 
+    public void setProjectTitle(String projectTitle) {
+      this.projectTitle = projectTitle;
+    }
+
     public String getProjectObjective() {
       return projectObjective;
+    }
+
+    public void setProjectObjective(String projectObjective) {
+      this.projectObjective = projectObjective;
     }
   }
 }
