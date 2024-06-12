@@ -72,7 +72,8 @@ public class ProjectRepositoryImpl implements ProjectRepository {
           ProjectRole.ADMIN);
       projectDataRepo.add(project);
     } catch (Exception e) {
-      log.error("Could not add project to openBIS. Removing project from repository, as well.");
+      log.error("An exception occurred while adding a new project: " + project.getProjectCode());
+      log.error("Project title was: " + project.getProjectIntent().projectTitle());
       projectRepo.delete(project);
       projectDataRepo.delete(project.getProjectCode());
       throw e;
