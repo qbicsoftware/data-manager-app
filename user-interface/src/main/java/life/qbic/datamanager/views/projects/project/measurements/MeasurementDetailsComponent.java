@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
@@ -246,7 +247,15 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               context.experimentId().orElseThrow(),
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
+      }, query -> {
+      int ngsCount = Math.toIntExact(
+          measurementService.countNGSMeasurements(context.experimentId().orElseThrow()));
+      System.err.println(ngsCount);
+      return ngsCount+1;
     });
+    ngsMeasurementGrid.getLazyDataView()
+        .addItemCountChangeListener(
+            countChangeEvent -> genomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
     ngsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(ngsGridDataView);
@@ -340,13 +349,21 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                   it -> new SortOrder(it.getSorted(),
                       it.getDirection().equals(SortDirection.ASCENDING)))
               .collect(Collectors.toList());
-          // if no order is provided by the grid order by last modified (least priority)
-          sortOrders.add(SortOrder.of("measurementCode").ascending());
-          return measurementService.findProteomicsMeasurements(searchTerm,
-                  context.experimentId().orElseThrow(),
-                  query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
-              .stream();
+            // if no order is provided by the grid order by last modified (least priority)
+            sortOrders.add(SortOrder.of("measurementCode").ascending());
+            return measurementService.findProteomicsMeasurements(searchTerm,
+                    context.experimentId().orElseThrow(),
+                    query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
+                .stream();
+        }, query -> {
+          int ptxCount = Math.toIntExact(
+              measurementService.countProteomicsMeasurements(context.experimentId().orElseThrow()));
+          System.err.println(ptxCount);
+          return ptxCount+1;
         });
+    proteomicsMeasurementGrid.getLazyDataView()
+        .addItemCountChangeListener(
+            countChangeEvent -> proteomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
     proteomicsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(proteomicsGridDataView);
