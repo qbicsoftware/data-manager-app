@@ -11,7 +11,7 @@ import life.qbic.application.commons.ApplicationException;
  */
 public record ProjectObjective(String objective) {
 
-  private static final long MAX_LENGTH = 1500;
+  private static final long MAX_LENGTH = 2000;
 
   public ProjectObjective {
     Objects.requireNonNull(objective);

@@ -21,7 +21,7 @@ public class ProjectIntent {
   private ProjectTitle projectTitle;
 
   @Convert(converter = ProjectObjectiveConverter.class)
-  @Column(name = "objective")
+  @Column(name = "objective", length = 2000)
   private ProjectObjective projectObjective;
 
   private ProjectIntent(ProjectTitle projectTitle, ProjectObjective objective) {
