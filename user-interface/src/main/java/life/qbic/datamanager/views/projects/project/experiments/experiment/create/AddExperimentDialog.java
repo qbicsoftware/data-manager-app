@@ -85,13 +85,16 @@ public class AddExperimentDialog extends DialogWindow {
             ExperimentDraft::setAnalytes);
 
     ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(
-        BioIcon.getOptionsForType(SampleSourceType.SPECIES), "Species icon");
+        BioIcon.getOptionsForType(SampleSourceType.SPECIES),
+        BioIcon.getDefaultBioIcon(SampleSourceType.SPECIES), "Species icon");
     binder.forField(speciesIconBox)
         .bind(ExperimentDraft::getSpeciesIcon,
             ExperimentDraft::setSpeciesIcon);
 
+
     ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(
-        BioIcon.getOptionsForType(SampleSourceType.SPECIMEN), "Specimen icon");
+        BioIcon.getOptionsForType(SampleSourceType.SPECIMEN),
+        BioIcon.getDefaultBioIcon(SampleSourceType.SPECIMEN), "Specimen icon");
     binder.forField(specimenIconBox)
         .bind(ExperimentDraft::getSpecimenIcon,
             ExperimentDraft::setSpecimenIcon);

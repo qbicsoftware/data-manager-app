@@ -13,7 +13,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
  */
 public class BioIconComboboxFactory {
 
-  public ComboBox<BioIcon> iconBox(List<BioIcon> options, String title) {
+  public ComboBox<BioIcon> iconBox(List<BioIcon> options, BioIcon defaultIcon, String title) {
     ComboBox<BioIcon> comboBox = new ComboBox<>(title);
     comboBox.setItems(options);
     comboBox.setWidth("150px");
@@ -28,6 +28,7 @@ public class BioIconComboboxFactory {
     }));
     comboBox.addValueChangeListener(valueChanged -> valueChanged.getSource()
         .setPrefixComponent(styleIcon(valueChanged.getValue())));
+    comboBox.setValue(defaultIcon);
     return comboBox;
   }
 

@@ -659,8 +659,22 @@ public class ExperimentDetailsComponent extends PageArea {
         String iconName) {
       Optional<BioIcon> searchResult = getOptionsForType(sampleSourceType).stream()
           .filter(icon -> icon.label.equals(iconName)).findFirst();
-      return searchResult.orElseGet(() -> getOptionsForType(sampleSourceType).stream()
-          .filter(icon -> icon.label.equals("default")).findFirst().get());
+      return searchResult.orElseGet(() -> getDefaultBioIcon(sampleSourceType));
+    }
+
+    public static BioIcon getDefaultBioIcon(SampleSourceType sampleSourceType) {
+      switch (sampleSourceType) {
+        case ANALYTE -> {
+          return DEFAULT_ANALYTE;
+        }
+        case SPECIES -> {
+          return DEFAULT_SPECIES;
+        }
+        case SPECIMEN -> {
+          return DEFAULT_SPECIMEN;
+        }
+      }
+      throw new RuntimeException("No default icon found for sample source type "+sampleSourceType);
     }
 
     public String getLabel() {

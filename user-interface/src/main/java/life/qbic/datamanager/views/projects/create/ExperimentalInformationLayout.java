@@ -53,13 +53,15 @@ public class ExperimentalInformationLayout extends Div implements
     experimentalInformationBinder = new Binder<>(ExperimentalInformation.class);
 
     ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(
-        BioIcon.getOptionsForType(SampleSourceType.SPECIES), "Species icon");
+        BioIcon.getOptionsForType(SampleSourceType.SPECIES),
+        BioIcon.getDefaultBioIcon(SampleSourceType.SPECIES), "Species icon");
     experimentalInformationBinder.forField(speciesIconBox)
         .bind(ExperimentalInformation::getSpeciesIcon,
             ExperimentalInformation::setSpeciesIcon);
 
     ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(
-        BioIcon.getOptionsForType(SampleSourceType.SPECIMEN), "Specimen icon");
+        BioIcon.getOptionsForType(SampleSourceType.SPECIMEN),
+        BioIcon.getDefaultBioIcon(SampleSourceType.SPECIMEN), "Specimen icon");
     experimentalInformationBinder.forField(specimenIconBox)
         .bind(ExperimentalInformation::getSpecimenIcon,
             ExperimentalInformation::setSpecimenIcon);
