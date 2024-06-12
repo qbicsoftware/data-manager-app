@@ -56,25 +56,26 @@ public class ProjectRepositoryImpl implements ProjectRepository {
 
   @Override
   @CanCreateProject
-  @Transactional
   public void add(Project project) {
     ProjectCode projectCode = project.getProjectCode();
     if (doesProjectExistWithId(project.getId()) || projectDataRepo.projectExists(projectCode)) {
       throw new ProjectExistsException();
     }
-    var savedProject = projectRepo.save(project);
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    var userId = ((QbicUserDetails) authentication.getPrincipal()).getUserId();
-    projectAccessService.initializeProject(savedProject.getId(), userId);
-    projectAccessService.addAuthorityAccess(savedProject.getId(),
-        "ROLE_ADMIN", ProjectAccessService.ProjectRole.ADMIN);
-    projectAccessService.addAuthorityAccess(savedProject.getId(), "ROLE_PROJECT_MANAGER",
-        ProjectRole.ADMIN);
     try {
+      var savedProject = projectRepo.save(project);
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      var userId = ((QbicUserDetails) authentication.getPrincipal()).getUserId();
+      projectAccessService.initializeProject(savedProject.getId(), userId);
+      projectAccessService.addAuthorityAccess(savedProject.getId(),
+          "ROLE_ADMIN", ProjectAccessService.ProjectRole.ADMIN);
+      projectAccessService.addAuthorityAccess(savedProject.getId(), "ROLE_PROJECT_MANAGER",
+          ProjectRole.ADMIN);
       projectDataRepo.add(project);
     } catch (Exception e) {
-      log.error("Could not add project to openBIS. Removing project from repository, as well.");
+      log.error("An exception occurred while adding a new project: " + project.getProjectCode());
+      log.error("Project title was: " + project.getProjectIntent().projectTitle());
       projectRepo.delete(project);
+      projectDataRepo.delete(project.getProjectCode());
       throw e;
     }
   }

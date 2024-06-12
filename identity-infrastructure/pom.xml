@@ -6,14 +6,14 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>0.40.0</version>
+    <version>1.0.1</version>
   </parent>
   <artifactId>identity-infrastructure</artifactId>
   <dependencies>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity</artifactId>
-      <version>0.40.0</version>
+      <version>1.0.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
