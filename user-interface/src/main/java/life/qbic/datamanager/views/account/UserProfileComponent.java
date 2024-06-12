@@ -7,7 +7,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -215,7 +214,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
   private class UserDetailsCard extends Div {
 
     private final Span platformUserName = new Span();
-    private final Avatar userAvatar = new Avatar();
+    private final UserAvatar userAvatar = new UserAvatar();
     private final Span userFullName = new Span();
     private final Span userEmail = new Span();
 
@@ -240,7 +239,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
       platformUserName.setText(userInfo.platformUserName());
       userEmail.setText(userInfo.emailAddress());
       userFullName.setText(userInfo.fullName());
-      userAvatar.setName(userInfo.platformUserName());
+      userAvatar.setName(userInfo.id());
     }
   }
 }

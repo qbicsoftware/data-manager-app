@@ -216,7 +216,10 @@ public class ProjectCollectionComponent extends PageArea {
       usersWithAccess.setMaxItemsVisible(MAXIMUM_NUMBER_OF_SHOWN_AVATARS);
       add(usersWithAccess);
       setMeasurementDependentTags();
-      projectOverview.collaboratorUserNames().stream().map(AvatarGroupItem::new)
+      // I do not know how to fix this if we only have the usernames. I would require the user id here to get the correct images.
+      //FIXME
+      projectOverview.collaboratorUserNames().stream()
+          .map(AvatarGroupItem::new)
           .forEach(usersWithAccess::add);
       addClassNames("project-overview-item");
       addClickListener(event -> getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class,

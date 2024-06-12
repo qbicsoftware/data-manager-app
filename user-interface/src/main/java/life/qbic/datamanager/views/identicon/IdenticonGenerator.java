@@ -23,8 +23,6 @@ public class IdenticonGenerator {
     //hash the input
     MessageDigest digest = null;
     try {
-      https:
-//docs.oracle.com/en/java/javase/21/docs/specs/security/standard-names.html#algorithmparametergenerator-algorithms
       digest = MessageDigest.getInstance("SHA-512");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);

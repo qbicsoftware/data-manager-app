@@ -27,8 +27,18 @@ class IdenticonGeneratorSpec extends Specification {
 
     def "works for other input"() {
         when:
-        IdenticonGenerator.generateIdenticon("1ca88d1f-acdb-42fe-a7ab-2d841163de41")
+        IdenticonGenerator.generateIdenticon(input)
         then:
         notThrown(IllegalArgumentException)
+        where:
+        input <<
+                ["test",
+                 "1ca88d1f-acdb-42fe-a7ab-2d841163de41",
+                 UUID.randomUUID().toString(),
+                 UUID.randomUUID().toString(),
+                 UUID.randomUUID().toString(),
+                 UUID.randomUUID().toString(),
+                 UUID.randomUUID().toString(),
+                 UUID.randomUUID().toString()]
     }
 }

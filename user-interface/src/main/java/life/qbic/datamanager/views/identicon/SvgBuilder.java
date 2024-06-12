@@ -25,7 +25,8 @@ public class SvgBuilder {
   }
 
   public static SvgBuilder startSvg(int width, int height) {
-    String svgString = "<svg viewBox=\"0 0 " + width + " " + height + "\">";
+    String svgString =
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + width + " " + height + "\">";
     return new SvgBuilder(width, height, svgString);
   }
 
@@ -52,12 +53,13 @@ public class SvgBuilder {
 
   private static String generateRectangle(int x, int y, int rx, int ry, int width, int height,
       String color) {
-    return "<rect x=%s y=%s rx=%s ry=%s width=%s height=%s  fill=\"%s\" ></rect>".formatted(
+    return "<rect x=\"%s\" y=\"%s\" rx=\"%s\" ry=\"%s\" width=\"%s\" height=\"%s\"  fill=\"%s\" ></rect>".formatted(
         x, y, rx, ry, width, height, color);
   }
 
   private static String generateCircle(int cx, int cy, int radius, String color) {
-    return "<circle cx=%s cy=%s r=%s fill=\"%s\"></circle>".formatted(cx, cy, radius, color);
+    return "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" fill=\"%s\"></circle>".formatted(cx, cy, radius,
+        color);
   }
 
 

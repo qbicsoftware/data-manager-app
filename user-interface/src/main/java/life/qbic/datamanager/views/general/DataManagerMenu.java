@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
@@ -11,6 +10,7 @@ import com.vaadin.flow.component.menubar.MenuBarVariant;
 import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
+import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
@@ -31,7 +31,7 @@ public class DataManagerMenu extends Div {
   private final transient LogoutService logoutService;
   private final transient UserInformationService userInformationService;
   MenuBar projectMenu = new MenuBar();
-  Avatar userAvatar = new Avatar();
+  UserAvatar userAvatar = new UserAvatar();
 
   public DataManagerMenu(@Autowired LogoutService logoutService,
       @Autowired UserInformationService userInformationService) {
@@ -65,9 +65,7 @@ public class DataManagerMenu extends Div {
     /*Since users can change their detailsInformation, the variable information in the user session may not be up to date,
       which is why a we retrieve the current state from the database */
     var userInfo = userInformationService.findById(details.getUserId()).orElseThrow();
-    userAvatar.setName(userInfo.platformUserName());
-    userAvatar.addClassName("user-avatar");
-
+    userAvatar.setName(userInfo.id());
   }
 
   private <T extends Component> void routeTo(Class<T> mainComponent) {
