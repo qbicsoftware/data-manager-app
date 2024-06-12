@@ -663,18 +663,11 @@ public class ExperimentDetailsComponent extends PageArea {
     }
 
     public static BioIcon getDefaultBioIcon(SampleSourceType sampleSourceType) {
-      switch (sampleSourceType) {
-        case ANALYTE -> {
-          return DEFAULT_ANALYTE;
-        }
-        case SPECIES -> {
-          return DEFAULT_SPECIES;
-        }
-        case SPECIMEN -> {
-          return DEFAULT_SPECIMEN;
-        }
-      }
-      throw new RuntimeException("No default icon found for sample source type "+sampleSourceType);
+      return switch (sampleSourceType) {
+        case SPECIES -> DEFAULT_SPECIES;
+        case SPECIMEN -> DEFAULT_SPECIMEN;
+        case ANALYTE -> DEFAULT_ANALYTE;
+      };
     }
 
     public String getLabel() {
