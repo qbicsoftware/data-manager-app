@@ -73,7 +73,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
       return new byte[0];
     }
 
-    ByteArrayOutputStream byteArrayOutputStream;
+    byte[] content;
 
     try (Workbook workbook = new XSSFWorkbook()) {
       Sheet sheet = workbook.createSheet("Sample Information");
@@ -98,16 +98,17 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
       }
 
       setAutoWidth(sheet);
-      byteArrayOutputStream = new ByteArrayOutputStream();
-      workbook.write(byteArrayOutputStream);
 
-
+      try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+        workbook.write(byteArrayOutputStream);
+        content = byteArrayOutputStream.toByteArray();
+      }
     } catch (IOException e) {
       log.error(e.getMessage(), e);
       throw new ApplicationException(ErrorCode.GENERAL, null);
     }
 
-    return byteArrayOutputStream.toByteArray();
+    return content;
   }
 
   private void createSampleInfoEntry(SamplePreview sample, Row sampleRow,
