@@ -11,10 +11,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.layouts.BoxLayout;
-import life.qbic.datamanager.views.register.UserRegistrationLayout;
+import life.qbic.datamanager.views.register.UserRegistrationMain;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -26,6 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Reset Password")
 @Route(value = AppRoutes.RESET_PASSWORD, layout = LandingPageLayout.class)
 @AnonymousAllowed
+@SpringComponent
+@UIScope
 public class ResetPasswordLayout extends VerticalLayout {
 
   public EmailField email;
@@ -83,7 +87,7 @@ public class ResetPasswordLayout extends VerticalLayout {
   }
 
   private void createSpan() {
-    RouterLink link = new RouterLink("REGISTER", UserRegistrationLayout.class);
+    RouterLink link = new RouterLink("REGISTER", UserRegistrationMain.class);
     registerSpan = new Span(new Text("Need an account? "), link);
   }
 

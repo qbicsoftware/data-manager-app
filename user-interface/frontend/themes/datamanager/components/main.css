@@ -19,7 +19,6 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  height: 100%;
 }
 
 #landing-page-layout .landing-page-title-and-logo {
@@ -83,7 +82,6 @@
 .main.legal-notice {
   padding: var(--lumo-space-m);
 }
-
 
 .main.privacy-agreement {
   padding: var(--lumo-space-m);
@@ -317,6 +315,14 @@
   justify-content: space-between;
   /*Moves this bar to end of container*/
   margin-top: auto;
+}
+
+.main.user-registration {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
 }
 
 .main.sample {

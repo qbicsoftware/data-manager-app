@@ -42,7 +42,16 @@ public interface UserInformationService {
    * @return true, if the username is still available, false if not
    * @since 1.0.0
    */
-  boolean userNameAvailable(String userName);
+  boolean isUserNameAvailable(String userName);
+
+
+  /**
+   * Queries if a provided email is already in use by another user
+   *
+   * @param email the desired email address
+   * @return true, if the email is still available, false if not
+   */
+  boolean isEmailAvailable(String email);
 
   List<UserInfo> findAllActive(String filter, int offset, int limit, List<SortOrder> sortOrders);
 }

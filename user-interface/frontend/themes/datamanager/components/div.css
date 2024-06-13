@@ -129,3 +129,18 @@
   gap: var(--lumo-space-xs);
   white-space: nowrap;
 }
+
+.user-registration-component {
+  background-color: var(--lumo-base-color);
+  border: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-l);
+  font-size: var(--lumo-font-size-s);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  width: clamp(300px, 300px, 15vw);
+  padding-bottom: var(--lumo-space-l);
+  padding-inline: var(--lumo-space-l);
+}
