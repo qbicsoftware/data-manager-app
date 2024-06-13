@@ -226,7 +226,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
           return;
         }
 
-        RuntimeException e = response.failures().getFirst();
+        RuntimeException e = response.failures().stream().findFirst().orElseThrow();
         if (e instanceof UserNameNotAvailableException) {
           dialog.setUserNameNotAvailable();
           return;

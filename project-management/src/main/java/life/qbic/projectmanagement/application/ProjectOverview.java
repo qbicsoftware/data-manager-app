@@ -58,6 +58,10 @@ public class ProjectOverview {
   @Column(name = "usernames")
   private List<String> collaboratorUserNames = new ArrayList<>();
 
+  @Convert(converter = CollaboratorUserInfosConverter.class)
+  @Column(name = "userInfos")
+  private List<UserInfo> collaboratorUserInfos = new ArrayList<>();
+
   protected ProjectOverview() {
 
   }
@@ -102,4 +106,11 @@ public class ProjectOverview {
     return collaboratorUserNames.stream().distinct().toList();
   }
 
+  public Collection<UserInfo> collaboratorUserInfos() {
+    return new ArrayList<>(this.collaboratorUserInfos);
+  }
+
+  public record UserInfo(String userId, String userName) {
+
+  }
 }
