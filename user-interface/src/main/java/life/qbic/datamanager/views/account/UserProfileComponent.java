@@ -58,7 +58,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
     Span title = new Span(TITLE);
     addComponentAsFirst(title);
     title.addClassName("title");
-    userDetailsCard = new UserDetailsCard();
+    userDetailsCard = new UserDetailsCard(userInfo.id(), userInfo.platformUserName());
     add(userDetailsCard);
     addClassName("user-profile-component");
   }
@@ -66,36 +66,6 @@ public class UserProfileComponent extends PageArea implements Serializable {
   public void setUserDetails(String userId) {
     this.userInfo = userInformationService.findById(userId).orElseThrow();
     userDetailsCard.setUserInfo(userInfo);
-  }
-
-  private void setupChangeUserDialog() {
-    ChangeUserDetailsDialog dialog = new ChangeUserDetailsDialog();
-    dialog.setCurrentUserName(userInfo.platformUserName());
-    dialog.addConfirmListener(event -> {
-      var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
-      if (!response.failures().isEmpty()) {
-        for (RuntimeException e : response.failures()) {
-          if (e instanceof UserNameNotAvailableException) {
-            dialog.setUserNameNotAvailable();
-            return;
-          }
-          if (e instanceof EmptyUserNameException) {
-            dialog.setUserNameEmpty();
-            return;
-          } else {
-            throw new ApplicationException("Unexpected exception occurred, Please try again");
-          }
-        }
-      }
-      if (response.isSuccess()) {
-        event.getSource().close();
-        // Trigger reload of UI reloading the username displayed in the datamanager menu
-        // and within this component
-        UI.getCurrent().getPage().reload();
-      }
-    });
-    dialog.addCancelListener(event -> event.getSource().close());
-    dialog.open();
   }
 
   private static class UserDetail extends Div {
@@ -218,13 +188,13 @@ public class UserProfileComponent extends PageArea implements Serializable {
     private final Span userFullName = new Span();
     private final Span userEmail = new Span();
 
-    public UserDetailsCard() {
+    public UserDetailsCard(final String userId, final String userName) {
       Div avatarWithName = new Div(userAvatar, userFullName);
-      userAvatar.addClassName("avatar");
       userFullName.addClassName("bold");
       avatarWithName.addClassName("avatar-with-name");
       Span changePlatformUserName = new Span("Change Username");
-      changePlatformUserName.addClickListener(event -> setupChangeUserDialog());
+      changePlatformUserName.addClickListener(
+          event -> userDetailsCard.setupChangeUserDialog(identityService, userId, userName));
       changePlatformUserName.addClassName("change-name");
       UserDetail userNameDetail = new UserDetail("Username: ", platformUserName,
           changePlatformUserName);
@@ -240,6 +210,36 @@ public class UserProfileComponent extends PageArea implements Serializable {
       userEmail.setText(userInfo.emailAddress());
       userFullName.setText(userInfo.fullName());
       userAvatar.setName(userInfo.id());
+    }
+
+    private void setupChangeUserDialog(IdentityService identityService,
+        String userId, String userName) {
+      ChangeUserDetailsDialog dialog = new ChangeUserDetailsDialog();
+      dialog.setCurrentUserName(userName);
+      dialog.addConfirmListener(event -> {
+        var response = identityService.requestUserNameChange(userId, event.userName());
+        if (response.isSuccess()) {
+          event.getSource().close();
+          // Trigger reload of UI reloading the username displayed in the datamanager menu
+          // and within this component
+          UI.getCurrent().getPage().reload();
+          return;
+        }
+
+        RuntimeException e = response.failures().getFirst();
+        if (e instanceof UserNameNotAvailableException) {
+          dialog.setUserNameNotAvailable();
+          return;
+        }
+        if (e instanceof EmptyUserNameException) {
+          dialog.setUserNameEmpty();
+          return;
+        }
+        throw ApplicationException.wrapping("Unexpected exception in username change.", e);
+      });
+
+      dialog.addCancelListener(event -> event.getSource().close());
+      dialog.open();
     }
   }
 }
