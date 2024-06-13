@@ -132,9 +132,16 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
         buttonClickEvent -> {
           String newProjectCode = ProjectCode.random().value();
           boolean isProjectCodeDuplicated = !isProjectCodeUnique(newProjectCode);
+          int retries = 0;
+          final int MAX_NUMBER_OF_RETRIES = 20;
           while (isProjectCodeDuplicated) {
+            //Ensure that we have an exit condition and the while loop does not iterate endlessly if most project codes are taken
+            if (retries > MAX_NUMBER_OF_RETRIES) {
+              break;
+            }
             newProjectCode = ProjectCode.random().value();
             isProjectCodeDuplicated = isProjectCodeUnique(newProjectCode);
+            retries++;
           }
           codeField.setValue(newProjectCode);
         });
@@ -150,7 +157,9 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
           if (isProjectCodeUnique(value)) {
             return ValidationResult.ok();
           } else {
-            return ValidationResult.error(String.format("Project code %s is not unique", value));
+            return ValidationResult.error(
+                String.format("Project code %s is already taken. Please choose a different code",
+                    value));
           }
         })
         .bind(ProjectDesign::getProjectCode, ProjectDesign::setProjectCode);
