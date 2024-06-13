@@ -34,6 +34,7 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
+import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -67,7 +68,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final DownloadProvider metadataDownload;
-  private final SampleMetadataContentProvider metadataDownloadFormatter;
+  private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
   private final Grid<SamplePreview> sampleGrid;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient SampleInformationService sampleInformationService;
@@ -93,8 +94,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         event -> onDownloadMetadataClicked());
     buttonBar.add(metadataDownloadButton);
 
-    metadataDownloadFormatter = new SampleMetadataContentProvider();
-    metadataDownload = new DownloadProvider(metadataDownloadFormatter);
+    sampleInformationXLSXProvider = new SampleInformationXLSXProvider();
+    metadataDownload = new DownloadProvider(sampleInformationXLSXProvider);
 
     Div buttonAndFieldBar = new Div();
     buttonAndFieldBar.addClassName("button-and-search-bar");
@@ -247,9 +248,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     // we also update the data provider with any samples of this experiment
     List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(
         experimentId);
-    metadataDownloadFormatter.updateContext(
-        experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId),
-        samples);
+    sampleInformationXLSXProvider.setSamples(samples);
   }
 
   /**
