@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.identicon;
 
+import static java.util.Objects.isNull;
+
 /**
  * Builds valid SVG images
  *
@@ -56,29 +58,80 @@ public class SvgBuilder {
         + Integer.toHexString(Byte.toUnsignedInt(blue));
   }
 
+  /**
+   * Adds a rectangle to the canvas
+   *
+   * @param x      the upper left corner position x value
+   * @param y      the upper left corner position y value
+   * @param rx     the radius of corners in x direction; 0 -> square corners; max value = width/2;
+   * @param ry     the radius of corners in y direction; 0 -> square corners; may value = height/2;
+   * @param width  the width of the rectangle
+   * @param height the height of the rectangle
+   * @param color  the fill color; null values are allowed.
+   * @return a builder with an added rectangle.
+   */
   public SvgBuilder addRectangle(int x, int y, int rx, int ry, int width, int height,
       String color) {
     return new SvgBuilder(this.width, this.height,
-        svgString + generateRectangle(x, y, rx, ry, width, height, color));
+        svgString + generateRectangle(x, y, rx, ry, width, height, color, null));
   }
 
-  public SvgBuilder addCircle(int x, int y, int radius, String color) {
-    return new SvgBuilder(this.width, this.height, svgString + generateCircle(x, y, radius, color));
+  /**
+   * @param x          the x coordinate of the center
+   * @param y          the y coordinate of the center
+   * @param radius     the radius of the circle
+   * @param color      the fill color; null if currentColor is used
+   * @param cssClasses the css class to apply; null in case of no css class.
+   * @return a builder with an added circle
+   */
+  public SvgBuilder addCircle(int x, int y, int radius, String color, String cssClasses) {
+    return new SvgBuilder(this.width, this.height,
+        svgString + generateCircle(x, y, radius, color, cssClasses));
   }
 
+  /**
+   * Builds the SVG string
+   * @return the SVG string corresponding to the svg.
+   */
   public String build() {
     return svgString + "</svg>";
   }
 
+  /**
+   *
+   * @param x the upper left corner position x value
+   * @param y the upper left corner position y value
+   * @param rx the radius of corners in x direction; 0 -> square corners; max value = width/2;
+   * @param ry the radius of corners in y direction; 0 -> square corners; may value = height/2;
+   * @param width the width of the rectangle
+   * @param height the height of the rectangle
+   * @param color the fill color; null values are allowed.
+   * @param cssClass the css class to apply; null in case of no css class.
+   * @return a string representation of the rectangle
+   */
   private static String generateRectangle(int x, int y, int rx, int ry, int width, int height,
-      String color) {
-    return "<rect x=\"%s\" y=\"%s\" rx=\"%s\" ry=\"%s\" width=\"%s\" height=\"%s\"  fill=\"%s\" ></rect>".formatted(
-        x, y, rx, ry, width, height, color);
+      String color, String cssClass) {
+    var formattedColor = isNull(color) ? "currentColor" : color;
+    var formattedCssClass = isNull(cssClass)
+        ? "" : " class=\"%s\"";
+    return
+        "<rect x=\"%s\" y=\"%s\" rx=\"%s\" ry=\"%s\" width=\"%s\" height=\"%s\" fill=\"%s\"%s></rect>".formatted(
+            x, y, rx, ry, width, height, formattedColor, formattedCssClass);
   }
 
-  private static String generateCircle(int cx, int cy, int radius, String color) {
-    return "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" fill=\"%s\"></circle>".formatted(cx, cy, radius,
-        color);
+  /**
+   * @param cx       the x coordinate of the center
+   * @param cy       the y coordinate of the center
+   * @param radius   the radius of the circle
+   * @param color    the fill color; null if currentColor is used
+   * @param cssClass the css class to apply; null in case of no css class.
+   * @return a string representation of the circle
+   */
+  private static String generateCircle(int cx, int cy, int radius, String color, String cssClass) {
+    String formattedCssClass = isNull(cssClass) ? "" : " class=\"%s\"".formatted(cssClass);
+    String formattedColor = isNull(color) ? "currentColor" : color;
+    return "<circle cx=\"%s\" cy=\"%s\" r=\"%s\" fill=\"%s\"%s></circle>".formatted(cx, cy, radius,
+        formattedColor, formattedCssClass);
   }
 
 
