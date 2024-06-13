@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.infrastructure.project;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -19,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -89,7 +87,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
-  public List<Project> find(ProjectCode projectCode) {
+  public Optional<Project> find(ProjectCode projectCode) {
     return projectRepo.findProjectByProjectCode(projectCode);
   }
 
