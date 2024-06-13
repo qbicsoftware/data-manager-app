@@ -88,6 +88,7 @@
   margin: auto;
 }
 
+<<<<<<< feature/dm-1266-enhance-readability-of-legal-note-and-data-privacy-statement
 
 .main.privacy-agreement {
   padding: var(--lumo-space-xl);
@@ -95,6 +96,10 @@
   max-width: 60rem;
   display: flex;
   margin: auto;
+=======
+.main.data-privacy-agreement {
+  padding: var(--lumo-space-m);
+>>>>>>> development
 }
 
 .main.measurement {
