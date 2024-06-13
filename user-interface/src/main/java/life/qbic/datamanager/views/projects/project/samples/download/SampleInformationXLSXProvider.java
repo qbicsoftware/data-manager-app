@@ -18,6 +18,7 @@ import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.VariableName;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -54,11 +55,14 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     }
   }
 
-  public Set<String> uniqueExperimentalVariables(List<SamplePreview> samples) {
+  private Set<String> uniqueExperimentalVariables(List<SamplePreview> samples) {
     HashSet<String> variableNames = new HashSet<>();
     for (SamplePreview sample : samples) {
-      sample.experimentalGroup().condition().getVariableLevels()
-          .forEach(vl -> variableNames.add(vl.variableName().value()));
+      var variableLevels = sample.experimentalGroup().condition().getVariableLevels();
+      variableNames.addAll(variableLevels
+          .stream()
+          .map(VariableLevel::variableName)
+          .map(VariableName::value).toList());
     }
     return variableNames;
   }
@@ -79,7 +83,8 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
       Set<String> experimentalVariableNames = uniqueExperimentalVariables(samples);
       Iterator<String> variableNamesIterator = experimentalVariableNames.iterator();
       for (int assignedColumn = SamplePreviewColumn.values().length;
-          assignedColumn < SamplePreviewColumn.values().length + experimentalVariableNames.size(); assignedColumn++) {
+          assignedColumn < SamplePreviewColumn.values().length + experimentalVariableNames.size();
+          assignedColumn++) {
         variableNamesToColumn.put(variableNamesIterator.next(), assignedColumn);
       }
       formatHeader(row, variableNamesToColumn);
@@ -107,8 +112,8 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
 
   private void createSampleInfoEntry(SamplePreview sample, Row sampleRow,
       Map<String, Integer> variableNamesToColumn) {
-    var sampleIDcol = sampleRow.createCell(SamplePreviewColumn.SAMPLE_ID.column());
-    sampleIDcol.setCellValue(sample.sampleCode());
+    var sampleIdCol = sampleRow.createCell(SamplePreviewColumn.SAMPLE_ID.column());
+    sampleIdCol.setCellValue(sample.sampleCode());
 
     var labelCol = sampleRow.createCell(SamplePreviewColumn.LABEL.column());
     labelCol.setCellValue(sample.sampleLabel());
