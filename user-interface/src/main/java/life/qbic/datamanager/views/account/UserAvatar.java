@@ -25,7 +25,7 @@ public class UserAvatar extends Avatar {
 
   private static StreamResource getImageResource(String name) {
     return new StreamResource("user-identicon.svg",
-        () -> new ByteArrayInputStream(IdenticonGenerator.generateIdenticon(name).getBytes(
+        () -> new ByteArrayInputStream(IdenticonGenerator.generateIdenticonSVG(name).getBytes(
             StandardCharsets.UTF_8)));
   }
 

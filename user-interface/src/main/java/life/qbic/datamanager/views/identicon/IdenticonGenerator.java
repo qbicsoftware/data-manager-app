@@ -7,16 +7,24 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * TODO!
- * <b>short description</b>
+ * An Identicon is a visual representation of a hash value. The input is hashed and turned into a
+ * visual representation.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.1.0
  */
 public class IdenticonGenerator {
 
-  public static String generateIdenticon(String input) {
+  private IdenticonGenerator() {
+  }
+
+  /**
+   * Generates a valid SVG string from a given input
+   *
+   * @param input a non-empty string value used for hashing; must not be null
+   * @return a string containing valid SVG content as specified in <a
+   * href="http://www.w3.org/2000/svg">the SVG specification</a>
+   */
+  public static String generateIdenticonSVG(String input) {
     if (isNull(input) || input.isBlank()) {
       throw new IllegalArgumentException("Input cannot be null or empty");
     }
@@ -25,7 +33,7 @@ public class IdenticonGenerator {
     try {
       digest = MessageDigest.getInstance("SHA-512");
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
+      throw new IdenticonGenerationException(e);
     }
     byte[] hashedInput = digest.digest(input.getBytes(StandardCharsets.UTF_8));
     //SHA-512 always generates a 512 bit (64 byte) digest
@@ -56,5 +64,28 @@ public class IdenticonGenerator {
     }
     return svgBuilder
         .build();
+  }
+
+  public static class IdenticonGenerationException extends RuntimeException {
+
+    public IdenticonGenerationException() {
+    }
+
+    public IdenticonGenerationException(String message) {
+      super(message);
+    }
+
+    public IdenticonGenerationException(String message, Throwable cause) {
+      super(message, cause);
+    }
+
+    public IdenticonGenerationException(Throwable cause) {
+      super(cause);
+    }
+
+    public IdenticonGenerationException(String message, Throwable cause, boolean enableSuppression,
+        boolean writableStackTrace) {
+      super(message, cause, enableSuppression, writableStackTrace);
+    }
   }
 }

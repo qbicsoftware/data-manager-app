@@ -13,21 +13,21 @@ import spock.lang.Specification
 class IdenticonGeneratorSpec extends Specification {
     def "fails for null input"() {
         when:
-        IdenticonGenerator.generateIdenticon(null)
+        IdenticonGenerator.generateIdenticonSVG(null)
         then:
         thrown(IllegalArgumentException)
     }
 
     def "fails for empty input"() {
         when:
-        IdenticonGenerator.generateIdenticon("")
+        IdenticonGenerator.generateIdenticonSVG("")
         then:
         thrown(IllegalArgumentException)
     }
 
     def "works for other input"() {
         when:
-        IdenticonGenerator.generateIdenticon(input)
+        IdenticonGenerator.generateIdenticonSVG(input)
         then:
         notThrown(IllegalArgumentException)
         where:
