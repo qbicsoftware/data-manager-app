@@ -89,14 +89,10 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     personSelection.setRequired(true);
     personSelection.setErrorMessage("Please specify the collaborator to be added to the project");
     personSelection.setPlaceholder("Please select a username");
-    personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.setRenderer(new ComponentRenderer<>(
-        userInfo -> {
-          Span userName = new Span(userInfo.platformUserName());
-          userName.addClassName("new-collaborator-username");
-          return userName;
-        }
+        AddCollaboratorToProjectDialog::renderUserInfo
     ));
+    personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.addClassName("person-selection");
     personSelectionSection.addClassName("person-selection-section");
     personSelectionSection.add(title, description, personSelection);
