@@ -107,7 +107,7 @@ public class ProjectOverview {
   }
 
   public Collection<UserInfo> collaboratorUserInfos() {
-    return new ArrayList<>(this.collaboratorUserInfos);
+    return collaboratorUserInfos.stream().distinct().toList();
   }
 
   public record UserInfo(String userId, String userName) {

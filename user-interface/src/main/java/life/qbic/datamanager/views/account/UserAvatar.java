@@ -18,9 +18,8 @@ public class UserAvatar extends Avatar {
     addClassName("user-avatar");
   }
 
-  @Override
-  public void setName(String name) {
-    setImageResource(getImageResource(name));
+  public void setUserId(String userId) {
+    setImageResource(getImageResource(userId));
   }
 
   private static StreamResource getImageResource(String name) {

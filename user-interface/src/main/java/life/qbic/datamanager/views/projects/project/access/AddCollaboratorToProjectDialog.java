@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.access;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
@@ -82,6 +84,8 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           .filter(userInfo -> alreadyExistingCollaborators.stream()
               .noneMatch(collaborator -> collaborator.userId().equals(userInfo.id())));
     });
+    personSelection.setRenderer(
+        new ComponentRenderer<>(AddCollaboratorToProjectDialog::renderUserInfo));
     personSelection.setRequired(true);
     personSelection.setErrorMessage("Please specify the collaborator to be added to the project");
     personSelection.setPlaceholder("Please select a username");
@@ -97,6 +101,18 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     personSelectionSection.addClassName("person-selection-section");
     personSelectionSection.add(title, description, personSelection);
 
+  }
+
+  private static Component renderUserInfo(UserInfo userInfo) {
+    UserAvatar userAvatar = new UserAvatar();
+    userAvatar.setUserId(userInfo.id());
+    userAvatar.setName(userInfo.platformUserName());
+    Div container = new Div();
+    container.addClassName("avatar-with-name");
+    Span userName = new Span(userInfo.platformUserName());
+    userName.addClassName("username");
+    container.add(userAvatar, userName);
+    return container;
   }
 
   private void initProjectRoleSelection() {

@@ -65,7 +65,7 @@ public class DataManagerMenu extends Div {
     /*Since users can change their detailsInformation, the variable information in the user session may not be up to date,
       which is why a we retrieve the current state from the database */
     var userInfo = userInformationService.findById(details.getUserId()).orElseThrow();
-    userAvatar.setName(userInfo.id());
+    userAvatar.setUserId(userInfo.id());
   }
 
   private <T extends Component> void routeTo(Class<T> mainComponent) {
