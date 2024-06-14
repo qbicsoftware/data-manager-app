@@ -91,7 +91,7 @@
 .main.data-privacy-agreement {
   padding: var(--lumo-space-xl);
   height: fit-content;
-  max-width: 60rem;
+width: clamp(500px, 60vw, 100%);
   display: flex;
   margin: auto;
 }
