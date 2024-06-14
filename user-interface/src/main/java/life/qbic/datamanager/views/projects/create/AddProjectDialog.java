@@ -31,6 +31,7 @@ import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ContactRepository;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Project;
 
@@ -66,15 +67,17 @@ public class AddProjectDialog extends Dialog {
     return stepper.addStep(label);
   }
 
-  public AddProjectDialog(FinanceService financeService,
+  public AddProjectDialog(ProjectInformationService projectInformationService,
+      FinanceService financeService,
       OntologyLookupService ontologyLookupService,
       ContactRepository contactRepository) {
     super();
     addClassName("add-project-dialog");
+    requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
     requireNonNull(ontologyLookupService,
         "ontologyTermInformationService must not be null");
-    this.projectDesignLayout = new ProjectDesignLayout(financeService);
+    this.projectDesignLayout = new ProjectDesignLayout(projectInformationService, financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
     this.collaboratorsLayout = new CollaboratorsLayout();
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
