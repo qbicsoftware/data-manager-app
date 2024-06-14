@@ -161,12 +161,7 @@ public class ProjectAccessComponent extends PageArea {
     UserAvatar userAvatar = new UserAvatar();
     userAvatar.setUserId(userInfo.id());
     userAvatar.setName(userInfo.platformUserName());
-    Div container = new Div();
-    container.addClassName("avatar-with-name");
-    Span userName = new Span(userInfo.platformUserName());
-    userName.addClassName("username");
-    container.add(userAvatar, userName);
-    return container;
+    return UserAvatarWithNameComponentRenderer.render(userAvatar, userInfo.platformUserName());
   }
 
   private Span changeProjectAccessCell(ProjectCollaborator collaborator) {
