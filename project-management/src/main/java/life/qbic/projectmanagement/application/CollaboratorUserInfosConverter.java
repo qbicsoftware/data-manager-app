@@ -40,8 +40,9 @@ public class CollaboratorUserInfosConverter implements
       objectMapper.writeValue(outputStream, attribute);
       return outputStream.toString();
     } catch (IOException e) {
-      log.error("Unexpected problems writing project collaborators to the database", e);
-      return null;
+      // we need to throw to prevent data loss
+      throw new RuntimeException(
+          "Unexpected problems writing project collaborators to the database", e);
     }
   }
 
@@ -56,8 +57,9 @@ public class CollaboratorUserInfosConverter implements
               List.class, UserInfo.class)
       );
     } catch (JsonProcessingException e) {
-      log.error("Unexpected failure parsing project collaborators from database", e);
-      return new ArrayList<>();
+      // we need to throw to prevent data loss
+      throw new RuntimeException("Unexpected failure parsing project collaborators from database",
+          e);
     }
 
   }
