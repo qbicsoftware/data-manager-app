@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -21,9 +22,12 @@ public class CollaboratorUserNamesConverter implements
 
   @Override
   public List<String> convertToEntityAttribute(String dbData) {
-    return Arrays.stream(dbData.split(","))
-        .map(String::strip)
-        .toList();
+    if (dbData == null) {
+      return new ArrayList<>();
+    } else {
+      return Arrays.stream(dbData.split(","))
+          .map(String::strip)
+          .toList();
+    }
   }
-
 }

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -19,7 +20,11 @@ public class LandingPageTitleAndLogo extends Div {
   private final static String UT_LOGO_PATH = "login/university-tuebingen-logo.svg";
 
   public LandingPageTitleAndLogo() {
-    add(getUTLogo());
+    Image UTLogo = getUTLogo();
+    UTLogo.addClickListener(
+        event -> UI.getCurrent().getPage().open("https://uni-tuebingen.de/", "_blank"));
+    UTLogo.addClassName("clickable");
+    add(UTLogo);
     addClassName("landing-page-title-and-logo");
     add(title);
     title.addClassName("title");

@@ -66,8 +66,8 @@ public class EditExperimentDialog extends DialogWindow {
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
-    ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(
-        BioIcon.getOptionsForType(SampleSourceType.SPECIES), "Species icon");
+    ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIES,
+    "Species icon");
     binder.forField(speciesIconBox)
         .bind(ExperimentDraft::getSpeciesIcon,
             ExperimentDraft::setSpeciesIcon);
@@ -79,8 +79,8 @@ public class EditExperimentDialog extends DialogWindow {
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
 
-    ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(
-        BioIcon.getOptionsForType(SampleSourceType.SPECIMEN), "Specimen icon");
+    ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIMEN,
+    "Specimen icon");
     binder.forField(specimenIconBox)
         .bind(ExperimentDraft::getSpecimenIcon,
             ExperimentDraft::setSpecimenIcon);
