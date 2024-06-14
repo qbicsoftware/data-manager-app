@@ -157,7 +157,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     projectDescription.setRequired(true);
     projectDesignBinder.forField(codeField).withValidator(ProjectCode::isValid,
             "A project code starts with Q followed by 4 letters/numbers")
-        .withValidator((this::uniqueProjectCodeValidator))
+        .withValidator(this::uniqueProjectCodeValidator)
         .bind(ProjectDesign::getProjectCode, ProjectDesign::setProjectCode);
     projectDesignBinder.forField(titleField)
         .withValidator(it -> !it.isBlank(), "Please provide a project title")
