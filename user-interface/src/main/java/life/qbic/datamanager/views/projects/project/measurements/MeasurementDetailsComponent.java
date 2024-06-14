@@ -247,12 +247,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               context.experimentId().orElseThrow(),
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
-      }, query -> {
-      int ngsCount = Math.toIntExact(
-          measurementService.countNGSMeasurements(context.experimentId().orElseThrow()));
-      System.err.println(ngsCount);
-      return ngsCount+1;
-    });
+      });
     ngsMeasurementGrid.getLazyDataView()
         .addItemCountChangeListener(
             countChangeEvent -> genomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
@@ -355,11 +350,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                     context.experimentId().orElseThrow(),
                     query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
                 .stream();
-        }, query -> {
-          int ptxCount = Math.toIntExact(
-              measurementService.countProteomicsMeasurements(context.experimentId().orElseThrow()));
-          System.err.println(ptxCount);
-          return ptxCount+1;
         });
     proteomicsMeasurementGrid.getLazyDataView()
         .addItemCountChangeListener(

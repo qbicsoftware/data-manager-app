@@ -26,6 +26,7 @@ import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementTechnologyTab;
 import life.qbic.projectmanagement.application.dataset.RawDataService;
 import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
 import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataSampleInformation;
@@ -49,8 +50,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final Grid<RawData> ngsRawDataGrid = new Grid<>();
   private final Grid<RawData> proteomicsRawDataGrid = new Grid<>();
   private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
+  private final MeasurementTechnologyTab proteomicsTab;
+  private final MeasurementTechnologyTab genomicsTab;
   private final transient RawDataService rawDataService;
-  private final List<Tab> tabsInTabSheet = new ArrayList<>();
+  private final List<MeasurementTechnologyTab> tabsInTabSheet = new ArrayList<>();
   private final transient ClientDetailsProvider clientDetailsProvider;
   private String searchTerm = "";
   private transient Context context;
@@ -59,6 +62,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       ClientDetailsProvider clientDetailsProvider) {
     this.rawDataService = Objects.requireNonNull(rawDataService);
     this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
+    proteomicsTab = new MeasurementTechnologyTab("Proteomics", 0);
+    genomicsTab = new MeasurementTechnologyTab("Genomics", 0);
     createProteomicsRawDataGrid();
     createNGSRawDataGrid();
     add(registeredRawDataTabSheet);
@@ -109,10 +114,12 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private void addRawDataTab(GridLazyDataView<RawData> gridLazyDataView) {
     if (gridLazyDataView.getItems().allMatch(rawData -> rawData.measurementCode().isNGSDomain())) {
-      tabsInTabSheet.add(registeredRawDataTabSheet.add("Genomics", ngsRawDataGrid));
+      tabsInTabSheet.add(genomicsTab);
+      registeredRawDataTabSheet.add(genomicsTab, ngsRawDataGrid);
     }
     if (gridLazyDataView.getItems().allMatch(rawData -> rawData.measurementCode().isMSDomain())) {
-      tabsInTabSheet.add(registeredRawDataTabSheet.add("Proteomics", proteomicsRawDataGrid));
+      tabsInTabSheet.add(proteomicsTab);
+      registeredRawDataTabSheet.add(proteomicsTab, proteomicsRawDataGrid);
     }
   }
 
@@ -144,6 +151,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
+    ngsRawDataGrid.getLazyDataView()
+        .addItemCountChangeListener(
+            countChangeEvent -> genomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
     ngsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
     ngsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
     rawDataGridDataViews.add(ngsGridDataView);
@@ -182,6 +192,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();
         });
+    proteomicsRawDataGrid.getLazyDataView()
+        .addItemCountChangeListener(
+            countChangeEvent -> proteomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
     proteomicsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
