@@ -14,6 +14,23 @@ import java.security.NoSuchAlgorithmException;
  */
 public class IdenticonGenerator {
 
+
+  private enum CSSClass {
+    ONE("identicon-one"),
+    TWO("identicon-two"),
+    THREE("identicon-three"),
+    FOUR("identicon-four");
+
+    private final String cssClassName;
+
+    CSSClass(String cssClassName) {
+      this.cssClassName = cssClassName;
+    }
+
+    public String getCssClassName() {
+      return cssClassName;
+    }
+  }
   private IdenticonGenerator() {
   }
 
@@ -29,7 +46,7 @@ public class IdenticonGenerator {
       throw new IllegalArgumentException("Input cannot be null or empty");
     }
     //hash the input
-    MessageDigest digest = null;
+    MessageDigest digest;
     try {
       digest = MessageDigest.getInstance("SHA-512");
     } catch (NoSuchAlgorithmException e) {
@@ -49,6 +66,17 @@ public class IdenticonGenerator {
         (byte) (hashedInput[1] ^ hashedInput[2]),
         (byte) (hashedInput[2] ^ hashedInput[3]));
 
+    // use the css class to overwrite the colors
+    int classByteValue = Byte.toUnsignedInt(hashedInput[63]);
+    // unsigned byte max value 256
+    CSSClass chosenClass = CSSClass.values()[0];
+    for (CSSClass value : CSSClass.values()) {
+      if (classByteValue <= 256.0 / (CSSClass.values().length - value.ordinal())) {
+        chosenClass = value;
+        break;
+      }
+    }
+
     //apply the visibility mask -> mirror horizontal and vertical
     SvgBuilder svgBuilder = SvgBuilder.startSvg(8, 8);
     for (int i = 0; i < visibilityMask.length; i++) {
@@ -57,10 +85,11 @@ public class IdenticonGenerator {
       }
       int x = i % 4;
       int y = i / 4;
-      svgBuilder = svgBuilder.addRectangle(x, y, 0, 0, 1, 1, identiconColor)
-          .addRectangle(x, 7 - y, 0, 0, 1, 1, identiconColor)
-          .addRectangle(7 - x, y, 0, 0, 1, 1, identiconColor)
-          .addRectangle(7 - x, 7 - y, 0, 0, 1, 1, identiconColor);
+      svgBuilder = svgBuilder.addRectangle(x, y, 0, 0, 1, 1, identiconColor,
+              chosenClass.getCssClassName())
+          .addRectangle(x, 7 - y, 0, 0, 1, 1, identiconColor, chosenClass.getCssClassName())
+          .addRectangle(7 - x, y, 0, 0, 1, 1, identiconColor, chosenClass.getCssClassName())
+          .addRectangle(7 - x, 7 - y, 0, 0, 1, 1, identiconColor, chosenClass.getCssClassName());
     }
     return svgBuilder
         .build();
@@ -68,24 +97,8 @@ public class IdenticonGenerator {
 
   public static class IdenticonGenerationException extends RuntimeException {
 
-    public IdenticonGenerationException() {
-    }
-
-    public IdenticonGenerationException(String message) {
-      super(message);
-    }
-
-    public IdenticonGenerationException(String message, Throwable cause) {
-      super(message, cause);
-    }
-
     public IdenticonGenerationException(Throwable cause) {
       super(cause);
-    }
-
-    public IdenticonGenerationException(String message, Throwable cause, boolean enableSuppression,
-        boolean writableStackTrace) {
-      super(message, cause, enableSuppression, writableStackTrace);
     }
   }
 }
