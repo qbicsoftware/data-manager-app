@@ -123,9 +123,6 @@ public class ProjectAccessComponent extends PageArea {
     Editor<ProjectCollaborator> editor = grid.getEditor();
     Binder<ProjectCollaborator> binder = new Binder<>(ProjectCollaborator.class);
     editor.setBinder(binder);
-//    Column<ProjectCollaborator> usernameColumn = grid.addComponentColumn(
-//            ProjectAccessComponent::renderProjectCollaboratorComponent)
-//        .setKey("user").setHeader("User").setAutoWidth(true);
     var usernameColumn = grid.addComponentColumn(
             projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
                 .map(ProjectAccessComponent::renderUserInfo)
