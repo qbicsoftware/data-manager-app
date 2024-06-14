@@ -16,7 +16,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
-import com.vaadin.flow.data.binder.Validator;
+import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import jakarta.validation.constraints.NotEmpty;
@@ -127,24 +127,28 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   private void initCodeGenerationButton() {
     generateCodeButton.setTooltipText("Generate Project ID");
     generateCodeButton.addThemeVariants(ButtonVariant.LUMO_ICON);
-    generateCodeButton.addClickListener(
-        //Only non-used project code should be provided
-        buttonClickEvent -> {
-          String newProjectCode = ProjectCode.random().value();
-          boolean isProjectCodeDuplicated = !isProjectCodeUnique(newProjectCode);
-          int retries = 0;
-          final int MAX_NUMBER_OF_RETRIES = 20;
-          while (isProjectCodeDuplicated) {
-            //Ensure that we have an exit condition and the while loop does not iterate endlessly if most project codes are taken
-            if (retries > MAX_NUMBER_OF_RETRIES) {
-              break;
-            }
-            newProjectCode = ProjectCode.random().value();
-            isProjectCodeDuplicated = isProjectCodeUnique(newProjectCode);
-            retries++;
-          }
-          codeField.setValue(newProjectCode);
-        });
+    generateCodeButton.addClickListener(event -> {
+      var projectCode = generateUniqueProjectCode();
+      codeField.setValue(projectCode);
+    });
+  }
+
+
+  private String generateUniqueProjectCode() {
+    String newProjectCode = ProjectCode.random().value();
+    boolean isProjectCodeDuplicated = !isProjectCodeUnique(newProjectCode);
+    int retries = 0;
+    final int MAX_NUMBER_OF_RETRIES = 20;
+    while (isProjectCodeDuplicated) {
+      //Ensure that we have an exit condition and the while loop does not iterate endlessly if most project codes are taken
+      if (retries > MAX_NUMBER_OF_RETRIES) {
+        break;
+      }
+      newProjectCode = ProjectCode.random().value();
+      isProjectCodeDuplicated = isProjectCodeUnique(newProjectCode);
+      retries++;
+    }
+    return newProjectCode;
   }
 
   private void initFieldValidators() {
@@ -153,15 +157,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     projectDescription.setRequired(true);
     projectDesignBinder.forField(codeField).withValidator(ProjectCode::isValid,
             "A project code starts with Q followed by 4 letters/numbers")
-        .withValidator((Validator<String>) (value, context) -> {
-          if (isProjectCodeUnique(value)) {
-            return ValidationResult.ok();
-          } else {
-            return ValidationResult.error(
-                String.format("Project code %s is already taken. Please choose a different code",
-                    value));
-          }
-        })
+        .withValidator((this::uniqueProjectCodeValidator))
         .bind(ProjectDesign::getProjectCode, ProjectDesign::setProjectCode);
     projectDesignBinder.forField(titleField)
         .withValidator(it -> !it.isBlank(), "Please provide a project title")
@@ -173,6 +169,16 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
         .bind((ProjectDesign::getProjectObjective),
             ProjectDesign::setProjectObjective);
     restrictProjectObjectiveLength();
+  }
+
+  private ValidationResult uniqueProjectCodeValidator(String value, ValueContext context) {
+    if (isProjectCodeUnique(value)) {
+      return ValidationResult.ok();
+    } else {
+      return ValidationResult.error(
+          String.format("Project code %s is already taken. Please choose a different code",
+              value));
+    }
   }
 
   private void restrictProjectTitleLength() {
