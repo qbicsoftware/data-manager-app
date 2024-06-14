@@ -93,7 +93,9 @@ public class ProjectInformationService {
   }
 
   public boolean isProjectCodeUnique(String projectCode) throws IllegalArgumentException {
-    return projectRepository.find(ProjectCode.parse(projectCode)).isEmpty();
+    boolean isUnique = !projectRepository.existsProjectByProjectCode(
+        ProjectCode.parse(projectCode));
+    return isUnique;
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project','READ')")

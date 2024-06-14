@@ -36,10 +36,10 @@ public interface ProjectRepository {
    * Searches for a project that contain the provided project code
    *
    * @param projectCode the project code to search for in projects
-   * @return project which contains the project code
+   * @return boolean indicating that a project with the specified code already exists
    * @since 1.0.0
    */
-  Optional<Project> find(ProjectCode projectCode);
+  boolean existsProjectByProjectCode(ProjectCode projectCode);
 
   Optional<Project> find(ProjectId projectId);
 

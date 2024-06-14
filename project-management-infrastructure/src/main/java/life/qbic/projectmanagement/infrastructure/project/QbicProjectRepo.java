@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.infrastructure.project;
 
-import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -19,6 +18,6 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface QbicProjectRepo extends CrudRepository<Project, ProjectId> {
 
-  Optional<Project> findProjectByProjectCode(ProjectCode projectCode);
+  boolean existsProjectByProjectCode(ProjectCode projectCode);
 
 }

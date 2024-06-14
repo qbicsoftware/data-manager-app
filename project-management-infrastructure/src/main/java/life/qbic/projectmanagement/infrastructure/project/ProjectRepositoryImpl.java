@@ -87,8 +87,8 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
-  public Optional<Project> find(ProjectCode projectCode) {
-    return projectRepo.findProjectByProjectCode(projectCode);
+  public boolean existsProjectByProjectCode(ProjectCode projectCode) {
+    return projectRepo.existsProjectByProjectCode(projectCode);
   }
 
   @Override
