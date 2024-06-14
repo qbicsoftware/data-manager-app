@@ -102,9 +102,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     add(registeredMeasurementsTabSheet);
     registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
-
-    registeredMeasurementsTabSheet.addSelectedChangeListener(
-        selectedChangeEvent -> resetSelectedMeasurements());
+    registeredMeasurementsTabSheet.addSelectedChangeListener(event -> resetSelectedMeasurements());
   }
 
   /**
@@ -135,10 +133,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    */
   public void setSearchedMeasurementValue(String searchTerm) {
     if (!this.searchTerm.equals(searchTerm)) {
-      resetSelectedMeasurements();
+      refreshGrids();
     }
     this.searchTerm = searchTerm;
-    measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
   }
 
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
@@ -158,6 +155,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       tabsInTabSheet.add(genomicsTab);
       registeredMeasurementsTabSheet.add(genomicsTab, ngsMeasurementGrid);
     }
+    refreshGrids();
   }
 
   private void createNGSMeasurementGrid() {
@@ -246,10 +244,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
               context.experimentId().orElseThrow(),
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
-      });
-    ngsMeasurementGrid.getLazyDataView()
+    });
+    ngsGridDataView
         .addItemCountChangeListener(
-            countChangeEvent -> genomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
+            countChangeEvent -> genomicsTab.setMeasurementCount(
+                (int) ngsGridDataView.getItems().count()));
     ngsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(ngsGridDataView);
@@ -349,10 +348,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                     context.experimentId().orElseThrow(),
                     query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
                 .stream();
+
         });
-    proteomicsMeasurementGrid.getLazyDataView()
+    proteomicsGridDataView
         .addItemCountChangeListener(
-            countChangeEvent -> proteomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
+            countChangeEvent -> proteomicsTab.setMeasurementCount(
+                (int) proteomicsGridDataView.getItems().count()));
     proteomicsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(proteomicsGridDataView);
@@ -617,7 +618,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Span sampleCountComponent = new Span();
       sampleCountComponent.add(countBadge);
       this.add(technologyNameComponent, sampleCountComponent);
-
       setTechnologyName(technology);
       setMeasurementCount(measurementCount);
     }
