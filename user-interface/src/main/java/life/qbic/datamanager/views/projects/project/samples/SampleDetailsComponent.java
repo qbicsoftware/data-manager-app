@@ -11,7 +11,6 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -32,7 +31,6 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
@@ -63,11 +61,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
   private static final Logger log = logger(SampleDetailsComponent.class);
-  private final SampleExperimentTab experimentTab;
   private final TextField searchField;
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final DownloadProvider metadataDownload;
+  private final Span countSpan;
   private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
   private final Grid<SamplePreview> sampleGrid;
   private final transient ExperimentInformationService experimentInformationService;
@@ -108,7 +106,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     Div experimentTabContent = new Div();
     experimentTabContent.addClassName("sample-tab-content");
-    experimentTab = new SampleExperimentTab("", 0);
 
     sampleGrid = createSampleGrid();
 
@@ -121,13 +118,15 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     experimentTabContent.add(sampleGrid, noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
 
     TabSheet sampleExperimentTabSheet = new TabSheet();
-    sampleExperimentTabSheet.add(experimentTab, experimentTabContent);
+    sampleExperimentTabSheet.add("", experimentTabContent);
     sampleExperimentTabSheet.setHeightFull();
 
     Div content = new Div();
     content.addClassName("sample-details-content");
 
-    content.add(buttonAndFieldBar, metadataDownload, sampleExperimentTabSheet);
+    countSpan = new Span();
+
+    content.add(buttonAndFieldBar, metadataDownload, countSpan, sampleExperimentTabSheet);
     add(content);
 
   }
@@ -219,12 +218,9 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       sortOrders.add(SortOrder.of("sampleCode").ascending());
       return sampleInformationService.queryPreview(experimentId, query.getOffset(),
           query.getLimit(), List.copyOf(sortOrders), filter).stream();
-    }, query -> SampleDetailsComponent.this.sampleInformationService.countPreviews(
-        experimentId,
-        filter));
-    sampleGrid.getLazyDataView()
-        .addItemCountChangeListener(
-            countChangeEvent -> experimentTab.setSampleCount(countChangeEvent.getItemCount()));
+    });
+    sampleGrid.getLazyDataView().addItemCountChangeListener(
+        countChangeEvent -> setSampleCount((int) sampleGrid.getLazyDataView().getItems().count()));
   }
 
   /**
@@ -233,6 +229,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
+    setSampleCount(0);
     if (context.experimentId().isEmpty()) {
       throw new ApplicationException("no experiment id in context " + context);
     }
@@ -275,7 +272,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   private void setExperiment(Experiment experiment) {
-    experimentTab.setExperimentName(experiment.getName());
 
     if (noExperimentGroupsInExperiment(experiment)) {
       sampleGrid.setVisible(false);
@@ -294,6 +290,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleGrid.setVisible(true);
     noSamplesRegisteredDisclaimer.setVisible(false);
     noGroupsDefinedDisclaimer.setVisible(false);
+  }
+
+  private void setSampleCount(int i) {
+    countSpan.setText(i+" samples");
   }
 
   private void onNoGroupsDefinedClicked(DisclaimerConfirmedEvent event) {
@@ -325,46 +325,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         "Add groups");
     noGroupsDefindedDisclaimer.addDisclaimerConfirmedListener(this::onNoGroupsDefinedClicked);
     return noGroupsDefindedDisclaimer;
-  }
-
-  public static class SampleExperimentTab extends Tab {
-
-    private final Span countBadge;
-    private final Span experimentNameComponent;
-
-    public SampleExperimentTab(String experimentName, int sampleCount) {
-      experimentNameComponent = new Span();
-      this.countBadge = createBadge();
-      Span sampleCountComponent = new Span();
-      sampleCountComponent.add(countBadge);
-      this.add(experimentNameComponent, sampleCountComponent);
-
-      setExperimentName(experimentName);
-      setSampleCount(sampleCount);
-    }
-
-    /**
-     * Helper method for creating a badge.
-     */
-    private static Span createBadge() {
-      Tag tag = new Tag(String.valueOf(0));
-      tag.setTagColor(TagColor.CONTRAST);
-      return tag;
-    }
-
-    /**
-     * Setter method for specifying the number of {@link Sample} of the {@link Experiment} shown in
-     * this component
-     *
-     * @param sampleCount number of samples associated with the experiment shown in this component
-     */
-    public void setSampleCount(int sampleCount) {
-      countBadge.setText(String.valueOf(sampleCount));
-    }
-
-    public void setExperimentName(String experimentName) {
-      this.experimentNameComponent.setText(experimentName);
-    }
   }
 
   /**

@@ -151,9 +151,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
-    ngsRawDataGrid.getLazyDataView()
-        .addItemCountChangeListener(
-            countChangeEvent -> genomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
+    ngsRawDataGrid.getLazyDataView().addItemCountChangeListener(
+            countChangeEvent -> genomicsTab.setMeasurementCount((int) ngsGridDataView.getItems().count()));
     ngsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
     ngsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
     rawDataGridDataViews.add(ngsGridDataView);
@@ -192,9 +191,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();
         });
-    proteomicsRawDataGrid.getLazyDataView()
-        .addItemCountChangeListener(
-            countChangeEvent -> proteomicsTab.setMeasurementCount(countChangeEvent.getItemCount()));
+    proteomicsRawDataGrid.getLazyDataView().addItemCountChangeListener(
+            countChangeEvent -> proteomicsTab.setMeasurementCount((int) proteomicsGridDataView.getItems().count()));
     proteomicsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
     rawDataGridDataViews.add(proteomicsGridDataView);
   }

@@ -120,6 +120,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             .findAny().isPresent()).toList();
 
     dataViewsWithItems.forEach(this::addMeasurementTab);
+    initializeTabCounts();
+  }
+
+  private void initializeTabCounts() {
+    genomicsTab.setMeasurementCount((int) measurementService.countNGSMeasurements(
+        context.experimentId().orElseThrow()));
+    proteomicsTab.setMeasurementCount((int) measurementService.countProteomicsMeasurements(
+        context.experimentId().orElseThrow()));
   }
 
   /**
