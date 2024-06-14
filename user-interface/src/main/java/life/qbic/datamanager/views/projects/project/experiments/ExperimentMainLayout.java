@@ -23,6 +23,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
@@ -49,16 +50,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Data Manager")
 public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnterObserver {
 
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private static final Logger log = getLogger(ExperimentMainLayout.class);
   private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectSideNavigationComponent projectSideNavigationComponent;
   private final ExperimentNavigationComponent experimentNavigationComponent = new ExperimentNavigationComponent();
   private final DataManagerMenu dataManagerMenu;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient ProjectInformationService projectInformationService;
-  private Context context = new Context();
   private final Span navBarTitle = new Span();
+  private Context context = new Context();
 
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
       @Autowired UserInformationService userInformationService,
@@ -66,7 +67,9 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
-      @Autowired OntologyLookupService ontologyTermInformationService) {
+      @Autowired OntologyLookupService ontologyTermInformationService,
+      @Autowired FooterComponent footerComponent) {
+    super(Objects.requireNonNull(footerComponent));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
@@ -111,7 +114,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
         .ifPresent(
             experiment -> {
               navBarTitle.removeAll();
-              Text projectCode = new Text(project.orElseThrow().getProjectCode().value()+"  /");
+              Text projectCode = new Text(project.orElseThrow().getProjectCode().value() + "  /");
               Text expName = new Text(experiment.getName());
               Icon book = styleIcon(VaadinIcon.NOTEBOOK);
               Icon beaker = styleIcon(VaadinIcon.FLASK);
@@ -164,8 +167,8 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
   }
 
   /**
-   * Sets the experiment tab within the {@link com.vaadin.flow.component.tabs.TabSheet}to the navigation target provided by the
-   * {@link BeforeEnterEvent}
+   * Sets the experiment tab within the {@link com.vaadin.flow.component.tabs.TabSheet}to the
+   * navigation target provided by the {@link BeforeEnterEvent}
    *
    * @param navigationTarget java {@link Class} containing the route to which the selected tab
    *                         leads.

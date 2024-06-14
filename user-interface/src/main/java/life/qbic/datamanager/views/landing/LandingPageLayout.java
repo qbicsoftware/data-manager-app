@@ -13,6 +13,7 @@ import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.LandingPageTitleAndLogo;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -25,12 +26,14 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
 
   @Serial
   private static final long serialVersionUID = 8899881833038660866L;
-  public Button register;
-  public Button login;
   private final Div landingPageContent = new Div();
   private final LandingPageTitleAndLogo landingPageTitleAndLogo = new LandingPageTitleAndLogo();
+  public Button register;
+  public Button login;
 
-  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
+  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired
+  FooterComponent footerComponent) {
+    super(Objects.requireNonNull(footerComponent));
     Objects.requireNonNull(handlerInterface);
     setId("landing-page-layout");
     //CSS class hosting the background image for all our landing pages
