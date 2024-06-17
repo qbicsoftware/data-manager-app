@@ -623,7 +623,7 @@
   justify-content: center;
 }
 
-.user-profile-component .user-details-card .avatar {
+.user-profile-component .user-details-card .user-avatar {
   height: 5rem;
   width: 5rem;
 }
