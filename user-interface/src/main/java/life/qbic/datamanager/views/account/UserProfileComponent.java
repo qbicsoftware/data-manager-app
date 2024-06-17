@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.ClickEvent;
@@ -45,8 +46,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
   private static final String TITLE = "My Profile";
   private final transient UserInformationService userInformationService;
   private final transient IdentityService identityService;
-  private final UserDetailsCard userDetailsCard;
-  private transient UserInfo userInfo;
+  private UserDetailsCard userDetailsCard;
 
   @Autowired
   public UserProfileComponent(IdentityService identityService,
@@ -58,14 +58,17 @@ public class UserProfileComponent extends PageArea implements Serializable {
     Span title = new Span(TITLE);
     addComponentAsFirst(title);
     title.addClassName("title");
-    userDetailsCard = new UserDetailsCard(userInfo.id(), userInfo.platformUserName());
-    add(userDetailsCard);
     addClassName("user-profile-component");
   }
 
   public void setUserDetails(String userId) {
-    this.userInfo = userInformationService.findById(userId).orElseThrow();
-    userDetailsCard.setUserInfo(userInfo);
+    UserInfo userInfo;
+    if (nonNull(userDetailsCard)) {
+      remove(userDetailsCard);
+    }
+    userInfo = userInformationService.findById(userId).orElseThrow();
+    this.userDetailsCard = new UserDetailsCard(userInfo);
+    add(userDetailsCard);
   }
 
   private static class UserDetail extends Div {
@@ -188,13 +191,14 @@ public class UserProfileComponent extends PageArea implements Serializable {
     private final Span userFullName = new Span();
     private final Span userEmail = new Span();
 
-    public UserDetailsCard(final String userId, final String userName) {
+    public UserDetailsCard(UserInfo userInfo) {
       Div avatarWithName = new Div(userAvatar, userFullName);
       userFullName.addClassName("bold");
       avatarWithName.addClassName("avatar-with-name");
       Span changePlatformUserName = new Span("Change Username");
       changePlatformUserName.addClickListener(
-          event -> userDetailsCard.setupChangeUserDialog(identityService, userId, userName));
+          event -> userDetailsCard.setupChangeUserDialog(identityService, userInfo.id(),
+              userInfo.platformUserName()));
       changePlatformUserName.addClassName("change-name");
       UserDetail userNameDetail = new UserDetail("Username: ", platformUserName,
           changePlatformUserName);
@@ -203,13 +207,15 @@ public class UserProfileComponent extends PageArea implements Serializable {
       userDetails.addClassName("details");
       add(avatarWithName, userDetails);
       addClassName("user-details-card");
+      setUserInfo(userInfo);
     }
 
     private void setUserInfo(UserInfo userInfo) {
       platformUserName.setText(userInfo.platformUserName());
       userEmail.setText(userInfo.emailAddress());
       userFullName.setText(userInfo.fullName());
-      userAvatar.setName(userInfo.id());
+      userAvatar.setName(userInfo.platformUserName());
+      userAvatar.setUserId(userInfo.id());
     }
 
     private void setupChangeUserDialog(IdentityService identityService,
