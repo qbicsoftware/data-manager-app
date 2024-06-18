@@ -2,14 +2,6 @@ package life.qbic.datamanager.views.identicon
 
 import spock.lang.Specification
 
-/**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 class IdenticonGeneratorSpec extends Specification {
     def "fails for null input"() {
         when:
