@@ -52,11 +52,6 @@ public class ProjectOverview {
   @Column(name = "amountPxpMeasurements")
   private String pxpMeasurementCount;
 
-  @Convert(converter = CollaboratorUserNamesConverter.class)
-//  @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
-//  @CollectionTable(name = "project_usernames", joinColumns = @JoinColumn(name = "projectId"))
-  @Column(name = "usernames")
-  private List<String> collaboratorUserNames = new ArrayList<>();
 
   @Convert(converter = CollaboratorUserInfosConverter.class)
   @Column(name = "userInfos")
@@ -100,10 +95,6 @@ public class ProjectOverview {
 
   public String pxpMeasurementCount() {
     return pxpMeasurementCount;
-  }
-
-  public Collection<String> collaboratorUserNames() {
-    return collaboratorUserNames.stream().distinct().toList();
   }
 
   public Collection<UserInfo> collaboratorUserInfos() {
