@@ -167,7 +167,7 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
     }
 
     public static Specification<ProjectOverview> isInCollaboratorNames(String filter) {
-      return (root, query, builder) -> builder.like(root.get("collaboratorUserNames"),
+      return (root, query, builder) -> builder.like(root.get("collaboratorUserInfos"),
           "%" + filter + "%");
 
     }
