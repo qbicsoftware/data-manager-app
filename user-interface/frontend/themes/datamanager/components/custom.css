@@ -21,6 +21,5 @@
 vaadin-avatar-group vaadin-avatar,
 .user-avatar {
   background-color: white;
-  /*border-width: 1px;*/
   border-color: var(--lumo-contrast-20pct);
 }
