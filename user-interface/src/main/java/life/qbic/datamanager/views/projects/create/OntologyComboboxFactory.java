@@ -2,16 +2,10 @@ package life.qbic.datamanager.views.projects.create;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.dom.Element;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
@@ -81,48 +75,12 @@ public class OntologyComboboxFactory {
     box.addClassName("chip-badge");
     box.addClassName("no-chevron");
 
-    //PrefixUtil.setSuffixComponent(box, VaadinIcon.SEARCH.create());
     return box;
   }
 
   private static String ontologyItemFormatted(OntologyTerm ontologyTerm) {
     String ontologyLinkName = ontologyTerm.getName().replace("_", ":");
     return String.format("%s (%s)", ontologyTerm.getLabel(), ontologyLinkName);
-  }
-
-  public class PrefixUtil {
-
-    private static Stream<Element> getElementsInSlot(HasElement target,
-        String slot) {
-      return target.getElement().getChildren()
-          .filter(child -> slot.equals(child.getAttribute("slot")));
-    }
-
-    public static void setSuffixComponent(Component target, Component component) {
-      clearSlot(target,"suffix");
-
-      if (component != null) {
-        component.getElement().setAttribute("slot", "suffix");
-        target.getElement().appendChild(component.getElement());
-      }
-    }
-
-    private static void clearSlot(Component target, String slot) {
-      getElementsInSlot(target, slot).collect(Collectors.toList())
-          .forEach(target.getElement()::removeChild);
-    }
-
-    private static Component getChildInSlot(HasElement target, String slot) {
-      Optional<Element> element = getElementsInSlot(target, slot).findFirst();
-      if (element.isPresent()) {
-        return element.get().getComponent().get();
-      }
-      return null;
-    }
-
-    public static Component getSuffixComponent(Component target) {
-      return getChildInSlot(target, "suffix");
-    }
   }
 
 }
