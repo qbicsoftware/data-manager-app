@@ -11,7 +11,6 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -117,16 +116,17 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
     experimentTabContent.add(sampleGrid, noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
 
+    /*
     TabSheet sampleExperimentTabSheet = new TabSheet();
     sampleExperimentTabSheet.add("", experimentTabContent);
     sampleExperimentTabSheet.setHeightFull();
-
+*/
     Div content = new Div();
     content.addClassName("sample-details-content");
 
     countSpan = new Span();
 
-    content.add(buttonAndFieldBar, metadataDownload, countSpan, sampleExperimentTabSheet);
+    content.add(buttonAndFieldBar, metadataDownload, countSpan, experimentTabContent);
     add(content);
 
   }
@@ -229,7 +229,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
    * @param context the context in which the user is.
    */
   public void setContext(Context context) {
-    setSampleCount(0);
     if (context.experimentId().isEmpty()) {
       throw new ApplicationException("no experiment id in context " + context);
     }
@@ -272,6 +271,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   private void setExperiment(Experiment experiment) {
+    setSampleCount(0);
 
     if (noExperimentGroupsInExperiment(experiment)) {
       sampleGrid.setVisible(false);

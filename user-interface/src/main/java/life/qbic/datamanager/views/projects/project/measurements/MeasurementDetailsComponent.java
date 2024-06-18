@@ -246,7 +246,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
           .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("measurementCode").ascending());
       return measurementService.findNGSMeasurements(searchTerm,
               context.experimentId().orElseThrow(),
@@ -446,13 +445,20 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     listeners.add(listener);
   }
 
-  //TODO introduce custom tab with label and updateable count
+  public static void main(String[] args) {
+    Tab tab = new Tab("Proteomics");
+    tab = null;
+    System.err.println();
+  }
+
   public Optional<String> getSelectedTabName() {
+    System.err.println(Optional.ofNullable(tabsInTabSheet.get(registeredMeasurementsTabSheet.getSelectedIndex())).map(Tab::getLabel));
     if (registeredMeasurementsTabSheet.getSelectedTab() != null && !tabsInTabSheet.isEmpty()) {
       return Optional.of(tabsInTabSheet.get(registeredMeasurementsTabSheet.getSelectedIndex()).getTabLabel());
     } else {
       return Optional.empty();
     }
+
   }
 
   /**

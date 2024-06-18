@@ -73,6 +73,7 @@ public class OntologyComboboxFactory {
     box.setRenderer(new ComponentRenderer<>(OntologyComponent::new));
     box.setItemLabelGenerator(OntologyComboboxFactory::ontologyItemFormatted);
     box.addClassName("chip-badge");
+
     return box;
   }
 
