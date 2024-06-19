@@ -132,18 +132,20 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     List<SampleInfo> sampleInfos = new ArrayList<>();
     for (ExperimentalGroup experimentalGroup : experimentalGroups) {
-      SampleInfo sampleInfo = new SampleInfo();
-      sampleInfo.setExperimentalGroup(experimentalGroup);
-      if (species.size() == 1) {
-        sampleInfo.setSpecies(species.get(0));
+      for (int i = 0; i < experimentalGroup.sampleSize(); i++) {
+        SampleInfo sampleInfo = new SampleInfo();
+        sampleInfo.setExperimentalGroup(experimentalGroup);
+        if (species.size() == 1) {
+          sampleInfo.setSpecies(species.get(0));
+        }
+        if (specimen.size() == 1) {
+          sampleInfo.setSpecimen(specimen.get(0));
+        }
+        if (analytes.size() == 1) {
+          sampleInfo.setAnalyte(analytes.get(0));
+        }
+        sampleInfos.add(sampleInfo);
       }
-      if (specimen.size() == 1) {
-        sampleInfo.setSpecimen(specimen.get(0));
-      }
-      if (analytes.size() == 1) {
-        sampleInfo.setAnalyte(analytes.get(0));
-      }
-      sampleInfos.add(sampleInfo);
     }
     return sampleInfos;
   }
