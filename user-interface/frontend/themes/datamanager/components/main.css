@@ -81,11 +81,19 @@
 }
 
 .main.legal-notice {
-  padding: var(--lumo-space-m);
+  padding: var(--lumo-space-xl);
+  height: fit-content;
+  width: clamp(700px, 60vw, 100%);
+  display: flex;
+  margin: auto;
 }
 
 .main.data-privacy-agreement {
-  padding: var(--lumo-space-m);
+  padding: var(--lumo-space-xl);
+  height: fit-content;
+  width: clamp(700px, 50vw, 100%);
+  display: flex;
+  margin: auto;
 }
 
 .main.measurement {
