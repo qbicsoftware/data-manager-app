@@ -41,7 +41,7 @@ vaadin-multi-select-combo-box::part(toggle-button)::before {
 }
 
 /* Hide toggle button */
-vaadin-multi-select-combo-box.no-chevron::part(toggle-button)::before {
+vaadin-multi-select-combo-box.no-chevron::part(toggle-button) {
   display: none;
 }
 
