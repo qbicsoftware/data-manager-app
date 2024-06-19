@@ -21,6 +21,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.account.UserProfileComponent.ChangeUserDetailsDialog.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.access.UserAvatarWithNameComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
@@ -183,10 +184,12 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     public UserDetailsCard(UserInfo userInfo) {
       UserAvatar userAvatar = new UserAvatar();
-      Span userFullName = new Span();
-      Div avatarWithName = new Div(userAvatar, userFullName);
-      userFullName.addClassName("bold");
-      avatarWithName.addClassName("avatar-with-name");
+      userAvatar.setName(userInfo.platformUserName());
+      userAvatar.setUserId(userInfo.id());
+      UserAvatarWithNameComponent avatarWithName = new UserAvatarWithNameComponent(userAvatar,
+          userInfo.platformUserName());
+      avatarWithName.getUserNameComponent().addClassName("bold");
+
       Span changePlatformUserName = new Span("Change Username");
       changePlatformUserName.addClickListener(this::onChangePlatformUserNameClicked);
       changePlatformUserName.addClassName("change-name");
@@ -197,13 +200,13 @@ public class UserProfileComponent extends PageArea implements Serializable {
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
       Div userDetails = new Div(userNameDetail, userEmailDetail);
       userDetails.addClassName("details");
+
       add(avatarWithName, userDetails);
       addClassName("user-details-card");
 
       this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
       platformUserName.setText(userInfo.platformUserName());
       userEmail.setText(this.userInfo.emailAddress());
-      userFullName.setText(this.userInfo.fullName());
       userAvatar.setName(this.userInfo.platformUserName());
       userAvatar.setUserId(this.userInfo.id());
     }
