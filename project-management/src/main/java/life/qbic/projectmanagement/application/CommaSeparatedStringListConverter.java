@@ -12,7 +12,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Converter(autoApply = false)
-public class CollaboratorUserNamesConverter implements
+public class CommaSeparatedStringListConverter implements
     AttributeConverter<List<String>, String> {
 
   @Override
