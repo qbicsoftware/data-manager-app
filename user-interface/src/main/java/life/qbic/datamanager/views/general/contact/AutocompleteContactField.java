@@ -179,6 +179,16 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   }
 
   @Override
+  public String getDefaultErrorMessage() {
+    return ""; // we do not show an error message on this field as this is part of the contained fields.
+  }
+
+  @Override
+  public boolean useBinderErrorMessage() {
+    return false;
+  }
+
+  @Override
   public Binder<Contact> getBinder() {
     return binder;
   }
