@@ -1,5 +1,7 @@
 package life.qbic.identity.api;
 
+import java.io.Serializable;
+
 /**
  * <b>User Information DTO</b>
  *
@@ -9,6 +11,6 @@ package life.qbic.identity.api;
  */
 public record UserInfo(String id, String fullName, String emailAddress, String platformUserName,
                        String encryptedPassword,
-                       boolean isActive) {
+                       boolean isActive) implements Serializable {
 
 }

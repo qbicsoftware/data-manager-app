@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.ClickEvent;
@@ -7,7 +8,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -17,12 +17,12 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.account.UserProfileComponent.ChangeUserDetailsDialog.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.access.UserAvatarWithNameComponent;
 import life.qbic.identity.api.UserInfo;
-import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
@@ -44,62 +44,31 @@ public class UserProfileComponent extends PageArea implements Serializable {
   @Serial
   private static final long serialVersionUID = -65339437186530376L;
   private static final String TITLE = "My Profile";
-  private final transient UserInformationService userInformationService;
   private final transient IdentityService identityService;
-  private final UserDetailsCard userDetailsCard;
-  private transient UserInfo userInfo;
+  private UserDetailsCard userDetailsCard;
 
   @Autowired
-  public UserProfileComponent(IdentityService identityService,
-      UserInformationService userInformationService) {
-    this.userInformationService = Objects.requireNonNull(userInformationService,
-        "user information service cannot be null");
-    this.identityService = Objects.requireNonNull(identityService,
+  public UserProfileComponent(IdentityService identityService) {
+    this.identityService = requireNonNull(identityService,
         "identity service cannot be null");
     Span title = new Span(TITLE);
     addComponentAsFirst(title);
     title.addClassName("title");
-    userDetailsCard = new UserDetailsCard();
-    add(userDetailsCard);
     addClassName("user-profile-component");
+    this.setVisible(false);
   }
 
-  public void setUserDetails(String userId) {
-    this.userInfo = userInformationService.findById(userId).orElseThrow();
-    userDetailsCard.setUserInfo(userInfo);
+  public void showForUser(UserInfo userInfo) {
+    requireNonNull(userInfo, "userInfo must not be null");
+    if (nonNull(userDetailsCard)) {
+      remove(userDetailsCard);
+    }
+    userDetailsCard = new UserDetailsCard(userInfo);
+    add(userDetailsCard);
+    this.setVisible(true);
   }
 
-  private void setupChangeUserDialog() {
-    ChangeUserDetailsDialog dialog = new ChangeUserDetailsDialog();
-    dialog.setCurrentUserName(userInfo.platformUserName());
-    dialog.addConfirmListener(event -> {
-      var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
-      if (!response.failures().isEmpty()) {
-        for (RuntimeException e : response.failures()) {
-          if (e instanceof UserNameNotAvailableException) {
-            dialog.setUserNameNotAvailable();
-            return;
-          }
-          if (e instanceof EmptyUserNameException) {
-            dialog.setUserNameEmpty();
-            return;
-          } else {
-            throw new ApplicationException("Unexpected exception occurred, Please try again");
-          }
-        }
-      }
-      if (response.isSuccess()) {
-        event.getSource().close();
-        // Trigger reload of UI reloading the username displayed in the datamanager menu
-        // and within this component
-        UI.getCurrent().getPage().reload();
-      }
-    });
-    dialog.addCancelListener(event -> event.getSource().close());
-    dialog.open();
-  }
-
-  private static class UserDetail extends Div {
+  static class UserDetail extends Div {
 
     public UserDetail(String title, Component... components) {
       Span titleSpan = new Span(title);
@@ -114,17 +83,14 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private final TextField platformUserNameField = new TextField("New username");
 
-    public ChangeUserDetailsDialog() {
+    public ChangeUserDetailsDialog(String currentUserName) {
       super();
       setHeaderTitle("Change username");
       add(platformUserNameField);
       setConfirmButtonLabel("Save");
       addClassName("change-user-details-dialog");
       platformUserNameField.addClassName("change-user-name");
-    }
-
-    public void setCurrentUserName(String userName) {
-      platformUserNameField.setValue(userName);
+      platformUserNameField.setValue(currentUserName);
     }
 
     public void setUserNameNotAvailable() {
@@ -214,33 +180,69 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
   private class UserDetailsCard extends Div {
 
-    private final Span platformUserName = new Span();
-    private final Avatar userAvatar = new Avatar();
-    private final Span userFullName = new Span();
-    private final Span userEmail = new Span();
+    private final UserInfo userInfo;
 
-    public UserDetailsCard() {
-      Div avatarWithName = new Div(userAvatar, userFullName);
-      userAvatar.addClassName("avatar");
-      userFullName.addClassName("bold");
-      avatarWithName.addClassName("avatar-with-name");
+    public UserDetailsCard(UserInfo userInfo) {
+      UserAvatar userAvatar = new UserAvatar();
+      userAvatar.setName(userInfo.platformUserName());
+      userAvatar.setUserId(userInfo.id());
+      UserAvatarWithNameComponent avatarWithName = new UserAvatarWithNameComponent(userAvatar,
+          userInfo.platformUserName());
+      avatarWithName.getUserNameComponent().addClassName("bold");
+
       Span changePlatformUserName = new Span("Change Username");
-      changePlatformUserName.addClickListener(event -> setupChangeUserDialog());
+      changePlatformUserName.addClickListener(this::onChangePlatformUserNameClicked);
       changePlatformUserName.addClassName("change-name");
+      Span platformUserName = new Span();
       UserDetail userNameDetail = new UserDetail("Username: ", platformUserName,
           changePlatformUserName);
+      Span userEmail = new Span();
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
       Div userDetails = new Div(userNameDetail, userEmailDetail);
       userDetails.addClassName("details");
+
       add(avatarWithName, userDetails);
       addClassName("user-details-card");
+
+      this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
+      platformUserName.setText(userInfo.platformUserName());
+      userEmail.setText(this.userInfo.emailAddress());
+      userAvatar.setName(this.userInfo.platformUserName());
+      userAvatar.setUserId(this.userInfo.id());
     }
 
-    private void setUserInfo(UserInfo userInfo) {
-      platformUserName.setText(userInfo.platformUserName());
-      userEmail.setText(userInfo.emailAddress());
-      userFullName.setText(userInfo.fullName());
-      userAvatar.setName(userInfo.platformUserName());
+    private void onChangePlatformUserNameClicked(ClickEvent<Span> event) {
+      userDetailsCard.openChangeUserDialog();
+    }
+
+    private void openChangeUserDialog() {
+      requireNonNull(userInfo, "userInfo must not be null");
+      ChangeUserDetailsDialog dialog = new ChangeUserDetailsDialog(userInfo.platformUserName());
+      dialog.addConfirmListener(this::onChangeUserDetailsDialogConfirmed);
+      dialog.addCancelListener(event -> event.getSource().close());
+      dialog.open();
+    }
+
+    private void onChangeUserDetailsDialogConfirmed(ConfirmEvent event) {
+      var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
+        if (response.isSuccess()) {
+          event.getSource().close();
+          // Trigger reload of UI reloading the username displayed in the datamanager menu
+          // and within this component
+          UI.getCurrent().getPage().reload();
+          return;
+        }
+
+        RuntimeException e = response.failures().stream().findFirst().orElseThrow();
+        if (e instanceof UserNameNotAvailableException) {
+          event.getSource().setUserNameNotAvailable();
+          return;
+        }
+        if (e instanceof EmptyUserNameException) {
+          event.getSource().setUserNameEmpty();
+          return;
+        }
+        throw ApplicationException.wrapping("Unexpected exception in username change.", e);
     }
   }
 }
