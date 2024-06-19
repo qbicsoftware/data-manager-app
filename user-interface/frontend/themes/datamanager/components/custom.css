@@ -32,14 +32,3 @@ vaadin-avatar-group vaadin-avatar,
   column-gap: var(--lumo-space-s);
   row-gap: initial;
 }
-
-{
-  display: inline-flex
-;
-  justify-content: center
-;
-  align-items: center
-;
-  column-gap: var(--lumo-space-s)
-;
-}
