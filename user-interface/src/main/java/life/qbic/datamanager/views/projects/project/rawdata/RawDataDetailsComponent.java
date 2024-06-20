@@ -1,10 +1,6 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
-
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
-import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -25,6 +21,7 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.GridDetailsItem;
+import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementTechnologyTab;
 import life.qbic.projectmanagement.application.dataset.RawDataService;
@@ -47,8 +44,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private final TabSheet registeredRawDataTabSheet = new TabSheet();
-  private final Grid<RawData> ngsRawDataGrid = new Grid<>();
-  private final Grid<RawData> proteomicsRawDataGrid = new Grid<>();
+  private final MultiSelectLazyLoadingGrid<RawData> ngsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
+  private final MultiSelectLazyLoadingGrid<RawData> proteomicsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
   private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
   private final MeasurementTechnologyTab proteomicsTab;
   private final MeasurementTechnologyTab genomicsTab;
@@ -81,8 +78,20 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
    *                   be filtered for
    */
   public void setSearchedRawDataValue(String searchTerm) {
+    if (!this.searchTerm.equals(searchTerm)) {
+      refreshGrids();
+    }
     this.searchTerm = searchTerm;
+  }
+
+  public void refreshGrids() {
+    resetSelectedMeasurements();
     rawDataGridDataViews.forEach(AbstractDataView::refreshAll);
+  }
+
+  private void resetSelectedMeasurements() {
+    proteomicsRawDataGrid.clearSelectedItems();
+    ngsRawDataGrid.clearSelectedItems();
   }
 
   /**
@@ -102,7 +111,15 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       return;
     }
     dataViewsWithItems.forEach(this::addRawDataTab);
+    initializeTabCounts();
   }
+
+private void initializeTabCounts() {
+  genomicsTab.setMeasurementCount(rawDataService.countNGSDatasets(
+      context.experimentId().orElseThrow()));
+  proteomicsTab.setMeasurementCount(rawDataService.countProteomicsDatasets(
+      context.experimentId().orElseThrow()));
+}
 
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
   private void resetTabsInTabsheet() {
@@ -154,7 +171,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     ngsRawDataGrid.getLazyDataView().addItemCountChangeListener(
             countChangeEvent -> genomicsTab.setMeasurementCount((int) ngsGridDataView.getItems().count()));
     ngsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
-    ngsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
     rawDataGridDataViews.add(ngsGridDataView);
   }
 
@@ -193,7 +209,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         });
     proteomicsRawDataGrid.getLazyDataView().addItemCountChangeListener(
             countChangeEvent -> proteomicsTab.setMeasurementCount((int) proteomicsGridDataView.getItems().count()));
-    proteomicsRawDataGrid.setSelectionMode(SelectionMode.MULTI);
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
 

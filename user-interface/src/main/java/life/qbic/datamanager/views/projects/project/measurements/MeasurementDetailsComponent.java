@@ -445,14 +445,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     listeners.add(listener);
   }
 
-  public static void main(String[] args) {
-    Tab tab = new Tab("Proteomics");
-    tab = null;
-    System.err.println();
-  }
-
   public Optional<String> getSelectedTabName() {
-    System.err.println(Optional.ofNullable(tabsInTabSheet.get(registeredMeasurementsTabSheet.getSelectedIndex())).map(Tab::getLabel));
     if (registeredMeasurementsTabSheet.getSelectedTab() != null && !tabsInTabSheet.isEmpty()) {
       return Optional.of(tabsInTabSheet.get(registeredMeasurementsTabSheet.getSelectedIndex()).getTabLabel());
     } else {

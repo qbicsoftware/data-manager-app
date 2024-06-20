@@ -51,16 +51,16 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
       if (event.isFromClient()) {
         Boolean allBoxVal = selectAllCheckBox.getValue();
-        if(Boolean.TRUE.equals(allBoxVal) && Boolean.FALSE.equals(box.getValue())) {
+        if (Boolean.TRUE.equals(allBoxVal) && Boolean.FALSE.equals(box.getValue())) {
           selectAllCheckBox.setValue(false);
-        } else if(Boolean.FALSE.equals(allBoxVal) && areAllSelected()) {
+        } else if (Boolean.FALSE.equals(allBoxVal) && areAllSelected()) {
           selectAllCheckBox.setValue(true);
         }
       }
     });
     /*Necessary to propagate selection of select all checkbox to individual checkbox*/
     selectAllCheckBox.addValueChangeListener(event -> {
-      if(event.isFromClient()) {
+      if(event.isFromClient() && box.getElement().getNode().isAttached()) {
         box.setValue(event.getValue());
       }
     });
