@@ -115,12 +115,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     noSamplesRegisteredDisclaimer.setVisible(false);
 
     experimentTabContent.add(sampleGrid, noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
-
-    /*
-    TabSheet sampleExperimentTabSheet = new TabSheet();
-    sampleExperimentTabSheet.add("", experimentTabContent);
-    sampleExperimentTabSheet.setHeightFull();
-*/
+    
     Div content = new Div();
     content.addClassName("sample-details-content");
 
