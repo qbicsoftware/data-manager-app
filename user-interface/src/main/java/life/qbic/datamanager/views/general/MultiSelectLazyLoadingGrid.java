@@ -60,6 +60,7 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
     });
     /*Necessary to propagate selection of select all checkbox to individual checkbox*/
     selectAllCheckBox.addValueChangeListener(event -> {
+      // needed so boxes that are filtered out are not selected and lead to miscount
       if(event.isFromClient() && box.getElement().getNode().isAttached()) {
         box.setValue(event.getValue());
       }
