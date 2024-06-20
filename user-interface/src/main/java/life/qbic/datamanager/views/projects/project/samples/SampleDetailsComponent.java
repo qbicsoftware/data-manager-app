@@ -115,7 +115,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     noSamplesRegisteredDisclaimer.setVisible(false);
 
     experimentTabContent.add(sampleGrid, noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
-    
+
     Div content = new Div();
     content.addClassName("sample-details-content");
 

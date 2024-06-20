@@ -80,18 +80,14 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   public void setSearchedRawDataValue(String searchTerm) {
     if (!this.searchTerm.equals(searchTerm)) {
       refreshGrids();
+      this.searchTerm = searchTerm;
     }
-    this.searchTerm = searchTerm;
   }
 
   public void refreshGrids() {
-    resetSelectedMeasurements();
-    rawDataGridDataViews.forEach(AbstractDataView::refreshAll);
-  }
-
-  private void resetSelectedMeasurements() {
     proteomicsRawDataGrid.clearSelectedItems();
     ngsRawDataGrid.clearSelectedItems();
+    rawDataGridDataViews.forEach(AbstractDataView::refreshAll);
   }
 
   /**

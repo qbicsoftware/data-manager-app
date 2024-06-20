@@ -155,6 +155,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
+    if(gridLazyDataView.getItems().findAny().isEmpty()) {
+      return;
+    }
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
       tabsInTabSheet.add(proteomicsTab);
       registeredMeasurementsTabSheet.add(proteomicsTab, proteomicsMeasurementGrid);
@@ -349,7 +352,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                   it -> new SortOrder(it.getSorted(),
                       it.getDirection().equals(SortDirection.ASCENDING)))
               .collect(Collectors.toList());
-            // if no order is provided by the grid order by last modified (least priority)
             sortOrders.add(SortOrder.of("measurementCode").ascending());
             return measurementService.findProteomicsMeasurements(searchTerm,
                     context.experimentId().orElseThrow(),
@@ -655,6 +657,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     public void setTechnologyName(String technologyName) {
       this.technologyNameComponent.setText(technologyName);
     }
+
   }
 
 }

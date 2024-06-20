@@ -44,7 +44,7 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
   private Checkbox renderCheckbox(T bean) {
     Checkbox box = new Checkbox();
-    box.addValueChangeListener(event -> {
+    Registration boxListener = box.addValueChangeListener(event -> {
       var checkBoxSelectEvent = new CheckBoxSelectedEvent(box, bean, event.isFromClient());
       updateSelectedItem(event.getValue(), bean);
       listeners.forEach(listener -> listener.onComponentEvent(checkBoxSelectEvent));
@@ -59,14 +59,20 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
       }
     });
     /*Necessary to propagate selection of select all checkbox to individual checkbox*/
-    selectAllCheckBox.addValueChangeListener(event -> {
-      // needed so boxes that are filtered out are not selected and lead to miscount
-      if(event.isFromClient() && box.getElement().getNode().isAttached()) {
+    Registration allSelectBoxListener = selectAllCheckBox.addValueChangeListener(event -> {
+      if(event.isFromClient()) {
         box.setValue(event.getValue());
       }
     });
     /*Necessary to keep items selected even if grid pagination is reloaded*/
     box.setValue(selectedItems.contains(bean));
+
+    //if the box is removed, we remove the respective listeners
+    box.addDetachListener(detachEvent -> {
+      boxListener.remove();
+      allSelectBoxListener.remove();
+    });
+
     return box;
   }
 
