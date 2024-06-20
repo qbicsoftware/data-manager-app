@@ -658,6 +658,22 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       this.technologyNameComponent.setText(technologyName);
     }
 
+    @Override
+    public final boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof MeasurementTechnologyTab that)) {
+        return false;
+      }
+
+      return Objects.equals(technology, that.technology);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(technology);
+    }
   }
 
 }
