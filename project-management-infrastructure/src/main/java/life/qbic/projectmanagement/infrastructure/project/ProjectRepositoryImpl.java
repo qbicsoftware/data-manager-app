@@ -8,15 +8,14 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
-import life.qbic.projectmanagement.application.authorization.authorities.aspects.CanCreateProject;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 
@@ -52,7 +51,7 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
-  @CanCreateProject
+  @PreAuthorize("hasAuthority('project:create')")
   public void add(Project project) {
     ProjectCode projectCode = project.getProjectCode();
     if (doesProjectExistWithId(project.getId()) || projectDataRepo.projectExists(projectCode)) {
@@ -60,8 +59,14 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     }
     try {
       var savedProject = projectRepo.save(project);
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      var userId = ((QbicUserDetails) authentication.getPrincipal()).getUserId();
+      var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+      var userId = "";
+      if (principal instanceof QbicUserDetails qbicUserDetails) {
+        userId = qbicUserDetails.getUserId();
+      }
+      if (principal instanceof OAuth2User oAuth2User) {
+        userId = oAuth2User.getName();
+      }
       projectAccessService.initializeProject(savedProject.getId(), userId);
       projectAccessService.addAuthorityAccess(savedProject.getId(),
           "ROLE_ADMIN", ProjectAccessService.ProjectRole.ADMIN);

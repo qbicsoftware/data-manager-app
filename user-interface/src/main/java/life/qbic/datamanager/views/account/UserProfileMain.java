@@ -19,6 +19,7 @@ import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * User Profile Main
@@ -65,8 +66,15 @@ public class UserProfileMain extends Main implements BeforeEnterObserver {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    var userInfo = userInformationService.findById(details.getUserId()).orElseThrow();
+    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var userId = "";
+    if (principal instanceof QbicUserDetails qbicUserDetails) {
+      userId = qbicUserDetails.getUserId();
+    }
+    if (principal instanceof OAuth2User oAuth2User) {
+      userId = oAuth2User.getName();
+    }
+    var userInfo = userInformationService.findById(userId).orElseThrow();
     userProfileComponent.showForUser(userInfo);
   }
 

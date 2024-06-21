@@ -11,7 +11,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
-import life.qbic.projectmanagement.application.authorization.authorities.Role;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -22,8 +21,8 @@ import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 /**
@@ -70,14 +69,20 @@ public class ProjectInformationService {
      therefore the list of accessible projectIds for the user have to be retrieved beforehand
    */
   private List<ProjectId> retrieveAccessibleProjectIdsForUser() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    var principal = ((QbicUserDetails) authentication.getPrincipal());
-    var userId = principal.getUserId();
-    var userRole = principal.getAuthorities().stream()
-        .filter(grantedAuthority -> grantedAuthority instanceof Role).findFirst();
+    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var userId = "";
+    if (principal instanceof QbicUserDetails qbicUserDetails) {
+      userId = qbicUserDetails.getUserId();
+    }
+    if (principal instanceof OAuth2User oAuth2User) {
+      userId = oAuth2User.getName();
+    }
+//    //FIXME!!! a user can have multiple roles potentially. Why is this used here?
+//    var userRole = principal.getAuthorities().stream()
+//        .filter(grantedAuthority -> grantedAuthority instanceof Role).findFirst();
     var accessibleProjectIds = projectAccessService.getAccessibleProjectsForSid(userId);
-    userRole.ifPresent(grantedAuthority -> accessibleProjectIds.addAll(
-        projectAccessService.getAccessibleProjectsForSid(grantedAuthority.getAuthority())));
+//    userRole.ifPresent(grantedAuthority -> accessibleProjectIds.addAll(
+//        projectAccessService.getAccessibleProjectsForSid(grantedAuthority.getAuthority())));
     return accessibleProjectIds;
   }
 

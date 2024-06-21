@@ -32,11 +32,13 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * Project overview {@link Main} component that shows project information and additional components
@@ -107,9 +109,17 @@ public class ProjectOverviewMain extends Main {
   private void addTitleAndDescription() {
     Div titleAndDescription = new Div();
     titleAndDescription.addClassName("title-and-description");
-    String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-    var user = userInformationService.findById(userId);
-    Span title = new Span(String.format("Welcome Back %s!", user.orElseThrow().platformUserName()));
+    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var userId = "";
+    if (principal instanceof QbicUserDetails qbicUserDetails) {
+      userId = qbicUserDetails.getUserId();
+    }
+    if (principal instanceof OAuth2User oAuth2User) {
+      userId = oAuth2User.getName();
+    }
+//    var user = userInformationService.findById(userId);
+    Span title = new Span(
+        String.format("Welcome Back %s!", ""/*user.orElseThrow().platformUserName()*/));
     title.addClassNames("project-overview-title");
     Span descriptionStart = new Span(
         "Manage all your scientific data in one place with the Data Manager. You can access our ");

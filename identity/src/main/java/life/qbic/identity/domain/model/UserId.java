@@ -32,7 +32,7 @@ public class UserId implements Serializable {
    * @since 1.0.0
    */
   public static UserId create() {
-    return new UserId(UUID.randomUUID());
+    return new UserId(UUID.randomUUID().toString());
   }
 
   /**
@@ -45,16 +45,12 @@ public class UserId implements Serializable {
    * @since 1.0.0
    */
   public static UserId from(String s) throws IllegalArgumentException {
-    try {
-      return new UserId(UUID.fromString(s));
-    } catch (IllegalArgumentException ignored) {
-      throw new IllegalArgumentException(s+ " has unknown user id format.");
-    }
+    return new UserId(s);
   }
 
-  private UserId(UUID id) {
+  private UserId(String id) {
     super();
-    this.value = id.toString();
+    this.value = id;
   }
 
   /**

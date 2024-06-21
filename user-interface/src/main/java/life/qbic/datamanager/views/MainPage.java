@@ -17,7 +17,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
  *
  * @since 1.0.0
  */
-@Route(value = "", layout = UserMainLayout.class)
+@Route(value = "/landing", layout = UserMainLayout.class)
 @PermitAll
 public class MainPage extends Div implements BeforeEnterObserver {
 

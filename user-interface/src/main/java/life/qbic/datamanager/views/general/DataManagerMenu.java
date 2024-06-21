@@ -16,8 +16,8 @@ import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * Data Manager Menu
@@ -60,12 +60,18 @@ public class DataManagerMenu extends Div {
   }
 
   private void initializeAvatar() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var userId = "";
+    if (principal instanceof QbicUserDetails qbicUserDetails) {
+      userId = qbicUserDetails.getUserId();
+    }
+    if (principal instanceof OAuth2User oAuth2User) {
+      userId = oAuth2User.getName();
+    }
     /*Since users can change their detailsInformation, the variable information in the user session may not be up to date,
       which is why a we retrieve the current state from the database */
-    var userInfo = userInformationService.findById(details.getUserId()).orElseThrow();
-    userAvatar.setUserId(userInfo.id());
+//    var userInfo = userInformationService.findById(userId).orElseThrow();
+    userAvatar.setUserId(userId);
   }
 
   private <T extends Component> void routeTo(Class<T> mainComponent) {

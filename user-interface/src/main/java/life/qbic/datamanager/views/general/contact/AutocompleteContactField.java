@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * <b>A component for contact person input</b>
@@ -98,10 +98,19 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   }
 
   private void onSelfSelected(ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
-    if(checkboxvalueChangeEvent.getValue().booleanValue()) {
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-      Contact userAsContact = new Contact(details.fullName(), details.getEmailAddress());
+    if (checkboxvalueChangeEvent.getValue()) {
+      var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+      var userId = "";
+      if (principal instanceof QbicUserDetails qbicUserDetails) {
+        userId = qbicUserDetails.getUserId();
+      }
+      if (principal instanceof OAuth2User oAuth2User) {
+        userId = oAuth2User.getName();
+      }
+      //TODO FIXME load correct information
+//      UserInfo userInfo = userInformationService.findById(userId).orElseThrow();
+//      Contact userAsContact = new Contact(userInfo.fullName(), userInfo.emailAddress());
+      var userAsContact = new Contact("no information", "no information");
       setContact(userAsContact);
     }
   }

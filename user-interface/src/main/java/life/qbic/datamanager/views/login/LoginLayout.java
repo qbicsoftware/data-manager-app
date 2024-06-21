@@ -17,13 +17,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.spring.security.AuthenticationContext;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -61,7 +58,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     this.registrationSection = initRegistrationSection();
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
-    Anchor orcidOauth = new Anchor("/dev/oauth2/authorization/orcid", "Login with ORCID");
+    //TODO make relative to root including context path
+    Anchor orcidOauth = new Anchor("/foobar/oauth2/authorization/orcid", "Login with ORCID");
     orcidOauth.setRouterIgnore(true);
     contentLayout.add(orcidOauth);
     add(contentLayout);
