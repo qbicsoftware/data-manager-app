@@ -414,6 +414,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     Optional<String> tabLabel = getSelectedTabName();
     if (tabLabel.isPresent()) {
       String label = tabLabel.get();
+
       if (label.equals("Proteomics")) {
         return getSelectedProteomicsMeasurements().size();
       }
@@ -448,12 +449,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   public Optional<String> getSelectedTabName() {
-    if (registeredMeasurementsTabSheet.getSelectedTab() != null && !tabsInTabSheet.isEmpty()) {
-      return Optional.of(tabsInTabSheet.get(registeredMeasurementsTabSheet.getSelectedIndex()).getTabLabel());
-    } else {
+    if (tabsInTabSheet.isEmpty()) {
       return Optional.empty();
     }
-
+    return Optional.ofNullable(registeredMeasurementsTabSheet.getSelectedTab())
+        .map(tab -> ((MeasurementTechnologyTab) tab).getTabLabel());
   }
 
   /**
