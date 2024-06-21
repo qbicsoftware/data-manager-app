@@ -4,6 +4,7 @@ import com.vaadin.flow.router.BeforeEvent;
 import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.Application;
+import life.qbic.datamanager.security.SecurityConfiguration;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -14,6 +15,8 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -97,6 +100,8 @@ public class LoginHandler implements LoginHandlerInterface, ConfirmEmailOutput {
 
   @Override
   public void handle(BeforeEvent beforeEvent) {
+    SecurityContext securityContextHolder = SecurityContextHolder.getContext();
+    securityContextHolder.getAuthentication();
     Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
         .getParameters();
     if (queryParams.containsKey("error")) {

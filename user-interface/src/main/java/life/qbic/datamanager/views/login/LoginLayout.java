@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.login;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
@@ -57,6 +58,9 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     this.registrationSection = initRegistrationSection();
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
+    Anchor orcidOauth = new Anchor("/dev/oauth2/authorization/orcid", "Login with ORCID");
+    orcidOauth.setRouterIgnore(true);
+    contentLayout.add(orcidOauth);
     add(contentLayout);
   }
 
