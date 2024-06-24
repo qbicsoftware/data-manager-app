@@ -95,7 +95,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
     Span projectDesignTitle = new Span(TITLE);
     projectDesignTitle.addClassName("title");
 
-    codeField.setHelperText("Q and 4 letters/numbers");
+    codeField.setHelperText("Q2 and 4 letters/numbers");
     codeField.setValue(ProjectCode.random().value());
     codeField.addClassName("code-field");
     initCodeGenerationButton();
