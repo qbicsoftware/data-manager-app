@@ -15,7 +15,6 @@ import jakarta.annotation.security.PermitAll;
 import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.identity.domain.model.User;
-import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -62,7 +61,6 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
       User user = User.createOidc(fullName, email, username,
           oidcUser.getIssuer().toString(), oidcUser.getName());
-      user.setId(UserId.from(oidcUser.getName()));
       userRepository.addUser(user);
     }
     UI.getCurrent().navigate(Projects.PROJECTS);
