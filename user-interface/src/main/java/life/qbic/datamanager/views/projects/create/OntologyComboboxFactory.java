@@ -74,7 +74,6 @@ public class OntologyComboboxFactory {
     box.setItemLabelGenerator(OntologyComboboxFactory::ontologyItemFormatted);
     box.addClassName("chip-badge");
     box.addClassName("no-chevron");
-
     return box;
   }
 
