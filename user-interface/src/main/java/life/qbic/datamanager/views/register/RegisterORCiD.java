@@ -12,17 +12,15 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.identity.domain.model.EmailAddress;
-import life.qbic.identity.domain.model.EncryptedPassword;
-import life.qbic.identity.domain.model.FullName;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 /**
  * TODO!
@@ -39,6 +37,7 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
   private final UserRepository userRepository;
   private final TextField username;
   private final TextField fullName;
+  private final TextField email;
 
   public RegisterORCiD(
       @Autowired UserRepository userRepository
@@ -49,19 +48,21 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
     fullName.setRequired(true);
     username = new TextField("Username");
     username.setRequired(true);
+    email = new TextField("Email");
+    email.setRequired(true);
     Button submit = new Button("Submit");
-    submit.addClickListener(clickedEvent -> createUser(fullName.getValue(), username.getValue()));
-    content.add(new FormLayout(fullName, username, submit));
+    submit.addClickListener(
+        clickedEvent -> createUser(fullName.getValue(), username.getValue(), email.getValue()));
+    content.add(new FormLayout(fullName, username, email, submit));
     setContent(content);
   }
 
-  private void createUser(String fullName, String username) {
+  private void createUser(String fullName, String username, String email) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication.getPrincipal() instanceof OAuth2User oAuth2User) {
-      EmailAddress emailAddress = EmailAddress.from("test@qbic.uni-tuebingen.de");
-      User user = User.create(FullName.from(fullName), emailAddress, username,
-          EncryptedPassword.fromEncrypted(""));
-      user.setId(UserId.from(oAuth2User.getName()));
+    if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
+      User user = User.createOidc(fullName, email, username,
+          oidcUser.getIssuer().toString(), oidcUser.getName());
+      user.setId(UserId.from(oidcUser.getName()));
       userRepository.addUser(user);
     }
     UI.getCurrent().navigate(Projects.PROJECTS);
@@ -70,10 +71,15 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication.getPrincipal() instanceof OAuth2User oAuth2User) {
-      String familyName = oAuth2User.getAttribute("family_name");
-      String givenName = oAuth2User.getAttribute("given_name");
+    if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
+      String familyName = oidcUser.getAttribute("family_name");
+      String givenName = oidcUser.getAttribute("given_name");
+      String email = oidcUser.getEmail();
       this.fullName.setValue(givenName + " " + familyName);
+      this.username.setValue(Optional.ofNullable(oidcUser.getPreferredUsername())
+          .orElse(this.username.getEmptyValue()));
+      this.email.setValue(Optional.ofNullable(email).orElse(this.email.getEmptyValue()));
+
     }
   }
 }

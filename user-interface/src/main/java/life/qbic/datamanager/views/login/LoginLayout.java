@@ -59,7 +59,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
     //TODO make relative to root including context path
-    Anchor orcidOauth = new Anchor("/dev/oauth2/authorization/orcid", "Login with ORCID");
+    Anchor orcidOauth = new Anchor("/foobar/oauth2/authorization/orcid", "Login with ORCID");
     orcidOauth.setRouterIgnore(true);
     contentLayout.add(orcidOauth);
     add(contentLayout);
