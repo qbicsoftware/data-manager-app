@@ -62,8 +62,12 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
       User user = User.createOidc(fullName, email, username,
           oidcUser.getIssuer().toString(), oidcUser.getName());
       userRepository.addUser(user);
+      //stop here
+      // -> tell them to verify email address
+      // --> after email is verified login should be possible
     }
-    UI.getCurrent().navigate(Projects.PROJECTS);
+    UI.getCurrent().navigate(
+        Projects.PROJECTS); // no user id loaded as authentication principal is not overwritten.
   }
 
   @Override
