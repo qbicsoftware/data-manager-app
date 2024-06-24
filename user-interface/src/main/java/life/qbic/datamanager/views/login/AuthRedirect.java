@@ -14,8 +14,11 @@ import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * TODO!
@@ -38,6 +41,8 @@ public class AuthRedirect extends Div implements BeforeEnterObserver {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+    var session = attributes.getRequest().getSession();
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       event.forwardTo(Projects.PROJECTS);
     } else if (principal instanceof OAuth2User oAuth2User) {

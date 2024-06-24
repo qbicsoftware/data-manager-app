@@ -8,6 +8,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity(debug = true)
@@ -30,11 +34,19 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     http.oauth2Login(oAuth2Login -> {
       oAuth2Login.loginPage("/login").permitAll();
       oAuth2Login.defaultSuccessUrl("/auth");
+      oAuth2Login.successHandler((request, response, authentication) -> {
+        response.sendRedirect("/dev/auth");
+          }
+          );
       oAuth2Login.failureUrl("/login?errorOauth2=true&error");
     });
     super.configure(http);
     setLoginView(http, LoginLayout.class);
   }
+
+
+
+
 
 
 }
