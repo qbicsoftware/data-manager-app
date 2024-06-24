@@ -32,13 +32,13 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * Project overview {@link Main} component that shows project information and additional components
@@ -114,8 +114,8 @@ public class ProjectOverviewMain extends Main {
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       userId = qbicUserDetails.getUserId();
     }
-    if (principal instanceof OAuth2User oAuth2User) {
-      userId = oAuth2User.getName();
+    if (principal instanceof QbicOidcUser qbicOidcUser) {
+      userId = qbicOidcUser.getQbicUserId();
     }
 //    var user = userInformationService.findById(userId);
     Span title = new Span(

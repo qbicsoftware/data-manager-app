@@ -22,10 +22,10 @@ import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * Personal Access Token Main
@@ -73,8 +73,8 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
       if (principal instanceof QbicUserDetails qbicUserDetails) {
         userId = qbicUserDetails.getUserId();
       }
-      if (principal instanceof OAuth2User oAuth2User) {
-        userId = oAuth2User.getName();
+      if (principal instanceof QbicOidcUser qbicOidcUser) {
+        userId = qbicOidcUser.getQbicUserId();
       }
       personalAccessTokenService.delete(deleteTokenEvent.tokenId(), userId);
       loadGeneratedPersonalAccessTokens();
@@ -96,8 +96,8 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
       if (principal instanceof QbicUserDetails qbicUserDetails) {
         userId = qbicUserDetails.getUserId();
       }
-      if (principal instanceof OAuth2User oAuth2User) {
-        userId = oAuth2User.getName();
+      if (principal instanceof QbicOidcUser qbicOidcUser) {
+        userId = qbicOidcUser.getQbicUserId();
       }
       RawToken createdToken = personalAccessTokenService.create(userId,
           event.personalAccessTokenDTO()
@@ -124,8 +124,8 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       userId = qbicUserDetails.getUserId();
     }
-    if (principal instanceof OAuth2User oAuth2User) {
-      userId = oAuth2User.getName();
+    if (principal instanceof QbicOidcUser oidcUser) {
+      userId = oidcUser.getQbicUserId();
     }
     Collection<PersonalAccessToken> personalAccessTokens = personalAccessTokenService.findAll(
         userId);

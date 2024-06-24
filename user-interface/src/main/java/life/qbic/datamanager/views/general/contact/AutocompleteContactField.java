@@ -14,9 +14,9 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.HasBinderValidation;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * <b>A component for contact person input</b>
@@ -104,8 +104,8 @@ public class AutocompleteContactField extends CustomField<Contact> implements
       if (principal instanceof QbicUserDetails qbicUserDetails) {
         userId = qbicUserDetails.getUserId();
       }
-      if (principal instanceof OAuth2User oAuth2User) {
-        userId = oAuth2User.getName();
+      if (principal instanceof QbicOidcUser qbicOidcUser) {
+        userId = qbicOidcUser.getQbicUserId();
       }
       //TODO FIXME load correct information
 //      UserInfo userInfo = userInformationService.findById(userId).orElseThrow();

@@ -14,10 +14,10 @@ import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * Data Manager Menu
@@ -65,8 +65,8 @@ public class DataManagerMenu extends Div {
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       userId = qbicUserDetails.getUserId();
     }
-    if (principal instanceof OAuth2User oAuth2User) {
-      userId = oAuth2User.getName();
+    if (principal instanceof QbicOidcUser qbicOidcUser) {
+      userId = qbicOidcUser.getQbicUserId();
     }
     /*Since users can change their detailsInformation, the variable information in the user session may not be up to date,
       which is why a we retrieve the current state from the database */

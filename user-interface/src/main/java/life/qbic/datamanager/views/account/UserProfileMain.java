@@ -15,11 +15,11 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * User Profile Main
@@ -71,8 +71,8 @@ public class UserProfileMain extends Main implements BeforeEnterObserver {
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       userId = qbicUserDetails.getUserId();
     }
-    if (principal instanceof OAuth2User oAuth2User) {
-      userId = oAuth2User.getName();
+    if (principal instanceof QbicOidcUser qbicOidcUser) {
+      userId = qbicOidcUser.getQbicUserId();
     }
     var userInfo = userInformationService.findById(userId).orElseThrow();
     userProfileComponent.showForUser(userInfo);

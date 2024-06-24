@@ -9,6 +9,7 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -22,7 +23,6 @@ import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 /**
@@ -74,8 +74,8 @@ public class ProjectInformationService {
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       userId = qbicUserDetails.getUserId();
     }
-    if (principal instanceof OAuth2User oAuth2User) {
-      userId = oAuth2User.getName();
+    if (principal instanceof QbicOidcUser qbicOidcUser) {
+      userId = qbicOidcUser.getQbicUserId();
     }
 //    //FIXME!!! a user can have multiple roles potentially. Why is this used here?
 //    var userRole = principal.getAuthorities().stream()
