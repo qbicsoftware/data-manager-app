@@ -16,8 +16,15 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
  */
 public class QbicOidcUser extends DefaultOidcUser {
 
+  private final String qbicUserId;
+
   public QbicOidcUser(Collection<? extends GrantedAuthority> authorities, OidcIdToken idToken,
-      OidcUserInfo userInfo) {
+      OidcUserInfo userInfo, String qbicUserId) {
     super(authorities, idToken, userInfo);
+    this.qbicUserId = qbicUserId;
+  }
+
+  public String getQbicUserId() {
+    return qbicUserId;
   }
 }

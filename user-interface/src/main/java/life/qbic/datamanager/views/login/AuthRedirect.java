@@ -10,13 +10,12 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.register.RegisterORCiD;
-import life.qbic.identity.domain.model.UserId;
-import life.qbic.identity.domain.repository.UserRepository;
+import life.qbic.identity.api.UserInformationService;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -32,10 +31,11 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @PermitAll
 public class AuthRedirect extends Div implements BeforeEnterObserver {
 
-  private final UserRepository userRepository;
+  private final UserInformationService userInformationService;
 
-  public AuthRedirect(@Autowired UserRepository userRepository) {
-    this.userRepository = requireNonNull(userRepository, "userRepository must not be null");
+  public AuthRedirect(@Autowired UserInformationService userInformationService) {
+    this.userInformationService = requireNonNull(userInformationService,
+        "userInformationService must not be null");
   }
 
   @Override
@@ -45,11 +45,13 @@ public class AuthRedirect extends Div implements BeforeEnterObserver {
     var session = attributes.getRequest().getSession();
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       event.forwardTo(Projects.PROJECTS);
-    } else if (principal instanceof OAuth2User oAuth2User) {
-      userRepository.findById(UserId.from(oAuth2User.getName()))
+    } else if (principal instanceof QbicOidcUser qbicOidcUser) {
+      userInformationService.findById(qbicOidcUser.getQbicUserId())
           .ifPresentOrElse(
               found -> event.forwardTo(Projects.PROJECTS),
               () -> event.forwardTo(RegisterORCiD.class));
+    } else if (principal instanceof OidcUser oidcUser) {
+      event.forwardTo(RegisterORCiD.class);
     } else {
       event.rerouteToError(NotFoundException.class);
     }

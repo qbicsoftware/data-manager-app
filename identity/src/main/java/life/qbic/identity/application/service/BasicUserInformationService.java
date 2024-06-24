@@ -66,6 +66,11 @@ public class BasicUserInformationService implements UserInformationService, User
   }
 
   @Override
+  public Optional<UserInfo> findByOidc(String oidcId, String oidcIssuer) {
+    return userRepository.findByOidc(oidcId, oidcIssuer).map(this::convert);
+  }
+
+  @Override
   public List<UserInfo> findAllActive(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {

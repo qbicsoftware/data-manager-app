@@ -44,5 +44,7 @@ public interface UserInformationService {
    */
   boolean userNameAvailable(String userName);
 
+  Optional<UserInfo> findByOidc(String oidcId, String oidcIssuer);
+
   List<UserInfo> findAllActive(String filter, int offset, int limit, List<SortOrder> sortOrders);
 }
