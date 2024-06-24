@@ -111,7 +111,7 @@ public class User implements Serializable {
     Instant registrationDate = Instant.now();
     var user = new User(id, FullName.from(fullName)
         , EmailAddress.from(emailAddress), userName, null, registrationDate, oidcIssuer, oidcId);
-    user.active = true;
+    user.active = false;
     return user;
   }
 
