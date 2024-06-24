@@ -32,7 +32,7 @@ class ProjectCreationServiceSpec extends Specification {
 
 
     Result<Project, ApplicationException> resultWithExperimentalDesign = projectCreationServiceWithStubs.createProject(
-            "source offer", "QABCD",
+            "source offer", "Q2ABCD",
             null,
             "objective",
             personReference,
@@ -50,7 +50,7 @@ class ProjectCreationServiceSpec extends Specification {
     def contact = new Contact("Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",
             "my title",
             "objective",
             contact,
@@ -88,7 +88,7 @@ class ProjectCreationServiceSpec extends Specification {
     def contact = new Contact("Mustermann", "some@notavailable.zxü")
 
     when: "create is called without a project manager"
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",
             "my title",
             "objective",
             contact,
@@ -108,7 +108,7 @@ class ProjectCreationServiceSpec extends Specification {
     def contact = new Contact("Mustermann", "some@notavailable.zxü")
 
     when: "a project is created with a non-empty title"
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",
             "my title",
             "objective",
             contact,
@@ -126,7 +126,7 @@ class ProjectCreationServiceSpec extends Specification {
     def contact = new Contact("Mustermann", "some@notavailable.zxü")
 
     when:
-    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
+    Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",
             "my title",
             "objective",
             contact,
