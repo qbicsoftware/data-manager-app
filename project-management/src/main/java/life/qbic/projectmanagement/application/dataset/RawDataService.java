@@ -143,6 +143,18 @@ public class RawDataService {
     return measurementLookupService.queryAllProteomicsMeasurements(samplesInExperiment);
   }
 
+  public int countNGSDatasets(ExperimentId experimentId) {
+    var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
+    var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
+    return rawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
+  }
+
+  public int countProteomicsDatasets(ExperimentId experimentId) {
+    var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
+    var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode).toList();
+    return rawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
+  }
+
   /**
    * Raw Data File information to be employed in the frontend containing information collected from
    * the connected datastore

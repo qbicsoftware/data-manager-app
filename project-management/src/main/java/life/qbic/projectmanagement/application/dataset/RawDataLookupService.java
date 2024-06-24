@@ -47,7 +47,6 @@ public class RawDataLookupService {
     return new ArrayList<>(dataList);
   }
 
-
   /**
    * Provides the count of the registered measurements for the provided measurementIds
    *
@@ -55,7 +54,7 @@ public class RawDataLookupService {
    *                  determined
    * @return number of raw data for all domains associated with the provided measurementIds
    */
-  public long countRawDataByMeasurementCodes(Collection<MeasurementCode> measurementCodes) {
+  public int countRawDataByMeasurementCodes(Collection<MeasurementCode> measurementCodes) {
     return rawDataLookup.countRawDataByMeasurementIds(measurementCodes);
   }
 

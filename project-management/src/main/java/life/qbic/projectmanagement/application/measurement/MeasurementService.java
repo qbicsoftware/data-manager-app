@@ -98,6 +98,18 @@ public class MeasurementService {
     return measurementLookupService.countMeasurementsBySampleIds(samplesInExperiment) != 0;
   }
 
+  public long countProteomicsMeasurements(ExperimentId experimentId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.countProteomicsMeasurementsBySampleIds(samplesInExperiment);
+  }
+
+  public long countNGSMeasurements(ExperimentId experimentId) {
+    var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
+    var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
+    return measurementLookupService.countNGSMeasurementsBySampleIds(samplesInExperiment);
+  }
+
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
