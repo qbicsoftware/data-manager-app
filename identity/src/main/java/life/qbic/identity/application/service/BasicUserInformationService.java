@@ -9,6 +9,8 @@ import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserPassword;
+import life.qbic.identity.api.UserPasswordService;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.identity.domain.model.User;
@@ -26,7 +28,7 @@ import org.springframework.data.domain.Sort.Order;
  *
  * @since 1.0.0
  */
-public class BasicUserInformationService implements UserInformationService {
+public class BasicUserInformationService implements UserInformationService, UserPasswordService {
 
   private static final Logger log = logger(BasicUserInformationService.class);
 
@@ -79,14 +81,21 @@ public class BasicUserInformationService implements UserInformationService {
             filter, new OffsetBasedRequest(offset, limit, Sort.by(orders)))
         .stream()
         .map(user -> new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
-            user.userName(), user.getEncryptedPassword().get(), user.isActive()))
+            user.userName(), user.isActive()))
         .toList();
   }
 
   private UserInfo convert(User user) {
     return new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
         user.userName(),
-        user.getEncryptedPassword().get(),
         user.isActive());
   }
+
+  @Override
+  public Optional<UserPassword> findForUser(String userId) {
+    return userRepository.findById(UserId.from(userId))
+        .map(user -> user.getEncryptedPassword() != null ? user : null)
+        .map(user -> new UserPassword(user.id().get(), user.getEncryptedPassword().get()));
+  }
+
 }

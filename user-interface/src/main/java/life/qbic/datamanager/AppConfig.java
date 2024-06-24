@@ -5,6 +5,7 @@ import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserPasswordService;
 import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.notification.NotificationService;
@@ -43,11 +44,11 @@ import life.qbic.projectmanagement.application.policy.MeasurementCreatedPolicy;
 import life.qbic.projectmanagement.application.policy.MeasurementUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.OfferAddedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
+import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.QCAddedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
@@ -128,6 +129,11 @@ public class AppConfig {
 
   @Bean
   public UserInformationService userInformationService(UserRepository userRepository) {
+    return new BasicUserInformationService(userRepository);
+  }
+
+  @Bean
+  public UserPasswordService userPasswordService(UserRepository userRepository) {
     return new BasicUserInformationService(userRepository);
   }
 

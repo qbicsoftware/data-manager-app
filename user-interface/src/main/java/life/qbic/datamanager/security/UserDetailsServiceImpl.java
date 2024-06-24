@@ -1,8 +1,9 @@
 package life.qbic.datamanager.security;
 
 import java.util.List;
-import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserPassword;
+import life.qbic.identity.api.UserPasswordService;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.User;
 import life.qbic.projectmanagement.application.authorization.authorities.UserAuthorityProvider;
@@ -18,12 +19,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
   private final UserInformationService userInformationService;
 
+  private final UserPasswordService userPasswordService;
+
   private final UserAuthorityProvider userAuthorityProvider;
 
   @Autowired
   UserDetailsServiceImpl(UserInformationService userInformationService,
+      UserPasswordService userPasswordService,
       UserAuthorityProvider userAuthorityProvider) {
     this.userInformationService = userInformationService;
+    this.userPasswordService = userPasswordService;
     this.userAuthorityProvider = userAuthorityProvider;
   }
 
@@ -35,18 +40,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     // Then search for a user with the provided mail address
     var userInfo = userInformationService.findByEmail(mailAddress)
         .orElseThrow(() -> new UsernameNotFoundException("Cannot find user"));
+    var encryptedPassword = userPasswordService.findForUser(userInfo.id())
+        .map(UserPassword::encryptedPassword);
     List<GrantedAuthority> authorities = userAuthorityProvider.getAuthoritiesByUserId(
         userInfo.id());
     var user = new User(userInfo.id(), userInfo.fullName(), userInfo.platformUserName(),
         userInfo.emailAddress(),
-        userInfo.encryptedPassword(), userInfo.isActive());
+        encryptedPassword.orElseGet(null), userInfo.isActive());
     return new QbicUserDetails(user, authorities);
-  }
-
-  private User convert(UserInfo userInfo) {
-    return new User(userInfo.id(), userInfo.fullName(), userInfo.emailAddress(),
-        userInfo.platformUserName(),
-        userInfo.encryptedPassword(),
-        userInfo.isActive());
   }
 }
