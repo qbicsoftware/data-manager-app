@@ -5,6 +5,7 @@ import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
+import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
@@ -30,8 +31,8 @@ public class UserMainLayout extends DataManagerLayout {
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");
     Objects.requireNonNull(userInformationService);
-//    dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
-    addToNavbar(navBarTitle/*, dataManagerMenu*/);
+    var dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
+    addToNavbar(navBarTitle, dataManagerMenu);
 
   }
 }
