@@ -23,7 +23,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
-import life.qbic.datamanager.views.general.footer.FooterComponent;
+import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
@@ -68,8 +68,8 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired OntologyLookupService ontologyTermInformationService,
-      @Autowired FooterComponent footerComponent) {
-    super(Objects.requireNonNull(footerComponent));
+      @Autowired FooterComponentFactory footerComponentFactory) {
+    super(Objects.requireNonNull(footerComponentFactory));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
