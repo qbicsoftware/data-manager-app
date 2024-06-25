@@ -1,12 +1,15 @@
 package life.qbic.datamanager.views.register;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -16,19 +19,13 @@ import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.repository.UserRepository;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
-/**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 @Route("register/orcid")
 @PermitAll
 public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
@@ -37,6 +34,8 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
   private final TextField username;
   private final TextField fullName;
   private final TextField email;
+
+  private static final Logger log = logger(RegisterORCiD.class);
 
   public RegisterORCiD(
       @Autowired UserRepository userRepository
@@ -58,6 +57,12 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
 
   private void createUser(String fullName, String username, String email) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication.getPrincipal() instanceof QbicOidcUser qbicOidcUser) {
+      log.warn("Existing user %s tried to re-register.".formatted(qbicOidcUser.getQbicUserId()));
+      UI.getCurrent().navigate(
+          Projects.PROJECTS); // no user id loaded as authentication principal is not overwritten.
+      return;
+    }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
       User user = User.createOidc(fullName, email, username,
           oidcUser.getIssuer().toString(), oidcUser.getName());
@@ -73,15 +78,27 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication.getPrincipal() instanceof QbicOidcUser qbicOidcUser) {
+      log.warn("User %s tried to enter registration although exists.".formatted(
+          qbicOidcUser.getQbicUserId()));
+      History history = UI.getCurrent().getPage().getHistory();
+      history.back();
+    }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-      String familyName = oidcUser.getAttribute("family_name");
-      String givenName = oidcUser.getAttribute("given_name");
-      String email = oidcUser.getEmail();
-      this.fullName.setValue(givenName + " " + familyName);
-      this.username.setValue(Optional.ofNullable(oidcUser.getPreferredUsername())
-          .orElse(this.username.getEmptyValue()));
-      this.email.setValue(Optional.ofNullable(email).orElse(this.email.getEmptyValue()));
-
+      //note: for ORCiD, only given name and family name are supported https://orcid.org/.well-known/openid-configuration
+      this.fullName.setValue(buildFullName(oidcUser.getGivenName(), oidcUser.getMiddleName(),
+          oidcUser.getFamilyName()));
+      Optional.ofNullable(oidcUser.getEmail()).ifPresent(this.email::setValue);
+      Optional.ofNullable(oidcUser.getPreferredUsername()).ifPresent(this.username::setValue);
     }
   }
+
+  private static String buildFullName(String givenName, String middleName, String familyName) {
+    return "%s%s%s".formatted(
+        isNull(givenName) ? "" : givenName,
+        isNull(middleName) ? "" : " " + middleName,
+        isNull(familyName) ? "" : " " + familyName
+    );
+  }
+
 }
