@@ -9,7 +9,6 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.page.History;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -17,6 +16,7 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.Optional;
 import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.MainPage;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.logging.api.Logger;
@@ -26,18 +26,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
-@Route("register/orcid")
+@Route("register/oidc")
 @PermitAll
-public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
+public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObserver {
 
   private final UserRepository userRepository;
   private final TextField username;
   private final TextField fullName;
   private final TextField email;
 
-  private static final Logger log = logger(RegisterORCiD.class);
+  private static final Logger log = logger(RegisterOpenIdConnect.class);
 
-  public RegisterORCiD(
+  public RegisterOpenIdConnect(
       @Autowired UserRepository userRepository
   ) {
     Div content = new Div();
@@ -57,19 +57,16 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
 
   private void createUser(String fullName, String username, String email) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication.getPrincipal() instanceof QbicOidcUser qbicOidcUser) {
-      log.warn("Existing user %s tried to re-register.".formatted(qbicOidcUser.getQbicUserId()));
-      UI.getCurrent().navigate(
-          Projects.PROJECTS); // no user id loaded as authentication principal is not overwritten.
-      return;
+    if (authentication.getPrincipal() instanceof QbicOidcUser) {
+      return; //nothing to do
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
       User user = User.createOidc(fullName, email, username,
           oidcUser.getIssuer().toString(), oidcUser.getName());
       userRepository.addUser(user);
-      //stop here
-      // -> tell them to verify email address
-      // --> after email is verified login should be possible
+      //TODO move user creation to registration service
+      UI.getCurrent().navigate(PleaseConfirmEmailPage.class);
+      return;
     }
     UI.getCurrent().navigate(
         Projects.PROJECTS); // no user id loaded as authentication principal is not overwritten.
@@ -81,11 +78,11 @@ public class RegisterORCiD extends AppLayout implements BeforeEnterObserver {
     if (authentication.getPrincipal() instanceof QbicOidcUser qbicOidcUser) {
       log.warn("User %s tried to enter registration although exists.".formatted(
           qbicOidcUser.getQbicUserId()));
-      History history = UI.getCurrent().getPage().getHistory();
-      history.back();
+      event.rerouteTo(MainPage.class);
+      return;
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-      //note: for ORCiD, only given name and family name are supported https://orcid.org/.well-known/openid-configuration
+      //note: for ORCiD, only given name and family name are supported https://orcid.org/.well-known/openid-configuration.
       this.fullName.setValue(buildFullName(oidcUser.getGivenName(), oidcUser.getMiddleName(),
           oidcUser.getFamilyName()));
       Optional.ofNullable(oidcUser.getEmail()).ifPresent(this.email::setValue);

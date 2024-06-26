@@ -21,22 +21,24 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 //@Import({AclSecurityConfiguration.class}) // enable in case you need beans from the Acl config
 public class SecurityConfiguration extends VaadinWebSecurity {
 
-  @Autowired(required = true)
+  @Autowired
   VaadinDefaultRequestCache defaultRequestCache;
 
   @Value("${routing.registration.oidc.orcid.endpoint}")
   String registrationOrcidEndpoint;
+
+  @Value("${routing.registration.error.pending-email-verification}")
+  String pleaseConfirmEmailEndpoint;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new QBiCPasswordEncoder();
   }
 
-  private AuthenticationSuccessHandler authenticationSuccessHandler(
-      String openIdRegistrationEndpoint, VaadinDefaultRequestCache defaultRequestCache) {
-    requireNonNull(openIdRegistrationEndpoint, "openIdRegistrationEndpoint must not be null");
+  private AuthenticationSuccessHandler authenticationSuccessHandler() {
+    requireNonNull(registrationOrcidEndpoint, "openIdRegistrationEndpoint must not be null");
     StoredRequestAwareOidcAuthenticationSuccessHandler storedRequestAwareOidcAuthenticationSuccessHandler = new StoredRequestAwareOidcAuthenticationSuccessHandler(
-        openIdRegistrationEndpoint);
+        registrationOrcidEndpoint, pleaseConfirmEmailEndpoint);
     storedRequestAwareOidcAuthenticationSuccessHandler.setRequestCache(defaultRequestCache);
     return storedRequestAwareOidcAuthenticationSuccessHandler;
   }
@@ -51,7 +53,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
       oAuth2Login.loginPage("/login").permitAll();
       oAuth2Login.defaultSuccessUrl("/");
       oAuth2Login.successHandler(
-          authenticationSuccessHandler(this.registrationOrcidEndpoint, this.defaultRequestCache));
+          authenticationSuccessHandler());
       oAuth2Login.failureUrl("/login?errorOauth2=true&error");
     });
     super.configure(http);
