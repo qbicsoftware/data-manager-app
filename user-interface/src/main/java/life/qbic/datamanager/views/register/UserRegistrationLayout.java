@@ -16,6 +16,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.AppRoutes;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = AppRoutes.REGISTER, layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
+@UIScope
 public class UserRegistrationLayout extends VerticalLayout {
 
   @Serial
