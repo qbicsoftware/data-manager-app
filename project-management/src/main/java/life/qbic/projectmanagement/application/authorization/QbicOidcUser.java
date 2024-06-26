@@ -17,14 +17,20 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 public class QbicOidcUser extends DefaultOidcUser {
 
   private final String qbicUserId;
+  private final boolean active;
 
   public QbicOidcUser(Collection<? extends GrantedAuthority> authorities, OidcIdToken idToken,
-      OidcUserInfo userInfo, String qbicUserId) {
+      OidcUserInfo userInfo, String qbicUserId, boolean active) {
     super(authorities, idToken, userInfo);
     this.qbicUserId = qbicUserId;
+    this.active = active;
   }
 
   public String getQbicUserId() {
     return qbicUserId;
+  }
+
+  public boolean isActive() {
+    return active;
   }
 }

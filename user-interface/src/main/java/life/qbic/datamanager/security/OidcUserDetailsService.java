@@ -48,8 +48,9 @@ public class OidcUserDetailsService extends OidcUserService {
       var user = localUser.get();
       var authorities = userAuthorityProvider.getAuthoritiesByUserId(
           user.id());
-      return new QbicOidcUser(authorities, userRequest.getIdToken(), defaultOidcUser.getUserInfo(),
-          user.id());
+      return new QbicOidcUser(authorities, userRequest.getIdToken(),
+          defaultOidcUser.getUserInfo(),
+          user.id(), user.isActive());
     }
     return defaultOidcUser;
   }
