@@ -30,8 +30,8 @@ public class EmailConfirmationLinkSupplier {
             @Value("${service.host.name}") String host,
             @Value("${service.host.port}") int port,
             @Value("${server.servlet.context-path}") String contextPath,
-            @Value("${email-confirmation-endpoint}") String loginEndpoint,
-            @Value("${email-confirmation-parameter}") String emailConfirmationParameter) {
+        @Value("${routing.email-confirmation.endpoint}") String loginEndpoint,
+        @Value("${routing.email-confirmation.confirmation-parameter}") String emailConfirmationParameter) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;
