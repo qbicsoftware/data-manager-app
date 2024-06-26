@@ -104,6 +104,11 @@
       "name": "openbis.datasource.dss.url",
       "type": "java.lang.String",
       "description": "URL of the openbis datastore server containing the measurement information"
+    },
+    {
+      "name": "routing.registration.oidc.orcid.endpoint",
+      "type": "java.lang.String",
+      "description": "The routing target for openid connect registration"
     }
   ]
 }

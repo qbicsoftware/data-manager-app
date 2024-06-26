@@ -31,7 +31,7 @@ public class NewPasswordHandler implements NewPasswordHandlerInterface, NewPassw
 
   @Autowired
   NewPasswordHandler(NewPasswordInput newPasswordUseCase,
-      @Value("${password-reset-parameter}") String newPasswordParam) {
+      @Value("${routing.password-reset.reset-parameter}") String newPasswordParam) {
     this.passwordReset = newPasswordUseCase;
     this.currentUserId = "";
     this.passwordResetQueryParameter = newPasswordParam;
