@@ -35,7 +35,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 @AnonymousAllowed
 public class PleaseConfirmEmailPage extends Div implements BeforeEnterObserver {
 
-  private final UserInformationService userInformationService;
+  private final transient UserInformationService userInformationService;
 
   public PleaseConfirmEmailPage(UserInformationService userInformationService) {
     this.userInformationService = requireNonNull(userInformationService,

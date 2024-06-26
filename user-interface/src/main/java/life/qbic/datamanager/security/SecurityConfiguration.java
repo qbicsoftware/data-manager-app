@@ -16,19 +16,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-@EnableWebSecurity(debug = false)
+@EnableWebSecurity
 @Configuration
 //@Import({AclSecurityConfiguration.class}) // enable in case you need beans from the Acl config
 public class SecurityConfiguration extends VaadinWebSecurity {
 
-  @Autowired
-  VaadinDefaultRequestCache defaultRequestCache;
+  final VaadinDefaultRequestCache defaultRequestCache;
 
   @Value("${routing.registration.oidc.orcid.endpoint}")
   String registrationOrcidEndpoint;
 
   @Value("${routing.registration.error.pending-email-verification}")
   String pleaseConfirmEmailEndpoint;
+
+  public SecurityConfiguration(
+      @Autowired VaadinDefaultRequestCache defaultRequestCache) {
+    this.defaultRequestCache = requireNonNull(defaultRequestCache,
+        "defaultRequestCache must not be null");
+  }
 
   @Bean
   public PasswordEncoder passwordEncoder() {
