@@ -123,6 +123,12 @@ class RegistrationSpec extends Specification {
         List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String username, Pageable pageable) {
             return users.stream().filter { it.userName() == username }.filter { it.isActive() }.collect(Collectors.toList())
         }
+
+        @Override
+        Optional<User> findByOidcIdEqualsAndOidcIssuerEquals(String oidcId, String oidcIssuer) {
+            return users.stream().filter { it.oidcId.orElse(null) == oidcId }.filter { it.oidcIssuer.orElse(null) == oidcIssuer }.findFirst()
+
+        }
     }
 
 }
