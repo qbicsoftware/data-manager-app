@@ -15,8 +15,7 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,13 +40,16 @@ public class UserProfileMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(UserProfileMain.class);
   private final UserProfileComponent userProfileComponent;
   private final transient UserInformationService userInformationService;
+  private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
   public UserProfileMain(@Autowired UserProfileComponent userProfileComponent,
-      @Autowired UserInformationService userInformationService) {
+      @Autowired UserInformationService userInformationService,
+      AuthenticationToUserIdTranslationService userIdTranslator) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userProfileComponent = requireNonNull(userProfileComponent,
         "userProfileComponent must not be null");
+    this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
     addClassName("user-profile");
     add(userProfileComponent);
     log.debug(String.format(
@@ -66,14 +68,7 @@ public class UserProfileMain extends Main implements BeforeEnterObserver {
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    var userId = "";
-    if (principal instanceof QbicUserDetails qbicUserDetails) {
-      userId = qbicUserDetails.getUserId();
-    }
-    if (principal instanceof QbicOidcUser qbicOidcUser) {
-      userId = qbicOidcUser.getQbicUserId();
-    }
+    var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();
     var userInfo = userInformationService.findById(userId).orElseThrow();
     userProfileComponent.showForUser(userInfo);
   }
