@@ -6,6 +6,7 @@ import java.util.Optional;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser.QbicUserInfo;
 import life.qbic.projectmanagement.application.authorization.authorities.UserAuthorityProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -15,12 +16,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * A details service loading user detais for OpenId Connect users known to the system.
  */
 @Component
 public class OidcUserDetailsService extends OidcUserService {
@@ -48,9 +44,10 @@ public class OidcUserDetailsService extends OidcUserService {
       var user = localUser.get();
       var authorities = userAuthorityProvider.getAuthoritiesByUserId(
           user.id());
+      QbicUserInfo qbicUserInfo = new QbicUserInfo(user.id(), user.fullName(), user.emailAddress(),
+          user.isActive());
       return new QbicOidcUser(authorities, userRequest.getIdToken(),
-          defaultOidcUser.getUserInfo(),
-          user.id(), user.isActive());
+          defaultOidcUser.getUserInfo(), qbicUserInfo);
     }
     return defaultOidcUser;
   }

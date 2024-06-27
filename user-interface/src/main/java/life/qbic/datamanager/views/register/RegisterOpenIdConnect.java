@@ -62,14 +62,15 @@ public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObser
     email.setRequired(true);
     Button submit = new Button("Submit");
     submit.addClickListener(
-        clickedEvent -> createUser(fullName.getValue(), username.getValue(), email.getValue()));
+        clickedEvent -> registerOidcUser(fullName.getValue(), username.getValue(),
+            email.getValue()));
     errorArea = new Div();
     errorArea.setVisible(false);
     content.add(new FormLayout(fullName, username, email, submit), errorArea);
     setContent(content);
   }
 
-  private void createUser(String fullName, String username, String email) {
+  private void registerOidcUser(String fullName, String username, String email) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication.getPrincipal() instanceof QbicOidcUser) {
       return; //nothing to do
@@ -79,31 +80,35 @@ public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObser
           username, email, oidcUser.getIssuer().toString(),
           oidcUser.getName());
       registrationResponse.ifSuccessOrElse(
-          success -> {
-            errorArea.removeAll();
-            errorArea.setVisible(false);
-            UI.getCurrent().navigate(PleaseConfirmEmailPage.class);
-          },
-          failure -> {
-            String allErrorMessages = failure.failures().stream().map(Throwable::getMessage)
-                .collect(Collectors.joining("\n"));
-            List<Component> errorMessages = failure.failures().stream()
-                .map(errorMessageTranslationService::translate)
-                .map(userFriendlyErrorMessage -> {
-                  Div errorDiv = new Div();
-                  errorDiv.add(new Span(userFriendlyErrorMessage.title() + ": "),
-                      new Span(userFriendlyErrorMessage.message()));
-                  return (Component) errorDiv;
-                }).toList();
-            errorArea.add(errorMessages);
-            log.error(allErrorMessages);
-            failure.failures().forEach(e -> log.debug(e.getMessage(), e));
-          }
+          this::onSuccessfulOidcUserRegistration,
+          this::onFailedOidcUserRegistration
       );
       return;
     }
     UI.getCurrent().navigate(
         Projects.PROJECTS); // no user id loaded as authentication principal is not overwritten.
+  }
+
+  private void onFailedOidcUserRegistration(ApplicationResponse failure) {
+    String allErrorMessages = failure.failures().stream().map(Throwable::getMessage)
+        .collect(Collectors.joining("\n"));
+    List<Component> errorMessages = failure.failures().stream()
+        .map(errorMessageTranslationService::translate)
+        .map(userFriendlyErrorMessage -> {
+          Div errorDiv = new Div();
+          errorDiv.add(new Span(userFriendlyErrorMessage.title() + ": "),
+              new Span(userFriendlyErrorMessage.message()));
+          return (Component) errorDiv;
+        }).toList();
+    errorArea.add(errorMessages);
+    log.error(allErrorMessages);
+    failure.failures().forEach(e -> log.debug(e.getMessage(), e));
+  }
+
+  private void onSuccessfulOidcUserRegistration(ApplicationResponse success) {
+    errorArea.removeAll();
+    errorArea.setVisible(false);
+    UI.getCurrent().navigate(PleaseConfirmEmailPage.class);
   }
 
   @Override

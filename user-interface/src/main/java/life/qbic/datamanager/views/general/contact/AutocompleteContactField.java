@@ -16,6 +16,7 @@ import java.util.List;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -97,20 +98,22 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     clear();
   }
 
-  private void onSelfSelected(ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
-    if (checkboxvalueChangeEvent.getValue()) {
+  private void onSelfSelected(
+      ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
+    if (Boolean.TRUE.equals(checkboxvalueChangeEvent.getValue())) {
       var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-      var userId = "";
+      String fullName;
+      String emailAddress;
       if (principal instanceof QbicUserDetails qbicUserDetails) {
-        userId = qbicUserDetails.getUserId();
+        fullName = qbicUserDetails.fullName();
+        emailAddress = qbicUserDetails.getEmailAddress();
+      } else if (principal instanceof QbicOidcUser qbicOidcUser) {
+        fullName = qbicOidcUser.getFullName();
+        emailAddress = qbicOidcUser.getEmail();
+      } else {
+        throw new AuthenticationCredentialsNotFoundException("Unknown authentication principal");
       }
-      if (principal instanceof QbicOidcUser qbicOidcUser) {
-        userId = qbicOidcUser.getQbicUserId();
-      }
-      //TODO FIXME load correct information
-//      UserInfo userInfo = userInformationService.findById(userId).orElseThrow();
-//      Contact userAsContact = new Contact(userInfo.fullName(), userInfo.emailAddress());
-      var userAsContact = new Contact("no information", "no information");
+      Contact userAsContact = new Contact(fullName, emailAddress);
       setContact(userAsContact);
     }
   }
