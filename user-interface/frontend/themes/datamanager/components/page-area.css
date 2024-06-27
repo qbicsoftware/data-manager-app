@@ -569,6 +569,10 @@
   width: 100%;
 }
 
+.sample-details-component .sample-grid {
+  height: 100%;
+}
+
 .sample-details-component .search-bar {
   gap: var(--lumo-space-s);
   display: inline-flex;

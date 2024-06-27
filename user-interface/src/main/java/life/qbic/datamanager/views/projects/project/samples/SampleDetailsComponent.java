@@ -7,7 +7,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -168,31 +167,57 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   private static Grid<SamplePreview> createSampleGrid() {
     Grid<SamplePreview> sampleGrid = new Grid<>(SamplePreview.class);
-    sampleGrid.addColumn(SamplePreview::sampleCode).setHeader("Sample ID")
-        .setSortProperty("sampleCode").setAutoWidth(true).setFlexGrow(0)
+    sampleGrid.addColumn(SamplePreview::sampleCode)
+        .setHeader("Sample ID")
+        .setSortProperty("sampleCode")
+        .setAutoWidth(true)
+        .setFlexGrow(0)
         .setTooltipGenerator(SamplePreview::sampleCode);
-    sampleGrid.addColumn(SamplePreview::sampleLabel).setHeader("Sample Label")
-        .setSortProperty("sampleLabel").setTooltipGenerator(SamplePreview::sampleLabel);
-    sampleGrid.addColumn(SamplePreview::organismId).setHeader("Organism ID")
-        .setSortProperty("organismId").setTooltipGenerator(SamplePreview::organismId);
-    sampleGrid.addColumn(SamplePreview::batchLabel).setHeader("Batch")
-        .setSortProperty("batchLabel").setTooltipGenerator(SamplePreview::batchLabel);
-    sampleGrid.addColumn(createConditionRenderer()).setHeader("Condition")
-        .setSortProperty("experimentalGroup").setAutoWidth(true).setFlexGrow(0);
-    sampleGrid.addColumn(preview -> preview.species().getLabel()).setHeader("Species")
+    sampleGrid.addColumn(SamplePreview::sampleLabel)
+        .setHeader("Sample Label")
+        .setSortProperty("sampleLabel")
+        .setTooltipGenerator(SamplePreview::sampleLabel)
+        .setAutoWidth(true);
+    sampleGrid.addColumn(SamplePreview::organismId)
+        .setHeader("Organism ID")
+        .setSortProperty("organismId")
+        .setTooltipGenerator(SamplePreview::organismId)
+        .setAutoWidth(true);
+    sampleGrid.addColumn(SamplePreview::batchLabel)
+        .setHeader("Batch")
+        .setSortProperty("batchLabel")
+        .setTooltipGenerator(SamplePreview::batchLabel)
+        .setAutoWidth(true);
+    sampleGrid.addColumn(createConditionRenderer())
+        .setHeader("Condition")
+        .setSortProperty("experimentalGroup")
+        .setAutoWidth(true);
+    sampleGrid.addColumn(preview -> preview.species().getLabel())
+        .setHeader("Species")
         .setSortProperty("species")
-        .setTooltipGenerator(preview -> preview.species().formatted());
-    sampleGrid.addColumn(preview -> preview.specimen().getLabel()).setHeader("Specimen")
-        .setSortProperty("specimen").setTooltipGenerator(preview -> preview.specimen().formatted());
-    sampleGrid.addColumn(preview -> preview.analyte().getLabel()).setHeader("Analyte")
+        .setTooltipGenerator(preview -> preview.species().formatted())
+        .setAutoWidth(true);
+    sampleGrid.addColumn(preview -> preview.specimen().getLabel())
+        .setHeader("Specimen")
+        .setSortProperty("specimen")
+        .setTooltipGenerator(preview -> preview.specimen().formatted())
+        .setAutoWidth(true);
+    sampleGrid.addColumn(preview -> preview.analyte().getLabel())
+        .setHeader("Analyte")
         .setSortProperty("analyte")
-        .setTooltipGenerator(preview -> preview.analyte().formatted());
-    sampleGrid.addColumn(SamplePreview::analysisMethod).setHeader("Analysis to Perform")
-        .setSortProperty("analysisMethod").setTooltipGenerator(SamplePreview::analysisMethod);
-    sampleGrid.addColumn(SamplePreview::comment).setHeader("Comment").setSortProperty("comment")
-        .setTooltipGenerator(SamplePreview::comment);
+        .setTooltipGenerator(preview -> preview.analyte().formatted())
+        .setAutoWidth(true);
+    sampleGrid.addColumn(SamplePreview::analysisMethod)
+        .setHeader("Analysis to Perform")
+        .setSortProperty("analysisMethod")
+        .setTooltipGenerator(SamplePreview::analysisMethod)
+        .setAutoWidth(true);
+    sampleGrid.addColumn(SamplePreview::comment)
+        .setHeader("Comment")
+        .setSortProperty("comment")
+        .setTooltipGenerator(SamplePreview::comment)
+        .setAutoWidth(true);
     sampleGrid.addClassName("sample-grid");
-    sampleGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
     return sampleGrid;
   }
 
