@@ -77,7 +77,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
     Objects.requireNonNull(userPermissions);
     Objects.requireNonNull(addExperimentToProjectService);
     Objects.requireNonNull(ontologyTermInformationService);
-    this.dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
+    this.dataManagerMenu = new DataManagerMenu(logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(

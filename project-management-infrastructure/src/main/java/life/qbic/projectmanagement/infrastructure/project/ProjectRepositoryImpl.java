@@ -64,7 +64,8 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     try {
       var savedProject = projectRepo.save(project);
       var userId = userIdTranslator.translateToUserId(
-          SecurityContextHolder.getContext().getAuthentication()).orElseThrow();
+              SecurityContextHolder.getContext().getAuthentication())
+          .orElseThrow();
       projectAccessService.initializeProject(savedProject.getId(), userId);
       projectAccessService.addAuthorityAccess(savedProject.getId(),
           "ROLE_ADMIN", ProjectAccessService.ProjectRole.ADMIN);

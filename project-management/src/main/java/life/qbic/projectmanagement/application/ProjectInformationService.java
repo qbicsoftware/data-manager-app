@@ -75,8 +75,7 @@ public class ProjectInformationService {
    */
   private List<ProjectId> retrieveAccessibleProjectIdsForUser() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    Optional<String> optionalUserId = userIdTranslator.translateToUserId(
-        authentication);
+    Optional<String> optionalUserId = userIdTranslator.translateToUserId(authentication);
     if (optionalUserId.isEmpty()) {
       return new ArrayList<>();
     }

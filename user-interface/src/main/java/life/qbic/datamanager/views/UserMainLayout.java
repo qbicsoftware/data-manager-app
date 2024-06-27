@@ -32,7 +32,7 @@ public class UserMainLayout extends DataManagerLayout {
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");
     Objects.requireNonNull(userInformationService);
-    var dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
+    var dataManagerMenu = new DataManagerMenu(logoutService);
     addToNavbar(navBarTitle, dataManagerMenu);
 
   }

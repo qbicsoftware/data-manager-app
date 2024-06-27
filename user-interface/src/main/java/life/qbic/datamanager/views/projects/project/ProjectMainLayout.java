@@ -66,7 +66,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyLookupService);
-    dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
+    dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");
     addToNavbar(projectMainNavbar);
