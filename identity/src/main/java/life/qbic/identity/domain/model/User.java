@@ -115,10 +115,6 @@ public class User implements Serializable {
     return user;
   }
 
-  public void setId(UserId id) {
-    this.id = id;
-  }
-
   @Override
   public String toString() {
     return "User{" +
