@@ -21,18 +21,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Data Manager")
 public class UserMainLayout extends DataManagerLayout {
 
-  //  private final DataManagerMenu dataManagerMenu;
-  private final Span navBarTitle = new Span("Data Manager");
-
   public UserMainLayout(@Autowired LogoutService logoutService,
       UserInformationService userInformationService,
       @Autowired FooterComponentFactory footerComponentFactory) {
     super(Objects.requireNonNull(footerComponentFactory));
     Objects.requireNonNull(logoutService);
+    Span navBarTitle = new Span("Data Manager");
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");
     Objects.requireNonNull(userInformationService);
-    var dataManagerMenu = new DataManagerMenu(logoutService);
+    DataManagerMenu dataManagerMenu = new DataManagerMenu(logoutService);
     addToNavbar(navBarTitle, dataManagerMenu);
 
   }

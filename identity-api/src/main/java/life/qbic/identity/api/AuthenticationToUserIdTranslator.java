@@ -4,17 +4,14 @@ import java.util.Optional;
 import org.springframework.security.core.Authentication;
 
 /**
- * TODO!
- * <b>short description</b>
+ * Translates an {@link Authentication} object into an identifier of QBiC
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.2.0
  */
 public interface AuthenticationToUserIdTranslator {
 
   /**
-   * Tranlsates an authentication object to the associated userId
+   * Translates an authentication object to the associated userId
    *
    * @param authentication
    * @return

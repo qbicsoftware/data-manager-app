@@ -1,8 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 
-import static org.slf4j.LoggerFactory.getLogger;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -35,7 +33,6 @@ import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -51,7 +48,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnterObserver {
 
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private static final Logger log = getLogger(ExperimentMainLayout.class);
   private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private final ProjectSideNavigationComponent projectSideNavigationComponent;
   private final ExperimentNavigationComponent experimentNavigationComponent = new ExperimentNavigationComponent();

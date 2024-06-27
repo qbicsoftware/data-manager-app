@@ -32,10 +32,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     this.userAuthorityProvider = userAuthorityProvider;
   }
 
-  @Override
   /**
-   * In our case the mail address is the username
+   * @param mailAddress the username identifying the user whose data is required.
+   * @return existing user details
+   * @throws UsernameNotFoundException if no user with this email exists
    */
+  @Override
   public UserDetails loadUserByUsername(String mailAddress) throws UsernameNotFoundException {
     // Then search for a user with the provided mail address
     var userInfo = userInformationService.findByEmail(mailAddress)

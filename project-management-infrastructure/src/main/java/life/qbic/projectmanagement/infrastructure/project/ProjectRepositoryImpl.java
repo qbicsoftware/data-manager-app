@@ -51,7 +51,6 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     this.projectDataRepo = projectDataRepo;
     this.projectAccessService = projectAccessService;
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
-    ;
   }
 
   @Override

@@ -62,13 +62,12 @@ public class PleaseConfirmEmailPage extends Div implements BeforeEnterObserver {
     if (isNull(authentication)) {
       return; //logged out already
     }
-    if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-      if (isAlreadyActiveUser(oidcUser)) {
+    if (authentication.getPrincipal() instanceof OidcUser oidcUser && isAlreadyActiveUser(
+        oidcUser)) {
         // no idea how they ended up here but the account is already active so they can go to the main page directly
         event.forwardTo(MainPage.class);
-        return;
-      }
     }
+
   }
 
   private boolean isAlreadyActiveUser(OidcUser oidcUser) {
