@@ -39,7 +39,7 @@ import life.qbic.identity.api.RawToken;
  * Personal Access Token Component
  * <p>
  * This {@link PageArea} allows the user to manage his personal access tokens. The user is able to
- * view a tokens expiration date and descripton. Additionally,he is able to delete and create
+ * view a tokens expiration date and description. Additionally,he is able to delete and create
  * personal access tokens. Only after a personal access token is created its raw text is shown to
  * the user with the ability to copy it to the clipboard
  */
@@ -137,7 +137,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   private Div generateDescription() {
     Anchor downloadGuideLink = new Anchor(
-        "https://qbicsoftware.github.io/research-data-management/download/introduction/",
+        "https://qbicsoftware.github.io/research-data-management/rawdata/raw_data_download_create_pat/",
         "Download Guide", AnchorTarget.BLANK);
     Text upperDescription = new Text(
         "Personal access tokens allow you to access your own data via the API. They can be used as an alternative over basic authentication (authentication through username and password).");
