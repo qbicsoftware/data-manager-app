@@ -21,6 +21,7 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.register.UserRegistrationLayout;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -44,22 +45,22 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private final transient LoginHandlerInterface viewHandler;
 
-  public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface) {
-    initLayout();
+  public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface,
+      @Value("${server.servlet.context-path}") String contextPath) {
+    initLayout(contextPath);
     styleLayout();
     viewHandler = loginHandlerInterface;
     registerToHandler(viewHandler);
   }
 
-  private void initLayout() {
+  private void initLayout(final String contextPath) {
     contentLayout = new VerticalLayout();
     createNotificationLayout();
     createLoginForm();
     this.registrationSection = initRegistrationSection();
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
-    //TODO make relative to root including context path
-    Anchor orcidOauth = new Anchor("/foobar/oauth2/authorization/orcid", "Login with ORCID");
+    Anchor orcidOauth = new Anchor(contextPath + "/oauth2/authorization/orcid", "Login with ORCID");
     orcidOauth.setRouterIgnore(true);
     contentLayout.add(orcidOauth);
     add(contentLayout);
