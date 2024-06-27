@@ -68,7 +68,6 @@ public class PleaseConfirmEmailPage extends Div implements BeforeEnterObserver {
         event.forwardTo(MainPage.class);
         return;
       }
-      SecurityContextHolder.getContext().setAuthentication(null);
     }
   }
 

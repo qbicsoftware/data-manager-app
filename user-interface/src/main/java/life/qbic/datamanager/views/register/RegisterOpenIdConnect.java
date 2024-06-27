@@ -14,6 +14,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.List;
@@ -34,7 +36,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 @Route("register/oidc")
 @PermitAll
-public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObserver {
+public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObserver,
+    BeforeLeaveObserver {
 
   private final TextField username;
   private final TextField fullName;
@@ -79,6 +82,7 @@ public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObser
       ApplicationResponse registrationResponse = identityService.registerOpenIdUser(fullName,
           username, email, oidcUser.getIssuer().toString(),
           oidcUser.getName());
+      resetErrors();
       registrationResponse.ifSuccessOrElse(
           this::onSuccessfulOidcUserRegistration,
           this::onFailedOidcUserRegistration
@@ -101,8 +105,14 @@ public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObser
           return (Component) errorDiv;
         }).toList();
     errorArea.add(errorMessages);
+    errorArea.setVisible(true);
     log.error(allErrorMessages);
     failure.failures().forEach(e -> log.debug(e.getMessage(), e));
+  }
+
+  private void resetErrors() {
+    errorArea.setVisible(false);
+    errorArea.removeAll();
   }
 
   private void onSuccessfulOidcUserRegistration(ApplicationResponse success) {
@@ -137,4 +147,8 @@ public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObser
     );
   }
 
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    SecurityContextHolder.getContext().setAuthentication(null); // remove authentication
+  }
 }
