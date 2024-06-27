@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
@@ -39,12 +40,12 @@ public class ProjectInformationService {
   private final ProjectOverviewLookup projectOverviewLookup;
   private final ProjectRepository projectRepository;
   private final ProjectAccessService projectAccessService;
-  private final AuthenticationToUserIdTranslationService userIdTranslator;
+  private final AuthenticationToUserIdTranslator userIdTranslator;
 
   public ProjectInformationService(@Autowired ProjectOverviewLookup projectOverviewLookup,
       @Autowired ProjectRepository projectRepository,
       @Autowired ProjectAccessService projectAccessService,
-      AuthenticationToUserIdTranslationService userIdTranslator) {
+      AuthenticationToUserIdTranslator userIdTranslator) {
     Objects.requireNonNull(projectOverviewLookup);
     this.projectOverviewLookup = projectOverviewLookup;
     this.projectRepository = projectRepository;
