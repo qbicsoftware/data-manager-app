@@ -6,7 +6,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
   </parent>
 
   <artifactId>finances-infrastructure</artifactId>
@@ -20,7 +20,7 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>finances</artifactId>
-      <version>1.0.3</version>
+      <version>1.0.4</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
