@@ -25,5 +25,6 @@ public interface RawDataLookup {
       Collection<MeasurementCode> measurementCodes, int offset,
       int limit, List<SortOrder> sortOrders);
 
-  long countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes);
+  int countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes);
+
 }

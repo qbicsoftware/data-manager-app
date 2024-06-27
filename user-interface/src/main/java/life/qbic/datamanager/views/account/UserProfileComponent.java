@@ -187,7 +187,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
       userAvatar.setName(userInfo.platformUserName());
       userAvatar.setUserId(userInfo.id());
       UserAvatarWithNameComponent avatarWithName = new UserAvatarWithNameComponent(userAvatar,
-          userInfo.platformUserName());
+          userInfo.fullName());
       avatarWithName.getUserNameComponent().addClassName("bold");
 
       Span changePlatformUserName = new Span("Change Username");

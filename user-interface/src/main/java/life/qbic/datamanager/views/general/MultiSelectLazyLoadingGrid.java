@@ -44,29 +44,44 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
   private Checkbox renderCheckbox(T bean) {
     Checkbox box = new Checkbox();
-    box.addValueChangeListener(event -> {
+    Registration boxListener = box.addValueChangeListener(event -> {
       var checkBoxSelectEvent = new CheckBoxSelectedEvent(box, bean, event.isFromClient());
       updateSelectedItem(event.getValue(), bean);
       listeners.forEach(listener -> listener.onComponentEvent(checkBoxSelectEvent));
 
+      // if a user selected/deselected one box, we check if the select all checkbox needs to change
       if (event.isFromClient()) {
-        Boolean allBoxVal = selectAllCheckBox.getValue();
-        if(Boolean.TRUE.equals(allBoxVal) && Boolean.FALSE.equals(box.getValue())) {
-          selectAllCheckBox.setValue(false);
-        } else if(Boolean.FALSE.equals(allBoxVal) && areAllSelected()) {
-          selectAllCheckBox.setValue(true);
-        }
+        updateAllCheckBox(event.getValue());
       }
     });
     /*Necessary to propagate selection of select all checkbox to individual checkbox*/
-    selectAllCheckBox.addValueChangeListener(event -> {
+    Registration allSelectBoxListener = selectAllCheckBox.addValueChangeListener(event -> {
       if(event.isFromClient()) {
         box.setValue(event.getValue());
       }
     });
     /*Necessary to keep items selected even if grid pagination is reloaded*/
     box.setValue(selectedItems.contains(bean));
+
+    //if the box is removed, we remove the respective listeners
+    box.addDetachListener(detachEvent -> {
+      boxListener.remove();
+      allSelectBoxListener.remove();
+    });
+
     return box;
+  }
+
+  private void updateAllCheckBox(Boolean value) {
+    Boolean allBoxVal = selectAllCheckBox.getValue();
+    // all boxes were selected -> user deselected one
+    if (Boolean.TRUE.equals(allBoxVal) && Boolean.FALSE.equals(value)) {
+      selectAllCheckBox.setValue(false);
+    }
+    // all but one box were selected -> all are now selected
+    else if (Boolean.FALSE.equals(allBoxVal) && areAllSelected()) {
+      selectAllCheckBox.setValue(true);
+    }
   }
 
   private void updateSelectedItem(boolean isSelected, T bean) {
