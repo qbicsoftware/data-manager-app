@@ -1,16 +1,7 @@
 package life.qbic.datamanager.views.login;
 
-import com.vaadin.flow.router.BeforeEvent;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import life.qbic.datamanager.Application;
-import life.qbic.datamanager.views.AppRoutes;
-import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.InformationMessage;
-import life.qbic.identity.application.user.registration.ConfirmEmailInput;
-import life.qbic.identity.application.user.registration.ConfirmEmailOutput;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
