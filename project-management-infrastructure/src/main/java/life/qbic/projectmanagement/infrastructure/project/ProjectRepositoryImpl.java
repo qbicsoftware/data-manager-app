@@ -1,12 +1,12 @@
 package life.qbic.projectmanagement.infrastructure.project;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -41,13 +41,17 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   private final QbicProjectRepo projectRepo;
   private final QbicProjectDataRepo projectDataRepo;
   private final ProjectAccessService projectAccessService;
+  private final AuthenticationToUserIdTranslationService userIdTranslator;
 
   @Autowired
   public ProjectRepositoryImpl(QbicProjectRepo projectRepo,
-      QbicProjectDataRepo projectDataRepo, ProjectAccessService projectAccessService) {
+      QbicProjectDataRepo projectDataRepo, ProjectAccessService projectAccessService,
+      AuthenticationToUserIdTranslationService userIdTranslator) {
     this.projectRepo = projectRepo;
     this.projectDataRepo = projectDataRepo;
     this.projectAccessService = projectAccessService;
+    this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
+    ;
   }
 
   @Override
@@ -59,14 +63,8 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     }
     try {
       var savedProject = projectRepo.save(project);
-      var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-      var userId = "";
-      if (principal instanceof QbicUserDetails qbicUserDetails) {
-        userId = qbicUserDetails.getUserId();
-      }
-      if (principal instanceof QbicOidcUser qbicOidcUser) {
-        userId = qbicOidcUser.getQbicUserId();
-      }
+      var userId = userIdTranslator.translateToUserId(
+          SecurityContextHolder.getContext().getAuthentication()).orElseThrow();
       projectAccessService.initializeProject(savedProject.getId(), userId);
       projectAccessService.addAuthorityAccess(savedProject.getId(),
           "ROLE_ADMIN", ProjectAccessService.ProjectRole.ADMIN);
