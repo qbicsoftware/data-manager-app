@@ -11,12 +11,9 @@ import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 
 /**
- * TODO!
- * <b>short description</b>
+ * An Oidc user enriched with QBiC information
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.2.0
  */
 public class QbicOidcUser extends DefaultOidcUser {
 
