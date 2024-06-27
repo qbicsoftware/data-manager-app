@@ -23,6 +23,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
+import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -53,7 +54,7 @@ public class ProteomicsMeasurement {
 
   @EmbeddedId
   @AttributeOverride(name = "uuid", column = @Column(name = "measurement_id"))
-  private MeasurementId id;
+  private MeasurementId measurementId;
 
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm instrument;
@@ -103,12 +104,13 @@ public class ProteomicsMeasurement {
         method); // throws IllegalArgumentException if required properties are missing
     evaluateMandatorySpecificMetadata(
         proteomicsMeasurementMetadata); // throws IllegalArgumentException if required properties are missing
-    this.id = id;
+    this.measurementId = id;
     this.organisation = organisation;
     this.measurementCode = measurementCode;
     this.registration = registration;
     setMethodMetadata(method);
     this.specificMetadata = new HashSet<>(proteomicsMeasurementMetadata);
+    emitCreatedEvent();
   }
 
   private static void evaluateMandatorySpecificMetadata(
@@ -201,7 +203,11 @@ public class ProteomicsMeasurement {
   }
 
   public MeasurementId measurementId() {
-    return id;
+    return measurementId;
+  }
+
+  public ProjectId projectId() {
+    return projectId;
   }
 
   public Collection<SampleId> measuredSamples() {
@@ -244,7 +250,7 @@ public class ProteomicsMeasurement {
   public Instant registrationDate() {
     return registration;
   }
-
+  
   public void updateMethod(ProteomicsMethodMetadata method) {
     setMethodMetadata(method);
     emitUpdatedEvent();
@@ -267,6 +273,11 @@ public class ProteomicsMeasurement {
     LocalDomainEventDispatcher.instance().dispatch(measurementUpdatedEvent);
   }
 
+  private void emitCreatedEvent() {
+    var measurementCreatedEvent = new MeasurementCreatedEvent(this.measurementId());
+    LocalDomainEventDispatcher.instance().dispatch(measurementCreatedEvent);
+  }
+
   public void setSamplePoolGroup(String group) {
     this.samplePool = group;
   }
@@ -285,6 +296,7 @@ public class ProteomicsMeasurement {
 
   public void setOrganisation(Organisation organisation) {
     this.organisation = organisation;
+    emitUpdatedEvent();
   }
 
   @Override
@@ -296,12 +308,12 @@ public class ProteomicsMeasurement {
       return false;
     }
 
-    return Objects.equals(id, that.id);
+    return Objects.equals(measurementId, that.measurementId);
   }
 
   @Override
   public int hashCode() {
-    return id != null ? id.hashCode() : 0;
+    return measurementId != null ? measurementId.hashCode() : 0;
   }
 
   public Optional<String> comment() {

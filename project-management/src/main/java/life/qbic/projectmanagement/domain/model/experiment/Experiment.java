@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
+import static java.util.Objects.requireNonNull;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
@@ -13,11 +15,13 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
+import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ConditionExistsException;
 import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableExistsException;
-import life.qbic.projectmanagement.domain.model.experiment.exception.ExperimentalVariableNotDefinedException;
 
 
 /**
@@ -39,7 +43,13 @@ public class Experiment {
   private String name;
   @Embedded
   private ExperimentalDesign experimentalDesign;
-
+  @Column(name = "speciesIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  private String speciesIconName;
+  @Column(name = "specimenIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  private String specimenIconName;
+  @Column(name = "analyteIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  private String analyteIconName;
+  
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
   //FIXME should be `analyte`in the database and here
@@ -51,7 +61,7 @@ public class Experiment {
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
   //FIXME should be `specimen`in the database and here
   private List<OntologyTerm> specimens = new ArrayList<>();
-
+  private static final String defaultIconName = "default";
 
   /**
    * Please use {@link Experiment#create(String)} instead
@@ -60,11 +70,23 @@ public class Experiment {
     // Please use the create method. This is needed for JPA
   }
 
+  protected Experiment(String name) {
+    if (name.isEmpty()) {
+      throw new ApplicationException("An Experiment must have a name");
+    }
+    this.name = name;
+    this.experimentId = ExperimentId.create();
+    emitExperimentCreatedEvent();
+  }
+
   public static Experiment create(String name) {
-    Experiment experiment = new Experiment();
-    experiment.name = name;
+    Experiment experiment = new Experiment(name);
     experiment.experimentalDesign = ExperimentalDesign.create();
-    experiment.experimentId = ExperimentId.create();
+
+    experiment.speciesIconName = defaultIconName;
+    experiment.specimenIconName = defaultIconName;
+    experiment.analyteIconName = defaultIconName;
+
     return experiment;
   }
 
@@ -84,6 +106,33 @@ public class Experiment {
     return name;
   }
 
+  public String getSpeciesIconName() {
+    return speciesIconName;
+  }
+
+  public String getSpecimenIconName() {
+    return specimenIconName;
+  }
+
+  public String getAnalyteIconName() {
+    return analyteIconName;
+  }
+
+  public void setIconNames(String speciesIconName, String specimenIconName,
+      String analyteIconName) {
+    this.speciesIconName = validateIconName(speciesIconName);
+    this.specimenIconName = validateIconName(specimenIconName);
+    this.analyteIconName = validateIconName(analyteIconName);
+  }
+
+  private String validateIconName(String iconName) {
+    requireNonNull(iconName, "Icon names must not be null");
+    if (iconName.isBlank()) {
+      throw new ApplicationException("Icon names must not be blank");
+    }
+    return iconName;
+  }
+
   /**
    * Retrieves the list of experimental variables stored within the Experiment.
    *
@@ -93,27 +142,6 @@ public class Experiment {
 
   public List<ExperimentalVariable> variables() {
     return experimentalDesign.variables();
-  }
-
-
-  /**
-   * Adds a level to an experimental variable with the given name. A successful operation is
-   * indicated in the result, which can be verified via {@link Result#isValue()}.
-   * <p>
-   * <b>Note</b>: If a variable with the provided name is not defined in the design, the creation
-   * will fail with an {@link ExperimentalVariableNotDefinedException}. You can check via
-   * {@link Result#isError()} if this is the case.
-   *
-   * @param variableName a declarative and unique name for the variable
-   * @param level        the value to be added to the levels of that variable
-   * @return a {@link Result} object containing the added level value or declarative exceptions. The
-   * result will contain an {@link ExperimentalVariableNotDefinedException} if no variable with the
-   * provided name is defined in this design.
-   * @since 1.0.0
-   */
-  public Result<VariableLevel, Exception> addLevelToVariable(String variableName,
-      ExperimentalValue level) {
-    return experimentalDesign.addLevelToVariable(variableName, level);
   }
 
   /**
@@ -159,6 +187,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.specimens.addAll(missingSpecimens);
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -169,6 +198,7 @@ public class Experiment {
   public void removeAllExperimentalVariables() {
     removeAllExperimentalGroups();
     experimentalDesign.removeAllExperimentalVariables();
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -178,6 +208,7 @@ public class Experiment {
    */
   public void removeExperimentalGroups(List<Long> ids) {
     ids.forEach(experimentalDesign::removeExperimentalGroup);
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -189,6 +220,7 @@ public class Experiment {
     for (ExperimentalGroup experimentalGroup : experimentalDesign.getExperimentalGroups()) {
       experimentalDesign.removeExperimentalGroup(experimentalGroup.id());
     }
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -207,6 +239,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.analytes.addAll(missingAnalytes);
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -224,6 +257,7 @@ public class Experiment {
         .distinct()
         .toList();
     this.species.addAll(missingSpecies);
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -243,7 +277,8 @@ public class Experiment {
    */
   public Result<VariableName, Exception> addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    return experimentalDesign.addVariable(variableName, levels);
+    return experimentalDesign.addVariable(variableName, levels)
+    .onValue(x -> emitExperimentUpdatedEvent());
   }
 
   /**
@@ -264,7 +299,8 @@ public class Experiment {
   public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String groupName,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
-    return experimentalDesign.addExperimentalGroup(groupName, variableLevels, sampleSize);
+    return experimentalDesign.addExperimentalGroup(groupName, variableLevels, sampleSize)
+        .onValue(x -> emitExperimentUpdatedEvent());
   }
 
   /**
@@ -285,7 +321,8 @@ public class Experiment {
   public Result<ExperimentalGroup, ResponseCode> updateExperimentalGroup(long id, String groupName,
       Collection<VariableLevel> variableLevels,
       int sampleSize) {
-    return experimentalDesign.updateExperimentalGroup(id, groupName, variableLevels, sampleSize);
+    return experimentalDesign.updateExperimentalGroup(id, groupName, variableLevels, sampleSize)
+        .onValue(ignored -> emitExperimentUpdatedEvent());
   }
 
   public List<ExperimentalGroup> getExperimentalGroups() {
@@ -316,6 +353,7 @@ public class Experiment {
           ErrorParameters.of(species));
     }
     this.species = species;
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -328,6 +366,7 @@ public class Experiment {
           ErrorParameters.of(specimens));
     }
     this.specimens = specimens;
+    emitExperimentUpdatedEvent();
   }
 
   /**
@@ -340,5 +379,16 @@ public class Experiment {
           ErrorParameters.of(analytes));
     }
     this.analytes = analytes;
+    emitExperimentUpdatedEvent();
+  }
+
+  private void emitExperimentUpdatedEvent() {
+    var updatedEvent = new ExperimentUpdatedEvent(this.experimentId());
+    LocalDomainEventDispatcher.instance().dispatch(updatedEvent);
+  }
+
+  private void emitExperimentCreatedEvent() {
+    var createdEvent = new ExperimentCreatedEvent(this.experimentId());
+    LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 }

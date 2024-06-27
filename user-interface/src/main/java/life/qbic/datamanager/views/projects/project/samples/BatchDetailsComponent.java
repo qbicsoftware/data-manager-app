@@ -146,6 +146,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     Button editButton = new Button(editIcon);
     Button deleteButton = new Button(deleteIcon);
     editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
+    deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE,
+        ButtonVariant.LUMO_ERROR);
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
         e.isFromClient())));

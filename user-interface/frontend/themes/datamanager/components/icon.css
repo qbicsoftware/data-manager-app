@@ -18,6 +18,10 @@ vaadin-icon.small {
   width: var(--lumo-icon-size-s);
 }
 
+vaadin-icon.smallest {
+  width: 1em;
+}
+
 vaadin-icon.copy-icon {
   color: var(--lumo-contrast-50pct);
 }

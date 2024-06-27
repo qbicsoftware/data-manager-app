@@ -8,8 +8,8 @@ import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.data.binder.ValidationResult;
 
 /**
- * Mixin interface for components that provide a binder for validation.
- * Sets properties for invalid state and error message string to show when invalid.
+ * Mixin interface for components that provide a binder for validation. Sets properties for invalid
+ * state and error message string to show when invalid.
  */
 public interface HasBinderValidation<T> extends HasValidationProperties {
 
@@ -48,13 +48,28 @@ public interface HasBinderValidation<T> extends HasValidationProperties {
     requireNonNull(getBinder(), "getBinder() must not be null");
     BinderValidationStatus<T> validationStatus = getBinder().validate();
     setInvalid(validationStatus.hasErrors());
-    setErrorMessage(validationStatus
-        .getValidationErrors().stream()
-        .filter(it -> !it.getErrorMessage().isBlank())
-        .findFirst()
-        .map(ValidationResult::getErrorMessage)
-        .orElse(getDefaultErrorMessage()));
+    if (useBinderErrorMessage()) {
+      setErrorMessage(validationStatus
+          .getValidationErrors().stream()
+          .filter(it -> !it.getErrorMessage().isBlank())
+          .findFirst()
+          .map(ValidationResult::getErrorMessage)
+          .orElse(getDefaultErrorMessage()));
+    } else {
+      setErrorMessage(getDefaultErrorMessage());
+    }
     return this;
+  }
+
+  /**
+   * True if the binder error message should be used. If false, then the default error message is
+   * used always.
+   *
+   * @return true if the binder error message is used; false if the default error message is used
+   * only.
+   */
+  default boolean useBinderErrorMessage() {
+    return true;
   }
 
   /**

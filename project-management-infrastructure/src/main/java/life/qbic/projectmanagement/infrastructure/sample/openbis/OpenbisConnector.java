@@ -631,7 +631,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   }
 
   @Override
-  public long countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes) {
+  public int countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes) {
     DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
     DataSetSearchCriteria searchCriteria = new DataSetSearchCriteria();
     List<String> codes = new ArrayList<>(

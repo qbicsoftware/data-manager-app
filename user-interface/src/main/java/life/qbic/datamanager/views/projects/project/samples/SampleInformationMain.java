@@ -217,7 +217,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
         sampleInfo.getSampleLabel(), sampleInfo.getOrganismId(),
         sampleInfo.getAnalysisToBePerformed(),
-       sampleInfo.getExperimentalGroup(),
+        sampleInfo.getExperimentalGroup(),
         sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
         sampleInfo.getCustomerComment()));
   }

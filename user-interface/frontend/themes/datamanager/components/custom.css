@@ -6,6 +6,7 @@
 @import "combobox.css";
 @import "dialog.css";
 @import "div.css";
+@import "image.css";
 @import "info.css";
 @import "icon.css";
 @import "main.css";
@@ -16,3 +17,18 @@
 @import "spreadsheet.css";
 @import "vaadin-custom.css";
 @import "virtuallist.css";
+
+vaadin-avatar-group vaadin-avatar,
+.user-avatar {
+  background-color: white;
+  border-color: var(--lumo-contrast-20pct);
+}
+
+.avatar-with-name {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  column-gap: var(--lumo-space-s);
+  row-gap: initial;
+}

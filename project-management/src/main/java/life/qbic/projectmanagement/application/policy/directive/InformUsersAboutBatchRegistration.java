@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.application.policy.directive;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
@@ -65,9 +64,12 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     notifyAllRecipients(recipients, event.projectTitle(), event.name(), sampleUri);
   }
 
-  public void notifyAllRecipients(List<RecipientDTO> recipients, String projectTitle, String batchName, String sampleUri) {
+  public void notifyAllRecipients(List<RecipientDTO> recipients, String projectTitle,
+      String batchName, String sampleUri) {
     for (RecipientDTO recipient : recipients) {
-      jobScheduler.enqueue(() -> notifyRecipient(recipient.getEmailAddress(), recipient.getFullName(), projectTitle, batchName, sampleUri));
+      jobScheduler.enqueue(
+          () -> notifyRecipient(recipient.getEmailAddress(), recipient.getFullName(), projectTitle,
+              batchName, sampleUri));
     }
   }
 
@@ -83,8 +85,9 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
     return users;
   }
 
-  @Job(name = "Notify users about batch registration")
+  @Job(name = "Notify users about batch registration of batch %3 in project %2")
   public void notifyRecipient(String emailAddress, String fullName, String projectTitle, String batchName,
+
       String sampleUri) {
     String subject = "New samples added to project";
 

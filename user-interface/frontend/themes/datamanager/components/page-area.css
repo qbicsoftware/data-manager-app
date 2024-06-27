@@ -10,9 +10,6 @@
   flex-direction: column;
   display: flex;
   gap: var(--lumo-space-s);
-  border: 1px solid;
-  border-color: var(--lumo-contrast-10pct);
-  border-radius: var(--lumo-border-radius-m);
 }
 
 .page-area .title {
@@ -31,7 +28,7 @@
 }
 
 .batch-details-component .editor-buttons {
-  display: flex;
+  display: inline-flex;
   gap: var(--lumo-space-s);
 }
 
@@ -144,13 +141,25 @@
 
 .measurement-details-component .measurement-grid {
   height: 100%;
-  width: 100%;
 }
 
-.measurement-details-component .measurement-grid .sample-code-column {
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--lumo-space-s);
+.measurement-details-component .measurement-grid .measurement-column-cell {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.measurement-details-component .measurement-grid .sample-column-cell {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+  align-items: center;
+}
+
+.measurement-details-component .measurement-grid .sample-column-cell .expand-icon {
+  width: 1em;
+  height: 1em;
+  color: var(--lumo-primary-color);
+  cursor: pointer;
 }
 
 .measurement-details-component .measurement-grid .organisation-entry {
@@ -176,17 +185,6 @@
   row-gap: var(--lumo-space-s);
   cursor: default;
 }
-
-/*We want to style the cells within the rows containing the components and values within the measurement grid to be clickable*/
-.measurement-details-component .measurement-grid > * {
-  cursor: pointer;
-}
-
-/*We want to style the rows within the measurement grid to be clickable without the items showing the pointer cursor*/
-.measurement-details-component .measurement-grid::part(row) {
-  cursor: pointer;
-}
-
 
 .measurement-details-component .measurement-grid .measurement-item .entry {
   display: inline-flex;
@@ -315,7 +313,6 @@
   border: 1px solid var(--lumo-contrast-20pct);
 }
 
-
 .personal-access-token-component .personal-access-token-container .show-created-personal-access-token-details {
   display: flex;
   flex-direction: column;
@@ -350,7 +347,6 @@
   row-gap: var(--lumo-space-m);
 }
 
-
 .personal-access-token-component .personal-access-token-container .show-encrypted-personal-access-token-details .copy-disclaimer {
   display: inline-flex;
   column-gap: var(--lumo-space-s);
@@ -378,22 +374,24 @@
   align-items: center;
 }
 
-.project-access-component .content {
+.project-access-component {
   display: flex;
   row-gap: var(--lumo-space-l);
   flex-direction: column;
-}
-
-.project-access-component .user-access {
-  display: flex;
-  row-gap: var(--lumo-space-m);
-  flex-direction: column;
+  width: clamp(500px, 70%, 100%);
+  height: max-content;
 }
 
 .project-access-component .header {
-  display: flex;
+  display: inline-flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.project-access-component .change-project-access-cell {
+  display: inline-flex;
+  column-gap: var(--lumo-space-l);
+  align-items: center;
 }
 
 .project-collection-component {
@@ -620,12 +618,11 @@
 .user-profile-component .user-details-card .avatar-with-name {
   display: flex;
   flex-direction: column;
-  align-items: center;
   row-gap: var(--lumo-space-l);
-  justify-content: center;
+  column-gap: initial;
 }
 
-.user-profile-component .user-details-card .avatar {
+.user-profile-component .user-details-card .user-avatar {
   height: 5rem;
   width: 5rem;
 }

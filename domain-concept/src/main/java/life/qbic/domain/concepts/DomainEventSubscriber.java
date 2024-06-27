@@ -3,7 +3,7 @@ package life.qbic.domain.concepts;
 /**
  * <b>Domain Event Subscriber</b>
  *
- * <p>Clients can implement this interface to subscribe to {@link DomainEventPublisher} and get
+ * <p>Clients can implement this interface to subscribe to {@link DomainEventDispatcher} and get
  * informed whenever a {@link DomainEvent} of the specified type <code>T</code> happens.
  *
  * @since 1.0.0

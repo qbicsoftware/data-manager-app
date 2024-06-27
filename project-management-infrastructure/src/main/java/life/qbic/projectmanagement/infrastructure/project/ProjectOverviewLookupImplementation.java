@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.infrastructure.project;
 
-import jakarta.persistence.criteria.Join;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -168,12 +167,9 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
     }
 
     public static Specification<ProjectOverview> isInCollaboratorNames(String filter) {
-      return (root, query, builder) -> {
-        Join<ProjectOverview, String> memberJoin = root.join("collaboratorUserNames");
-        return builder.like(memberJoin, "%" + filter + "%");
-      };
+      return (root, query, builder) -> builder.like(root.get("collaboratorUserInfos"),
+          "%" + filter + "%");
+
     }
-
   }
-
 }

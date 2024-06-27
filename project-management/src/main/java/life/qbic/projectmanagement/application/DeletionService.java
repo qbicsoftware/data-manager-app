@@ -60,27 +60,29 @@ public class DeletionService {
    * Will contain an error, if samples are available and attached to the experiment. In this case,
    * no variables and groups will be deleted.
    *
-   * @param id the experiment id
+   * @param experimentId the experiment id
+   * @param projectId the project id
    * @return a result containing the experiment id on success or an error {@link ResponseCode}
    * @since 1.0.0
    */
-  public Result<ExperimentId, ResponseCode> deleteAllExperimentalVariables(ExperimentId id) {
-    var queryResult = sampleInformationService.retrieveSamplesForExperiment(id);
+  public Result<ExperimentId, ResponseCode> deleteAllExperimentalVariables(ExperimentId experimentId,
+      ProjectId projectId) {
+    var queryResult = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     if (queryResult.isError()) {
       return Result.fromError(ResponseCode.QUERY_FAILED);
     }
     if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
       return Result.fromError(ResponseCode.SAMPLES_STILL_ATTACHED_TO_EXPERIMENT);
     }
-    experimentInformationService.deleteAllExperimentalVariables(id);
-    return Result.fromValue(id);
+    experimentInformationService.deleteAllExperimentalVariables(experimentId, projectId);
+    return Result.fromValue(experimentId);
   }
 
   @Transactional
   public BatchId deleteBatch(ProjectId projectId, BatchId batchId) {
     var samples = sampleInformationService.retrieveSamplesForBatch(batchId).stream()
         .map(Sample::sampleId).toList();
-    var deletedBatchId = batchDomainService.deleteBatch(batchId);
+    var deletedBatchId = batchDomainService.deleteBatch(batchId, projectId);
     deletedBatchId.onError(error -> {
       throw new ApplicationException("Could not delete batch " + batchId);
     });

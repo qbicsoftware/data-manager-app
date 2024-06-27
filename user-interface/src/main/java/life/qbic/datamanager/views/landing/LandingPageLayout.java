@@ -1,12 +1,19 @@
 package life.qbic.datamanager.views.landing;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.views.DataManagerLayout;
+import life.qbic.datamanager.views.LandingPageTitleAndLogo;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -15,20 +22,24 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @since 1.0.0
  */
 @PageTitle("Data Manager")
-public class LandingPageLayout extends DataManagerLayout {
+public class LandingPageLayout extends DataManagerLayout implements RouterLayout {
 
   @Serial
   private static final long serialVersionUID = 8899881833038660866L;
-
+  private final Div landingPageContent = new Div();
+  private final LandingPageTitleAndLogo landingPageTitleAndLogo = new LandingPageTitleAndLogo();
   public Button register;
   public Button login;
 
-  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface) {
+  public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired
+  FooterComponent footerComponent) {
+    super(Objects.requireNonNull(footerComponent));
     Objects.requireNonNull(handlerInterface);
-
+    setId("landing-page-layout");
+    //CSS class hosting the background image for all our landing pages
+    landingPageContent.addClassName("landing-page-content");
     createNavBarContent();
     registerToHandler(handlerInterface);
-
   }
 
   private void registerToHandler(LandingPageHandlerInterface handler) {
@@ -36,8 +47,9 @@ public class LandingPageLayout extends DataManagerLayout {
   }
 
   private void createNavBarContent() {
-
-    addToNavbar(createHeaderButtonLayout());
+    Span dataManagerTitle = new Span("Data Manager");
+    dataManagerTitle.setClassName("navbar-title");
+    addToNavbar(dataManagerTitle, createHeaderButtonLayout());
   }
 
   private HorizontalLayout createHeaderButtonLayout() {
@@ -54,5 +66,20 @@ public class LandingPageLayout extends DataManagerLayout {
 
   private void styleHeaderButtons() {
     login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @param content
+   * @throws IllegalArgumentException if content is not a {@link Component}
+   */
+  @Override
+  public void showRouterLayoutContent(HasElement content) {
+    landingPageContent.removeAll();
+    //Ensures that the data manager title und UT Logo is always present in this layout
+    landingPageContent.getElement().appendChild(landingPageTitleAndLogo.getElement());
+    landingPageContent.getElement().appendChild(content.getElement());
+    super.showRouterLayoutContent(landingPageContent);
   }
 }

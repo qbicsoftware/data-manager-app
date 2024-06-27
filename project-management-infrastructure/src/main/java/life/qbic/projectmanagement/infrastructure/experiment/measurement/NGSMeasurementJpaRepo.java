@@ -21,4 +21,7 @@ public interface NGSMeasurementJpaRepo
 
   Optional<NGSMeasurement> findNGSMeasurementByMeasurementCode(
       MeasurementCode measurementCode);
+
+  Optional<NGSMeasurement> findNGSMeasurementByMeasurementId(
+      MeasurementId measurementId);
 }

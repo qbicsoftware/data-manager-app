@@ -1,7 +1,6 @@
 package life.qbic.identity.domain.event;
 
 import java.io.Serial;
-import java.time.Instant;
 import life.qbic.domain.concepts.DomainEvent;
 
 /**
@@ -16,27 +15,19 @@ public class UserEmailConfirmed extends DomainEvent {
 
   private final String userId;
   private final String email;
-  private final Instant occurredOn;
 
   public static UserEmailConfirmed create(String userId, String email) {
-    return new UserEmailConfirmed(userId, email, Instant.now());
+    return new UserEmailConfirmed(userId, email);
   }
 
   /**
    * @param userId     the id of the user for which the mail was confirmed
    * @param email      the confirmed email address
-   * @param occurredOn the timestamp this event happened
    * @since 1.0.0
    */
-  private UserEmailConfirmed(final String userId, final String email, Instant occurredOn) {
+  private UserEmailConfirmed(final String userId, final String email) {
     this.userId = userId;
     this.email = email;
-    this.occurredOn = occurredOn;
-  }
-
-  @Override
-  public Instant occurredOn() {
-    return occurredOn;
   }
 
   public String userId() {

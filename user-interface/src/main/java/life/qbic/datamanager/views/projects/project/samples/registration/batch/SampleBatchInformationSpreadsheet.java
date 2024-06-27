@@ -42,42 +42,49 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
             var sampleCode =
                 sampleCodeString.isBlank() ? null : SampleCode.create(sampleCodeString);
             sampleInfo.setSampleCode(sampleCode);
-          }).requireDistinctValues();
+          })
+          .requireDistinctValues();
       lockColumn(sampleCodeColumn);
     }
 
     addColumn("Analysis to be performed", SampleInfo::getAnalysisToBePerformed,
         AnalysisMethod::label,
         (sampleInfo, analysisToBePerformed) -> sampleInfo.setAnalysisToBePerformed(
-            AnalysisMethod.forLabel(analysisToBePerformed))).selectFrom(sortedAnalysisMethods,
-        identity(), getAnalysisMethodItemRenderer()).setRequired();
+            AnalysisMethod.forLabel(analysisToBePerformed)))
+        .selectFrom(sortedAnalysisMethods, identity(), getAnalysisMethodItemRenderer())
+        .setRequired();
 
-    addColumn("Sample label", SampleInfo::getSampleLabel,
-        SampleInfo::setSampleLabel).requireDistinctValues().setRequired();
+    addColumn("Sample label", SampleInfo::getSampleLabel, SampleInfo::setSampleLabel)
+        .requireDistinctValues()
+        .setRequired();
 
     addColumn("Organism ID", SampleInfo::getOrganismId, SampleInfo::setOrganismId);
 
     addColumn("Condition", SampleInfo::getExperimentalGroup,
         experimentalGroup -> formatConditionString(experimentalGroup.condition()),
         (sampleInfo, conditionString) -> updateSampleInfoWithMatchingExperimentalGroup(
-            experimentalGroups, sampleInfo, conditionString)).selectFrom(experimentalGroups,
-        identity()).setRequired();
+            experimentalGroups, sampleInfo, conditionString))
+        .selectFrom(experimentalGroups, identity())
+        .setRequired();
 
     addColumn("Species", SampleInfo::getSpecies, OntologyTerm::getLabel,
-        (sampleInfo, label) -> sampleInfo.setSpecies(
-            findOntologyForLabel(species, label))).selectFrom(species, identity()).setRequired();
+        (sampleInfo, label) -> sampleInfo.setSpecies(findOntologyForLabel(species, label)))
+        .selectFrom(species, identity())
+        .setRequired();
 
     addColumn("Specimen", SampleInfo::getSpecimen, OntologyTerm::getLabel,
-        (sampleInfo, label) -> sampleInfo.setSpecimen(
-            findOntologyForLabel(specimens, label))).selectFrom(specimens, identity())
+        (sampleInfo, label) -> sampleInfo.setSpecimen(findOntologyForLabel(specimens, label)))
+        .selectFrom(specimens, identity())
         .setRequired();
 
     addColumn("Analyte", SampleInfo::getAnalyte, OntologyTerm::getLabel,
-        (sampleInfo, label) -> sampleInfo.setAnalyte(
-            findOntologyForLabel(analytes, label))).selectFrom(analytes, identity()).setRequired();
+        (sampleInfo, label) -> sampleInfo.setAnalyte(findOntologyForLabel(analytes, label)))
+        .selectFrom(analytes, identity())
+        .setRequired();
 
     addColumn("Customer comment", SampleInfo::getCustomerComment, SampleInfo::setCustomerComment);
 
+    resetRows(); //ensures the current column information is taken
     for (int i = 0; i < INITIAL_ROW_COUNT; i++) {
       addEmptyRow();
     }
@@ -109,7 +116,8 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private String customerComment;
 
     public static SampleInfo create(AnalysisMethod analysisMethod, String sampleLabel,
-        String organismId, ExperimentalGroup experimentalGroup, OntologyTerm species, OntologyTerm specimen,
+        String organismId, ExperimentalGroup experimentalGroup, OntologyTerm species,
+        OntologyTerm specimen,
         OntologyTerm analyte, String customerComment) {
       return create(null, null, analysisMethod, sampleLabel, organismId,
           experimentalGroup, species, specimen, analyte, customerComment);

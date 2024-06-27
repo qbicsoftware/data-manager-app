@@ -6,10 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -17,6 +22,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
+import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,6 +48,13 @@ public class SampleDomainService {
   public Result<Collection<Sample>, ResponseCode> registerSamples(Project project,
       Map<SampleCode, SampleRegistrationRequest> sampleCodesToRegistrationRequests) {
     Objects.requireNonNull(sampleCodesToRegistrationRequests);
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new SampleCreatedDomainEventSubscriber(domainEventsCache));
+
     Collection<Sample> samplesToRegister = new ArrayList<>();
     sampleCodesToRegistrationRequests.forEach((sampleCode, sampleRegistrationRequest) -> {
       var sample = Sample.create(sampleCode, sampleRegistrationRequest);
@@ -49,14 +62,23 @@ public class SampleDomainService {
     });
     Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.addAll(project,
         samplesToRegister);
-    result.onValue(
-            createdSamples -> createdSamples.forEach(this::dispatchSuccessfulSampleRegistration))
-        .onError(Result::fromError);
+    if(result.isValue()) {
+      domainEventsCache.forEach(
+          domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+    }
+    result.onError(Result::fromError);
     return result;
   }
 
   public void updateSamples(Project project, Collection<SampleUpdateRequest> updatedSamples) {
     Objects.requireNonNull(updatedSamples);
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new SampleUpdatedDomainEventSubscriber(domainEventsCache));
+
     List<SampleId> sampleIds = updatedSamples.stream().map(SampleUpdateRequest::sampleId).toList();
     Collection<Sample> samplesToUpdate = sampleRepository.findSamplesBySampleId(sampleIds);
     for (Sample sample : samplesToUpdate) {
@@ -70,14 +92,20 @@ public class SampleDomainService {
           sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
       sample.setComment(sampleInfo.sampleInformation().comment());
       sample.setExperimentalGroupId(sampleInfo.sampleInformation().experimentalGroup().id());
+      sample.update(sampleInfo);
     }
     sampleRepository.updateAll(project, samplesToUpdate);
+    domainEventsCache.forEach(
+        domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
   }
 
   public void deleteSamples(Project project, BatchId batchId, Collection<SampleId> samples) {
     Objects.requireNonNull(samples);
     sampleRepository.deleteAll(project, samples);
     samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, batchId));
+    if(!samples.isEmpty()) {
+      dispatchProjectChangedUponSampleDeletion(project.getId());
+    }
   }
 
   private void dispatchSuccessfulSampleDeletion(SampleId sampleId, BatchId batchId) {
@@ -85,10 +113,9 @@ public class SampleDomainService {
     DomainEventDispatcher.instance().dispatch(sampleDeleted);
   }
 
-  private void dispatchSuccessfulSampleRegistration(Sample sample) {
-    SampleRegistered sampleRegistered = SampleRegistered.create(sample.assignedBatch(),
-        sample.sampleId());
-    DomainEventDispatcher.instance().dispatch(sampleRegistered);
+  private void dispatchProjectChangedUponSampleDeletion(ProjectId projectId) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectId);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   public boolean isSampleRemovable(SampleId sampleId) {
@@ -104,4 +131,33 @@ public class SampleDomainService {
     REGISTRATION_FAILED, DELETION_FAILED, DATA_ATTACHED_TO_SAMPLES, UPDATE_FAILED
   }
 
+  public record SampleUpdatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return SampleUpdated.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
+
+  public record SampleCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return SampleRegistered.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }

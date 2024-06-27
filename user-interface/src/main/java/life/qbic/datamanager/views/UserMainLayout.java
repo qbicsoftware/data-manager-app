@@ -1,10 +1,12 @@
 package life.qbic.datamanager.views;
 
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.DataManagerMenu;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +22,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class UserMainLayout extends DataManagerLayout {
 
   private final DataManagerMenu dataManagerMenu;
+  private final Span navBarTitle = new Span("Data Manager");
 
   public UserMainLayout(@Autowired LogoutService logoutService,
-      UserInformationService userInformationService) {
+      UserInformationService userInformationService, @Autowired FooterComponent footerComponent) {
+    super(Objects.requireNonNull(footerComponent));
     Objects.requireNonNull(logoutService);
+    navBarTitle.setClassName("navbar-title");
+    addClassName("user-main-layout");
     Objects.requireNonNull(userInformationService);
     dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
-    addToNavbar(dataManagerMenu);
+    addToNavbar(navBarTitle, dataManagerMenu);
 
   }
 }

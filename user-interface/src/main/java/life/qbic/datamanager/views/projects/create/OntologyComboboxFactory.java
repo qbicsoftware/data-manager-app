@@ -19,7 +19,6 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 public class OntologyComboboxFactory {
 
   private final OntologyLookupService ontologyLookupService;
-  private static final String[] BOX_CLASSES = {"chip-badge", "full-width-input"};
 
   public OntologyComboboxFactory(OntologyLookupService ontologyLookupService) {
     this.ontologyLookupService = requireNonNull(ontologyLookupService,
@@ -32,8 +31,9 @@ public class OntologyComboboxFactory {
     MultiSelectComboBox<OntologyTerm> box = newBox();
     box.setItems(ontologyFetchCallback(analyteOntologies));
 
-    box.setPlaceholder("Please select one or more analytes for your samples");
+    box.setPlaceholder("Search and select one or more analytes for your samples");
     box.setLabel("Analytes");
+    box.addClassName("full-width-input");
     return box;
   }
 
@@ -49,7 +49,7 @@ public class OntologyComboboxFactory {
     MultiSelectComboBox<OntologyTerm> box = newBox();
     box.setItems(ontologyFetchCallback(speciesOntologies));
 
-    box.setPlaceholder("Please select one or more species for your samples");
+    box.setPlaceholder("Search and select one or more species for your samples");
     box.setLabel("Species");
     return box;
   }
@@ -61,7 +61,7 @@ public class OntologyComboboxFactory {
     MultiSelectComboBox<OntologyTerm> box = newBox();
     box.setItems(ontologyFetchCallback(specimenOntologies));
 
-    box.setPlaceholder("Please select one or more specimen for your samples");
+    box.setPlaceholder("Search and select one or more specimen for your samples");
     box.setLabel("Specimen");
     return box;
   }
@@ -72,7 +72,8 @@ public class OntologyComboboxFactory {
     box.setHelperText("Please provide at least two letters to search for entries.");
     box.setRenderer(new ComponentRenderer<>(OntologyComponent::new));
     box.setItemLabelGenerator(OntologyComboboxFactory::ontologyItemFormatted);
-    box.addClassNames(BOX_CLASSES);
+    box.addClassName("chip-badge");
+    box.addClassName("no-chevron");
     return box;
   }
 

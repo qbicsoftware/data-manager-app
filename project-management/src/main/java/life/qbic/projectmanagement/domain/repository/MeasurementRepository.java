@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
@@ -31,7 +30,11 @@ public interface MeasurementRepository {
 
   Optional<NGSMeasurement> findNGSMeasurement(String measurementCode);
 
+  Optional<NGSMeasurement> findNGSMeasurementById(String measurementId);
+
   void updateProteomics(ProteomicsMeasurement measurement);
+
+  Optional<ProteomicsMeasurement> findProteomicsMeasurementById(String measurementCode);
 
   void deleteAllProteomics(Set<ProteomicsMeasurement> measurements);
 
@@ -47,4 +50,6 @@ public interface MeasurementRepository {
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping);
 
   void saveAllNGS(Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping);
+
+  boolean existsMeasurement(String measurementCode);
 }

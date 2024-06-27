@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
 import life.qbic.application.commons.Result;
+import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -16,6 +17,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import org.slf4j.Logger;
@@ -182,7 +184,7 @@ public class BatchRegistrationService {
       return Result.fromError(ResponseCode.SAMPLES_DONT_BELONG_TO_BATCH);
     }
     Batch batch = searchResult.get();
-    updateBatchInformation(batch, batchLabel, isPilot);
+    updateBatchInformation(batch, projectId, batchLabel, isPilot);
     if (!createdSamples.isEmpty()) {
       sampleRegistrationService.registerSamples(createdSamples, projectId);
     }
@@ -195,13 +197,18 @@ public class BatchRegistrationService {
     return Result.fromValue(batch.batchId());
   }
 
-  private Result<BatchId, ResponseCode> updateBatchInformation(Batch batch,
-      String updatedBatchLabel,
-      boolean updatedIsPilot) {
+  private void dispatchSuccessfulBatchUpdate(BatchId batchId, ProjectId projectId) {
+    BatchUpdated batchUpdated = BatchUpdated.create(batchId, projectId);
+    DomainEventDispatcher.instance().dispatch(batchUpdated);
+  }
+
+  private Result<BatchId, ResponseCode> updateBatchInformation(Batch batch, ProjectId projectId,
+      String updatedBatchLabel, boolean updatedIsPilot) {
     batch.setPilot(updatedIsPilot);
     batch.setLabel(updatedBatchLabel);
     var result = batchRepository.update(batch);
     if (result.isValue()) {
+      dispatchSuccessfulBatchUpdate(batch.batchId(), projectId);
       return Result.fromValue(batch.batchId());
     } else {
       return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);

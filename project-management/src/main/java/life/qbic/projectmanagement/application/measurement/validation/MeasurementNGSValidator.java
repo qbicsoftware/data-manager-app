@@ -105,7 +105,7 @@ public class MeasurementNGSValidator implements
   public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId)
-        .combine(validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
+        .combine(validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
             .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())
             .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()))));
@@ -150,11 +150,11 @@ public class MeasurementNGSValidator implements
     // https://ror.readme.io/docs/ror-identifier-pattern
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
-    ValidationResult validateMeasurementId(String measurementId) {
-      var queryMeasurement = measurementService.findNGSMeasurement(measurementId);
+    ValidationResult validateMeasurementCode(String measurementCode) {
+      var queryMeasurement = measurementService.findNGSMeasurement(measurementCode);
       return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
           ValidationResult.withFailures(1,
-              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
+              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementCode))));
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")

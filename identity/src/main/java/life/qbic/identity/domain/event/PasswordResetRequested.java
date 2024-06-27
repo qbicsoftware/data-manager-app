@@ -1,7 +1,6 @@
 package life.qbic.identity.domain.event;
 
 import java.io.Serial;
-import java.time.Instant;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.FullName;
@@ -21,8 +20,6 @@ public class PasswordResetRequested extends DomainEvent {
 
   private final UserId userId;
 
-  private final Instant occurredOn;
-
   private final FullName fullName;
 
   private final EmailAddress emailAddress;
@@ -38,21 +35,13 @@ public class PasswordResetRequested extends DomainEvent {
    */
   public static PasswordResetRequested create(UserId userId, FullName name,
       EmailAddress emailAddress) {
-    return new PasswordResetRequested(userId, Instant.now(), name, emailAddress);
+    return new PasswordResetRequested(userId, name, emailAddress);
   }
 
-  private PasswordResetRequested(UserId userId, Instant occurredOn, FullName name,
-      EmailAddress emailAddress) {
-    super();
+  private PasswordResetRequested(UserId userId, FullName name, EmailAddress emailAddress) {
     this.userId = userId;
-    this.occurredOn = occurredOn;
     this.fullName = name;
     this.emailAddress = emailAddress;
-  }
-
-  @Override
-  public Instant occurredOn() {
-    return occurredOn;
   }
 
   /**

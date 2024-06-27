@@ -24,7 +24,7 @@ public interface ProjectPurchaseStorage {
    */
   void storePurchase(ServicePurchase purchase) throws PurchaseStoreException;
 
-  void storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException;
+  Iterable<ServicePurchase> storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException;
 
   List<Offer> findOffersForProject(ProjectId projectId);
 
@@ -32,4 +32,13 @@ public interface ProjectPurchaseStorage {
 
   Optional<Offer> findOfferForProject(String projectId, Long offerId);
 
+  /**
+   * Returns a {@link ProjectId} of a purchase, if found.
+   * This method is intended to be used when no project id is available.
+   * For user interactions use {@link #findOfferForProject}
+   *
+   * @param purchaseID the id of the purchase to be returned
+   * @see #findOfferForProject
+   */
+  Optional<ProjectId> findProjectIdOfPurchase(Long purchaseID);
 }

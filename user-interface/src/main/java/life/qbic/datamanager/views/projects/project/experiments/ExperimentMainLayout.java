@@ -4,30 +4,36 @@ package life.qbic.datamanager.views.projects.project.experiments;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.applayout.AppLayout;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,17 +48,18 @@ import org.springframework.beans.factory.annotation.Autowired;
  * experiment.
  */
 @PageTitle("Data Manager")
-public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserver {
+public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnterObserver {
 
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private static final Logger log = getLogger(ExperimentMainLayout.class);
   private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private final ProjectSideNavigationComponent projectSideNavigationComponent;
   private final ExperimentNavigationComponent experimentNavigationComponent = new ExperimentNavigationComponent();
   private final DataManagerMenu dataManagerMenu;
   private final transient ExperimentInformationService experimentInformationService;
-  private Context context = new Context();
+  private final transient ProjectInformationService projectInformationService;
   private final Span navBarTitle = new Span();
+  private Context context = new Context();
 
   public ExperimentMainLayout(@Autowired LogoutService logoutService,
       @Autowired UserInformationService userInformationService,
@@ -60,7 +67,9 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
-      @Autowired OntologyLookupService ontologyTermInformationService) {
+      @Autowired OntologyLookupService ontologyTermInformationService,
+      @Autowired FooterComponent footerComponent) {
+    super(Objects.requireNonNull(footerComponent));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
@@ -70,6 +79,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     Objects.requireNonNull(ontologyTermInformationService);
     this.dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
     this.experimentInformationService = experimentInformationService;
+    this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyTermInformationService);
@@ -94,20 +104,36 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     context = context.with(parsedExperimentId);
-    setExperimentNameAsTitle(context.experimentId().orElseThrow());
+    setProjectAndExperimentAsTitle(projectId, context.experimentId().orElseThrow());
     setSelectedExperimentTab(beforeEnterEvent.getNavigationTarget());
   }
 
-  private void setExperimentNameAsTitle(ExperimentId experimentId) {
-    experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
+  private void setProjectAndExperimentAsTitle(String projectId, ExperimentId experimentId) {
+    Optional<Project> project = projectInformationService.find(projectId);
+    experimentInformationService.find(projectId, experimentId)
         .ifPresent(
-            experiment -> navBarTitle.setText(experiment.getName()));
+            experiment -> {
+              navBarTitle.removeAll();
+              Text projectCode = new Text(project.orElseThrow().getProjectCode().value() + "  /");
+              Text expName = new Text(experiment.getName());
+              Icon book = styleIcon(VaadinIcon.NOTEBOOK);
+              Icon beaker = styleIcon(VaadinIcon.FLASK);
+              navBarTitle.add(book, projectCode, beaker, expName);
+            });
+  }
+
+  private Icon styleIcon(VaadinIcon vaadinIcon) {
+    Icon icon = vaadinIcon.create();
+    icon.addClassName("primary");
+    icon.addClassName("smallest");
+    return icon;
   }
 
   private void initializeNavbar() {
-    addToNavbar(createAppNavigationBar());
-    addToNavbar(createExperimentNavigationBar());
-    navBarTitle.setClassName("experiment-navbar-title");
+    Div experimentNavbar = new Div();
+    experimentNavbar.addClassName("experiment-main-layout-navbar-container");
+    experimentNavbar.add(createAppNavigationBar(), createExperimentNavigationBar());
+    addToNavbar(experimentNavbar);
   }
 
   private void initializeAppDrawer() {
@@ -120,6 +146,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   private Span createDrawerToggleAndTitleBar() {
     Span drawerToggleAndTitleBar = new Span();
     DrawerToggle drawerToggle = new DrawerToggle();
+    navBarTitle.setClassName("navbar-title");
     drawerToggleAndTitleBar.add(drawerToggle, navBarTitle);
     drawerToggleAndTitleBar.addClassName("drawer-title-bar");
     return drawerToggleAndTitleBar;
@@ -127,7 +154,7 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
 
   private Span createAppNavigationBar() {
     Span appNavigationBar = new Span();
-    appNavigationBar.addClassNames("experiment-app-navbar");
+    appNavigationBar.addClassNames("experiment-main-layout-navbar");
     appNavigationBar.add(createDrawerToggleAndTitleBar(), dataManagerMenu);
     return appNavigationBar;
   }
@@ -140,8 +167,8 @@ public class ExperimentMainLayout extends AppLayout implements BeforeEnterObserv
   }
 
   /**
-   * Sets the experiment tab within the {@link com.vaadin.flow.component.tabs.TabSheet}to the navigation target provided by the
-   * {@link BeforeEnterEvent}
+   * Sets the experiment tab within the {@link com.vaadin.flow.component.tabs.TabSheet}to the
+   * navigation target provided by the {@link BeforeEnterEvent}
    *
    * @param navigationTarget java {@link Class} containing the route to which the selected tab
    *                         leads.

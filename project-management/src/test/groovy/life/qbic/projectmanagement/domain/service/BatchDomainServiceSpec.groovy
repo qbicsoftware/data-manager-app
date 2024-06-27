@@ -83,7 +83,7 @@ class BatchDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(batchDeleted)
 
         when:
-        batchDomainService.deleteBatch(testBatch.batchId())
+        batchDomainService.deleteBatch(testBatch.batchId(), ProjectId.create())
 
         then:
         batchDeleted.eventReceived

@@ -11,7 +11,7 @@ vaadin-dialog-overlay::part(footer) {
 }
 
 vaadin-dialog-overlay::part(header) {
-  padding: 2rem 1rem 1rem 4rem;
+  padding: 2rem 4rem 1rem 4rem;
 }
 
 vaadin-dialog-overlay::part(title) {
@@ -92,14 +92,33 @@ vaadin-dialog-overlay::part(title) {
   width: 50%;
 }
 
-
 .add-user-to-project-dialog::part(overlay) {
-  height: 100%;
-  min-width: 66vw;
+  height: fit-content;
+  min-width: fit-content;
 }
 
-.add-user-to-project-dialog vaadin-grid {
-  height: 100%
+.add-user-to-project-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xl);
+}
+
+.add-user-to-project-dialog .person-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.add-user-to-project-dialog .role-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.add-user-to-project-dialog .section-title {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-l);
+  font-weight: bold;
 }
 
 .batch-registration-dialog::part(content),
@@ -184,6 +203,22 @@ vaadin-dialog-overlay::part(title) {
 .edit-experiment-content .full-width-input,
 .add-experiment-content .full-width-input {
   width: 100%;
+}
+
+.input-with-icon-selection {
+  display: inline-flex;
+  column-gap: 1rem;
+}
+
+.icon-and-component {
+  display: inline-flex;
+  justify-content: start;
+  align-items: flex-end;
+  column-gap: var(--lumo-space-m);
+}
+
+.box-flexgrow {
+  flex-grow: 1;
 }
 
 .edit-project-dialog .content {
@@ -432,6 +467,32 @@ vaadin-dialog-overlay::part(title) {
 
 .change-user-details-dialog .change-user-name {
   width: 100%;
+}
+
+.measurement-pooled-samples-dialog::part(overlay) {
+  min-width: 50vw;
+}
+
+.measurement-pooled-samples-dialog::part(content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details {
+  gap: var(--lumo-space-xs);
+  display: flex;
+  flex-direction: column;
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details .pooled-detail {
+  gap: var(--lumo-space-s);
+  display: inline-flex;
+}
+
+.measurement-pooled-samples-dialog .pooled-measurement-details .pooled-detail .label {
+  color: var(--lumo-secondary-text-color);
+  font-weight: bold;
 }
 
 .measurement-upload-dialog::part(overlay) {

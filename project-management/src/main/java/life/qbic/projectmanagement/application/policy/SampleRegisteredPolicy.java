@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
+import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponSampleCreation;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 
@@ -26,12 +27,15 @@ public class SampleRegisteredPolicy {
    * <p>
    * All directives will be created and subscribed upon instantiation.
    *
-   * @param addSampleToBatch directive to update the affected sample
-   *                         {@link Batch}
+   * @param addSampleToBatch directive to update the affected sample {@link Batch}
+   * @param updateProject    directive to update the related project
    * @since 1.0.0
    */
-  public SampleRegisteredPolicy(AddSampleToBatch addSampleToBatch) {
+  public SampleRegisteredPolicy(AddSampleToBatch addSampleToBatch,
+      UpdateProjectUponSampleCreation updateProject) {
     DomainEventDispatcher.instance().subscribe(
         requireNonNull(addSampleToBatch, "addSampleToBatch must not be null"));
+    DomainEventDispatcher.instance().subscribe(
+        requireNonNull(updateProject, "updateProject must not be null"));
   }
 }

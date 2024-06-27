@@ -8,7 +8,8 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.AbstractIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -18,11 +19,13 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -58,6 +61,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -209,6 +213,10 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentDraft.setSpecies(experiment.getSpecies());
       experimentDraft.setSpecimens(experiment.getSpecimens());
       experimentDraft.setAnalytes(experiment.getAnalytes());
+      experimentDraft.setSpeciesIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIES,
+          experiment.getSpeciesIconName()));
+      experimentDraft.setSpecimenIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN,
+          experiment.getSpecimenIconName()));
 
       editExperimentDialog.setExperiment(experimentDraft);
       editExperimentDialog.setConfirmButtonLabel("Save");
@@ -229,7 +237,9 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes());
+        experimentDraft.getAnalytes(),
+        experimentDraft.getSpeciesIcon().getLabel(),
+        experimentDraft.getSpecimenIcon().getLabel());
     reloadExperimentInfo(experimentId);
     event.getSource().close();
   }
@@ -242,7 +252,8 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void deleteExistingExperimentalVariables() {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-    var result = deletionService.deleteAllExperimentalVariables(experimentId);
+    ProjectId projectId = context.projectId().orElseThrow();
+    var result = deletionService.deleteAllExperimentalVariables(experimentId, projectId);
     result.onError(responseCode -> {
       throw new ApplicationException("variable deletion failed: " + responseCode);
     });
@@ -351,7 +362,7 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(sampleSourceComponent);
   }
 
-  private Div createSampleSourceList(String titleText, Icon icon,
+  private Div createSampleSourceList(String titleText, AbstractIcon<?> icon,
       List<OntologyTerm> ontologyClasses) {
     icon.addClassName("primary");
     Div sampleSource = new Div();
@@ -373,12 +384,22 @@ public class ExperimentDetailsComponent extends PageArea {
     List<OntologyTerm> specimenTags = new ArrayList<>(experiment.getSpecimens());
     List<OntologyTerm> analyteTags = new ArrayList<>(experiment.getAnalytes());
 
+    BioIcon speciesIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIES).stream()
+        .filter(icon -> icon.label.equals(experiment.getSpeciesIconName())).findFirst()
+        .orElse(BioIcon.DEFAULT_SPECIES);
+    BioIcon specimenIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIMEN).stream()
+        .filter(icon -> icon.label.equals(experiment.getSpecimenIconName())).findFirst()
+        .orElse(BioIcon.DEFAULT_SPECIMEN);
+    BioIcon analyteIcon = BioIcon.getOptionsForType(SampleSourceType.ANALYTE).stream()
+        .filter(icon -> icon.label.equals(experiment.getAnalyteIconName())).findFirst()
+        .orElse(BioIcon.DEFAULT_ANALYTE);
+
     sampleSourceComponent.add(
-        createSampleSourceList("Species", VaadinIcon.BUG.create(), speciesTags));
+        createSampleSourceList("Species", speciesIcon.iconResource.createIcon(), speciesTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Specimen", VaadinIcon.DROP.create(), specimenTags));
+        createSampleSourceList("Specimen", specimenIcon.iconResource.createIcon(), specimenTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Analytes", VaadinIcon.CLUSTER.create(), analyteTags));
+        createSampleSourceList("Analytes", analyteIcon.iconResource.createIcon(), analyteTags));
   }
 
   private void layoutTabSheet() {
@@ -585,4 +606,119 @@ public class ExperimentDetailsComponent extends PageArea {
     experimentalGroups.add(experimentalGroupsCollection);
   }
 
+  /**
+   * Describes a species, specimen or analyte icon with label, type and source. Note that the icon
+   * source is stored instead of the icon itself, because mixing enums and Components causes trouble
+   * at runtime.
+   */
+  public enum BioIcon {
+    DEFAULT_SPECIES("default", SampleSourceType.SPECIES, VaadinIcon.BUG),
+    HUMAN("Human", SampleSourceType.SPECIES, VaadinIcon.MALE),
+    //Mouse by Graphic Mall
+    MOUSE("Mouse", SampleSourceType.SPECIES, new StreamResource("mouse.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/mouse.svg"))),
+    PLANT("Plant", SampleSourceType.SPECIES, new StreamResource("plant.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/plant.svg"))),
+    //Mushroom by Jemis Mali on IconScout
+    FUNGI("Fungi", SampleSourceType.SPECIES, new StreamResource("mushroom.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/mushroom.svg"))),
+    BACTERIA("Bacteria", SampleSourceType.SPECIES, new StreamResource("bacteria.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/bacteria.svg"))),
+    DEFAULT_SPECIMEN("default", SampleSourceType.SPECIMEN, VaadinIcon.DROP),
+    //Kidneys by Daniel Burka on IconScout
+    KIDNEY("Kidney", SampleSourceType.SPECIMEN, new StreamResource("kidneys.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/kidneys.svg"))),
+    //Liver by Daniel Burka on IconScout
+    LIVER("Liver", SampleSourceType.SPECIMEN, new StreamResource("liver.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/liver.svg"))),
+    //Heart by Vector Stall on IconScout
+    HEART("Heart", SampleSourceType.SPECIMEN, new StreamResource("heart.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/heart.svg"))),
+    //Leaf by Phosphor Icons on IconScout
+    LEAF("Leaf", SampleSourceType.SPECIMEN, new StreamResource("leaf.svg",
+        () -> BioIcon.class.getResourceAsStream("/icons/leaf.svg"))),
+    EYE("Eye", SampleSourceType.SPECIMEN, VaadinIcon.EYE),
+    DEFAULT_ANALYTE("default", SampleSourceType.ANALYTE, VaadinIcon.CLUSTER);
+    private final String label;
+    private final SampleSourceType type;
+    private final IconResource iconResource;
+
+    BioIcon(String label, SampleSourceType type, VaadinIcon icon) {
+      this.label = label;
+      this.type = type;
+      this.iconResource = new IconResource(icon);
+    }
+
+    BioIcon(String label, SampleSourceType type, StreamResource svgResource) {
+      this.label = label;
+      this.type = type;
+      this.iconResource = new IconResource(svgResource);
+    }
+
+    public static BioIcon getTypeWithNameOrDefault(SampleSourceType sampleSourceType,
+        String iconName) {
+      Optional<BioIcon> searchResult = getOptionsForType(sampleSourceType).stream()
+          .filter(icon -> icon.label.equals(iconName)).findFirst();
+      return searchResult.orElseGet(() -> getDefaultBioIcon(sampleSourceType));
+    }
+
+    public static BioIcon getDefaultBioIcon(SampleSourceType sampleSourceType) {
+      return switch (sampleSourceType) {
+        case SPECIES -> DEFAULT_SPECIES;
+        case SPECIMEN -> DEFAULT_SPECIMEN;
+        case ANALYTE -> DEFAULT_ANALYTE;
+      };
+    }
+
+    public String getLabel() {
+      return label;
+    }
+
+    public SampleSourceType getType() {
+      return type;
+    }
+
+    public IconResource getIconResource() {
+      return iconResource;
+    }
+
+    public static List<BioIcon> getOptionsForType(SampleSourceType type) {
+      return Arrays.stream(BioIcon.values()).filter(o ->
+          o.getType().equals(type)).toList();
+    }
+
+  }
+
+  /**
+   * Wrapper class for different icon resources, e.g. VaadinIcons or custom SVGs. Provides a method
+   * to create the respective Icon component.
+   */
+  public static class IconResource {
+
+    private StreamResource streamResource = null;
+    private VaadinIcon vaadinIconResource = null;
+
+    public IconResource(VaadinIcon vaadinIconResource) {
+      this.vaadinIconResource = vaadinIconResource;
+    }
+
+    public IconResource(StreamResource streamResource) {
+      this.streamResource = streamResource;
+    }
+
+    public AbstractIcon createIcon() {
+      if (streamResource != null) {
+        return new SvgIcon(streamResource);
+      } else {
+        return vaadinIconResource.create();
+      }
+    }
+  }
+
+  /**
+   * Describes the source level of a sample: species, specimen or analyte
+   */
+  public enum SampleSourceType {
+    SPECIES, SPECIMEN, ANALYTE;
+  }
 }

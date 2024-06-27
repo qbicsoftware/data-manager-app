@@ -22,8 +22,8 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
 import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
 import life.qbic.projectmanagement.application.ContactRepository;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -86,7 +86,7 @@ public class ProjectDetailsComponent extends PageArea {
 
     var projectCode = new Div();
     projectCode.setText(project.getProjectCode().value());
-    entries.add(new Entry("ID", "The unique identifier of the project", projectCode));
+    entries.add(new Entry("Project ID", "The unique identifier of the project", projectCode));
 
     var projectTitle = new Div();
     projectTitle.setText(project.getProjectIntent().projectTitle().title());

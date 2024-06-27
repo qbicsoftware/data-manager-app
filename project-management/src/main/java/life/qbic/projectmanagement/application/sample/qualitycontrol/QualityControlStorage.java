@@ -28,9 +28,10 @@ public interface QualityControlStorage {
    * Stores a list of {@link QualityControl} item persistently.
    *
    * @param qualityControls the QualityControl item list to store
+   * @return
    * @throws QualityControlStorageException is thrown if the storage fails
    */
-  void storeQualityControls(List<QualityControl> qualityControls)
+  Iterable<QualityControl> storeQualityControls(List<QualityControl> qualityControls)
       throws QualityControlStorageException;
 
   /**
@@ -62,4 +63,12 @@ public interface QualityControlStorage {
   Optional<QualityControlUpload> findQualityControlForProject(String projectId,
       Long qualityControlId);
 
+  /**
+   * Returns a {@link QualityControl} item with the provided qualityControlId, if found. Used when
+   * project id is not available (e.g. events). For user interactions findQualityControlForProject
+   * should be used.
+   *
+   * @param qualityControlId the id of the quality control to be returned
+   */
+  Optional<QualityControl> findQualityControl(Long qualityControlId);
 }

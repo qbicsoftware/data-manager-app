@@ -9,6 +9,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "ontology_classes")
+//NOTE: make sure to set the Engine to MyISAM and create a label and name fulltext index.
 public class OntologyClass {
 
   @Column(name = "ontology")
@@ -17,7 +18,7 @@ public class OntologyClass {
   String ontologyVersion;
   @Column(name = "ontologyIri")
   String ontologyIri;
-  @Column(name = "label")
+  @Column(name = "label", length = 1024)
   String classLabel;
   @Column(name = "name")
   String curie;

@@ -1,8 +1,10 @@
 package life.qbic.datamanager.views.projects.project;
 
-import com.vaadin.flow.component.applayout.AppLayout;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -10,16 +12,19 @@ import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -31,7 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  */
 @PageTitle("Data Manager")
-public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver {
+public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterObserver {
 
   private static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -48,7 +53,8 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
       ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
-      @Autowired OntologyLookupService ontologyLookupService) {
+      @Autowired OntologyLookupService ontologyLookupService, @Autowired FooterComponent footerComponent) {
+    super(Objects.requireNonNull(footerComponent));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
@@ -61,7 +67,9 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
         experimentInformationService, addExperimentToProjectService,
         userPermissions, ontologyLookupService);
     dataManagerMenu = new DataManagerMenu(logoutService, userInformationService);
-    addToNavbar(createDrawerToggleAndTitleBar(), dataManagerMenu);
+    Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
+    projectMainNavbar.addClassName("project-main-layout-navbar");
+    addToNavbar(projectMainNavbar);
     addClassName("project-main-layout");
   }
 
@@ -79,15 +87,31 @@ public class ProjectMainLayout extends AppLayout implements BeforeEnterObserver 
   private void setProjectNameAsTitle(ProjectId projectId) {
     projectInformationService.find(projectId)
         .ifPresent(
-            project -> projectTitle.setText(project.getProjectIntent().projectTitle().title()));
+            project -> {
+              projectTitle.removeAll();
+
+              Text projectCode = new Text(project.getProjectCode().value() + " - ");
+              Text projectName = new Text(project.getProjectIntent().projectTitle().title());
+              Icon book = styleIcon(VaadinIcon.NOTEBOOK);
+
+              projectTitle.add(book, projectCode, projectName);
+            });
+  }
+
+  private Icon styleIcon(VaadinIcon vaadinIcon) {
+    Icon icon = vaadinIcon.create();
+    icon.addClassName("primary");
+    icon.addClassName("smallest");
+    return icon;
   }
 
   private Span createDrawerToggleAndTitleBar() {
     Span drawerToggleAndTitleBar = new Span();
     drawerToggleAndTitleBar.addClassName("drawer-title-bar");
     DrawerToggle drawerToggle = new DrawerToggle();
+    projectTitle.setClassName("navbar-title");
     drawerToggleAndTitleBar.add(drawerToggle, projectTitle);
-    projectTitle.setClassName("project-navbar-title");
+
     initializeDrawer();
     return drawerToggleAndTitleBar;
   }

@@ -78,7 +78,6 @@ public class ResetPasswordLayout extends VerticalLayout {
 
     styleFieldLayout();
     styleSendButton();
-    setSizeFull();
     setAlignItems(FlexComponent.Alignment.CENTER);
     setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
   }

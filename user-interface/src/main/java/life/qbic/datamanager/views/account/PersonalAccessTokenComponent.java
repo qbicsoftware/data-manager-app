@@ -6,7 +6,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -30,7 +29,7 @@ import java.time.format.FormatStyle;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.identity.api.PersonalAccessToken;
@@ -47,7 +46,6 @@ import life.qbic.identity.api.RawToken;
 
 @SpringComponent
 @UIScope
-@JsModule("./javascript/copytoclipboard.js")
 public class PersonalAccessTokenComponent extends PageArea implements Serializable {
 
   @Serial
@@ -115,74 +113,13 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
     return expirationDate;
   }
 
-  private void showCreatedPersonalAccessToken(String rawTokenText, String disclaimer) {
+  private void showCreatedPersonalAccessToken(String rawTokenText) {
     createdTokenLayout.removeAll();
-    Div createdPersonalAccessTokenDetails = new Div();
-    Icon copyIcon = VaadinIcon.COPY_O.create();
-    copyIcon.addClassName(IconSize.SMALL);
-    copyIcon.addClassName("clickable");
-    copyIcon.addClickListener(event -> handleCopyClicked(rawTokenText));
-
-    Span rawToken = new Span(rawTokenText);
-    Span personalAccessTokenWithIcon = new Span(rawToken, copyIcon);
-    personalAccessTokenWithIcon.addClassName("token-text");
-
-    Icon disclaimerIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
-    disclaimerIcon.addClassName(IconSize.SMALL);
-    Span copyDisclaimer = new Span(disclaimerIcon,
-        new Text(disclaimer));
-    copyDisclaimer.addClassName("copy-disclaimer");
-    copyDisclaimer.addClassName("primary");
-    createdPersonalAccessTokenDetails.add(personalAccessTokenWithIcon, copyDisclaimer);
-    createdPersonalAccessTokenDetails.addClassName("show-created-personal-access-token-details");
+    CreatedPersonalAccessTokenDetails createdPersonalAccessTokenDetails = new CreatedPersonalAccessTokenDetails();
+    createdPersonalAccessTokenDetails.setToken(rawTokenText);
     createdTokenLayout.add(createdPersonalAccessTokenDetails);
     updateUI();
   }
-
-private void handleCopyClicked(String rawTokenText) {
-  UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)", rawTokenText);
-
-  createdTokenLayout.removeAll();
-  Div createdPersonalAccessTokenDetails = new Div();
-  createdPersonalAccessTokenDetails.addClassName("success-background-hue");
-
-  Icon copyIcon = VaadinIcon.CHECK.create();
-  copyIcon.addClassName(IconSize.SMALL);
-  copyIcon.addClassNames("copy-icon-success");
-
-  Span rawToken = new Span(rawTokenText);
-
-  Span personalAccessTokenWithIcon = new Span(rawToken, copyIcon);
-  personalAccessTokenWithIcon.addClassName("token-text");
-
-  Icon disclaimerIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
-  disclaimerIcon.addClassName(IconSize.SMALL);
-  String tokenCopiedDisclaimer = "Token successfully copied.";
-  Span copyDisclaimer = new Span(disclaimerIcon,
-      new Text(tokenCopiedDisclaimer));
-  copyDisclaimer.addClassName("copy-disclaimer");
-  copyDisclaimer.addClassName("primary");
-  createdPersonalAccessTokenDetails.add(personalAccessTokenWithIcon, copyDisclaimer);
-  createdPersonalAccessTokenDetails.addClassName("show-created-personal-access-token-details");
-  createdTokenLayout.add(createdPersonalAccessTokenDetails);
-
-  // reset copy view after one second
-  UI ui = UI.getCurrent();
-  ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
-  new Thread(() -> {
-    try {
-      TimeUnit.SECONDS.sleep(1);
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
-    }
-    ui.access(() -> {
-      showCreatedPersonalAccessToken(rawTokenText, tokenCopiedDisclaimer);
-      ui.push();
-    });
-  }).start();
-
-  updateUI();
-}
 
   private Span generateHeader() {
     Span title = new Span(TITLE);
@@ -232,8 +169,9 @@ private void handleCopyClicked(String rawTokenText) {
    * Sets the provided collection of {@link PersonalAccessTokenFrontendBean} within the
    * {@link PersonalAccessTokenComponent}
    *
-   * @param personalAccessTokenFrontendBeans Collection of {@link PersonalAccessTokenFrontendBean} for the logged-in
-   *                                user to be displayed within {@link VirtualList} the component
+   * @param personalAccessTokenFrontendBeans Collection of {@link PersonalAccessTokenFrontendBean}
+   *                                         for the logged-in user to be displayed within
+   *                                         {@link VirtualList} the component
    */
   public void setTokens(
       Collection<PersonalAccessTokenFrontendBean> personalAccessTokenFrontendBeans) {
@@ -268,8 +206,7 @@ private void handleCopyClicked(String rawTokenText) {
    * @param rawToken The {@link RawToken} to be displayed to the user
    */
   public void showCreatedToken(RawToken rawToken) {
-    showCreatedPersonalAccessToken(rawToken.value(),
-        "Please copy your personal access token now. You won't be able to see it again");
+    showCreatedPersonalAccessToken(rawToken.value());
   }
 
   /**
@@ -340,9 +277,9 @@ private void handleCopyClicked(String rawTokenText) {
   public static class PersonalAccessTokenFrontendBean {
 
     private final String tokenId;
+    private final boolean hasExpired;
     private String tokenDescription;
     private Duration expirationDate;
-    private final boolean hasExpired;
 
     public PersonalAccessTokenFrontendBean(String tokenId, String tokenDescription,
         Duration expirationDate, boolean hasExpired) {
@@ -381,6 +318,53 @@ private void handleCopyClicked(String rawTokenText) {
 
     public boolean expired() {
       return hasExpired;
+    }
+  }
+
+
+  /**
+   * Created Personal Access Token Details
+   * <p>
+   * Component based on {@link Div} showing the created Personal access token, providing the
+   * possibility to copy the new token via the {@link CopyToClipBoardComponent}
+   */
+  private static class CreatedPersonalAccessTokenDetails extends Div {
+
+    private final Span rawToken = new Span();
+    private final Span copyDisclaimerText = new Span();
+    private final CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent();
+
+    public CreatedPersonalAccessTokenDetails() {
+
+      Span personalAccessTokenWithIcon = new Span(rawToken, copyToClipBoardComponent);
+      personalAccessTokenWithIcon.addClassName("token-text");
+      Icon disclaimerIcon = VaadinIcon.EXCLAMATION_CIRCLE_O.create();
+      disclaimerIcon.addClassName(IconSize.SMALL);
+      copyDisclaimerText.setText(
+          "Please copy your personal access token now. You won't be able to see it again");
+      Span copyDisclaimer = new Span(disclaimerIcon, copyDisclaimerText);
+      copyDisclaimer.addClassName("copy-disclaimer");
+      copyDisclaimer.addClassName("primary");
+      add(personalAccessTokenWithIcon, copyDisclaimer);
+      addClassName("show-created-personal-access-token-details");
+    }
+
+    public void setToken(String token) {
+      rawToken.setText(token);
+      UI ui = UI.getCurrent();
+      ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
+      copyToClipBoardComponent.setCopyText(token);
+      copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(event ->
+          ui.access(() -> {
+            addClassName("success-background-hue");
+            copyDisclaimerText.setText("Token successfully copied.");
+            ui.push();
+          }));
+      copyToClipBoardComponent.addSwitchToCopyIconListener(event ->
+          ui.access(() -> {
+            removeClassName("success-background-hue");
+            ui.push();
+          }));
     }
   }
 }

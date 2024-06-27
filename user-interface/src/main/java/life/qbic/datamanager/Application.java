@@ -21,9 +21,9 @@ import life.qbic.identity.domain.service.UserDomainService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
+import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -42,8 +42,7 @@ import org.springframework.context.annotation.ComponentScan;
     shortName = "Data Manager",
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
-@ComponentScan({"life.qbic"})
-@EntityScan(basePackages = "life.qbic")
+@ComponentScan(value = {"life.qbic"})
 @Push
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
@@ -57,9 +56,16 @@ public class Application extends SpringBootServletInitializer implements AppShel
 
     var appContext = SpringApplication.run(Application.class, args);
 
-    var connectionTester = appContext.getBean(DataRepoConnectionTester.class);
-    connectionTester.testApplicationServer();
-    connectionTester.testDatastoreServer();
+    try {
+      var connectionTester = appContext.getBean(DataRepoConnectionTester.class);
+      connectionTester.testApplicationServer();
+      connectionTester.testDatastoreServer();
+    } catch (Exception e) {
+      log.error(
+          "Unexpected error occurred while starting data manager app during openBis connection.",
+          e);
+      SpringApplication.exit(appContext, () -> 1);
+    }
 
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);

@@ -51,7 +51,7 @@ public class CreateNewSampleStatisticsEntry implements
     jobScheduler.enqueue(() -> createSampleStatisticsEntry(event.createdProject()));
   }
 
-  @Job(name = "Create_Sample_Statistics_Entry")
+  @Job(name = "Create sample statistics entry for project %0")
   public void createSampleStatisticsEntry(String projectId) throws RuntimeException {
     var id = ProjectId.parse(projectId);
     if (sampleStatisticsEntryMissing(id)) {

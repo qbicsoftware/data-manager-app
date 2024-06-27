@@ -47,7 +47,8 @@ public class MeasurementValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata, ProjectId projectId) {
+  public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata,
+      ProjectId projectId) {
     return measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
   }
 
@@ -65,7 +66,8 @@ public class MeasurementValidationService {
    * @since 1.0.0
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata, ProjectId projectId) {
+  public ValidationResult validateProteomics(ProteomicsMeasurementMetadata pxMeasurementMetadata,
+      ProjectId projectId) {
     return pxpValidator.validate(pxMeasurementMetadata, projectId);
   }
 

@@ -4,16 +4,22 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.domain.concepts.DomainEvent;
+import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.domain.concepts.DomainEventSubscriber;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
+import life.qbic.projectmanagement.domain.model.project.purchase.PurchaseCreatedEvent;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -37,17 +43,33 @@ public class ProjectPurchaseService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addPurchases(String projectId, List<OfferDTO> offers) {
+
     var projectReference = ProjectId.parse(projectId);
     var purchaseDate = Instant.now();
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new PurchaseCreatedDomainEventSubscriber(domainEventsCache));
+
     List<ServicePurchase> servicePurchases = offers.stream()
         .map(it -> Offer.create(it.signed(), it.fileName(), it.content()))
         .map(it -> ServicePurchase.create(projectReference, purchaseDate, it))
         .toList();
     try {
-      storage.storePurchases(servicePurchases);
+      Iterable<ServicePurchase> results = storage.storePurchases(servicePurchases);
+      for(ServicePurchase servicePurchase : results) {
+        DomainEventDispatcher.instance().dispatch(new PurchaseCreatedEvent(servicePurchase.getId()));
+      }
     } catch (PurchaseStoreException e) {
       throw ApplicationException.wrapping(e);
     }
+  }
+
+  private void dispatchProjectChangedOnPurchaseDeletion(ProjectId projectReference) {
+    ProjectChanged projectChanged = ProjectChanged.create(projectReference);
+    DomainEventDispatcher.instance().dispatch(projectChanged);
   }
 
   /**
@@ -68,6 +90,7 @@ public class ProjectPurchaseService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void deleteOffer(String projectId, long offerId) {
     storage.deleteOffer(projectId, offerId);
+    dispatchProjectChangedOnPurchaseDeletion(ProjectId.parse(projectId));
   }
 
   @PreAuthorize(
@@ -76,4 +99,21 @@ public class ProjectPurchaseService {
     return storage.findOfferForProject(projectId, offerId);
   }
 
+  public Optional<ProjectId> findProjectIdOfPurchase(Long purchaseID) {
+    return storage.findProjectIdOfPurchase(purchaseID);
+  }
+  private record PurchaseCreatedDomainEventSubscriber(
+      List<DomainEvent> domainEventsCache) implements
+      DomainEventSubscriber<DomainEvent> {
+
+    @Override
+    public Class<? extends DomainEvent> subscribedToEventType() {
+      return PurchaseCreatedEvent.class;
+    }
+
+    @Override
+    public void handleEvent(DomainEvent event) {
+      domainEventsCache.add(event);
+    }
+  }
 }

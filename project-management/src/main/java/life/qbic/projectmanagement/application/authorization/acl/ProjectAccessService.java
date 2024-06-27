@@ -55,10 +55,10 @@ public interface ProjectAccessService {
   enum ProjectRole {
     //the order matters from least powerful to most powerful
     READ("read",
-        "Can read project information. Can also download data associated with the project."),
+        "View project and download data."),
     WRITE("write",
-        "Can read and edit project information. Can also download data associated with the project."),
-    ADMIN("admin", "Can read, edit, download project information. Can also manage project access."),
+        "View and edit the project "),
+    ADMIN("admin", "Full project access including project management"),
     OWNER("owner", "Has complete access to this project."),
     ;
     private final String label;
@@ -123,11 +123,9 @@ public interface ProjectAccessService {
 
     public static String render(ProjectRole role) {
       return switch (role) {
-        case READ ->
-            "Recommended for people who want to view a project and download associated data.";
-        case WRITE -> "Recommended for people who edit the project.";
-        case ADMIN ->
-            "Recommended for people who need full access to the project, including managing project access.";
+        case READ -> "View all project data and metadata.";
+        case WRITE -> "View and edit all project data and metadata";
+        case ADMIN -> "View and edit all project data and metadata, manage access";
         case OWNER -> "Do not assign this role. This person owns the project.";
       };
     }

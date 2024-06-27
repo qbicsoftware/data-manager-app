@@ -23,9 +23,9 @@ public class ProjectCode {
   @Column(name = "projectCode")
   private String value;
 
-  private static final int LENGTH = 5;
+  private static final int LENGTH_RANDOM_PART = 4;
 
-  private static final String PREFIX = "Q";
+  private static final String PREFIX = "Q2";
 
   public static final char[] ALLOWED_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWX".toCharArray();
 
@@ -46,9 +46,9 @@ public class ProjectCode {
    */
   public static ProjectCode random() {
     var randomCodeGenerator = new RandomCodeGenerator(ALLOWED_LETTERS, ALLOWED_NUMBERS);
-    String code = randomCodeGenerator.next(LENGTH - 1);
+    String code = randomCodeGenerator.next(LENGTH_RANDOM_PART);
     while (isBlackListed(code)) {
-      code = randomCodeGenerator.next(LENGTH - 1);
+      code = randomCodeGenerator.next(LENGTH_RANDOM_PART);
     }
     return new ProjectCode(PREFIX + code);
   }
@@ -81,7 +81,7 @@ public class ProjectCode {
   }
 
   private static boolean isGeneralFormatValid(String code) {
-    return code.startsWith(PREFIX) && (code.length() == LENGTH);
+    return code.startsWith(PREFIX) && (code.length() == LENGTH_RANDOM_PART + PREFIX.length());
   }
 
   private static boolean containsInvalidCharacters(String code) {
@@ -181,7 +181,7 @@ public class ProjectCode {
   }
 
   public static int getLENGTH() {
-    return LENGTH;
+    return LENGTH_RANDOM_PART + PREFIX.length();
   }
 
   public static String getPREFIX() {

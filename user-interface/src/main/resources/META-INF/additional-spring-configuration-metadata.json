@@ -21,9 +21,69 @@
       "description": "The password jobRunr uses for the datasource."
     },
     {
+      "name": "qbic.identity.datasource.url",
+      "type": "java.lang.String",
+      "description": "The datasource url qbic's identity domain uses."
+    },
+    {
+      "name": "qbic.identity.datasource.driver-class-name",
+      "type": "java.lang.String",
+      "description": "The datasource driver class for qbic's identity domains datasource."
+    },
+    {
+      "name": "qbic.identity.datasource.username",
+      "type": "java.lang.String",
+      "description": "The username qbic's identity domain uses for the datasource."
+    },
+    {
+      "name": "qbic.identity.datasource.password",
+      "type": "java.lang.String",
+      "description": "The password qbic's identity domain uses for the datasource."
+    },
+    {
+      "name": "qbic.finance.datasource.url",
+      "type": "java.lang.String",
+      "description": "The datasource url qbic's finance domain uses."
+    },
+    {
+      "name": "qbic.finance.datasource.driver-class-name",
+      "type": "java.lang.String",
+      "description": "The datasource driver class for qbic's finance domains datasource."
+    },
+    {
+      "name": "qbic.finance.datasource.username",
+      "type": "java.lang.String",
+      "description": "The username qbic's finance domain uses for the datasource."
+    },
+    {
+      "name": "qbic.finance.datasource.password",
+      "type": "java.lang.String",
+      "description": "The password qbic's finance domain uses for the datasource."
+    },
+    {
+      "name": "qbic.project-management.datasource.url",
+      "type": "java.lang.String",
+      "description": "The datasource url qbic's project-management domain uses."
+    },
+    {
+      "name": "qbic.project-management.datasource.driver-class-name",
+      "type": "java.lang.String",
+      "description": "The datasource driver class for qbic's project-management domains datasource."
+    },
+    {
+      "name": "qbic.project-management.datasource.username",
+      "type": "java.lang.String",
+      "description": "The username qbic's project-management domain uses for the datasource."
+    },
+    {
+      "name": "qbic.project-management.datasource.password",
+      "type": "java.lang.String",
+      "description": "The password qbic's project-management domain uses for the datasource."
+    },
+    {
       "name": "qbic.access-token.salt",
       "type": "java.lang.String",
-      "description": "The salt used to encrypt personal access tokens."
+      "description": "The salt used to encrypt personal access tokens. A hex representation of the bytes."
     },
     {
       "name": "qbic.access-token.iteration-count",

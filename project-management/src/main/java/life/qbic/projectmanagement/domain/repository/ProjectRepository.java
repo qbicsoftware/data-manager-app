@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.repository;
 
-import java.util.List;
+import java.time.Instant;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
@@ -33,15 +33,17 @@ public interface ProjectRepository {
   void update(Project project);
 
   /**
-   * Searches for projects that contain the provided project code
+   * Searches for a project that contain the provided project code
    *
    * @param projectCode the project code to search for in projects
-   * @return projects that contain the project code
+   * @return boolean indicating that a project with the specified code already exists
    * @since 1.0.0
    */
-  List<Project> find(ProjectCode projectCode);
+  boolean existsProjectByProjectCode(ProjectCode projectCode);
 
   Optional<Project> find(ProjectId projectId);
+
+  void unsafeUpdateLastModified(ProjectId projectId, Instant modifiedOn);
 
   /**
    * Is thrown if a project that should be created already exists, as denoted by the project id

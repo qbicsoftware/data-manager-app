@@ -62,9 +62,12 @@ public class MeasurementProteomicsValidator implements
    */
   public static boolean isProteomics(Collection<String> properties) {
     if (properties.isEmpty()) {
+      log.debug("no properties found");
       return false;
     }
     if (properties.size() < PROTEOMICS_PROPERTY.values().length) {
+      log.debug("wrong length of property header: "+properties().size());
+      log.debug("expected: "+PROTEOMICS_PROPERTY.values().length);
       return false;
     }
     for (PROTEOMICS_PROPERTY pxpProperty : PROTEOMICS_PROPERTY.values()) {
@@ -114,7 +117,7 @@ public class MeasurementProteomicsValidator implements
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validateSampleId(metadata.associatedSample())
         .combine(validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId))
-        .combine(validationPolicy.validateMeasurementId(metadata.measurementIdentifier().orElse(""))
+        .combine(validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
             .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
             .combine(validationPolicy.validateOrganisation(metadata.organisationId())
                 .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())
@@ -231,11 +234,11 @@ public class MeasurementProteomicsValidator implements
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
     }
 
-    ValidationResult validateMeasurementId(String measurementId) {
-      var queryMeasurement = measurementService.findProteomicsMeasurement(measurementId);
+    ValidationResult validateMeasurementCode(String measurementCode) {
+      var queryMeasurement = measurementService.findProteomicsMeasurement(measurementCode);
       return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
           ValidationResult.withFailures(1,
-              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementId))));
+              List.of("Measurement Code: Unknown measurement for id '%s'".formatted(measurementCode))));
     }
 
     ValidationResult validateInstrument(String instrument) {

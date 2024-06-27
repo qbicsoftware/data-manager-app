@@ -40,7 +40,7 @@ public class ProjectAccessMain extends Main implements BeforeEnterObserver {
     requireNonNull(userPermissions);
     this.projectAccessComponent = projectAccessComponent;
     this.userPermissions = userPermissions;
-    this.addClassName("project-access-main");
+    addClassName("project-access");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),

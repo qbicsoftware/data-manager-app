@@ -6,12 +6,12 @@ import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategy;
 import javax.sql.DataSource;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.QbicPermissionEvaluator;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.acls.AclPermissionEvaluator;
@@ -42,26 +42,11 @@ public class AclSecurityConfiguration {
 
   private static final Logger log = logger(AclSecurityConfiguration.class);
 
-  @Value("${spring.datasource.url}")
-  String url;
-  @Value("${spring.datasource.username}")
-  String name;
-  @Value("${spring.datasource.password}")
-  String password;
-
   @Bean
-  public DataSource dataSource() {
-    var ds = new DriverManagerDataSource();
-    ds.setUrl(url);
-    ds.setUsername(name);
-    ds.setPassword(password);
-    return ds;
-  }
-
-  @Bean
-  public MutableAclService mutableAclService(CacheManager cacheManager) {
-    JdbcMutableAclService jdbcMutableAclService = new JdbcMutableAclService(dataSource(),
-        lookupStrategy(cacheManager), aclCache(cacheManager));
+  public MutableAclService mutableAclService(CacheManager cacheManager,
+      @Qualifier("dataManagementDataSource") DataSource dataSource) {
+    JdbcMutableAclService jdbcMutableAclService = new JdbcMutableAclService(dataSource,
+        lookupStrategy(cacheManager, dataSource), aclCache(cacheManager));
     // allow for non-long type ids
     jdbcMutableAclService.setAclClassIdSupported(true);
     jdbcMutableAclService.setSecurityContextHolderStrategy(securityContextHolderStrategy());
@@ -115,9 +100,10 @@ public class AclSecurityConfiguration {
   }
 
   @Bean
-  public LookupStrategy lookupStrategy(CacheManager cacheManager) {
+  public LookupStrategy lookupStrategy(CacheManager cacheManager,
+      @Qualifier("dataManagementDataSource") DataSource dataSource) {
     BasicLookupStrategy basicLookupStrategy = new BasicLookupStrategy(
-        dataSource(),
+        dataSource,
         aclCache(cacheManager),
         aclAuthorizationStrategy(),
         auditLogger()
@@ -127,14 +113,16 @@ public class AclSecurityConfiguration {
   }
 
   @Bean(name = "qbicPermissionEvaluator")
-  AclPermissionEvaluator permissionEvaluator(CacheManager cacheManager) {
-    return new QbicPermissionEvaluator(mutableAclService(cacheManager));
+  AclPermissionEvaluator permissionEvaluator(
+      @Qualifier("mutableAclService") MutableAclService mutableAclService) {
+    return new QbicPermissionEvaluator(mutableAclService);
   }
 
   @Bean
-  public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler(CacheManager cacheManager) {
+  public MethodSecurityExpressionHandler defaultMethodSecurityExpressionHandler(
+      @Qualifier("qbicPermissionEvaluator") PermissionEvaluator permissionEvaluator) {
     var expressionHandler = new DefaultMethodSecurityExpressionHandler();
-    expressionHandler.setPermissionEvaluator(permissionEvaluator(cacheManager));
+    expressionHandler.setPermissionEvaluator(permissionEvaluator);
     return expressionHandler;
   }
 }

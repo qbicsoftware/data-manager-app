@@ -10,6 +10,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**
@@ -44,6 +45,7 @@ public class ServicePurchase {
     this.projectId = projectId;
     this.purchasedOn = purchasedOn;
     this.offer = offer;
+    emitCreatedEvent();
   }
 
   public static ServicePurchase create(ProjectId projectId, Instant purchasedOn, Offer offer) {
@@ -60,6 +62,12 @@ public class ServicePurchase {
 
   public Instant purchasedOn() {
     return purchasedOn;
+  }
+
+  private void emitCreatedEvent() {
+    //FIXME id is null
+    //var createdEvent = new PurchaseCreatedEvent(this.id);
+    //LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 
   @Override
@@ -79,5 +87,9 @@ public class ServicePurchase {
   @Override
   public int hashCode() {
     return Objects.hash(projectId, purchasedOn, offer, id);
+  }
+
+  public Long getId() {
+    return id;
   }
 }

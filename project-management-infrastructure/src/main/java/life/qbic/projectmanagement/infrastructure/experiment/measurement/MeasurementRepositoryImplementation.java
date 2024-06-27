@@ -13,6 +13,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementService.De
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -36,10 +37,10 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   private final MeasurementDataRepo measurementDataRepo;
 
   public MeasurementRepositoryImplementation(NGSMeasurementJpaRepo ngsMeasurementJpaRepo,
-      ProteomicsMeasurementJpaRepo pxpMeasurenemtJpaRepo,
+      ProteomicsMeasurementJpaRepo pxpMeasurementJpaRepo,
       MeasurementDataRepo measurementDataRepo) {
     this.ngsMeasurementJpaRepo = ngsMeasurementJpaRepo;
-    this.pxpMeasurementJpaRepo = pxpMeasurenemtJpaRepo;
+    this.pxpMeasurementJpaRepo = pxpMeasurementJpaRepo;
     this.measurementDataRepo = measurementDataRepo;
   }
 
@@ -91,6 +92,17 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(code);
     } catch (IllegalArgumentException e) {
       log.error("Illegal measurement code: " + measurementCode, e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurementById(String measurementId) {
+    try {
+      var id = MeasurementId.parse(measurementId);
+      return pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementId(id);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement id: " + measurementId, e);
       return Optional.empty();
     }
   }
@@ -153,6 +165,17 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
   }
 
   @Override
+  public Optional<NGSMeasurement> findNGSMeasurementById(String measurementId) {
+    try {
+      var id = MeasurementId.parse(measurementId);
+      return ngsMeasurementJpaRepo.findNGSMeasurementByMeasurementId(id);
+    } catch (IllegalArgumentException e) {
+      log.error("Illegal measurement id: " + measurementId, e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
   public void updateProteomics(ProteomicsMeasurement measurement) {
     pxpMeasurementJpaRepo.save(measurement);
   }
@@ -206,5 +229,13 @@ public class MeasurementRepositoryImplementation implements MeasurementRepositor
       ngsMeasurementJpaRepo.deleteAll(ngsMeasurementsMapping.keySet());
       throw e;
     }
+  }
+
+  @Override
+  public boolean existsMeasurement(String measurementCode) {
+    return ngsMeasurementJpaRepo.findNGSMeasurementByMeasurementCode(
+        MeasurementCode.parse(measurementCode)).isPresent() ||
+        pxpMeasurementJpaRepo.findProteomicsMeasurementByMeasurementCode(
+            MeasurementCode.parse(measurementCode)).isPresent();
   }
 }

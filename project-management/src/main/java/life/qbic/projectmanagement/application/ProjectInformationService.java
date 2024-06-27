@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import life.qbic.projectmanagement.application.authorization.authorities.Role;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
@@ -90,12 +92,18 @@ public class ProjectInformationService {
     return find(ProjectId.parse(projectId));
   }
 
+  public boolean isProjectCodeUnique(String projectCode) throws IllegalArgumentException {
+    boolean isUnique = !projectRepository.existsProjectByProjectCode(
+        ProjectCode.parse(projectCode));
+    return isUnique;
+  }
+
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project','READ')")
   private Project loadProject(ProjectId projectId) {
     Objects.requireNonNull(projectId);
     log.debug("Search for project with id: " + projectId.value());
     return projectRepository.find(projectId).orElseThrow(() -> new ApplicationException(
-            "Project with id" + projectId + "does not exit anymore")
+            "Project with id" + projectId + "does not exist anymore")
         // should never happen; indicates dirty removal of project from db
     );
   }
@@ -143,7 +151,6 @@ public class ProjectInformationService {
     var project = loadProject(projectId);
     project.setFunding(funding);
     projectRepository.update(project);
-
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -151,5 +158,9 @@ public class ProjectInformationService {
     var project = loadProject(projectId);
     project.removeFunding();
     projectRepository.update(project);
+  }
+
+  public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) {
+    projectRepository.unsafeUpdateLastModified(projectID, modifiedOn);
   }
 }

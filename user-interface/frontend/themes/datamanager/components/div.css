@@ -32,20 +32,6 @@
   margin-bottom: 0.5rem;
 }
 
-.experiment-navigation-component {
-  width: 100%;
-  margin: var(--lumo-space-s);
-}
-
-.experiment-navigation-component .experiment-navigation-tabs {
-  width: 100%;
-}
-
-.experiment-navigation-component .experiment-navigation-tabs .arrow-tab {
-  align-items: end;
-  color: var(--lumo-contrast-60pct);
-}
-
 .grid-details-item {
   display: flex;
   flex-direction: column;

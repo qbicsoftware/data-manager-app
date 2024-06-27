@@ -45,9 +45,9 @@ public class PurchaseStore implements ProjectPurchaseStorage {
   }
 
   @Override
-  public void storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException {
+  public Iterable<ServicePurchase> storePurchases(List<ServicePurchase> purchases) throws PurchaseStoreException {
     try {
-      persistenceStore.saveAll(purchases);
+      return persistenceStore.saveAll(purchases);
     } catch (RuntimeException e) {
       throw new PurchaseStoreException("Storing purchases failed.");
     }
@@ -90,4 +90,10 @@ public class PurchaseStore implements ProjectPurchaseStorage {
           "Retrieving offer %d for project %s failed.".formatted(offerId, projectId), e);
     }
   }
+
+  @Override
+  public Optional<ProjectId> findProjectIdOfPurchase(Long purchaseID) {
+    return persistenceStore.findById(purchaseID).map(ServicePurchase::project);
+  }
+
 }

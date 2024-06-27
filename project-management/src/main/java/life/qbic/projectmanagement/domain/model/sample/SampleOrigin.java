@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.domain.model.sample;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import java.util.Objects;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -14,10 +16,14 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
  *
  * @since 1.0.0
  */
+@Embeddable
 public class SampleOrigin {
 
+  @Column(name = "species", columnDefinition = "TEXT")
   private OntologyTerm species;
+  @Column(name = "specimen", columnDefinition = "TEXT")
   private OntologyTerm specimen;
+  @Column(name = "analyte", columnDefinition = "TEXT")
   private OntologyTerm analyte;
 
   protected SampleOrigin() {

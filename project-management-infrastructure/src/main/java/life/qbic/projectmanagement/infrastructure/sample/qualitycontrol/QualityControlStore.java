@@ -52,10 +52,10 @@ public class QualityControlStore implements QualityControlStorage {
   }
 
   @Override
-  public void storeQualityControls(List<QualityControl> qualityControls)
+  public Iterable<QualityControl> storeQualityControls(List<QualityControl> qualityControls)
       throws QualityControlStorageException {
     try {
-      persistenceStore.saveAll(qualityControls);
+      return persistenceStore.saveAll(qualityControls);
     } catch (RuntimeException e) {
       throw new QualityControlStorageException((
           "Storing the quality control for project %s failed".formatted(
@@ -103,5 +103,19 @@ public class QualityControlStore implements QualityControlStorage {
           "Retrieving quality control %d for project %s failed.".formatted(qualityControlId,
               projectId), e);
     }
+  }
+
+  /**
+   * Returns a {@link QualityControl} item with the provided qualityControlId, if found. 
+   * This method is intended to be used when no project id is available.
+   * <p>
+   * For user interactions {@link #findQualityControlForProject} instead!
+   *
+   * @param qualityControlId the id of the quality control to be returned
+   * @see {@link #findQualityControlForProject}
+   */
+  @Override
+  public Optional<QualityControl> findQualityControl(Long qualityControlId) {
+    return persistenceStore.findById(qualityControlId);
   }
 }
