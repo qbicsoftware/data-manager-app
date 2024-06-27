@@ -116,11 +116,11 @@ public class UserRegistrationLayout extends VerticalLayout {
   }
 
   private void handleRegistrationFailure(ApplicationResponse response) {
-    UserRegistrationException exception = build(response);
+    UserRegistrationException exception = convertToRegistrationException(response);
     handleRegistrationFailure(exception);
   }
 
-  private UserRegistrationException build(ApplicationResponse applicationResponse) {
+  private UserRegistrationException convertToRegistrationException(ApplicationResponse applicationResponse) {
     var builder = UserRegistrationException.builder();
 
     for (RuntimeException e : applicationResponse.failures()) {
