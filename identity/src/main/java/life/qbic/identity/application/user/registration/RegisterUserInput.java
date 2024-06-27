@@ -15,7 +15,7 @@ public interface RegisterUserInput {
    * @param fullName    the full name of the user
    * @param email       the user's mail address
    * @param rawPassword the user selected raw password for authentication
-   * @param userName
+   * @param userName    the unique user name specified by the user
    * @since 1.0.0
    */
   void register(String fullName, String email, char[] rawPassword, String userName);

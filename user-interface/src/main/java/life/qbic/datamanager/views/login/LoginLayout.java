@@ -16,9 +16,11 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
-import life.qbic.datamanager.views.register.UserRegistrationLayout;
+import life.qbic.datamanager.views.register.UserRegistrationMain;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -30,6 +32,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route(value = AppRoutes.LOGIN, layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
+@SpringComponent
+@UIScope
 public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
   private VerticalLayout contentLayout;
@@ -103,7 +107,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private Div initRegistrationSection() {
-    RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
+    RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationMain.class);
     return new Div(new Text("Need an account? "), routerLink);
   }
 
