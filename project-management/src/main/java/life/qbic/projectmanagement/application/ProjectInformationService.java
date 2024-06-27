@@ -1,6 +1,9 @@
 package life.qbic.projectmanagement.application;
 
+import static java.util.function.Predicate.not;
+
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -9,8 +12,6 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
@@ -22,6 +23,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -37,14 +39,17 @@ public class ProjectInformationService {
   private final ProjectOverviewLookup projectOverviewLookup;
   private final ProjectRepository projectRepository;
   private final ProjectAccessService projectAccessService;
+  private final AuthenticationToUserIdTranslationService userIdTranslator;
 
   public ProjectInformationService(@Autowired ProjectOverviewLookup projectOverviewLookup,
       @Autowired ProjectRepository projectRepository,
-      @Autowired ProjectAccessService projectAccessService) {
+      @Autowired ProjectAccessService projectAccessService,
+      AuthenticationToUserIdTranslationService userIdTranslator) {
     Objects.requireNonNull(projectOverviewLookup);
     this.projectOverviewLookup = projectOverviewLookup;
     this.projectRepository = projectRepository;
     this.projectAccessService = projectAccessService;
+    this.userIdTranslator = userIdTranslator;
   }
 
   /**
@@ -69,20 +74,20 @@ public class ProjectInformationService {
      therefore the list of accessible projectIds for the user have to be retrieved beforehand
    */
   private List<ProjectId> retrieveAccessibleProjectIdsForUser() {
-    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    var userId = "";
-    if (principal instanceof QbicUserDetails qbicUserDetails) {
-      userId = qbicUserDetails.getUserId();
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    Optional<String> optionalUserId = userIdTranslator.translateToUserId(
+        authentication);
+    if (optionalUserId.isEmpty()) {
+      return new ArrayList<>();
     }
-    if (principal instanceof QbicOidcUser qbicOidcUser) {
-      userId = qbicOidcUser.getQbicUserId();
-    }
-//    //FIXME!!! a user can have multiple roles potentially. Why is this used here?
-//    var userRole = principal.getAuthorities().stream()
-//        .filter(grantedAuthority -> grantedAuthority instanceof Role).findFirst();
-    var accessibleProjectIds = projectAccessService.getAccessibleProjectsForSid(userId);
-//    userRole.ifPresent(grantedAuthority -> accessibleProjectIds.addAll(
-//        projectAccessService.getAccessibleProjectsForSid(grantedAuthority.getAuthority())));
+    var accessibleProjectIds = projectAccessService.getAccessibleProjectsForSid(
+        optionalUserId.get());
+    List<ProjectId> accessibleProjectsFromRoles = authentication.getAuthorities().stream()
+        .flatMap(it -> projectAccessService.getAccessibleProjectsForSid(
+            it.getAuthority()).stream())
+        .filter(not(accessibleProjectIds::contains))
+        .toList();
+    accessibleProjectIds.addAll(accessibleProjectsFromRoles);
     return accessibleProjectIds;
   }
 
