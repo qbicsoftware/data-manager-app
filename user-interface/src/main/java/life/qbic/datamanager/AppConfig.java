@@ -21,8 +21,6 @@ import life.qbic.identity.application.user.policy.directive.WhenUserActivatedSub
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSendConfirmationEmail;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
 import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
-import life.qbic.identity.application.user.registration.RegisterUserInput;
-import life.qbic.identity.application.user.registration.Registration;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
@@ -113,18 +111,6 @@ public class AppConfig {
   @Bean
   public PasswordResetInput passwordResetInput(IdentityService identityService) {
     return new PasswordResetRequest(identityService);
-  }
-
-  /**
-   * Creates the registration use case.
-   *
-   * @param identityService the user registration services used by this use case
-   * @return the use case input
-   * @since 1.0.0
-   */
-  @Bean
-  public RegisterUserInput registerUserInput(IdentityService identityService) {
-    return new Registration(identityService);
   }
 
   @Bean
