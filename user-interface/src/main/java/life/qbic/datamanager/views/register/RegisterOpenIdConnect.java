@@ -4,24 +4,30 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import life.qbic.application.commons.ApplicationResponse;
+import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.MainPage;
-import life.qbic.identity.domain.model.User;
-import life.qbic.identity.domain.repository.UserRepository;
+import life.qbic.identity.application.user.IdentityService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -30,18 +36,24 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 @PermitAll
 public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObserver {
 
-  private final UserRepository userRepository;
   private final TextField username;
   private final TextField fullName;
   private final TextField email;
-
+  private final Div errorArea;
+  
   private static final Logger log = logger(RegisterOpenIdConnect.class);
+  private final transient IdentityService identityService;
+  private final transient ErrorMessageTranslationService errorMessageTranslationService;
+
 
   public RegisterOpenIdConnect(
-      @Autowired UserRepository userRepository
-  ) {
+      @Qualifier("userRegistrationService") IdentityService identityService,
+      @Autowired ErrorMessageTranslationService errorMessageTranslationService) {
+    requireNonNull(errorMessageTranslationService,
+        "errorMessageTranslationService must not be null");
+    this.identityService = requireNonNull(identityService, "identityService must not be null");
+    this.errorMessageTranslationService = errorMessageTranslationService;
     Div content = new Div();
-    this.userRepository = requireNonNull(userRepository, "userRepository must not be null");
     fullName = new TextField("Full Name");
     fullName.setRequired(true);
     username = new TextField("Username");
@@ -51,7 +63,9 @@ public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObser
     Button submit = new Button("Submit");
     submit.addClickListener(
         clickedEvent -> createUser(fullName.getValue(), username.getValue(), email.getValue()));
-    content.add(new FormLayout(fullName, username, email, submit));
+    errorArea = new Div();
+    errorArea.setVisible(false);
+    content.add(new FormLayout(fullName, username, email, submit), errorArea);
     setContent(content);
   }
 
@@ -61,11 +75,31 @@ public class RegisterOpenIdConnect extends AppLayout implements BeforeEnterObser
       return; //nothing to do
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-      User user = User.createOidc(fullName, email, username,
-          oidcUser.getIssuer().toString(), oidcUser.getName());
-      userRepository.addUser(user);
-      //TODO move user creation to registration service
-      UI.getCurrent().navigate(PleaseConfirmEmailPage.class);
+      ApplicationResponse registrationResponse = identityService.registerOpenIdUser(fullName,
+          username, email, oidcUser.getIssuer().toString(),
+          oidcUser.getName());
+      registrationResponse.ifSuccessOrElse(
+          success -> {
+            errorArea.removeAll();
+            errorArea.setVisible(false);
+            UI.getCurrent().navigate(PleaseConfirmEmailPage.class);
+          },
+          failure -> {
+            String allErrorMessages = failure.failures().stream().map(Throwable::getMessage)
+                .collect(Collectors.joining("\n"));
+            List<Component> errorMessages = failure.failures().stream()
+                .map(errorMessageTranslationService::translate)
+                .map(userFriendlyErrorMessage -> {
+                  Div errorDiv = new Div();
+                  errorDiv.add(new Span(userFriendlyErrorMessage.title() + ": "),
+                      new Span(userFriendlyErrorMessage.message()));
+                  return (Component) errorDiv;
+                }).toList();
+            errorArea.add(errorMessages);
+            log.error(allErrorMessages);
+            failure.failures().forEach(e -> log.debug(e.getMessage(), e));
+          }
+      );
       return;
     }
     UI.getCurrent().navigate(
