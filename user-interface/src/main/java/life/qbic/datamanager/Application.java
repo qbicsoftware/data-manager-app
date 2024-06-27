@@ -75,10 +75,6 @@ public class Application extends SpringBootServletInitializer implements AppShel
   }
 
   private static void setupUseCases(ConfigurableApplicationContext context) {
-    var emailAddressConfirmation = context.getBean(EmailAddressConfirmation.class);
-    var loginHandler = (ConfirmEmailOutput) context.getBean(LoginHandler.class);
-    emailAddressConfirmation.setConfirmEmailOutput(loginHandler);
-
     var passwordReset = context.getBean(PasswordResetRequest.class);
     var passwordResetHandler = (PasswordResetOutput) context.getBean(PasswordResetHandler.class);
     passwordReset.setUseCaseOutput(passwordResetHandler);
