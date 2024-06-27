@@ -15,7 +15,7 @@
 #landing-page-layout .landing-page-content {
   /*Static resources have to be loaded in css form the Meta-INF directory see vaadin cheatsheet
   https://vaadin.com/vaadin-reference-card#static-content */
-  /*Provide Background image here once a valid one is provided*/
+  background-image: url("../images/background-mesh-bottom-left.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -80,11 +80,19 @@
 }
 
 .main.legal-notice {
-  padding: var(--lumo-space-m);
+  padding: var(--lumo-space-xl);
+  height: fit-content;
+  width: clamp(700px, 60vw, 100%);
+  display: flex;
+  margin: auto;
 }
 
 .main.data-privacy-agreement {
-  padding: var(--lumo-space-m);
+  padding: var(--lumo-space-xl);
+  height: fit-content;
+  width: clamp(700px, 50vw, 100%);
+  display: flex;
+  margin: auto;
 }
 
 .main.measurement {

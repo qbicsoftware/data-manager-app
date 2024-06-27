@@ -39,12 +39,22 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
 
   @Override
   public long countProteomicsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
-    return pxpMeasurementJpaRepo.count(ProteomicsMeasurementSpec.containsSampleId(sampleIds));
+    Specification<ProteomicsMeasurement> isDistinctSpec = ProteomicsMeasurementSpec.isDistinct();
+    Specification<ProteomicsMeasurement> containsSampleId = ProteomicsMeasurementSpec.containsSampleId(
+        sampleIds);
+    Specification<ProteomicsMeasurement> distinct = Specification.where(containsSampleId)
+        .and(isDistinctSpec);
+    return pxpMeasurementJpaRepo.count(distinct);
   }
 
   @Override
   public long countNgsMeasurementsBySampleIds(Collection<SampleId> sampleIds) {
-    return ngsMeasurementJpaRepo.count(NgsMeasurementSpec.containsSampleId(sampleIds));
+    Specification<NGSMeasurement> isDistinctSpec = NgsMeasurementSpec.isDistinct();
+    Specification<NGSMeasurement> containsSampleId = NgsMeasurementSpec.containsSampleId(
+        sampleIds);
+    Specification<NGSMeasurement> distinct = Specification.where(containsSampleId)
+        .and(isDistinctSpec);
+    return ngsMeasurementJpaRepo.count(distinct);
   }
 
   @Override

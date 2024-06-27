@@ -83,7 +83,6 @@ public class Experiment {
     Experiment experiment = new Experiment(name);
     experiment.experimentalDesign = ExperimentalDesign.create();
 
-    experiment.experimentId = ExperimentId.create();
     experiment.speciesIconName = defaultIconName;
     experiment.specimenIconName = defaultIconName;
     experiment.analyteIconName = defaultIconName;
