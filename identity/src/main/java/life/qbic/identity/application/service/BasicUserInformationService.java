@@ -97,7 +97,7 @@ public class BasicUserInformationService implements UserInformationService, User
   }
 
   @Override
-  public Optional<UserPassword> findForUser(String userId) {
+  public Optional<UserPassword> findEncryptedPasswordForUser(String userId) {
     return userRepository.findById(UserId.from(userId))
         .map(user -> user.getEncryptedPassword() != null ? user : null)
         .map(user -> new UserPassword(user.id().get(), user.getEncryptedPassword().get()));

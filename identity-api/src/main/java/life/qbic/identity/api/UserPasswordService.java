@@ -13,6 +13,6 @@ public interface UserPasswordService {
    * @param userId the identifier of the user in the datamanager user management
    * @return the {@link UserPassword} for a user with the given identifier
    */
-  Optional<UserPassword> findForUser(String userId);
+  Optional<UserPassword> findEncryptedPasswordForUser(String userId);
 
 }

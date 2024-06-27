@@ -40,7 +40,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     // Then search for a user with the provided mail address
     var userInfo = userInformationService.findByEmail(mailAddress)
         .orElseThrow(() -> new UsernameNotFoundException("Cannot find user"));
-    var encryptedPassword = userPasswordService.findForUser(userInfo.id())
+    var encryptedPassword = userPasswordService.findEncryptedPasswordForUser(userInfo.id())
         .map(UserPassword::encryptedPassword);
     List<GrantedAuthority> authorities = userAuthorityProvider.getAuthoritiesByUserId(
         userInfo.id());
