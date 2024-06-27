@@ -31,7 +31,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
  * @since 1.1.0
  */
 @Route("register/pending-email-confirmation")
-@PageTitle("Waiting for e-mail confirmation")
+@PageTitle("Waiting for email confirmation")
 @AnonymousAllowed
 public class PleaseConfirmEmailPage extends Div implements BeforeEnterObserver {
 
