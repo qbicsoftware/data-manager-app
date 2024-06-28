@@ -112,7 +112,6 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
 
     styleFieldLayout();
     styleSendButton();
-    setSizeFull();
     setAlignItems(Alignment.CENTER);
     setJustifyContentMode(JustifyContentMode.CENTER);
   }
