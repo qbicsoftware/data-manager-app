@@ -7,11 +7,8 @@ import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import java.io.Serial;
 import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
-import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
 import life.qbic.identity.application.user.password.NewPassword;
 import life.qbic.identity.application.user.password.NewPasswordOutput;
-import life.qbic.identity.application.user.password.PasswordResetOutput;
-import life.qbic.identity.application.user.password.PasswordResetRequest;
 import life.qbic.identity.domain.registry.DomainRegistry;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.identity.domain.service.UserDomainService;
@@ -66,17 +63,5 @@ public class Application extends SpringBootServletInitializer implements AppShel
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
-
-    setupUseCases(appContext);
-  }
-
-  private static void setupUseCases(ConfigurableApplicationContext context) {
-    var passwordReset = context.getBean(PasswordResetRequest.class);
-    var passwordResetHandler = (PasswordResetOutput) context.getBean(PasswordResetHandler.class);
-    passwordReset.setUseCaseOutput(passwordResetHandler);
-
-    var newPassword = context.getBean(NewPassword.class);
-    var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
-    newPassword.setUseCaseOutput(newPasswordHandler);
   }
 }

@@ -62,6 +62,7 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
     this.identityService = Objects.requireNonNull(identityService);
     initLayout();
     styleLayout();
+    addClickListeners();
   }
 
   public PasswordField newPassword() {
