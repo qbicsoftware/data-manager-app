@@ -3,6 +3,8 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment.upda
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
@@ -22,6 +24,7 @@ import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.EditExperimentCancelConfirmationNotification;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
@@ -46,6 +49,8 @@ public class EditExperimentDialog extends DialogWindow {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
+
+    initCancelShortcuts();
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
@@ -124,9 +129,27 @@ public class EditExperimentDialog extends DialogWindow {
     }
   }
 
+  private void initCancelShortcuts() {
+    setCloseOnOutsideClick(false);
+    setCloseOnEsc(false);
+    Shortcuts.addShortcutListener(this,
+        this::onEditCanceled, Key.ESCAPE);
+  }
+
+  private void onEditCanceled() {
+    EditExperimentCancelConfirmationNotification cancelNotification = new EditExperimentCancelConfirmationNotification();
+    cancelNotification.open();
+    cancelNotification.addConfirmListener(event -> {
+      cancelNotification.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelNotification.addCancelListener(
+        event -> cancelNotification.close());
+  }
+
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    onEditCanceled();
   }
 
   public void setExperiment(ExperimentDraft experiment) {

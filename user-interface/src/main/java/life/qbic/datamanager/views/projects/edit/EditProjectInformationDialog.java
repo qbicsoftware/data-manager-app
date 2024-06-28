@@ -5,6 +5,8 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
@@ -20,6 +22,10 @@ import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog.CancelEvent;
+import life.qbic.datamanager.views.projects.project.CreateProjectCancelConfirmationNotification;
+import life.qbic.datamanager.views.projects.project.EditProjectCancelConfirmationNotification;
 import life.qbic.projectmanagement.application.ContactRepository;
 
 /**
@@ -44,6 +50,8 @@ public class EditProjectInformationDialog extends DialogWindow {
   public EditProjectInformationDialog(ContactRepository contactRepository) {
     super();
 
+    initCancelShortcuts();
+
     addClassName("edit-project-dialog");
     setHeaderTitle("Project Information");
     setConfirmButtonLabel("Save");
@@ -64,7 +72,6 @@ public class EditProjectInformationDialog extends DialogWindow {
 
     // Calls the reset method for all possible closure methods of the dialogue window:
     addDialogCloseActionListener(closeActionEvent -> close());
-    cancelButton.addClickListener(buttonClickEvent -> close());
 
     add(formLayout);
   }
@@ -93,12 +100,28 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
   }
 
-  @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-    close();
+  private void initCancelShortcuts() {
+    setCloseOnOutsideClick(false);
+    setCloseOnEsc(false);
+    Shortcuts.addShortcutListener(this,
+        this::onEditCanceled, Key.ESCAPE);
   }
 
+  private void onEditCanceled() {
+    EditProjectCancelConfirmationNotification cancelNotification = new EditProjectCancelConfirmationNotification();
+    cancelNotification.open();
+    cancelNotification.addConfirmListener(event -> {
+      cancelNotification.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelNotification.addCancelListener(
+        event -> cancelNotification.close());
+  }
+
+  @Override
+  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    onEditCanceled();
+  }
 
   public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
     addListener(ProjectUpdateEvent.class, listener);

@@ -7,6 +7,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
@@ -14,6 +16,7 @@ import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.spreadsheet.framework.Action;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -29,6 +32,7 @@ import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
+import life.qbic.datamanager.views.projects.project.CreateProjectCancelConfirmationNotification;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -58,6 +62,7 @@ public class AddProjectDialog extends Dialog {
   private final Button confirmButton;
   private final Button backButton;
   private final Button nextButton;
+  private Action cancelAction;
 
   private final Map<String, Component> stepContent;
 
@@ -72,6 +77,9 @@ public class AddProjectDialog extends Dialog {
       OntologyLookupService ontologyLookupService,
       ContactRepository contactRepository) {
     super();
+
+    initCancelShortcuts();
+
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
@@ -142,6 +150,24 @@ public class AddProjectDialog extends Dialog {
     adaptFooterButtons(stepper.getFirstStep());
   }
 
+  private void initCancelShortcuts() {
+    setCloseOnOutsideClick(false);
+    setCloseOnEsc(false);
+    Shortcuts.addShortcutListener(this,
+        this::onCreationCanceled, Key.ESCAPE);
+  }
+
+  private void onCreationCanceled() {
+    CreateProjectCancelConfirmationNotification projectCancelNotification = new CreateProjectCancelConfirmationNotification();
+    projectCancelNotification.open();
+    projectCancelNotification.addConfirmListener(event -> {
+      projectCancelNotification.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    projectCancelNotification.addCancelListener(
+        event -> projectCancelNotification.close());
+  }
+
   /**
    * Allows user to search the offer database to prefill some project information
    */
@@ -150,7 +176,7 @@ public class AddProjectDialog extends Dialog {
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    onCreationCanceled();
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {
