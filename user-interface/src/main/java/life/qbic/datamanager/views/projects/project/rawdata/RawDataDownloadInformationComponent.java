@@ -12,6 +12,7 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -57,22 +58,28 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
     Div downloadRawDataSection = generateSection("Download RAW data URLs",
         "Download the file with a list of URLs corresponding to the measurement you want to download.",
         generateDownloadUrlsButton);
-    CodeBlock codeBlock = new CodeBlock("curl", "-OJ", "-H",
+    TabSheet codeTabSheet = new TabSheet();
+    CodeBlock curlCodeBlock = new CodeBlock("curl", "-OJ", "-H",
         "\"Authorization: Bearer <ACCESS_TOKEN>\"",
         "<DOWNLOAD_URL>");
-    Div runCurlCommandSection = generateSection("Run cURL command",
-        "Install cURL on your system, open it and enter the following command once for each file you want to download",
-        codeBlock);
+    CodeBlock wgetCodeBlock = new CodeBlock("wget", "--content-disposition", "--trust-server-names",
+        "--header",
+        "\"Authorization: Bearer <ACCESS_TOKEN>\"",
+        "<DOWNLOAD_URL>");
+    codeTabSheet.add("curl", curlCodeBlock);
+    codeTabSheet.add("wget", wgetCodeBlock);
+    Div runCurlCommandSection = generateSection("Download Data",
+        "Install cURL or wGet on your system, open the command line and enter one of the following command once for each file you want to download",
+        codeTabSheet);
     Span additionalInfoSection = generateAdditionalInformationSection();
     add(generateTokenSection, downloadRawDataSection, runCurlCommandSection, additionalInfoSection);
   }
 
   private Span generateAdditionalInformationSection() {
     Anchor downloadGuideLink = new Anchor(
-        "https://qbicsoftware.github.io/research-data-management/download/introduction/",
+        "https://qbicsoftware.github.io/research-data-management/rawdata/raw_data_download_run_download/",
         "here", AnchorTarget.BLANK);
-    Text additionalInformationText = new Text(
-        "Learn more about how to download the datasets ");
+    Text additionalInformationText = new Text("Learn more about how to download the datasets ");
     return new Span(additionalInformationText, downloadGuideLink);
   }
 
