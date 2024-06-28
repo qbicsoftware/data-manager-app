@@ -233,10 +233,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setHeader("Run protocol")
         .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
         .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
-        .setHeader("Flow Cell")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
-        .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(
             ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
                 .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
