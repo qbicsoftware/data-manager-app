@@ -22,9 +22,6 @@ import java.util.StringJoiner;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
-import life.qbic.datamanager.views.projects.create.AddProjectDialog;
-import life.qbic.datamanager.views.projects.create.AddProjectDialog.CancelEvent;
-import life.qbic.datamanager.views.projects.project.CreateProjectCancelConfirmationNotification;
 import life.qbic.datamanager.views.projects.project.EditProjectCancelConfirmationNotification;
 import life.qbic.projectmanagement.application.ContactRepository;
 
