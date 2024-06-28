@@ -16,7 +16,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Disclaimer;
+import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -39,6 +42,7 @@ import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleI
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
+import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -78,6 +82,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient DeletionService deletionService;
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
+  private final Disclaimer noGroupsDefinedDisclaimer;
+  private final Disclaimer noSamplesRegisteredDisclaimer;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ProjectInformationService projectInformationService,
@@ -105,8 +111,14 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     this.sampleDetailsComponent = sampleDetailsComponent;
     this.batchDetailsComponent = batchDetailsComponent;
     addClassName("sample");
-    reloadOnBatchRegistration();
-    sampleDetailsComponent.addCreateBatchListener(event -> onRegisterBatchClicked());
+
+    noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
+    noGroupsDefinedDisclaimer.setVisible(false);
+
+    noSamplesRegisteredDisclaimer = createNoSamplesRegisteredDisclaimer();
+    noSamplesRegisteredDisclaimer.setVisible(false);
+
+    addListener(RegisterBatchClicked.class, event -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
     batchDetailsComponent.addBatchEditListener(this::onEditBatchClicked);
@@ -150,11 +162,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void reloadOnBatchRegistration() {
-    sampleDetailsComponent.addCreateBatchListener(
-        event -> displayComponentInContent(sampleDetailsComponent));
-  }
-
   private void onRegisterBatchClicked() {
     Experiment experiment = context.experimentId()
         .flatMap(
@@ -175,7 +182,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private void reload() {
     setContext(context);
   }
-
 
   private void registerBatch(ConfirmEvent confirmEvent) {
     String batchLabel = confirmEvent.getData().batchName();
@@ -220,6 +226,79 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         sampleInfo.getExperimentalGroup(),
         sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
         sampleInfo.getCustomerComment()));
+  }
+
+  private Disclaimer createNoSamplesRegisteredDisclaimer() {
+    Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
+        "Manage your samples in one place",
+        "Start your project by registering the first sample batch", "Register batch");
+    noSamplesDefinedCard.addDisclaimerConfirmedListener(
+        event -> fireEvent(new RegisterBatchClicked(this, event.isFromClient())));
+    return noSamplesDefinedCard;
+  }
+
+  private Disclaimer createNoGroupsDefinedDisclaimer() {
+    Disclaimer noGroupsDefindedDisclaimer = Disclaimer.createWithTitle(
+        "Design your experiment first",
+        "Start the sample registration process by defining experimental groups",
+        "Add groups");
+    noGroupsDefindedDisclaimer.addDisclaimerConfirmedListener(this::onNoGroupsDefinedClicked);
+    return noGroupsDefindedDisclaimer;
+  }
+
+
+  private void onNoGroupsDefinedClicked(DisclaimerConfirmedEvent event) {
+    routeToExperimentalGroupCreation(event, context.experimentId().orElseThrow().value());
+  }
+
+  private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
+      String experimentId) {
+    if (componentEvent.isFromClient()) {
+      String routeToExperimentPage = String.format(Projects.EXPERIMENT,
+          context.projectId().orElseThrow().value(),
+          experimentId);
+      log.debug(String.format(
+          "Rerouting to experiment page for experiment %s of project %s: %s",
+          experimentId, context.projectId().orElseThrow().value(), routeToExperimentPage));
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
+    }
+  }
+
+
+  private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
+    return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+        .map(Collection::isEmpty)
+        .onError(error -> {
+          throw new ApplicationException("Unexpected response code : " + error);
+        })
+        .getValue();
+  }
+
+
+  private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
+    return experiment.getExperimentalGroups().isEmpty();
+  }
+
+
+  private void setExperiment(Experiment experiment) {
+
+    if (noExperimentGroupsInExperiment(experiment)) {
+      sampleGrid.setVisible(false);
+      noSamplesRegisteredDisclaimer.setVisible(false);
+      noGroupsDefinedDisclaimer.setVisible(true);
+      return;
+    }
+    if (noSamplesRegisteredInExperiment(experiment)) {
+      sampleGrid.setVisible(false);
+      noSamplesRegisteredDisclaimer.setVisible(true);
+      noGroupsDefinedDisclaimer.setVisible(false);
+      return;
+    }
+    updateSampleGridDataProvider(context.experimentId().orElseThrow(), searchField.getValue());
+
+    sampleGrid.setVisible(true);
+    noSamplesRegisteredDisclaimer.setVisible(false);
+    noGroupsDefinedDisclaimer.setVisible(false);
   }
 
   private void displayUpdateSuccess() {
@@ -356,6 +435,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     setContext(context);
   }
 
+
   public static class BatchRegisteredEvent extends ComponentEvent<SampleInformationMain> {
 
     /**
@@ -367,6 +447,22 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
      *                   side, <code>false</code> otherwise
      */
     public BatchRegisteredEvent(SampleInformationMain source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  /**
+   * <b>Create Batch Event</b>
+   *
+   * <p>Indicates that a user wants to create a {@link Batch}
+   * within the {@link SampleDetailsComponent} of a project</p>
+   */
+  public static class RegisterBatchClicked extends ComponentEvent<SampleInformationMain> {
+
+    @Serial
+    private static final long serialVersionUID = 5351296685318048598L;
+
+    public RegisterBatchClicked(SampleInformationMain source, boolean fromClient) {
       super(source, fromClient);
     }
   }

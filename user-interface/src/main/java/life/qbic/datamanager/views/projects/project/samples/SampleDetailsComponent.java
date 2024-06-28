@@ -3,8 +3,6 @@ package life.qbic.datamanager.views.projects.project.samples;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
@@ -18,15 +16,11 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.general.Disclaimer;
-import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
@@ -60,8 +54,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final long serialVersionUID = 2893730975944372088L;
   private static final Logger log = logger(SampleDetailsComponent.class);
   private final TextField searchField;
-  private final Disclaimer noGroupsDefinedDisclaimer;
-  private final Disclaimer noSamplesRegisteredDisclaimer;
   private final DownloadProvider metadataDownload;
   private final Span countSpan;
   private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
@@ -106,20 +98,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     experimentTabContent.addClassName("sample-tab-content");
 
     sampleGrid = createSampleGrid();
-
-    noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
-    noGroupsDefinedDisclaimer.setVisible(false);
-
-    noSamplesRegisteredDisclaimer = createNoSamplesRegisteredDisclaimer();
-    noSamplesRegisteredDisclaimer.setVisible(false);
-
-    experimentTabContent.add(sampleGrid, noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
-
+    experimentTabContent.add(sampleGrid);
     Div content = new Div();
     content.addClassName("sample-details-content");
 
     countSpan = new Span();
-
+    setSampleCount(0);
     content.add(buttonAndFieldBar, metadataDownload, countSpan, experimentTabContent);
     add(content);
 
@@ -159,10 +143,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     Div tagCollection = new Div();
     tagCollection.addClassName("tag-collection");
     return tagCollection;
-  }
-
-  private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
-    return experiment.getExperimentalGroups().isEmpty();
   }
 
   private static Grid<SamplePreview> createSampleGrid() {
@@ -267,99 +247,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     sampleInformationXLSXProvider.setSamples(samples);
   }
 
-  /**
-   * Adds the provided listener
-   *
-   * @param batchRegistrationListener listener notified if the user intends to create a batch
-   */
-  public void addCreateBatchListener(
-      ComponentEventListener<RegisterBatchClicked> batchRegistrationListener) {
-    addListener(RegisterBatchClicked.class, batchRegistrationListener);
-  }
-
-  private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
-      String experimentId) {
-    if (componentEvent.isFromClient()) {
-      String routeToExperimentPage = String.format(Projects.EXPERIMENT,
-          context.projectId().orElseThrow().value(),
-          experimentId);
-      log.debug(String.format(
-          "Rerouting to experiment page for experiment %s of project %s: %s",
-          experimentId, context.projectId().orElseThrow().value(), routeToExperimentPage));
-      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
-    }
-  }
-
   private void setExperiment(Experiment experiment) {
     setSampleCount(0);
-
-    if (noExperimentGroupsInExperiment(experiment)) {
-      sampleGrid.setVisible(false);
-      noSamplesRegisteredDisclaimer.setVisible(false);
-      noGroupsDefinedDisclaimer.setVisible(true);
-      return;
-    }
-    if (noSamplesRegisteredInExperiment(experiment)) {
-      sampleGrid.setVisible(false);
-      noSamplesRegisteredDisclaimer.setVisible(true);
-      noGroupsDefinedDisclaimer.setVisible(false);
-      return;
-    }
     updateSampleGridDataProvider(context.experimentId().orElseThrow(), searchField.getValue());
-
-    sampleGrid.setVisible(true);
-    noSamplesRegisteredDisclaimer.setVisible(false);
-    noGroupsDefinedDisclaimer.setVisible(false);
   }
 
   private void setSampleCount(int i) {
     countSpan.setText(i+" samples");
   }
 
-  private void onNoGroupsDefinedClicked(DisclaimerConfirmedEvent event) {
-    routeToExperimentalGroupCreation(event, context.experimentId().orElseThrow().value());
-  }
-
-  private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
-    return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-        .map(Collection::isEmpty)
-        .onError(error -> {
-          throw new ApplicationException("Unexpected response code : " + error);
-        })
-        .getValue();
-  }
-
-  private Disclaimer createNoSamplesRegisteredDisclaimer() {
-    Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
-        "Manage your samples in one place",
-        "Start your project by registering the first sample batch", "Register batch");
-    noSamplesDefinedCard.addDisclaimerConfirmedListener(
-        event -> fireEvent(new RegisterBatchClicked(this, event.isFromClient())));
-    return noSamplesDefinedCard;
-  }
-
-  private Disclaimer createNoGroupsDefinedDisclaimer() {
-    Disclaimer noGroupsDefindedDisclaimer = Disclaimer.createWithTitle(
-        "Design your experiment first",
-        "Start the sample registration process by defining experimental groups",
-        "Add groups");
-    noGroupsDefindedDisclaimer.addDisclaimerConfirmedListener(this::onNoGroupsDefinedClicked);
-    return noGroupsDefindedDisclaimer;
-  }
-
-  /**
-   * <b>Create Batch Event</b>
-   *
-   * <p>Indicates that a user wants to create a {@link Batch}
-   * within the {@link SampleDetailsComponent} of a project</p>
-   */
-  public static class RegisterBatchClicked extends ComponentEvent<SampleDetailsComponent> {
-
-    @Serial
-    private static final long serialVersionUID = 5351296685318048598L;
-
-    public RegisterBatchClicked(SampleDetailsComponent source, boolean fromClient) {
-      super(source, fromClient);
-    }
-  }
 }
