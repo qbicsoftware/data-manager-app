@@ -1,5 +1,6 @@
 package life.qbic.datamanager;
 
+import static java.util.Objects.isNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
@@ -15,6 +16,7 @@ import life.qbic.datamanager.views.register.RegisterOpenIdConnect;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -57,7 +59,11 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
 
   private void ensureCompleteOidcRegistration(BeforeEnterEvent it) {
     SecurityContext securityContext = SecurityContextHolder.getDeferredContext().get();
-    var principal = securityContext.getAuthentication().getPrincipal();
+    Authentication authentication = securityContext.getAuthentication();
+    if (isNull(authentication)) {
+      return;
+    }
+    var principal = authentication.getPrincipal();
     if (principal instanceof OidcUser && !(principal instanceof QbicOidcUser)) {
       if (it.getNavigationTarget().equals(RegisterOpenIdConnect.class)) {
         return;
