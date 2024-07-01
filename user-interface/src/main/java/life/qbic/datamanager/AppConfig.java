@@ -19,7 +19,6 @@ import life.qbic.identity.application.user.policy.UserRegisteredPolicy;
 import life.qbic.identity.application.user.policy.directive.WhenUserActivatedSubmitIntegrationEvent;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSendConfirmationEmail;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
-import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
@@ -41,11 +40,11 @@ import life.qbic.projectmanagement.application.policy.MeasurementCreatedPolicy;
 import life.qbic.projectmanagement.application.policy.MeasurementUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.OfferAddedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
+import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.QCAddedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
@@ -89,11 +88,6 @@ public class AppConfig {
 
   Section starts below
   */
-  @Bean
-  public EmailAddressConfirmation confirmEmailInput(
-      IdentityService identityService) {
-    return new EmailAddressConfirmation(identityService);
-  }
 
   @Bean
   public IdentityService userRegistrationService(
