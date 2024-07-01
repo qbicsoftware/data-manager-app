@@ -9,7 +9,7 @@ import life.qbic.datamanager.views.layouts.BoxLayout;
  *
  * @since 1.0.0
  */
-public class LinkSentLayout extends BoxLayout {
+class LinkSentLayout extends BoxLayout {
 
   public Button loginButton;
 
