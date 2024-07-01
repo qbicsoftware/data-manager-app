@@ -16,7 +16,6 @@ import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.spreadsheet.framework.Action;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -62,7 +61,6 @@ public class AddProjectDialog extends Dialog {
   private final Button confirmButton;
   private final Button backButton;
   private final Button nextButton;
-  private Action cancelAction;
 
   private final Map<String, Component> stepContent;
 
