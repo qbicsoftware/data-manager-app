@@ -37,6 +37,62 @@
   padding-bottom: var(--lumo-space-s);
   font-size: small;
 }
+
+.login-card {
+  display: inline-flex;
+  gap: var(--lumo-space-l);
+  align-items: center;
+  padding-inline: var(--lumo-space-m);
+  padding-top: var(--lumo-space-s);
+  padding-bottom: var(--lumo-space-s);
+  box-sizing: border-box;
+  background-color: var(--lumo-base-color);
+  border-radius: var(--lumo-border-radius-m);
+  border-style: solid;
+  border-color: var(--lumo-contrast-20pct);
+  border-width: 1px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.login-card .logo {
+  height: var(--lumo-icon-size-m);
+  width: var(--lumo-icon-size-m);
+}
+
+.login-card .text {
+  font-weight: 500;
+  font-size: var(--lumo-font-size-m);
+}
+
+.registration-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  align-items: center;
+  width: 100%;
+}
+
+.registration-section .link {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+  font-weight: 500;
+}
+
+.registration-section .spacer {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  width: 100%
+}
+
+.registration-section .spacer::before,
+.registration-section .spacer::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--lumo-contrast-20pct);
+}
+
 /* ontology-link styling */
 .ontology-link {
   display: inline-flex;

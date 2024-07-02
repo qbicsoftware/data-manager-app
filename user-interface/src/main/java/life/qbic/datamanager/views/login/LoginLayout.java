@@ -2,10 +2,12 @@ package life.qbic.datamanager.views.login;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -16,6 +18,7 @@ import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
@@ -45,6 +48,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   private final transient LoginHandlerInterface viewHandler;
 
+  private final static String OrcId_LOGO_PATH = "login/orcid_logo.svg";
+
   public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface,
       @Value("${server.servlet.context-path}") String contextPath) {
     initLayout(contextPath);
@@ -57,14 +62,26 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     contentLayout = new VerticalLayout();
     createNotificationLayout();
     createLoginForm();
-    this.registrationSection = initRegistrationSection();
+    registrationSection = initRegistrationSection(contextPath);
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
-    Anchor orcidOauth = new Anchor(contextPath + "/oauth2/authorization/orcid", "Login with ORCID");
-    orcidOauth.setRouterIgnore(true);
-    contentLayout.add(orcidOauth);
     add(contentLayout);
+  }
 
+  private Span createLoginCard(Image logo, String text, String url) {
+    logo.addClassName("logo");
+    Span loginText = new Span(text);
+    loginText.addClassName("text");
+    Span loginCard = new Span(logo, loginText);
+    loginCard.addClassName("login-card");
+    loginCard.addClickListener(event -> UI.getCurrent().getPage().open(url, "_blank"));
+    return loginCard;
+  }
+
+  private Image getOrcIdLogo() {
+    StreamResource utResource = new StreamResource("orcid_logo.svg",
+        () -> getClass().getClassLoader().getResourceAsStream(OrcId_LOGO_PATH));
+    return new Image(utResource, "orcid_logo");
   }
 
   private void registerToHandler(LoginHandlerInterface loginHandler) {
@@ -109,9 +126,17 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     loginForm.setUsernameText("Email");
   }
 
-  private Div initRegistrationSection() {
-    RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    return new Div(new Text("Need an account? "), routerLink);
+  private Div initRegistrationSection(String contextPath) {
+    RouterLink routerLink = new RouterLink("Register", UserRegistrationLayout.class);
+    Span registrationLink = new Span(new Text("Don't have an account? "), routerLink);
+    registrationLink.addClassName("link");
+    Span spacer = new Span("OR");
+    spacer.addClassName("spacer");
+    Span orcidCard = createLoginCard(getOrcIdLogo(), "Login with ORCID",
+        contextPath + "/oauth2/authorization/orcid");
+    Div registrationSection = new Div(registrationLink, spacer, orcidCard);
+    registrationSection.addClassName("registration-section");
+    return registrationSection;
   }
 
   private void styleNotificationLayout() {
