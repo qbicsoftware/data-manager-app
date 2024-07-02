@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.login;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ComponentEventListener;
@@ -59,9 +60,10 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   public LoginLayout(@Autowired LoginHandler loginHandler,
       @Autowired IdentityService identityService,
       @Value("${server.servlet.context-path}") String contextPath) {
-    this.identityService = Objects.requireNonNull(identityService,
+    requireNonNull(loginHandler, "loginHandler must not be null");
+    this.identityService = requireNonNull(identityService,
         "identityService must not be null");
-    this.emailConfirmationParameter = Objects.requireNonNull(
+    this.emailConfirmationParameter = requireNonNull(
         loginHandler.emailConfirmationParameter(), "email confirmationParameter must not be null");
     initLayout(contextPath);
     styleLayout();
@@ -198,12 +200,13 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     }
     if (queryParams.containsKey(emailConfirmationParameter)) {
       String userId = queryParams.get(emailConfirmationParameter).iterator().next();
-      try  {
+      try {
         identityService.confirmUserEmail(userId);
         onEmailConfirmationSuccess();
       } catch (UserNotFoundException e) {
         log.error("User %s not found!".formatted(userId), e);
-        onEmailConfirmationFailure("Unknown user for request. If the issue persists, please contact our helpdesk.");
+        onEmailConfirmationFailure(
+            "Unknown user for request. If the issue persists, please contact our helpdesk.");
       }
 
     }
