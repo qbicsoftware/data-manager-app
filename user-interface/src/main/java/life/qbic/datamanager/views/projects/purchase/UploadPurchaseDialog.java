@@ -21,6 +21,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -49,6 +50,8 @@ public class UploadPurchaseDialog extends DialogWindow {
   private final Div uploadedItemsSectionContent;
 
   public UploadPurchaseDialog() {
+    initCancelShortcuts(this::onCanceled);
+
     // Vaadin's upload component setup
     multiFileMemoryBuffer = new EditableMultiFileMemoryBuffer();
 
@@ -133,9 +136,23 @@ public class UploadPurchaseDialog extends DialogWindow {
     fireEvent(new ConfirmEvent(this, true));
   }
 
+  private void onCanceled() {
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("Uploads were not yet saved.")
+        .withConfirmText("Discard uploads")
+        .withTitle("Discard Offer uploads?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
+  }
+
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new UploadPurchaseDialog.CancelEvent(this, clickEvent.isFromClient()));
+    onCanceled();
   }
 
   private void processClientFileRemoveEvent(DomEvent event) {

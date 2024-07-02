@@ -5,8 +5,6 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
@@ -19,10 +17,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
-import life.qbic.datamanager.views.projects.project.EditProjectCancelConfirmationNotification;
 import life.qbic.projectmanagement.application.ContactRepository;
 
 /**
@@ -47,7 +45,7 @@ public class EditProjectInformationDialog extends DialogWindow {
   public EditProjectInformationDialog(ContactRepository contactRepository) {
     super();
 
-    initCancelShortcuts();
+    initCancelShortcuts(this::onEditCanceled);
 
     addClassName("edit-project-dialog");
     setHeaderTitle("Project Information");
@@ -97,22 +95,18 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
   }
 
-  private void initCancelShortcuts() {
-    setCloseOnOutsideClick(false);
-    setCloseOnEsc(false);
-    Shortcuts.addShortcutListener(this,
-        this::onEditCanceled, Key.ESCAPE);
-  }
-
   private void onEditCanceled() {
-    EditProjectCancelConfirmationNotification cancelNotification = new EditProjectCancelConfirmationNotification();
-    cancelNotification.open();
-    cancelNotification.addConfirmListener(event -> {
-      cancelNotification.close();
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("You will lose all the changes made to this project.")
+        .withConfirmText("Discard changes")
+        .withTitle("Discard project changes?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
       fireEvent(new CancelEvent(this, true));
     });
-    cancelNotification.addCancelListener(
-        event -> cancelNotification.close());
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
   }
 
   @Override

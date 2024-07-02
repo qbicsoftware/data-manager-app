@@ -23,6 +23,7 @@ import java.io.Serial;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
@@ -31,7 +32,6 @@ import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
-import life.qbic.datamanager.views.projects.project.CreateProjectCancelConfirmationNotification;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -156,14 +156,17 @@ public class AddProjectDialog extends Dialog {
   }
 
   private void onCreationCanceled() {
-    CreateProjectCancelConfirmationNotification projectCancelNotification = new CreateProjectCancelConfirmationNotification();
-    projectCancelNotification.open();
-    projectCancelNotification.addConfirmListener(event -> {
-      projectCancelNotification.close();
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("You will lose all the information entered for this project.")
+        .withConfirmText("Discard project creation")
+        .withTitle("Discard new project creation?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
       fireEvent(new CancelEvent(this, true));
     });
-    projectCancelNotification.addCancelListener(
-        event -> projectCancelNotification.close());
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
   }
 
   /**
