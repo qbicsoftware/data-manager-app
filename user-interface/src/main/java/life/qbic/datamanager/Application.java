@@ -6,27 +6,16 @@ import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import java.io.Serial;
-import life.qbic.datamanager.views.login.LoginHandler;
-import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
-import life.qbic.datamanager.views.login.passwordreset.PasswordResetHandler;
-import life.qbic.identity.application.user.password.NewPassword;
-import life.qbic.identity.application.user.password.NewPasswordOutput;
-import life.qbic.identity.application.user.password.PasswordResetOutput;
-import life.qbic.identity.application.user.password.PasswordResetRequest;
-import life.qbic.identity.application.user.registration.ConfirmEmailOutput;
-import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
 import life.qbic.identity.domain.registry.DomainRegistry;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.identity.domain.service.UserDomainService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
-import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
@@ -70,21 +59,5 @@ public class Application extends SpringBootServletInitializer implements AppShel
     // We need to set up the domain registry and register important services:
     var userRepository = appContext.getBean(UserRepository.class);
     DomainRegistry.instance().registerService(new UserDomainService(userRepository));
-
-    setupUseCases(appContext);
-  }
-
-  private static void setupUseCases(ConfigurableApplicationContext context) {
-    var emailAddressConfirmation = context.getBean(EmailAddressConfirmation.class);
-    var loginHandler = (ConfirmEmailOutput) context.getBean(LoginHandler.class);
-    emailAddressConfirmation.setConfirmEmailOutput(loginHandler);
-
-    var passwordReset = context.getBean(PasswordResetRequest.class);
-    var passwordResetHandler = (PasswordResetOutput) context.getBean(PasswordResetHandler.class);
-    passwordReset.setUseCaseOutput(passwordResetHandler);
-
-    var newPassword = context.getBean(NewPassword.class);
-    var newPasswordHandler = (NewPasswordOutput) context.getBean(NewPasswordHandler.class);
-    newPassword.setUseCaseOutput(newPasswordHandler);
   }
 }

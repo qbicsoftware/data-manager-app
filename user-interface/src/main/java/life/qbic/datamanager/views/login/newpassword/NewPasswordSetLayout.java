@@ -9,7 +9,7 @@ import life.qbic.datamanager.views.layouts.BoxLayout;
  *
  * @since 1.0.0
  */
-public class NewPasswordSetLayout extends BoxLayout {
+class NewPasswordSetLayout extends BoxLayout {
 
   private Button loginButton;
 
