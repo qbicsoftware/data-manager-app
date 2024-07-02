@@ -2,6 +2,7 @@ package life.qbic.identity.infrastructure;
 
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.identity.domain.model.EmailAddress;
 import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
@@ -50,4 +51,6 @@ public interface QbicUserRepo extends JpaRepository<User, UserId> {
   User findUserByUserName(String userName);
 
   List<User> findAllByUserNameContainingIgnoreCaseAndActiveTrue(String username, Pageable pageable);
+
+  Optional<User> findByOidcIdEqualsAndOidcIssuerEquals(String oidcId, String oidcIssuer);
 }

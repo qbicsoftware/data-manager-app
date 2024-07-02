@@ -57,6 +57,7 @@ public class NotFoundPage extends Div implements ErrorPage<NotFoundException> {
   @Override
   public int setErrorParameter(BeforeEnterEvent event,
       ErrorParameter<NotFoundException> parameter) {
+    ErrorPage.super.setErrorParameter(event, parameter);
     return getStatusCode();
   }
 }

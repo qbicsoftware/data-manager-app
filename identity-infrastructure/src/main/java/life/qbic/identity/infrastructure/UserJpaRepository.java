@@ -64,4 +64,9 @@ public class UserJpaRepository implements UserDataStorage {
       Pageable pageable) {
     return userRepo.findAllByUserNameContainingIgnoreCaseAndActiveTrue(userName, pageable);
   }
+
+  @Override
+  public Optional<User> findByOidcIdEqualsAndOidcIssuerEquals(String oidcId, String oidcIssuer) {
+    return userRepo.findByOidcIdEqualsAndOidcIssuerEquals(oidcId, oidcIssuer);
+  }
 }

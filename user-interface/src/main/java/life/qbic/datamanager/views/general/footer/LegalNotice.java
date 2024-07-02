@@ -1,11 +1,10 @@
 package life.qbic.datamanager.views.general.footer;
 
 import com.vaadin.flow.component.Html;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serial;
@@ -20,9 +19,8 @@ import life.qbic.logging.service.LoggerFactory;
  * <p>
  * Legal Notice Main Component showing the relevant legal information for the data-manager application
  */
-@SpringComponent
-@UIScope
-@Route(value = "legalnotice", layout = DataManagerLayout.class)
+@Route(value = "legal-notice", layout = DataManagerLayout.class)
+@PageTitle("Impressum / Legal Notice")
 @AnonymousAllowed
 public class LegalNotice extends Main {
 

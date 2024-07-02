@@ -15,7 +15,7 @@
 #landing-page-layout .landing-page-content {
   /*Static resources have to be loaded in css form the Meta-INF directory see vaadin cheatsheet
   https://vaadin.com/vaadin-reference-card#static-content */
-  background-image: url("../images/background-mesh-bottom-left.png");
+  /*background-image: url("../images/")*/;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

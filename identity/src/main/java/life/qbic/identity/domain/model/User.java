@@ -1,5 +1,8 @@
 package life.qbic.identity.domain.model;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.EmbeddedId;
@@ -8,6 +11,7 @@ import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Optional;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.identity.domain.event.PasswordResetRequested;
 import life.qbic.identity.domain.event.UserActivated;
@@ -49,16 +53,22 @@ public class User implements Serializable {
   @Convert(converter = PasswordConverter.class)
   private EncryptedPassword encryptedPassword;
 
+  private String oidcIssuer;
+  private String oidcId;
+
   private boolean active = false;
 
   private User(UserId id, FullName fullName, EmailAddress emailAddress,
-      String userName, EncryptedPassword encryptedPassword, Instant registrationDate) {
+      String userName, EncryptedPassword encryptedPassword, Instant registrationDate,
+      String oidcIssuer, String oidcId) {
     this.id = id;
     this.fullName = fullName;
     this.emailAddress = emailAddress;
     this.encryptedPassword = encryptedPassword;
     this.userName = userName;
     this.registrationDate = registrationDate;
+    this.oidcIssuer = oidcIssuer;
+    this.oidcId = oidcId;
   }
 
   protected User() {
@@ -85,9 +95,23 @@ public class User implements Serializable {
       String userName, EncryptedPassword encryptedPassword) {
     UserId id = UserId.create();
     Instant registrationDate = Instant.now();
-    var user = new User(id, fullName, emailAddress, userName, encryptedPassword, registrationDate);
+    var user = new User(id, fullName, emailAddress, userName, encryptedPassword, registrationDate,
+        null, null);
     user.active = false;
 
+    return user;
+  }
+
+  public static User createOidc(String fullName, String emailAddress,
+      String userName, String oidcIssuer, String oidcId) {
+    if (isNull(oidcIssuer) && nonNull(oidcId)) {
+      throw new IllegalStateException("OIDC issuer cannot be null if OIDC identifier is provided");
+    }
+    UserId id = UserId.create();
+    Instant registrationDate = Instant.now();
+    var user = new User(id, FullName.from(fullName)
+        , EmailAddress.from(emailAddress), userName, null, registrationDate, oidcIssuer, oidcId);
+    user.active = false;
     return user;
   }
 
@@ -118,6 +142,14 @@ public class User implements Serializable {
 
   public UserId id() {
     return this.id;
+  }
+
+  public Optional<String> getOidcIssuer() {
+    return Optional.ofNullable(oidcIssuer);
+  }
+
+  public Optional<String> getOidcId() {
+    return Optional.ofNullable(oidcId);
   }
 
   public EmailAddress emailAddress() {

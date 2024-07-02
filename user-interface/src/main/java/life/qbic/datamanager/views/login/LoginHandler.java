@@ -22,7 +22,8 @@ public class LoginHandler {
   private final String emailConfirmationParameter;
 
   @Autowired
-  LoginHandler(@Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter) {
+  LoginHandler(
+      @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter) {
     this.emailConfirmationParameter = Objects.requireNonNull(emailConfirmationParameter);
   }
 

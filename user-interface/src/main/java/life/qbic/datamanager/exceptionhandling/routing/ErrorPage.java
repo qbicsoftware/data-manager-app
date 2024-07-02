@@ -42,7 +42,8 @@ public interface ErrorPage<E extends Exception> extends HasErrorParameter<E> {
    */
   default void logError(E error) {
     Logger log = logger(getClass());
-    log.error(error.getMessage(), error);
+    log.error(error.getMessage());
+    log.debug(error.getMessage(), error);
   }
 
   /**

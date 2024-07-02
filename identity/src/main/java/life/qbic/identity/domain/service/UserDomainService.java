@@ -53,4 +53,17 @@ public class UserDomainService {
         user.emailAddress().get());
     DomainEventDispatcher.instance().dispatch(userCreatedEvent);
   }
+
+  public void createOidcUser(FullName userFullName, String userName, EmailAddress userEmail,
+      String oidcIssuer, String oidcId) {
+    // Ensure idempotent behaviour of the service
+    if (userRepository.findByOidc(oidcId, oidcIssuer).isPresent()) {
+      return;
+    }
+    var user = User.createOidc(userFullName.get(), userEmail.get(), userName, oidcIssuer, oidcId);
+    userRepository.addUser(user);
+    var userCreatedEvent = UserRegistered.create(user.id().get(), user.fullName().get(),
+        user.emailAddress().get());
+    DomainEventDispatcher.instance().dispatch(userCreatedEvent);
+  }
 }

@@ -1,5 +1,7 @@
 package life.qbic.identity.domain.model.translation;
 
+import static java.util.Objects.isNull;
+
 import jakarta.persistence.AttributeConverter;
 import life.qbic.identity.domain.model.EncryptedPassword;
 
@@ -17,11 +19,17 @@ public class PasswordConverter implements AttributeConverter<EncryptedPassword, 
 
   @Override
   public String convertToDatabaseColumn(EncryptedPassword password) {
+    if (isNull(password)) {
+      return null;
+    }
     return password.get();
   }
 
   @Override
   public EncryptedPassword convertToEntityAttribute(String s) {
+    if (isNull(s)) {
+      return null;
+    }
     return EncryptedPassword.fromEncrypted(s);
   }
 }

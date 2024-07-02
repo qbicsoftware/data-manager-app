@@ -1,11 +1,10 @@
 package life.qbic.datamanager.views.general.footer;
 
 import com.vaadin.flow.component.Html;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serial;
@@ -21,10 +20,9 @@ import life.qbic.logging.service.LoggerFactory;
  * Main area showing the relevant legal information for the data handling and orotection performed
  * within the data-manager application
  */
-@SpringComponent
-@UIScope
 @Route(value = "data-privacy-agreement", layout = DataManagerLayout.class)
 @AnonymousAllowed
+@PageTitle("Impressum / Data Privacy Agreement")
 public class DataPrivacyAgreement extends Main {
 
   @Serial

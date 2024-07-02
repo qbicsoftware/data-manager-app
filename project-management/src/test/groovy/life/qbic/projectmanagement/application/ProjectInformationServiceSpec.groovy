@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application
 
+import life.qbic.identity.api.AuthenticationToUserIdTranslator
 import life.qbic.projectmanagement.application.api.ProjectOverviewLookup
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService
 import life.qbic.projectmanagement.domain.model.project.*
@@ -11,7 +12,8 @@ class ProjectInformationServiceSpec extends Specification {
     ProjectRepository projectRepository = Mock()
     ProjectOverviewLookup projectPreviewLookup = Mock()
     ProjectAccessService projectAccessService = Mock()
-    ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService)
+    AuthenticationToUserIdTranslator authenticationToUserIdTranslator = Mock()
+    ProjectInformationService projectInformationService = new ProjectInformationService(projectPreviewLookup, projectRepository, projectAccessService, authenticationToUserIdTranslator)
 
     def project = setupProject()
 

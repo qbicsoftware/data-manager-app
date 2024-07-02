@@ -28,8 +28,8 @@ public class DataManagerContextProvider implements AppContextProvider {
       @Value("${service.host.name}") String host,
       @Value("${service.host.port}") int port,
       @Value("${server.servlet.context-path}") String contextPath,
-      @Value("${project-info-endpoint}") String projectEndpoint,
-      @Value("${project-samples-endpoint}") String samplesEndpoint) {
+      @Value("${routing.projects.info.endpoint}") String projectEndpoint,
+      @Value("${routing.projects.samples.enpoint}") String samplesEndpoint) {
     this.projectInfoEndpoint = projectEndpoint;
     this.samplesEndpoint = samplesEndpoint;
     try {

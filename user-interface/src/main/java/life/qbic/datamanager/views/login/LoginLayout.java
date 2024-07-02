@@ -5,6 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
@@ -32,6 +33,7 @@ import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -55,26 +57,31 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private final IdentityService identityService;
 
   public LoginLayout(@Autowired LoginHandler loginHandler,
-      @Autowired IdentityService identityService) {
+      @Autowired IdentityService identityService,
+      @Value("${server.servlet.context-path}") String contextPath) {
     Objects.requireNonNull(loginHandler);
     this.identityService = Objects.requireNonNull(identityService);
     emailConfirmationParameter = loginHandler.emailConfirmationParameter();
-    initLayout();
+    initLayout(contextPath);
     styleLayout();
     initFields();
     addListener();
   }
 
-  private void initLayout() {
+  private void initLayout(final String contextPath) {
     contentLayout = new VerticalLayout();
     createNotificationLayout();
     createLoginForm();
     this.registrationSection = initRegistrationSection();
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
+    Anchor orcidOauth = new Anchor(contextPath + "/oauth2/authorization/orcid", "Login with ORCID");
+    orcidOauth.setRouterIgnore(true);
+    contentLayout.add(orcidOauth);
     add(contentLayout);
+
   }
-  
+
   private void styleLayout() {
     styleNotificationLayout();
     styleFormLayout();
@@ -190,12 +197,13 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     }
     if (queryParams.containsKey(emailConfirmationParameter)) {
       String userId = queryParams.get(emailConfirmationParameter).iterator().next();
-      try  {
+      try {
         identityService.confirmUserEmail(userId);
         onEmailConfirmationSuccess();
       } catch (UserNotFoundException e) {
         log.error("User %s not found!".formatted(userId), e);
-        onEmailConfirmationFailure("Unknown user for request. If the issue persists, please contact our helpdesk.");
+        onEmailConfirmationFailure(
+            "Unknown user for request. If the issue persists, please contact our helpdesk.");
       }
 
     }

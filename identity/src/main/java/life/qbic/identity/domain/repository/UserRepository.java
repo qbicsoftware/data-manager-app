@@ -115,6 +115,10 @@ public class UserRepository implements Serializable {
     return dataStorage.findByUserNameContainingIgnoreCaseAndActiveTrue(userName, pageable);
   }
 
+  public Optional<User> findByOidc(String oidcId, String oidcIssuer) {
+    return dataStorage.findByOidcIdEqualsAndOidcIssuerEquals(oidcId, oidcIssuer);
+  }
+
   /**
    * Updates a user in the repository. Publishes all domain events of the user if successful. If
    * unsuccessful, throws a {@link UserStorageException}
