@@ -44,6 +44,11 @@ public class ExperimentId implements Serializable {
     return new ExperimentId(id);
   }
 
+  @Override
+  public String toString() {
+    return uuid;
+  }
+
   public static boolean isValid(String str) {
     try {
       UUID.fromString(str);

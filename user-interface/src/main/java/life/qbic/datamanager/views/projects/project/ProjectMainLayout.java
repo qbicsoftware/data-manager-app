@@ -14,6 +14,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
+import life.qbic.datamanager.views.general.footer.FooterComponent;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
@@ -23,6 +24,7 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -51,7 +53,8 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
-      @Autowired OntologyLookupService ontologyLookupService) {
+      @Autowired OntologyLookupService ontologyLookupService, @Autowired FooterComponent footerComponent) {
+    super(Objects.requireNonNull(footerComponent));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);

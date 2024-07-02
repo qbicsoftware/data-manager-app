@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -7,9 +9,9 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
-import java.util.Objects;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -37,10 +39,14 @@ public class UserProfileMain extends Main implements BeforeEnterObserver {
 
   private static final Logger log = LoggerFactory.logger(UserProfileMain.class);
   private final UserProfileComponent userProfileComponent;
+  private final transient UserInformationService userInformationService;
 
-  public UserProfileMain(@Autowired UserProfileComponent userProfileComponent) {
-    Objects.requireNonNull(userProfileComponent);
-    this.userProfileComponent = userProfileComponent;
+  public UserProfileMain(@Autowired UserProfileComponent userProfileComponent,
+      @Autowired UserInformationService userInformationService) {
+    this.userInformationService = requireNonNull(userInformationService,
+        "userInformationService must not be null");
+    this.userProfileComponent = requireNonNull(userProfileComponent,
+        "userProfileComponent must not be null");
     addClassName("user-profile");
     add(userProfileComponent);
     log.debug(String.format(
@@ -58,12 +64,10 @@ public class UserProfileMain extends Main implements BeforeEnterObserver {
    */
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    loadUserInformation();
-  }
-
-  private void loadUserInformation() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    userProfileComponent.setUserDetails(details.getUserId());
+    var userInfo = userInformationService.findById(details.getUserId()).orElseThrow();
+    userProfileComponent.showForUser(userInfo);
   }
+
 }

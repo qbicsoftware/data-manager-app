@@ -40,6 +40,8 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
+import life.qbic.datamanager.views.projects.project.measurements.download.NGSMeasurementContentProvider;
+import life.qbic.datamanager.views.projects.project.measurements.download.ProteomicsMeasurementContentProvider;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;

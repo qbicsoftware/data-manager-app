@@ -43,6 +43,8 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.Tag.TagColor;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -74,10 +76,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
+  private final MeasurementTechnologyTab proteomicsTab;
+  private final MeasurementTechnologyTab genomicsTab;
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
-  private final List<Tab> tabsInTabSheet = new ArrayList<>();
+  private final List<MeasurementTechnologyTab> tabsInTabSheet = new ArrayList<>();
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
   private final ClientDetailsProvider clientDetailsProvider;
@@ -91,14 +95,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
+    proteomicsTab = new MeasurementTechnologyTab("Proteomics", 0);
+    genomicsTab = new MeasurementTechnologyTab("Genomics", 0);
     createProteomicsGrid();
     createNGSMeasurementGrid();
     add(registeredMeasurementsTabSheet);
     registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
-
-    registeredMeasurementsTabSheet.addSelectedChangeListener(
-        selectedChangeEvent -> resetSelectedMeasurements());
+    registeredMeasurementsTabSheet.addSelectedChangeListener(event -> resetSelectedMeasurements());
   }
 
   /**
@@ -114,7 +118,16 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     List<GridLazyDataView<?>> dataViewsWithItems = measurementsGridDataViews.stream()
         .filter(gridLazyDataView -> gridLazyDataView.getItems()
             .findAny().isPresent()).toList();
+
     dataViewsWithItems.forEach(this::addMeasurementTab);
+    initializeTabCounts();
+  }
+
+  private void initializeTabCounts() {
+    genomicsTab.setMeasurementCount((int) measurementService.countNGSMeasurements(
+        context.experimentId().orElseThrow()));
+    proteomicsTab.setMeasurementCount((int) measurementService.countProteomicsMeasurements(
+        context.experimentId().orElseThrow()));
   }
 
   /**
@@ -128,10 +141,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
    */
   public void setSearchedMeasurementValue(String searchTerm) {
     if (!this.searchTerm.equals(searchTerm)) {
-      resetSelectedMeasurements();
+      refreshGrids();
     }
     this.searchTerm = searchTerm;
-    measurementsGridDataViews.forEach(AbstractDataView::refreshAll);
   }
 
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
@@ -143,13 +155,18 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
+    if(gridLazyDataView.getItems().findAny().isEmpty()) {
+      return;
+    }
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
-      tabsInTabSheet.add(
-          registeredMeasurementsTabSheet.add("Proteomics", proteomicsMeasurementGrid));
+      tabsInTabSheet.add(proteomicsTab);
+      registeredMeasurementsTabSheet.add(proteomicsTab, proteomicsMeasurementGrid);
     }
     if (gridLazyDataView.getItem(0) instanceof NGSMeasurement) {
-      tabsInTabSheet.add(registeredMeasurementsTabSheet.add("Genomics", ngsMeasurementGrid));
+      tabsInTabSheet.add(genomicsTab);
+      registeredMeasurementsTabSheet.add(genomicsTab, ngsMeasurementGrid);
     }
+    refreshGrids();
   }
 
   private void createNGSMeasurementGrid() {
@@ -228,13 +245,16 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
           .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("measurementCode").ascending());
       return measurementService.findNGSMeasurements(searchTerm,
               context.experimentId().orElseThrow(),
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
+    ngsGridDataView
+        .addItemCountChangeListener(
+            countChangeEvent -> genomicsTab.setMeasurementCount(
+                (int) ngsGridDataView.getItems().count()));
     ngsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(ngsGridDataView);
@@ -328,13 +348,17 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                   it -> new SortOrder(it.getSorted(),
                       it.getDirection().equals(SortDirection.ASCENDING)))
               .collect(Collectors.toList());
-          // if no order is provided by the grid order by last modified (least priority)
-          sortOrders.add(SortOrder.of("measurementCode").ascending());
-          return measurementService.findProteomicsMeasurements(searchTerm,
-                  context.experimentId().orElseThrow(),
-                  query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
-              .stream();
+            sortOrders.add(SortOrder.of("measurementCode").ascending());
+            return measurementService.findProteomicsMeasurements(searchTerm,
+                    context.experimentId().orElseThrow(),
+                    query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
+                .stream();
+
         });
+    proteomicsGridDataView
+        .addItemCountChangeListener(
+            countChangeEvent -> proteomicsTab.setMeasurementCount(
+                (int) proteomicsGridDataView.getItems().count()));
     proteomicsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(proteomicsGridDataView);
@@ -386,6 +410,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     Optional<String> tabLabel = getSelectedTabName();
     if (tabLabel.isPresent()) {
       String label = tabLabel.get();
+
       if (label.equals("Proteomics")) {
         return getSelectedProteomicsMeasurements().size();
       }
@@ -419,13 +444,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     listeners.add(listener);
   }
 
-  //TODO introduce custom tab with label and updateable count
   public Optional<String> getSelectedTabName() {
-    if (registeredMeasurementsTabSheet.getSelectedTab() != null) {
-      return Optional.of(registeredMeasurementsTabSheet.getSelectedTab().getLabel());
-    } else {
+    if (tabsInTabSheet.isEmpty()) {
       return Optional.empty();
     }
+    return Optional.ofNullable(registeredMeasurementsTabSheet.getSelectedTab())
+        .map(tab -> ((MeasurementTechnologyTab) tab).getTabLabel());
   }
 
   /**
@@ -584,6 +608,52 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       pooledDetail.addClassName("pooled-detail");
       return pooledDetail;
     }
+  }
+
+  public static class MeasurementTechnologyTab extends Tab {
+
+    private final Span countBadge;
+    private final Span technologyNameComponent;
+    private final String technology;
+
+    public MeasurementTechnologyTab(String technology, int measurementCount) {
+      this.technology = technology;
+      technologyNameComponent = new Span();
+      this.countBadge = createBadge();
+      Span sampleCountComponent = new Span();
+      sampleCountComponent.add(countBadge);
+      this.add(technologyNameComponent, sampleCountComponent);
+      setTechnologyName(technology);
+      setMeasurementCount(measurementCount);
+    }
+
+    public String getTabLabel() {
+      return technology;
+    }
+
+    /**
+     * Helper method for creating a badge.
+     */
+    private static Span createBadge() {
+      Tag tag = new Tag(String.valueOf(0));
+      tag.setTagColor(TagColor.CONTRAST);
+      return tag;
+    }
+
+    /**
+     * Setter method for specifying the number of measurements of the technology type shown in
+     * this component
+     *
+     * @param measurementCount number of samples associated with the experiment shown in this component
+     */
+    public void setMeasurementCount(int measurementCount) {
+      countBadge.setText(String.valueOf(measurementCount));
+    }
+
+    public void setTechnologyName(String technologyName) {
+      this.technologyNameComponent.setText(technologyName);
+    }
+
   }
 
 }

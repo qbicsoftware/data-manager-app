@@ -16,46 +16,46 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 
 /**
- * Data protection agreement
+ * Data privacy agreement
  * <p>
  * Main area showing the relevant legal information for the data handling and orotection performed
  * within the data-manager application
  */
 @SpringComponent
 @UIScope
-@Route(value = "privacy-agreement", layout = DataManagerLayout.class)
+@Route(value = "data-privacy-agreement", layout = DataManagerLayout.class)
 @AnonymousAllowed
-public class PrivacyAgreement extends Main {
+public class DataPrivacyAgreement extends Main {
 
   @Serial
   private static final long serialVersionUID = 3892163770509236678L;
-  private static final Logger log = LoggerFactory.logger(PrivacyAgreement.class);
-  private static final String PRIVACY_AGREEMENT_PATH = "impressum/PrivacyAgreement.html";
+  private static final Logger log = LoggerFactory.logger(DataPrivacyAgreement.class);
+  private static final String DATA_PRIVACY_AGREEMENT_HTML = "impressum/DataPrivacyAgreement.html";
 
-  public PrivacyAgreement() {
-    String privacyAgreementHtmlContent = getPrivacyAgreementHtmlContent();
+  public DataPrivacyAgreement() {
+    String dataPrivacyAgreementHtmlContent = getDataPrivacyAgreementHtmlContent();
     // Replace href="#" with href="currentPath#id"
-    String privacyAgreementWithAnchors = privacyAgreementHtmlContent.replaceAll(
+    String dataPrivacyAgreementWithAnchors = dataPrivacyAgreementHtmlContent.replaceAll(
         "href=\"#", replaceWithCurrentUrl());
-    Html html = new Html(privacyAgreementWithAnchors);
+    Html html = new Html(dataPrivacyAgreementWithAnchors);
     add(html);
-    addClassName("privacy-agreement");
+    addClassName("data-privacy-agreement");
     log.debug(String.format(
         "New instance for %s(#%s) created",
         this.getClass().getSimpleName(), System.identityHashCode(this)));
   }
 
-  private String getPrivacyAgreementHtmlContent() {
+  private String getDataPrivacyAgreementHtmlContent() {
     String htmlContent = "";
     try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(
-        PRIVACY_AGREEMENT_PATH)) {
+        DATA_PRIVACY_AGREEMENT_HTML)) {
       if (inputStream == null) {
-        throw new IOException("Resource not found in path " + PRIVACY_AGREEMENT_PATH);
+        throw new IOException("Resource not found in path " + DATA_PRIVACY_AGREEMENT_HTML);
       }
       htmlContent = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     } catch (IOException e) {
-      throw new RuntimeException("Cannot get html content for the privacy agreement: "
-          + PRIVACY_AGREEMENT_PATH,
+      throw new RuntimeException("Cannot get html content for the data privacy agreement: "
+          + DATA_PRIVACY_AGREEMENT_HTML,
           e);
     }
     return htmlContent;

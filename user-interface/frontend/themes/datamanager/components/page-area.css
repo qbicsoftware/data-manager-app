@@ -618,12 +618,11 @@
 .user-profile-component .user-details-card .avatar-with-name {
   display: flex;
   flex-direction: column;
-  align-items: center;
   row-gap: var(--lumo-space-l);
-  justify-content: center;
+  column-gap: initial;
 }
 
-.user-profile-component .user-details-card .avatar {
+.user-profile-component .user-details-card .user-avatar {
   height: 5rem;
   width: 5rem;
 }

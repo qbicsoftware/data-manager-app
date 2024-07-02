@@ -11,16 +11,16 @@ class ProjectCodeSpec extends Specification {
         ProjectCode code2 = ProjectCode.random();
 
         then:
-        code.value().length() == 5
-        code.value().startsWith("Q")
-        code2.value().length() == 5
-        code2.value().startsWith("Q")
+        code.value().length() == 6
+        code.value().startsWith("Q2")
+        code2.value().length() == 6
+        code2.value().startsWith("Q2")
         code != code2
     }
 
     def "Parsing a code with a blacklisted expression throws an IllegalArgumentException"() {
         when:
-        ProjectCode.parse("Q" + blacklistedExpression as String)
+        ProjectCode.parse("Q2" + blacklistedExpression as String)
 
         then:
         thrown(IllegalArgumentException)
@@ -31,7 +31,7 @@ class ProjectCodeSpec extends Specification {
 
     def "Parsing a project code with a valid expression returns its object oriented form"() {
         when:
-        ProjectCode code = ProjectCode.parse("Q" + "ABCD")
+        ProjectCode code = ProjectCode.parse("Q2" + "ABCD")
 
         then:
         code.value().contains("ABCD")
@@ -39,7 +39,7 @@ class ProjectCodeSpec extends Specification {
 
     def "Parsing a project code with a invalid length throws an IllegalArgumentException"() {
         when:
-        ProjectCode.parse("Q" + wrongLength)
+        ProjectCode.parse("Q2" + wrongLength)
 
         then:
         thrown(IllegalArgumentException)
@@ -50,7 +50,7 @@ class ProjectCodeSpec extends Specification {
 
     def "Parsing a project code with a invalid character throws an IllegalArgumentException"() {
         when:
-        ProjectCode.parse("Q" + invalidChar)
+        ProjectCode.parse("Q2" + invalidChar)
 
         then:
         thrown(IllegalArgumentException)
