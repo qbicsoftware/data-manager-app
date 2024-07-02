@@ -113,7 +113,8 @@ public class ProjectOverviewMain extends Main {
     title.addClassNames("project-overview-title");
     Span descriptionStart = new Span(
         "Manage all your scientific data in one place with the Data Manager. You can access our ");
-    Anchor descriptionLinkToDoc = new Anchor("https://qbicsoftware.github.io/data-manager-app/",
+    Anchor descriptionLinkToDoc = new Anchor(
+        "https://qbicsoftware.github.io/research-data-management/",
         "documentation", AnchorTarget.BLANK);
     Span descriptionEnd = new Span(
         " and learn more about using the Data Manager.\n"
