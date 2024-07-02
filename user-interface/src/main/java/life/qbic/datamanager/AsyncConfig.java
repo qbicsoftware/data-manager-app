@@ -1,5 +1,6 @@
 package life.qbic.datamanager;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionHandler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +14,9 @@ import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecu
 @EnableAsync()
 public class AsyncConfig implements AsyncConfigurer {
 
+  @Qualifier("asyncTaskExecutor")
+  private ThreadPoolTaskExecutor threadPoolTaskExecutor;
+
   @Bean("asyncTaskExecutor")
   public ThreadPoolTaskExecutor threadPoolTaskExecutor(
       RejectedExecutionHandler rejectedExecutionHandler) {
@@ -22,13 +26,17 @@ public class AsyncConfig implements AsyncConfigurer {
     executor.setQueueCapacity(50);
     executor.setThreadNamePrefix("async-");
     executor.setRejectedExecutionHandler(rejectedExecutionHandler);
+    this.threadPoolTaskExecutor = executor;
     return executor;
   }
 
   @Bean
-  public DelegatingSecurityContextAsyncTaskExecutor taskExecutor(
-      @Qualifier("asyncTaskExecutor") ThreadPoolTaskExecutor delegate) {
-    return new DelegatingSecurityContextAsyncTaskExecutor(delegate);
+  public DelegatingSecurityContextAsyncTaskExecutor taskExecutor() {
+    return new DelegatingSecurityContextAsyncTaskExecutor(threadPoolTaskExecutor);
   }
 
+  @Override
+  public Executor getAsyncExecutor() {
+    return new DelegatingSecurityContextAsyncTaskExecutor(threadPoolTaskExecutor);
+  }
 }
