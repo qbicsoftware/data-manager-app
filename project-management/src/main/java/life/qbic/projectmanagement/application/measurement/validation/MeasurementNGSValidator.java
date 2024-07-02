@@ -12,6 +12,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -63,6 +64,9 @@ public class MeasurementNGSValidator implements
       return false;
     }
     if (properties.size() < NGS_PROPERTY.values().length) {
+      log.debug("Wrong length of property header: "+properties().size());
+      log.debug("Expected: "+ NGS_PROPERTY.values().length);
+      log.debug("Provided: "+ String.join(" - ", properties));
       return false;
     }
     var providedNGSProperties = properties.stream().map(String::toLowerCase).toList();
