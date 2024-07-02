@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.ArrayList;
 import java.util.List;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.spreadsheet.Spreadsheet.ValidationMode;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent.Data;
@@ -38,6 +39,7 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     addClassName("batch-registration-dialog");
     setConfirmButtonLabel("Register");
+    initCancelShortcuts(this::onCanceled);
 
     this.experimentalGroups = new ArrayList<>(experimentalGroups);
     this.species = new ArrayList<>(species);
@@ -190,9 +192,23 @@ public class BatchRegistrationDialog extends DialogWindow {
         new Data(batchNameField.getValue(), spreadsheet.getData())));
   }
 
+  private void onCanceled() {
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("You will lose any batch and sample information you added.")
+        .withConfirmText("Discard samples")
+        .withTitle("Discard batch registration?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
+  }
+
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    onCanceled();
   }
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {

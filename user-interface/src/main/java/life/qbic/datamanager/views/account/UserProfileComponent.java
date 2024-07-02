@@ -85,6 +85,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     public ChangeUserDetailsDialog(String currentUserName) {
       super();
+
       setHeaderTitle("Change username");
       add(platformUserNameField);
       setConfirmButtonLabel("Save");

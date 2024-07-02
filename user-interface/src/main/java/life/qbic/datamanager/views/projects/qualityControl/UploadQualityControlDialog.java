@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -55,6 +56,8 @@ public class UploadQualityControlDialog extends DialogWindow {
       ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(experimentInformationService,
         "experiment information service must not be null");
+    initCancelShortcuts(this::onCanceled);
+
     //Load selectable Experiments for Sample quality control items;
     selectableExperimentsForProject = experimentInformationService.findAllForProject(projectId)
         .stream()
@@ -148,9 +151,23 @@ public class UploadQualityControlDialog extends DialogWindow {
     fireEvent(new ConfirmEvent(this, true));
   }
 
+  private void onCanceled() {
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("Uploads were not yet saved.")
+        .withConfirmText("Discard uploads")
+        .withTitle("Discard Quality Control uploads?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
+  }
+
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    onCanceled();
   }
 
   private void processClientFileRemoveEvent(DomEvent event) {
