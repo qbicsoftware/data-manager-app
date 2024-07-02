@@ -65,7 +65,7 @@ public class MeasurementNGSValidator implements
     }
     if (properties.size() < NGS_PROPERTY.values().length) {
       log.debug("Wrong length of property header: "+properties().size());
-      log.debug("Expected: "+ PROTEOMICS_PROPERTY.values().length);
+      log.debug("Expected: "+ NGS_PROPERTY.values().length);
       log.debug("Provided: "+ String.join(" - ", properties));
       return false;
     }
