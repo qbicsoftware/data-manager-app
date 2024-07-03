@@ -20,7 +20,6 @@ import life.qbic.identity.application.user.policy.UserRegisteredPolicy;
 import life.qbic.identity.application.user.policy.directive.WhenUserActivatedSubmitIntegrationEvent;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSendConfirmationEmail;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
-import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
@@ -90,11 +89,6 @@ public class AppConfig {
 
   Section starts below
   */
-  @Bean
-  public EmailAddressConfirmation confirmEmailInput(
-      IdentityService identityService) {
-    return new EmailAddressConfirmation(identityService);
-  }
 
   @Bean
   public IdentityService userRegistrationService(

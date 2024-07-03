@@ -1,5 +1,8 @@
 package life.qbic.datamanager.views.login;
 
+import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -21,13 +24,18 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.AbstractStreamResource;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.util.List;
+import java.util.Map;
 import life.qbic.datamanager.views.AppRoutes;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.register.UserRegistrationMain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import life.qbic.identity.application.user.IdentityService;
+import life.qbic.identity.application.user.UserNotFoundException;
+import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -40,30 +48,32 @@ import org.springframework.beans.factory.annotation.Value;
 @Route(value = AppRoutes.LOGIN, layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
-@SpringComponent
 @UIScope
 public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
-  private static final Logger log = LoggerFactory.getLogger(LoginLayout.class);
-  private VerticalLayout contentLayout;
-
+  private static final Logger log = logger(LoginLayout.class);
+  private final String emailConfirmationParameter;
   public VerticalLayout notificationLayout;
+  private VerticalLayout contentLayout;
   private H2 title;
-
   private ConfigurableLoginForm loginForm;
-
   private Div registrationSection;
-
-  private final transient LoginHandlerInterface viewHandler;
+  private final IdentityService identityService;
 
   private final static String OrcId_LOGO_PATH = "login/orcid_logo.svg";
 
-  public LoginLayout(@Autowired LoginHandlerInterface loginHandlerInterface,
+  public LoginLayout(@Autowired LoginHandler loginHandler,
+      @Autowired IdentityService identityService,
       @Value("${server.servlet.context-path}") String contextPath) {
+    requireNonNull(loginHandler, "loginHandler must not be null");
+    this.identityService = requireNonNull(identityService,
+        "identityService must not be null");
+    this.emailConfirmationParameter = requireNonNull(
+        loginHandler.emailConfirmationParameter(), "email confirmationParameter must not be null");
     initLayout(contextPath);
     styleLayout();
-    viewHandler = loginHandlerInterface;
-    registerToHandler(viewHandler);
+    initFields();
+    addListener();
   }
 
   private void initLayout(final String contextPath) {
@@ -74,10 +84,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
     add(contentLayout);
-  }
-
-  private void registerToHandler(LoginHandlerInterface loginHandler) {
-    loginHandler.handle(this);
   }
 
   private void styleLayout() {
@@ -150,7 +156,85 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   @Override
   public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
-    viewHandler.handle(event);
+    handle(event);
+  }
+
+  private void initFields() {
+    clearNotifications();
+  }
+
+  private void showInvalidCredentialsError() {
+    showError("Incorrect username or password", "Please try again.");
+  }
+
+  private void showEmailConfirmationInformation() {
+    showInformation("Email address confirmed", "You can now login with your credentials.");
+  }
+
+  private void showEmailConfirmationReminder() {
+    showInformation("Registration mail sent",
+        "Please check your mail inbox to confirm your registration");
+  }
+
+  public void clearNotifications() {
+    notificationLayout.removeAll();
+  }
+
+  public void showError(String title, String description) {
+    clearNotifications();
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
+    notificationLayout.add(errorMessage);
+  }
+
+  public void showInformation(String title, String description) {
+    clearNotifications();
+    InformationMessage informationMessage = new InformationMessage(title, description);
+    notificationLayout.add(informationMessage);
+  }
+
+  private void addListener() {
+    addLoginListener(it ->
+        onLoginSucceeded());
+    addForgotPasswordListener(
+        it -> it.getSource().getUI().ifPresent(ui -> ui.navigate(AppRoutes.RESET_PASSWORD)));
+  }
+
+  private void onLoginSucceeded() {
+    clearNotifications();
+    getUI().ifPresentOrElse(
+        ui -> ui.navigate(Projects.PROJECTS),
+        () -> log.error("No UI found!"));
+  }
+
+  public void handle(BeforeEvent beforeEvent) {
+    Map<String, List<String>> queryParams = beforeEvent.getLocation().getQueryParameters()
+        .getParameters();
+    if (queryParams.containsKey("error")) {
+      showInvalidCredentialsError();
+    }
+    if (queryParams.containsKey(emailConfirmationParameter)) {
+      String userId = queryParams.get(emailConfirmationParameter).iterator().next();
+      try {
+        identityService.confirmUserEmail(userId);
+        onEmailConfirmationSuccess();
+      } catch (UserNotFoundException e) {
+        log.error("User %s not found!".formatted(userId), e);
+        onEmailConfirmationFailure(
+            "Unknown user for request. If the issue persists, please contact our helpdesk.");
+      }
+
+    }
+    if (queryParams.containsKey("userRegistered")) {
+      showEmailConfirmationReminder();
+    }
+  }
+
+  public void onEmailConfirmationSuccess() {
+    showEmailConfirmationInformation();
+  }
+
+  public void onEmailConfirmationFailure(String reason) {
+    showError("Email confirmation failed", reason);
   }
 
   private static class LoginCard extends Span {
@@ -168,5 +252,4 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
       addClickListener(event -> UI.getCurrent().getPage().open(url, "_blank"));
     }
   }
-
 }

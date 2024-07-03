@@ -7,16 +7,17 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
-import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.user.IdentityService;
-import life.qbic.identity.application.user.registration.RegisterUserOutput;
-import life.qbic.identity.application.user.registration.UserRegistrationException;
+import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
+import life.qbic.identity.application.user.IdentityService.UserExistsException;
+import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @AnonymousAllowed
 @SpringComponent
 @UIScope
-public class UserRegistrationMain extends Main implements RegisterUserOutput {
+public class UserRegistrationMain extends Main {
 
   @Serial
   private static final long serialVersionUID = 6995209728843801219L;
@@ -65,40 +66,27 @@ public class UserRegistrationMain extends Main implements RegisterUserOutput {
         userRegistrationInformation.fullName(),
         userRegistrationInformation.userName(),
         userRegistrationInformation.email(),
-        userRegistrationInformation.password().toCharArray());
+            userRegistrationInformation.password().toCharArray())
+        .ifSuccessOrElse(applicationResponse -> getUI().orElseThrow().navigate(
+                PleaseConfirmEmailPage.class),
+            applicationResponse -> handleRegistrationFailure(applicationResponse.failures()));
   }
 
-
-  @Override
-  public void onUserRegistrationSucceeded() {
-    getUI().orElseThrow().navigate(LoginLayout.class);
-  }
-
-  @Override
-  public void onUnexpectedFailure(UserRegistrationException userRegistrationException) {
-    handleRegistrationFailure(userRegistrationException);
-  }
-
-  @Override
-  public void onUnexpectedFailure(String reason) {
-    userRegistrationComponent.showError("Registration failed", "Please try again.");
-  }
-
-  private void handleRegistrationFailure(UserRegistrationException userRegistrationException) {
+  private void handleRegistrationFailure(List<RuntimeException> exceptionList) {
     /*These Cases should not happen anymore since we validate before we send the event,
     however they can still be used as a failsafe*/
-    if (userRegistrationException.userExistsException().isPresent()) {
+    if (exceptionList.isEmpty()) {
+      return;
+    }
+    if (exceptionList.contains(UserExistsException.class)) {
       userRegistrationComponent.showError("Email address already in use",
           "If you have difficulties with your password you can reset it.");
-    }
-    if (userRegistrationException.userNameNotAvailableException().isPresent()) {
+    } else if (exceptionList.contains(UserNameNotAvailableException.class)) {
       userRegistrationComponent.showError("Username already in use", "Please try another username");
-    }
-    if (userRegistrationException.emptyUserNameException().isPresent()) {
+    } else if (exceptionList.contains(EmptyUserNameException.class)) {
       userRegistrationComponent.showError("Username must not be empty",
           "Please try another username");
-    }
-    if (userRegistrationException.unexpectedException().isPresent()) {
+    } else {
       userRegistrationComponent.showError("Registration failed", "Please try again.");
     }
   }
