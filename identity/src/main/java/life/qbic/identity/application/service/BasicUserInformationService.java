@@ -61,13 +61,24 @@ public class BasicUserInformationService implements UserInformationService, User
   }
 
   @Override
-  public boolean userNameAvailable(String userName) {
+  public boolean isUserNameAvailable(String userName) {
     return userRepository.findByUserName(userName).isEmpty();
   }
 
   @Override
   public Optional<UserInfo> findByOidc(String oidcId, String oidcIssuer) {
     return userRepository.findByOidc(oidcId, oidcIssuer).map(this::convert);
+  }
+
+  @Override
+  public boolean isEmailAvailable(String email) {
+    try {
+      var emailAddress = EmailAddress.from(email);
+      return userRepository.findByEmail(emailAddress).isEmpty();
+    } catch (EmailValidationException e) {
+      log.error("Invalid email address %s".formatted(email), e);
+      return false;
+    }
   }
 
   @Override

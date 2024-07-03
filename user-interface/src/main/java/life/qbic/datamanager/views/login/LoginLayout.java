@@ -21,9 +21,11 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.AbstractStreamResource;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
-import life.qbic.datamanager.views.register.UserRegistrationLayout;
+import life.qbic.datamanager.views.register.UserRegistrationMain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,8 @@ import org.springframework.beans.factory.annotation.Value;
 @Route(value = AppRoutes.LOGIN, layout = LandingPageLayout.class)
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
+@SpringComponent
+@UIScope
 public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
 
   private static final Logger log = LoggerFactory.getLogger(LoginLayout.class);
@@ -115,9 +119,9 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   }
 
   private Div initRegistrationSection(String contextPath) {
-    RouterLink routerLink = new RouterLink("Register", UserRegistrationLayout.class);
+    RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
     Span registrationLink = new Span(new Text("Don't have an account? "), routerLink);
-    registrationLink.addClassName("link");
+    registrationLink.addClassName("registration-link");
     Span spacer = new Span("OR");
     spacer.addClassName("spacer");
     LoginCard orcidCard = new LoginCard(getOrcIdSource(), "Login with ORCID",
@@ -164,4 +168,5 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
       addClickListener(event -> UI.getCurrent().getPage().open(url, "_blank"));
     }
   }
+
 }
