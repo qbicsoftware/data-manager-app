@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views;
 
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -15,7 +16,11 @@ public class CancelConfirmationNotificationDialog extends NotificationDialog {
   public CancelConfirmationNotificationDialog() {
     customizeHeader();
     setCancelable(true);
-    setConfirmText("Discard");
+    Button redButton = new Button("Discard");
+    redButton.addClassName("danger");
+    setConfirmButton(redButton);
+    Button cancelButton = new Button("Continue");
+    setCancelButton(cancelButton);
   }
 
   public CancelConfirmationNotificationDialog withBodyText(String mainText) {
