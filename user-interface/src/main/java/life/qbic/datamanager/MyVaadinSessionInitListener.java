@@ -12,7 +12,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.AppRoutes;
-import life.qbic.datamanager.views.register.RegisterOpenIdConnect;
+import life.qbic.datamanager.views.register.RegistrationOrcIdMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +65,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
     }
     var principal = authentication.getPrincipal();
     if (principal instanceof OidcUser && !(principal instanceof QbicOidcUser)) {
-      if (it.getNavigationTarget().equals(RegisterOpenIdConnect.class)) {
+      if (it.getNavigationTarget().equals(RegistrationOrcIdMain.class)) {
         return;
       }
       log.warn("Incomplete OpenIdConnect registration. Logging out and forwarding to login.");

@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.register;
 
-import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -30,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @PageTitle("Register")
 @Route(value = AppRoutes.REGISTER, layout = LandingPageLayout.class)
-@CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
 @SpringComponent
 @UIScope
@@ -63,12 +61,12 @@ public class UserRegistrationMain extends Main {
 
   private void onRegistrationClicked(UserRegistrationInformation userRegistrationInformation) {
     identityService.registerUser(
-        userRegistrationInformation.fullName(),
-        userRegistrationInformation.userName(),
-        userRegistrationInformation.email(),
+            userRegistrationInformation.fullName(),
+            userRegistrationInformation.userName(),
+            userRegistrationInformation.email(),
             userRegistrationInformation.password().toCharArray())
         .ifSuccessOrElse(applicationResponse -> getUI().orElseThrow().navigate(
-                PleaseConfirmEmailPage.class),
+                EmailConfirmationMain.class),
             applicationResponse -> handleRegistrationFailure(applicationResponse.failures()));
   }
 
