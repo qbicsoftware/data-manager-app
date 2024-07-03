@@ -39,7 +39,7 @@ public class UserRegistrationMain extends Main {
 
   private static final Logger log =
       LoggerFactory.logger(UserRegistrationMain.class.getName());
-  private final IdentityService identityService;
+  private final transient IdentityService identityService;
   private final UserRegistrationComponent userRegistrationComponent;
 
   public UserRegistrationMain(@Autowired IdentityService identityService, @Autowired
