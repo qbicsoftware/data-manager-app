@@ -24,14 +24,14 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
     VaadinSavedRequestAwareAuthenticationSuccessHandler {
 
   private final String openIdRegistrationEndpoint;
-  private final String pleaseConfirmEmailEndpoint;
+  private final String emailConfirmationEndpoint;
 
   public StoredRequestAwareOidcAuthenticationSuccessHandler(String openIdRegistrationEndpoint,
-      String pleaseConfirmEmailEndpoint) {
+      String emailConfirmationEndpoint) {
     this.openIdRegistrationEndpoint = requireNonNull(openIdRegistrationEndpoint,
         "openIdRegistrationEndpoint must not be null");
-    this.pleaseConfirmEmailEndpoint = requireNonNull(pleaseConfirmEmailEndpoint,
-        "pleaseConfirmEmailEndpoint must not be null");
+    this.emailConfirmationEndpoint = requireNonNull(emailConfirmationEndpoint,
+        "emailConfirmationEndpoint must not be null");
   }
 
   @Override
@@ -39,7 +39,7 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       Authentication authentication) throws ServletException, IOException {
     if (authentication.getPrincipal() instanceof QbicOidcUser qbicOidcUser) {
       if (!qbicOidcUser.isActive()) {
-        getRedirectStrategy().sendRedirect(request, response, pleaseConfirmEmailEndpoint);
+        getRedirectStrategy().sendRedirect(request, response, emailConfirmationEndpoint);
         return;
       }
       super.onAuthenticationSuccess(request, response, authentication);

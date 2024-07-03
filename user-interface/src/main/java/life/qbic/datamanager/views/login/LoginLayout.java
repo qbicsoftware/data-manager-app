@@ -5,10 +5,12 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -19,17 +21,18 @@ import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.AbstractStreamResource;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
-import life.qbic.datamanager.views.register.UserRegistrationLayout;
+import life.qbic.datamanager.views.register.UserRegistrationMain;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.logging.api.Logger;
@@ -57,6 +60,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private Div registrationSection;
   private final IdentityService identityService;
 
+  private final static String OrcId_LOGO_PATH = "login/orcid_logo.svg";
+
   public LoginLayout(@Autowired LoginHandler loginHandler,
       @Autowired IdentityService identityService,
       @Value("${server.servlet.context-path}") String contextPath) {
@@ -75,14 +80,10 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     contentLayout = new VerticalLayout();
     createNotificationLayout();
     createLoginForm();
-    this.registrationSection = initRegistrationSection();
+    registrationSection = initRegistrationSection(contextPath);
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
-    Anchor orcidOauth = new Anchor(contextPath + "/oauth2/authorization/orcid", "Login with ORCID");
-    orcidOauth.setRouterIgnore(true);
-    contentLayout.add(orcidOauth);
     add(contentLayout);
-
   }
 
   private void styleLayout() {
@@ -123,9 +124,22 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     loginForm.setUsernameText("Email");
   }
 
-  private Div initRegistrationSection() {
-    RouterLink routerLink = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    return new Div(new Text("Need an account? "), routerLink);
+  private Div initRegistrationSection(String contextPath) {
+    RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
+    Span registrationLink = new Span(new Text("Don't have an account? "), routerLink);
+    registrationLink.addClassName("registration-link");
+    Span spacer = new Span("OR");
+    spacer.addClassName("spacer");
+    LoginCard orcidCard = new LoginCard(getOrcIdSource(), "Login with ORCID",
+        contextPath + "/oauth2/authorization/orcid");
+    Div registrationSection = new Div(registrationLink, spacer, orcidCard);
+    registrationSection.addClassName("registration-section");
+    return registrationSection;
+  }
+
+  private AbstractStreamResource getOrcIdSource() {
+    return new StreamResource("orcid_logo.svg",
+        () -> getClass().getClassLoader().getResourceAsStream(OrcId_LOGO_PATH));
   }
 
   private void styleNotificationLayout() {
@@ -221,5 +235,21 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   public void onEmailConfirmationFailure(String reason) {
     showError("Email confirmation failed", reason);
+  }
+
+  private static class LoginCard extends Span {
+
+    private final Span text = new Span();
+    private final Image logo = new Image();
+
+    public LoginCard(AbstractStreamResource imageResource, String description, String url) {
+      logo.addClassName("logo");
+      text.setText(description);
+      text.addClassName("text");
+      logo.setSrc(imageResource);
+      add(logo, text);
+      addClassName("login-card");
+      addClickListener(event -> UI.getCurrent().getPage().open(url, "_blank"));
+    }
   }
 }

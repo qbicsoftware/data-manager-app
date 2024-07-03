@@ -27,7 +27,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
   String registrationOrcidEndpoint;
 
   @Value("${routing.registration.error.pending-email-verification}")
-  String pleaseConfirmEmailEndpoint;
+  String emailConfirmationEndpoint;
 
   public SecurityConfiguration(
       @Autowired VaadinDefaultRequestCache defaultRequestCache) {
@@ -43,7 +43,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
   private AuthenticationSuccessHandler authenticationSuccessHandler() {
     requireNonNull(registrationOrcidEndpoint, "openIdRegistrationEndpoint must not be null");
     StoredRequestAwareOidcAuthenticationSuccessHandler storedRequestAwareOidcAuthenticationSuccessHandler = new StoredRequestAwareOidcAuthenticationSuccessHandler(
-        registrationOrcidEndpoint, pleaseConfirmEmailEndpoint);
+        registrationOrcidEndpoint, emailConfirmationEndpoint);
     storedRequestAwareOidcAuthenticationSuccessHandler.setRequestCache(defaultRequestCache);
     return storedRequestAwareOidcAuthenticationSuccessHandler;
   }

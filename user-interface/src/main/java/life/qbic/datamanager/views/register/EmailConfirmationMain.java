@@ -3,13 +3,9 @@ package life.qbic.datamanager.views.register;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -17,7 +13,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Optional;
+import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MainPage;
+import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
@@ -30,30 +29,40 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
  *
  * @since 1.1.0
  */
-@Route("register/pending-email-confirmation")
+@Route(value = AppRoutes.EMAIL_CONFIRMATION, layout = LandingPageLayout.class)
 @PageTitle("Waiting for email confirmation")
 @AnonymousAllowed
-public class PleaseConfirmEmailPage extends Div implements BeforeEnterObserver {
+public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
 
   private final transient UserInformationService userInformationService;
 
-  public PleaseConfirmEmailPage(UserInformationService userInformationService) {
+  private final Div emailConfirmationComponent = new Div();
+
+  public EmailConfirmationMain(UserInformationService userInformationService) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
-    add(content());
+    initConfirmEmailComponent();
+    addClassName("email-confirmation");
+    add(emailConfirmationComponent);
   }
 
-  private Component content() {
-    HorizontalLayout horizontalLayout = new HorizontalLayout();
-    horizontalLayout.setDefaultVerticalComponentAlignment(Alignment.CENTER);
-    VerticalLayout verticalLayout = new VerticalLayout();
-    verticalLayout.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
-    horizontalLayout.add(verticalLayout);
-    verticalLayout.add(new H1("Please confirm your email address"));
-    verticalLayout.add(
-        new H2("Please confirm your email address by clicking the link we have sent you."));
-    verticalLayout.add(new RouterLink("Go back to the login", LoginLayout.class));
-    return horizontalLayout;
+  private void initConfirmEmailComponent() {
+    emailConfirmationComponent.addClassName("email-confirmation-component");
+    H2 title = new H2("Verify your email");
+    emailConfirmationComponent.add(title);
+    Text description = new Text(
+        "We've sent a verification link to your email. Please check your inbox and click on the link to complete the registration");
+    emailConfirmationComponent.add(description);
+    /* Todo Unsure how this should be handled since we dispatch the email after successful registration
+    Text resendVerificationText = new Text("Did not receive an email?");
+    Anchor resendVerificationLink = new Anchor("", "Resend verification link");
+    Span resendVerification = new Span(resendVerificationText, resendVerificationLink);
+    resendVerification.addClassName("resend-verification");
+    emailConfirmationComponent.add(resendVerification);
+    */
+
+    RouterLink backToLoginLink = new RouterLink("Go back to login", LoginLayout.class);
+    emailConfirmationComponent.add(backToLoginLink);
   }
 
   @Override
@@ -64,10 +73,9 @@ public class PleaseConfirmEmailPage extends Div implements BeforeEnterObserver {
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser && isAlreadyActiveUser(
         oidcUser)) {
-        // no idea how they ended up here but the account is already active so they can go to the main page directly
-        event.forwardTo(MainPage.class);
+      // no idea how they ended up here but the account is already active, so they can go to the main page directly
+      event.forwardTo(MainPage.class);
     }
-
   }
 
   private boolean isAlreadyActiveUser(OidcUser oidcUser) {
