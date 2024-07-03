@@ -58,9 +58,8 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private H2 title;
   private ConfigurableLoginForm loginForm;
   private Div registrationSection;
-  private final IdentityService identityService;
-
-  private final static String OrcId_LOGO_PATH = "login/orcid_logo.svg";
+  private final transient IdentityService identityService;
+  private static final String ORCID_LOGO_PATH = "login/orcid_logo.svg";
 
   public LoginLayout(@Autowired LoginHandler loginHandler,
       @Autowired IdentityService identityService,
@@ -81,6 +80,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     createNotificationLayout();
     createLoginForm();
     registrationSection = initRegistrationSection(contextPath);
+    registrationSection.addClassName("registration-section");
     title = new H2("Log in");
     contentLayout.add(title, notificationLayout, loginForm, registrationSection);
     add(contentLayout);
@@ -132,14 +132,12 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     spacer.addClassName("spacer");
     LoginCard orcidCard = new LoginCard(getOrcIdSource(), "Login with ORCID",
         contextPath + "/oauth2/authorization/orcid");
-    Div registrationSection = new Div(registrationLink, spacer, orcidCard);
-    registrationSection.addClassName("registration-section");
-    return registrationSection;
+    return new Div(registrationLink, spacer, orcidCard);
   }
 
   private AbstractStreamResource getOrcIdSource() {
     return new StreamResource("orcid_logo.svg",
-        () -> getClass().getClassLoader().getResourceAsStream(OrcId_LOGO_PATH));
+        () -> getClass().getClassLoader().getResourceAsStream(ORCID_LOGO_PATH));
   }
 
   private void styleNotificationLayout() {
