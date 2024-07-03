@@ -42,10 +42,11 @@ vaadin-dialog-overlay::part(title) {
   margin: 0;
 }
 
-vaadin-confirm-dialog-overlay::part(footer) {
-  display: inline-block;
-  width: 100%;
-  margin-left: auto;
+/*Vaadin currently does not allow to style the flex items within the footer.
+Since we want to remove the spacing between the cancel and confirm button we replace the flex setting with a grid layout*/
+.notification-dialog::part(footer) {
+  display: grid;
+  grid-template-columns: 0 15% 15%;
 }
 
 /* icon in header */
