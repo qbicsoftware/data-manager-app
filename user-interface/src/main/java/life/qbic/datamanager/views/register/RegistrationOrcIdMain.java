@@ -42,11 +42,14 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
   private static final Logger log = logger(RegistrationOrcIdMain.class);
   private final transient IdentityService identityService;
   private final UserRegistrationOrcIdComponent userRegistrationOrcIdComponent;
+  private final transient UserInformationService userInformationService;
 
   public RegistrationOrcIdMain(
       @Qualifier("userRegistrationService") IdentityService identityService,
       @Autowired UserInformationService userInformationService) {
     this.identityService = requireNonNull(identityService, "identityService must not be null");
+    this.userInformationService = requireNonNull(userInformationService,
+        "userInformationService must not be null");
     userRegistrationOrcIdComponent = new UserRegistrationOrcIdComponent(userInformationService);
     userRegistrationOrcIdComponent.addRegistrationListener(
         event -> registerOidcUser(event.userRegistrationOrcIdInformation()));
@@ -78,7 +81,10 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
           information.userName(), information.email(), oidcUser.getIssuer().toString(),
           oidcUser.getName());
       registrationResponse.ifSuccessOrElse(
-          response -> UI.getCurrent().navigate(EmailConfirmationMain.class),
+          response -> {
+            var userId = userInformationService.findByEmail(information.email()).orElseThrow().id();
+            getUI().orElseThrow().navigate(EmailConfirmationMain.class, userId);
+          },
           response -> handleRegistrationFailure(response.failures())
       );
       return;

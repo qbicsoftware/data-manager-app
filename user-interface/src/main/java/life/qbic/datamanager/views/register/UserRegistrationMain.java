@@ -40,13 +40,15 @@ public class UserRegistrationMain extends Main {
   private static final Logger log =
       LoggerFactory.logger(UserRegistrationMain.class.getName());
   private final transient IdentityService identityService;
+  private final transient UserInformationService userInformationService;
   private final UserRegistrationComponent userRegistrationComponent;
 
   public UserRegistrationMain(@Autowired IdentityService identityService, @Autowired
   UserInformationService userInformationService) {
     this.identityService = Objects.requireNonNull(identityService,
         "Identity service cannot be null");
-    Objects.requireNonNull(userInformationService, "User Information service cannot be null");
+    this.userInformationService = Objects.requireNonNull(userInformationService,
+        "User Information service cannot be null");
     addClassName("user-registration");
     userRegistrationComponent = new UserRegistrationComponent(userInformationService);
     userRegistrationComponent.addRegistrationListener(
@@ -65,8 +67,11 @@ public class UserRegistrationMain extends Main {
             userRegistrationInformation.userName(),
             userRegistrationInformation.email(),
             userRegistrationInformation.password().toCharArray())
-        .ifSuccessOrElse(applicationResponse -> getUI().orElseThrow().navigate(
-                EmailConfirmationMain.class),
+        .ifSuccessOrElse(applicationResponse -> {
+              var userId = userInformationService.findByEmail(userRegistrationInformation.email())
+                  .orElseThrow().id();
+              getUI().orElseThrow().navigate(EmailConfirmationMain.class, userId);
+            },
             applicationResponse -> handleRegistrationFailure(applicationResponse.failures()));
   }
 

@@ -38,6 +38,15 @@
   font-size: small;
 }
 
+.link {
+  color: var(--lumo-primary-text-color);
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
 .login-card {
   display: inline-flex;
   gap: var(--lumo-space-l);
