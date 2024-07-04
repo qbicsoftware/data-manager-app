@@ -247,7 +247,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
       logo.setSrc(imageResource);
       add(logo, text);
       addClassName("login-card");
-      addClickListener(event -> UI.getCurrent().getPage().open(url, "_blank"));
+      addClickListener(event -> UI.getCurrent().getPage().open(url, "_self"));
     }
   }
 }
