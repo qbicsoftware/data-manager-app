@@ -25,6 +25,7 @@ import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -122,11 +123,11 @@ public class ProjectAccessComponent extends PageArea {
     Editor<ProjectCollaborator> editor = grid.getEditor();
     Binder<ProjectCollaborator> binder = new Binder<>(ProjectCollaborator.class);
     editor.setBinder(binder);
-    Column<ProjectAccessService.ProjectCollaborator> usernameColumn = grid.addColumn(
+    var usernameColumn = grid.addComponentColumn(
             projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
-                //We can't throw an exception here since projects can be linked to deleted users
-                .map(UserInfo::platformUserName).orElse(""))
-        .setKey("username").setHeader("User").setAutoWidth(true);
+                .map(ProjectAccessComponent::renderUserInfo)
+                .orElse(null))
+        .setKey("user").setHeader("User").setAutoWidth(true);
     Column<ProjectAccessService.ProjectCollaborator> projectRoleColumn = grid.addColumn(
             collaborator -> "Role: " + collaborator.projectRole().label())
         .setKey("projectRole").setHeader("Role").setEditorComponent(
@@ -151,6 +152,13 @@ public class ProjectAccessComponent extends PageArea {
             new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING)));
     grid.setSelectionMode(SelectionMode.NONE);
     return grid;
+  }
+
+  private static Component renderUserInfo(UserInfo userInfo) {
+    UserAvatar userAvatar = new UserAvatar();
+    userAvatar.setUserId(userInfo.id());
+    userAvatar.setName(userInfo.platformUserName());
+    return new UserAvatarWithNameComponent(userAvatar, userInfo.platformUserName());
   }
 
   private Span changeProjectAccessCell(ProjectCollaborator collaborator) {

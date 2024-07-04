@@ -71,11 +71,11 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
         filter);
     Specification<ProjectOverview> hasPxpMeasurements = ProjectOverviewSpec.hasPxPMeasurements(
         filter);
-//    Specification<ProjectOverview> isInCollaboratorNames = ProjectOverviewSpec.isInCollaboratorNames(
-//        filter);
+    Specification<ProjectOverview> isInCollaboratorNames = ProjectOverviewSpec.isInCollaboratorNames(
+        filter);
     Specification<ProjectOverview> filterSpecification = Specification.anyOf(isProjectTitle,
         isProjectCode, isLastModifiedDate, isPrincipalInvestigator, isResponsiblePerson,
-        hasNgsMeasurements, hasPxpMeasurements/*, isInCollaboratorNames*/);
+        hasNgsMeasurements, hasPxpMeasurements, isInCollaboratorNames);
     return Specification.where(isBlankSpec)
         .and(containsProjectId)
         .and(filterSpecification)
@@ -166,13 +166,10 @@ public class ProjectOverviewLookupImplementation implements ProjectOverviewLooku
       };
     }
 
-//    public static Specification<ProjectOverview> isInCollaboratorNames(String filter) {
-//      return (root, query, builder) -> {
-//        Join<ProjectOverview, String> memberJoin = root.join("collaboratorUserNames");
-//        return builder.like(memberJoin, "%" + filter + "%");
-//      };
-//    }
+    public static Specification<ProjectOverview> isInCollaboratorNames(String filter) {
+      return (root, query, builder) -> builder.like(root.get("collaboratorUserInfos"),
+          "%" + filter + "%");
 
+    }
   }
-
 }

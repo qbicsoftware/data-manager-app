@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.overview.components;
 
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
-import com.vaadin.flow.component.avatar.AvatarGroup.AvatarGroupItem;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
@@ -216,7 +216,8 @@ public class ProjectCollectionComponent extends PageArea {
       usersWithAccess.setMaxItemsVisible(MAXIMUM_NUMBER_OF_SHOWN_AVATARS);
       add(usersWithAccess);
       setMeasurementDependentTags();
-      projectOverview.collaboratorUserNames().stream().map(AvatarGroupItem::new)
+      projectOverview.collaboratorUserInfos().stream()
+          .map(userInfo -> new UserAvatarGroupItem(userInfo.userName(), userInfo.userId()))
           .forEach(usersWithAccess::add);
       addClassNames("project-overview-item");
       addClickListener(event -> getUI().ifPresent(ui -> ui.navigate(ProjectInformationMain.class,

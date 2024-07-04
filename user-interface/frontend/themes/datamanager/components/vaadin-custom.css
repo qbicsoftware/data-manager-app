@@ -40,6 +40,11 @@ vaadin-multi-select-combo-box::part(toggle-button)::before {
   color: var(--lumo-primary-color);
 }
 
+/* Hide toggle button */
+vaadin-multi-select-combo-box.no-chevron::part(toggle-button) {
+  display: none;
+}
+
 vaadin-number-field::part(decrease-button), vaadin-number-field::part(increase-button) {
   color: var(--lumo-primary-color);
 }

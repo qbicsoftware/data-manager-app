@@ -31,6 +31,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -53,6 +54,7 @@ public class ProjectOverviewMain extends Main {
   private static final Logger log = logger(ProjectOverviewMain.class);
   private final ProjectCollectionComponent projectCollectionComponent;
   private final transient ProjectCreationService projectCreationService;
+  private final transient ProjectInformationService projectInformationService;
   private final transient FinanceService financeService;
   private final transient OntologyLookupService ontologyTermInformationService;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
@@ -61,6 +63,7 @@ public class ProjectOverviewMain extends Main {
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
+      ProjectInformationService projectInformationService,
       OntologyLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
@@ -70,6 +73,8 @@ public class ProjectOverviewMain extends Main {
     this.projectCreationService = Objects.requireNonNull(projectCreationService,
         "project creation service can not be null");
     this.financeService = Objects.requireNonNull(financeService, "finance service can not be null");
+    this.projectInformationService = Objects.requireNonNull(projectInformationService,
+        "project information service can not be null");
     this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService,
         "ontology term information service can not be null");
     this.addExperimentToProjectService = Objects.requireNonNull(addExperimentToProjectService,
@@ -81,7 +86,8 @@ public class ProjectOverviewMain extends Main {
     addTitleAndDescription();
     add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
-      AddProjectDialog addProjectDialog = new AddProjectDialog(this.financeService,
+      AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
+          this.financeService,
           this.ontologyTermInformationService, this.contactRepository);
       if (isOfferSearchAllowed()) {
         addProjectDialog.enableOfferSearch();
@@ -107,7 +113,8 @@ public class ProjectOverviewMain extends Main {
     title.addClassNames("project-overview-title");
     Span descriptionStart = new Span(
         "Manage all your scientific data in one place with the Data Manager. You can access our ");
-    Anchor descriptionLinkToDoc = new Anchor("https://qbicsoftware.github.io/data-manager-app/",
+    Anchor descriptionLinkToDoc = new Anchor(
+        "https://qbicsoftware.github.io/research-data-management/",
         "documentation", AnchorTarget.BLANK);
     Span descriptionEnd = new Span(
         " and learn more about using the Data Manager.\n"

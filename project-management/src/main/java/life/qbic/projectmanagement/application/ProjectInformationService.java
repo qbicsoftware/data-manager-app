@@ -15,6 +15,7 @@ import life.qbic.projectmanagement.application.authorization.authorities.Role;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
@@ -89,6 +90,12 @@ public class ProjectInformationService {
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
   public Optional<Project> find(String projectId) throws IllegalArgumentException {
     return find(ProjectId.parse(projectId));
+  }
+
+  public boolean isProjectCodeUnique(String projectCode) throws IllegalArgumentException {
+    boolean isUnique = !projectRepository.existsProjectByProjectCode(
+        ProjectCode.parse(projectCode));
+    return isUnique;
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project','READ')")
