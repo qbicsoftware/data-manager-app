@@ -197,7 +197,7 @@
 }
 
 .tab-with-count {
-  gap: var(--lumo-space-xs);
+  gap: var(--lumo-space-s);
 }
 
 .ontology-lookup-component {
