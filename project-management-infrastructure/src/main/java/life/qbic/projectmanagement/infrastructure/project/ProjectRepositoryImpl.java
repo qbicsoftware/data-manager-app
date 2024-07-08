@@ -54,7 +54,6 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   @Override
-  @PreAuthorize("hasAuthority('project:create')")
   public void add(Project project) {
     ProjectCode projectCode = project.getProjectCode();
     if (doesProjectExistWithId(project.getId()) || projectDataRepo.projectExists(projectCode)) {
