@@ -130,7 +130,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     registrationLink.addClassName("registration-link");
     Span spacer = new Span("OR");
     spacer.addClassName("spacer");
-    LoginCard orcidCard = new LoginCard(getOrcIdSource(), "Login with ORCID",
+    LoginCard orcidCard = new LoginCard(getOrcIdSource(), "Login with ORCiD",
         contextPath + "/oauth2/authorization/orcid");
     return new Div(registrationLink, spacer, orcidCard);
   }
