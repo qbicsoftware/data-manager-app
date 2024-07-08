@@ -30,10 +30,10 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ConfirmEvent;
+import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
@@ -65,18 +65,21 @@ public class ProjectAccessComponent extends PageArea {
   private final UserPermissions userPermissions;
   private final Grid<ProjectAccessService.ProjectCollaborator> projectCollaborators;
   private final Span buttonBar;
+  private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private Context context;
 
   protected ProjectAccessComponent(
       @Autowired ProjectAccessService projectAccessService,
       @Autowired UserInformationService userInformationService,
-      UserPermissions userPermissions) {
+      UserPermissions userPermissions,
+      AuthenticationToUserIdTranslator authenticationToUserIdTranslator) {
     this.projectAccessService = requireNonNull(projectAccessService,
         "projectAccessService must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
-
+    this.authenticationToUserIdTranslator = requireNonNull(authenticationToUserIdTranslator,
+        "authenticationToUserIdTranslator must not be null");
     this.addClassName("project-access-component");
     log.debug("New instance for %s(#%d)".formatted(ProjectAccessComponent.class.getSimpleName(),
         System.identityHashCode(this)));
@@ -96,10 +99,10 @@ public class ProjectAccessComponent extends PageArea {
     add(userProjectAccessDescription, projectCollaborators);
   }
 
-  private static boolean isCurrentUser(ProjectAccessService.ProjectCollaborator collaborator) {
-    return Objects.equals(collaborator.userId(),
-        ((QbicUserDetails) SecurityContextHolder.getContext()
-            .getAuthentication().getPrincipal()).getUserId());
+  private boolean isCurrentUser(ProjectAccessService.ProjectCollaborator collaborator) {
+    var userId = this.authenticationToUserIdTranslator.translateToUserId(
+        SecurityContextHolder.getContext().getAuthentication()).orElseThrow();
+    return Objects.equals(collaborator.userId(), userId);
   }
 
   private Button addCollaboratorButton() {
