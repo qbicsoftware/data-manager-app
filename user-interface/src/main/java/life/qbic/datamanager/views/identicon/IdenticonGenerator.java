@@ -14,6 +14,15 @@ import java.security.NoSuchAlgorithmException;
  */
 public class IdenticonGenerator {
 
+  private static final String[] COLOUR_SPACE = new String[]{
+      "#1E88E5",
+      "#7B99FA",
+      "#53CDD8",
+      "#F68787",
+      "#96EAB7",
+  };
+
+  private static final String DEFAULT_COLOUR_BLACK = "#ffffff";
 
   private enum CSSClass {
     ONE("identicon-one"),
@@ -62,9 +71,7 @@ public class IdenticonGenerator {
     }
 
     // the color is determined by the first three bytes
-    final String identiconColor = SvgBuilder.toHexColor((byte) (hashedInput[0] ^ hashedInput[1]),
-        (byte) (hashedInput[1] ^ hashedInput[2]),
-        (byte) (hashedInput[2] ^ hashedInput[3]));
+    final String identiconColor = getHexColor(hashedInput);
 
     // use the css class to overwrite the colors
     int classByteValue = Byte.toUnsignedInt(hashedInput[63]);
@@ -93,6 +100,17 @@ public class IdenticonGenerator {
     }
     return svgBuilder
         .build();
+  }
+
+  private static String getHexColor(byte[] hashedInput) {
+    if (hashedInput == null || hashedInput.length < 3) {
+      return DEFAULT_COLOUR_BLACK;
+    }
+    // we are looking into the first 3 byte and create an XOR on them, to enhance the
+    // variation of values a little bit
+    var colourAssignmentByte = Byte.toUnsignedInt((byte) (hashedInput[0] ^ hashedInput[1] ^ hashedInput[2]));
+    // Will always access with an index between 0 and the length of the colour space array minus 1
+    return COLOUR_SPACE[colourAssignmentByte % COLOUR_SPACE.length];
   }
 
   public static class IdenticonGenerationException extends RuntimeException {
