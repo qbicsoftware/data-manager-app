@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -34,10 +35,11 @@ import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
 import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.communication.CommunicationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 /**
  * The page to be shown after registration when the user needs to confirm the email.
@@ -127,10 +129,17 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
         "Please wait " + timeLeft + " seconds until another email can be sent");
   }
 
-  private boolean isAlreadyActiveUser(OidcUser oidcUser) {
-    Optional<UserInfo> byOidc = userInformationService.findByOidc(oidcUser.getName(),
-        oidcUser.getIssuer().toString());
-    return byOidc.map(UserInfo::isActive).orElse(false);
+  private boolean isAlreadyActiveUser(QbicOidcUser oidcUser) {
+    return isAlreadyActiveUser(oidcUser.getQbicUserId());
+  }
+
+  private boolean isAlreadyActiveUser(QbicUserDetails qbicUserDetails) {
+    return isAlreadyActiveUser(qbicUserDetails.getUserId());
+  }
+
+  private boolean isAlreadyActiveUser(String userId) {
+    Optional<UserInfo> userInfo = userInformationService.findById(userId);
+    return userInfo.map(UserInfo::isActive).orElse(false);
   }
 
   private void sendConfirmationEmail(String userId, String email, String fullName) {
@@ -170,37 +179,34 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
    */
   @Override
   public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
+    forwardToMainIfAlreadyConfirmed(event, parameter);
     if (parameter != null && !parameter.isEmpty()) {
       var optUserInfo = userInformationService.findById(parameter);
       if (optUserInfo.isEmpty()) {
         log.error("Invalid UserId provided during pending email confirmation "
             + optUserInfo);
+        throw new NotFoundException("Could not find user");
       } else {
         userInfo = optUserInfo.get();
       }
-      return;
     }
+  }
+
+  private void forwardToMainIfAlreadyConfirmed(BeforeEvent event, String parameter) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    // user has provided no authentication and no parameters have been provided so there is no way to resend verification link
     if (isNull(authentication)) {
-      log.debug("user without authentication and no parameters reached the confirm email page");
+      log.debug(
+          "user without authentication and parameter [%s] reached the confirm email page".formatted(
+              parameter));
       return;
     }
-    // user has an orcId and registered an account but has not confirmed his email address
-    if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-      log.debug("subject " + oidcUser.getSubject());
-      //No idea why we need to get the subject here instead of the name
-      var optUserInfo = userInformationService.findByOidc(oidcUser.getSubject(),
-          oidcUser.getIssuer().toString());
-      if (optUserInfo.isEmpty()) {
-        log.error("Invalid UserId provided during pending email confirmation " + optUserInfo);
-      } else {
-        userInfo = optUserInfo.get();
-      }
-    }
+    var principal = authentication.getPrincipal();
     // no idea how they ended up here but the account is already active, so they can go to the main page directly
-    if (authentication.getPrincipal() instanceof OidcUser oidcUser && isAlreadyActiveUser(
-        oidcUser)) {
+    if (principal instanceof QbicOidcUser qbicOidcUser && isAlreadyActiveUser(qbicOidcUser)) {
+      event.forwardTo(MainPage.class);
+    }
+    if (principal instanceof QbicUserDetails qbicUserDetails && isAlreadyActiveUser(
+        qbicUserDetails)) {
       event.forwardTo(MainPage.class);
     }
   }
