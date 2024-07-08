@@ -63,7 +63,7 @@ public class UserRegistrationOrcIdComponent extends Div {
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     username.setHelperText("Your unique user name, visible to other users");
     description.add(
-        "Since your full name and email are not shared by ORCiD, we need some additional information from you");
+        "Please complete missing information to create an account with us.");
     add(titleSpan, notificationLayout, description, fullName, email, username, registerButton);
     setFieldValidation();
     addRegistrationButtonListener();
