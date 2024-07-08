@@ -1,5 +1,7 @@
 package life.qbic.identity.domain.model;
 
+import static java.util.Objects.isNull;
+
 import java.util.regex.Pattern;
 import life.qbic.identity.domain.model.policy.PolicyCheckReport;
 import life.qbic.identity.domain.model.policy.PolicyStatus;
@@ -44,6 +46,9 @@ class EmailFormatPolicy {
   }
 
   private static boolean honoursRFCSpec(String email) {
+    if (isNull(email)) {
+      return false;
+    }
     var pattern = Pattern.compile(FULL_ADDRESS_SPEC);
     var matcher = pattern.matcher(email);
     return matcher.matches();

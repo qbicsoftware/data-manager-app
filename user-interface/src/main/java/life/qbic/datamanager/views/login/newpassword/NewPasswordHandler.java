@@ -17,7 +17,7 @@ public class NewPasswordHandler {
   private final String passwordResetQueryParameter;
 
   @Autowired
-  NewPasswordHandler(@Value("${password-reset-parameter}") String newPasswordParam) {
+  NewPasswordHandler(@Value("${routing.password-reset.reset-parameter}") String newPasswordParam) {
     this.passwordResetQueryParameter = newPasswordParam;
   }
 

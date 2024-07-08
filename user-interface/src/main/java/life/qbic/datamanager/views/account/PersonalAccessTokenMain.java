@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -10,7 +12,6 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;
@@ -22,9 +23,7 @@ import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -46,13 +45,17 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   private static final Logger log = LoggerFactory.logger(PersonalAccessTokenMain.class);
   private final PersonalAccessTokenComponent personalAccessTokenComponent;
   private final PersonalAccessTokenService personalAccessTokenService;
+  private final AuthenticationToUserIdTranslationService userIdTranslator;
 
   public PersonalAccessTokenMain(PersonalAccessTokenService personalAccessTokenService,
-      @Autowired PersonalAccessTokenComponent personalAccessTokenComponent) {
-    Objects.requireNonNull(personalAccessTokenService);
-    Objects.requireNonNull(personalAccessTokenComponent);
-    this.personalAccessTokenService = personalAccessTokenService;
-    this.personalAccessTokenComponent = personalAccessTokenComponent;
+      PersonalAccessTokenComponent personalAccessTokenComponent,
+      AuthenticationToUserIdTranslationService userIdTranslator) {
+    this.personalAccessTokenService = requireNonNull(personalAccessTokenService,
+        "personalAccessTokenService must not be null");
+    this.personalAccessTokenComponent = requireNonNull(personalAccessTokenComponent,
+        "personalAccessTokenComponent must not be null");
+    this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
+
     addClassName("personal-access-token");
     add(personalAccessTokenComponent);
     personalAccessTokenComponent.addTokenListener(this::onAddTokenClicked);
@@ -68,9 +71,10 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     AccessTokenDeletionConfirmationNotification tokenDeletionConfirmationNotification = new AccessTokenDeletionConfirmationNotification();
     tokenDeletionConfirmationNotification.open();
     tokenDeletionConfirmationNotification.addConfirmListener(event -> {
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-      personalAccessTokenService.delete(deleteTokenEvent.tokenId(), details.getUserId());
+      var userId = userIdTranslator.translateToUserId(
+              SecurityContextHolder.getContext().getAuthentication())
+          .orElseThrow();
+      personalAccessTokenService.delete(deleteTokenEvent.tokenId(), userId);
       loadGeneratedPersonalAccessTokens();
       tokenDeletionConfirmationNotification.close();
     });
@@ -85,9 +89,10 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
     /*Reload the tokens to ensure that if multiple tokens are generated the previously generated tokens are shown within the list*/
     addPersonalAccessTokenDialog.addConfirmListener(event -> loadGeneratedPersonalAccessTokens());
     addPersonalAccessTokenDialog.addConfirmListener(event -> {
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-      RawToken createdToken = personalAccessTokenService.create(details.getUserId(),
+      var userId = userIdTranslator.translateToUserId(
+              SecurityContextHolder.getContext().getAuthentication())
+          .orElseThrow();
+      RawToken createdToken = personalAccessTokenService.create(userId,
           event.personalAccessTokenDTO()
               .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
       personalAccessTokenComponent.showCreatedToken(createdToken);
@@ -107,10 +112,11 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   }
 
   private void loadGeneratedPersonalAccessTokens() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
+    var userId = userIdTranslator.translateToUserId(
+            SecurityContextHolder.getContext().getAuthentication())
+        .orElseThrow();
     Collection<PersonalAccessToken> personalAccessTokens = personalAccessTokenService.findAll(
-        details.getUserId());
+        userId);
     List<PersonalAccessTokenFrontendBean> personalAccessTokenFrontendBeans = personalAccessTokens.stream()
         .map(PersonalAccessTokenFrontendBean::from)
         .collect(Collectors.toCollection(ArrayList::new));

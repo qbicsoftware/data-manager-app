@@ -19,7 +19,7 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.layouts.BoxLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.register.UserRegistrationLayout;
+import life.qbic.datamanager.views.register.UserRegistrationMain;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.identity.domain.model.EmailAddress;
@@ -91,8 +91,9 @@ public class ResetPasswordLayout extends VerticalLayout {
   }
 
   private void createSpan() {
-    RouterLink link = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    registerSpan = new Span(new Text("Need an account? "), link);
+    RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
+    registerSpan = new Span(new Text("Don't have an account? "), routerLink);
+    registerSpan.addClassName("registration-link");
   }
 
   private void createSendButton() {

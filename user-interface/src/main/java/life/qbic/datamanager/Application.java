@@ -6,9 +6,6 @@ import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import java.io.Serial;
-import life.qbic.datamanager.views.login.newpassword.NewPasswordHandler;
-import life.qbic.identity.application.user.password.NewPassword;
-import life.qbic.identity.application.user.password.NewPasswordOutput;
 import life.qbic.identity.domain.registry.DomainRegistry;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.identity.domain.service.UserDomainService;
@@ -19,7 +16,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
