@@ -39,7 +39,7 @@ public class BatchRegistrationDialog extends DialogWindow {
 
     addClassName("batch-registration-dialog");
     setConfirmButtonLabel("Register");
-    initCancelShortcuts(this::onCanceled);
+    specifyCancelShortcuts(this::onCanceled);
 
     this.experimentalGroups = new ArrayList<>(experimentalGroups);
     this.species = new ArrayList<>(species);

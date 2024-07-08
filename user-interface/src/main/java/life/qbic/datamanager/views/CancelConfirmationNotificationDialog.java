@@ -24,8 +24,8 @@ public class CancelConfirmationNotificationDialog extends NotificationDialog {
   }
 
   public CancelConfirmationNotificationDialog withBodyText(String mainText) {
-    content.add(new Span(
-        mainText));
+    content.removeAll();
+    content.add(new Span(mainText));
     return this;
   }
 

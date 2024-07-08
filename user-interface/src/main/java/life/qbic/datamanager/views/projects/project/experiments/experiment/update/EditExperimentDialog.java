@@ -48,7 +48,7 @@ public class EditExperimentDialog extends DialogWindow {
         ontologyTermInformationService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
-    initCancelShortcuts(this::onEditCanceled);
+    specifyCancelShortcuts(this::onEditCanceled);
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");

@@ -45,7 +45,7 @@ public class EditProjectInformationDialog extends DialogWindow {
   public EditProjectInformationDialog(ContactRepository contactRepository) {
     super();
 
-    initCancelShortcuts(this::onEditCanceled);
+    specifyCancelShortcuts(this::onEditCanceled);
 
     addClassName("edit-project-dialog");
     setHeaderTitle("Project Information");

@@ -33,10 +33,10 @@ public abstract class DialogWindow extends Dialog {
     confirmButton.addClickListener(this::onConfirmClicked);
   }
 
-  protected void initCancelShortcuts(Command onCreationCanceled) {
+  protected void specifyCancelShortcuts(Command onCreationCanceled) {
       setCloseOnOutsideClick(false);
       setCloseOnEsc(false);
-      Shortcuts.addShortcutListener((Component) this,
+      Shortcuts.addShortcutListener(this,
           onCreationCanceled, Key.ESCAPE);
   }
 

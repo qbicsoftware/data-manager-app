@@ -46,7 +46,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     super();
     mode = editMode ? MODE.EDIT : MODE.ADD;
     setConfirmButtonLabel(confirmActionLabel());
-    initCancelShortcuts(this::onCanceled);
+    specifyCancelShortcuts(this::onCanceled);
     setCancelButtonLabel("Cancel");
     addClassName("experiment-variable-dialog");
     layoutComponent();

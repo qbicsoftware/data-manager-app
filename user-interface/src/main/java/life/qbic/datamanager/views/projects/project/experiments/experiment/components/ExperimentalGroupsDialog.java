@@ -42,7 +42,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,
       boolean editMode) {
     super();
-    initCancelShortcuts(this::onCanceled);
+    specifyCancelShortcuts(this::onCanceled);
     this.editMode = editMode;
     this.experimentalVariableLevels = Objects.requireNonNull(experimentalVariableLevels);
     layoutComponent();

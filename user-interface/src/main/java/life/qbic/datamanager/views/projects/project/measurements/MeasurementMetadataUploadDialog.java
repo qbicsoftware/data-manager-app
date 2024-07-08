@@ -89,7 +89,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
         "The dialog mode needs to be defined");
-    initCancelShortcuts(this::onCanceled);
+    specifyCancelShortcuts(this::onCanceled);
 
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();

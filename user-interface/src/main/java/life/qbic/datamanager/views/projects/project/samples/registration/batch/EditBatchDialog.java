@@ -57,7 +57,7 @@ public class EditBatchDialog extends DialogWindow {
 
     this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
 
-    initCancelShortcuts(this::onCanceled);
+    specifyCancelShortcuts(this::onCanceled);
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, true);
