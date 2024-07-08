@@ -48,7 +48,7 @@ public class UserId implements Serializable {
     try {
       return new UserId(UUID.fromString(s));
     } catch (IllegalArgumentException ignored) {
-      throw new IllegalArgumentException(s+ " has unknown user id format.");
+      throw new IllegalArgumentException(s + " has unknown user id format.");
     }
   }
 

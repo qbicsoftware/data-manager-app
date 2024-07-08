@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
@@ -51,6 +52,8 @@ public class AddExperimentDialog extends DialogWindow {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
+
+    specifyCancelShortcuts(this::onCreationCanceled);
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
@@ -128,9 +131,23 @@ public class AddExperimentDialog extends DialogWindow {
     }
   }
 
+  private void onCreationCanceled() {
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("You will lose all the information entered for this experiment.")
+        .withConfirmText("Discard experiment creation")
+        .withTitle("Discard new experiment creation?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
+  }
+
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    onCreationCanceled();
   }
 
   public void setExperiment(ExperimentDraft experiment) {

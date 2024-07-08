@@ -5,6 +5,7 @@ import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserPasswordService;
 import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.notification.NotificationService;
@@ -19,9 +20,6 @@ import life.qbic.identity.application.user.policy.UserRegisteredPolicy;
 import life.qbic.identity.application.user.policy.directive.WhenUserActivatedSubmitIntegrationEvent;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSendConfirmationEmail;
 import life.qbic.identity.application.user.policy.directive.WhenUserRegisteredSubmitIntegrationEvent;
-import life.qbic.identity.application.user.registration.EmailAddressConfirmation;
-import life.qbic.identity.application.user.registration.RegisterUserInput;
-import life.qbic.identity.application.user.registration.Registration;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.infrastructure.email.EmailServiceProvider;
@@ -43,11 +41,11 @@ import life.qbic.projectmanagement.application.policy.MeasurementCreatedPolicy;
 import life.qbic.projectmanagement.application.policy.MeasurementUpdatedPolicy;
 import life.qbic.projectmanagement.application.policy.OfferAddedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectAccessGrantedPolicy;
+import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.ProjectRegisteredPolicy;
 import life.qbic.projectmanagement.application.policy.QCAddedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleDeletedPolicy;
 import life.qbic.projectmanagement.application.policy.SampleRegisteredPolicy;
-import life.qbic.projectmanagement.application.policy.ProjectChangedPolicy;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.CreateNewSampleStatisticsEntry;
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch;
@@ -91,11 +89,6 @@ public class AppConfig {
 
   Section starts below
   */
-  @Bean
-  public EmailAddressConfirmation confirmEmailInput(
-      IdentityService identityService) {
-    return new EmailAddressConfirmation(identityService);
-  }
 
   @Bean
   public IdentityService userRegistrationService(
@@ -114,20 +107,13 @@ public class AppConfig {
     return new PasswordResetRequest(identityService);
   }
 
-  /**
-   * Creates the registration use case.
-   *
-   * @param identityService the user registration services used by this use case
-   * @return the use case input
-   * @since 1.0.0
-   */
   @Bean
-  public RegisterUserInput registerUserInput(IdentityService identityService) {
-    return new Registration(identityService);
+  public UserInformationService userInformationService(UserRepository userRepository) {
+    return new BasicUserInformationService(userRepository);
   }
 
   @Bean
-  public UserInformationService userInformationService(UserRepository userRepository) {
+  public UserPasswordService userPasswordService(UserRepository userRepository) {
     return new BasicUserInformationService(userRepository);
   }
 

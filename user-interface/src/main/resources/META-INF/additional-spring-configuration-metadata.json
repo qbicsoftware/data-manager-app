@@ -98,12 +98,42 @@
     {
       "name": "openbis.datasource.as.url",
       "type": "java.lang.String",
-      "description": "URL of the openbis application server containing the measurement information"
+      "description": "URL of the openbis application server containing the measurement information."
     },
     {
       "name": "openbis.datasource.dss.url",
       "type": "java.lang.String",
       "description": "URL of the openbis datastore server containing the measurement information"
+    },
+    {
+      "name": "routing.registration.oidc.orcid.endpoint",
+      "type": "java.lang.String",
+      "description": "The routing target for openid connect registration"
+    },
+    {
+      "name": "qbic.communication.data-manager.source-code.url",
+      "type": "java.lang.String",
+      "description": "URL of the repository hosting the source code for the data manager application."
+    },
+    {
+      "name": "qbic.communication.documentation.url",
+      "type": "java.lang.String",
+      "description": "URL of the github pages instance hosting the user documentation for the data manager application."
+    },
+    {
+      "name": "qbic.communication.contact.email",
+      "type": "java.lang.String",
+      "description": "Contact email address to get in touch with qbic about the data manager application."
+    },
+    {
+      "name": "qbic.communication.contact.subject",
+      "type": "java.lang.String",
+      "description": "Subject String for the contact email address."
+    },
+    {
+      "name": "qbic.communication.api.url",
+      "type": "java.lang.String",
+      "description": "URL of the repository hosting the information on how to interact with the data manager API."
     }
   ]
 }

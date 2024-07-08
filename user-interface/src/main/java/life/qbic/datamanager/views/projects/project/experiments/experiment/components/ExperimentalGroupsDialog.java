@@ -12,6 +12,7 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
 import life.qbic.projectmanagement.application.VariableValueFormatter;
@@ -41,6 +42,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,
       boolean editMode) {
     super();
+    specifyCancelShortcuts(this::onCanceled);
     this.editMode = editMode;
     this.experimentalVariableLevels = Objects.requireNonNull(experimentalVariableLevels);
     layoutComponent();
@@ -114,9 +116,23 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
   }
 
+  private void onCanceled() {
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("You will lose any changes you made to experimental groups.")
+        .withConfirmText("Discard changes")
+        .withTitle("Discard experimental group changes?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
+  }
+
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    onCanceled();
   }
 
   public void addCancelEventListener(

@@ -32,8 +32,8 @@ public class PasswordResetLinkSupplier {
             @Value("${service.host.name}") String host,
             @Value("${service.host.port}") int port,
             @Value("${server.servlet.context-path}") String contextPath,
-            @Value("${password-reset-endpoint}") String resetEndpoint,
-            @Value("${password-reset-parameter}") String passwordResetParameter) {
+        @Value("${routing.password-reset.endpoint}") String resetEndpoint,
+        @Value("${routing.password-reset.reset-parameter}") String passwordResetParameter) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;

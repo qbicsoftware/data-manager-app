@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.overview;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.html.Anchor;
@@ -12,7 +13,6 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -29,6 +29,7 @@ import life.qbic.finances.api.FinanceService;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
+import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -60,6 +61,7 @@ public class ProjectOverviewMain extends Main {
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient ContactRepository contactRepository;
   private final transient UserInformationService userInformationService;
+  private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
@@ -67,22 +69,25 @@ public class ProjectOverviewMain extends Main {
       OntologyLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
-      ContactRepository contactRepository) {
-    this.projectCollectionComponent = Objects.requireNonNull(projectCollectionComponent,
+      ContactRepository contactRepository,
+      AuthenticationToUserIdTranslationService userIdTranslator) {
+    this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
-    this.projectCreationService = Objects.requireNonNull(projectCreationService,
+    this.projectCreationService = requireNonNull(projectCreationService,
         "project creation service can not be null");
-    this.financeService = Objects.requireNonNull(financeService, "finance service can not be null");
-    this.projectInformationService = Objects.requireNonNull(projectInformationService,
+    this.financeService = requireNonNull(financeService, "finance service can not be null");
+    this.projectInformationService = requireNonNull(projectInformationService,
         "project information service can not be null");
-    this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService,
+    this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
         "ontology term information service can not be null");
-    this.addExperimentToProjectService = Objects.requireNonNull(addExperimentToProjectService,
+    this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
         "add experiment to project service cannot be null");
-    this.contactRepository = Objects.requireNonNull(contactRepository,
+    this.contactRepository = requireNonNull(contactRepository,
         "contact repository can not be null");
-    this.userInformationService = Objects.requireNonNull(userInformationService,
+    this.userInformationService = requireNonNull(userInformationService,
         "user information service can not be null");
+    this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
+
     addTitleAndDescription();
     add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
@@ -102,18 +107,22 @@ public class ProjectOverviewMain extends Main {
         this.getClass().getSimpleName(), System.identityHashCode(this),
         projectCollectionComponent.getClass().getSimpleName(),
         System.identityHashCode(projectCollectionComponent)));
+
   }
 
   private void addTitleAndDescription() {
     Div titleAndDescription = new Div();
     titleAndDescription.addClassName("title-and-description");
-    String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-    var user = userInformationService.findById(userId);
-    Span title = new Span(String.format("Welcome Back %s!", user.orElseThrow().platformUserName()));
+    var authentication = SecurityContextHolder.getContext().getAuthentication();
+    var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();
+    var user = userInformationService.findById(userId).orElseThrow();
+    Span title = new Span(
+        String.format("Welcome Back %s!", user.platformUserName()));
     title.addClassNames("project-overview-title");
     Span descriptionStart = new Span(
         "Manage all your scientific data in one place with the Data Manager. You can access our ");
-    Anchor descriptionLinkToDoc = new Anchor("https://qbicsoftware.github.io/data-manager-app/",
+    Anchor descriptionLinkToDoc = new Anchor(
+        "https://qbicsoftware.github.io/research-data-management/",
         "documentation", AnchorTarget.BLANK);
     Span descriptionEnd = new Span(
         " and learn more about using the Data Manager.\n"

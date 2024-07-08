@@ -1,17 +1,19 @@
 package life.qbic.projectmanagement.application;
 
+import static java.util.function.Predicate.not;
+
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
-import life.qbic.projectmanagement.application.authorization.authorities.Role;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -38,14 +40,17 @@ public class ProjectInformationService {
   private final ProjectOverviewLookup projectOverviewLookup;
   private final ProjectRepository projectRepository;
   private final ProjectAccessService projectAccessService;
+  private final AuthenticationToUserIdTranslator userIdTranslator;
 
   public ProjectInformationService(@Autowired ProjectOverviewLookup projectOverviewLookup,
       @Autowired ProjectRepository projectRepository,
-      @Autowired ProjectAccessService projectAccessService) {
+      @Autowired ProjectAccessService projectAccessService,
+      AuthenticationToUserIdTranslator userIdTranslator) {
     Objects.requireNonNull(projectOverviewLookup);
     this.projectOverviewLookup = projectOverviewLookup;
     this.projectRepository = projectRepository;
     this.projectAccessService = projectAccessService;
+    this.userIdTranslator = userIdTranslator;
   }
 
   /**
@@ -71,13 +76,18 @@ public class ProjectInformationService {
    */
   private List<ProjectId> retrieveAccessibleProjectIdsForUser() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    var principal = ((QbicUserDetails) authentication.getPrincipal());
-    var userId = principal.getUserId();
-    var userRole = principal.getAuthorities().stream()
-        .filter(grantedAuthority -> grantedAuthority instanceof Role).findFirst();
-    var accessibleProjectIds = projectAccessService.getAccessibleProjectsForSid(userId);
-    userRole.ifPresent(grantedAuthority -> accessibleProjectIds.addAll(
-        projectAccessService.getAccessibleProjectsForSid(grantedAuthority.getAuthority())));
+    Optional<String> optionalUserId = userIdTranslator.translateToUserId(authentication);
+    if (optionalUserId.isEmpty()) {
+      return new ArrayList<>();
+    }
+    var accessibleProjectIds = projectAccessService.getAccessibleProjectsForSid(
+        optionalUserId.get());
+    List<ProjectId> accessibleProjectsFromRoles = authentication.getAuthorities().stream()
+        .flatMap(it -> projectAccessService.getAccessibleProjectsForSid(
+            it.getAuthority()).stream())
+        .filter(not(accessibleProjectIds::contains))
+        .toList();
+    accessibleProjectIds.addAll(accessibleProjectsFromRoles);
     return accessibleProjectIds;
   }
 
@@ -93,9 +103,7 @@ public class ProjectInformationService {
   }
 
   public boolean isProjectCodeUnique(String projectCode) throws IllegalArgumentException {
-    boolean isUnique = !projectRepository.existsProjectByProjectCode(
-        ProjectCode.parse(projectCode));
-    return isUnique;
+    return !projectRepository.existsProjectByProjectCode(ProjectCode.parse(projectCode));
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project','READ')")

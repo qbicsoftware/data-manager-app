@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.login.passwordreset;
 
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -11,10 +12,17 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.spring.annotation.UIScope;
+import java.util.Objects;
+import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.layouts.BoxLayout;
-import life.qbic.datamanager.views.register.UserRegistrationLayout;
+import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.register.UserRegistrationMain;
+import life.qbic.identity.application.user.IdentityService;
+import life.qbic.identity.application.user.UserNotFoundException;
+import life.qbic.identity.domain.model.EmailAddress;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -26,23 +34,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Reset Password")
 @Route(value = AppRoutes.RESET_PASSWORD, layout = LandingPageLayout.class)
 @AnonymousAllowed
+@UIScope
 public class ResetPasswordLayout extends VerticalLayout {
 
+  private final IdentityService identityService;
   public EmailField email;
   public Button sendButton;
   public Span registerSpan;
   public BoxLayout enterEmailLayout;
   public LinkSentLayout linkSentLayout;
 
-  public ResetPasswordLayout(@Autowired PasswordResetHandlerInterface passwordResetHandler) {
+  public ResetPasswordLayout(@Autowired IdentityService identityService) {
+    this.identityService = Objects.requireNonNull(identityService);
     initLayout();
     styleLayout();
-    registerToHandler(passwordResetHandler);
+    addClickListeners();
   }
 
-  private void registerToHandler(PasswordResetHandlerInterface passwordResetHandler) {
-    passwordResetHandler.handle(this);
-  }
 
   private void initLayout() {
     initLinkSentLayout();
@@ -83,8 +91,9 @@ public class ResetPasswordLayout extends VerticalLayout {
   }
 
   private void createSpan() {
-    RouterLink link = new RouterLink("REGISTER", UserRegistrationLayout.class);
-    registerSpan = new Span(new Text("Need an account? "), link);
+    RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
+    registerSpan = new Span(new Text("Don't have an account? "), routerLink);
+    registerSpan.addClassName("registration-link");
   }
 
   private void createSendButton() {
@@ -98,5 +107,66 @@ public class ResetPasswordLayout extends VerticalLayout {
   private void styleSendButton() {
     sendButton.setWidthFull();
     sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  }
+
+  private void addClickListeners() {
+    sendButton.addClickListener(
+        buttonClickEvent -> {
+          clearNotifications();
+          resetPassword(email.getValue());
+        });
+    sendButton.addClickShortcut(Key.ENTER);
+
+    linkSentLayout.loginButton.addClickListener(
+        buttonClickEvent ->
+            linkSentLayout
+                .getUI()
+                .ifPresent(ui -> ui.navigate("login")));
+  }
+
+  private void resetPassword(String value) {
+    var response = identityService.requestPasswordReset(value);
+    if (response.hasFailures()) {
+      onPasswordResetFailed(response);
+    } else {
+      onPasswordResetSucceeded();
+    }
+  }
+
+  public void clearNotifications() {
+    enterEmailLayout.removeNotifications();
+  }
+
+  public void showError(String title, String description) {
+    clearNotifications();
+    ErrorMessage errorMessage = new ErrorMessage(title, description);
+    enterEmailLayout.setNotification(errorMessage);
+  }
+
+  private void showPasswordResetFailedError(String error, String description) {
+    showError(error, description);
+  }
+
+  public void onPasswordResetSucceeded() {
+    linkSentLayout.setVisible(true);
+    enterEmailLayout.setVisible(false);
+  }
+
+  public void onPasswordResetFailed(ApplicationResponse response) {
+    for (RuntimeException failure : response.failures()) {
+      if (failure instanceof EmailAddress.EmailValidationException) {
+        showPasswordResetFailedError("Invalid mail address format",
+            "Please provide a valid mail address.");
+      } else if (failure instanceof UserNotFoundException) {
+        showPasswordResetFailedError(
+            "User not found", "No user with the provided mail address is known.");
+      } else if (failure instanceof IdentityService.UserNotActivatedException) {
+        showPasswordResetFailedError("User not active",
+            "Please activate your account first to reset the password.");
+      } else {
+        showPasswordResetFailedError(
+            "An unexpected error occurred", "Please contact support@qbic.zendesk.com for help.");
+      }
+    }
   }
 }

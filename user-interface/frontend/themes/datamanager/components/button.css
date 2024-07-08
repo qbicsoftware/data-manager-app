@@ -22,6 +22,15 @@ vaadin-button.primary {
   min-width: calc(var(--lumo-button-size) * 2.5);
 }
 
+vaadin-button.danger {
+  background-color: var(--lumo-error-color, var(--lumo-error-color));
+  color: var(--lumo-button-primary-color, var(--lumo-primary-contrast-color));
+}
+
+vaadin-button.danger[focus-ring] {
+  box-shadow: none !important;
+}
+
 /* Styles recreated from vaadin lumo theme */
 vaadin-button[disabled] {
   background-color: var(--lumo-contrast-30pct);

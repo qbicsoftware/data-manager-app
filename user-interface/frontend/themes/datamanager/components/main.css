@@ -15,11 +15,12 @@
 #landing-page-layout .landing-page-content {
   /*Static resources have to be loaded in css form the Meta-INF directory see vaadin cheatsheet
   https://vaadin.com/vaadin-reference-card#static-content */
-  background-image: url("../images/background-mesh-bottom-left.png");
+  /*background-image: url("../images/")*/;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  height: 100%;
+  /*Ensures that the landing page layout is always the full height of the content area*/
+  min-height: 100%;
 }
 
 #landing-page-layout .landing-page-title-and-logo {
@@ -74,6 +75,34 @@
   grid-template-rows: auto;
   grid-template-areas:
     "experimentdetails";
+}
+
+.main.email-confirmation {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
+}
+
+.main.email-confirmation .email-confirmation-component {
+  background-color: var(--lumo-base-color);
+  border: var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-m);
+  box-shadow: var(--lumo-box-shadow-l);
+  font-size: var(--lumo-font-size-s);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-l);
+  width: clamp(450px, 450px, 15vw);
+  padding-bottom: var(--lumo-space-xl);
+  padding-inline: var(--lumo-space-l);
+}
+
+.main.email-confirmation .email-confirmation-component .resend-verification {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
 }
 
 .main.experiment .experiment-details-component {
@@ -324,6 +353,14 @@
   justify-content: space-between;
   /*Moves this bar to end of container*/
   margin-top: auto;
+}
+
+.main.user-registration {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
 }
 
 .main.sample {

@@ -196,6 +196,10 @@
   white-space: nowrap;
 }
 
+.tab-with-count {
+  gap: var(--lumo-space-s);
+}
+
 .ontology-lookup-component {
   display: flex;
   flex-direction: column;

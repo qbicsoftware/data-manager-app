@@ -233,10 +233,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setHeader("Run protocol")
         .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.sequencingRunProtocol().orElse(""))
         .setAutoWidth(true);
-    ngsMeasurementGrid.addColumn(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
-        .setHeader("Flow Cell")
-        .setTooltipGenerator(ngsMeasurement -> ngsMeasurement.flowCell().orElse(""))
-        .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(
             ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
                 .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
@@ -629,6 +625,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       this.add(technologyNameComponent, sampleCountComponent);
       setTechnologyName(technology);
       setMeasurementCount(measurementCount);
+      addClassName("tab-with-count");
     }
 
     public String getTabLabel() {
