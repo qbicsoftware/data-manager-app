@@ -129,6 +129,36 @@
       "name": "qbic.communication.api.url",
       "type": "java.lang.String",
       "description": "URL of the repository hosting the information on how to interact with the data manager API."
+    },
+    {
+      "name": "server.servlet.session.timeout",
+      "type": "java.lang.String",
+      "description": "Session Timeout in seconds if no duration suffix is provided."
+    },
+    {
+      "name": "vaadin.closeIdleSessions",
+      "type": "java.lang.String",
+      "description": "Closes the Vaadin session if no UI is active on the client side."
+    },
+    {
+      "name": "vaadin.heartbeatInterval",
+      "type": "java.lang.String",
+      "description": "Sets the heartbeat interval time in seconds."
+    },
+    {
+      "name": "server.servlet.session.cookie.max-age",
+      "type": "java.lang.String",
+      "description": "Maximum age of the session cookie in seconds."
+    },
+    {
+      "name": "server.servlet.session.cookie.secure",
+      "type": "java.lang.String",
+      "description": "Sets the secure flag for the session cookie."
+    },
+    {
+      "name": "server.servlet.session.cookie.domain",
+      "type": "java.lang.String",
+      "description": "Domain for the session cookie."
     }
   ]
 }
