@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -20,7 +18,6 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
@@ -45,7 +42,6 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
-  private static final Logger log = logger(SampleDetailsComponent.class);
   private final Span countSpan;
   private final Grid<SamplePreview> sampleGrid;
   private final transient SampleInformationService sampleInformationService;
