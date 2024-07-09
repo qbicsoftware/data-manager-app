@@ -2,32 +2,25 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.general.download.DownloadProvider;
-import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
@@ -53,68 +46,23 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   @Serial
   private static final long serialVersionUID = 2893730975944372088L;
   private static final Logger log = logger(SampleDetailsComponent.class);
-  private final TextField searchField;
-  private final DownloadProvider metadataDownload;
   private final Span countSpan;
-  private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
   private final Grid<SamplePreview> sampleGrid;
-  private final transient ExperimentInformationService experimentInformationService;
   private final transient SampleInformationService sampleInformationService;
   private Context context;
 
-  public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService,
-      @Autowired ExperimentInformationService experimentInformationService) {
-    this.experimentInformationService = experimentInformationService;
-    this.sampleInformationService = sampleInformationService;
+  public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService) {
+    this.sampleInformationService = Objects.requireNonNull(sampleInformationService,
+        "SampleInformationService cannot be null");
     addClassName("sample-details-component");
-
-    this.searchField = createSearchField();
-    searchField.addValueChangeListener(valueChangeEvent -> {
-    });
-    searchField.addValueChangeListener(this::onSearchFieldChanged);
-    Span fieldBar = new Span();
-    fieldBar.addClassName("search-bar");
-    fieldBar.add(searchField);
-
-    Span buttonBar = new Span();
-    buttonBar.addClassName("button-bar");
-    Button metadataDownloadButton = new Button("Download Metadata",
-        event -> onDownloadMetadataClicked());
-    buttonBar.add(metadataDownloadButton);
-
-    sampleInformationXLSXProvider = new SampleInformationXLSXProvider();
-    metadataDownload = new DownloadProvider(sampleInformationXLSXProvider);
-
-    Div buttonAndFieldBar = new Div();
-    buttonAndFieldBar.addClassName("button-and-search-bar");
-    buttonAndFieldBar.add(fieldBar, buttonBar);
-
-    Span title = new Span("Samples");
-    title.addClassName("title");
-
-    addComponentAsFirst(title);
-
-    Div experimentTabContent = new Div();
-    experimentTabContent.addClassName("sample-tab-content");
-
     sampleGrid = createSampleGrid();
-    experimentTabContent.add(sampleGrid);
     Div content = new Div();
     content.addClassName("sample-details-content");
-
     countSpan = new Span();
+    countSpan.addClassName("sample-count");
     setSampleCount(0);
-    content.add(buttonAndFieldBar, metadataDownload, countSpan, experimentTabContent);
+    content.add(countSpan, sampleGrid);
     add(content);
-
-  }
-
-  private static TextField createSearchField() {
-    TextField textField = new TextField();
-    textField.setPlaceholder("Search");
-    textField.setPrefixComponent(VaadinIcon.SEARCH.create());
-    textField.setValueChangeMode(ValueChangeMode.EAGER);
-    return textField;
   }
 
   private static ComponentRenderer<Div, SamplePreview> createConditionRenderer() {
@@ -154,8 +102,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setFlexGrow(0)
         .setTooltipGenerator(SamplePreview::sampleCode);
     sampleGrid.addColumn(SamplePreview::sampleLabel)
-        .setHeader("Sample Label")
-        .setSortProperty("sampleLabel")
+        .setHeader("Sample Name")
+        .setSortProperty("sampleName")
         .setTooltipGenerator(SamplePreview::sampleLabel)
         .setAutoWidth(true);
     sampleGrid.addColumn(SamplePreview::organismId)
@@ -198,15 +146,12 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(SamplePreview::comment)
         .setAutoWidth(true);
     sampleGrid.addClassName("sample-grid");
+    sampleGrid.setColumnReorderingAllowed(true);
     return sampleGrid;
   }
 
-  private void onDownloadMetadataClicked() {
-    metadataDownload.trigger();
-  }
-
-  private void onSearchFieldChanged(ComponentValueChangeEvent<TextField, String> valueChangeEvent) {
-    updateSampleGridDataProvider(context.experimentId().orElseThrow(), valueChangeEvent.getValue());
+  public void onSearchFieldValueChanged(String searchValue) {
+    updateSampleGridDataProvider(context.experimentId().orElseThrow(), searchValue);
   }
 
   private void updateSampleGridDataProvider(ExperimentId experimentId, String filter) {
@@ -221,6 +166,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
     });
     sampleGrid.getLazyDataView().addItemCountChangeListener(
         countChangeEvent -> setSampleCount((int) sampleGrid.getLazyDataView().getItems().count()));
+    sampleGrid.recalculateColumnWidths();
   }
 
   /**
@@ -236,24 +182,11 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
-    ExperimentId experimentId = context.experimentId().get();
-    setExperiment(
-        experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
-            .orElseThrow());
-
-    // we also update the data provider with any samples of this experiment
-    List<SamplePreview> samples = sampleInformationService.retrieveSamplePreviewsForExperiment(
-        experimentId);
-    sampleInformationXLSXProvider.setSamples(samples);
-  }
-
-  private void setExperiment(Experiment experiment) {
-    setSampleCount(0);
-    updateSampleGridDataProvider(context.experimentId().orElseThrow(), searchField.getValue());
+    updateSampleGridDataProvider(this.context.experimentId().orElseThrow(), "");
   }
 
   private void setSampleCount(int i) {
-    countSpan.setText(i+" samples");
+    countSpan.setText(i + " samples");
   }
 
 }
