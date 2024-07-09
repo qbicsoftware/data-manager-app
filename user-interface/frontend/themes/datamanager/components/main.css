@@ -364,8 +364,8 @@
 }
 
 .main.sample {
-  grid-template-columns: minmax(min-content, 60%) minmax(min-content, 50%);
-  grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
+  grid-template-columns: minmax(min-content, 50%) minmax(min-content, 50%);
+  grid-template-rows: minmax(min-content, 25%) minmax(min-content, 70%);
   grid-template-areas:
     ". batchdetails"
     "sampledetails sampledetails";
@@ -375,6 +375,43 @@
   border: 1px solid;
   border-color: var(--lumo-contrast-10pct);
   border-radius: var(--lumo-border-radius-m);
+}
+
+/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
+.main.sample .no-samples-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
+.main.sample .no-experimental-groups-registered-disclaimer {
+  grid-column-start: 1;
+  grid-column-end: -1;
+  grid-row-start: 1;
+  grid-row-end: -1;
+}
+
+.main.sample .sample-main-content {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--lumo-space-m);
+  padding: var(--lumo-space-m);
+  justify-content: space-between;
+}
+
+.main.sample .sample-main-content .title {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xxl);
+  margin-bottom: 0.5rem;
+}
+
+.main.sample .sample-main-content .buttonAndField {
+  display: inline-flex;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
 }
 
 .main.sample .batch-details-component {
@@ -440,9 +477,10 @@
   .main.sample {
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
+    "."
     "batchdetails"
     "sampledetails";
-    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 75%);
+    grid-template-rows: minmax(min-content, 20%) minmax(min-content, 20%) minmax(min-content, 60%);
   }
 
 
