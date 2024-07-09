@@ -91,7 +91,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     batchGrid.addColumn(BatchPreview::batchLabel)
         .setHeader("Name").setSortable(true)
         .setTooltipGenerator(BatchPreview::batchLabel)
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     batchGrid.addColumn(new LocalDateTimeRenderer<>(
             batchPreview -> asClientLocalDateTime(batchPreview.createdOn()),
             "yyyy-MM-dd"))
@@ -115,7 +116,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
         .setAutoWidth(true);
     batchGrid.addComponentColumn(this::generateEditorButtons)
         .setAutoWidth(true)
-        .setHeader("Action");
+        .setHeader("Action")
+        .setFrozenToEnd(true);
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
     batchGrid.addClassName("batch-grid");
     batchGrid.setAllRowsVisible(true);

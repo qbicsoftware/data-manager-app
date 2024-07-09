@@ -96,31 +96,37 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setSortProperty("sampleCode")
         .setAutoWidth(true)
         .setFlexGrow(0)
-        .setTooltipGenerator(SamplePreview::sampleCode);
+        .setTooltipGenerator(SamplePreview::sampleCode)
+        .setFrozen(true);
     sampleGrid.addColumn(SamplePreview::sampleLabel)
         .setHeader("Sample Name")
         .setSortProperty("sampleName")
         .setTooltipGenerator(SamplePreview::sampleLabel)
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(SamplePreview::organismId)
         .setHeader("Organism ID")
         .setSortProperty("organismId")
         .setTooltipGenerator(SamplePreview::organismId)
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(SamplePreview::batchLabel)
         .setHeader("Batch")
         .setSortProperty("batchLabel")
         .setTooltipGenerator(SamplePreview::batchLabel)
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(createConditionRenderer())
         .setHeader("Condition")
         .setSortProperty("experimentalGroup")
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(preview -> preview.species().getLabel())
         .setHeader("Species")
         .setSortProperty("species")
         .setTooltipGenerator(preview -> preview.species().formatted())
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(preview -> preview.specimen().getLabel())
         .setHeader("Specimen")
         .setSortProperty("specimen")
@@ -130,17 +136,20 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setHeader("Analyte")
         .setSortProperty("analyte")
         .setTooltipGenerator(preview -> preview.analyte().formatted())
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(SamplePreview::analysisMethod)
         .setHeader("Analysis to Perform")
         .setSortProperty("analysisMethod")
         .setTooltipGenerator(SamplePreview::analysisMethod)
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addColumn(SamplePreview::comment)
         .setHeader("Comment")
         .setSortProperty("comment")
         .setTooltipGenerator(SamplePreview::comment)
-        .setAutoWidth(true);
+        .setAutoWidth(true)
+        .setResizable(true);
     sampleGrid.addClassName("sample-grid");
     sampleGrid.setColumnReorderingAllowed(true);
     return sampleGrid;
