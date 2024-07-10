@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.overview.components;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
@@ -14,12 +16,11 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.RouteParam;
-import com.vaadin.flow.spring.annotation.RouteScope;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
@@ -27,6 +28,7 @@ import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.notifications.Notifications;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -42,7 +44,7 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-@RouteScope
+@UIScope
 public class ProjectCollectionComponent extends PageArea {
 
   @Serial
@@ -56,13 +58,24 @@ public class ProjectCollectionComponent extends PageArea {
   private String projectOverviewFilter = "";
   private GridLazyDataView<ProjectOverview> projectOverviewGridLazyDataView;
 
-  public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
-    this.projectInformationService = Objects.requireNonNull(projectInformationService,
+  public ProjectCollectionComponent(ProjectInformationService projectInformationService,
+      Notifications notifications) {
+    this.projectInformationService = requireNonNull(projectInformationService,
         "Project information service cannot be null");
     layoutComponent();
     createLazyProjectView();
     configureSearch();
     configureProjectCreationButton();
+    var dialogFactory = notifications.dialog()
+        .forWarning()
+        .withDynamicMessage("test.dialog", new Object[]{"bla blubb", 1_000})
+        .onConfirmed(d -> System.out.println("confirmed clicked on" + d.getSource()))
+        .withCancel()
+        .onCancelled(d -> System.out.println("cancelled clicked on" + d.getSource()));
+    var notificationFactory = notifications.toast()
+        .withDynamicMessage("test.dialog", new Object[]{"bla blubb", 1_000});
+    add(new Button("test dialog", it -> dialogFactory.create().open()));
+    add(new Button("test notification", it -> notificationFactory.create().open()));
   }
 
   private void initHeader() {
@@ -138,7 +151,7 @@ public class ProjectCollectionComponent extends PageArea {
    */
   public void addCreateClickedListener(
       ComponentEventListener<ProjectCreationSubmitEvent> listener) {
-    Objects.requireNonNull(listener);
+    requireNonNull(listener);
     addListener(ProjectCreationSubmitEvent.class, listener);
   }
 
@@ -196,7 +209,7 @@ public class ProjectCollectionComponent extends PageArea {
     private final ProjectOverview projectOverview;
 
     public ProjectOverviewItem(ProjectOverview projectOverview) {
-      this.projectOverview = Objects.requireNonNull(projectOverview);
+      this.projectOverview = requireNonNull(projectOverview);
       Span header = createHeader(projectOverview.projectCode(), projectOverview.projectTitle());
       add(header);
       Span lastModified = new Span(

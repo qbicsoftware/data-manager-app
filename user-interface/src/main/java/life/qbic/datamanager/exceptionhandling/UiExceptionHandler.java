@@ -7,8 +7,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.ErrorEvent;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.Notifications;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -30,10 +30,12 @@ public class UiExceptionHandler {
 
   private static final Logger log = logger(UiExceptionHandler.class);
   private final ErrorMessageTranslationService userMessageService;
+  private final Notifications notifications;
 
   public UiExceptionHandler(
-      @Autowired ErrorMessageTranslationService userMessageService) {
+      @Autowired ErrorMessageTranslationService userMessageService, Notifications notifications) {
     this.userMessageService = userMessageService;
+    this.notifications = notifications;
   }
 
   /**
@@ -51,17 +53,13 @@ public class UiExceptionHandler {
   }
 
   private void displayUserFriendlyMessage(UI ui, ApplicationException exception) {
-    requireNonNull(ui);
-    requireNonNull(exception);
-
+    requireNonNull(ui, "ui must not be null");
+    requireNonNull(exception, "exception must not be null");
     UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
-    ui.access(() -> showErrorDialog(errorMessage));
-  }
-
-  private void showErrorDialog(UserFriendlyErrorMessage userFriendlyError) {
-    ErrorMessage errorMessage = new ErrorMessage(userFriendlyError.title(),
-        userFriendlyError.message());
-    StyledNotification styledNotification = new StyledNotification(errorMessage);
-    styledNotification.open();
+    NotificationDialog dialog = notifications.dialog()
+        .forError()
+        .withTitle(errorMessage.title())
+        .withMessage(errorMessage.message()).create();
+    dialog.open();
   }
 }
