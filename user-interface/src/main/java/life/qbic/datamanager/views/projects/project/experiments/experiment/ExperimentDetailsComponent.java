@@ -1,5 +1,9 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -28,9 +32,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
@@ -62,6 +70,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -204,6 +213,9 @@ public class ExperimentDetailsComponent extends PageArea {
       throw new ApplicationException(
           "Experiment information could not be retrieved from service");
     }
+
+    Map<SampleOriginType, Set<OntologyTerm>> usedTerms = getOntologyTermsUsedInSamples(experimentId);
+
     optionalExperiment.ifPresent(experiment -> {
       EditExperimentDialog editExperimentDialog = new EditExperimentDialog(
           ontologyTermInformationService);
@@ -218,13 +230,29 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentDraft.setSpecimenIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN,
           experiment.getSpecimenIconName()));
 
-      editExperimentDialog.setExperiment(experimentDraft);
+      editExperimentDialog.setExperiment(experimentDraft, usedTerms);
       editExperimentDialog.setConfirmButtonLabel("Save");
 
       editExperimentDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
       editExperimentDialog.addCancelListener(event -> event.getSource().close());
       editExperimentDialog.open();
     });
+  }
+
+  private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(ExperimentId experimentId) {
+    Map<SampleOriginType, Set<OntologyTerm>> result = new HashMap<>();
+    result.put(SPECIES, new HashSet<>());
+    result.put(SPECIMEN, new HashSet<>());
+    result.put(ANALYTE, new HashSet<>());
+    sampleInformationService.retrieveSamplesForExperiment(experimentId).onValue(samples -> {
+      samples.forEach(sample -> {
+        SampleOrigin origin = sample.sampleOrigin();
+        result.get(SPECIES).add(origin.getSpecies());
+        result.get(SPECIMEN).add(origin.getSpecimen());
+        result.get(ANALYTE).add(origin.getAnalyte());
+      });
+    });
+    return result;
   }
 
   private void onExperimentUpdateEvent(ExperimentUpdateEvent event) {
