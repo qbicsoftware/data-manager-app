@@ -8,6 +8,7 @@ import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserDataStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 
@@ -60,13 +61,62 @@ public class UserJpaRepository implements UserDataStorage {
   }
 
   @Override
-  public List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String userName,
-      Pageable pageable) {
-    return userRepo.findAllByUserNameContainingIgnoreCaseAndActiveTrue(userName, pageable);
+  public List<User> queryActiveUsersWithFilter(String filter, Pageable pageable) {
+    Specification<User> userSpecification = generateUserFilterSpecification(filter);
+    return userRepo.findAll(userSpecification, pageable).getContent();
   }
 
   @Override
   public Optional<User> findByOidcIdEqualsAndOidcIssuerEquals(String oidcId, String oidcIssuer) {
     return userRepo.findByOidcIdEqualsAndOidcIssuerEquals(oidcId, oidcIssuer);
+  }
+
+  private Specification<User> generateUserFilterSpecification(String filter) {
+    Specification<User> isBlankSpec = UserSpec.isBlank(filter);
+    Specification<User> isFullName = UserSpec.isFullName(filter);
+    Specification<User> isUserNameSpec = UserSpec.isUserName(filter);
+    Specification<User> isOrcidSpec = UserSpec.isOrcid(filter);
+    Specification<User> isActiveSpec = UserSpec.isActive();
+    Specification<User> filterSpecification =
+        Specification.anyOf(isFullName,
+            isUserNameSpec,
+            isOrcidSpec
+        );
+    return Specification.where(isBlankSpec)
+        .and(filterSpecification)
+        .and(isActiveSpec);
+  }
+
+  private static class UserSpec {
+
+    //If no filter was provided return all Users
+    public static Specification<User> isBlank(String filter) {
+      return (root, query, builder) -> {
+        if (filter != null && filter.isBlank()) {
+          return builder.conjunction();
+        }
+        return null;
+      };
+    }
+
+    public static Specification<User> isUserName(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("userName"), "%" + filter + "%");
+    }
+
+    public static Specification<User> isFullName(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("fullName"), "%" + filter + "%");
+    }
+
+    public static Specification<User> isOrcid(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("oidcId"), "%" + filter + "%");
+    }
+
+    public static Specification<User> isActive() {
+      return (root, query, builder) ->
+          builder.isTrue(root.get("active"));
+    }
   }
 }
