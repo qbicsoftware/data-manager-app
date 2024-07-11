@@ -81,7 +81,7 @@ public class EditExperimentDialog extends DialogWindow {
               Set<OntologyTerm> missing = new HashSet<>();
               for (OntologyTerm species : usedSampleOrigins.get(SampleOriginType.SPECIES)) {
                 if (!valueChangeEvent.getValue().contains(species)
-                    & valueChangeEvent.isFromClient()) {
+                    && valueChangeEvent.isFromClient()) {
                   missing.add(species);
                   showSamplesPreventOriginEdit(species);
                 }
@@ -110,7 +110,7 @@ public class EditExperimentDialog extends DialogWindow {
               Set<OntologyTerm> missing = new HashSet<>();
               for (OntologyTerm specimen : usedSampleOrigins.get(SampleOriginType.SPECIMEN)) {
                 if (!valueChangeEvent.getValue().contains(specimen)
-                    & valueChangeEvent.isFromClient()) {
+                    && valueChangeEvent.isFromClient()) {
                   missing.add(specimen);
                   showSamplesPreventOriginEdit(specimen);
                 }
@@ -138,7 +138,7 @@ public class EditExperimentDialog extends DialogWindow {
               Set<OntologyTerm> missing = new HashSet<>();
               for (OntologyTerm analyte : usedSampleOrigins.get(SampleOriginType.ANALYTE)) {
                 if (!valueChangeEvent.getValue().contains(analyte)
-                    & valueChangeEvent.isFromClient()) {
+                    && valueChangeEvent.isFromClient()) {
                   missing.add(analyte);
                   showSamplesPreventOriginEdit(analyte);
                 }

@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment.comp
 
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;

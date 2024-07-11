@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -240,7 +241,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(ExperimentId experimentId) {
-    Map<SampleOriginType, Set<OntologyTerm>> result = new HashMap<>();
+    Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
     result.put(SPECIES, new HashSet<>());
     result.put(SPECIMEN, new HashSet<>());
     result.put(ANALYTE, new HashSet<>());
