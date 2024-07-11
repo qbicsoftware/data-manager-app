@@ -1,5 +1,9 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.update;
 
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
+
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -75,7 +79,7 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
-    initOriginEditListener(speciesBox, usedSampleOrigins.get(SampleOriginType.SPECIES));
+    initOriginEditListener(speciesBox, SPECIES);
 
 
     ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIES,
@@ -90,7 +94,7 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
-    initOriginEditListener(specimenBox, usedSampleOrigins.get(SampleOriginType.SPECIMEN));
+    initOriginEditListener(specimenBox, SPECIMEN);
 
     ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIMEN,
         "Specimen icon");
@@ -103,7 +107,7 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
-    initOriginEditListener(analyteBox, usedSampleOrigins.get(SampleOriginType.ANALYTE));
+    initOriginEditListener(analyteBox, ANALYTE);
 
 
     addClassName("edit-experiment-dialog");
@@ -129,11 +133,11 @@ public class EditExperimentDialog extends DialogWindow {
   }
 
   private void initOriginEditListener(
-      MultiSelectComboBox<OntologyTerm> originBox, Set<OntologyTerm> ontologyTerms) {
+      MultiSelectComboBox<OntologyTerm> originBox, SampleOriginType originType) {
     ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTerm>,
         Set<OntologyTerm>>> valueChangeListener = valueChangeEvent -> {
       Set<OntologyTerm> missing = new HashSet<>();
-      for (OntologyTerm term : ontologyTerms) {
+      for (OntologyTerm term : usedSampleOrigins.get(originType)) {
         if (!valueChangeEvent.getValue().contains(term)
             && valueChangeEvent.isFromClient()) {
           missing.add(term);
