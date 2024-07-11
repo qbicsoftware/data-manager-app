@@ -8,12 +8,18 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.server.AbstractStreamResource;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
@@ -76,14 +82,15 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           .collect(Collectors.toCollection(ArrayList::new));
       // if no order is provided by the grid order by username
       sortOrders.add(SortOrder.of("userName").descending());
-      List<UserInfo> allActiveWithUsername = userInformationService.findAllActive(
+      List<UserInfo> activeUsersWithFilter = userInformationService.queryActiveUsersWithFilter(
           query.getFilter().orElse(null), query.getOffset(),
           query.getLimit(), List.copyOf(sortOrders));
       // filter for not already
-      return allActiveWithUsername.stream()
+      return activeUsersWithFilter.stream()
           .filter(userInfo -> alreadyExistingCollaborators.stream()
               .noneMatch(collaborator -> collaborator.userId().equals(userInfo.id())));
     });
+    personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.setRenderer(
         new ComponentRenderer<>(AddCollaboratorToProjectDialog::renderUserInfo));
     personSelection.setRequired(true);
@@ -92,7 +99,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     personSelection.setRenderer(new ComponentRenderer<>(
         AddCollaboratorToProjectDialog::renderUserInfo
     ));
-    personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.addClassName("person-selection");
     personSelectionSection.addClassName("person-selection-section");
     personSelectionSection.add(title, description, personSelection);
@@ -103,7 +109,10 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     UserAvatar userAvatar = new UserAvatar();
     userAvatar.setUserId(userInfo.id());
     userAvatar.setName(userInfo.platformUserName());
-    return new UserAvatarWithNameComponent(userAvatar, userInfo.platformUserName());
+    CollaboratorInfoRender collaboratorInfoRender = new CollaboratorInfoRender(userAvatar,
+        userInfo.platformUserName(), userInfo.fullName());
+    userInfo.oidcId().ifPresent(collaboratorInfoRender::setOrcid);
+    return collaboratorInfoRender;
   }
 
   private void initProjectRoleSelection() {
@@ -139,6 +148,55 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     projectRoleSelection.addClassName("role-selection");
     projectRoleSelectionSection.addClassName("role-selection-section");
     projectRoleSelectionSection.add(title, description, projectRoleSelection);
+  }
+
+  /**
+   * A component displaying a user avatar and user name
+   */
+  public static class CollaboratorInfoRender extends FormLayout {
+
+    private final Span userNameSpan;
+    private final UserAvatar userAvatar;
+    private final Span fullNameSpan;
+    private Anchor orcidLink;
+    private static final String ORCID_LOGO_PATH = "login/orcid_logo.svg";
+
+    public CollaboratorInfoRender(UserAvatar userAvatar,
+        String userName, String fullName) {
+      addClassName("collaborator-info");
+      userNameSpan = new Span(userName);
+      this.userAvatar = userAvatar;
+      userAvatar.setClassName("avatar");
+      addFormItem(userAvatar, "Avatar");
+      addFormItem(userNameSpan, "Username");
+      fullNameSpan = new Span(fullName);
+      addFormItem(fullNameSpan, "Full Name");
+    }
+
+    private void setOrcid(String orcid) {
+      if (orcid.isEmpty()) {
+        return;
+      }
+      String orcidURL = "https://orcid.org/" + orcid;
+      Span orcIdSpan = new Span(generateOrcIdLogo(), new Span("Orcid"));
+      orcIdSpan.addClassName("orcid");
+      orcidLink = new Anchor(orcidURL, orcid);
+      orcidLink.setTarget(AnchorTarget.BLANK);
+      var formItem = addFormItem(orcidLink, orcIdSpan);
+      formItem.addClassName("orcid-form");
+    }
+
+    private Image generateOrcIdLogo() {
+      Image orcIdLogo = new Image();
+      orcIdLogo.setSrc(getOrcIdSource());
+      orcIdLogo.addClassName("logo");
+      return orcIdLogo;
+    }
+
+    private AbstractStreamResource getOrcIdSource() {
+      return new StreamResource("orcid_logo.svg",
+          () -> getClass().getClassLoader().getResourceAsStream(ORCID_LOGO_PATH));
+    }
   }
 
   @Override

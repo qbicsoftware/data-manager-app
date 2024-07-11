@@ -128,6 +128,28 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   font-weight: bold;
 }
 
+.collaborator-info {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-l);
+}
+
+.collaborator-info .avatar {
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+}
+
+.collaborator-info .orcid .logo {
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+}
+
+.collaborator-info .orcid {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
 .batch-registration-dialog::part(content),
 .batch-update-dialog::part(content) {
   display: flex;
