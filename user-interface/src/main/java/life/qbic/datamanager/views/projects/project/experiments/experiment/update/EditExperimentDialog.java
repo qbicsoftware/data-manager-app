@@ -75,22 +75,8 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
-    speciesBox.addValueChangeListener(
-        (ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTerm>, Set<OntologyTerm>>>)
-            valueChangeEvent -> {
-              Set<OntologyTerm> missing = new HashSet<>();
-              for (OntologyTerm species : usedSampleOrigins.get(SampleOriginType.SPECIES)) {
-                if (!valueChangeEvent.getValue().contains(species)
-                    && valueChangeEvent.isFromClient()) {
-                  missing.add(species);
-                  showSamplesPreventOriginEdit(species);
-                }
-              }
-              if (!missing.isEmpty()) {
-                missing.addAll(valueChangeEvent.getValue());
-                speciesBox.setValue(missing);
-              }
-            });
+    initOriginEditListener(speciesBox, usedSampleOrigins.get(SampleOriginType.SPECIES));
+
 
     ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIES,
     "Species icon");
@@ -104,25 +90,10 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
-    specimenBox.addValueChangeListener(
-        (ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTerm>, Set<OntologyTerm>>>)
-            valueChangeEvent -> {
-              Set<OntologyTerm> missing = new HashSet<>();
-              for (OntologyTerm specimen : usedSampleOrigins.get(SampleOriginType.SPECIMEN)) {
-                if (!valueChangeEvent.getValue().contains(specimen)
-                    && valueChangeEvent.isFromClient()) {
-                  missing.add(specimen);
-                  showSamplesPreventOriginEdit(specimen);
-                }
-              }
-              if (!missing.isEmpty()) {
-                missing.addAll(valueChangeEvent.getValue());
-                specimenBox.setValue(missing);
-              }
-            });
+    initOriginEditListener(specimenBox, usedSampleOrigins.get(SampleOriginType.SPECIMEN));
 
     ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIMEN,
-    "Specimen icon");
+        "Specimen icon");
     binder.forField(specimenIconBox)
         .bind(ExperimentDraft::getSpecimenIcon,
             ExperimentDraft::setSpecimenIcon);
@@ -132,22 +103,8 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
-    analyteBox.addValueChangeListener(
-        (ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTerm>, Set<OntologyTerm>>>)
-            valueChangeEvent -> {
-              Set<OntologyTerm> missing = new HashSet<>();
-              for (OntologyTerm analyte : usedSampleOrigins.get(SampleOriginType.ANALYTE)) {
-                if (!valueChangeEvent.getValue().contains(analyte)
-                    && valueChangeEvent.isFromClient()) {
-                  missing.add(analyte);
-                  showSamplesPreventOriginEdit(analyte);
-                }
-              }
-              if (!missing.isEmpty()) {
-                missing.addAll(valueChangeEvent.getValue());
-                analyteBox.setValue(missing);
-              }
-            });
+    initOriginEditListener(analyteBox, usedSampleOrigins.get(SampleOriginType.ANALYTE));
+
 
     addClassName("edit-experiment-dialog");
     setHeaderTitle("Experimental Design");
@@ -169,6 +126,26 @@ public class EditExperimentDialog extends DialogWindow {
         specimenRow,
         analyteBox);
     add(editExperimentContent);
+  }
+
+  private void initOriginEditListener(
+      MultiSelectComboBox<OntologyTerm> originBox, Set<OntologyTerm> ontologyTerms) {
+    ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTerm>,
+        Set<OntologyTerm>>> valueChangeListener = valueChangeEvent -> {
+      Set<OntologyTerm> missing = new HashSet<>();
+      for (OntologyTerm term : ontologyTerms) {
+        if (!valueChangeEvent.getValue().contains(term)
+            && valueChangeEvent.isFromClient()) {
+          missing.add(term);
+          showSamplesPreventOriginEdit(term);
+        }
+      }
+      if (!missing.isEmpty()) {
+        missing.addAll(valueChangeEvent.getValue());
+        originBox.setValue(missing);
+      }
+    };
+    originBox.addValueChangeListener(valueChangeListener);
   }
 
   private void showSamplesPreventOriginEdit(OntologyTerm species) {
