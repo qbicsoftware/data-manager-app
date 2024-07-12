@@ -8,7 +8,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -30,7 +29,6 @@ import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
-import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
@@ -57,20 +55,29 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
   private final ProjectId projectId;
 
   public AddCollaboratorToProjectDialog(UserInformationService userInformationService,
-      ProjectAccessService projectAccessService, ProjectId projectId,
-      List<ProjectCollaborator> alreadyExistingCollaborators) {
+      ProjectId projectId,
+      List<ProjectCollaborator> projectCollaborators) {
     requireNonNull(userInformationService, "userInformationService must not be null");
-    requireNonNull(projectAccessService, "projectAccessService must not be null");
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     addClassName("add-user-to-project-dialog");
-    initPersonSelection(userInformationService, alreadyExistingCollaborators);
+    initPersonSelection(userInformationService, projectCollaborators);
     initProjectRoleSelection();
     setHeaderTitle("Add Collaborator");
     add(personSelectionSection, projectRoleSelectionSection);
   }
 
+  private static Component renderUserInfo(UserInfo userInfo) {
+    UserAvatar userAvatar = new UserAvatar();
+    userAvatar.setUserId(userInfo.id());
+    userAvatar.setName(userInfo.platformUserName());
+    CollaboratorInfoRender collaboratorInfoRender = new CollaboratorInfoRender(userAvatar,
+        userInfo.platformUserName(), userInfo.fullName());
+    userInfo.oidcId().ifPresent(collaboratorInfoRender::setOrcid);
+    return collaboratorInfoRender;
+  }
+
   private void initPersonSelection(UserInformationService userInformationService,
-      List<ProjectCollaborator> alreadyExistingCollaborators) {
+      List<ProjectCollaborator> projectCollaborators) {
     Span title = new Span("Select the person");
     title.addClassNames("section-title");
     Span description = new Span(
@@ -87,8 +94,9 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           query.getLimit(), List.copyOf(sortOrders));
       // filter for not already
       return activeUsersWithFilter.stream()
-          .filter(userInfo -> alreadyExistingCollaborators.stream()
-              .noneMatch(collaborator -> collaborator.userId().equals(userInfo.id())));
+          .filter(userInfo -> projectCollaborators.stream()
+              .noneMatch(
+                  projectCollaborator -> projectCollaborator.userId().equals(userInfo.id())));
     });
     personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.setRenderer(
@@ -103,16 +111,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     personSelectionSection.addClassName("person-selection-section");
     personSelectionSection.add(title, description, personSelection);
 
-  }
-
-  private static Component renderUserInfo(UserInfo userInfo) {
-    UserAvatar userAvatar = new UserAvatar();
-    userAvatar.setUserId(userInfo.id());
-    userAvatar.setName(userInfo.platformUserName());
-    CollaboratorInfoRender collaboratorInfoRender = new CollaboratorInfoRender(userAvatar,
-        userInfo.platformUserName(), userInfo.fullName());
-    userInfo.oidcId().ifPresent(collaboratorInfoRender::setOrcid);
-    return collaboratorInfoRender;
   }
 
   private void initProjectRoleSelection() {
@@ -150,55 +148,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     projectRoleSelectionSection.add(title, description, projectRoleSelection);
   }
 
-  /**
-   * A component displaying a user avatar and user name
-   */
-  public static class CollaboratorInfoRender extends FormLayout {
-
-    private final Span userNameSpan;
-    private final UserAvatar userAvatar;
-    private final Span fullNameSpan;
-    private Anchor orcidLink;
-    private static final String ORCID_LOGO_PATH = "login/orcid_logo.svg";
-
-    public CollaboratorInfoRender(UserAvatar userAvatar,
-        String userName, String fullName) {
-      addClassName("collaborator-info");
-      userNameSpan = new Span(userName);
-      this.userAvatar = userAvatar;
-      userAvatar.setClassName("avatar");
-      addFormItem(userAvatar, "Avatar");
-      addFormItem(userNameSpan, "Username");
-      fullNameSpan = new Span(fullName);
-      addFormItem(fullNameSpan, "Full Name");
-    }
-
-    private void setOrcid(String orcid) {
-      if (orcid.isEmpty()) {
-        return;
-      }
-      String orcidURL = "https://orcid.org/" + orcid;
-      Span orcIdSpan = new Span(generateOrcIdLogo(), new Span("Orcid"));
-      orcIdSpan.addClassName("orcid");
-      orcidLink = new Anchor(orcidURL, orcid);
-      orcidLink.setTarget(AnchorTarget.BLANK);
-      var formItem = addFormItem(orcidLink, orcIdSpan);
-      formItem.addClassName("orcid-form");
-    }
-
-    private Image generateOrcIdLogo() {
-      Image orcIdLogo = new Image();
-      orcIdLogo.setSrc(getOrcIdSource());
-      orcIdLogo.addClassName("logo");
-      return orcIdLogo;
-    }
-
-    private AbstractStreamResource getOrcIdSource() {
-      return new StreamResource("orcid_logo.svg",
-          () -> getClass().getClassLoader().getResourceAsStream(ORCID_LOGO_PATH));
-    }
-  }
-
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     personSelection.setInvalid(personSelection.isEmpty());
@@ -223,6 +172,60 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
     return addListener(ConfirmEvent.class, listener);
+  }
+
+  /**
+   * A component displaying a user avatar and user name
+   */
+  public static class CollaboratorInfoRender extends Div {
+
+    private static final String ORCID_LOGO_PATH = "login/orcid_logo.svg";
+    private final Div userInfoContent;
+
+    public CollaboratorInfoRender(UserAvatar userAvatar,
+        String userName, String fullName) {
+      addClassName("collaborator-info");
+      userAvatar.setClassName("avatar");
+      userInfoContent = new Div();
+      userInfoContent.addClassName("user-info");
+      addInfoItem("Username", new Span(userName));
+      addInfoItem("Full Name", new Span(fullName));
+      add(userAvatar, userInfoContent);
+    }
+
+    private void setOrcid(String orcid) {
+      if (orcid.isEmpty()) {
+        return;
+      }
+      String orcidURL = "https://orcid.org/" + orcid;
+      Anchor orcidLink = new Anchor(orcidURL, orcid);
+      orcidLink.setTarget(AnchorTarget.BLANK);
+      Span orcIdSpan = new Span(generateOrcIdLogo(), orcidLink);
+      orcIdSpan.addClassName("orcid");
+      addInfoItem("Orcid", orcIdSpan);
+    }
+
+    private Image generateOrcIdLogo() {
+      Image orcIdLogo = new Image();
+      orcIdLogo.setSrc(getOrcIdSource());
+      orcIdLogo.addClassName("logo");
+      return orcIdLogo;
+    }
+
+    private AbstractStreamResource getOrcIdSource() {
+      return new StreamResource("orcid_logo.svg",
+          () -> getClass().getClassLoader().getResourceAsStream(ORCID_LOGO_PATH));
+    }
+
+    private void addInfoItem(String label, Component value) {
+      Span labelSpan = new Span(label);
+      labelSpan.addClassName("label");
+      value.addClassName("value");
+      Div infoItem = new Div();
+      infoItem.add(labelSpan, value);
+      infoItem.addClassName("info-item");
+      userInfoContent.add(infoItem);
+    }
   }
 
   public static class CancelEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
