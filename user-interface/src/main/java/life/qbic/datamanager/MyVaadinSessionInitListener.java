@@ -36,13 +36,13 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener,
   @Override
   public void serviceInit(ServiceInitEvent event) {
     event.getSource().addSessionInitListener(
-        initEvent -> log.info("A new Session has been initialized!"));
+        initEvent -> log.debug("A new Session has been initialized! Session " + initEvent.getSession().getSession().getId()));
 
     event.getSource().addSessionDestroyListener(this);
 
     event.getSource().addUIInitListener(
         initEvent -> {
-          log.info("A new UI has been initialized!");
+          log.debug("A new UI has been initialized! Session is " + initEvent.getUI().getSession().getSession().getId());
           UI ui = initEvent.getUI();
           ui.getPage().retrieveExtendedClientDetails(clientDetailsReceiver);
           ui.getSession().setErrorHandler(errorEvent -> uiExceptionHandler.error(errorEvent, ui));
@@ -55,6 +55,6 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener,
   public void sessionDestroy(SessionDestroyEvent event) {
     log.debug("Session destroyed.");
     event.getSession().getSession().invalidate();
-    log.debug("HTTP Session has been invalidated.");
+    log.debug("HTTP Session has been invalidated. Id is " + event.getSession().getSession().getId());
   }
 }
