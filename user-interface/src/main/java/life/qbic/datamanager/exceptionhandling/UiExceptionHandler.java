@@ -4,11 +4,11 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.server.ErrorEvent;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
-import life.qbic.datamanager.views.notifications.Notifications;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -30,12 +30,10 @@ public class UiExceptionHandler {
 
   private static final Logger log = logger(UiExceptionHandler.class);
   private final ErrorMessageTranslationService userMessageService;
-  private final Notifications notifications;
 
   public UiExceptionHandler(
-      @Autowired ErrorMessageTranslationService userMessageService, Notifications notifications) {
+      @Autowired ErrorMessageTranslationService userMessageService) {
     this.userMessageService = userMessageService;
-    this.notifications = notifications;
   }
 
   /**
@@ -56,10 +54,9 @@ public class UiExceptionHandler {
     requireNonNull(ui, "ui must not be null");
     requireNonNull(exception, "exception must not be null");
     UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
-    NotificationDialog dialog = notifications.dialog()
-        .forError()
-        .withTitle(errorMessage.title())
-        .withMessage(errorMessage.message()).create();
+    NotificationDialog dialog = NotificationDialog.errorDialog();
+    dialog.setTitle(errorMessage.title());
+    dialog.setContent(new Span(errorMessage.message()));
     dialog.open();
   }
 }

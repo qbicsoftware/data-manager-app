@@ -13,8 +13,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class AccessTokenDeletionConfirmationNotification extends NotificationDialog {
 
   public AccessTokenDeletionConfirmationNotification() {
+    super(Type.INFO);
     customizeHeader();
-    content.add(new Span(
+    setContent(new Span(
         "Deleting this Personal Access Token will make it unusable. Proceed?"));
     setCancelable(true);
     setConfirmText("Confirm");

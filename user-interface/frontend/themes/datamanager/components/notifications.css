@@ -1,0 +1,4 @@
+vaadin-notification-card.toast-notification::part(overlay) {
+  background-color: burlywood;
+  min-width: 50% !important;
+}

@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -12,6 +13,7 @@ import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -28,7 +30,8 @@ import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
-import life.qbic.datamanager.views.notifications.Notifications;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -58,24 +61,38 @@ public class ProjectCollectionComponent extends PageArea {
   private String projectOverviewFilter = "";
   private GridLazyDataView<ProjectOverview> projectOverviewGridLazyDataView;
 
-  public ProjectCollectionComponent(ProjectInformationService projectInformationService,
-      Notifications notifications) {
+  public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "Project information service cannot be null");
     layoutComponent();
     createLazyProjectView();
     configureSearch();
     configureProjectCreationButton();
-    var dialogFactory = notifications.dialog()
-        .forWarning()
-        .withDynamicMessage("test.dialog", new Object[]{"bla blubb", 1_000})
-        .onConfirmed(d -> System.out.println("confirmed clicked on" + d.getSource()))
-        .withCancel()
-        .onCancelled(d -> System.out.println("cancelled clicked on" + d.getSource()));
-    var notificationFactory = notifications.toast()
-        .withDynamicMessage("test.dialog", new Object[]{"bla blubb", 1_000});
-    add(new Button("test dialog", it -> dialogFactory.create().open()));
-    add(new Button("test notification", it -> notificationFactory.create().open()));
+    var testText = new TextField();
+    var closeable = new Checkbox("notification closeable?", true);
+    add(new HorizontalLayout(testText, closeable));
+    add(new Button("test dialog", it -> {
+      NotificationDialog
+          .infoDialog()
+          .setContent(new Span(testText.getValue()))
+          .open();
+      NotificationDialog
+          .warningDialog()
+          .setContent(new Span(testText.getValue()))
+          .open();
+      NotificationDialog
+          .errorDialog()
+          .setContent(new Span(testText.getValue()))
+          .open();
+      NotificationDialog
+          .successDialog()
+          .setContent(new Span(testText.getValue()))
+          .open();
+    }));
+    add(new Button("test notification", it -> Toast
+        .createWithText(testText.getValue())
+        .setCloseable(closeable.getValue())
+        .open()));
   }
 
   private void initHeader() {

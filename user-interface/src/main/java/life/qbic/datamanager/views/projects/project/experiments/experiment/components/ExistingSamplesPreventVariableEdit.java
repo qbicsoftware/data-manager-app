@@ -16,6 +16,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class ExistingSamplesPreventVariableEdit extends NotificationDialog {
 
   public ExistingSamplesPreventVariableEdit(int sampleCount) {
+    super(Type.INFO);
     addClassName("existing-samples-prevent-variable-edit");
     customizeHeader();
     customizeContent(sampleCount);
@@ -32,7 +33,7 @@ public class ExistingSamplesPreventVariableEdit extends NotificationDialog {
   private void customizeContent(int sampleCount) {
     Span sampleCountSpan = new Span(String.valueOf(sampleCount));
     sampleCountSpan.addClassName("sample-count");
-    content.add(
+    layout.add(
         new Div(new Text(
             "Editing experimental variables is only possible if samples are not registered.")),
         new Div(new Text("You have "), sampleCountSpan,

@@ -17,6 +17,7 @@
 @import "spreadsheet.css";
 @import "vaadin-custom.css";
 @import "virtuallist.css";
+@import "notifications.css";
 
 vaadin-avatar-group vaadin-avatar,
 .user-avatar {

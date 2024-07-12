@@ -17,6 +17,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public final class ExistingGroupsPreventVariableEdit extends NotificationDialog {
 
   public ExistingGroupsPreventVariableEdit(int numberOfExperimentalGroups) {
+    super(Type.INFO);
     addClassName("existing-groups-prevent-variable-edit");
     customizeHeader();
     customizeContent(numberOfExperimentalGroups);
@@ -34,14 +35,14 @@ public final class ExistingGroupsPreventVariableEdit extends NotificationDialog 
   private void customizeContent(int numberOfExperimentalGroups) {
     Span experimentalGroupCount = new Span(String.valueOf(numberOfExperimentalGroups));
     experimentalGroupCount.addClassName("experimental-group-count");
-    content.add(
+    setContent(new Div(
         new Div(new Text(
             "Editing experimental variables requires all experimental groups to be deleted.")),
         new Div(new Text("You have "), experimentalGroupCount,
             new Text(
                 " experimental group%s.".formatted(numberOfExperimentalGroups > 1 ? "s" : ""))),
         new Div(new Text("Please delete the group%s to edit the variables.".formatted(
-            numberOfExperimentalGroups > 1 ? "s" : ""))));
+            numberOfExperimentalGroups > 1 ? "s" : "")))));
   }
 
   private void customizeHeader() {

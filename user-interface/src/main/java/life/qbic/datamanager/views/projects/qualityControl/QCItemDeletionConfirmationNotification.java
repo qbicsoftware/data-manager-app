@@ -13,8 +13,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class QCItemDeletionConfirmationNotification extends NotificationDialog {
 
   public QCItemDeletionConfirmationNotification() {
+    super(Type.INFO);
     customizeHeader();
-    content.add(new Span(
+    setContent(new Span(
         "Are you sure you want to delete this file?"));
     setCancelable(true);
     setConfirmText("Confirm");

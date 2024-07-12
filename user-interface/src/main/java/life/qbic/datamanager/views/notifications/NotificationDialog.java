@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.notifications;
 
-import com.vaadin.flow.component.HasOrderedComponents;
+import static java.util.Objects.requireNonNull;
+
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -25,35 +27,87 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 public class NotificationDialog extends ConfirmDialog {
 
   private final H2 title;
+  private final Type type;
+  protected final Div layout;
   private Icon headerIcon;
-  protected final HasOrderedComponents content;
+  protected Component content;
 
 
-  public NotificationDialog() {
+  protected enum Type {
+    SUCCESS, WARNING, ERROR, INFO
+  }
+
+  protected NotificationDialog(Type type) {
     addClassName("notification-dialog");
+    this.type = requireNonNull(type, "type must not be null");
+
     title = new H2("Please note");
     title.addClassName("title");
-    headerIcon = VaadinIcon.INFO_CIRCLE.create();
-    headerIcon.addClassName("info-icon");
+    setHeaderIcon(typeBasedHeaderIcon(this.type));
     updateHeader();
-    Div content = new Div();
-    content.addClassName("content");
-    add(content);
+
+    layout = new Div();
+    layout.addClassName("content");
+    this.content = new Div();
+    layout.add(this.content);
+    add(layout);
     setConfirmText("Okay");
-    this.content = content;
+  }
+
+  protected static Icon typeBasedHeaderIcon(Type newType) {
+    var iconCssClass = switch (newType) {
+      case SUCCESS -> "success-icon";
+      case WARNING -> "warning-icon";
+      case ERROR -> "error-icon";
+      case INFO -> "info-icon";
+    };
+    var icon = switch (newType) {
+      case SUCCESS -> VaadinIcon.CHECK.create();
+      case WARNING -> VaadinIcon.WARNING.create();
+      case ERROR -> VaadinIcon.CLOSE_CIRCLE.create();
+      case INFO -> VaadinIcon.INFO_CIRCLE.create();
+    };
+    icon.addClassName(iconCssClass);
+    return icon;
+  }
+
+  public static NotificationDialog successDialog() {
+    return new NotificationDialog(Type.SUCCESS);
+  }
+
+  public static NotificationDialog warningDialog() {
+    return new NotificationDialog(Type.WARNING);
+  }
+
+  public static NotificationDialog errorDialog() {
+    return new NotificationDialog(Type.ERROR);
+  }
+
+  public static NotificationDialog infoDialog() {
+    return new NotificationDialog(Type.INFO);
   }
 
   private void updateHeader() {
     setHeader(new Span(headerIcon, title));
   }
 
-  protected void setHeaderIcon(Icon icon) {
+  public void setHeaderIcon(Icon icon) {
     this.headerIcon = icon;
     updateHeader();
   }
 
-  protected void setTitle(String text) {
+  public void setTitle(String text) {
     title.setText(text);
     updateHeader();
+  }
+
+  public NotificationDialog setContent(Component content) {
+    if (this.content != null) {
+      this.content.removeFromParent();
+    }
+    this.content = requireNonNull(content, "content must not be null");
+    layout.removeAll();
+    layout.add(content);
+    return this;
   }
 }

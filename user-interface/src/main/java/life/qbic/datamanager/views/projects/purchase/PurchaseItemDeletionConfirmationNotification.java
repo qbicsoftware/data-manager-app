@@ -13,8 +13,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class PurchaseItemDeletionConfirmationNotification extends NotificationDialog {
 
   public PurchaseItemDeletionConfirmationNotification() {
+    super(Type.INFO);
     customizeHeader();
-    content.add(new Span(
+    setContent(new Span(
         "Are you sure you want to delete this offer?"));
     setCancelable(true);
     setConfirmText("Confirm");

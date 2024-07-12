@@ -14,6 +14,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class CancelConfirmationNotificationDialog extends NotificationDialog {
 
   public CancelConfirmationNotificationDialog() {
+    super(Type.INFO);
     customizeHeader();
     setCancelable(true);
     Button redButton = new Button("Discard");
@@ -24,8 +25,7 @@ public class CancelConfirmationNotificationDialog extends NotificationDialog {
   }
 
   public CancelConfirmationNotificationDialog withBodyText(String mainText) {
-    content.removeAll();
-    content.add(new Span(mainText));
+    setContent(new Span(mainText));
     return this;
   }
 
