@@ -1,8 +1,14 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.update;
 
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
+
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
@@ -16,8 +22,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -25,6 +33,8 @@ import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventSampleOriginEdit;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
@@ -42,6 +52,7 @@ public class EditExperimentDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
   private final Binder<ExperimentDraft> binder = new Binder<>();
+  private Map<SampleOriginType, Set<OntologyTerm>> usedSampleOrigins;
 
   public EditExperimentDialog(OntologyLookupService ontologyTermInformationService) {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
@@ -68,6 +79,8 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
+    initOriginEditListener(speciesBox, SPECIES);
+
 
     ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIES,
     "Species icon");
@@ -81,9 +94,10 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
+    initOriginEditListener(specimenBox, SPECIMEN);
 
     ComboBox<BioIcon> specimenIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIMEN,
-    "Specimen icon");
+        "Specimen icon");
     binder.forField(specimenIconBox)
         .bind(ExperimentDraft::getSpecimenIcon,
             ExperimentDraft::setSpecimenIcon);
@@ -93,6 +107,8 @@ public class EditExperimentDialog extends DialogWindow {
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
+    initOriginEditListener(analyteBox, ANALYTE);
+
 
     addClassName("edit-experiment-dialog");
     setHeaderTitle("Experimental Design");
@@ -114,6 +130,36 @@ public class EditExperimentDialog extends DialogWindow {
         specimenRow,
         analyteBox);
     add(editExperimentContent);
+  }
+
+  private void initOriginEditListener(
+      MultiSelectComboBox<OntologyTerm> originBox, SampleOriginType originType) {
+    ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTerm>,
+        Set<OntologyTerm>>> valueChangeListener = valueChangeEvent -> {
+      Set<OntologyTerm> missing = new HashSet<>();
+      for (OntologyTerm term : usedSampleOrigins.get(originType)) {
+        if (!valueChangeEvent.getValue().contains(term)
+            && valueChangeEvent.isFromClient()) {
+          missing.add(term);
+          showSamplesPreventOriginEdit(term);
+        }
+      }
+      if (!missing.isEmpty()) {
+        missing.addAll(valueChangeEvent.getValue());
+        originBox.setValue(missing);
+      }
+    };
+    originBox.addValueChangeListener(valueChangeListener);
+  }
+
+  private void showSamplesPreventOriginEdit(OntologyTerm species) {
+    ExistingSamplesPreventSampleOriginEdit samplesPreventSampleOriginEdit = new ExistingSamplesPreventSampleOriginEdit(
+        species.getLabel());
+    samplesPreventSampleOriginEdit.addConfirmListener(
+        confirmEvent -> confirmEvent.getSource().close());
+    samplesPreventSampleOriginEdit.addRejectListener(
+        rejectEvent -> rejectEvent.getSource().close());
+    samplesPreventSampleOriginEdit.open();
   }
 
   @Override
@@ -146,7 +192,8 @@ public class EditExperimentDialog extends DialogWindow {
     onEditCanceled();
   }
 
-  public void setExperiment(ExperimentDraft experiment) {
+  public void setExperiment(ExperimentDraft experiment, Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
+    this.usedSampleOrigins = usedTerms;
     binder.setBean(experiment);
   }
 
