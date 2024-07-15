@@ -39,7 +39,6 @@ public class Toast extends Notification {
     add(closeButton);
     setCloseable(true);
     setPosition(Position.BOTTOM_START);
-    setDuration(0);
   }
 
 
