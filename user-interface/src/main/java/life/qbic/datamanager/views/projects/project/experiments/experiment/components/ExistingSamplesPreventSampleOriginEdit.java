@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.components;
 
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -16,9 +15,12 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class ExistingSamplesPreventSampleOriginEdit extends NotificationDialog {
 
   public ExistingSamplesPreventSampleOriginEdit(String ontologyLabel) {
+    super(Type.INFO);
     addClassName("existing-samples-prevent-variable-edit");
     customizeHeader();
-    customizeContent(ontologyLabel);
+    setContent(new Div(
+        "'%s' cannot be deleted, as it is referenced in samples of this experiment.".formatted(
+            ontologyLabel)));
     setConfirmText("Okay");
   }
 
@@ -29,8 +31,4 @@ public class ExistingSamplesPreventSampleOriginEdit extends NotificationDialog {
     setHeaderIcon(errorIcon);
   }
 
-  private void customizeContent(String ontologyLabel) {
-    content.add(
-        new Div(new Text("'%s' cannot be deleted, as it is referenced in samples of this experiment.".formatted(ontologyLabel))));
-  }
 }

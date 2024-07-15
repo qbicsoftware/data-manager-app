@@ -9,6 +9,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 
 /**
@@ -21,7 +23,6 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
  */
 public class Toast extends Notification {
 
-  protected final Div layout;
   protected Component content;
 
   private final Button closeButton;
@@ -30,16 +31,15 @@ public class Toast extends Notification {
   protected Toast() {
     super();
     addClassName("toast-notification");
-    layout = new Div();
     closeButton = new Button(LumoIcon.CROSS.create());
     closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeButton.addClickListener(it -> this.close());
+    closeButton.addClassName("close-button");
     closeButton.setVisible(false);
-    add(layout, closeButton);
+    add(closeButton);
     setCloseable(true);
-
     setPosition(Position.BOTTOM_START);
-    setDuration(8_000);
+    setDuration(0);
   }
 
 
@@ -54,14 +54,27 @@ public class Toast extends Notification {
     return toast;
   }
 
+  public static Toast createWithRouting(String message, String linkText,
+      Class<? extends Component> navigationTarget, RouteParameters routeParameters) {
+    var toast = new Toast();
+    toast.setContent(Toast.createRoutingContent(new Span(message),
+        toast.createRoutingComponent(linkText, navigationTarget, routeParameters)));
+    return toast;
+  }
+
   public Toast setContent(Component content) {
     if (nonNull(this.content)) {
       this.content.removeFromParent();
     }
     this.content = requireNonNull(content, "content must not be null");
     this.content.addClassName("toast-content");
-    layout.addComponentAtIndex(Math.max(0, layout.getComponentCount() - 1), this.content);
+    refresh();
     return this;
+  }
+
+  private void refresh() {
+    removeAll();
+    add(this.content, this.closeButton);
   }
 
   public boolean isCloseable() {
@@ -74,10 +87,23 @@ public class Toast extends Notification {
     return this;
   }
 
-  public static Component createRoutingContent(Component content, Component routing) {
+  public static Component createRoutingContent(Component content, Component routingComponent) {
     var container = new Div();
     container.addClassName("routing-container");
-    container.add(content, routing);
+    content.addClassName("routing-content");
+    routingComponent.addClassName("routing-link");
+    container.add(content, routingComponent);
     return container;
+  }
+
+  public Component createRoutingComponent(String text,
+      Class<? extends Component> navigationTarget, RouteParameters routeParameters) {
+    var routerLink = new RouterLink(navigationTarget, routeParameters);
+    routerLink.addClassName("routing-link");
+    Button button = new Button(text);
+    button.addClassName("routing-button");
+    button.addClickListener(routingClicked -> close());
+    routerLink.add(button);
+    return routerLink;
   }
 }
