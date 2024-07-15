@@ -39,6 +39,12 @@ public class NotificationDialog extends ConfirmDialog {
 
   protected NotificationDialog(Type type) {
     addClassName("notification-dialog");
+    addClassName(switch (type) {
+      case SUCCESS -> "success-dialog";
+      case WARNING -> "warning-dialog";
+      case ERROR -> "error-dialog";
+      case INFO -> "info-dialog";
+    });
     this.type = requireNonNull(type, "type must not be null");
 
     title = new H2("Please note");

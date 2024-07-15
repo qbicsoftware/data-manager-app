@@ -27,8 +27,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ConfirmEvent;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.identity.api.UserInfo;
@@ -306,9 +305,10 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void displayError(String title, String description) {
-    ErrorMessage errorMessage = new ErrorMessage(title, description);
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
+    NotificationDialog dialog = NotificationDialog.errorDialog();
+    dialog.setTitle(title);
+    dialog.setContent(new Span(description));
+    dialog.open();
   }
 
 }

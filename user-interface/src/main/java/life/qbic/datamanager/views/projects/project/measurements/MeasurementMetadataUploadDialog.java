@@ -41,8 +41,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -629,9 +628,10 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
 
   private void showErrorNotification(String title, String description) {
-    ErrorMessage errorMessage = new ErrorMessage(title, description);
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
+    var dialog = NotificationDialog.errorDialog();
+    dialog.setTitle(title);
+    dialog.setContent(new Span(description));
+    dialog.open();
   }
 
   private void onCanceled() {

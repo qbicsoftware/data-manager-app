@@ -61,16 +61,32 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   fill: var(--lumo-error-color);
 }
 
+.notification-dialog.error-dialog::part(overlay) {
+  /*border: .25rem solid var(--lumo-error-color-50pct);*/
+}
+
 .notification-dialog .warning-icon {
   fill: var(--lumo-warning-color);
+}
+
+.notification-dialog.warning-dialog::part(overlay) {
+  /*border: .25rem solid var(--lumo-warning-color-10pct);*/
 }
 
 .notification-dialog .info-icon {
   fill: var(--lumo-primary-color);
 }
 
+.notification-dialog.info-dialog::part(overlay) {
+  /*border: .25rem solid var(--lumo-primary-color-10pct);*/
+}
+
 .notification-dialog .success-icon {
   fill: var(--lumo-success-color);
+}
+
+.notification-dialog.success-dialog::part(overlay) {
+  /*border: .25rem solid var(--lumo-success-color-10pct);*/
 }
 
 /* experimental groups exist dialog on variable edit */

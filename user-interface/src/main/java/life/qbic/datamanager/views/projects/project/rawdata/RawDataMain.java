@@ -25,8 +25,7 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -148,10 +147,10 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private void handleUrlDownload(ComponentEvent<?> event) {
     Collection<MeasurementCode> selectedMeasurements = rawdataDetailsComponent.getSelectedMeasurementUrls();
     if (selectedMeasurements.isEmpty()) {
-      ErrorMessage errorMessage = new ErrorMessage("No Raw Data Item Selected",
-          "Please select at least one measurement to generate an URL from");
-      StyledNotification notification = new StyledNotification(errorMessage);
-      notification.open();
+      var dialog = NotificationDialog.errorDialog();
+      dialog.setTitle("No Raw Data Item Selected");
+      dialog.setContent(new Span("Please select at least one measurement to generate an URL from"));
+      dialog.open();
     }
     var downloadUrls = generateDownloadUrls(selectedMeasurements);
     var currentExperiment = experimentInformationService.find(

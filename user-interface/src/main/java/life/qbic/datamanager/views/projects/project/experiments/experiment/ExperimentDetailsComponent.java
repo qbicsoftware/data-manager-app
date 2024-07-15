@@ -150,7 +150,7 @@ public class ExperimentDetailsComponent extends PageArea {
         getLocale());
     String linkText = messageSource.getMessage("routing.experiment.to.samples.link-text", null,
         getLocale());
-    return Toast.createWithRouting(message, linkText, SampleInformationMain.class,
+    return Toast.createWithRouting(new Span(message), linkText, SampleInformationMain.class,
         new RouteParameters(projectRouteParam, experimentRouteParam));
   }
 

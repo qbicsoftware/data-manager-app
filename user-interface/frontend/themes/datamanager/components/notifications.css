@@ -8,13 +8,17 @@
 }
 
 .toast-notification .toast-content {
-  display: grid;
-  grid-template-columns: minmax(min-content, max-content) auto minmax(min-content, max-content);
-  column-gap: var(--lumo-space-m);
+
 }
 
 .toast-notification .close-button {
   /*you can style the toast close button here*/
+}
+
+.toast-notification .routing-container {
+  display: grid;
+  grid-template-columns: minmax(min-content, max-content) auto minmax(min-content, max-content);
+  column-gap: var(--lumo-space-m);
 }
 
 .toast-notification .routing-content {

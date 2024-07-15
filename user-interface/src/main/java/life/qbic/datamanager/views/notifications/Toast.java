@@ -4,10 +4,10 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
@@ -27,6 +27,12 @@ public class Toast extends Notification {
 
   private final Button closeButton;
   private boolean closeable;
+  private Type type;
+
+  protected enum Type {
+    SUCCESS,
+    INFO
+  }
 
   protected Toast() {
     super();
@@ -39,11 +45,26 @@ public class Toast extends Notification {
     add(closeButton);
     setCloseable(true);
     setPosition(Position.BOTTOM_START);
+    setType(Type.INFO);
+  }
+
+  public Toast success() {
+    setType(Type.SUCCESS);
+    return this;
+  }
+
+  public Toast info() {
+    setType(Type.INFO);
+    return this;
+  }
+
+  private void setType(Type type) {
+    this.type = requireNonNull(type, "type must not be null");
   }
 
 
   public static Toast createWithText(String text) {
-    return create(new Span(text));
+    return create(new Html("<div class=\"text-content\">%s</div>".formatted(text)));
   }
 
   public static Toast create(Component content) {
@@ -53,10 +74,10 @@ public class Toast extends Notification {
     return toast;
   }
 
-  public static Toast createWithRouting(String message, String linkText,
+  public static Toast createWithRouting(Component content, String linkText,
       Class<? extends Component> navigationTarget, RouteParameters routeParameters) {
     var toast = new Toast();
-    toast.setContent(Toast.createRoutingContent(new Span(message),
+    toast.setContent(Toast.createRoutingContent(content,
         toast.createRoutingComponent(linkText, navigationTarget, routeParameters)));
     return toast;
   }

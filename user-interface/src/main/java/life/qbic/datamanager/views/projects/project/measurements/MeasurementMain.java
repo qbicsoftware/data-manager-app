@@ -34,8 +34,7 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
@@ -428,9 +427,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void showErrorNotification(String title, String description) {
-    ErrorMessage errorMessage = new ErrorMessage(title, description);
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
+    NotificationDialog dialog = NotificationDialog.errorDialog();
+    dialog.setTitle(title);
+    dialog.setContent(new Span(description));
+    dialog.open();
   }
 
   /**

@@ -26,7 +26,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -34,8 +33,7 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -54,6 +52,8 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
 
 /**
  * Project Side Navigation Component
@@ -77,6 +77,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ExperimentInformationService experimentInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
+  private final MessageSource messageSource;
   private OntologyLookupService ontologyTermInformationService;
   private Context context = new Context();
 
@@ -85,11 +86,12 @@ public class ProjectSideNavigationComponent extends Div implements
       ExperimentInformationService experimentInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserPermissions userPermissions,
-      OntologyLookupService ontologyTermInformationService) {
+      OntologyLookupService ontologyTermInformationService,
+      @Qualifier("messageSource") MessageSource messageSource) {
     content = new Div();
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(addExperimentToProjectService);
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(addExperimentToProjectService);
     this.ontologyTermInformationService = ontologyTermInformationService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
@@ -103,6 +105,8 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug(
         String.format("New instance for %s(#%s) created",
             this.getClass().getSimpleName(), System.identityHashCode(this)));
+    this.messageSource = requireNonNull(messageSource, "messageSource must not be null");
+    ;
   }
 
   private static Div createProjectSection(Project project,
@@ -322,7 +326,7 @@ public class ProjectSideNavigationComponent extends Div implements
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
     event.getSource().close();
-    displayExperimentCreationSuccess();
+    displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
     routeToExperiment(createdExperiment);
   }
 
@@ -353,10 +357,12 @@ public class ProjectSideNavigationComponent extends Div implements
     }
   }
 
-  private void displayExperimentCreationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayExperimentCreationSuccess(String experimentName) {
+    String message = messageSource.getMessage("experiment.created.message",
+        new Object[]{experimentName},
+        getLocale());
+    Toast successNotification = Toast.createWithText(message).success();
+    successNotification.open();
   }
 
   public static class AddExperimentClickEvent extends ComponentEvent<ExperimentListComponent> {

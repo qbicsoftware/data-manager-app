@@ -1,11 +1,16 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -14,15 +19,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
@@ -35,12 +40,14 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
+import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -52,6 +59,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
 
 /**
  * Sample Information Main Component
@@ -80,6 +89,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient DeletionService deletionService;
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
+  private final MessageSource messageSource;
+  private final BatchInformationService batchInformationService;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ProjectInformationService projectInformationService,
@@ -89,15 +100,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
-      @Autowired BatchDetailsComponent batchDetailsComponent) {
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(batchRegistrationService);
-    Objects.requireNonNull(sampleRegistrationService);
-    Objects.requireNonNull(sampleInformationService);
-    Objects.requireNonNull(deletionService);
-    Objects.requireNonNull(sampleDetailsComponent);
-    Objects.requireNonNull(batchDetailsComponent);
+      @Autowired BatchDetailsComponent batchDetailsComponent,
+      @Qualifier("messageSource") MessageSource messageSource,
+      BatchInformationService batchInformationService) {
+    requireNonNull(messageSource, "messageSource must not be null");
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(batchRegistrationService);
+    requireNonNull(sampleRegistrationService);
+    requireNonNull(sampleInformationService);
+    requireNonNull(deletionService);
+    requireNonNull(sampleDetailsComponent);
+    requireNonNull(batchDetailsComponent);
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
     this.batchRegistrationService = batchRegistrationService;
@@ -120,6 +134,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
+    this.messageSource = messageSource;
+    this.batchInformationService = batchInformationService;
   }
 
   /**
@@ -225,23 +241,34 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         sampleInfo.getCustomerComment()));
   }
 
-  private void displayUpdateSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch update succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayUpdateSuccess(String batchName) {
+    String message = messageSource.getMessage("samples.batch.changes-saved.message",
+        new Object[]{batchName},
+        getLocale());
+    Toast toast = Toast.createWithText(message).success();
+    toast.open();
   }
 
-  private void displayDeletionSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch deletion succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayDeletionSuccess(String batchName) {
+    String message = messageSource.getMessage("samples.batch.deleted.message",
+        new Object[]{batchName}, getLocale());
+    Toast toast = Toast.createWithText(message).success();
+    toast.open();
   }
 
 
   private void displayRegistrationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+    RouteParam projectRouteParam = new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
+        context.projectId().orElseThrow().value());
+    RouteParam experimentRouteParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
+        context.experimentId().orElseThrow().value());
+    String message = messageSource.getMessage("samples.batch.registered.message", null,
+        getLocale());
+    var linkText = messageSource.getMessage("samples.batch.registered.link-text", null,
+        getLocale());
+    Toast toast = Toast.createWithRouting(new Html("<div>%s</div>".formatted(message)), linkText,
+        MeasurementMain.class, new RouteParameters(projectRouteParam, experimentRouteParam));
+    toast.open();
   }
 
   private void displayRegistrationFailure() {
@@ -312,14 +339,16 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         confirmEvent.getData().batchName(), isPilot, createdSamples, editedSamples,
         deletedSamples, context.projectId().orElseThrow());
     result.onValue(ignored -> confirmEvent.getSource().close());
-    result.onValue(batchId -> displayUpdateSuccess());
+    result.onValue(batchId -> displayUpdateSuccess(confirmEvent.getData().batchName()));
     result.onValue(ignored -> reload());
   }
 
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
+    String batchName = batchInformationService.find(deleteBatchEvent.batchId()).map(Batch::label)
+        .orElse("");
     deletionService.deleteBatch(context.projectId().orElseThrow(),
         deleteBatchEvent.batchId());
-    displayDeletionSuccess();
+    displayDeletionSuccess(batchName);
     reload();
   }
 
