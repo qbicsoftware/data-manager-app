@@ -77,7 +77,7 @@ public class Toast extends Notification {
   public static Component createRoutingContent(Component content, Component routing) {
     var container = new Div();
     container.addClassName("routing-container");
-    container.add(container, routing);
+    container.add(content, routing);
     return container;
   }
 }
