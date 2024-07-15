@@ -19,6 +19,7 @@
 
 .toast-notification .routing-content {
   /*in case of routing this can style the content without the routing link*/
+  align-content: center;
 }
 
 .toast-notification .routing-link {
