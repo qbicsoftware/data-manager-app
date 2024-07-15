@@ -525,7 +525,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Grid<ProteomicsSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
       sampleDetailsGrid.addColumn(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setHeader("Sample Label")
+          .setHeader("Sample Name")
           .setTooltipGenerator(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
           .setAutoWidth(true);
@@ -558,7 +558,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Grid<NGSSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
       sampleDetailsGrid.addColumn(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setHeader("Sample Label")
+          .setHeader("Sample Name")
           .setTooltipGenerator(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
           .setAutoWidth(true);
