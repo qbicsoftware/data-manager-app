@@ -70,15 +70,21 @@ public class ProjectCollectionComponent extends PageArea {
     configureProjectCreationButton();
     var testText = new TextField();
     var closeable = new Checkbox("notification closeable?", true);
-    add(new HorizontalLayout(testText, closeable));
+    var closeOnNavigation = new Checkbox("notification close on navigation?", false);
+    add(new HorizontalLayout(testText, closeable, closeOnNavigation));
     add(new Button("test dialog", it -> {
       NotificationDialog
           .infoDialog()
           .setContent(new Span(testText.getValue()))
           .open();
-      NotificationDialog
+      NotificationDialog warningDialog = NotificationDialog
           .warningDialog()
-          .setContent(new Span(testText.getValue()))
+          .setContent(new Span(testText.getValue()));
+      warningDialog.setCancelable(true);
+      warningDialog.addCancelListener(it2 -> it2.getSource().close());
+      warningDialog.setRejectable(true);
+      warningDialog.addRejectListener(it2 -> it2.getSource().close());
+      warningDialog
           .open();
       NotificationDialog
           .errorDialog()
@@ -92,6 +98,7 @@ public class ProjectCollectionComponent extends PageArea {
     add(new Button("test notification", it -> Toast
         .createWithText(testText.getValue())
         .setCloseable(closeable.getValue())
+        .closeOnNavigation(closeOnNavigation.getValue())
         .open()));
   }
 
