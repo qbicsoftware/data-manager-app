@@ -31,6 +31,16 @@ public class AppRoutes {
    */
   public static final String REGISTER = "registration";
 
+  /**
+   * The route to enable new users to create a new account with their orcId
+   */
+  public static final String REGISTER_OIDC = "register/oidc";
+
+  /**
+   * The route to inform user to confirm their email after account registration
+   */
+  public static final String EMAIL_CONFIRMATION = "register/pending-email-confirmation";
+
   public static class Projects {
 
     /**

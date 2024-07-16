@@ -625,6 +625,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       this.add(technologyNameComponent, sampleCountComponent);
       setTechnologyName(technology);
       setMeasurementCount(measurementCount);
+      addClassName("tab-with-count");
     }
 
     public String getTabLabel() {

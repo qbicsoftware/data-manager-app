@@ -13,10 +13,9 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
-import life.qbic.identity.api.UserInformationService;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -29,14 +28,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class DataManagerMenu extends Div {
 
   private final transient LogoutService logoutService;
-  private final transient UserInformationService userInformationService;
   MenuBar projectMenu = new MenuBar();
   UserAvatar userAvatar = new UserAvatar();
 
-  public DataManagerMenu(@Autowired LogoutService logoutService,
-      @Autowired UserInformationService userInformationService) {
+  public DataManagerMenu(@Autowired LogoutService logoutService) {
     this.logoutService = Objects.requireNonNull(logoutService);
-    this.userInformationService = Objects.requireNonNull(userInformationService);
     initializeHomeMenuItem();
     initializeUserSubMenuItems();
     add(projectMenu);
@@ -60,12 +56,15 @@ public class DataManagerMenu extends Div {
   }
 
   private void initializeAvatar() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    QbicUserDetails details = (QbicUserDetails) authentication.getPrincipal();
-    /*Since users can change their detailsInformation, the variable information in the user session may not be up to date,
-      which is why a we retrieve the current state from the database */
-    var userInfo = userInformationService.findById(details.getUserId()).orElseThrow();
-    userAvatar.setUserId(userInfo.id());
+    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var userId = "";
+    if (principal instanceof QbicUserDetails qbicUserDetails) {
+      userId = qbicUserDetails.getUserId();
+    }
+    if (principal instanceof QbicOidcUser qbicOidcUser) {
+      userId = qbicOidcUser.getQbicUserId();
+    }
+    userAvatar.setUserId(userId);
   }
 
   private <T extends Component> void routeTo(Class<T> mainComponent) {

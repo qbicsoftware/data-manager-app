@@ -149,13 +149,14 @@ public class NewPasswordLayout extends VerticalLayout implements HasUrlParameter
 
   private void addClickListeners() {
     sendButton().addClickListener(buttonClickEvent -> {
-        Result<?, RuntimeException> applicationResponse = identityService.newUserPassword(currentUserId,
-            newPassword().getValue().toCharArray());
-        if (applicationResponse.isError()) {
-          handleNewPasswordError(applicationResponse);
+          Result<?, RuntimeException> applicationResponse = identityService.newUserPassword(
+              currentUserId,
+              newPassword().getValue().toCharArray());
+          if (applicationResponse.isError()) {
+            handleNewPasswordError(applicationResponse);
+          }
+          handleSuccess();
         }
-        handleSuccess();
-    }
     );
     sendButton().addClickShortcut(Key.ENTER);
 

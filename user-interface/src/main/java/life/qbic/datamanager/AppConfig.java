@@ -5,6 +5,7 @@ import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
 import life.qbic.domain.concepts.TemporaryEventRepository;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.api.UserPasswordService;
 import life.qbic.identity.application.communication.EmailService;
 import life.qbic.identity.application.communication.broadcasting.EventHub;
 import life.qbic.identity.application.notification.NotificationService;
@@ -108,6 +109,11 @@ public class AppConfig {
 
   @Bean
   public UserInformationService userInformationService(UserRepository userRepository) {
+    return new BasicUserInformationService(userRepository);
+  }
+
+  @Bean
+  public UserPasswordService userPasswordService(UserRepository userRepository) {
     return new BasicUserInformationService(userRepository);
   }
 

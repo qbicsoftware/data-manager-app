@@ -51,9 +51,20 @@ public class UiExceptionHandler {
   }
 
   private void displayUserFriendlyMessage(UI ui, ApplicationException exception) {
-    requireNonNull(ui);
-    requireNonNull(exception);
-
+    requireNonNull(ui, "ui must not be null");
+    requireNonNull(exception, "exception must not be null");
+    if (ui.isClosing()) {
+      log.error(
+          "tried to show message on closing UI ui[%s] vaadin[%s] http[%s]".formatted(ui.getUIId(),
+              ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+      return;
+    }
+    if (!ui.isAttached()) {
+      log.error(
+          "tried to show message on detached UI ui[%s] vaadin[%s] http[%s]".formatted(ui.getUIId(),
+              ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+      return;
+    }
     UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
     ui.access(() -> showErrorDialog(errorMessage));
   }

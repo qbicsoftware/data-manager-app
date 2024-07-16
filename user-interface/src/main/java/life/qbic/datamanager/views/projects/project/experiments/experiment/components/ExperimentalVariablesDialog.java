@@ -15,6 +15,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 
@@ -45,6 +46,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     super();
     mode = editMode ? MODE.EDIT : MODE.ADD;
     setConfirmButtonLabel(confirmActionLabel());
+    specifyCancelShortcuts(this::onCanceled);
     setCancelButtonLabel("Cancel");
     addClassName("experiment-variable-dialog");
     layoutComponent();
@@ -93,9 +95,23 @@ public class ExperimentalVariablesDialog extends DialogWindow {
 
   }
 
+  private void onCanceled() {
+    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
+        .withBodyText("You will lose any changes you made to variables.")
+        .withConfirmText("Discard changes")
+        .withTitle("Discard variable changes?");
+    cancelDialog.open();
+    cancelDialog.addConfirmListener(event -> {
+      cancelDialog.close();
+      fireEvent(new CancelEvent(this, true));
+    });
+    cancelDialog.addCancelListener(
+        event -> cancelDialog.close());
+  }
+
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
+    onCanceled();
   }
 
   /**

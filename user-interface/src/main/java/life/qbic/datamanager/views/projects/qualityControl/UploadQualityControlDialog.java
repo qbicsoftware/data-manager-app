@@ -55,6 +55,7 @@ public class UploadQualityControlDialog extends DialogWindow {
       ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(experimentInformationService,
         "experiment information service must not be null");
+
     //Load selectable Experiments for Sample quality control items;
     selectableExperimentsForProject = experimentInformationService.findAllForProject(projectId)
         .stream()
