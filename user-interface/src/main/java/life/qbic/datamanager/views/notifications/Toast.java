@@ -11,7 +11,10 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * TODO!
@@ -27,6 +30,7 @@ public class Toast extends Notification {
 
   private final Button closeButton;
   private boolean closeable;
+  private List<Registration> closeOnNavigationListeners = new ArrayList<>();
   private Type type;
 
   protected enum Type {
@@ -46,6 +50,25 @@ public class Toast extends Notification {
     setCloseable(true);
     setPosition(Position.BOTTOM_START);
     setType(Type.INFO);
+    closeOnNavigation(true);
+  }
+
+  public Toast closeOnNavigation(boolean close) {
+    //reset previous listeners
+    closeOnNavigationListeners.forEach(Registration::remove);
+    closeOnNavigationListeners.clear();
+    if (!close) {
+      return this;
+    }
+    closeOnNavigationListeners.add(addAttachListener(attachEvent -> {
+      closeOnNavigationListeners.add(attachEvent.getUI().addBeforeLeaveListener(
+          beforeLeaveEvent -> {
+            if (attachEvent.getSource() instanceof Toast toast) {
+              toast.close();
+            }
+          }));
+    }));
+    return this;
   }
 
   public Toast success() {
