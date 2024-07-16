@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -62,12 +63,13 @@ public class MeasurementProteomicsValidator implements
    */
   public static boolean isProteomics(Collection<String> properties) {
     if (properties.isEmpty()) {
-      log.debug("no properties found");
+      log.debug("No properties found");
       return false;
     }
     if (properties.size() < PROTEOMICS_PROPERTY.values().length) {
-      log.debug("wrong length of property header: "+properties().size());
-      log.debug("expected: "+PROTEOMICS_PROPERTY.values().length);
+      log.debug("Wrong length of property header: "+properties().size());
+      log.debug("Expected: "+PROTEOMICS_PROPERTY.values().length);
+      log.debug("Provided: "+ String.join(" - ", properties));
       return false;
     }
     for (PROTEOMICS_PROPERTY pxpProperty : PROTEOMICS_PROPERTY.values()) {
