@@ -31,5 +31,11 @@
       <artifactId>spock-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>life.qbic</groupId>
+      <artifactId>logging</artifactId>
+      <version>1.1.5</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>
