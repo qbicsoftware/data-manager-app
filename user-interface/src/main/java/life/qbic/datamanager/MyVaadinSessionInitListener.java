@@ -6,8 +6,13 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.page.Page.ExtendedClientDetailsReceiver;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.server.ServiceDestroyEvent;
 import com.vaadin.flow.server.ServiceInitEvent;
+import com.vaadin.flow.server.SessionDestroyEvent;
+import com.vaadin.flow.server.SessionInitEvent;
+import com.vaadin.flow.server.UIInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
+import com.vaadin.flow.server.WrappedSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;
 import life.qbic.datamanager.security.LogoutService;
@@ -36,7 +41,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
   public MyVaadinSessionInitListener(
       @Autowired ExtendedClientDetailsReceiver clientDetailsProvider,
       @Autowired UiExceptionHandler uiExceptionHandler,
-      LogoutService logoutService) {
+      @Autowired LogoutService logoutService) {
     this.clientDetailsReceiver = clientDetailsProvider;
     this.uiExceptionHandler = uiExceptionHandler;
     this.logoutService = logoutService;
@@ -44,17 +49,42 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
 
   @Override
   public void serviceInit(ServiceInitEvent event) {
-    event.getSource().addSessionInitListener(
-        initEvent -> log.info("A new Session has been initialized!"));
+    event.getSource().addSessionInitListener(MyVaadinSessionInitListener::onSessionInit);
+    event.getSource().addServiceDestroyListener(MyVaadinSessionInitListener::onServiceDestroyed);
+    event.getSource().addSessionDestroyListener(MyVaadinSessionInitListener::onSessionDestroy);
+    event.getSource().addUIInitListener(this::onUiInit);
+  }
 
-    event.getSource().addUIInitListener(
-        initEvent -> {
-          log.info("A new UI has been initialized!");
-          UI ui = initEvent.getUI();
-          ui.getPage().retrieveExtendedClientDetails(clientDetailsReceiver);
-          ui.getSession().setErrorHandler(errorEvent -> uiExceptionHandler.error(errorEvent, ui));
-          ui.addBeforeEnterListener(this::ensureCompleteOidcRegistration);
-        });
+  private void onUiInit(UIInitEvent initEvent) {
+    log.debug("A new UI has been initialized! ui[%s] vaadin[%s] http[%s] ".formatted(
+        initEvent.getUI().getUIId(), initEvent.getUI().getSession().getPushId(),
+        initEvent.getUI().getSession().getSession().getId()));
+    UI ui = initEvent.getUI();
+    ui.getPage().retrieveExtendedClientDetails(clientDetailsReceiver);
+    ui.getSession().setErrorHandler(errorEvent -> uiExceptionHandler.error(errorEvent, ui));
+    ui.addBeforeEnterListener(this::ensureCompleteOidcRegistration);
+  }
+
+  private static void onSessionInit(SessionInitEvent initEvent) {
+    log.debug("A new Session has been initialized! vaadin[%s] http[%s] ".formatted(
+        initEvent.getSession().getPushId(), initEvent.getSession().getSession().getId()));
+  }
+
+  private static void onServiceDestroyed(ServiceDestroyEvent serviceDestroyEvent) {
+    log.debug("Destroying vaadin service [%s]".formatted(serviceDestroyEvent.getSource()));
+  }
+
+  public static void onSessionDestroy(SessionDestroyEvent event) {
+    WrappedSession wrappedSession = event.getSession().getSession();
+    if (wrappedSession != null) {
+      wrappedSession.invalidate();
+      log.debug("Invalidated HTTP session " + wrappedSession.getId());
+    } else {
+      log.debug("Vaadin session [%s] does not wrap any HTTP session.".formatted(
+          event.getSession().getPushId()));
+    }
+    log.debug("Vaadin session destroyed [%s].".formatted(event.getSession().getPushId()));
+
   }
 
   private void ensureCompleteOidcRegistration(BeforeEnterEvent it) {

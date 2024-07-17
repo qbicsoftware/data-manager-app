@@ -1,13 +1,14 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
 import static java.util.Objects.requireNonNull;
-import static org.slf4j.LoggerFactory.getLogger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.dssapi.v3.IDataStoreServerApi;
 import ch.systemsx.cisd.common.exceptions.UserFailureException;
 import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
-import org.slf4j.Logger;
+import life.qbic.logging.api.Logger;
+
 
 /**
  *
@@ -88,7 +89,7 @@ public class OpenbisSessionFactory {
 
   private static final class AutoCloseableOpenBisSession implements OpenBisSession, Refreshable {
 
-    private static final Logger log = getLogger(AutoCloseableOpenBisSession.class);
+    private static final Logger log = logger(AutoCloseableOpenBisSession.class);
 
     private String token;
     private final IApplicationServerApi apiV3;
