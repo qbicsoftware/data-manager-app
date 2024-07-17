@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views.general;
 
 import static java.util.Objects.requireNonNull;
-import static org.slf4j.LoggerFactory.getLogger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
@@ -13,7 +13,7 @@ import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.dom.Element;
 import java.util.Objects;
 import java.util.function.Function;
-import org.slf4j.Logger;
+import life.qbic.logging.api.Logger;
 
 /**
  * ToggleDisplayEditComponent is a custom component enabling the switch between two different Vaadin
@@ -31,7 +31,8 @@ import org.slf4j.Logger;
 @Tag("div")
 public class ToggleDisplayEditComponent<S extends Component, T extends Component & HasSize & HasValue<? extends HasValue.ValueChangeEvent<U>, U> & HasValidation & Focusable<T>, U> extends
     AbstractField<ToggleDisplayEditComponent<S, T, U>, U> implements HasSize {
-  private static final Logger log = getLogger(ToggleDisplayEditComponent.class);
+
+  private static final Logger log = logger(ToggleDisplayEditComponent.class);
   private final Function<U, S> displayProvider;
   private final T inputComponent;
   private S displayComponent;

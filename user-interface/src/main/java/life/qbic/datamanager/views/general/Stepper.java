@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.general;
 
-import static org.slf4j.LoggerFactory.getLogger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
-import org.slf4j.Logger;
+import life.qbic.logging.api.Logger;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -27,7 +27,7 @@ import org.springframework.util.CollectionUtils;
 
 public class Stepper extends Div {
 
-  private static final Logger log = getLogger(Stepper.class);
+  private static final Logger log = logger(Stepper.class);
   private final List<StepIndicator> stepList = new ArrayList<>();
   private StepIndicator selectedStep;
   private final Supplier<Component> separator;
@@ -35,8 +35,8 @@ public class Stepper extends Div {
   public Stepper(Supplier<Component> separatorSupplier) {
     this.separator = separatorSupplier;
     addClassName("stepper");
-    log.debug("New instance for {} {}{} created", this.getClass().getSimpleName(), "#",
-        System.identityHashCode(this));
+    log.debug("New instance for %s %s%s created".formatted(this.getClass().getSimpleName(), "#",
+        System.identityHashCode(this)));
   }
   /**
    * Add a listener that is called, when a new {@link StepSelectedEvent event} is emitted.
