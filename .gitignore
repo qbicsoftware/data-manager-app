@@ -3,7 +3,6 @@
 .settings
 .project
 .classpath
-user-interface/src/main/bundles/
 
 *.iml
 .DS_Store
