@@ -76,11 +76,13 @@ public class UserJpaRepository implements UserDataStorage {
     Specification<User> isFullName = UserSpec.isFullName(filter);
     Specification<User> isUserNameSpec = UserSpec.isUserName(filter);
     Specification<User> isOidc = UserSpec.isOidc(filter);
+    Specification<User> isOidcIssuer = UserSpec.isOidcIssuer(filter);
     Specification<User> isActiveSpec = UserSpec.isActive();
     Specification<User> filterSpecification =
         Specification.anyOf(isFullName,
             isUserNameSpec,
-            isOidc
+            isOidc,
+            isOidcIssuer
         );
     return Specification.where(isBlankSpec)
         .and(filterSpecification)
@@ -113,6 +115,11 @@ public class UserJpaRepository implements UserDataStorage {
     public static Specification<User> isOidc(String filter) {
       return (root, query, builder) ->
           builder.like(root.get("oidcId"), "%" + filter + "%");
+    }
+
+    public static Specification<User> isOidcIssuer(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("oidcIssuer"), "%" + filter + "%");
     }
 
     public static Specification<User> isActive() {
