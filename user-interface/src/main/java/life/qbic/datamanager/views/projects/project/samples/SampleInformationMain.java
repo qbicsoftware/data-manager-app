@@ -91,6 +91,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
 
   private final Div content = new Div();
+  private final TextField searchField = new TextField();
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private transient Context context;
@@ -160,7 +161,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void initSearchFieldAndButtonBar() {
-    TextField searchField = new TextField();
     searchField.setPlaceholder("Search");
     searchField.setClearButtonVisible(true);
     searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
@@ -464,6 +464,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     content.setVisible(true);
     sampleDetailsComponent.setVisible(true);
     batchDetailsComponent.setVisible(true);
+    searchField.setValue("");
   }
 
   private void reloadBatchInformation() {
