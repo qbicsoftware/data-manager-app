@@ -1,7 +1,6 @@
 package life.qbic.identity.api;
 
 import java.io.Serializable;
-import java.util.Optional;
 
 /**
  * <b>User Information DTO</b>
@@ -11,6 +10,6 @@ import java.util.Optional;
  * @since 1.0.0
  */
 public record UserInfo(String id, String fullName, String emailAddress, String platformUserName,
-                       boolean isActive, Optional<String> oidcId) implements Serializable {
+                       boolean isActive, String oidcId, String oidcIssuer) implements Serializable {
 
 }
