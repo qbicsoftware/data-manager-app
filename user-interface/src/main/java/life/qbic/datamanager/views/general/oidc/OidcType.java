@@ -5,8 +5,8 @@ package life.qbic.datamanager.views.general.oidc;
  * corresponding oidc a user has provided
  */
 public enum OidcType {
-  Orcid("https://orcid.org", "login/orcid_logo.svg", "https://orcid.org/", "Orcid"),
-  SandboxOrcid("https://sandbox.orcid.org", "login/orcid_logo.svg", "https://sandbox.orcid.org/",
+  ORCID("https://orcid.org", "login/orcid_logo.svg", "https://orcid.org/", "Orcid"),
+  ORCID_SANDBOX("https://sandbox.orcid.org", "login/orcid_logo.svg", "https://sandbox.orcid.org/",
       "OrcId");
 
   private final String issuer;
