@@ -1,17 +1,17 @@
 package life.qbic.projectmanagement.infrastructure.project.purchase;
 
-import static org.apache.logging.log4j.LogManager.getLogger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.ProjectPurchaseStorage;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.project.purchase.ServicePurchase;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PurchaseStore implements ProjectPurchaseStorage {
 
-  private static final Logger log = getLogger(PurchaseStore.class);
+  private static final Logger log = logger(PurchaseStore.class);
 
   private final ProjectPurchaseJpa persistenceStore;
 

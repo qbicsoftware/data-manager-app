@@ -1,7 +1,7 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 
-import static org.slf4j.LoggerFactory.getLogger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -21,7 +21,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain;
 import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
-import org.slf4j.Logger;
+import life.qbic.logging.api.Logger;
 
 /**
  * Project Side Navigation Component
@@ -32,7 +32,7 @@ import org.slf4j.Logger;
  */
 public class ExperimentNavigationComponent extends Div {
 
-  private static final Logger log = getLogger(ExperimentNavigationComponent.class);
+  private static final Logger log = logger(ExperimentNavigationComponent.class);
   Tabs experimentNavigationTabs = new Tabs();
   RoutingTab<ExperimentInformationMain> designExperiment = new RoutingTab<>(
       VaadinIcon.USER.create(),

@@ -9,6 +9,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.SessionDestroyEvent;
+import com.vaadin.flow.server.SessionDestroyListener;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Arrays;
@@ -186,5 +188,4 @@ public class ProjectOverviewMain extends Main {
     var notification = new StyledNotification(successMessage);
     notification.open();
   }
-
 }
