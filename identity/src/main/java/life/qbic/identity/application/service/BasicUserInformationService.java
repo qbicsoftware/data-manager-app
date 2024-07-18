@@ -97,14 +97,15 @@ public class BasicUserInformationService implements UserInformationService, User
             filter, new OffsetBasedRequest(offset, limit, Sort.by(orders)))
         .stream()
         .map(user -> new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
-            user.userName(), user.isActive(), user.getOidcId()))
+            user.userName(), user.isActive(), user.getOidcId().orElse(null),
+            user.getOidcIssuer().orElse(null)))
         .toList();
   }
 
   private UserInfo convert(User user) {
     return new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
         user.userName(),
-        user.isActive(), user.getOidcId());
+        user.isActive(), user.getOidcId().orElse(null), user.getOidcIssuer().orElse(null));
   }
 
   @Override
