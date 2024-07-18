@@ -328,7 +328,6 @@
   grid-area: rawdatadownloadinformation;
 }
 
-
 .main.raw-data .raw-data-details-component {
   grid-area: rawdatadetails
 }
@@ -339,7 +338,6 @@
   row-gap: var(--lumo-space-m);
   padding: var(--lumo-space-m);
 }
-
 
 .main.raw-data .raw-data-main-content .title {
   font-weight: bold;
@@ -355,7 +353,7 @@
   margin-top: auto;
 }
 
-.main.user-registration {
+.main.reset-password {
   grid-template-columns: auto;
   grid-template-rows: auto;
   justify-content: center;
@@ -422,11 +420,27 @@
   grid-area: sampledetails;
 }
 
+.main.set-new-password {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
+}
+
 .main.user-profile {
   grid-template-columns: minmax(min-content, auto);
   grid-template-rows: minmax(min-content, auto);
   grid-template-areas:
     "user-profile-component"
+}
+
+.main.user-registration {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
 }
 
 /*Large devices (large desktops, 1200px and up)*/

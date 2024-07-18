@@ -23,7 +23,7 @@ import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.datamanager.views.login.passwordreset.ResetPasswordLayout;
+import life.qbic.datamanager.views.login.passwordreset.ResetPasswordMain;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.identity.api.UserInformationService;
 
@@ -66,6 +66,7 @@ public class UserRegistrationComponent extends Div {
     addClassName("user-registration-component");
     registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     username.setHelperText("Your unique user name, visible to other users");
+    password.setHelperText("Please provide a password with at least 12 characters");
     add(titleSpan, notificationLayout, fullName, email, username, password, registerButton);
     setFieldValidation();
     addRegistrationButtonListener();
@@ -73,7 +74,7 @@ public class UserRegistrationComponent extends Div {
   }
 
   private void addRoutingLinks() {
-    RouterLink resetLink = new RouterLink("RESET", ResetPasswordLayout.class);
+    RouterLink resetLink = new RouterLink("RESET", ResetPasswordMain.class);
     Span resetSpan = new Span(new Text("Forgot your password? "), resetLink);
     add(resetSpan);
   }
@@ -111,7 +112,7 @@ public class UserRegistrationComponent extends Div {
         .asRequired("Please provide a password")
         .withValidator(
             name -> name.strip().length() >= 12,
-            "Please provide a password with at least 12 characters")
+            "Password is too short")
         .bind(UserRegistrationInformation::password, UserRegistrationInformation::setPassword);
   }
 
