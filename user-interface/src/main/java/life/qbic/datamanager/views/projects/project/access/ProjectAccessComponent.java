@@ -10,6 +10,8 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.editor.Editor;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
@@ -19,9 +21,9 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -152,9 +154,10 @@ public class ProjectAccessComponent extends PageArea {
         .setSortable(true)
         .setResizable(true)
         .setAutoWidth(true);
-    projectUserGrid.addColumn(projectUser -> projectUser.orcid().orElse(""))
-        .setKey("orcid")
-        .setHeader("OrcId")
+    projectUserGrid.addComponentColumn(
+            projectuser -> renderOidc(projectuser.oidcIssuer(), projectuser.oidc()))
+        .setKey("oidc")
+        .setHeader("Oidc")
         .setSortable(true)
         .setResizable(true)
         .setAutoWidth(true);
@@ -188,6 +191,24 @@ public class ProjectAccessComponent extends PageArea {
             new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING)));
     projectUserGrid.setSelectionMode(SelectionMode.NONE);
     projectUserGrid.setColumnReorderingAllowed(true);
+  }
+
+  private Span renderOidc(String oidcIssuer, String oidc) {
+    Span oidcSpan = new Span();
+    oidcSpan.addClassName("oidc-cell");
+    if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
+      return oidcSpan;
+    }
+    var oidcType = Arrays.stream(OidcType.values())
+        .filter(ot -> ot.getIssuer().equals(oidcIssuer))
+        .findFirst().orElseThrow(
+            () -> new IllegalArgumentException("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+    String oidcUrl = String.format(oidcType.getUrl()) + oidc;
+    Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
+    oidcLink.setTarget(AnchorTarget.BLANK);
+    OidcLogo oidcLogo = new OidcLogo(oidcType);
+    oidcSpan.add(oidcLogo, oidcLink);
+    return oidcSpan;
   }
 
   private Span changeProjectAccessCell(ProjectUser projectUser) {
@@ -250,8 +271,16 @@ public class ProjectAccessComponent extends PageArea {
     return projectCollaborators.stream().map(collaborator ->
     {
       var userInfo = userInformationService.findById(collaborator.userId()).orElseThrow();
+      var oidcId = "";
+      var oidcIssuer = "";
+      if (userInfo.oidcId() != null) {
+        oidcId = userInfo.oidcId();
+      }
+      if (userInfo.oidcIssuer() != null) {
+        oidcIssuer = userInfo.oidcIssuer();
+      }
       return new ProjectUser(collaborator.userId(), userInfo.platformUserName(),
-          userInfo.fullName(), userInfo.oidcId(), collaborator.projectRole());
+          userInfo.fullName(), oidcId, oidcIssuer, collaborator.projectRole());
     }).toList();
   }
 
@@ -333,11 +362,11 @@ public class ProjectAccessComponent extends PageArea {
    * @param userId      the collaborating user
    * @param userName    the unique username of the user
    * @param fullName    the full name of the user
-   * @param orcid       the orcid of the user
+   * @param oidc        the oidc of the user
    * @param projectRole the role of the user within the project
    */
-  public record ProjectUser(String userId, String userName, String fullName, Optional<String> orcid,
-                            ProjectRole projectRole) {
+  public record ProjectUser(String userId, String userName, String fullName, String oidc,
+                            String oidcIssuer, ProjectRole projectRole) {
 
   }
 
