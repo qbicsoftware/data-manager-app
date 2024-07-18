@@ -11,17 +11,15 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.server.AbstractStreamResource;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
@@ -72,7 +70,9 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     userAvatar.setName(userInfo.platformUserName());
     CollaboratorInfoRender collaboratorInfoRender = new CollaboratorInfoRender(userAvatar,
         userInfo.platformUserName(), userInfo.fullName());
-    userInfo.oidcId().ifPresent(collaboratorInfoRender::setOrcid);
+    if (userInfo.oidcId() != null && userInfo.oidcIssuer() != null) {
+      collaboratorInfoRender.setOidc(userInfo.oidcIssuer(), userInfo.oidcId());
+    }
     return collaboratorInfoRender;
   }
 
@@ -179,7 +179,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
    */
   public static class CollaboratorInfoRender extends Div {
 
-    private static final String ORCID_LOGO_PATH = "login/orcid_logo.svg";
     private final Div userInfoContent;
 
     public CollaboratorInfoRender(UserAvatar userAvatar,
@@ -193,28 +192,21 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
       add(userAvatar, userInfoContent);
     }
 
-    private void setOrcid(String orcid) {
-      if (orcid.isEmpty()) {
+    private void setOidc(String oidcIssuer, String oidc) {
+      if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
         return;
       }
-      String orcidURL = "https://orcid.org/" + orcid;
-      Anchor orcidLink = new Anchor(orcidURL, orcid);
-      orcidLink.setTarget(AnchorTarget.BLANK);
-      Span orcIdSpan = new Span(generateOrcIdLogo(), orcidLink);
-      orcIdSpan.addClassName("orcid");
-      addInfoItem("Orcid", orcIdSpan);
-    }
-
-    private Image generateOrcIdLogo() {
-      Image orcIdLogo = new Image();
-      orcIdLogo.setSrc(getOrcIdSource());
-      orcIdLogo.addClassName("logo");
-      return orcIdLogo;
-    }
-
-    private AbstractStreamResource getOrcIdSource() {
-      return new StreamResource("orcid_logo.svg",
-          () -> getClass().getClassLoader().getResourceAsStream(ORCID_LOGO_PATH));
+      var oidcType = Arrays.stream(OidcType.values())
+          .filter(ot -> ot.getIssuer().equals(oidcIssuer))
+          .findFirst().orElseThrow(
+              () -> new IllegalArgumentException("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+      String oidcUrl = String.format(oidcType.getUrl()) + oidc;
+      Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
+      oidcLink.setTarget(AnchorTarget.BLANK);
+      OidcLogo oidcLogo = new OidcLogo(oidcType);
+      Span oidcSpan = new Span(oidcLogo, oidcLink);
+      oidcSpan.addClassName("oidc");
+      addInfoItem(oidcType.getName(), oidcSpan);
     }
 
     private void addInfoItem(String label, Component value) {
