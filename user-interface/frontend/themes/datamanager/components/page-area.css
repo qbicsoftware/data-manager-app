@@ -382,7 +382,6 @@
   display: flex;
   row-gap: var(--lumo-space-l);
   flex-direction: column;
-  width: clamp(500px, 70%, 100%);
   height: max-content;
 }
 

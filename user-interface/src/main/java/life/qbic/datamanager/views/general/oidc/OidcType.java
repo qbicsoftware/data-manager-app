@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.access;
+package life.qbic.datamanager.views.general.oidc;
 
 /**
  * The Oidc Types enum contains the associated logo path, the issuer and the url of the

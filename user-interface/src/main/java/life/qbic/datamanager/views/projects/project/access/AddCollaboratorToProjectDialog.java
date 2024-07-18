@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;

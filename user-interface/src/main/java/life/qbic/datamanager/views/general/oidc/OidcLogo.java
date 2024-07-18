@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.access;
+package life.qbic.datamanager.views.general.oidc;
 
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.server.AbstractStreamResource;
