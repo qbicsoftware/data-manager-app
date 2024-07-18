@@ -146,11 +146,6 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   flex-wrap: wrap;
 }
 
-.collaborator-info .user-info .info-item .oidc-logo {
-  width: var(--lumo-icon-size-m);
-  height: var(--lumo-icon-size-m);
-}
-
 .collaborator-info .user-info .oidc {
   display: inline-flex;
   align-items: center;

@@ -64,11 +64,6 @@
   cursor: pointer;
 }
 
-.login-card .oidc-logo {
-  height: var(--lumo-icon-size-m);
-  width: var(--lumo-icon-size-m);
-}
-
 .login-card .text {
   font-weight: 500;
   font-size: var(--lumo-font-size-m);

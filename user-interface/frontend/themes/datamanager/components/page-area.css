@@ -404,11 +404,6 @@
   align-items: center;
 }
 
-.project-access-component .oidc-cell .oidc-logo {
-  width: var(--lumo-icon-size-m);
-  height: var(--lumo-icon-size-m);
-}
-
 .project-collection-component {
   height: 100%;
   /*Necessary since we currently don't distinguish
