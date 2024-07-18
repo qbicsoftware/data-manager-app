@@ -14,7 +14,7 @@ import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.UserNotFoundException;
-import life.qbic.identity.domain.model.EmailAddress;
+import life.qbic.identity.domain.model.EmailAddress.EmailValidationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,13 +75,14 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
     if (exceptionList.isEmpty()) {
       return;
     }
-    if (exceptionList.contains(EmailAddress.EmailValidationException.class)) {
+    if (exceptionList.stream().anyMatch(e -> e instanceof EmailValidationException)) {
       resetPasswordComponent.showError("Invalid mail address format",
           "Please provide a valid mail address.");
-    } else if (exceptionList.contains(UserNotFoundException.class)) {
+    } else if (exceptionList.stream().anyMatch(e -> e instanceof UserNotFoundException)) {
       resetPasswordComponent.showError(
           "User not found", "No user with the provided mail address is known.");
-    } else if (exceptionList.contains(IdentityService.UserNotActivatedException.class)) {
+    } else if (exceptionList.stream()
+        .anyMatch(e -> e instanceof IdentityService.UserNotActivatedException)) {
       resetPasswordComponent.showError("User not active",
           "Please activate your account first to reset the password.");
     } else {

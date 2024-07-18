@@ -11,13 +11,17 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.Objects;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.register.UserRegistrationMain;
+import life.qbic.identity.api.UserInformationService;
 
 /**
  * Reset Password Component
@@ -40,8 +44,11 @@ public class ResetPasswordComponent extends Div {
   private final Div notificationLayout = new Div();
   private final Binder<String> emailBinder = new Binder<>(String.class);
   public Span registerSpan;
+  private final transient UserInformationService userInformationService;
 
-  public ResetPasswordComponent() {
+  public ResetPasswordComponent(UserInformationService userInformationService) {
+    this.userInformationService = Objects.requireNonNull(userInformationService,
+        "userInformationService is required");
     addClassName("reset-password-component");
     confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     Div introduction = new Div();
@@ -66,6 +73,13 @@ public class ResetPasswordComponent extends Div {
     emailField.setRequired(true);
     emailBinder.forField(emailField)
         .withValidator(new EmailValidator("Please provide a valid email address"))
+        .withValidator((Validator<String>) (value, context) -> {
+          if (userInformationService.isEmailAvailable(value)) {
+            return ValidationResult.error("No user with the provided mail address is known.");
+          } else {
+            return ValidationResult.ok();
+          }
+        })
         .bind(value -> value, (bean, value) -> {
         });
   }
