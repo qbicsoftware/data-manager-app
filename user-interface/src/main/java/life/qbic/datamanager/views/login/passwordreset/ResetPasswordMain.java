@@ -32,7 +32,7 @@ public class ResetPasswordMain extends Main implements BeforeEnterObserver {
 
   private static final Logger log =
       LoggerFactory.logger(ResetPasswordMain.class.getName());
-  private final IdentityService identityService;
+  private final transient IdentityService identityService;
   private final ResetEmailSentComponent resetEmailSentComponent;
   private final ResetPasswordComponent resetPasswordComponent;
 

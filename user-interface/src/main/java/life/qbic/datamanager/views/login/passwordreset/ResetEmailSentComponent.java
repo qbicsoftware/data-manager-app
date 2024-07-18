@@ -26,15 +26,13 @@ public class ResetEmailSentComponent extends Div {
 
   private final Button loginButton = new Button("Login");
 
-  private final H2 titleSpan = new H2("Email has been sent");
-
-  private final Div introduction = new Div();
-
   public ResetEmailSentComponent() {
     addClassName("reset-email-sent-component");
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    Div introduction = new Div();
     introduction.add("Please check your inbox and follow the instructions to reset your password.");
     introduction.addClassName("introduction");
+    H2 titleSpan = new H2("Email has been sent");
     add(titleSpan, introduction, loginButton);
   }
 
