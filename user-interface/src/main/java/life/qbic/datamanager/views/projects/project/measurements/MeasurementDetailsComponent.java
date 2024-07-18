@@ -198,7 +198,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
-        .setHeader("Sample IDs")
+        .setHeader("Samples")
         .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
         .setHeader("Facility")
@@ -289,7 +289,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
-        .setHeader("Sample IDs")
+        .setHeader("Samples")
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderOrganisation(proteomicsMeasurement.organisation()))
