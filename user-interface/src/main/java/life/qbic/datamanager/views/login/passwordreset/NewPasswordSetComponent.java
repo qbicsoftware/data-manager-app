@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.datamanager.views.general.CardLayout;
 
 /**
  * Reset Email Sent Component
@@ -20,7 +21,7 @@ import java.io.Serial;
  */
 @SpringComponent
 @UIScope
-public class NewPasswordSetComponent extends Div {
+public class NewPasswordSetComponent extends CardLayout {
 
   @Serial
   private static final long serialVersionUID = -1138757655198857262L;
@@ -28,7 +29,6 @@ public class NewPasswordSetComponent extends Div {
   private final Button loginButton = new Button("Login");
 
   public NewPasswordSetComponent() {
-    addClassName("new-password-set-component");
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     Div introduction = new Div();
     introduction.add("You can now log in with your new password.");

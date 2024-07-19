@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import life.qbic.datamanager.views.general.CardLayout;
 
 /**
  * Reset Email Sent Component
@@ -19,7 +20,7 @@ import java.io.Serial;
  */
 @SpringComponent
 @UIScope
-public class ResetEmailSentComponent extends Div {
+public class ResetEmailSentComponent extends CardLayout {
 
   @Serial
   private static final long serialVersionUID = -1138757655198857262L;
@@ -27,7 +28,6 @@ public class ResetEmailSentComponent extends Div {
   private final Button loginButton = new Button("Login");
 
   public ResetEmailSentComponent() {
-    addClassName("reset-email-sent-component");
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     Div introduction = new Div();
     introduction.add("Please check your inbox and follow the instructions to reset your password.");

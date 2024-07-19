@@ -19,6 +19,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.CardLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.register.UserRegistrationMain;
 import life.qbic.identity.api.UserInformationService;
@@ -32,7 +33,7 @@ import life.qbic.identity.api.UserInformationService;
  */
 @SpringComponent
 @UIScope
-public class ResetPasswordComponent extends Div {
+public class ResetPasswordComponent extends CardLayout {
 
   @Serial
   private static final long serialVersionUID = 6918803421532658723L;
@@ -49,7 +50,6 @@ public class ResetPasswordComponent extends Div {
   public ResetPasswordComponent(UserInformationService userInformationService) {
     this.userInformationService = Objects.requireNonNull(userInformationService,
         "userInformationService is required");
-    addClassName("reset-password-component");
     confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     Div introduction = new Div();
     introduction.add(
