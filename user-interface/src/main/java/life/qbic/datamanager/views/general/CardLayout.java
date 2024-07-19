@@ -4,11 +4,11 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 
 /**
- * <class short description - One Line!>
+ * Card Layout
  * <p>
- * <More detailed description - When to use, what it solves, etc.>
+ * Card styled Layout employed within all {@link Main} in the
+ * {@link life.qbic.datamanager.views.login.LoginLayout}
  *
- * @since <version tag>
  */
 public class CardLayout extends Div {
 
