@@ -19,7 +19,7 @@ public class CancelConfirmationNotificationDialog extends NotificationDialog {
     Button redButton = new Button("Discard");
     redButton.addClassName("danger");
     setConfirmButton(redButton);
-    Button cancelButton = new Button("Continue");
+    Button cancelButton = new Button("Continue Editing");
     setCancelButton(cancelButton);
   }
 
