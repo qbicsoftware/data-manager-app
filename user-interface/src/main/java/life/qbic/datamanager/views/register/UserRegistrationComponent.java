@@ -5,7 +5,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
@@ -64,7 +63,7 @@ public class UserRegistrationComponent extends CardLayout {
 
   public UserRegistrationComponent(UserInformationService userInformationService) {
     this.userInformationService = Objects.requireNonNull(userInformationService);
-    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    registerButton.addClassName("primary");
     username.setHelperText("Your unique user name, visible to other users");
     password.setHelperText("Please provide a password with at least 12 characters");
     add(titleSpan, notificationLayout, fullName, email, username, password, registerButton);

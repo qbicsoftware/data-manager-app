@@ -4,7 +4,6 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -29,7 +28,7 @@ public class NewPasswordSetComponent extends CardLayout {
   private final Button loginButton = new Button("Login");
 
   public NewPasswordSetComponent() {
-    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    loginButton.addClassName("primary");
     Div introduction = new Div();
     introduction.add("You can now log in with your new password.");
     introduction.addClassName("introduction");

@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.login.passwordreset;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -28,7 +27,7 @@ public class ResetEmailSentComponent extends CardLayout {
   private final Button loginButton = new Button("Login");
 
   public ResetEmailSentComponent() {
-    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    loginButton.addClassName("primary");
     Div introduction = new Div();
     introduction.add("Please check your inbox and follow the instructions to reset your password.");
     introduction.addClassName("introduction");

@@ -5,7 +5,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
@@ -49,7 +48,7 @@ public class ResetPasswordComponent extends CardLayout {
   public ResetPasswordComponent(UserInformationService userInformationService) {
     this.userInformationService = Objects.requireNonNull(userInformationService,
         "userInformationService is required");
-    confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmButton.addClassName("primary");
     Div introduction = new Div();
     introduction.add(
         "Enter the mail address associated with your account and we'll send you a link to reset your password:");

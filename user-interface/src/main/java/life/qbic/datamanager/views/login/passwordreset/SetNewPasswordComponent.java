@@ -4,7 +4,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -39,7 +38,7 @@ public class SetNewPasswordComponent extends CardLayout {
   private final Binder<String> passwordResetBinder = new Binder<>(String.class);
 
   public SetNewPasswordComponent() {
-    confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmButton.addClassName("primary");
     password.setHelperText("Please provide a password with at least 12 characters");
     Div introduction = new Div();
     introduction.add("Please provide a new password for your account:");

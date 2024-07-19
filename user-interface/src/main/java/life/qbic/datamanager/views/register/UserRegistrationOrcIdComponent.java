@@ -4,7 +4,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.textfield.TextField;
@@ -60,7 +59,7 @@ public class UserRegistrationOrcIdComponent extends CardLayout {
 
   public UserRegistrationOrcIdComponent(UserInformationService userInformationService) {
     this.userInformationService = Objects.requireNonNull(userInformationService);
-    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    registerButton.addClassName("primary");
     username.setHelperText("Your unique user name, visible to other users");
     description.add(
         "Please complete missing information to create an account with us.");
