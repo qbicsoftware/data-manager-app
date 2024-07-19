@@ -44,7 +44,6 @@ public class ResetPasswordComponent extends CardLayout {
   private final Button confirmButton = new Button("Send");
   private final Div notificationLayout = new Div();
   private final Binder<String> emailBinder = new Binder<>(String.class);
-  private final Span registerSpan;
   private final transient UserInformationService userInformationService;
 
   public ResetPasswordComponent(UserInformationService userInformationService) {
@@ -60,7 +59,7 @@ public class ResetPasswordComponent extends CardLayout {
     setFieldValidation();
     addRegistrationButtonListener();
     RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
-    registerSpan = new Span(new Text("Don't have an account? "), routerLink);
+    Span registerSpan = new Span(new Text("Don't have an account? "), routerLink);
     registerSpan.addClassName("registration-link");
     add(registerSpan);
   }
