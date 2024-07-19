@@ -54,7 +54,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .selectFrom(sortedAnalysisMethods, identity(), getAnalysisMethodItemRenderer())
         .setRequired();
 
-    addColumn("Sample label", SampleInfo::getSampleLabel, SampleInfo::setSampleLabel)
+    addColumn("Sample Name", SampleInfo::getSampleLabel, SampleInfo::setSampleLabel)
         .requireDistinctValues()
         .setRequired();
 
