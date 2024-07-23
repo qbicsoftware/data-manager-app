@@ -59,7 +59,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
         "Download the file with a list of URLs corresponding to the measurement you want to download.",
         generateDownloadUrlsButton);
     TabSheet codeTabSheet = new TabSheet();
-    CodeBlock curlCodeBlock = new CodeBlock("curl", "-OJ", "-H",
+    CodeBlock curlCodeBlock = new CodeBlock("curl", "--parallel", "--fail", "-OJ", "-H",
         "\"Authorization: Bearer <ACCESS_TOKEN>\"",
         "<DOWNLOAD_URL>");
     CodeBlock wgetCodeBlock = new CodeBlock("wget", "--content-disposition", "--trust-server-names",
@@ -77,7 +77,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
 
   private Span generateAdditionalInformationSection() {
     Anchor downloadGuideLink = new Anchor(
-        "https://qbicsoftware.github.io/research-data-management/rawdata/raw_data_download_run_download/",
+        "https://qbicsoftware.github.io/research-data-management/rawdata/raw_data_download/#download-raw-data",
         "here", AnchorTarget.BLANK);
     Text additionalInformationText = new Text("Learn more about how to download the datasets ");
     return new Span(additionalInformationText, downloadGuideLink);
