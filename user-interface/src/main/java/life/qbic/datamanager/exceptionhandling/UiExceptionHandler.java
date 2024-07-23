@@ -1,5 +1,6 @@
 package life.qbic.datamanager.exceptionhandling;
 
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -54,15 +55,28 @@ public class UiExceptionHandler {
     requireNonNull(ui, "ui must not be null");
     requireNonNull(exception, "exception must not be null");
     if (ui.isClosing()) {
-      log.error(
-          "tried to show message on closing UI ui[%s] vaadin[%s] http[%s]".formatted(ui.getUIId(),
-              ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+      if (nonNull(ui.getSession())) {
+        log.error(
+            "tried to show message on closing UI ui[%s] vaadin[%s] http[%s]".formatted(ui.getUIId(),
+                ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+      } else {
+        log.error(
+            "tried to show message on closing UI ui[%s] session is null".formatted(ui.getUIId()));
+      }
+
       return;
     }
     if (!ui.isAttached()) {
-      log.error(
-          "tried to show message on detached UI ui[%s] vaadin[%s] http[%s]".formatted(ui.getUIId(),
-              ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+      if (nonNull(ui.getSession())) {
+        log.error(
+            "tried to show message on detached UI ui[%s] vaadin[%s] http[%s]".formatted(
+                ui.getUIId(),
+                ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+      } else {
+        log.error(
+            "tried to show message on detached UI ui[%s] session is null".formatted(
+                ui.getUIId()));
+      }
       return;
     }
     UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
