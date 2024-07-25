@@ -67,6 +67,7 @@ public class ProjectAccessComponent extends PageArea {
   private final transient UserInformationService userInformationService;
   private final UserPermissions userPermissions;
   private final Grid<ProjectUser> projectUserGrid;
+  Div header = new Div();
   private final Span buttonBar;
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private Context context;
@@ -86,8 +87,6 @@ public class ProjectAccessComponent extends PageArea {
     this.addClassName("project-access-component");
     log.debug("New instance for %s(#%d)".formatted(ProjectAccessComponent.class.getSimpleName(),
         System.identityHashCode(this)));
-
-    Div header = new Div();
     header.addClassName("header");
     Span titleField = new Span();
     titleField.setText("Project Access Management");
@@ -96,7 +95,7 @@ public class ProjectAccessComponent extends PageArea {
     Button addCollaboratorButton = new Button("Add people");
     addCollaboratorButton.addClickListener(event -> openAddCollaboratorDialog());
     buttonBar.add(addCollaboratorButton);
-    header.add(titleField, buttonBar);
+    header.add(titleField);
     add(header);
     Span userProjectAccessDescription = new Span("Users with access to this project");
     projectUserGrid = new Grid<>(ProjectUser.class);
@@ -129,46 +128,38 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private void showControls(boolean isVisible) {
-    buttonBar.setVisible(isVisible);
+    boolean containsButtonBar = header.getChildren()
+        .anyMatch(component -> component.equals(buttonBar));
+    if (isVisible) {
+      if (!containsButtonBar) {
+        header.add(buttonBar);
+      }
+    } else {
+      if (containsButtonBar) {
+        header.remove(buttonBar);
+      }
+    }
   }
 
   private void initProjectUserGrid() {
     Editor<ProjectUser> editor = projectUserGrid.getEditor();
     Binder<ProjectUser> binder = new Binder<>(ProjectUser.class);
     editor.setBinder(binder);
-    projectUserGrid.addComponentColumn(projectUser -> {
-          UserAvatar userAvatar = new UserAvatar();
-          userAvatar.setUserId(projectUser.userId());
-          userAvatar.setName(projectUser.userName());
-          return userAvatar;
-        })
-        .setKey("avatar")
-        .setAutoWidth(true);
-    var userNameColumn = projectUserGrid.addColumn(ProjectUser::userName)
-        .setKey("username")
+    var projectUserInfoColumn = projectUserGrid.addComponentColumn(
+            ProjectAccessComponent::renderUserInfo)
+        .setKey("userinfo")
+        .setHeader("User Info")
+        .setAutoWidth(true)
         .setSortable(true)
-        .setResizable(true)
-        .setHeader("User Name")
-        .setAutoWidth(true);
-    projectUserGrid.addColumn(ProjectUser::fullName)
-        .setKey("fullname")
-        .setHeader("Full Name")
-        .setSortable(true)
-        .setResizable(true)
-        .setAutoWidth(true);
-    projectUserGrid.addComponentColumn(
-            projectuser -> renderOidc(projectuser.oidcIssuer(), projectuser.oidc()))
-        .setKey("oidc")
-        .setHeader("Oidc")
-        .setSortable(true)
-        .setResizable(true)
-        .setAutoWidth(true);
+        .setComparator(ProjectUser::userName)
+        .setResizable(true);
     var projectRoleColumn = projectUserGrid.addColumn(
             collaborator -> "Role: " + collaborator.projectRole().label())
         .setKey("projectRole").setHeader("Role")
         .setEditorComponent(
             this::renderProjectRoleComponent)
         .setSortable(true)
+        .setComparator(projectUser -> projectUser.projectRole().label())
         .setResizable(true)
         .setAutoWidth(true);
     projectUserGrid.addComponentColumn(projectUser -> {
@@ -189,28 +180,20 @@ public class ProjectAccessComponent extends PageArea {
         .setHeader("Action")
         .setAutoWidth(true);
     projectUserGrid.sort(
-        List.of(new GridSortOrder<>(userNameColumn, SortDirection.ASCENDING),
+        List.of(new GridSortOrder<>(projectUserInfoColumn, SortDirection.DESCENDING),
             new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING)));
     projectUserGrid.setSelectionMode(SelectionMode.NONE);
     projectUserGrid.setColumnReorderingAllowed(true);
   }
 
-  private Span renderOidc(String oidcIssuer, String oidc) {
-    Span oidcSpan = new Span();
-    oidcSpan.addClassName("oidc-cell");
-    if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
-      return oidcSpan;
-    }
-    var oidcType = Arrays.stream(OidcType.values())
-        .filter(ot -> ot.getIssuer().equals(oidcIssuer))
-        .findFirst().orElseThrow(
-            () -> new IllegalArgumentException("Unknown oidc Issuer %s".formatted(oidcIssuer)));
-    String oidcUrl = String.format(oidcType.getUrl()) + oidc;
-    Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
-    oidcLink.setTarget(AnchorTarget.BLANK);
-    OidcLogo oidcLogo = new OidcLogo(oidcType);
-    oidcSpan.add(oidcLogo, oidcLink);
-    return oidcSpan;
+  private static UserInfoCellComponent renderUserInfo(ProjectUser projectUser) {
+    UserAvatar userAvatar = new UserAvatar();
+    userAvatar.setUserId(projectUser.userId());
+    userAvatar.setName(projectUser.userName());
+    UserInfoCellComponent userInfoCellComponent = new UserInfoCellComponent(userAvatar,
+        projectUser.userName, projectUser.fullName);
+    userInfoCellComponent.setOidc(projectUser.oidcIssuer, projectUser.oidc);
+    return userInfoCellComponent;
   }
 
   private Span changeProjectAccessCell(ProjectUser projectUser) {
@@ -369,7 +352,49 @@ public class ProjectAccessComponent extends PageArea {
    */
   public record ProjectUser(String userId, String userName, String fullName, String oidc,
                             String oidcIssuer, ProjectRole projectRole) {
-
   }
 
+  /**
+   * A component displaying a users avatar, orcid, full name and username
+   */
+  public static class UserInfoCellComponent extends Div {
+
+    private final Div userInfoContent;
+
+    public UserInfoCellComponent(UserAvatar userAvatar, String userName, String fullName) {
+      addClassName("user-info-cell-component");
+      userAvatar.addClassName("avatar");
+      userInfoContent = new Div();
+      userInfoContent.addClassName("user-info");
+      add(userAvatar, userInfoContent);
+      setUserNameAndFullName(userName, fullName);
+    }
+
+    private void setUserNameAndFullName(String userName, String fullName) {
+      Span fullNameSpan = new Span(fullName);
+      Span userNameSpan = new Span(userName);
+      fullNameSpan.addClassName("secondary");
+      Span userNameAndFullName = new Span(userNameSpan, fullNameSpan);
+      userNameAndFullName.addClassName("user-name-and-full-name");
+      userInfoContent.add(userNameAndFullName);
+    }
+
+    protected void setOidc(String oidcIssuer, String oidc) {
+      if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
+        return;
+      }
+      var oidcType = Arrays.stream(OidcType.values())
+          .filter(ot -> ot.getIssuer().equals(oidcIssuer))
+          .findFirst().orElseThrow(
+              () -> new IllegalArgumentException("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+      String oidcUrl = String.format(oidcType.getUrl()) + oidc;
+      Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
+      oidcLink.setTarget(AnchorTarget.BLANK);
+      OidcLogo oidcLogo = new OidcLogo(oidcType);
+      oidcLogo.setClassName("size-small");
+      Span oidcSpan = new Span(oidcLogo, oidcLink);
+      oidcSpan.addClassName("oidc");
+      userInfoContent.add(oidcSpan);
+    }
+  }
 }
