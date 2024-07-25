@@ -7,3 +7,8 @@ img.clickable {
   width: var(--lumo-icon-size-m);
   height: var(--lumo-icon-size-m);
 }
+
+.size-small {
+  width: var(--lumo-icon-size-s);
+  height: var(--lumo-icon-size-s);
+}

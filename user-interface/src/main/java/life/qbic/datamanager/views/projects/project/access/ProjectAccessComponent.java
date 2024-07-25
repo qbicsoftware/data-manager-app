@@ -98,8 +98,7 @@ public class ProjectAccessComponent extends PageArea {
     header.add(titleField);
     add(header);
     Span userProjectAccessDescription = new Span("Users with access to this project");
-    projectUserGrid = new Grid<>(ProjectUser.class);
-    initProjectUserGrid();
+    projectUserGrid = createProjectUserGrid();
     add(userProjectAccessDescription, projectUserGrid);
   }
 
@@ -141,11 +140,12 @@ public class ProjectAccessComponent extends PageArea {
     }
   }
 
-  private void initProjectUserGrid() {
-    Editor<ProjectUser> editor = projectUserGrid.getEditor();
+  private Grid<ProjectUser> createProjectUserGrid() {
+    Grid<ProjectUser> pUserGrid = new Grid<>(ProjectUser.class);
+    Editor<ProjectUser> editor = pUserGrid.getEditor();
     Binder<ProjectUser> binder = new Binder<>(ProjectUser.class);
     editor.setBinder(binder);
-    var projectUserInfoColumn = projectUserGrid.addComponentColumn(
+    var projectUserInfoColumn = pUserGrid.addComponentColumn(
             ProjectAccessComponent::renderUserInfo)
         .setKey("userinfo")
         .setHeader("User Info")
@@ -153,7 +153,7 @@ public class ProjectAccessComponent extends PageArea {
         .setSortable(true)
         .setComparator(ProjectUser::userName)
         .setResizable(true);
-    var projectRoleColumn = projectUserGrid.addColumn(
+    var projectRoleColumn = pUserGrid.addColumn(
             collaborator -> "Role: " + collaborator.projectRole().label())
         .setKey("projectRole").setHeader("Role")
         .setEditorComponent(
@@ -162,7 +162,7 @@ public class ProjectAccessComponent extends PageArea {
         .setComparator(projectUser -> projectUser.projectRole().label())
         .setResizable(true)
         .setAutoWidth(true);
-    projectUserGrid.addComponentColumn(projectUser -> {
+    pUserGrid.addComponentColumn(projectUser -> {
           //You can't remove or edit your own role
           if (isCurrentUser(projectUser)) {
             return new Span();
@@ -179,11 +179,12 @@ public class ProjectAccessComponent extends PageArea {
         })
         .setHeader("Action")
         .setAutoWidth(true);
-    projectUserGrid.sort(
+    pUserGrid.sort(
         List.of(new GridSortOrder<>(projectUserInfoColumn, SortDirection.DESCENDING),
             new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING)));
-    projectUserGrid.setSelectionMode(SelectionMode.NONE);
-    projectUserGrid.setColumnReorderingAllowed(true);
+    pUserGrid.setSelectionMode(SelectionMode.NONE);
+    pUserGrid.setColumnReorderingAllowed(true);
+    return pUserGrid;
   }
 
   private static UserInfoCellComponent renderUserInfo(ProjectUser projectUser) {

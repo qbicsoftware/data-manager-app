@@ -4,6 +4,36 @@
   flex-flow: row wrap;
 }
 
+.user-info-cell-component {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-l);
+}
+
+.user-info-cell-component .avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+}
+
+.user-info-cell-component .user-info {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.user-info-cell-component .user-info .oidc {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.user-info-cell-component .user-info .user-name-and-full-name {
+  display: flex;
+  gap: var(--lumo-space-s);
+  align-items: baseline;
+}
+
 .disclaimer {
   display: flex;
   justify-content: center;
