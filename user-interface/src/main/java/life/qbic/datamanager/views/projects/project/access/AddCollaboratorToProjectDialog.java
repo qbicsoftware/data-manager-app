@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.access;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -29,6 +30,7 @@ import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
@@ -48,6 +50,7 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 6582904858073255011L;
+  private static final Logger log = logger(AddCollaboratorToProjectDialog.class);
   private final Div projectRoleSelectionSection = new Div();
   private final Div personSelectionSection = new Div();
   private final RadioButtonGroup<ProjectRole> projectRoleSelection = new RadioButtonGroup<>();
@@ -186,7 +189,7 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     public CollaboratorInfoRender(UserAvatar userAvatar,
         String userName, String fullName) {
       addClassName("collaborator-info");
-      userAvatar.setClassName("avatar");
+      userAvatar.addClassName("avatar");
       userInfoContent = new Div();
       userInfoContent.addClassName("user-info");
       addInfoItem("Username", new Span(userName));
@@ -194,14 +197,19 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
       add(userAvatar, userInfoContent);
     }
 
-    private void setOidc(String oidcIssuer, String oidc) {
+    protected void setOidc(String oidcIssuer, String oidc) {
       if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
         return;
       }
-      var oidcType = Arrays.stream(OidcType.values())
+      Arrays.stream(OidcType.values())
           .filter(ot -> ot.getIssuer().equals(oidcIssuer))
-          .findFirst().orElseThrow(
-              () -> new IllegalArgumentException("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+          .findFirst()
+          .ifPresentOrElse(oidcType -> addOidcInfoItem(oidcType, oidc),
+              () -> log.warn("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+      ;
+    }
+
+    private void addOidcInfoItem(OidcType oidcType, String oidc) {
       String oidcUrl = String.format(oidcType.getUrl()) + oidc;
       Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
       oidcLink.setTarget(AnchorTarget.BLANK);
