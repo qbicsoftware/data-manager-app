@@ -46,7 +46,7 @@ vaadin-dialog-overlay::part(title) {
 Since we want to remove the spacing between the cancel and confirm button we replace the flex setting with a grid layout*/
 .notification-dialog::part(footer) {
   display: grid;
-  grid-template-columns: 0 15% 15%;
+  grid-auto-flow: column;
 }
 
 /* icon in header */
