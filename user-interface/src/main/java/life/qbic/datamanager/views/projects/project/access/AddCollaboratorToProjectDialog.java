@@ -206,7 +206,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           .findFirst()
           .ifPresentOrElse(oidcType -> addOidcInfoItem(oidcType, oidc),
               () -> log.warn("Unknown oidc Issuer %s".formatted(oidcIssuer)));
-      ;
     }
 
     private void addOidcInfoItem(OidcType oidcType, String oidc) {
