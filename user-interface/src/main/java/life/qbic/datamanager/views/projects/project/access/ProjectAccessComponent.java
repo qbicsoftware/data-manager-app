@@ -103,6 +103,16 @@ public class ProjectAccessComponent extends PageArea {
     add(userProjectAccessDescription, projectUserGrid);
   }
 
+  private static UserInfoComponent renderUserInfo(ProjectUser projectUser) {
+    UserAvatar userAvatar = new UserAvatar();
+    userAvatar.setUserId(projectUser.userId());
+    userAvatar.setName(projectUser.userName());
+    UserInfoComponent userInfoCellComponent = new UserInfoComponent(userAvatar,
+        projectUser.userName, projectUser.fullName);
+    userInfoCellComponent.setOidc(projectUser.oidcIssuer, projectUser.oidc);
+    return userInfoCellComponent;
+  }
+
   public void setContext(Context context) {
     if (context.projectId().isEmpty()) {
       throw new ApplicationException("no project id in context " + context);
@@ -186,16 +196,6 @@ public class ProjectAccessComponent extends PageArea {
     pUserGrid.setSelectionMode(SelectionMode.NONE);
     pUserGrid.setColumnReorderingAllowed(true);
     return pUserGrid;
-  }
-
-  private static UserInfoCellComponent renderUserInfo(ProjectUser projectUser) {
-    UserAvatar userAvatar = new UserAvatar();
-    userAvatar.setUserId(projectUser.userId());
-    userAvatar.setName(projectUser.userName());
-    UserInfoCellComponent userInfoCellComponent = new UserInfoCellComponent(userAvatar,
-        projectUser.userName, projectUser.fullName);
-    userInfoCellComponent.setOidc(projectUser.oidcIssuer, projectUser.oidc);
-    return userInfoCellComponent;
   }
 
   private Span changeProjectAccessCell(ProjectUser projectUser) {
@@ -359,12 +359,12 @@ public class ProjectAccessComponent extends PageArea {
   /**
    * A component displaying a users avatar, orcid, full name and username
    */
-  public static class UserInfoCellComponent extends Div {
+  public static class UserInfoComponent extends Div {
 
     private final Div userInfoContent;
 
-    public UserInfoCellComponent(UserAvatar userAvatar, String userName, String fullName) {
-      addClassName("user-info-cell-component");
+    public UserInfoComponent(UserAvatar userAvatar, String userName, String fullName) {
+      addClassName("user-info-component");
       userAvatar.addClassName("avatar");
       userInfoContent = new Div();
       userInfoContent.addClassName("user-info");
@@ -375,6 +375,7 @@ public class ProjectAccessComponent extends PageArea {
     private void setUserNameAndFullName(String userName, String fullName) {
       Span fullNameSpan = new Span(fullName);
       Span userNameSpan = new Span(userName);
+      userNameSpan.addClassName("bold");
       fullNameSpan.addClassName("secondary");
       Span userNameAndFullName = new Span(userNameSpan, fullNameSpan);
       userNameAndFullName.addClassName("user-name-and-full-name");
@@ -385,15 +386,18 @@ public class ProjectAccessComponent extends PageArea {
       if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
         return;
       }
-      var oidcType = Arrays.stream(OidcType.values())
+      Arrays.stream(OidcType.values())
           .filter(ot -> ot.getIssuer().equals(oidcIssuer))
-          .findFirst().orElseThrow(
-              () -> new IllegalArgumentException("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+          .findFirst()
+          .ifPresentOrElse(oidcType -> addOidcInfoItem(oidcType, oidc),
+              () -> log.warn("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+    }
+
+    private void addOidcInfoItem(OidcType oidcType, String oidc) {
       String oidcUrl = String.format(oidcType.getUrl()) + oidc;
       Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
-      oidcLogo.setClassName("size-small");
       Span oidcSpan = new Span(oidcLogo, oidcLink);
       oidcSpan.addClassName("oidc");
       userInfoContent.add(oidcSpan);

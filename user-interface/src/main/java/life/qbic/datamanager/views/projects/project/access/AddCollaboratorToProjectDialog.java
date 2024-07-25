@@ -9,8 +9,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
@@ -20,14 +18,12 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.general.oidc.OidcLogo;
-import life.qbic.datamanager.views.general.oidc.OidcType;
+import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.UserInfoComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
@@ -73,12 +69,12 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     UserAvatar userAvatar = new UserAvatar();
     userAvatar.setUserId(userInfo.id());
     userAvatar.setName(userInfo.platformUserName());
-    CollaboratorInfoRender collaboratorInfoRender = new CollaboratorInfoRender(userAvatar,
+    UserInfoComponent userInfoComponent = new UserInfoComponent(userAvatar,
         userInfo.platformUserName(), userInfo.fullName());
     if (userInfo.oidcId() != null && userInfo.oidcIssuer() != null) {
-      collaboratorInfoRender.setOidc(userInfo.oidcIssuer(), userInfo.oidcId());
+      userInfoComponent.setOidc(userInfo.oidcIssuer(), userInfo.oidcId());
     }
-    return collaboratorInfoRender;
+    return userInfoComponent;
   }
 
   private void initPersonSelection(UserInformationService userInformationService,
@@ -177,56 +173,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
     return addListener(ConfirmEvent.class, listener);
-  }
-
-  /**
-   * A component displaying a user avatar and user name
-   */
-  public static class CollaboratorInfoRender extends Div {
-
-    private final Div userInfoContent;
-
-    public CollaboratorInfoRender(UserAvatar userAvatar,
-        String userName, String fullName) {
-      addClassName("collaborator-info");
-      userAvatar.addClassName("avatar");
-      userInfoContent = new Div();
-      userInfoContent.addClassName("user-info");
-      addInfoItem("Username", new Span(userName));
-      addInfoItem("Full Name", new Span(fullName));
-      add(userAvatar, userInfoContent);
-    }
-
-    protected void setOidc(String oidcIssuer, String oidc) {
-      if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
-        return;
-      }
-      Arrays.stream(OidcType.values())
-          .filter(ot -> ot.getIssuer().equals(oidcIssuer))
-          .findFirst()
-          .ifPresentOrElse(oidcType -> addOidcInfoItem(oidcType, oidc),
-              () -> log.warn("Unknown oidc Issuer %s".formatted(oidcIssuer)));
-    }
-
-    private void addOidcInfoItem(OidcType oidcType, String oidc) {
-      String oidcUrl = String.format(oidcType.getUrl()) + oidc;
-      Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
-      oidcLink.setTarget(AnchorTarget.BLANK);
-      OidcLogo oidcLogo = new OidcLogo(oidcType);
-      Span oidcSpan = new Span(oidcLogo, oidcLink);
-      oidcSpan.addClassName("oidc");
-      addInfoItem(oidcType.getName(), oidcSpan);
-    }
-
-    private void addInfoItem(String label, Component value) {
-      Span labelSpan = new Span(label);
-      labelSpan.addClassName("label");
-      value.addClassName("value");
-      Div infoItem = new Div();
-      infoItem.add(labelSpan, value);
-      infoItem.addClassName("info-item");
-      userInfoContent.add(infoItem);
-    }
   }
 
   public static class CancelEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
