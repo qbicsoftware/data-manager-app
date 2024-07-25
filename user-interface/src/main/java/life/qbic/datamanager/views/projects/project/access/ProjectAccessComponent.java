@@ -67,7 +67,7 @@ public class ProjectAccessComponent extends PageArea {
   private final transient UserInformationService userInformationService;
   private final UserPermissions userPermissions;
   private final Grid<ProjectUser> projectUserGrid;
-  Div header = new Div();
+  private final Div header;
   private final Span buttonBar;
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private Context context;
@@ -87,6 +87,7 @@ public class ProjectAccessComponent extends PageArea {
     this.addClassName("project-access-component");
     log.debug("New instance for %s(#%d)".formatted(ProjectAccessComponent.class.getSimpleName(),
         System.identityHashCode(this)));
+    header = new Div();
     header.addClassName("header");
     Span titleField = new Span();
     titleField.setText("Project Access Management");
