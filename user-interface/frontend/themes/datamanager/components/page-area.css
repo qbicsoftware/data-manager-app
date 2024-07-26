@@ -382,7 +382,7 @@
   display: flex;
   row-gap: var(--lumo-space-l);
   flex-direction: column;
-  height: max-content;
+  height: auto;
 }
 
 .project-access-component .header {
