@@ -1,6 +1,7 @@
 package life.qbic.logging.impl.logger;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
+
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.api.Publisher;
 import life.qbic.logging.impl.slf4j.Slf4jWrapper;
@@ -30,12 +31,12 @@ public class LoggerFacade implements Logger {
   private final Publisher publisher;
 
   public static LoggerFacade from(String name, Publisher publisher) {
-    Objects.requireNonNull(publisher);
+    requireNonNull(publisher, "publisher must not be null");
     return new LoggerFacade(name, publisher);
   }
 
   public static LoggerFacade from(Class<?> clazz, Publisher publisher) {
-    Objects.requireNonNull(publisher);
+    requireNonNull(publisher, "publisher must not be null");
     return new LoggerFacade(clazz, publisher);
   }
 

@@ -68,6 +68,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     Specification<SamplePreview> isBlankSpec = SamplePreviewSpecs.isBlank(filter);
     Specification<SamplePreview> experimentIdSpec = SamplePreviewSpecs.experimentIdEquals(
         experimentId);
+    Specification<SamplePreview> organismIdSpec = SamplePreviewSpecs.organismIdContains(filter);
     Specification<SamplePreview> sampleCodeSpec = SamplePreviewSpecs.sampleCodeContains(filter);
     Specification<SamplePreview> sampleLabelSpec = SamplePreviewSpecs.sampleLabelContains(filter);
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);
@@ -79,7 +80,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         filter);
     Specification<SamplePreview> commentSpec = SamplePreviewSpecs.commentContains(filter);
     Specification<SamplePreview> containsFilterSpec = Specification.anyOf(sampleCodeSpec,
-        sampleLabelSpec, batchLabelSpec, conditionSpec, speciesSpec,
+        sampleLabelSpec, organismIdSpec, batchLabelSpec, conditionSpec, speciesSpec,
         specimenSpec, analyteSpec, analysisMethodContains, commentSpec);
     Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
     return Specification.where(experimentIdSpec).and(isBlankSpec)
@@ -155,6 +156,11 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         return builder.like(function,
             "%" + filter + "%");
       };
+    }
+
+    public static Specification<SamplePreview> organismIdContains(String filter) {
+      return (root, query, builder) ->
+          builder.like(root.get("organismId"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> speciesContains(String filter) {

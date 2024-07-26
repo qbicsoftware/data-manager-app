@@ -6,14 +6,14 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.1.5</version>
+    <version>1.2.3</version>
   </parent>
   <artifactId>identity-infrastructure</artifactId>
   <dependencies>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity</artifactId>
-      <version>1.1.5</version>
+      <version>1.2.3</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -24,7 +24,7 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-jakarta-server</artifactId>
-      <version>2.31.2</version>
+      <version>2.35.0</version>
     </dependency>
 
   </dependencies>

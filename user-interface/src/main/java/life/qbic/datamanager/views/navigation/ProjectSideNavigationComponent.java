@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.navigation;
 
 import static java.util.Objects.requireNonNull;
-import static org.slf4j.LoggerFactory.getLogger;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -42,6 +41,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.creat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentAddEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -71,7 +72,7 @@ public class ProjectSideNavigationComponent extends Div implements
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
-  private static final Logger log = getLogger(ProjectSideNavigationComponent.class);
+  private static final Logger log = LoggerFactory.logger(ProjectSideNavigationComponent.class);
   private final Div content;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;

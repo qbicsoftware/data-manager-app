@@ -1,12 +1,13 @@
 package life.qbic.projectmanagement.application.batch;
 
-import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -20,7 +21,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest
 import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BatchRegistrationService {
 
-  private static final Logger log = getLogger(BatchRegistrationService.class);
+  private static final Logger log = LoggerFactory.logger(BatchRegistrationService.class);
   private final BatchRepository batchRepository;
   private final BatchDomainService batchDomainService;
   private final ProjectInformationService projectInformationService;

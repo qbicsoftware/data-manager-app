@@ -1,17 +1,18 @@
 package life.qbic.projectmanagement.infrastructure.sample.qualitycontrol;
 
-import static org.apache.logging.log4j.LogManager.getLogger;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorage;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorageException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControl;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class QualityControlStore implements QualityControlStorage {
 
-  private static final Logger log = getLogger(QualityControlStore.class);
+  private static final Logger log = logger(QualityControlStore.class);
 
   private final QualityControlJpa persistenceStore;
 
