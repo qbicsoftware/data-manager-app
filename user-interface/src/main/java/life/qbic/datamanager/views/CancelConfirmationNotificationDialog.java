@@ -21,17 +21,12 @@ public class CancelConfirmationNotificationDialog extends NotificationDialog {
   }
 
   public CancelConfirmationNotificationDialog withBodyText(String mainText) {
-    setContent(new Span(mainText));
+    withContent(new Span(mainText));
     return this;
   }
 
   public CancelConfirmationNotificationDialog withConfirmText(String confirmText) {
     setConfirmText(confirmText);
-    return this;
-  }
-
-  public CancelConfirmationNotificationDialog withTitle(String headerText) {
-    setTitle(headerText);
     return this;
   }
 }

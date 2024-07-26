@@ -3,18 +3,19 @@ package life.qbic.datamanager.views.notifications;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import life.qbic.datamanager.views.general.ConfirmDialog;
 
 /**
  * A dialog notifying the user of some event.
  * <p>
  * By default, this dialog comes with an icon and a text in the header. You can modify the header
- * text with {@link #setTitle}. When setting the icon with {@link #setHeaderIcon}, you can modify
+ * text with {@link #withTitle}. When setting the icon with {@link #withHeaderIcon}, you can modify
  * the color of the icon by assigning the following css classes:
  * <ul>
  *   <li>error-icon</li>
@@ -33,6 +34,7 @@ public class NotificationDialog extends ConfirmDialog {
   protected Component content;
 
 
+
   protected enum Type {
     SUCCESS, WARNING, ERROR, INFO
   }
@@ -47,9 +49,15 @@ public class NotificationDialog extends ConfirmDialog {
     });
     this.type = requireNonNull(type, "type must not be null");
 
-    title = new H2("Please note");
+    var defaultTitle = switch (type) {
+      case SUCCESS -> "Success";
+      case WARNING -> "Warning";
+      case ERROR -> "Error";
+      case INFO -> "Please note";
+    };
+    title = new H2(defaultTitle);
     title.addClassName("title");
-    setHeaderIcon(typeBasedHeaderIcon(this.type));
+    withHeaderIcon(typeBasedHeaderIcon(this.type));
     updateHeader();
 
     layout = new Div();
@@ -97,23 +105,29 @@ public class NotificationDialog extends ConfirmDialog {
     setHeader(new Span(headerIcon, title));
   }
 
-  public void setHeaderIcon(Icon icon) {
+  public <T extends NotificationDialog> T withHeaderIcon(Icon icon) {
     this.headerIcon = icon;
     updateHeader();
+    return (T) this;
   }
 
-  public void setTitle(String text) {
+  public <T extends NotificationDialog> T withTitle(String text) {
     title.setText(text);
     updateHeader();
+    return (T) this;
   }
 
-  public NotificationDialog setContent(Component content) {
+  public <T extends NotificationDialog> T withContent(Component content) {
     if (this.content != null) {
       this.content.removeFromParent();
     }
     this.content = requireNonNull(content, "content must not be null");
     layout.removeAll();
     layout.add(content);
-    return this;
+    return (T) this;
+  }
+
+  public <T extends NotificationDialog> T withHtmlContent(String htmlContent) {
+    return withContent(new Html("<div>%s</div>".formatted(htmlContent)));
   }
 }

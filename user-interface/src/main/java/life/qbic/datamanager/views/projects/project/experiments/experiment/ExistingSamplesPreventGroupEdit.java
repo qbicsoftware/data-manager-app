@@ -26,14 +26,14 @@ public class ExistingSamplesPreventGroupEdit extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
     errorIcon.setClassName("error-icon");
-    setTitle("Cannot edit experimental groups");
-    setHeaderIcon(errorIcon);
+    withTitle("Cannot edit experimental groups");
+    withHeaderIcon(errorIcon);
   }
 
   private void customizeContent(int sampleCount) {
     Span sampleCountSpan = new Span(String.valueOf(sampleCount));
     sampleCountSpan.addClassName("sample-count");
-    setContent(new Div(
+    withContent(new Div(
         new Div(new Text(
             "Editing experimental groups is only possible if samples are not registered.")),
         new Div(new Text("You have "), sampleCountSpan,

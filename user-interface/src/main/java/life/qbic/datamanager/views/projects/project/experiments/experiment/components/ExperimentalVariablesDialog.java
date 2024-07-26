@@ -90,7 +90,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
 
 
   @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
 
   }
@@ -110,7 +110,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
   }
 
   @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     onCanceled();
   }
 

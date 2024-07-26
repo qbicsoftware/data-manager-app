@@ -18,7 +18,7 @@ public class ExistingSamplesPreventSampleOriginEdit extends NotificationDialog {
     super(Type.INFO);
     addClassName("existing-samples-prevent-variable-edit");
     customizeHeader();
-    setContent(new Div(
+    withContent(new Div(
         "'%s' cannot be deleted, as it is referenced in samples of this experiment.".formatted(
             ontologyLabel)));
     setConfirmText("Okay");
@@ -27,8 +27,8 @@ public class ExistingSamplesPreventSampleOriginEdit extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
     errorIcon.setClassName("error-icon");
-    setTitle("Cannot remove sample origin");
-    setHeaderIcon(errorIcon);
+    withTitle("Cannot remove sample origin");
+    withHeaderIcon(errorIcon);
   }
 
 }

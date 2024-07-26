@@ -2,19 +2,17 @@ package life.qbic.datamanager.views.projects.project.access;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +20,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.notifications.CanRequireCancelConfirmation;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
@@ -40,7 +39,8 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * added collaborator should fulfill in the project
  * <p>
  */
-public class AddCollaboratorToProjectDialog extends DialogWindow {
+public class AddCollaboratorToProjectDialog extends DialogWindow implements
+    CanRequireCancelConfirmation {
 
   @Serial
   private static final long serialVersionUID = 6582904858073255011L;
@@ -56,10 +56,11 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     requireNonNull(userInformationService, "userInformationService must not be null");
     requireNonNull(projectAccessService, "projectAccessService must not be null");
     this.projectId = requireNonNull(projectId, "projectId must not be null");
+    requireCancelConfirmation();
     addClassName("add-user-to-project-dialog");
     initPersonSelection(userInformationService, alreadyExistingCollaborators);
     initProjectRoleSelection();
-    setHeaderTitle("Add Collaborator");
+    setHeader("Add Collaborator");
     add(personSelectionSection, projectRoleSelectionSection);
   }
 
@@ -139,10 +140,11 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     projectRoleSelection.addClassName("role-selection");
     projectRoleSelectionSection.addClassName("role-selection-section");
     projectRoleSelectionSection.add(title, description, projectRoleSelection);
+    addConfirmListener(this::onConfirmed);
   }
 
-  @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+
+  protected void onConfirmed(ConfirmDialog.ConfirmEvent confirmEvent) {
     personSelection.setInvalid(personSelection.isEmpty());
     projectRoleSelection.setInvalid(projectRoleSelection.isEmpty());
     if (!personSelection.isInvalid() && !projectRoleSelection.isInvalid()) {
@@ -150,21 +152,14 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
       ProjectRole projectRole = projectRoleSelection.getValue();
       ProjectCollaborator projectCollaborator = new ProjectCollaborator(userId, projectId,
           projectRole);
-      fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), projectCollaborator));
+      fireEvent(new ProjectCollaboratorConfirmedEvent(this, confirmEvent.isFromClient(),
+          projectCollaborator));
     }
   }
 
-  @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-  }
-
-  public Registration addCancelListener(ComponentEventListener<CancelEvent> listener) {
-    return addListener(CancelEvent.class, listener);
-  }
-
-  public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
-    return addListener(ConfirmEvent.class, listener);
+  public void addProjectCollaboratorConfirmedListener(
+      ComponentEventListener<ProjectCollaboratorConfirmedEvent> listener) {
+    addListener(ProjectCollaboratorConfirmedEvent.class, listener);
   }
 
   public static class CancelEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
@@ -182,7 +177,8 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     }
   }
 
-  public static class ConfirmEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
+  public static class ProjectCollaboratorConfirmedEvent extends
+      ComponentEvent<AddCollaboratorToProjectDialog> {
 
     private final ProjectCollaborator projectCollaborator;
 
@@ -194,7 +190,8 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public ConfirmEvent(AddCollaboratorToProjectDialog source, boolean fromClient,
+    public ProjectCollaboratorConfirmedEvent(AddCollaboratorToProjectDialog source,
+        boolean fromClient,
         ProjectCollaborator projectCollaborator) {
       super(source, fromClient);
       this.projectCollaborator = projectCollaborator;

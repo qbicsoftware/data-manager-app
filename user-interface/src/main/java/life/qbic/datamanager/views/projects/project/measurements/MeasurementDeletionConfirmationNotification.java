@@ -24,7 +24,7 @@ public class MeasurementDeletionConfirmationNotification extends NotificationDia
   private void customizeHeader(String title) {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle(title);
-    setHeaderIcon(errorIcon);
+    withTitle(title);
+    withHeaderIcon(errorIcon);
   }
 }

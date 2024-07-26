@@ -26,8 +26,8 @@ public class ExistingSamplesPreventVariableEdit extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
     errorIcon.setClassName("error-icon");
-    setTitle("Cannot edit variables");
-    setHeaderIcon(errorIcon);
+    withTitle("Cannot edit variables");
+    withHeaderIcon(errorIcon);
   }
 
   private void customizeContent(int sampleCount) {

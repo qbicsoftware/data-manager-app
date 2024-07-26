@@ -123,7 +123,7 @@ public class AddExperimentDialog extends DialogWindow {
   }
 
   @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     ExperimentDraft experimentDraft = new ExperimentDraft();
     boolean isValid = binder.writeBeanIfValid(experimentDraft);
     if (isValid) {
@@ -146,7 +146,7 @@ public class AddExperimentDialog extends DialogWindow {
   }
 
   @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     onCreationCanceled();
   }
 

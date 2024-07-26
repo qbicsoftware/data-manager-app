@@ -21,14 +21,14 @@ public final class ExistingGroupsPreventVariableEdit extends NotificationDialog 
     super(Type.ERROR);
     this.messageSource = requireNonNull(messageSource, "messageSource must not be null");
     addClassName("existing-groups-prevent-variable-edit");
-    setTitle("Cannot edit variables");
+    withTitle("Cannot edit variables");
 
     String defaultMessage =
         "You have " + numberOfExperimentalGroups + " experimental groups. Please delete them.";
     String message = this.messageSource.getMessage(
         "experiment.design.variable.edit.groups-exist.message",
         new Object[]{numberOfExperimentalGroups}, defaultMessage, getLocale());
-    setContent(new Html("<div>%s</div>".formatted(message)));
+    withContent(new Html("<div>%s</div>".formatted(message)));
 
     String confirmText = messageSource.getMessage(
         "experiment.design.variable.edit.groups-exist.confirm-text", null, "Ok", getLocale());

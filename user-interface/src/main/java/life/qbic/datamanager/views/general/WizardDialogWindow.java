@@ -21,13 +21,12 @@ import com.vaadin.flow.component.button.Button;
 public abstract class WizardDialogWindow extends DialogWindow {
 
   protected final Button finishButton;
+  protected Button confirmButtonSwap;
 
   protected WizardDialogWindow() {
     super();
     finishButton = new Button("Finish");
-    getFooter().add(finishButton);
     finishButton.addClassName("primary");
-    showFailed();
     finishButton.addClickListener(this::onFinishClicked);
   }
 
@@ -49,8 +48,8 @@ public abstract class WizardDialogWindow extends DialogWindow {
   public void showSucceeded() {
     this.cancelButton.setVisible(false);
     this.confirmButton.setVisible(false);
-    this.finishButton.setVisible(true);
-    this.finishButton.setEnabled(true);
+    finishButton.setEnabled(true);
+    setConfirmButton(finishButton);
   }
 
   /**
@@ -61,9 +60,7 @@ public abstract class WizardDialogWindow extends DialogWindow {
   public void showFailed() {
     this.cancelButton.setVisible(true);
     this.cancelButton.setEnabled(true);
-    this.confirmButton.setVisible(true);
-    this.confirmButton.setEnabled(true);
-    this.finishButton.setVisible(false);
+    setConfirmButton(confirmButton);
   }
 
   /**
@@ -74,9 +71,8 @@ public abstract class WizardDialogWindow extends DialogWindow {
   public void showInProgress() {
     this.cancelButton.setVisible(true);
     this.cancelButton.setEnabled(false);
-    this.finishButton.setVisible(true);
-    this.finishButton.setEnabled(false);
-    this.confirmButton.setVisible(false);
+    finishButton.setEnabled(false);
+    setConfirmButton(finishButton);
   }
 
   /**

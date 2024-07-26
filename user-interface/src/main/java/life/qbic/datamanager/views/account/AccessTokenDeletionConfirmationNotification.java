@@ -15,7 +15,7 @@ public class AccessTokenDeletionConfirmationNotification extends NotificationDia
   public AccessTokenDeletionConfirmationNotification() {
     super(Type.INFO);
     customizeHeader();
-    setContent(new Span(
+    withContent(new Span(
         "Deleting this Personal Access Token will make it unusable. Proceed?"));
     setCancelable(true);
     setConfirmText("Confirm");
@@ -24,7 +24,7 @@ public class AccessTokenDeletionConfirmationNotification extends NotificationDia
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Personal Access Token will be deleted");
-    setHeaderIcon(errorIcon);
+    withTitle("Personal Access Token will be deleted");
+    withHeaderIcon(errorIcon);
   }
 }

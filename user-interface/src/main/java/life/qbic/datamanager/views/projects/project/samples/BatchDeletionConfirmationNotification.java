@@ -25,7 +25,7 @@ public class BatchDeletionConfirmationNotification extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Samples within batch will be deleted");
-    setHeaderIcon(errorIcon);
+    withTitle("Samples within batch will be deleted");
+    withHeaderIcon(errorIcon);
   }
 }

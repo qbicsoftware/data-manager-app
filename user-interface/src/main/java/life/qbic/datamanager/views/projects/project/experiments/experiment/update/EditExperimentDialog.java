@@ -59,8 +59,6 @@ public class EditExperimentDialog extends DialogWindow {
         ontologyTermInformationService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
-    specifyCancelShortcuts(this::onEditCanceled);
-
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
 
@@ -163,7 +161,7 @@ public class EditExperimentDialog extends DialogWindow {
   }
 
   @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     ExperimentDraft experimentDraft = new ExperimentDraft();
     ExperimentDraft oldDraft = binder.getBean();
     boolean isValid = binder.writeBeanIfValid(experimentDraft);
@@ -188,7 +186,7 @@ public class EditExperimentDialog extends DialogWindow {
   }
 
   @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     onEditCanceled();
   }
 

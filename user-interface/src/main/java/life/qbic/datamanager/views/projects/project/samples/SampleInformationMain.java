@@ -27,6 +27,7 @@ import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -59,6 +60,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
 
 /**
  * Sample Information Main Component
@@ -94,6 +97,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final TextField searchField = new TextField();
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
+  private final MessageSource messageSource;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -102,7 +106,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
-      @Autowired BatchDetailsComponent batchDetailsComponent) {
+      @Autowired BatchDetailsComponent batchDetailsComponent,
+      @Qualifier("messageSource") MessageSource messageSource) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
     this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService,
@@ -144,6 +149,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
+    this.messageSource = messageSource;
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -292,10 +298,13 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }
   }
 
-  private void displayUpdateSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch update succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayUpdateSuccess(String batchName) {
+    String message = messageSource.getMessage("samples.batch.changes-saved.message",
+        new Object[]{batchName},
+        getLocale());
+    NotificationDialog dialog = NotificationDialog.successDialog()
+        .withHtmlContent(message);
+    dialog.open();
   }
 
   private void displayDeletionSuccess() {
@@ -371,7 +380,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         confirmEvent.getData().batchName(), isPilot, createdSamples, editedSamples,
         deletedSamples, context.projectId().orElseThrow());
     result.onValue(ignored -> confirmEvent.getSource().close());
-    result.onValue(batchId -> displayUpdateSuccess());
+    result.onValue(batchId -> displayUpdateSuccess(confirmEvent.getData().batchName()));
     result.onValue(ignored -> setBatchAndSampleInformation());
   }
 

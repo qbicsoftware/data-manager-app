@@ -83,8 +83,8 @@ public class UiExceptionHandler {
       return;
     }
     NotificationDialog dialog = NotificationDialog.errorDialog();
-    dialog.setTitle(errorMessage.title());
-    dialog.setContent(new Span(errorMessage.message()));
+    dialog.withTitle(errorMessage.title());
+    dialog.withContent(new Span(errorMessage.message()));
     dialog.open();
   }
 }

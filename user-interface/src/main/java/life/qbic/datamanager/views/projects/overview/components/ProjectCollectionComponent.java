@@ -75,11 +75,11 @@ public class ProjectCollectionComponent extends PageArea {
     add(new Button("test dialog", it -> {
       NotificationDialog
           .infoDialog()
-          .setContent(new Span(testText.getValue()))
+          .withContent(new Span(testText.getValue()))
           .open();
       NotificationDialog warningDialog = NotificationDialog
           .warningDialog()
-          .setContent(new Span(testText.getValue()));
+          .withContent(new Span(testText.getValue()));
       warningDialog.setCancelable(true);
       warningDialog.addCancelListener(it2 -> it2.getSource().close());
       warningDialog.setRejectable(true);
@@ -88,11 +88,11 @@ public class ProjectCollectionComponent extends PageArea {
           .open();
       NotificationDialog
           .errorDialog()
-          .setContent(new Span(testText.getValue()))
+          .withContent(new Span(testText.getValue()))
           .open();
       NotificationDialog
           .successDialog()
-          .setContent(new Span(testText.getValue()))
+          .withContent(new Span(testText.getValue()))
           .open();
     }));
     add(new Button("test notification", it -> Toast

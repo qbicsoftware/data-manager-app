@@ -7,10 +7,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
-import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -24,11 +21,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
+import life.qbic.datamanager.views.general.Dialog;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.notifications.CanRequireCancelConfirmation;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
@@ -47,7 +46,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 
 @SpringComponent
 @UIScope
-public class AddProjectDialog extends Dialog {
+public class AddProjectDialog extends Dialog implements CanRequireCancelConfirmation {
 
   @Serial
   private static final long serialVersionUID = 7643754818237178416L;
@@ -75,7 +74,7 @@ public class AddProjectDialog extends Dialog {
       OntologyLookupService ontologyLookupService,
       ContactRepository contactRepository) {
     super();
-
+    requireCancelConfirmation();
     initCancelShortcuts();
 
     addClassName("add-project-dialog");
@@ -149,10 +148,11 @@ public class AddProjectDialog extends Dialog {
   }
 
   private void initCancelShortcuts() {
-    setCloseOnOutsideClick(false);
-    setCloseOnEsc(false);
-    Shortcuts.addShortcutListener(this,
-        this::onCreationCanceled, Key.ESCAPE);
+//    setCloseOnOutsideClick(false);
+//    setCloseOnEsc(false);
+//    Shortcuts.addShortcutListener(this,
+//        this::onCreationCanceled, Key.ESCAPE);
+//    addDialogCloseActionListener(dialogClose -> onCreationCanceled());
   }
 
   private void onCreationCanceled() {
@@ -177,7 +177,8 @@ public class AddProjectDialog extends Dialog {
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onCreationCanceled();
+    close();
+//    onCreationCanceled();
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {

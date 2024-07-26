@@ -4,7 +4,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -264,9 +263,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
-  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
+  private MeasurementMetadataUploadDialog setupDialog(MeasurementMetadataUploadDialog dialog) {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent ->
+    dialog.addMeasurementUploadConfirmListener(confirmEvent ->
     {
       triggerMeasurementRegistration(confirmEvent.uploads(),
           confirmEvent.getSource());
@@ -282,12 +281,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         measurementMetadataUploadDialog.getMode() == MODE.EDIT ? "update" : "registration";
     for (var upload : measurementMetadataUploads) {
       var measurementData = upload.measurementMetadata();
-      measurementMetadataUploadDialog.taskInProgress(
-          "%s of %s measurements ...".formatted(StringUtils.capitalize(process),
-              measurementData.size()),
-          "This might take a minute");
-      //Necessary so the dialog window switches to show the upload progress
-      UI.getCurrent().push();
+      UI.getCurrent().access(() ->
+          measurementMetadataUploadDialog.taskInProgress(
+              "%s of %s measurements ...".formatted(StringUtils.capitalize(process),
+                  measurementData.size()),
+              "This might take a minute"));
       CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
       if (measurementMetadataUploadDialog.getMode().equals(MODE.EDIT)) {
         completableFuture = measurementService.updateAll(upload.measurementMetadata(),
@@ -428,8 +426,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void showErrorNotification(String title, String description) {
     NotificationDialog dialog = NotificationDialog.errorDialog();
-    dialog.setTitle(title);
-    dialog.setContent(new Span(description));
+    dialog.withTitle(title);
+    dialog.withContent(new Span(description));
     dialog.open();
   }
 

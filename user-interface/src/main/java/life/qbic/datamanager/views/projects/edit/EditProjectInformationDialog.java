@@ -84,7 +84,7 @@ public class EditProjectInformationDialog extends DialogWindow {
   }
 
   @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     ProjectInformation projectInformation = new ProjectInformation();
     try {
       binder.writeBean(projectInformation);
@@ -110,7 +110,7 @@ public class EditProjectInformationDialog extends DialogWindow {
   }
 
   @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     onEditCanceled();
   }
 

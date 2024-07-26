@@ -148,8 +148,9 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     Collection<MeasurementCode> selectedMeasurements = rawdataDetailsComponent.getSelectedMeasurementUrls();
     if (selectedMeasurements.isEmpty()) {
       var dialog = NotificationDialog.errorDialog();
-      dialog.setTitle("No Raw Data Item Selected");
-      dialog.setContent(new Span("Please select at least one measurement to generate an URL from"));
+      dialog.withTitle("No Raw Data Item Selected");
+      dialog.withContent(
+          new Span("Please select at least one measurement to generate an URL from"));
       dialog.open();
     }
     var downloadUrls = generateDownloadUrls(selectedMeasurements);

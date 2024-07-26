@@ -28,7 +28,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
-import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ConfirmEvent;
+import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ProjectCollaboratorConfirmedEvent;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
@@ -293,10 +293,11 @@ public class ProjectAccessComponent extends PageArea {
         alreadyExistingCollaborators);
     addCollaboratorToProjectDialog.open();
     addCollaboratorToProjectDialog.addCancelListener(event -> event.getSource().close());
-    addCollaboratorToProjectDialog.addConfirmListener(this::onAddCollaboratorConfirmed);
+    addCollaboratorToProjectDialog.addProjectCollaboratorConfirmedListener(
+        this::onAddCollaboratorConfirmed);
   }
 
-  private void onAddCollaboratorConfirmed(ConfirmEvent event) {
+  private void onAddCollaboratorConfirmed(ProjectCollaboratorConfirmedEvent event) {
     projectAccessService.addCollaborator(context.projectId().orElseThrow(),
         event.projectCollaborator()
             .userId(), event.projectCollaborator().projectRole());
@@ -306,8 +307,8 @@ public class ProjectAccessComponent extends PageArea {
 
   private void displayError(String title, String description) {
     NotificationDialog dialog = NotificationDialog.errorDialog();
-    dialog.setTitle(title);
-    dialog.setContent(new Span(description));
+    dialog.withTitle(title);
+    dialog.withContent(new Span(description));
     dialog.open();
   }
 
