@@ -5,11 +5,11 @@ import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.server.ErrorEvent;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -54,11 +54,14 @@ public class UiExceptionHandler {
   private void displayUserFriendlyMessage(UI ui, ApplicationException exception) {
     requireNonNull(ui, "ui must not be null");
     requireNonNull(exception, "exception must not be null");
+    UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
     if (ui.isClosing()) {
       if (nonNull(ui.getSession())) {
         log.error(
-            "tried to show message on closing UI ui[%s] vaadin[%s] http[%s]".formatted(ui.getUIId(),
-                ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+            "tried to show message on closing UI ui[%s] vaadin[%s] http[%s]: %s;%s".formatted(
+                ui.getUIId(),
+                ui.getSession().getPushId(), ui.getSession().getSession().getId(),
+                errorMessage.title(), errorMessage.message()));
       } else {
         log.error(
             "tried to show message on closing UI ui[%s] session is null".formatted(ui.getUIId()));
@@ -69,24 +72,19 @@ public class UiExceptionHandler {
     if (!ui.isAttached()) {
       if (nonNull(ui.getSession())) {
         log.error(
-            "tried to show message on detached UI ui[%s] vaadin[%s] http[%s]".formatted(
+            "tried to show message on detached UI ui[%s] vaadin[%s] http[%s]: %s;%s".formatted(
                 ui.getUIId(),
-                ui.getSession().getPushId(), ui.getSession().getSession().getId()));
+                ui.getSession().getPushId(), ui.getSession().getSession().getId(), errorMessage.title(), errorMessage.message()));
       } else {
         log.error(
-            "tried to show message on detached UI ui[%s] session is null".formatted(
-                ui.getUIId()));
+            "tried to show message on detached UI ui[%s] session is null: %s;%s".formatted(
+                ui.getUIId(), errorMessage.title(), errorMessage.message()));
       }
       return;
     }
-    UserFriendlyErrorMessage errorMessage = userMessageService.translate(exception, ui.getLocale());
-    ui.access(() -> showErrorDialog(errorMessage));
-  }
-
-  private void showErrorDialog(UserFriendlyErrorMessage userFriendlyError) {
-    ErrorMessage errorMessage = new ErrorMessage(userFriendlyError.title(),
-        userFriendlyError.message());
-    StyledNotification styledNotification = new StyledNotification(errorMessage);
-    styledNotification.open();
+    NotificationDialog dialog = NotificationDialog.errorDialog();
+    dialog.withTitle(errorMessage.title());
+    dialog.withContent(new Span(errorMessage.message()));
+    dialog.open();
   }
 }

@@ -1,8 +1,11 @@
 package life.qbic.datamanager.views.projects.overview.components;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -10,16 +13,16 @@ import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.RouteParam;
-import com.vaadin.flow.spring.annotation.RouteScope;
+import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
@@ -27,6 +30,8 @@ import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.info.ProjectInformationMain;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -42,7 +47,7 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-@RouteScope
+@UIScope
 public class ProjectCollectionComponent extends PageArea {
 
   @Serial
@@ -57,12 +62,44 @@ public class ProjectCollectionComponent extends PageArea {
   private GridLazyDataView<ProjectOverview> projectOverviewGridLazyDataView;
 
   public ProjectCollectionComponent(ProjectInformationService projectInformationService) {
-    this.projectInformationService = Objects.requireNonNull(projectInformationService,
+    this.projectInformationService = requireNonNull(projectInformationService,
         "Project information service cannot be null");
     layoutComponent();
     createLazyProjectView();
     configureSearch();
     configureProjectCreationButton();
+    var testText = new TextField();
+    var closeable = new Checkbox("notification closeable?", true);
+    var closeOnNavigation = new Checkbox("notification close on navigation?", false);
+    add(new HorizontalLayout(testText, closeable, closeOnNavigation));
+    add(new Button("test dialog", it -> {
+      NotificationDialog
+          .infoDialog()
+          .withContent(new Span(testText.getValue()))
+          .open();
+      NotificationDialog warningDialog = NotificationDialog
+          .warningDialog()
+          .withContent(new Span(testText.getValue()));
+      warningDialog.setCancelable(true);
+      warningDialog.addCancelListener(it2 -> it2.getSource().close());
+      warningDialog.setRejectable(true);
+      warningDialog.addRejectListener(it2 -> it2.getSource().close());
+      warningDialog
+          .open();
+      NotificationDialog
+          .errorDialog()
+          .withContent(new Span(testText.getValue()))
+          .open();
+      NotificationDialog
+          .successDialog()
+          .withContent(new Span(testText.getValue()))
+          .open();
+    }));
+    add(new Button("test notification", it -> Toast
+        .createWithText(testText.getValue())
+        .setCloseable(closeable.getValue())
+        .closeOnNavigation(closeOnNavigation.getValue())
+        .open()));
   }
 
   private void initHeader() {
@@ -138,7 +175,7 @@ public class ProjectCollectionComponent extends PageArea {
    */
   public void addCreateClickedListener(
       ComponentEventListener<ProjectCreationSubmitEvent> listener) {
-    Objects.requireNonNull(listener);
+    requireNonNull(listener);
     addListener(ProjectCreationSubmitEvent.class, listener);
   }
 
@@ -196,7 +233,7 @@ public class ProjectCollectionComponent extends PageArea {
     private final ProjectOverview projectOverview;
 
     public ProjectOverviewItem(ProjectOverview projectOverview) {
-      this.projectOverview = Objects.requireNonNull(projectOverview);
+      this.projectOverview = requireNonNull(projectOverview);
       Span header = createHeader(projectOverview.projectCode(), projectOverview.projectTitle());
       add(header);
       Span lastModified = new Span(

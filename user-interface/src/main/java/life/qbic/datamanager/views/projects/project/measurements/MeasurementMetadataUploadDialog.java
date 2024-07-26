@@ -2,10 +2,9 @@ package life.qbic.datamanager.views.projects.project.measurements;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
@@ -41,8 +40,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -89,7 +87,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
         "The dialog mode needs to be defined");
-    specifyCancelShortcuts(this::onCanceled);
 
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
@@ -114,7 +111,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     upload.getElement().addEventListener("file-remove", this::onFileRemoved)
         .addEventData(VAADIN_FILENAME_EVENT);
     addClassName("measurement-upload-dialog");
-
+    addConfirmListener(this::onConfirmClicked);
+    addCancelListener(this::onCancelClicked);
   }
 
   private static List<String> parseHeaderContent(String header) {
@@ -270,11 +268,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private void setModeBasedLabels() {
     switch (mode) {
       case ADD -> {
-        setHeaderTitle("Register measurements");
+        setHeader("Register measurements");
         confirmButton.setText("Register");
       }
       case EDIT -> {
-        setHeaderTitle("Edit measurements");
+        setHeader("Edit measurements");
         confirmButton.setText("Save");
       }
     }
@@ -600,16 +598,12 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     showErrorNotification("File upload failed", errorMessage);
   }
 
-  public Registration addCancelListener(ComponentEventListener<CancelEvent> listener) {
-    return addListener(CancelEvent.class, listener);
-  }
-
-  public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
+  public Registration addMeasurementUploadConfirmListener(
+      ComponentEventListener<ConfirmEvent> listener) {
     return addListener(ConfirmEvent.class, listener);
   }
 
-  @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmClicked(ConfirmDialog.ConfirmEvent clickEvent) {
     if (containsInvalidMeasurementData()) {
       showErrorNotification("Metadata still invalid",
           "Please correct your metadata first and upload it again.");
@@ -629,9 +623,10 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
 
   private void showErrorNotification(String title, String description) {
-    ErrorMessage errorMessage = new ErrorMessage(title, description);
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
+    var dialog = NotificationDialog.errorDialog();
+    dialog.withTitle(title);
+    dialog.withContent(new Span(description));
+    dialog.open();
   }
 
   private void onCanceled() {
@@ -648,15 +643,14 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         event -> cancelDialog.close());
   }
 
-  @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelClicked(ConfirmDialog.CancelEvent clickEvent) {
     onCanceled();
   }
 
   @Override
   public void taskFailed(String label, String description) {
     uploadProgressDisplay.showProgressFailedDisplay(label, description);
-    setConfirmButtonLabel("%s Again".formatted(mode == MODE.ADD ? "Register" : "Edit"));
+    confirmButton.setText("%s Again".formatted(mode == MODE.ADD ? "Register" : "Edit"));
     showFailed();
   }
 

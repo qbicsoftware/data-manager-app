@@ -16,6 +16,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class ExistingSamplesPreventGroupEdit extends NotificationDialog {
 
   public ExistingSamplesPreventGroupEdit(int sampleCount) {
+    super(Type.INFO);
     addClassName("existing-samples-prevent-group-edit");
     customizeHeader();
     customizeContent(sampleCount);
@@ -25,17 +26,17 @@ public class ExistingSamplesPreventGroupEdit extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
     errorIcon.setClassName("error-icon");
-    setTitle("Cannot edit experimental groups");
-    setHeaderIcon(errorIcon);
+    withTitle("Cannot edit experimental groups");
+    withHeaderIcon(errorIcon);
   }
 
   private void customizeContent(int sampleCount) {
     Span sampleCountSpan = new Span(String.valueOf(sampleCount));
     sampleCountSpan.addClassName("sample-count");
-    content.add(
+    withContent(new Div(
         new Div(new Text(
             "Editing experimental groups is only possible if samples are not registered.")),
         new Div(new Text("You have "), sampleCountSpan,
-            new Text(" sample%s registered.".formatted(sampleCount > 1 ? "s" : ""))));
+            new Text(" sample%s registered.".formatted(sampleCount > 1 ? "s" : "")))));
   }
 }

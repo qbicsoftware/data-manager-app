@@ -13,8 +13,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class PurchaseItemDeletionConfirmationNotification extends NotificationDialog {
 
   public PurchaseItemDeletionConfirmationNotification() {
+    super(Type.INFO);
     customizeHeader();
-    content.add(new Span(
+    withContent(new Span(
         "Are you sure you want to delete this offer?"));
     setCancelable(true);
     setConfirmText("Confirm");
@@ -23,7 +24,7 @@ public class PurchaseItemDeletionConfirmationNotification extends NotificationDi
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Offer will be deleted");
-    setHeaderIcon(errorIcon);
+    withTitle("Offer will be deleted");
+    withHeaderIcon(errorIcon);
   }
 }

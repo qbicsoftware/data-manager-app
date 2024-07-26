@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -13,7 +15,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
@@ -34,6 +35,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 
 /**
  * <b> The ExperimentMainLayout functions as a layout which contains all views related to managing
@@ -64,21 +66,24 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired OntologyLookupService ontologyTermInformationService,
-      @Autowired FooterComponentFactory footerComponentFactory) {
-    super(Objects.requireNonNull(footerComponentFactory));
-    Objects.requireNonNull(logoutService);
-    Objects.requireNonNull(userInformationService);
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(userPermissions);
-    Objects.requireNonNull(addExperimentToProjectService);
-    Objects.requireNonNull(ontologyTermInformationService);
+      @Autowired FooterComponentFactory footerComponentFactory,
+      MessageSource messageSource) {
+    super(requireNonNull(footerComponentFactory));
+    requireNonNull(messageSource, "messageSource must not be null");
+    requireNonNull(logoutService);
+    requireNonNull(userInformationService);
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(userPermissions);
+    requireNonNull(addExperimentToProjectService);
+    requireNonNull(ontologyTermInformationService);
+    requireNonNull(messageSource, "messageSource must not be null");
     this.dataManagerMenu = new DataManagerMenu(logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyTermInformationService);
+        userPermissions, ontologyTermInformationService, messageSource);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");

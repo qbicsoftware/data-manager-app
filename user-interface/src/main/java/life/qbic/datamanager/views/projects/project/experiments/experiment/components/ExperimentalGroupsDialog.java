@@ -42,7 +42,6 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,
       boolean editMode) {
     super();
-    specifyCancelShortcuts(this::onCanceled);
     this.editMode = editMode;
     this.experimentalVariableLevels = Objects.requireNonNull(experimentalVariableLevels);
     layoutComponent();
@@ -111,8 +110,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         experimentalGroupInput.getCondition());
   }
 
-  @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
   }
 
@@ -130,8 +128,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         event -> cancelDialog.close());
   }
 
-  @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     onCanceled();
   }
 
@@ -165,11 +162,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private void layoutHeaderAndFooter() {
-    setHeaderTitle(editMode ? "Edit Experimental Groups" : "Add Experimental Groups");
+    setHeader(editMode ? "Edit Experimental Groups" : "Add Experimental Groups");
     addClassName("experiment-group-dialog");
-    setConfirmButtonLabel(editMode ? "Save" : "Add");
-    setCancelButtonLabel("Cancel");
-    getFooter().add(cancelButton, confirmButton);
+    confirmButton.setText(editMode ? "Save" : "Add");
+    cancelButton.setText("Cancel");
   }
 
   private void addNewGroupEntry() {

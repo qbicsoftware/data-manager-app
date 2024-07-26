@@ -2,8 +2,6 @@ package life.qbic.datamanager.views;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
 
 /**
@@ -14,34 +12,21 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class CancelConfirmationNotificationDialog extends NotificationDialog {
 
   public CancelConfirmationNotificationDialog() {
-    customizeHeader();
+    super(Type.WARNING);
     setCancelable(true);
+    setCancelText("Continue Editing");
     Button redButton = new Button("Discard");
     redButton.addClassName("danger");
     setConfirmButton(redButton);
-    Button cancelButton = new Button("Continue Editing");
-    setCancelButton(cancelButton);
   }
 
   public CancelConfirmationNotificationDialog withBodyText(String mainText) {
-    content.removeAll();
-    content.add(new Span(mainText));
+    withContent(new Span(mainText));
     return this;
   }
 
   public CancelConfirmationNotificationDialog withConfirmText(String confirmText) {
     setConfirmText(confirmText);
     return this;
-  }
-
-  public CancelConfirmationNotificationDialog withTitle(String headerText) {
-    setTitle(headerText);
-    return this;
-  }
-
-  private void customizeHeader() {
-    Icon errorIcon = new Icon(VaadinIcon.WARNING);
-    errorIcon.setClassName("warning-icon");
-    setHeaderIcon(errorIcon);
   }
 }

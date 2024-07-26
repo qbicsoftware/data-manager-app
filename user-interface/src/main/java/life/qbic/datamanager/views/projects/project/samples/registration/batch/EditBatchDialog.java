@@ -181,7 +181,7 @@ public class EditBatchDialog extends DialogWindow {
   }
 
   @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     spreadsheet.validate();
     if (spreadsheet.isInvalid()) {
       return;
@@ -239,7 +239,7 @@ public class EditBatchDialog extends DialogWindow {
   }
 
   @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     onCanceled();
   }
 

@@ -76,7 +76,7 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
    * @param clickEvent
    */
   @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     if (!personalAccessTokenDTOBinder.isValid()) {
       personalAccessTokenDTOBinder.validate();
       return;
@@ -96,7 +96,7 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
    * @param clickEvent
    */
   @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 

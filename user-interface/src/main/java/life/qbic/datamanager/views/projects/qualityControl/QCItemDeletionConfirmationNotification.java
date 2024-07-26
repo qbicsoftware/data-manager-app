@@ -13,8 +13,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class QCItemDeletionConfirmationNotification extends NotificationDialog {
 
   public QCItemDeletionConfirmationNotification() {
+    super(Type.INFO);
     customizeHeader();
-    content.add(new Span(
+    withContent(new Span(
         "Are you sure you want to delete this file?"));
     setCancelable(true);
     setConfirmText("Confirm");
@@ -23,7 +24,7 @@ public class QCItemDeletionConfirmationNotification extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Quality control will be deleted");
-    setHeaderIcon(errorIcon);
+    withTitle("Quality control will be deleted");
+    withHeaderIcon(errorIcon);
   }
 }

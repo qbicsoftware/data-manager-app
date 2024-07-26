@@ -21,8 +21,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.general.download.QualityControlDownload;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
@@ -56,6 +55,8 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
 
 
 /**
@@ -88,6 +89,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final QualityControlDownload qualityControlDownload;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
+  private final MessageSource messageSource;
   private Context context;
 
   public ProjectInformationMain(@Autowired ProjectDetailsComponent projectDetailsComponent,
@@ -97,7 +99,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired OntologyLookupService ontologyTermInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ProjectPurchaseService projectPurchaseService,
-      @Autowired QualityControlService qualityControlService) {
+      @Autowired QualityControlService qualityControlService,
+      @Qualifier("messageSource") MessageSource messageSource) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
     this.experimentListComponent = requireNonNull(experimentListComponent,
@@ -130,6 +133,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     addClassName("project");
     add(projectDetailsComponent, offerListComponent, offerDownload, experimentListComponent,
         qualityControlListComponent, qualityControlDownload);
+    this.messageSource = messageSource;
   }
 
   private static void refreshOffers(ProjectPurchaseService projectPurchaseService, String projectId,
@@ -298,7 +302,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
     event.getSource().close();
-    displayExperimentCreationSuccess();
+    displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
     routeToExperiment(createdExperiment);
   }
 
@@ -318,10 +322,12 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     creationDialog.open();
   }
 
-  private void displayExperimentCreationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayExperimentCreationSuccess(String experimentName) {
+    String message = messageSource.getMessage("experiment.created.message",
+        new Object[]{experimentName},
+        getLocale());
+    Toast toast = Toast.createWithText(message).success();
+    toast.open();
   }
 
   private ExperimentId createExperiment(ProjectId projectId,

@@ -111,7 +111,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
      * @param clickEvent
      */
     @Override
-    protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+    protected void onConfirmed(ClickEvent<Button> clickEvent) {
       if (!platformUserNameField.isEmpty()) {
         fireEvent(
             new ConfirmEvent(this, clickEvent.isFromClient(), platformUserNameField.getValue()));
@@ -126,7 +126,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
      * @param clickEvent
      */
     @Override
-    protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    protected void onCancelled(ClickEvent<Button> clickEvent) {
       fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
     }
 

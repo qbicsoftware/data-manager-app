@@ -129,12 +129,12 @@ public class UploadPurchaseDialog extends DialogWindow {
   }
 
   @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
+  protected void onConfirmed(ClickEvent<Button> clickEvent) {
     fireEvent(new ConfirmEvent(this, true));
   }
 
   @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+  protected void onCancelled(ClickEvent<Button> clickEvent) {
     fireEvent(new UploadPurchaseDialog.CancelEvent(this, clickEvent.isFromClient()));
   }
 

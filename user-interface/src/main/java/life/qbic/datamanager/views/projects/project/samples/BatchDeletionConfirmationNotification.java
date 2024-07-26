@@ -14,8 +14,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class BatchDeletionConfirmationNotification extends NotificationDialog {
 
   public BatchDeletionConfirmationNotification() {
+    super(Type.INFO);
     customizeHeader();
-    content.add(new Span(
+    layout.add(new Span(
         "Deleting this Batch will also delete the samples contained within. Proceed?"));
     setCancelable(true);
     setConfirmText("Confirm");
@@ -24,7 +25,7 @@ public class BatchDeletionConfirmationNotification extends NotificationDialog {
   private void customizeHeader() {
     Icon errorIcon = new Icon(VaadinIcon.WARNING);
     errorIcon.setClassName("warning-icon");
-    setTitle("Samples within batch will be deleted");
-    setHeaderIcon(errorIcon);
+    withTitle("Samples within batch will be deleted");
+    withHeaderIcon(errorIcon);
   }
 }
