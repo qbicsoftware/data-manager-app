@@ -382,8 +382,7 @@
   display: flex;
   row-gap: var(--lumo-space-l);
   flex-direction: column;
-  width: clamp(500px, 70%, 100%);
-  height: max-content;
+  height: auto;
 }
 
 .project-access-component .header {
@@ -395,6 +394,12 @@
 .project-access-component .change-project-access-cell {
   display: inline-flex;
   column-gap: var(--lumo-space-l);
+  align-items: center;
+}
+
+.project-access-component .oidc-cell {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
   align-items: center;
 }
 
