@@ -144,3 +144,36 @@
   gap: var(--lumo-space-xs);
   white-space: nowrap;
 }
+
+
+.user-info-component {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-l);
+  margin: var(--lumo-space-s);
+}
+
+.user-info-component .avatar {
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+}
+
+.user-info-component .user-info {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+}
+
+.user-info-component .user-info .oidc {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  white-space: nowrap;
+}
+
+.user-info-component .user-info .user-name-and-full-name {
+  display: flex;
+  gap: var(--lumo-space-s);
+  align-items: baseline;
+}
