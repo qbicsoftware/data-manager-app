@@ -11,9 +11,13 @@ import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.SessionDestroyEvent;
 import com.vaadin.flow.server.SessionInitEvent;
 import com.vaadin.flow.server.UIInitEvent;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.WrappedSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import jakarta.servlet.http.Cookie;
+import java.util.Arrays;
+import java.util.Optional;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.AppRoutes;
@@ -37,6 +41,8 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
 
   private final UiExceptionHandler uiExceptionHandler;
   private final LogoutService logoutService;
+
+  private static final String SESSION_ID_COOKIE_NAME = "JSESSIONID";
 
   public MyVaadinSessionInitListener(
       @Autowired ExtendedClientDetailsReceiver clientDetailsProvider,
@@ -71,6 +77,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
   }
 
   private static void onServiceDestroyed(ServiceDestroyEvent serviceDestroyEvent) {
+    CookieUtil.deleteCookie(SESSION_ID_COOKIE_NAME); //TODO test this and perform the same when logging out manually?
     log.debug("Destroying vaadin service [%s]".formatted(serviceDestroyEvent.getSource()));
   }
 
@@ -78,7 +85,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
     WrappedSession wrappedSession = event.getSession().getSession();
     if (wrappedSession != null) {
       wrappedSession.invalidate();
-      log.debug("Invalidated HTTP session " + wrappedSession.getId());
+      log.debug("Invalidated HTTP session " tatu+ wrappedSession.getId());
     } else {
       log.debug("Vaadin session [%s] does not wrap any HTTP session.".formatted(
           event.getSession().getPushId()));
@@ -101,6 +108,31 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
       log.warn("Incomplete OpenIdConnect registration. Logging out and forwarding to login.");
       logoutService.logout();
       it.forwardTo(AppRoutes.LOGIN);
+    }
+  }
+
+  public static class CookieUtil {
+
+    public static Cookie saveCookie(final String cookieName, final String value) {
+      final Cookie cookie = new Cookie(cookieName, value);
+      cookie.setHttpOnly(true);
+      cookie.setPath("/");
+      cookie.setMaxAge(60 * 60 * 24 * 30);
+      VaadinService.getCurrentResponse().addCookie(cookie);
+      return cookie;
+    }
+
+    public static void deleteCookie(final String cookieName) {
+      final Cookie cookie = new Cookie(cookieName, "");
+      cookie.setHttpOnly(true);
+      cookie.setPath("/");
+      cookie.setMaxAge(0);
+      VaadinService.getCurrentResponse().addCookie(cookie);
+    }
+
+    public static Optional<Cookie> getCookie(final String cookieName) {
+      final Cookie[] cookies = VaadinService.getCurrentRequest().getCookies();
+      return Arrays.stream(cookies).filter(c -> c.getName().equals(cookieName)).findFirst();
     }
   }
 }
