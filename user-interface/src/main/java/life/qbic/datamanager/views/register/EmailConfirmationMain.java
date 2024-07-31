@@ -23,7 +23,7 @@ import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.MainPage;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
-import life.qbic.datamanager.views.login.LoginLayout;
+import life.qbic.datamanager.views.login.UserLoginMain;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.identity.api.UserInfo;
@@ -104,7 +104,7 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
     resendVerification.addClassName("resend-verification");
     emailConfirmationComponent.add(resendVerification);
 
-    RouterLink backToLoginLink = new RouterLink("Go back to login", LoginLayout.class);
+    RouterLink backToLoginLink = new RouterLink("Go back to login", UserLoginMain.class);
     emailConfirmationComponent.add(backToLoginLink);
   }
 

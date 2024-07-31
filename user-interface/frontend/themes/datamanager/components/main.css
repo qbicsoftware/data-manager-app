@@ -430,6 +430,14 @@
     "user-profile-component"
 }
 
+.main.user-login {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
+}
+
 /*Large devices (large desktops, 1200px and up)*/
 @media only screen and (max-width: 1200px) {
   .main.experiment {

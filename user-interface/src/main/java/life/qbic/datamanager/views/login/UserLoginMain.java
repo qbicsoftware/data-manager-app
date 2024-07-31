@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.login;
 
+import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
@@ -53,12 +54,13 @@ public class UserLoginMain extends Main implements HasUrlParameter<String> {
   public UserLoginMain(
       @Value("${EMAIL_CONFIRMATION_PARAMETER:confirm-email}") String emailConfirmationParameter,
       @Autowired IdentityService identityService,
-      @Autowired UserInformationService userInformationService) {
+      @Autowired UserInformationService userInformationService,
+      @Value("${server.servlet.context-path}") String contextPath) {
     this.identityService = Objects.requireNonNull(identityService,
         "Identity service cannot be null");
     this.emailConfirmationParameter = Objects.requireNonNull(emailConfirmationParameter);
     addClassName("user-login");
-    userLoginComponent = new UserLoginComponent(userInformationService);
+    userLoginComponent = new UserLoginComponent(userInformationService, contextPath);
     add(userLoginComponent);
     addListener();
     log.debug(String.format(
@@ -67,7 +69,6 @@ public class UserLoginMain extends Main implements HasUrlParameter<String> {
         userLoginComponent.getClass().getSimpleName(),
         System.identityHashCode(userLoginComponent)));
   }
-
 
   private void handleLoginFailure(List<RuntimeException> exceptionList) {
     /*These Cases should not happen anymore since we validate before we send the event,
@@ -117,8 +118,15 @@ public class UserLoginMain extends Main implements HasUrlParameter<String> {
   }
 
   private void addListener() {
-    userLoginComponent.addLoginListener(it ->
-        onLoginSucceeded());
+    userLoginComponent.addLoginListener(it -> {
+      EmailValidator emailValidator = new EmailValidator("Invalid email address provided");
+      var result = emailValidator.apply(it.getUsername(), null);
+      if (!result.isError()) {
+        onLoginSucceeded();
+      } else {
+        userLoginComponent.showError("Invalid Email provided", result.getErrorMessage());
+      }
+    });
     userLoginComponent.addForgotPasswordListener(
         it -> it.getSource().getUI().ifPresent(ui -> ui.navigate(AppRoutes.RESET_PASSWORD)));
   }

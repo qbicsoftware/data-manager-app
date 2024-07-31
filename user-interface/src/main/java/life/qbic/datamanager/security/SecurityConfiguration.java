@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
-import life.qbic.datamanager.views.login.LoginLayout;
+import life.qbic.datamanager.views.login.UserLoginMain;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,6 +62,6 @@ public class SecurityConfiguration extends VaadinWebSecurity {
       oAuth2Login.failureUrl("/login?errorOauth2=true&error");
     });
     super.configure(http);
-    setLoginView(http, LoginLayout.class);
+    setLoginView(http, UserLoginMain.class);
   }
 }
