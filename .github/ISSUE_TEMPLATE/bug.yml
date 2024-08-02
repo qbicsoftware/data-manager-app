@@ -1,6 +1,6 @@
 name: Bug Report
 description: File a bug report.
-title: "[Bug]: "
+title: "[Provide a short descriptive title]"
 labels: ["bug", "triage"]
 projects: ["qbicsoftware/25"]
 assignees:
