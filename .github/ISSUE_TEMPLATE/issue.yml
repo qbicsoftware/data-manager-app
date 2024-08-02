@@ -24,7 +24,7 @@ body:
     id: use-case
     attributes:
       label: Why do you need a solution?
-      description: Please explain your scenario (use case), how it affects your business.
+      description: Please explain your scenario (use case) and how it affects your experience
     validations:
       required: true
   - type: textarea
