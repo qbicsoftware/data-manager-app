@@ -354,6 +354,7 @@ public class ProjectAccessComponent extends PageArea {
    */
   public record ProjectUser(String userId, String userName, String fullName, String oidc,
                             String oidcIssuer, ProjectRole projectRole) {
+
   }
 
   /**

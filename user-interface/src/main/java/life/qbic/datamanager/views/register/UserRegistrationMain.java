@@ -81,12 +81,12 @@ public class UserRegistrationMain extends Main {
     if (exceptionList.isEmpty()) {
       return;
     }
-    if (exceptionList.contains(UserExistsException.class)) {
+    if (exceptionList.stream().anyMatch(e -> e instanceof UserExistsException)) {
       userRegistrationComponent.showError("Email address already in use",
           "If you have difficulties with your password you can reset it.");
-    } else if (exceptionList.contains(UserNameNotAvailableException.class)) {
+    } else if (exceptionList.stream().anyMatch(e -> e instanceof UserNameNotAvailableException)) {
       userRegistrationComponent.showError("Username already in use", "Please try another username");
-    } else if (exceptionList.contains(EmptyUserNameException.class)) {
+    } else if (exceptionList.stream().anyMatch(e -> e instanceof EmptyUserNameException)) {
       userRegistrationComponent.showError("Username must not be empty",
           "Please try another username");
     } else {

@@ -5,8 +5,8 @@ import com.vaadin.flow.server.AbstractStreamResource;
 import com.vaadin.flow.server.StreamResource;
 
 /**
- * OidcLogo shown within the data manager application.
- * Logo source and image path is based on the information provided within the {@link OidcType}
+ * OidcLogo shown within the data manager application. Logo source and image path is based on the
+ * information provided within the {@link OidcType}
  */
 public class OidcLogo extends Image {
 
