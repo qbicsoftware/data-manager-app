@@ -10,6 +10,7 @@
   grid-template-areas:
     "content-area"
     "data-manager-footer";
+  zoom: 90%;
 }
 
 #landing-page-layout .landing-page-content {
@@ -71,8 +72,8 @@
 }
 
 .main.experiment {
-  grid-template-columns: minmax(max-content, 100%);
-  grid-template-rows: auto;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
   grid-template-areas:
     "experimentdetails";
 }
