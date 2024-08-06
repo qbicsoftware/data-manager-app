@@ -53,7 +53,7 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
     h2.setCellStyle(readOnlyHeader);
 
     var h3 = header.createCell(2);
-    h3.setCellValue("Sample label");
+    h3.setCellValue("Sample Name");
     h3.setCellStyle(readOnlyHeader);
 
     var h4 = header.createCell(3);

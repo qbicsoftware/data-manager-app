@@ -1,8 +1,12 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -15,17 +19,20 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Disclaimer;
+import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
+import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
@@ -34,12 +41,12 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.S
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
-import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -72,7 +79,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
-  private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient BatchRegistrationService batchRegistrationService;
   private final transient SampleRegistrationService sampleRegistrationService;
@@ -80,39 +86,57 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient DeletionService deletionService;
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
+
+  private final DownloadProvider metadataDownload;
+  private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
+
+  private final Div content = new Div();
+  private final TextField searchField = new TextField();
+  private final Disclaimer noGroupsDefinedDisclaimer;
+  private final Disclaimer noSamplesRegisteredDisclaimer;
   private transient Context context;
 
-  public SampleInformationMain(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
+  public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
       @Autowired DeletionService deletionService,
       @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent) {
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(batchRegistrationService);
-    Objects.requireNonNull(sampleRegistrationService);
-    Objects.requireNonNull(sampleInformationService);
-    Objects.requireNonNull(deletionService);
-    Objects.requireNonNull(sampleDetailsComponent);
-    Objects.requireNonNull(batchDetailsComponent);
-    this.projectInformationService = projectInformationService;
-    this.experimentInformationService = experimentInformationService;
-    this.batchRegistrationService = batchRegistrationService;
-    this.sampleRegistrationService = sampleRegistrationService;
-    this.sampleInformationService = sampleInformationService;
-    this.deletionService = deletionService;
-    this.sampleDetailsComponent = sampleDetailsComponent;
-    this.batchDetailsComponent = batchDetailsComponent;
-    addClassName("sample");
-    reloadOnBatchRegistration();
-    sampleDetailsComponent.addCreateBatchListener(event -> onRegisterBatchClicked());
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService,
+        "ExperimentInformationService cannot be null");
+    this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService,
+        "BatchRegistrationService cannot be null");
+    this.sampleRegistrationService = Objects.requireNonNull(sampleRegistrationService,
+        "SampleRegistrationService cannot be null");
+    this.sampleInformationService = Objects.requireNonNull(sampleInformationService,
+        "SampleInformationService cannot be null");
+    this.deletionService = Objects.requireNonNull(deletionService,
+        "DeletionService cannot be null");
+    this.sampleDetailsComponent = Objects.requireNonNull(sampleDetailsComponent,
+        "SampleDetailsComponent cannot be null");
+    this.batchDetailsComponent = Objects.requireNonNull(batchDetailsComponent,
+        "BatchDetailsComponent cannot be null");
+
+    noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
+    noGroupsDefinedDisclaimer.setVisible(false);
+
+    noSamplesRegisteredDisclaimer = createNoSamplesRegisteredDisclaimer();
+    noSamplesRegisteredDisclaimer.setVisible(false);
+
+    sampleInformationXLSXProvider = new SampleInformationXLSXProvider();
+    metadataDownload = new DownloadProvider(sampleInformationXLSXProvider);
+
+    add(noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
+    initContent();
+    add(sampleDetailsComponent, batchDetailsComponent);
+    add(metadataDownload);
+
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
     batchDetailsComponent.addBatchEditListener(this::onEditBatchClicked);
-    batchDetailsComponent.addBatchViewListener(this::onViewBatchClicked);
+
+    addClassName("sample");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s) and %s(#%s)",
         this.getClass().getSimpleName(), System.identityHashCode(this),
@@ -122,40 +146,50 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(sampleDetailsComponent)));
   }
 
-  /**
-   * Provides the {@link Context} to the components within this page
-   * <p>
-   * This method serves as an entry point providing the necessary {@link Context} to the components
-   * within this cage
-   *
-   * @param context Context containing the projectId of the selected project
-   */
-  public void setContext(Context context) {
-    this.context = context;
-    ProjectId projectId = context.projectId().orElseThrow();
-    batchDetailsComponent.setContext(context);
-    projectInformationService.find(projectId)
-        .ifPresentOrElse(
-            project -> {
-              sampleDetailsComponent.setContext(context);
-              displayComponentInContent(batchDetailsComponent);
-              displayComponentInContent(sampleDetailsComponent);
-            }, this::displayProjectNotFound);
+  private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
+    return experiment.getExperimentalGroups().isEmpty();
   }
 
-  private boolean isComponentInContent(Component component) {
-    return this.getChildren().collect(Collectors.toSet()).contains(component);
+  private void initContent() {
+    Span titleField = new Span();
+    titleField.setText("Register sample batch");
+    titleField.addClassNames("title");
+    content.add(titleField);
+    initSearchFieldAndButtonBar();
+    add(content);
+    content.addClassName("sample-main-content");
   }
 
-  private void displayComponentInContent(Component component) {
-    if (!isComponentInContent(component)) {
-      this.add(component);
-    }
+  private void initSearchFieldAndButtonBar() {
+    searchField.setPlaceholder("Search");
+    searchField.setClearButtonVisible(true);
+    searchField.setSuffixComponent(VaadinIcon.SEARCH.create());
+    searchField.addClassNames("search-field");
+    searchField.setValueChangeMode(ValueChangeMode.LAZY);
+    searchField.addValueChangeListener(
+        event -> sampleDetailsComponent.onSearchFieldValueChanged((event.getValue())));
+    Button metadataDownloadButton = new Button("Download Sample Metadata",
+        event -> downloadSampleMetadata());
+    Span buttonBar = new Span(metadataDownloadButton);
+    buttonBar.addClassName("button-bar");
+    Span buttonsAndSearch = new Span(searchField, buttonBar);
+    buttonsAndSearch.addClassName("buttonAndField");
+    content.add(buttonsAndSearch);
   }
 
-  private void reloadOnBatchRegistration() {
-    sampleDetailsComponent.addCreateBatchListener(
-        event -> displayComponentInContent(sampleDetailsComponent));
+  private void downloadSampleMetadata() {
+    List<SamplePreview> samplePreviews = sampleInformationService.retrieveSamplePreviewsForExperiment(
+        context.experimentId()
+            .orElseThrow());
+
+    Comparator<String> natOrder = Comparator.naturalOrder();
+
+    var result = samplePreviews.stream()
+        // sort by measurement codes first, then by sample codes
+        .sorted(Comparator.comparing(SamplePreview::sampleCode, natOrder)
+            .thenComparing(SamplePreview::sampleLabel, natOrder)).toList();
+    sampleInformationXLSXProvider.setSamples(result);
+    metadataDownload.trigger();
   }
 
   private void onRegisterBatchClicked() {
@@ -175,11 +209,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     dialog.open();
   }
 
-  private void reload() {
-    setContext(context);
-  }
-
-
   private void registerBatch(ConfirmEvent confirmEvent) {
     String batchLabel = confirmEvent.getData().batchName();
     List<SampleInfo> samples = confirmEvent.getData().samples();
@@ -196,7 +225,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
         .onValue(ignored -> confirmEvent.getSource().close())
         .onValue(batchId -> displayRegistrationSuccess())
-        .onValue(ignored -> reload());
+        .onValue(ignored -> setBatchAndSampleInformation());
   }
 
   private List<SampleRegistrationRequest> generateSampleRequestsFromSampleInfo(BatchId batchId,
@@ -225,6 +254,43 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         sampleInfo.getCustomerComment()));
   }
 
+  private Disclaimer createNoSamplesRegisteredDisclaimer() {
+    Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
+        "Manage your samples in one place",
+        "Start your project by registering the first sample batch", "Register batch");
+    noSamplesDefinedCard.addClassName("no-samples-registered-disclaimer");
+    noSamplesDefinedCard.addDisclaimerConfirmedListener(
+        event -> onRegisterBatchClicked());
+    return noSamplesDefinedCard;
+  }
+
+  private Disclaimer createNoGroupsDefinedDisclaimer() {
+    Disclaimer noGroupsDefindedDisclaimer = Disclaimer.createWithTitle(
+        "Design your experiment first",
+        "Start the sample registration process by defining experimental groups",
+        "Add groups");
+    noGroupsDefindedDisclaimer.addClassName("no-experimental-groups-registered-disclaimer");
+    noGroupsDefindedDisclaimer.addDisclaimerConfirmedListener(this::onNoGroupsDefinedClicked);
+    return noGroupsDefindedDisclaimer;
+  }
+
+  private void onNoGroupsDefinedClicked(DisclaimerConfirmedEvent event) {
+    routeToExperimentalGroupCreation(event, context.experimentId().orElseThrow().value());
+  }
+
+  private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
+      String experimentId) {
+    if (componentEvent.isFromClient()) {
+      String routeToExperimentPage = String.format(Projects.EXPERIMENT,
+          context.projectId().orElseThrow().value(),
+          experimentId);
+      log.debug(String.format(
+          "Rerouting to experiment page for experiment %s of project %s: %s",
+          experimentId, context.projectId().orElseThrow().value(), routeToExperimentPage));
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.navigate(routeToExperimentPage));
+    }
+  }
+
   private void displayUpdateSuccess() {
     SuccessMessage successMessage = new SuccessMessage("Batch update succeeded.", "");
     StyledNotification notification = new StyledNotification(successMessage);
@@ -237,7 +303,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     notification.open();
   }
 
-
   private void displayRegistrationSuccess() {
     SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
     StyledNotification notification = new StyledNotification(successMessage);
@@ -248,13 +313,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
     StyledNotification notification = new StyledNotification(errorMessage);
     notification.open();
-  }
-
-  private void onViewBatchClicked(ViewBatchEvent viewBatchEvent) {
-    ConfirmDialog confirmDialog = new ConfirmDialog();
-    confirmDialog.setText(("This is where I'd show all of my Samples"));
-    confirmDialog.open();
-    confirmDialog.addConfirmListener(event -> confirmDialog.close());
   }
 
   private void onEditBatchClicked(EditBatchEvent editBatchEvent) {
@@ -313,14 +371,14 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         deletedSamples, context.projectId().orElseThrow());
     result.onValue(ignored -> confirmEvent.getSource().close());
     result.onValue(batchId -> displayUpdateSuccess());
-    result.onValue(ignored -> reload());
+    result.onValue(ignored -> setBatchAndSampleInformation());
   }
 
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
     deletionService.deleteBatch(context.projectId().orElseThrow(),
         deleteBatchEvent.batchId());
     displayDeletionSuccess();
-    reload();
+    setBatchAndSampleInformation();
   }
 
   private void onDeleteBatchClicked(DeleteBatchEvent deleteBatchEvent) {
@@ -332,14 +390,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     });
     batchDeletionConfirmationNotification.addCancelListener(
         event -> batchDeletionConfirmationNotification.close());
-  }
-
-  private void displayProjectNotFound() {
-    this.removeAll();
-    ErrorMessage errorMessage = new ErrorMessage("Project not found",
-        "Please try to reload the page");
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
   }
 
   /**
@@ -363,7 +413,66 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
-    setContext(context);
+    setBatchAndSampleInformation();
+  }
+
+  private void setBatchAndSampleInformation() {
+    var experiment = experimentInformationService.find(context.projectId().orElseThrow().value(),
+        context.experimentId()
+            .orElseThrow()).orElseThrow();
+    if (noExperimentGroupsInExperiment(experiment)) {
+      showRegisterGroupsDisclaimer();
+      return;
+    }
+    if (noSamplesRegisteredInExperiment(experiment)) {
+      showRegisterBatchDisclaimer();
+    } else {
+      reloadBatchInformation();
+      reloadSampleInformation();
+      showBatchAndSampleInformation();
+    }
+  }
+
+  private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
+    return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
+        .map(Collection::isEmpty)
+        .onError(error -> {
+          throw new ApplicationException("Unexpected response code : " + error);
+        })
+        .getValue();
+  }
+
+  private void showRegisterGroupsDisclaimer() {
+    content.setVisible(false);
+    sampleDetailsComponent.setVisible(false);
+    batchDetailsComponent.setVisible(false);
+    noSamplesRegisteredDisclaimer.setVisible(false);
+    noGroupsDefinedDisclaimer.setVisible(true);
+  }
+
+  private void showRegisterBatchDisclaimer() {
+    content.setVisible(false);
+    sampleDetailsComponent.setVisible(false);
+    batchDetailsComponent.setVisible(false);
+    noGroupsDefinedDisclaimer.setVisible(false);
+    noSamplesRegisteredDisclaimer.setVisible(true);
+  }
+
+  private void showBatchAndSampleInformation() {
+    noSamplesRegisteredDisclaimer.setVisible(false);
+    noGroupsDefinedDisclaimer.setVisible(false);
+    content.setVisible(true);
+    sampleDetailsComponent.setVisible(true);
+    batchDetailsComponent.setVisible(true);
+    searchField.setValue("");
+  }
+
+  private void reloadBatchInformation() {
+    batchDetailsComponent.setContext(context);
+  }
+
+  private void reloadSampleInformation() {
+    sampleDetailsComponent.setContext(context);
   }
 
   public static class BatchRegisteredEvent extends ComponentEvent<SampleInformationMain> {

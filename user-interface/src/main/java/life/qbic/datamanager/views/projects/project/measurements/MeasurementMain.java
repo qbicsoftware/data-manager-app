@@ -536,6 +536,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void setSelectedMeasurementsInfo(int selectedMeasurements) {
       String text = "%s measurements are currently selected.".formatted(
           String.valueOf(selectedMeasurements));
+      measurementsSelectedInfoBox.setVisible(selectedMeasurements > 0);
       measurementsSelectedInfoBox.setText(text);
   }
 }

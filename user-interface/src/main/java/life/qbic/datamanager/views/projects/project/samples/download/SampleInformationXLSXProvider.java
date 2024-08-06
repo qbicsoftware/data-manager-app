@@ -161,7 +161,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
   enum SamplePreviewColumn {
 
     SAMPLE_ID("Sample ID", 0),
-    LABEL("Label", 1),
+    LABEL("Sample Name", 1),
     ORGANISM_ID("Organism ID", 2),
     BATCH("Batch", 3),
     SPECIES("Species", 4),

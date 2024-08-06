@@ -58,7 +58,7 @@ public interface UserDataStorage {
 
   Optional<User> findUserByUserName(String userName);
 
-  List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String username, Pageable pageable);
+  List<User> queryActiveUsersWithFilter(String filter, Pageable pageable);
 
   Optional<User> findByOidcIdEqualsAndOidcIssuerEquals(String oidcId, String oidcIssuer);
 }

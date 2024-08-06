@@ -224,7 +224,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     SAMPLEID("QBiC Sample Id", 1,
         true),
     SAMPLELABEL(
-        "Sample label", 2,
+        "Sample Name", 2,
         true),
     POOLGROUP("Sample Pool Group", 3,
         true),

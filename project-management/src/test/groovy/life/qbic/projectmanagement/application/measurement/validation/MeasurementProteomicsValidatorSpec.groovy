@@ -47,7 +47,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
     final ProjectInformationService projectInformationService = Mock(ProjectInformationService.class)
 
-    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample label", "organisation id", "facility", "instrument",
+    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample name", "organisation id", "facility", "instrument",
                                                     "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "labeling type", "label", "comment"])

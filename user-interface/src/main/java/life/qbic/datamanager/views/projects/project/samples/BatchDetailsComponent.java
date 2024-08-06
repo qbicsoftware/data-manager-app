@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -32,9 +31,7 @@ import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.ClientDetailsProvider.ClientDetails;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.BatchPreview.ViewBatchEvent;
 import life.qbic.projectmanagement.application.batch.BatchInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -63,24 +60,19 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private final Div content = new Div();
   private final Grid<BatchPreview> batchGrid = new Grid<>();
   private final transient BatchInformationService batchInformationService;
-  private final transient ExperimentInformationService experimentInformationService;
-  private final Collection<BatchPreview> batchPreviews = new LinkedHashSet<>();
   private final ClientDetailsProvider clientDetailsProvider;
   private Context context;
 
   public BatchDetailsComponent(@Autowired BatchInformationService batchInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
       ClientDetailsProvider clientDetailsProvider) {
-    Objects.requireNonNull(batchInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(clientDetailsProvider);
+    this.batchInformationService = Objects.requireNonNull(batchInformationService,
+        "BatchInformationService cannot be null");
+    this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider,
+        "ClientDetailsProvider cannot be null");
     addClassName("batch-details-component");
     createTitleAndControls();
     createBatchGrid();
     add(content);
-    this.experimentInformationService = experimentInformationService;
-    this.batchInformationService = batchInformationService;
-    this.clientDetailsProvider = clientDetailsProvider;
   }
 
   private void createTitleAndControls() {
@@ -98,34 +90,40 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     content.addClassName("content");
     batchGrid.addColumn(BatchPreview::batchLabel)
         .setHeader("Name").setSortable(true)
-        .setTooltipGenerator(BatchPreview::batchLabel).setFlexGrow(1).setAutoWidth(true);
+        .setTooltipGenerator(BatchPreview::batchLabel)
+        .setAutoWidth(true)
+        .setResizable(true);
     batchGrid.addColumn(new LocalDateTimeRenderer<>(
             batchPreview -> asClientLocalDateTime(batchPreview.createdOn()),
             "yyyy-MM-dd"))
         .setKey("createdOn")
         .setHeader("Date Created")
         .setSortable(true)
-        .setComparator(BatchPreview::createdOn);
+        .setComparator(BatchPreview::createdOn)
+        .setAutoWidth(true);
     batchGrid.addColumn(new LocalDateTimeRenderer<>(
             batchPreview -> asClientLocalDateTime(batchPreview.lastModified()),
             "yyyy-MM-dd"))
         .setKey("lastModified")
         .setHeader("Date Modified")
         .setSortable(true)
-        .setComparator(BatchPreview::lastModified);
+        .setComparator(BatchPreview::lastModified)
+        .setAutoWidth(true);
     batchGrid.addColumn(batchPreview -> batchPreview.samples.size())
         .setKey("samples")
         .setHeader("Samples")
-        .setSortable(true);
-    batchGrid.addComponentColumn(this::generateEditorButtons).setAutoWidth(true)
-        .setHeader("Action");
+        .setSortable(true)
+        .setAutoWidth(true);
+    batchGrid.addComponentColumn(this::generateEditorButtons)
+        .setAutoWidth(true)
+        .setHeader("Action")
+        .setFrozenToEnd(true);
     batchGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
     batchGrid.addClassName("batch-grid");
     batchGrid.setAllRowsVisible(true);
   }
 
   public void setContext(Context context) {
-    batchPreviews.clear();
     if (context.experimentId().isEmpty()) {
       throw new ApplicationException("no experiment id in context " + context);
     }
@@ -133,12 +131,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
-    ExperimentId experimentId = context.experimentId().get();
-    Experiment experiment = experimentInformationService.find(
-        context.projectId().orElseThrow().value(), experimentId).orElseThrow();
-    loadBatchesForExperiment(experiment);
-    batchGrid.setItems(batchPreviews)
-        .setSortOrder(BatchPreview::lastModified, SortDirection.DESCENDING);
+    updateBatchGridDataProvider(context.experimentId().get());
   }
 
   private Span generateEditorButtons(BatchPreview batchPreview) {
@@ -149,6 +142,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE,
         ButtonVariant.LUMO_ERROR);
+    deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
     deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
         e.isFromClient())));
     editButton.addClickListener(
@@ -165,23 +159,16 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
         batch.lastModified());
   }
 
-  private void loadBatchesForExperiment(Experiment experiment) {
-    batchInformationService.retrieveBatchesForExperiment(experiment.experimentId())
+
+  private void updateBatchGridDataProvider(ExperimentId experimentId) {
+    List<BatchPreview> experimentBatches = batchInformationService.retrieveBatchesForExperiment(
+            experimentId)
         .map(Collection::stream)
         .map(batchStream -> batchStream.map(this::generatePreviewFromBatch))
-        .map(Stream::toList)
-        .onValue(batchPreviews::addAll);
-  }
-
-  /**
-   * Register a {@link ComponentEventListener} that will get informed with an
-   * {@link ViewBatchEvent}, as soon as a user wants to view a {@link Batch}
-   *
-   * @param batchViewListener a listener on the batch view trigger
-   */
-  public void addBatchViewListener(
-      ComponentEventListener<ViewBatchEvent> batchViewListener) {
-    addListener(ViewBatchEvent.class, batchViewListener);
+        .map(Stream::toList).getValue();
+    batchGrid.setItems(experimentBatches);
+    batchGrid.getListDataView().setSortOrder(BatchPreview::batchLabel, SortDirection.DESCENDING);
+    batchGrid.recalculateColumnWidths();
   }
 
   /**
@@ -237,29 +224,6 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
       Objects.requireNonNull(lastModified);
     }
 
-    /**
-     * <b>View Batch Event</b>
-     *
-     * <p>Indicates that a user wants to view a {@link Batch}
-     * within the {@link BatchDetailsComponent} of a project</p>
-     */
-    public static class ViewBatchEvent extends ComponentEvent<BatchDetailsComponent> {
-
-      @Serial
-      private static final long serialVersionUID = -5108638994476271770L;
-
-      private final BatchPreview batchPreview;
-
-      public ViewBatchEvent(BatchDetailsComponent source, BatchPreview batchPreview,
-          boolean fromClient) {
-        super(source, fromClient);
-        this.batchPreview = batchPreview;
-      }
-
-      public BatchPreview batchPreview() {
-        return batchPreview;
-      }
-    }
   }
 
   /**

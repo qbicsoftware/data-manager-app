@@ -198,7 +198,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
-        .setHeader("Sample IDs")
+        .setHeader("Samples")
         .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
         .setHeader("Facility")
@@ -289,7 +289,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
-        .setHeader("Sample IDs")
+        .setHeader("Samples")
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderOrganisation(proteomicsMeasurement.organisation()))
@@ -525,7 +525,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Grid<ProteomicsSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
       sampleDetailsGrid.addColumn(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setHeader("Sample Label")
+          .setHeader("Sample Name")
           .setTooltipGenerator(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
           .setAutoWidth(true);
@@ -558,7 +558,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       Grid<NGSSpecificMeasurementMetadata> sampleDetailsGrid = new Grid<>();
       sampleDetailsGrid.addColumn(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
-          .setHeader("Sample Label")
+          .setHeader("Sample Name")
           .setTooltipGenerator(
               metadata -> retrieveSampleById(metadata.measuredSample()).orElseThrow().label())
           .setAutoWidth(true);
