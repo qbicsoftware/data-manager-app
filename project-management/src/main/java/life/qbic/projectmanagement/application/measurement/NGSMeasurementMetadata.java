@@ -18,31 +18,12 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
                                      String indexI7, String indexI5,
                                      String comment) implements MeasurementMetadata {
 
-  public static NGSMeasurementMetadata copyWithNewProperties(
-      Collection<SampleCode> associatedSamples, String indexI7, String indexI5,
-      NGSMeasurementMetadata metadata) {
-    return new NGSMeasurementMetadata(
-        metadata.measurementId(),
-        associatedSamples.stream().toList(),
-        metadata.organisationId(),
-        metadata.instrumentCURI(),
-        metadata.facility(),
-        metadata.sequencingReadType(),
-        metadata.libraryKit(),
-        metadata.flowCell(),
-        metadata.sequencingRunProtocol(),
-        metadata.samplePoolGroup(),
-        indexI7,
-        indexI5,
-        metadata.comment());
-  }
-
   @Override
   public SampleCode associatedSample() {
     return sampleCodes.iterator().next();
   }
 
-  @Override
+  //  @Override
   public Optional<String> assignedSamplePoolGroup() {
     return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
   }

@@ -10,9 +10,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  */
 public interface MeasurementMetadata {
 
-  default Optional<String> assignedSamplePoolGroup() {
-    return Optional.empty();
-  }
 
   default SampleCode associatedSample() {
     return null;

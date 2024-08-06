@@ -255,10 +255,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     return Result.fromValue(metadata);
   }
 
-  private static List<SampleCode> parseSampleCode(String sampleCodeEntry) {
-    return Arrays.stream(sampleCodeEntry.split(",")).map(SampleCode::create).toList();
-  }
-
   private static Optional<String> safeArrayAccess(String[] array, int index) {
     try {
       return Optional.of(array[index]);

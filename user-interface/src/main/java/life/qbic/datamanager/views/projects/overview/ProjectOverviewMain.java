@@ -3,14 +3,13 @@ package life.qbic.datamanager.views.projects.overview;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.SessionDestroyEvent;
-import com.vaadin.flow.server.SessionDestroyListener;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.Arrays;
@@ -35,6 +34,7 @@ import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslation
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.measurement.foobar.jpa.NgsMeasurementRepository;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -65,6 +65,8 @@ public class ProjectOverviewMain extends Main {
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
+  private final transient NgsMeasurementRepository ngsMeasurementRepository;
+
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       ProjectInformationService projectInformationService,
@@ -72,7 +74,8 @@ public class ProjectOverviewMain extends Main {
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
       ContactRepository contactRepository,
-      AuthenticationToUserIdTranslationService userIdTranslator) {
+      AuthenticationToUserIdTranslationService userIdTranslator,
+      NgsMeasurementRepository ngsMeasurementRepository) {
     this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
     this.projectCreationService = requireNonNull(projectCreationService,
@@ -89,9 +92,11 @@ public class ProjectOverviewMain extends Main {
     this.userInformationService = requireNonNull(userInformationService,
         "user information service can not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
+    this.ngsMeasurementRepository = ngsMeasurementRepository;
 
     addTitleAndDescription();
     add(projectCollectionComponent);
+    add(new Button("Click Me", it -> ngsMeasurementRepository.findAll()));
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
           this.financeService,

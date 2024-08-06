@@ -22,27 +22,7 @@ public record ProteomicsMeasurementMetadata(String measurementId,
                                             String comment) implements MeasurementMetadata {
 
 
-  public static ProteomicsMeasurementMetadata copyWithNewProperties(SampleCode associatedSample,
-      Labeling labeling,
-      ProteomicsMeasurementMetadata metadata) {
-    return new ProteomicsMeasurementMetadata(metadata.measurementId(),
-        associatedSample,
-        metadata.organisationId(),
-        metadata.instrumentCURI(),
-        metadata.samplePoolGroup(),
-        metadata.facility(),
-        metadata.fractionName(),
-        metadata.digestionEnzyme(),
-        metadata.digestionMethod(),
-        metadata.enrichmentMethod(),
-        metadata.injectionVolume(),
-        metadata.lcColumn(),
-        metadata.lcmsMethod(),
-        labeling,
-        metadata.comment());
-  }
-
-  @Override
+  //  @Override
   public Optional<String> assignedSamplePoolGroup() {
     return Optional.ofNullable(samplePoolGroup.isBlank() ? null : samplePoolGroup);
   }
