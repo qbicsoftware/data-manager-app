@@ -668,6 +668,15 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   @Override
   public void taskInProgress(String label, String description) {
+    getUI().ifPresentOrElse(
+        ui -> ui.access(() -> showProgress(label, description)),
+        () -> showProgress(label, description)
+    );
+
+
+  }
+
+  private void showProgress(String label, String description) {
     uploadProgressDisplay.showInProgressDisplay(label, description);
     showInProgress();
   }

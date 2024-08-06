@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -23,7 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
@@ -51,7 +50,6 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -288,15 +286,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
               measurementData.size()),
           "This might take a minute");
       //Necessary so the dialog window switches to show the upload progress
-      UI.getCurrent().push();
-      CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
-      if (measurementMetadataUploadDialog.getMode().equals(MODE.EDIT)) {
-        completableFuture = measurementService.updateAll(upload.measurementMetadata(),
+      var completableFuture = switch (measurementMetadataUploadDialog.getMode()) {
+        case ADD -> measurementService.registerAll(upload.measurementMetadata(),
             context.projectId().orElseThrow());
-      } else {
-        completableFuture = measurementService.registerAll(upload.measurementMetadata(),
+        case EDIT -> measurementService.updateAll(upload.measurementMetadata(),
             context.projectId().orElseThrow());
-      }
+      };
+
       completableFuture.thenAccept(results -> {
         var errorResult = results.stream().filter(Result::isError).findAny();
         if (errorResult.isPresent()) {
@@ -312,7 +308,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
                   "Measurement %s for %s measurements was successful".formatted(process,
                       measurementData.size()))));
         }
-      }).join(); // we wait for the update to finish
+      }).orTimeout(10, TimeUnit.SECONDS); // we wait for the update to finish
     }
   }
 
