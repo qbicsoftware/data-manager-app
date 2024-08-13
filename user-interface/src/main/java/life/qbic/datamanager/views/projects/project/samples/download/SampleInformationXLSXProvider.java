@@ -117,7 +117,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     sampleIdCol.setCellValue(sample.sampleCode());
 
     var labelCol = sampleRow.createCell(SamplePreviewColumn.LABEL.column());
-    labelCol.setCellValue(sample.sampleLabel());
+    labelCol.setCellValue(sample.sampleName());
 
     var organismIdCol = sampleRow.createCell(SamplePreviewColumn.ORGANISM_ID.column());
     organismIdCol.setCellValue(sample.organismId());
