@@ -127,7 +127,7 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
       return;
     }
     if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-      //note: for ORCiD, only given name and family name are supported https://orcid.org/.well-known/openid-configuration.
+      //note: for ORCID, only given name and family name are supported https://orcid.org/.well-known/openid-configuration.
       userRegistrationOrcIdComponent.setFullName(
           buildFullName(oidcUser.getGivenName(), oidcUser.getMiddleName(),
               oidcUser.getFamilyName()));
