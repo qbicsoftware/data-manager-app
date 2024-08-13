@@ -376,7 +376,6 @@ public class ProjectAccessComponent extends PageArea {
       Span fullNameSpan = new Span(fullName);
       Span userNameSpan = new Span(userName);
       userNameSpan.addClassName("bold");
-      fullNameSpan.addClassName("secondary");
       Span userNameAndFullName = new Span(userNameSpan, fullNameSpan);
       userNameAndFullName.addClassName("user-name-and-full-name");
       userInfoContent.add(userNameAndFullName);
