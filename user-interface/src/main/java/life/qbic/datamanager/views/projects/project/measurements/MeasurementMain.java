@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -536,7 +537,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private void setSelectedMeasurementsInfo(int selectedMeasurements) {
       String text = "%s measurements are currently selected.".formatted(
           String.valueOf(selectedMeasurements));
-      measurementsSelectedInfoBox.setVisible(selectedMeasurements > 0);
+    if (selectedMeasurements > 0) {
+      measurementsSelectedInfoBox.getStyle().setVisibility(Visibility.INITIAL);
+    } else {
+      measurementsSelectedInfoBox.getStyle().setVisibility(Visibility.HIDDEN);
+    }
       measurementsSelectedInfoBox.setText(text);
   }
 }
