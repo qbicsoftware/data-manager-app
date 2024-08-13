@@ -82,7 +82,7 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     Span title = new Span("Select the person");
     title.addClassNames("section-title");
     Span description = new Span(
-        "Please select the username of the person you want to grant access to");
+        "Please select the person you want to grant access to");
     description.addClassName("secondary");
     personSelection.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
@@ -104,7 +104,7 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
         new ComponentRenderer<>(AddCollaboratorToProjectDialog::renderUserInfo));
     personSelection.setRequired(true);
     personSelection.setErrorMessage("Please specify the collaborator to be added to the project");
-    personSelection.setPlaceholder("Please select a username");
+    personSelection.setPlaceholder("Please search for username or full name or ORCiD");
     personSelection.setRenderer(new ComponentRenderer<>(
         AddCollaboratorToProjectDialog::renderUserInfo
     ));
