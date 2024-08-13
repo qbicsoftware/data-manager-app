@@ -70,7 +70,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         experimentId);
     Specification<SamplePreview> organismIdSpec = SamplePreviewSpecs.organismIdContains(filter);
     Specification<SamplePreview> sampleCodeSpec = SamplePreviewSpecs.sampleCodeContains(filter);
-    Specification<SamplePreview> sampleLabelSpec = SamplePreviewSpecs.sampleLabelContains(filter);
+    Specification<SamplePreview> sampleNameSpec = SamplePreviewSpecs.sampleNameContains(filter);
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);
     Specification<SamplePreview> conditionSpec = SamplePreviewSpecs.conditionContains(filter);
     Specification<SamplePreview> speciesSpec = SamplePreviewSpecs.speciesContains(filter);
@@ -80,7 +80,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         filter);
     Specification<SamplePreview> commentSpec = SamplePreviewSpecs.commentContains(filter);
     Specification<SamplePreview> containsFilterSpec = Specification.anyOf(sampleCodeSpec,
-        sampleLabelSpec, organismIdSpec, batchLabelSpec, conditionSpec, speciesSpec,
+        sampleNameSpec, organismIdSpec, batchLabelSpec, conditionSpec, speciesSpec,
         specimenSpec, analyteSpec, analysisMethodContains, commentSpec);
     Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
     return Specification.where(experimentIdSpec).and(isBlankSpec)
@@ -127,9 +127,9 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
           builder.like(root.get("batchLabel"), "%" + filter + "%");
     }
 
-    public static Specification<SamplePreview> sampleLabelContains(String filter) {
+    public static Specification<SamplePreview> sampleNameContains(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("sampleLabel"), "%" + filter + "%");
+          builder.like(root.get("sampleName"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> conditionContains(String filter) {

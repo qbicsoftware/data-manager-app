@@ -85,7 +85,7 @@ public class SampleDomainService {
       var sampleInfo = updatedSamples.stream()
           .filter(sampleUpdateRequest -> sampleUpdateRequest.sampleId().equals(sample.sampleId()))
           .findFirst().orElseThrow();
-      sample.setLabel(sampleInfo.sampleInformation().sampleLabel());
+      sample.setLabel(sampleInfo.sampleInformation().sampleName());
       sample.setOrganismId(sampleInfo.sampleInformation().organismId());
       sample.setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
       sample.setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),

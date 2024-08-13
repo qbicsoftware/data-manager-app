@@ -106,9 +106,9 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
     sampleIdCol.setCellValue(pxpEntry.sampleInformation().sampleId());
     sampleIdCol.setCellStyle(readOnlyStyle);
 
-    var sampleLabelCol = entry.createCell(2);
-    sampleLabelCol.setCellValue(pxpEntry.sampleInformation().sampleLabel());
-    sampleLabelCol.setCellStyle(readOnlyStyle);
+    var sampleNameCol = entry.createCell(2);
+    sampleNameCol.setCellValue(pxpEntry.sampleInformation().sampleName());
+    sampleNameCol.setCellStyle(readOnlyStyle);
 
     var samplePoolCol = entry.createCell(3);
     samplePoolCol.setCellValue(pxpEntry.samplePoolGroup());

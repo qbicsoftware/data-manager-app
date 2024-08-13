@@ -187,7 +187,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var result = samplePreviews.stream()
         // sort by measurement codes first, then by sample codes
         .sorted(Comparator.comparing(SamplePreview::sampleCode, natOrder)
-            .thenComparing(SamplePreview::sampleLabel, natOrder)).toList();
+            .thenComparing(SamplePreview::sampleName, natOrder)).toList();
     sampleInformationXLSXProvider.setSamples(result);
     metadataDownload.trigger();
   }
@@ -233,7 +233,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     List<SampleRegistrationRequest> sampleRegistrationRequests;
     sampleRegistrationRequests = sampleInfos.stream()
         .map(sample -> new SampleRegistrationRequest(
-            sample.getSampleLabel(), sample.getOrganismId(),
+            sample.getSampleName(), sample.getOrganismId(),
             batchId,
             context.experimentId().orElseThrow(),
             sample.getExperimentalGroup().id(),
@@ -247,7 +247,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private SampleUpdateRequest generateSampleUpdateRequestFromSampleInfo(
       SampleInfo sampleInfo) {
     return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
-        sampleInfo.getSampleLabel(), sampleInfo.getOrganismId(),
+        sampleInfo.getSampleName(), sampleInfo.getOrganismId(),
         sampleInfo.getAnalysisToBePerformed(),
         sampleInfo.getExperimentalGroup(),
         sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
