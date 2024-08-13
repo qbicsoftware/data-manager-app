@@ -104,7 +104,7 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
         new ComponentRenderer<>(AddCollaboratorToProjectDialog::renderUserInfo));
     personSelection.setRequired(true);
     personSelection.setErrorMessage("Please specify the collaborator to be added to the project");
-    personSelection.setPlaceholder("Please search for username or full name or ORCiD");
+    personSelection.setPlaceholder("Please search for username or full name or ORCID identifier");
     personSelection.setRenderer(new ComponentRenderer<>(
         AddCollaboratorToProjectDialog::renderUserInfo
     ));
