@@ -8,7 +8,6 @@ import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.CrudRepository;
 
 /**
@@ -22,8 +21,7 @@ import org.springframework.data.repository.CrudRepository;
  *
  * @since 1.0.0
  */
-public interface QbicUserRepo extends JpaRepository<User, UserId>,
-    JpaSpecificationExecutor<User> {
+public interface QbicUserRepo extends JpaRepository<User, UserId> {
 
   /**
    * Find users by mail address in the persistent data storage

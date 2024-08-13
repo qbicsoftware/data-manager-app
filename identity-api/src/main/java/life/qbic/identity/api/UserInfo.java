@@ -10,6 +10,6 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 public record UserInfo(String id, String fullName, String emailAddress, String platformUserName,
-                       boolean isActive, String oidcId, String oidcIssuer) implements Serializable {
+                       boolean isActive) implements Serializable {
 
 }

@@ -189,7 +189,6 @@
   flex-direction: column;
   row-gap: var(--lumo-space-m);
   padding: var(--lumo-space-m);
-  justify-content: space-between;
 }
 
 .main.measurement .measurement-main-content .title {

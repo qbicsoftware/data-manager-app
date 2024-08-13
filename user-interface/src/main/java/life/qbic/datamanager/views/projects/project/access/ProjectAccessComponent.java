@@ -7,11 +7,10 @@ import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.editor.Editor;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
@@ -21,7 +20,6 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
@@ -29,12 +27,11 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.oidc.OidcLogo;
-import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProjectDialog.ConfirmEvent;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
+import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
@@ -66,8 +63,7 @@ public class ProjectAccessComponent extends PageArea {
   private final transient ProjectAccessService projectAccessService;
   private final transient UserInformationService userInformationService;
   private final UserPermissions userPermissions;
-  private final Grid<ProjectUser> projectUserGrid;
-  private final Div header;
+  private final Grid<ProjectAccessService.ProjectCollaborator> projectCollaborators;
   private final Span buttonBar;
   private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private Context context;
@@ -87,127 +83,97 @@ public class ProjectAccessComponent extends PageArea {
     this.addClassName("project-access-component");
     log.debug("New instance for %s(#%d)".formatted(ProjectAccessComponent.class.getSimpleName(),
         System.identityHashCode(this)));
-    header = new Div();
+
+    Div header = new Div();
     header.addClassName("header");
     Span titleField = new Span();
     titleField.setText("Project Access Management");
     titleField.addClassName("title");
+
     buttonBar = new Span();
-    Button addCollaboratorButton = new Button("Add people");
-    addCollaboratorButton.addClickListener(event -> openAddCollaboratorDialog());
-    buttonBar.add(addCollaboratorButton);
-    header.add(titleField);
+    header.add(titleField, buttonBar);
     add(header);
     Span userProjectAccessDescription = new Span("Users with access to this project");
-    projectUserGrid = createProjectUserGrid();
-    add(userProjectAccessDescription, projectUserGrid);
+
+    projectCollaborators = projectCollaboratorGrid();
+    add(userProjectAccessDescription, projectCollaborators);
   }
 
-  private static UserInfoComponent renderUserInfo(ProjectUser projectUser) {
-    UserAvatar userAvatar = new UserAvatar();
-    userAvatar.setUserId(projectUser.userId());
-    userAvatar.setName(projectUser.userName());
-    UserInfoComponent userInfoCellComponent = new UserInfoComponent(userAvatar,
-        projectUser.userName, projectUser.fullName);
-    userInfoCellComponent.setOidc(projectUser.oidcIssuer, projectUser.oidc);
-    return userInfoCellComponent;
-  }
-
-  public void setContext(Context context) {
-    if (context.projectId().isEmpty()) {
-      throw new ApplicationException("no project id in context " + context);
-    }
-    this.context = context;
-    setProjectInformation();
-  }
-
-  private void setProjectInformation() {
-    refreshProjectUserGrid();
-    showControls(userPermissions.changeProjectAccess(context.projectId().orElseThrow()));
-  }
-
-  private void refreshProjectUserGrid() {
-    loadProjectUsers();
-    projectUserGrid.setItems(loadProjectUsers());
-  }
-
-  private boolean isCurrentUser(ProjectUser projectUser) {
+  private boolean isCurrentUser(ProjectAccessService.ProjectCollaborator collaborator) {
     var userId = this.authenticationToUserIdTranslator.translateToUserId(
         SecurityContextHolder.getContext().getAuthentication()).orElseThrow();
-    return Objects.equals(projectUser.userId(), userId);
+    return Objects.equals(collaborator.userId(), userId);
   }
 
-  private void showControls(boolean isVisible) {
-    boolean containsButtonBar = header.getChildren()
-        .anyMatch(component -> component.equals(buttonBar));
-    if (isVisible) {
-      if (!containsButtonBar) {
-        header.add(buttonBar);
-      }
-    } else {
-      if (containsButtonBar) {
-        header.remove(buttonBar);
-      }
-    }
+  private Button addCollaboratorButton() {
+    Button button = new Button("Add people");
+    button.addClickListener(event -> openAddCollaboratorDialog());
+    return button;
   }
 
-  private Grid<ProjectUser> createProjectUserGrid() {
-    Grid<ProjectUser> pUserGrid = new Grid<>(ProjectUser.class);
-    Editor<ProjectUser> editor = pUserGrid.getEditor();
-    Binder<ProjectUser> binder = new Binder<>(ProjectUser.class);
+  private void showControls() {
+    buttonBar.removeAll();
+    buttonBar.add(addCollaboratorButton());
+  }
+
+  private void removeControls() {
+    buttonBar.removeAll();
+  }
+
+  private Grid<ProjectAccessService.ProjectCollaborator> projectCollaboratorGrid() {
+
+    Grid<ProjectAccessService.ProjectCollaborator> grid = new Grid<>();
+    Editor<ProjectCollaborator> editor = grid.getEditor();
+    Binder<ProjectCollaborator> binder = new Binder<>(ProjectCollaborator.class);
     editor.setBinder(binder);
-    var projectUserInfoColumn = pUserGrid.addComponentColumn(
-            ProjectAccessComponent::renderUserInfo)
-        .setKey("userinfo")
-        .setHeader("User Info")
-        .setAutoWidth(true)
-        .setSortable(true)
-        .setComparator(ProjectUser::userName)
-        .setResizable(true);
-    var projectRoleColumn = pUserGrid.addColumn(
+    var usernameColumn = grid.addComponentColumn(
+            projectCollaborator -> userInformationService.findById(projectCollaborator.userId())
+                .map(ProjectAccessComponent::renderUserInfo)
+                .orElse(null))
+        .setKey("user").setHeader("User").setAutoWidth(true);
+    Column<ProjectAccessService.ProjectCollaborator> projectRoleColumn = grid.addColumn(
             collaborator -> "Role: " + collaborator.projectRole().label())
-        .setKey("projectRole").setHeader("Role")
-        .setEditorComponent(
-            this::renderProjectRoleComponent)
-        .setSortable(true)
-        .setComparator(projectUser -> projectUser.projectRole().label())
-        .setResizable(true)
-        .setAutoWidth(true);
-    pUserGrid.addComponentColumn(projectUser -> {
-          //You can't remove or edit your own role
-          if (isCurrentUser(projectUser)) {
-            return new Span();
-          }
-          //You can't remove or edit the project owner
-          if (projectUser.projectRole() == ProjectRole.OWNER) {
-            return new Span();
-          }
-          //You don't have the rights to change the user
-          if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-            return new Span();
-          }
-          return changeProjectAccessCell(projectUser);
-        })
-        .setHeader("Action")
-        .setAutoWidth(true);
-    pUserGrid.sort(
-        List.of(new GridSortOrder<>(projectUserInfoColumn, SortDirection.DESCENDING),
+        .setKey("projectRole").setHeader("Role").setEditorComponent(
+            this::renderProjectRoleComponent).setAutoWidth(true);
+    grid.addComponentColumn(collaborator -> {
+      //You can't remove or edit your own role
+      if (isCurrentUser(collaborator)) {
+        return new Span();
+      }
+      //You can't remove or edit the project owner
+      if (collaborator.projectRole() == ProjectRole.OWNER) {
+        return new Span();
+      }
+      //You don't have the rights to change the user
+      if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+        return new Span();
+      }
+      return changeProjectAccessCell(collaborator);
+    }).setHeader("Action").setAutoWidth(true);
+    grid.sort(
+        List.of(new GridSortOrder<>(usernameColumn, SortDirection.ASCENDING),
             new GridSortOrder<>(projectRoleColumn, SortDirection.DESCENDING)));
-    pUserGrid.setSelectionMode(SelectionMode.NONE);
-    pUserGrid.setColumnReorderingAllowed(true);
-    return pUserGrid;
+    grid.setSelectionMode(SelectionMode.NONE);
+    return grid;
   }
 
-  private Span changeProjectAccessCell(ProjectUser projectUser) {
+  private static Component renderUserInfo(UserInfo userInfo) {
+    UserAvatar userAvatar = new UserAvatar();
+    userAvatar.setUserId(userInfo.id());
+    userAvatar.setName(userInfo.platformUserName());
+    return new UserAvatarWithNameComponent(userAvatar, userInfo.platformUserName());
+  }
+
+  private Span changeProjectAccessCell(ProjectCollaborator collaborator) {
     Span changeProjectAccessCell = new Span();
     //We want to ensure that even if the frontend components are shown no event is propagated
     // if the user doesn't have the correct role or tries to remove himself/the project owner
     Button removeButton = new Button("Remove", clickEvent -> {
-      if (isCurrentUser(projectUser)) {
+      if (isCurrentUser(collaborator)) {
         displayError("Invalid user removal", "You can't remove yourself from a project");
         return;
       }
-      if (projectUser.projectRole() == ProjectRole.OWNER) {
+      if (collaborator.projectRole() == ProjectRole.OWNER) {
         displayError("Invalid user removal", "You can't remove the owner of a project");
         return;
       }
@@ -216,22 +182,16 @@ public class ProjectAccessComponent extends PageArea {
             "You don't have permission to remove the user from this project");
         return;
       }
-      ProjectUserRemovalConfirmationNotification projectUserRemovalConfirmationNotification = new ProjectUserRemovalConfirmationNotification(
-          projectUser);
-      projectUserRemovalConfirmationNotification.addConfirmListener(
-          event -> removeCollaborator(projectUser));
-      projectUserRemovalConfirmationNotification.addCancelListener(
-          event -> projectUserRemovalConfirmationNotification.close());
-      projectUserRemovalConfirmationNotification.open();
+      removeCollaborator(collaborator);
     });
     //We want to ensure that even if the frontend components are shown no event is propagated
     // if the user doesn't have the correct role or tries to edit himself/the project owner
     Button editButton = new Button("Edit", clickEvent -> {
-      if (isCurrentUser(projectUser)) {
+      if (isCurrentUser(collaborator)) {
         displayError("Invalid role edit", "You can't change your own project role");
         return;
       }
-      if (projectUser.projectRole() == ProjectRole.OWNER) {
+      if (collaborator.projectRole() == ProjectRole.OWNER) {
         displayError("Invalid role edit", "You can't change the owner of this project");
         return;
       }
@@ -240,39 +200,27 @@ public class ProjectAccessComponent extends PageArea {
             "You don't have permission to change the role of this collaborator");
         return;
       }
-      if (projectUserGrid.getEditor().isOpen()) {
-        projectUserGrid.getEditor().cancel();
-        projectUserGrid.getEditor().closeEditor();
+      if (projectCollaborators.getEditor().isOpen()) {
+        projectCollaborators.getEditor().cancel();
+        projectCollaborators.getEditor().closeEditor();
         return;
       }
-      projectUserGrid.getEditor().editItem(projectUser);
+      projectCollaborators.getEditor().editItem(collaborator);
     });
     changeProjectAccessCell.add(editButton, removeButton);
     changeProjectAccessCell.addClassName("change-project-access-cell");
     return changeProjectAccessCell;
   }
 
-  private List<ProjectUser> loadProjectUsers() {
-    var projectCollaborators = projectAccessService.listCollaborators(
+  private void reloadProjectCollaborators(Grid<ProjectAccessService.ProjectCollaborator> grid,
+      ProjectAccessService projectAccessService) {
+    List<ProjectAccessService.ProjectCollaborator> collaborators = projectAccessService.listCollaborators(
         context.projectId().orElseThrow());
-    return projectCollaborators.stream().map(collaborator ->
-    {
-      var userInfo = userInformationService.findById(collaborator.userId()).orElseThrow();
-      var oidcId = "";
-      var oidcIssuer = "";
-      if (userInfo.oidcId() != null) {
-        oidcId = userInfo.oidcId();
-      }
-      if (userInfo.oidcIssuer() != null) {
-        oidcIssuer = userInfo.oidcIssuer();
-      }
-      return new ProjectUser(collaborator.userId(), userInfo.platformUserName(),
-          userInfo.fullName(), oidcId, oidcIssuer, collaborator.projectRole());
-    }).toList();
+    grid.setItems(collaborators);
   }
 
   private Component renderProjectRoleComponent(
-      ProjectUser projectUser) {
+      ProjectAccessService.ProjectCollaborator collaborator) {
     String labelPrefix = "Role: ";
     Select<ProjectRole> roleSelect = new Select<>();
     roleSelect.addClassName("project-role-select");
@@ -297,33 +245,53 @@ public class ProjectAccessComponent extends PageArea {
           return projectRoleDiv;
         }));
 
-    roleSelect.setValue(projectUser.projectRole());
+    roleSelect.setValue(collaborator.projectRole());
     roleSelect.addValueChangeListener(valueChanged -> {
-      onProjectRoleSelectionChanged(projectUser, valueChanged);
-      projectUserGrid.getEditor().save();
-      projectUserGrid.getEditor().closeEditor();
-      refreshProjectUserGrid();
+      onProjectRoleSelectionChanged(collaborator, valueChanged);
+      projectCollaborators.getEditor().save();
+      projectCollaborators.getEditor().closeEditor();
+      reloadProjectCollaborators(projectCollaborators, projectAccessService);
     });
     return roleSelect;
   }
 
-  private void removeCollaborator(ProjectUser projectUser) {
+  private void removeCollaborator(ProjectAccessService.ProjectCollaborator collaborator) {
     ProjectId projectId = context.projectId().orElseThrow();
-    projectAccessService.removeCollaborator(projectId, projectUser.userId());
-    refreshProjectUserGrid();
+    projectAccessService.removeCollaborator(projectId, collaborator.userId());
+    reloadProjectCollaborators(projectCollaborators, projectAccessService);
   }
 
-  private void onProjectRoleSelectionChanged(ProjectUser projectUser,
+  private void onProjectRoleSelectionChanged(ProjectAccessService.ProjectCollaborator collaborator,
       ComponentValueChangeEvent<Select<ProjectRole>, ProjectRole> valueChanged) {
-    projectAccessService.changeRole(context.projectId().orElseThrow(), projectUser.userId(),
+    projectAccessService.changeRole(context.projectId().orElseThrow(), collaborator.userId(),
         valueChanged.getValue());
   }
 
+
+  public void setContext(Context context) {
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
+    this.context = context;
+    onProjectChanged();
+  }
+
+  private void onProjectChanged() {
+    reloadProjectCollaborators(projectCollaborators, projectAccessService);
+    if (userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
+      showControls();
+    } else {
+      removeControls();
+    }
+  }
+
+
   private void openAddCollaboratorDialog() {
-    List<ProjectCollaborator> alreadyExistingCollaborators = projectAccessService.listCollaborators(
+    List<ProjectAccessService.ProjectCollaborator> alreadyExistingCollaborators = projectAccessService.listCollaborators(
         context.projectId().orElseThrow());
     AddCollaboratorToProjectDialog addCollaboratorToProjectDialog = new AddCollaboratorToProjectDialog(
-        userInformationService, context.projectId().orElseThrow(), alreadyExistingCollaborators);
+        userInformationService, projectAccessService, context.projectId().orElseThrow(),
+        alreadyExistingCollaborators);
     addCollaboratorToProjectDialog.open();
     addCollaboratorToProjectDialog.addCancelListener(event -> event.getSource().close());
     addCollaboratorToProjectDialog.addConfirmListener(this::onAddCollaboratorConfirmed);
@@ -333,7 +301,7 @@ public class ProjectAccessComponent extends PageArea {
     projectAccessService.addCollaborator(context.projectId().orElseThrow(),
         event.projectCollaborator()
             .userId(), event.projectCollaborator().projectRole());
-    refreshProjectUserGrid();
+    reloadProjectCollaborators(projectCollaborators, projectAccessService);
     event.getSource().close();
   }
 
@@ -343,64 +311,4 @@ public class ProjectAccessComponent extends PageArea {
     notification.open();
   }
 
-  /**
-   * A user in a specific project.
-   *
-   * @param userId      the collaborating user
-   * @param userName    the unique username of the user
-   * @param fullName    the full name of the user
-   * @param oidc        the oidc of the user
-   * @param projectRole the role of the user within the project
-   */
-  public record ProjectUser(String userId, String userName, String fullName, String oidc,
-                            String oidcIssuer, ProjectRole projectRole) {
-  }
-
-  /**
-   * A component displaying a users avatar, orcid, full name and username
-   */
-  public static class UserInfoComponent extends Div {
-
-    private final Div userInfoContent;
-
-    public UserInfoComponent(UserAvatar userAvatar, String userName, String fullName) {
-      addClassName("user-info-component");
-      userAvatar.addClassName("avatar");
-      userInfoContent = new Div();
-      userInfoContent.addClassName("user-info");
-      add(userAvatar, userInfoContent);
-      setUserNameAndFullName(userName, fullName);
-    }
-
-    private void setUserNameAndFullName(String userName, String fullName) {
-      Span fullNameSpan = new Span(fullName);
-      Span userNameSpan = new Span(userName);
-      userNameSpan.addClassName("bold");
-      fullNameSpan.addClassName("secondary");
-      Span userNameAndFullName = new Span(userNameSpan, fullNameSpan);
-      userNameAndFullName.addClassName("user-name-and-full-name");
-      userInfoContent.add(userNameAndFullName);
-    }
-
-    protected void setOidc(String oidcIssuer, String oidc) {
-      if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
-        return;
-      }
-      Arrays.stream(OidcType.values())
-          .filter(ot -> ot.getIssuer().equals(oidcIssuer))
-          .findFirst()
-          .ifPresentOrElse(oidcType -> addOidcInfoItem(oidcType, oidc),
-              () -> log.warn("Unknown oidc Issuer %s".formatted(oidcIssuer)));
-    }
-
-    private void addOidcInfoItem(OidcType oidcType, String oidc) {
-      String oidcUrl = String.format(oidcType.getUrl()) + oidc;
-      Anchor oidcLink = new Anchor(oidcUrl, oidcUrl);
-      oidcLink.setTarget(AnchorTarget.BLANK);
-      OidcLogo oidcLogo = new OidcLogo(oidcType);
-      Span oidcSpan = new Span(oidcLogo, oidcLink);
-      oidcSpan.addClassName("oidc");
-      userInfoContent.add(oidcSpan);
-    }
-  }
 }

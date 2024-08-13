@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.access;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -23,10 +22,9 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.UserInfoComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
-import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
@@ -46,7 +44,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 6582904858073255011L;
-  private static final Logger log = logger(AddCollaboratorToProjectDialog.class);
   private final Div projectRoleSelectionSection = new Div();
   private final Div personSelectionSection = new Div();
   private final RadioButtonGroup<ProjectRole> projectRoleSelection = new RadioButtonGroup<>();
@@ -54,31 +51,20 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
   private final ProjectId projectId;
 
   public AddCollaboratorToProjectDialog(UserInformationService userInformationService,
-      ProjectId projectId,
-      List<ProjectCollaborator> projectCollaborators) {
+      ProjectAccessService projectAccessService, ProjectId projectId,
+      List<ProjectCollaborator> alreadyExistingCollaborators) {
     requireNonNull(userInformationService, "userInformationService must not be null");
+    requireNonNull(projectAccessService, "projectAccessService must not be null");
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     addClassName("add-user-to-project-dialog");
-    initPersonSelection(userInformationService, projectCollaborators);
+    initPersonSelection(userInformationService, alreadyExistingCollaborators);
     initProjectRoleSelection();
     setHeaderTitle("Add Collaborator");
     add(personSelectionSection, projectRoleSelectionSection);
   }
 
-  private static Component renderUserInfo(UserInfo userInfo) {
-    UserAvatar userAvatar = new UserAvatar();
-    userAvatar.setUserId(userInfo.id());
-    userAvatar.setName(userInfo.platformUserName());
-    UserInfoComponent userInfoComponent = new UserInfoComponent(userAvatar,
-        userInfo.platformUserName(), userInfo.fullName());
-    if (userInfo.oidcId() != null && userInfo.oidcIssuer() != null) {
-      userInfoComponent.setOidc(userInfo.oidcIssuer(), userInfo.oidcId());
-    }
-    return userInfoComponent;
-  }
-
   private void initPersonSelection(UserInformationService userInformationService,
-      List<ProjectCollaborator> projectCollaborators) {
+      List<ProjectCollaborator> alreadyExistingCollaborators) {
     Span title = new Span("Select the person");
     title.addClassNames("section-title");
     Span description = new Span(
@@ -90,16 +76,14 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
           .collect(Collectors.toCollection(ArrayList::new));
       // if no order is provided by the grid order by username
       sortOrders.add(SortOrder.of("userName").descending());
-      List<UserInfo> activeUsersWithFilter = userInformationService.queryActiveUsersWithFilter(
+      List<UserInfo> allActiveWithUsername = userInformationService.findAllActive(
           query.getFilter().orElse(null), query.getOffset(),
           query.getLimit(), List.copyOf(sortOrders));
       // filter for not already
-      return activeUsersWithFilter.stream()
-          .filter(userInfo -> projectCollaborators.stream()
-              .noneMatch(
-                  projectCollaborator -> projectCollaborator.userId().equals(userInfo.id())));
+      return allActiveWithUsername.stream()
+          .filter(userInfo -> alreadyExistingCollaborators.stream()
+              .noneMatch(collaborator -> collaborator.userId().equals(userInfo.id())));
     });
-    personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.setRenderer(
         new ComponentRenderer<>(AddCollaboratorToProjectDialog::renderUserInfo));
     personSelection.setRequired(true);
@@ -108,10 +92,18 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     personSelection.setRenderer(new ComponentRenderer<>(
         AddCollaboratorToProjectDialog::renderUserInfo
     ));
+    personSelection.setItemLabelGenerator(UserInfo::platformUserName);
     personSelection.addClassName("person-selection");
     personSelectionSection.addClassName("person-selection-section");
     personSelectionSection.add(title, description, personSelection);
 
+  }
+
+  private static Component renderUserInfo(UserInfo userInfo) {
+    UserAvatar userAvatar = new UserAvatar();
+    userAvatar.setUserId(userInfo.id());
+    userAvatar.setName(userInfo.platformUserName());
+    return new UserAvatarWithNameComponent(userAvatar, userInfo.platformUserName());
   }
 
   private void initProjectRoleSelection() {

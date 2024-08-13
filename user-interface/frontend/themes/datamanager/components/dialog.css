@@ -100,8 +100,8 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 }
 
 .add-user-to-project-dialog::part(overlay) {
-  height: clamp(700px, 100%, 700px);
-  width: clamp(700px, 100%, 700px);
+  height: fit-content;
+  min-width: fit-content;
 }
 
 .add-user-to-project-dialog::part(content) {

@@ -110,9 +110,9 @@ public class UserRepository implements Serializable {
     saveUser(user);
   }
 
-  public List<User> queryActiveUsersWithFilter(String filter,
+  public List<User> findByUserNameContainingIgnoreCaseAndActiveTrue(String userName,
       Pageable pageable) {
-    return dataStorage.queryActiveUsersWithFilter(filter, pageable);
+    return dataStorage.findByUserNameContainingIgnoreCaseAndActiveTrue(userName, pageable);
   }
 
   public Optional<User> findByOidc(String oidcId, String oidcIssuer) {

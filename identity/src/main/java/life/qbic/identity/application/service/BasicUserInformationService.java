@@ -82,7 +82,7 @@ public class BasicUserInformationService implements UserInformationService, User
   }
 
   @Override
-  public List<UserInfo> queryActiveUsersWithFilter(String filter, int offset, int limit,
+  public List<UserInfo> findAllActive(String filter, int offset, int limit,
       List<SortOrder> sortOrders) {
     List<Order> orders = sortOrders.stream().map(it -> {
       Order order;
@@ -93,19 +93,18 @@ public class BasicUserInformationService implements UserInformationService, User
       }
       return order;
     }).toList();
-    return userRepository.queryActiveUsersWithFilter(
+    return userRepository.findByUserNameContainingIgnoreCaseAndActiveTrue(
             filter, new OffsetBasedRequest(offset, limit, Sort.by(orders)))
         .stream()
         .map(user -> new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
-            user.userName(), user.isActive(), user.getOidcId().orElse(null),
-            user.getOidcIssuer().orElse(null)))
+            user.userName(), user.isActive()))
         .toList();
   }
 
   private UserInfo convert(User user) {
     return new UserInfo(user.id().get(), user.fullName().get(), user.emailAddress().get(),
         user.userName(),
-        user.isActive(), user.getOidcId().orElse(null), user.getOidcIssuer().orElse(null));
+        user.isActive());
   }
 
   @Override

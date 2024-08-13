@@ -16,7 +16,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 
 /**
- * A details service loading user details for OpenId Connect users known to the system.
+ * A details service loading user detais for OpenId Connect users known to the system.
  */
 @Component
 public class OidcUserDetailsService extends OidcUserService {

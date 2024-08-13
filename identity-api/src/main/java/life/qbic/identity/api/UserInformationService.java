@@ -55,6 +55,5 @@ public interface UserInformationService {
 
   Optional<UserInfo> findByOidc(String oidcId, String oidcIssuer);
 
-  List<UserInfo> queryActiveUsersWithFilter(String filter, int offset, int limit,
-      List<SortOrder> sortOrders);
+  List<UserInfo> findAllActive(String filter, int offset, int limit, List<SortOrder> sortOrders);
 }

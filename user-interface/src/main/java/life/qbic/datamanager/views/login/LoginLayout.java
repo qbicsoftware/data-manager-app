@@ -21,14 +21,14 @@ import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.AbstractStreamResource;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.Projects;
-import life.qbic.datamanager.views.general.oidc.OidcLogo;
-import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.InformationMessage;
@@ -59,6 +59,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private ConfigurableLoginForm loginForm;
   private Div registrationSection;
   private final transient IdentityService identityService;
+  private static final String ORCID_LOGO_PATH = "login/orcid_logo.svg";
 
   public LoginLayout(@Autowired LoginHandler loginHandler,
       @Autowired IdentityService identityService,
@@ -129,10 +130,14 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     registrationLink.addClassName("registration-link");
     Span spacer = new Span("OR");
     spacer.addClassName("spacer");
-    OidcLogo oidcLogo = new OidcLogo(OidcType.ORCID);
-    LoginCard orcidCard = new LoginCard(oidcLogo, "Login with ORCiD",
+    LoginCard orcidCard = new LoginCard(getOrcIdSource(), "Login with ORCiD",
         contextPath + "/oauth2/authorization/orcid");
     return new Div(registrationLink, spacer, orcidCard);
+  }
+
+  private AbstractStreamResource getOrcIdSource() {
+    return new StreamResource("orcid_logo.svg",
+        () -> getClass().getClassLoader().getResourceAsStream(ORCID_LOGO_PATH));
   }
 
   private void styleNotificationLayout() {
@@ -233,10 +238,13 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private static class LoginCard extends Span {
 
     private final Span text = new Span();
+    private final Image logo = new Image();
 
-    public LoginCard(Image logo, String description, String url) {
+    public LoginCard(AbstractStreamResource imageResource, String description, String url) {
+      logo.addClassName("logo");
       text.setText(description);
       text.addClassName("text");
+      logo.setSrc(imageResource);
       add(logo, text);
       addClassName("login-card");
       addClickListener(event -> UI.getCurrent().getPage().open(url, "_self"));
