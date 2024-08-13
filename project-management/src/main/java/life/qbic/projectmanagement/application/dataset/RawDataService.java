@@ -169,7 +169,7 @@ public class RawDataService {
    * Sample Information associated with the measurements to which the {@link RawData} is linked and
    * meant to be employed in the frontend
    */
-  public record RawDataSampleInformation(SampleCode sampleCode, String sampleLabel) {
+  public record RawDataSampleInformation(SampleCode sampleCode, String sampleName) {
 
   }
 

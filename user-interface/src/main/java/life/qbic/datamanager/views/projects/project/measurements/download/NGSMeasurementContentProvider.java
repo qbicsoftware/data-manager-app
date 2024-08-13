@@ -78,9 +78,9 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     sampleIdCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleId());
     setCellStyle(sampleIdCol, NGSMeasurementColumns.SAMPLEID.readOnly());
 
-    var sampleLabelCol = entry.createCell(NGSMeasurementColumns.SAMPLELABEL.columnNumber());
-    sampleLabelCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleLabel());
-    setCellStyle(sampleLabelCol, NGSMeasurementColumns.SAMPLELABEL.readOnly());
+    var sampleNameCol = entry.createCell(NGSMeasurementColumns.SAMPLENAME.columnNumber());
+    sampleNameCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleName());
+    setCellStyle(sampleNameCol, NGSMeasurementColumns.SAMPLENAME.readOnly());
 
     var orgIdCol = entry.createCell(NGSMeasurementColumns.ORGANISATIONID.columnNumber());
     orgIdCol.setCellValue(ngsMeasurementEntry.organisationId());
@@ -223,7 +223,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
         true),
     SAMPLEID("QBiC Sample Id", 1,
         true),
-    SAMPLELABEL(
+    SAMPLENAME(
         "Sample Name", 2,
         true),
     POOLGROUP("Sample Pool Group", 3,
