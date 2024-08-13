@@ -1,0 +1,29 @@
+name: Label issues
+on:
+  issues:
+    types:
+      - reopened
+      - opened
+jobs:
+  label_issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - run: gh issue edit "$NUMBER" --add-label "$LABELS"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          LABELS: triage
+      - run: gh project list --owner qbicsoftware
+        env:
+          GH_TOKEN: ${{secrets.ISSUE_MANAGEMENT}}
+      - run: gh project item-add "$PROJECT" --owner qbicsoftware --url "$ISSUE_URL"
+        env:
+          PROJECT: 25
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          GH_TOKEN: ${{ secrets.ISSUE_MANAGEMENT }}
+          GH_REPO: ${{ github.repository }}
