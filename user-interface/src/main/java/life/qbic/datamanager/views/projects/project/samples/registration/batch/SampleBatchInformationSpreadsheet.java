@@ -54,7 +54,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .selectFrom(sortedAnalysisMethods, identity(), getAnalysisMethodItemRenderer())
         .setRequired();
 
-    addColumn("Sample label", SampleInfo::getSampleLabel, SampleInfo::setSampleLabel)
+    addColumn("Sample Name", SampleInfo::getSampleName, SampleInfo::setSampleName)
         .requireDistinctValues()
         .setRequired();
 
@@ -107,7 +107,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private SampleId sampleId;
     private SampleCode sampleCode;
     private AnalysisMethod analysisToBePerformed;
-    private String sampleLabel;
+    private String sampleName;
     private String organismId;
     private ExperimentalGroup experimentalGroup;
     private OntologyTerm species;
@@ -115,16 +115,16 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private OntologyTerm analyte;
     private String customerComment;
 
-    public static SampleInfo create(AnalysisMethod analysisMethod, String sampleLabel,
+    public static SampleInfo create(AnalysisMethod analysisMethod, String sampleName,
         String organismId, ExperimentalGroup experimentalGroup, OntologyTerm species,
         OntologyTerm specimen,
         OntologyTerm analyte, String customerComment) {
-      return create(null, null, analysisMethod, sampleLabel, organismId,
+      return create(null, null, analysisMethod, sampleName, organismId,
           experimentalGroup, species, specimen, analyte, customerComment);
     }
 
     public static SampleInfo create(SampleId sampleId, SampleCode sampleCode,
-        AnalysisMethod analysisMethod, String sampleLabel, String organismId,
+        AnalysisMethod analysisMethod, String sampleName, String organismId,
         ExperimentalGroup experimentalGroup,
         OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
         String customerComment) {
@@ -132,7 +132,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       sampleInfo.setSampleId(sampleId);
       sampleInfo.setSampleCode(sampleCode);
       sampleInfo.setAnalysisToBePerformed(analysisMethod);
-      sampleInfo.setSampleLabel(sampleLabel);
+      sampleInfo.setSampleName(sampleName);
       sampleInfo.setOrganismId(organismId);
       sampleInfo.setExperimentalGroup(experimentalGroup);
       sampleInfo.setSpecies(species);
@@ -166,12 +166,12 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       this.analysisToBePerformed = analysisToBePerformed;
     }
 
-    public String getSampleLabel() {
-      return sampleLabel;
+    public String getSampleName() {
+      return sampleName;
     }
 
-    public void setSampleLabel(String sampleLabel) {
-      this.sampleLabel = sampleLabel;
+    public void setSampleName(String sampleName) {
+      this.sampleName = sampleName;
     }
 
     public String getOrganismId() {
@@ -225,7 +225,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     @Override
     public String toString() {
       return new StringJoiner(", ", SampleInfo.class.getSimpleName() + "[", "]").add(
-              "analysisToBePerformed=" + analysisToBePerformed).add("sampleLabel='" + sampleLabel + "'")
+              "analysisToBePerformed=" + analysisToBePerformed).add("sampleName='" + sampleName + "'")
           .add("organismId='" + organismId + "'")
           .add("experimentalGroup=" + experimentalGroup).add("species=" + species)
           .add("specimen=" + specimen).add("analyte=" + analyte)
@@ -240,7 +240,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       sampleInfo.experimentalGroup = original.experimentalGroup;
       sampleInfo.sampleCode = original.sampleCode;
       sampleInfo.sampleId = original.sampleId;
-      sampleInfo.sampleLabel = original.sampleLabel;
+      sampleInfo.sampleName = original.sampleName;
       sampleInfo.organismId = original.organismId;
       sampleInfo.species = original.species;
       sampleInfo.specimen = original.specimen;
@@ -267,7 +267,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       if (analysisToBePerformed != that.analysisToBePerformed) {
         return false;
       }
-      if (!Objects.equals(sampleLabel, that.sampleLabel)) {
+      if (!Objects.equals(sampleName, that.sampleName)) {
         return false;
       }
       if (!Objects.equals(organismId, that.organismId)) {
@@ -293,7 +293,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       int result = sampleId != null ? sampleId.hashCode() : 0;
       result = 31 * result + (sampleCode != null ? sampleCode.hashCode() : 0);
       result = 31 * result + (analysisToBePerformed != null ? analysisToBePerformed.hashCode() : 0);
-      result = 31 * result + (sampleLabel != null ? sampleLabel.hashCode() : 0);
+      result = 31 * result + (sampleName != null ? sampleName.hashCode() : 0);
       result = 31 * result + (organismId != null ? organismId.hashCode() : 0);
       result = 31 * result + (experimentalGroup != null ? experimentalGroup.hashCode() : 0);
       result = 31 * result + (species != null ? species.hashCode() : 0);

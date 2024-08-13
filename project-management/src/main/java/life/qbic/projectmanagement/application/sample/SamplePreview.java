@@ -39,7 +39,7 @@ public class SamplePreview {
   private String batchLabel;
 
   @Column(name = "label")
-  private String sampleLabel;
+  private String sampleName;
 
   @Column(name = "organism_id")
   private String organismId;
@@ -58,14 +58,14 @@ public class SamplePreview {
   }
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
-      String batchLabel, String sampleLabel, String organismId,
+      String batchLabel, String sampleName, String organismId,
       ExperimentalGroup experimentalGroup, OntologyTerm species,
       OntologyTerm specimen, OntologyTerm analyte, String analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
     Objects.requireNonNull(batchLabel);
-    Objects.requireNonNull(sampleLabel);
+    Objects.requireNonNull(sampleName);
     Objects.requireNonNull(experimentalGroup);
     Objects.requireNonNull(species);
     Objects.requireNonNull(specimen);
@@ -75,7 +75,7 @@ public class SamplePreview {
     this.sampleId = sampleId;
     this.sampleCode = sampleCode;
     this.batchLabel = batchLabel;
-    this.sampleLabel = sampleLabel;
+    this.sampleName = sampleName;
     this.experimentalGroup = experimentalGroup;
     this.species = species;
     this.specimen = specimen;
@@ -95,7 +95,7 @@ public class SamplePreview {
    * @param batchLabel        the label of the {@link Batch} which contains the {@link Sample}
    *                          associated with this preview
    *                          associated with this preview
-   * @param sampleLabel       the label of the {@link Sample} associated with this preview
+   * @param sampleName       the name of the {@link Sample} associated with this preview
    * @param organismId        optional identifier of the patient or organism a {@link Sample} was taken of
    * @param experimentalGroup the {@link ExperimentalGroup} for the {@link Sample} associated with
    *                          this preview
@@ -112,11 +112,11 @@ public class SamplePreview {
   public static SamplePreview create(ExperimentId experimentId, SampleId sampleId,
       String sampleCode,
       String batchLabel,
-      String sampleLabel, String organismId, ExperimentalGroup experimentalGroup,
+      String sampleName, String organismId, ExperimentalGroup experimentalGroup,
       OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
       String analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel,
-        sampleLabel, organismId, experimentalGroup, species, specimen, analyte, analysisMethod,
+        sampleName, organismId, experimentalGroup, species, specimen, analyte, analysisMethod,
         comment);
   }
 
@@ -136,8 +136,8 @@ public class SamplePreview {
     return batchLabel;
   }
 
-  public String sampleLabel() {
-    return sampleLabel;
+  public String sampleName() {
+    return sampleName;
   }
 
   public OntologyTerm species() {
@@ -179,8 +179,8 @@ public class SamplePreview {
     SamplePreview that = (SamplePreview) o;
     return Objects.equals(experimentId, that.experimentId) && Objects.equals(
         sampleCode, that.sampleCode) && Objects.equals(sampleId, that.sampleId)
-        && Objects.equals(batchLabel, that.batchLabel) && Objects.equals(sampleLabel,
-        that.sampleLabel) && Objects.equals(organismId, that.organismId)
+        && Objects.equals(batchLabel, that.batchLabel) && Objects.equals(sampleName,
+        that.sampleName) && Objects.equals(organismId, that.organismId)
         && Objects.equals(species, that.species) && Objects.equals(specimen,
         that.specimen) && Objects.equals(analyte, that.analyte) && Objects.equals(
         experimentalGroup, that.experimentalGroup) && Objects.equals(analysisMethod,
@@ -190,7 +190,7 @@ public class SamplePreview {
   @Override
   public int hashCode() {
     return Objects.hash(experimentId, sampleCode, sampleId, batchLabel,
-        sampleLabel, organismId,
+        sampleName, organismId,
         species, specimen, analyte, experimentalGroup, analysisMethod, comment);
   }
 
@@ -201,7 +201,7 @@ public class SamplePreview {
         ", sampleCode='" + sampleCode + '\'' +
         ", sampleId='" + sampleId + '\'' +
         ", batchLabel='" + batchLabel + '\'' +
-        ", sampleLabel='" + sampleLabel + '\'' +
+        ", sampleName='" + sampleName + '\'' +
         ", organismId='" + organismId + '\'' +
         ", species='" + species + '\'' +
         ", specimen='" + specimen + '\'' +

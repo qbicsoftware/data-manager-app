@@ -164,7 +164,7 @@ public class Sample {
   }
 
   public void update(SampleUpdateRequest sampleInfo) {
-    setLabel(sampleInfo.sampleInformation().sampleLabel());
+    setLabel(sampleInfo.sampleInformation().sampleName());
     setOrganismId(sampleInfo.sampleInformation().organismId());
     setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
     setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),

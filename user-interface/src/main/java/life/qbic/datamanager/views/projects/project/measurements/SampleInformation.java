@@ -7,6 +7,6 @@ package life.qbic.datamanager.views.projects.project.measurements;
  *
  * @since <version tag>
  */
-public record SampleInformation(String sampleId, String sampleLabel) {
+public record SampleInformation(String sampleId, String sampleName) {
 
 }

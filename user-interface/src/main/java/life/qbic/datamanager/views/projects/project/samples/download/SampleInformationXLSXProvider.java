@@ -117,7 +117,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     sampleIdCol.setCellValue(sample.sampleCode());
 
     var labelCol = sampleRow.createCell(SamplePreviewColumn.LABEL.column());
-    labelCol.setCellValue(sample.sampleLabel());
+    labelCol.setCellValue(sample.sampleName());
 
     var organismIdCol = sampleRow.createCell(SamplePreviewColumn.ORGANISM_ID.column());
     organismIdCol.setCellValue(sample.organismId());
@@ -161,7 +161,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
   enum SamplePreviewColumn {
 
     SAMPLE_ID("Sample ID", 0),
-    LABEL("Label", 1),
+    LABEL("Sample Name", 1),
     ORGANISM_ID("Organism ID", 2),
     BATCH("Batch", 3),
     SPECIES("Species", 4),
