@@ -225,7 +225,7 @@ private void initializeTabCounts() {
       Collection<RawDataSampleInformation> sampleInformationCollection) {
     return sampleInformationCollection.stream().map(
         sampleInformation -> String.format("%s (%s)",
-            sampleInformation.sampleLabel(), sampleInformation.sampleCode().code())).toList();
+            sampleInformation.sampleName(), sampleInformation.sampleCode().code())).toList();
   }
 
   private String convertToLocalDate(Date date) {
