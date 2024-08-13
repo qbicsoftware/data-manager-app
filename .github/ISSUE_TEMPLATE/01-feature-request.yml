@@ -1,0 +1,42 @@
+name: Feature Request
+description: File a feature request.
+title: "[Please create a short, descriptive title]"
+labels: ["enhancement", "triage"]
+projects: ["qbicsoftware/25"]
+assignees:
+  - sven1103
+  - Shraddha0903
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request.
+  - type: textarea
+    id: wanted
+    attributes:
+      label: What are you missing?
+      description: Also tell us, what is missing?
+      placeholder: Tell us what you would need!
+      value: "I am currently missing ... \nI would need ..."
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Why do you need a solution?
+      description: Please explain your scenario (use case) and how it affects your experience
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Ideas
+      description: Maybe you have an idea how to solve it or have seen a solution from others.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/qbicsoftware/data-manager-app?tab=coc-ov-file).
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
