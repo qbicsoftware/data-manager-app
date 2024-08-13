@@ -83,7 +83,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
     title.addClassNames("section-title");
     Span description = new Span(
         "Please select the username of the person you want to grant access to");
-    description.addClassName("secondary");
     personSelection.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
