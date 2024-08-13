@@ -137,7 +137,7 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
   private Div generateDescription() {
     Anchor downloadGuideLink = new Anchor(
-        "https://qbicsoftware.github.io/research-data-management/rawdata/raw_data_download_create_pat/",
+        "https://qbicsoftware.github.io/research-data-management/rawdata/raw_data_download/#personal-access-token",
         "Download Guide", AnchorTarget.BLANK);
     Text upperDescription = new Text(
         "Personal access tokens allow you to access your own data via the API. They can be used as an alternative over basic authentication (authentication through username and password).");
