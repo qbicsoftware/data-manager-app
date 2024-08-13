@@ -100,7 +100,7 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setFrozen(true);
     sampleGrid.addColumn(SamplePreview::sampleLabel)
         .setHeader("Sample Name")
-        .setSortProperty("sampleName")
+        .setSortProperty("sampleLabel")
         .setTooltipGenerator(SamplePreview::sampleLabel)
         .setAutoWidth(true)
         .setResizable(true);
