@@ -4,7 +4,7 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic</groupId>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>project-management</artifactId>
@@ -37,13 +37,13 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.3.0</version>
+      <version>1.3.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>1.3.0</version>
+      <version>1.3.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -54,7 +54,7 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>1.3.0</version>
+      <version>1.3.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -77,13 +77,13 @@
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-api</artifactId>
-      <version>1.3.0</version>
+      <version>1.3.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.finances</groupId>
       <artifactId>finances-api</artifactId>
-      <version>1.3.0</version>
+      <version>1.3.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
