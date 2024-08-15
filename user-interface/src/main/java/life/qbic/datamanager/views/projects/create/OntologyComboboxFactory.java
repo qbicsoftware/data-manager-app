@@ -6,9 +6,11 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
@@ -20,16 +22,19 @@ public class OntologyComboboxFactory {
 
   private final OntologyLookupService ontologyLookupService;
 
-  public OntologyComboboxFactory(OntologyLookupService ontologyLookupService) {
+  private final TerminologyService terminologyService;
+
+  public OntologyComboboxFactory(OntologyLookupService ontologyLookupService, TerminologyService terminologyService) {
     this.ontologyLookupService = requireNonNull(ontologyLookupService,
         "ontologyTermInformationService must not be null");
+    this.terminologyService = Objects.requireNonNull(terminologyService);
   }
 
   public MultiSelectComboBox<OntologyTerm> analyteBox() {
     List<Ontology> analyteOntologies = List.of(Ontology.BIOASSAY_ONTOLOGY);
 
     MultiSelectComboBox<OntologyTerm> box = newBox();
-    box.setItems(ontologyFetchCallback(analyteOntologies));
+    box.setItems(ontologyTermFetchCallback());
 
     box.setPlaceholder("Search and select one or more analytes for your samples");
     box.setLabel("Analytes");
@@ -41,6 +46,10 @@ public class OntologyComboboxFactory {
       List<Ontology> ontologies) {
     return query -> OntologyFilterConnector.loadOntologyTerms(ontologies, query,
         ontologyLookupService);
+  }
+
+  private FetchCallback<OntologyTerm, String> ontologyTermFetchCallback() {
+    return query -> OntologyFilterConnector.loadOntologyTerms(query, terminologyService);
   }
 
   public MultiSelectComboBox<OntologyTerm> speciesBox() {

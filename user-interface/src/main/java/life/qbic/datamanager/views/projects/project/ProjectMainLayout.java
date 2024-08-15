@@ -22,6 +22,7 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +54,8 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired OntologyLookupService ontologyLookupService,
-      @Autowired FooterComponentFactory footerComponentFactory) {
+      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired TerminologyService terminologyService) {
     super(Objects.requireNonNull(footerComponentFactory));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
@@ -65,7 +67,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyLookupService);
+        userPermissions, ontologyLookupService, terminologyService);
     dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");

@@ -60,6 +60,7 @@ import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -105,6 +106,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
   private final DeletionService deletionService;
+  private final TerminologyService terminologyService;
   private Context context;
   private int experimentalGroupCount;
 
@@ -113,7 +115,8 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired DeletionService deletionService,
-      @Autowired OntologyLookupService ontologyTermInformationService) {
+      @Autowired OntologyLookupService ontologyTermInformationService,
+      TerminologyService terminologyService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
     this.deletionService = Objects.requireNonNull(deletionService);
@@ -124,6 +127,7 @@ public class ExperimentDetailsComponent extends PageArea {
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
+    this.terminologyService = terminologyService;
   }
 
   private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
@@ -218,7 +222,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
     optionalExperiment.ifPresent(experiment -> {
       EditExperimentDialog editExperimentDialog = new EditExperimentDialog(
-          ontologyTermInformationService);
+          ontologyTermInformationService, terminologyService);
 
       ExperimentDraft experimentDraft = new ExperimentDraft();
       experimentDraft.setExperimentName(experiment.getName());

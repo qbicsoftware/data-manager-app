@@ -50,6 +50,7 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -77,6 +78,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ExperimentInformationService experimentInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
+  private final TerminologyService terminologyService;
   private OntologyLookupService ontologyTermInformationService;
   private Context context = new Context();
 
@@ -85,7 +87,8 @@ public class ProjectSideNavigationComponent extends Div implements
       ExperimentInformationService experimentInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserPermissions userPermissions,
-      OntologyLookupService ontologyTermInformationService) {
+      OntologyLookupService ontologyTermInformationService,
+      TerminologyService terminologyService) {
     content = new Div();
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
@@ -96,6 +99,7 @@ public class ProjectSideNavigationComponent extends Div implements
     addClassName("project-navigation-drawer");
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
+    this.terminologyService = Objects.requireNonNull(terminologyService);
     content.addClassName("content");
     add(content);
     addListener(ProjectNavigationEvent.class,
@@ -312,7 +316,8 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new AddExperimentDialog(ontologyTermInformationService);
+    var creationDialog = new AddExperimentDialog(ontologyTermInformationService,
+        terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
     creationDialog.addCancelListener(event -> event.getSource().close());
     creationDialog.open();

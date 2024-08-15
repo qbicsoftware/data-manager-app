@@ -21,6 +21,7 @@ import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 
@@ -36,11 +37,12 @@ public class ExperimentalInformationLayout extends Div implements
   private final Binder<ExperimentalInformation> experimentalInformationBinder;
 
   public ExperimentalInformationLayout(
-      OntologyLookupService ontologyTermInformationService) {
+      OntologyLookupService ontologyTermInformationService, TerminologyService terminologyService) {
     requireNonNull(ontologyTermInformationService,
         "ontologyTermInformationService must not be null");
+    requireNonNull(terminologyService);
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
-        ontologyTermInformationService);
+        ontologyTermInformationService, terminologyService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
     MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
