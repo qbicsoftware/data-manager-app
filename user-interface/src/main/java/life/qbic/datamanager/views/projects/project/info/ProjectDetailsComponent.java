@@ -226,8 +226,6 @@ public class ProjectDetailsComponent extends PageArea {
     project.ifPresentOrElse(proj -> {
           EditProjectInformationDialog editProjectInformationDialog = generateEditProjectInformationDialog(
               proj);
-          editProjectInformationDialog.addCancelListener(
-              cancelEvent -> cancelEvent.getSource().close());
           editProjectInformationDialog.addProjectUpdateEventListener(this::onProjectUpdateEvent);
           editProjectInformationDialog.open();
         }
@@ -272,7 +270,7 @@ public class ProjectDetailsComponent extends PageArea {
       ProjectId projectId = context.projectId().orElseThrow();
       fireEvent(new ProjectEditEvent(this, projectId, projectUpdateEvent.isFromClient()));
     }
-    projectUpdateEvent.getSource().close();
+    projectUpdateEvent.getSource().closeIgnoringListeners();
   }
 
   private void updateProjectInformation(ProjectInformation projectInformationContent) {
