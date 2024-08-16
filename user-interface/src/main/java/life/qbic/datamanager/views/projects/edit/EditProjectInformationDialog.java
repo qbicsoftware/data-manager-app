@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
@@ -45,8 +44,6 @@ public class EditProjectInformationDialog extends DialogWindow {
   public EditProjectInformationDialog(ContactRepository contactRepository) {
     super();
 
-    specifyCancelShortcuts(this::onEditCanceled);
-
     addClassName("edit-project-dialog");
     setHeaderTitle("Project Information");
     setConfirmButtonLabel("Save");
@@ -64,9 +61,6 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
 
     binder = formLayout.getBinder();
-
-    // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> close());
 
     add(formLayout);
   }
@@ -95,40 +89,15 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
   }
 
-  private void onEditCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose all the changes made to this project.")
-        .withConfirmText("Discard changes")
-        .withTitle("Discard project changes?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
-  }
-
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onEditCanceled();
+    close();
   }
 
   public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
     addListener(ProjectUpdateEvent.class, listener);
   }
 
-  public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
-    addListener(CancelEvent.class, listener);
-  }
-
-  public static class CancelEvent extends
-      life.qbic.datamanager.views.events.UserCancelEvent<EditProjectInformationDialog> {
-
-    public CancelEvent(EditProjectInformationDialog source, boolean fromClient) {
-      super(source, fromClient);
-    }
-  }
 
   /**
    * <b>Project Update Event</b>
