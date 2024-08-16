@@ -38,7 +38,6 @@ import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentAddEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
@@ -357,21 +356,6 @@ public class ProjectSideNavigationComponent extends Div implements
     SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
     StyledNotification notification = new StyledNotification(successMessage);
     notification.open();
-  }
-
-  public static class AddExperimentClickEvent extends ComponentEvent<ExperimentListComponent> {
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public AddExperimentClickEvent(ExperimentListComponent source, boolean fromClient) {
-      super(source, fromClient);
-    }
   }
 
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {

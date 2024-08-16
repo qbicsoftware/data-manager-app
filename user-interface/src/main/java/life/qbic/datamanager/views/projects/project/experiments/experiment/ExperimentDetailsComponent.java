@@ -754,6 +754,6 @@ public class ExperimentDetailsComponent extends PageArea {
    * Describes the source level of a sample: species, specimen or analyte
    */
   public enum SampleSourceType {
-    SPECIES, SPECIMEN, ANALYTE;
+    SPECIES, SPECIMEN, ANALYTE
   }
 }

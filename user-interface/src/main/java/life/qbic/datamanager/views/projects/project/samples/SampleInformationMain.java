@@ -324,7 +324,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         editBatchEvent.batchPreview().batchId()).stream().toList();
     var experimentalGroups = experimentInformationService.experimentalGroupsFor(
         context.projectId().orElseThrow().value(),
-        context.experimentId().get());
+        context.experimentId().orElseThrow());
     // need to create mutable list to order samples
     List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = new ArrayList<>(
         samples.stream()
