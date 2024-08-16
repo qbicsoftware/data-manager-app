@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment.comp
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -12,10 +11,8 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentalGroupInput;
-import life.qbic.projectmanagement.application.VariableValueFormatter;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 
 /**
@@ -28,9 +25,6 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
  */
 public class ExperimentalGroupsDialog extends DialogWindow {
 
-  private static final ItemLabelGenerator<VariableLevel> VARIABLE_LEVEL_ITEM_LABEL_GENERATOR = it -> String.format(
-      "%s: %s", it.variableName().value(),
-      VariableValueFormatter.format(it.experimentalValue()));
   @Serial
   private static final long serialVersionUID = 1657697182040756406L;
   private final Collection<VariableLevel> experimentalVariableLevels;
@@ -42,10 +36,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,
       boolean editMode) {
     super();
-    specifyCancelShortcuts(this::onCanceled);
     this.editMode = editMode;
     this.experimentalVariableLevels = Objects.requireNonNull(experimentalVariableLevels);
     layoutComponent();
+    requireCloseConfirmation();
   }
 
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,
@@ -116,23 +110,9 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient()));
   }
 
-  private void onCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose any changes you made to experimental groups.")
-        .withConfirmText("Discard changes")
-        .withTitle("Discard experimental group changes?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
-  }
-
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onCanceled();
+    close();
   }
 
   public void addCancelEventListener(
