@@ -220,7 +220,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       return;
     }
     MeasurementDeletionConfirmationNotification notification =
-        new MeasurementDeletionConfirmationNotification("Selected proteomics measurements will be deleted", measurements.size());
+        new MeasurementDeletionConfirmationNotification(
+            "Selected proteomics measurements will be deleted", measurements.size());
     notification.open();
     notification.addConfirmListener(event -> {
       deletePtxMeasurements(measurements);
@@ -234,7 +235,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       return;
     }
     MeasurementDeletionConfirmationNotification notification =
-        new MeasurementDeletionConfirmationNotification("Selected genomics measurements will be deleted", measurements.size());
+        new MeasurementDeletionConfirmationNotification(
+            "Selected genomics measurements will be deleted", measurements.size());
     notification.open();
     notification.addConfirmListener(event -> {
       deleteNGSMeasurements(measurements);
