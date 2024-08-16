@@ -33,12 +33,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
@@ -70,7 +70,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -241,17 +241,24 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(ExperimentId experimentId) {
     Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
-    result.put(SPECIES, new HashSet<>());
-    result.put(SPECIMEN, new HashSet<>());
-    result.put(ANALYTE, new HashSet<>());
-    sampleInformationService.retrieveSamplesForExperiment(experimentId).onValue(samples -> {
-      samples.forEach(sample -> {
-        SampleOrigin origin = sample.sampleOrigin();
-        result.get(SPECIES).add(origin.getSpecies());
-        result.get(SPECIMEN).add(origin.getSpecimen());
-        result.get(ANALYTE).add(origin.getAnalyte());
-      });
-    });
+    Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(experimentId)
+        .valueOrElse(new ArrayList<>());
+
+    Set<OntologyTerm> speciesSet = samples.stream()
+        .map(sample -> sample.sampleOrigin().getSpecies())
+        .collect(Collectors.toSet());
+    result.put(SPECIES, speciesSet);
+
+    Set<OntologyTerm> specimenSet = samples.stream()
+        .map(sample -> sample.sampleOrigin().getSpecimen())
+        .collect(Collectors.toSet());
+    result.put(SPECIMEN, specimenSet);
+
+    Set<OntologyTerm> analyteSet = samples.stream()
+        .map(sample -> sample.sampleOrigin().getAnalyte())
+        .collect(Collectors.toSet());
+    result.put(ANALYTE, analyteSet);
+
     return result;
   }
 
@@ -269,7 +276,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getSpeciesIcon().getLabel(),
         experimentDraft.getSpecimenIcon().getLabel());
     reloadExperimentInfo(experimentId);
-    event.getSource().close();
+    event.getSource().closeIgnoringListeners();
   }
 
   private void listenForExperimentalVariablesComponentEvents() {
@@ -305,7 +312,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onExperimentalVariablesAddConfirmed(
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
-    confirmEvent.getSource().close();
+    confirmEvent.getSource().closeIgnoringListeners();
     reloadExperimentInfo(context.experimentId().orElseThrow());
     if (hasExperimentalGroups()) {
       showSampleRegistrationPossibleNotification();
@@ -329,7 +336,7 @@ public class ExperimentDetailsComponent extends PageArea {
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     deleteExistingExperimentalVariables();
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
-    confirmEvent.getSource().close();
+    confirmEvent.getSource().closeIgnoringListeners();
     reloadExperimentInfo(context.experimentId().orElseThrow());
   }
 
@@ -508,7 +515,7 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentInformationService.updateExperimentalGroupsOfExperiment(
           context.projectId().orElseThrow().value(), experimentId, groupDTOs);
       reloadExperimentalGroups();
-      confirmEvent.getSource().close();
+      confirmEvent.getSource().closeIgnoringListeners();
     }
   }
 
