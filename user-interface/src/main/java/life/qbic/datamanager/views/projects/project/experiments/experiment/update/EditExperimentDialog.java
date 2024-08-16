@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
@@ -59,7 +58,6 @@ public class EditExperimentDialog extends DialogWindow {
         ontologyTermInformationService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
-    specifyCancelShortcuts(this::onEditCanceled);
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
@@ -173,23 +171,9 @@ public class EditExperimentDialog extends DialogWindow {
     }
   }
 
-  private void onEditCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose all the changes made to this experiment.")
-        .withConfirmText("Discard changes")
-        .withTitle("Discard experiment changes?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
-  }
-
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onEditCanceled();
+    close();
   }
 
   public void setExperiment(ExperimentDraft experiment, Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
@@ -198,8 +182,8 @@ public class EditExperimentDialog extends DialogWindow {
   }
 
   @Override
-  public void close() {
-    super.close();
+  public void closeIgnoringListeners() {
+    super.closeIgnoringListeners();
     reset();
   }
 
