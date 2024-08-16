@@ -7,10 +7,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
-import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -23,8 +20,8 @@ import java.io.Serial;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.HasBinderValidation;
+import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
 import life.qbic.datamanager.views.general.contact.Contact;
@@ -47,7 +44,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 
 @SpringComponent
 @UIScope
-public class AddProjectDialog extends Dialog {
+public class AddProjectDialog extends QbicDialog {
 
   @Serial
   private static final long serialVersionUID = 7643754818237178416L;
@@ -75,8 +72,8 @@ public class AddProjectDialog extends Dialog {
       OntologyLookupService ontologyLookupService,
       ContactRepository contactRepository) {
     super();
-
-    initCancelShortcuts();
+    requireCloseConfirmation();
+    setIgnoreCloseCheckIfUnmodified(false);
 
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
@@ -148,27 +145,6 @@ public class AddProjectDialog extends Dialog {
     adaptFooterButtons(stepper.getFirstStep());
   }
 
-  private void initCancelShortcuts() {
-    setCloseOnOutsideClick(false);
-    setCloseOnEsc(false);
-    Shortcuts.addShortcutListener(this,
-        this::onCreationCanceled, Key.ESCAPE);
-  }
-
-  private void onCreationCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose all the information entered for this project.")
-        .withConfirmText("Discard project creation")
-        .withTitle("Discard new project creation?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
-  }
-
   /**
    * Allows user to search the offer database to prefill some project information
    */
@@ -177,7 +153,7 @@ public class AddProjectDialog extends Dialog {
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onCreationCanceled();
+    close();
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {
