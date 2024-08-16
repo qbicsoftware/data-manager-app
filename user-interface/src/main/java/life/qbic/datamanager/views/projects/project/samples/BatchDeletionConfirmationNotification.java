@@ -1,8 +1,6 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
 
 /**
@@ -14,17 +12,11 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class BatchDeletionConfirmationNotification extends NotificationDialog {
 
   public BatchDeletionConfirmationNotification() {
-    customizeHeader();
-    content.add(new Span(
+    super(Type.WARNING);
+    withTitle("Samples within batch will be deleted");
+    withContent(new Span(
         "Deleting this Batch will also delete the samples contained within. Proceed?"));
     setCancelable(true);
     setConfirmText("Confirm");
-  }
-
-  private void customizeHeader() {
-    Icon errorIcon = new Icon(VaadinIcon.WARNING);
-    errorIcon.setClassName("warning-icon");
-    setTitle("Samples within batch will be deleted");
-    setHeaderIcon(errorIcon);
   }
 }

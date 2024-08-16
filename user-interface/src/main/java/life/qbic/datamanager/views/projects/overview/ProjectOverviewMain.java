@@ -176,7 +176,7 @@ public class ProjectOverviewMain extends Main {
 
   private void onProjectCreated(ConfirmEvent confirmEvent) {
     displaySuccessfulProjectCreationNotification();
-    confirmEvent.getSource().close();
+    confirmEvent.getSource().closeIgnoringListeners();
     projectCollectionComponent.refresh();
     projectCollectionComponent.resetSearch();
   }

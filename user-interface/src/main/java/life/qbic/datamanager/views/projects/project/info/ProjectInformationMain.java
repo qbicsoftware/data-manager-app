@@ -203,7 +203,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
           .toList();
       projectPurchaseService.addPurchases(projectId, offerDTOs);
       refreshOffers(projectPurchaseService, projectId, uploadOfferClickEvent.getSource());
-      confirmEvent.getSource().close();
+      confirmEvent.getSource().closeIgnoringListeners();
     });
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.open();
@@ -250,7 +250,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       qualityControlService.addQualityControls(context.projectId().orElseThrow().toString(),
           qualityControlReports);
       refreshQualityControls();
-      confirmEvent.getSource().close();
+      confirmEvent.getSource().closeIgnoringListeners();
     });
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.open();

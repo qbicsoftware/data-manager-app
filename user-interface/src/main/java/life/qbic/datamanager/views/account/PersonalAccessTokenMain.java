@@ -96,7 +96,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
           event.personalAccessTokenDTO()
               .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
       personalAccessTokenComponent.showCreatedToken(createdToken);
-      event.getSource().close();
+      event.getSource().closeIgnoringListeners();
     });
   }
 
