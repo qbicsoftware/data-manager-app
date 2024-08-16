@@ -297,7 +297,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private void onExperimentAddEvent(ExperimentAddEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
-    event.getSource().close();
+    event.getSource().closeIgnoringListeners();
     displayExperimentCreationSuccess();
     routeToExperiment(createdExperiment);
   }
