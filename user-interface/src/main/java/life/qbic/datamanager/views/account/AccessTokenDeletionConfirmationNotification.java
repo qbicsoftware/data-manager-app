@@ -1,8 +1,6 @@
 package life.qbic.datamanager.views.account;
 
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
 
 /**
@@ -13,17 +11,13 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class AccessTokenDeletionConfirmationNotification extends NotificationDialog {
 
   public AccessTokenDeletionConfirmationNotification() {
-    customizeHeader();
-    content.add(new Span(
+    super(Type.WARNING);
+    withTitle("Personal Access Token will be deleted");
+    withContent(new Span(
         "Deleting this Personal Access Token will make it unusable. Proceed?"));
     setCancelable(true);
-    setConfirmText("Confirm");
+    setConfirmText("Delete Token");
   }
 
-  private void customizeHeader() {
-    Icon errorIcon = new Icon(VaadinIcon.WARNING);
-    errorIcon.setClassName("warning-icon");
-    setTitle("Personal Access Token will be deleted");
-    setHeaderIcon(errorIcon);
-  }
+
 }

@@ -1,11 +1,9 @@
 package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.server.Command;
 
 /**
@@ -17,7 +15,7 @@ import com.vaadin.flow.server.Command;
  *
  * @since 1.0.0
  */
-public abstract class DialogWindow extends Dialog {
+public abstract class DialogWindow extends QbicDialog {
 
   protected final Button confirmButton = new Button("Confirm");
   protected final Button cancelButton = new Button("Cancel");
