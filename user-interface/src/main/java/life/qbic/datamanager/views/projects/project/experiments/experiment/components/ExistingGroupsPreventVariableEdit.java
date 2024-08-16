@@ -4,8 +4,6 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
 
 /**
@@ -17,8 +15,9 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public final class ExistingGroupsPreventVariableEdit extends NotificationDialog {
 
   public ExistingGroupsPreventVariableEdit(int numberOfExperimentalGroups) {
+    super(Type.ERROR);
     addClassName("existing-groups-prevent-variable-edit");
-    customizeHeader();
+    withTitle("Cannot edit variables");
     customizeContent(numberOfExperimentalGroups);
     customizeRejection();
     setConfirmText("Go to Experimental Groups");
@@ -34,7 +33,7 @@ public final class ExistingGroupsPreventVariableEdit extends NotificationDialog 
   private void customizeContent(int numberOfExperimentalGroups) {
     Span experimentalGroupCount = new Span(String.valueOf(numberOfExperimentalGroups));
     experimentalGroupCount.addClassName("experimental-group-count");
-    content.add(
+    withContent(
         new Div(new Text(
             "Editing experimental variables requires all experimental groups to be deleted.")),
         new Div(new Text("You have "), experimentalGroupCount,
@@ -44,10 +43,4 @@ public final class ExistingGroupsPreventVariableEdit extends NotificationDialog 
             numberOfExperimentalGroups > 1 ? "s" : ""))));
   }
 
-  private void customizeHeader() {
-    Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
-    errorIcon.setClassName("error-icon");
-    setTitle("Cannot edit variables");
-    setHeaderIcon(errorIcon);
-  }
 }
