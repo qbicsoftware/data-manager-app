@@ -239,7 +239,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     List<SampleRegistrationRequest> sampleRegistrationRequests;
     sampleRegistrationRequests = sampleInfos.stream()
         .map(sample -> new SampleRegistrationRequest(
-            sample.getSampleName(), sample.getOrganismId(),
+            sample.getSampleName(), sample.getBiologicalReplicate(),
             batchId,
             context.experimentId().orElseThrow(),
             sample.getExperimentalGroup().id(),
@@ -253,7 +253,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private SampleUpdateRequest generateSampleUpdateRequestFromSampleInfo(
       SampleInfo sampleInfo) {
     return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
-        sampleInfo.getSampleName(), sampleInfo.getOrganismId(),
+        sampleInfo.getSampleName(), sampleInfo.getBiologicalReplicate(),
         sampleInfo.getAnalysisToBePerformed(),
         sampleInfo.getExperimentalGroup(),
         sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
@@ -359,7 +359,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     /*We currently allow replicates independent of experimental groups which is why we have to parse all replicates */
     return SampleBatchInformationSpreadsheet.SampleInfo.create(sample.sampleId(),
         sample.sampleCode(), sample.analysisMethod(),
-        sample.label(), sample.organismId(), experimentalGroup, sample.sampleOrigin()
+        sample.label(), sample.biologicalReplicate(), experimentalGroup, sample.sampleOrigin()
             .getSpecies(), sample.sampleOrigin().getSpecimen(), sample.sampleOrigin().getAnalyte(),
         sample.comment().orElse(""));
   }

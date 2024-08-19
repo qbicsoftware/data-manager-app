@@ -9,7 +9,8 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
  * Serves as a parameter object for sample creation.
  *
  * @param label               a human-readable semantic descriptor of the sample
- * @param organismId          optional identifier of the patient or organism a sample was taken of
+ * @param biologicalReplicate optional identifier of the patient or organism a sample was taken of.
+ *                            Used to group biological replicates
  * @param assignedBatch       the assigned batch
  * @param experimentId        the experiment reference
  * @param experimentalGroupId the experimental group id the sample is part of
@@ -19,16 +20,16 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
  *
  * @since 1.0.0
  */
-public record SampleRegistrationRequest(String label, String organismId, BatchId assignedBatch,
+public record SampleRegistrationRequest(String label, String biologicalReplicate, BatchId assignedBatch,
                                         ExperimentId experimentId, Long experimentalGroupId,
                                         SampleOrigin sampleOrigin, AnalysisMethod analysisMethod,
                                         String comment) {
 
-  public SampleRegistrationRequest(String label, String organismId, BatchId assignedBatch,
+  public SampleRegistrationRequest(String label, String biologicalReplicate, BatchId assignedBatch,
       ExperimentId experimentId, Long experimentalGroupId,
       SampleOrigin sampleOrigin, AnalysisMethod analysisMethod, String comment) {
     this.label = Objects.requireNonNull(label);
-    this.organismId = organismId;
+    this.biologicalReplicate = biologicalReplicate;
     this.assignedBatch = Objects.requireNonNull(assignedBatch);
     this.experimentId = Objects.requireNonNull(experimentId);
     this.experimentalGroupId = Objects.requireNonNull(experimentalGroupId);
