@@ -135,7 +135,7 @@ public class ExperimentDetailsComponent extends PageArea {
       Span ontology = new Span();
       Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
       /*Ontology terms are delimited by a column, the underscore is only used in the web environment*/
-      String ontologyLinkName = ontologyClassDTO.getName().replace("_", ":");
+      String ontologyLinkName = ontologyClassDTO.getOboId().replace("_", ":");
       Span ontologyLink = new Span(ontologyLinkName);
       ontologyLink.addClassName("ontology-link");
       Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);

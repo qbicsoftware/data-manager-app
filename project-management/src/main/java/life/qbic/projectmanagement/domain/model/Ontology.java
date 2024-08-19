@@ -22,7 +22,8 @@ public enum Ontology {
       "Contains sample preparations."),
   PLANT_ONTOLOGY("Plant Ontology", "po", "Plant ontology"),
   BRENDA_TISSUE_ONTOLOGY("Brenda Tissue / Enzyme Ontology", "bto",
-      "Contains tissues, cell line, cell types, etc.");
+      "Contains tissues, cell line, cell types, etc."),
+  UNKNOWN_ONTOLOGY("Unknown Ontology", "", "We don't have information about this ontology yet.");
 
   private final String name;
   private final String abbreviation;
@@ -47,7 +48,7 @@ public enum Ontology {
 
   public static Ontology findOntologyByAbbreviation(String abbreviation) {
     return Arrays.stream(Ontology.values()).filter(o ->
-            o.getAbbreviation().equals(abbreviation)).findFirst()
-        .orElse(null);
+            o.getAbbreviation().equalsIgnoreCase(abbreviation)).findFirst()
+        .orElse(Ontology.UNKNOWN_ONTOLOGY);
   }
 }

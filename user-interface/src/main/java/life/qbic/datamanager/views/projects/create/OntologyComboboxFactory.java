@@ -31,8 +31,6 @@ public class OntologyComboboxFactory {
   }
 
   public MultiSelectComboBox<OntologyTerm> analyteBox() {
-    List<Ontology> analyteOntologies = List.of(Ontology.BIOASSAY_ONTOLOGY);
-
     MultiSelectComboBox<OntologyTerm> box = newBox();
     box.setItems(ontologyTermFetchCallback());
 
@@ -64,11 +62,9 @@ public class OntologyComboboxFactory {
   }
 
   public MultiSelectComboBox<OntologyTerm> specimenBox() {
-    List<Ontology> specimenOntologies = List.of(Ontology.PLANT_ONTOLOGY,
-        Ontology.BRENDA_TISSUE_ONTOLOGY);
 
     MultiSelectComboBox<OntologyTerm> box = newBox();
-    box.setItems(ontologyFetchCallback(specimenOntologies));
+    box.setItems(ontologyTermFetchCallback());
 
     box.setPlaceholder("Search and select one or more specimen for your samples");
     box.setLabel("Specimen");
@@ -87,7 +83,7 @@ public class OntologyComboboxFactory {
   }
 
   private static String ontologyItemFormatted(OntologyTerm ontologyTerm) {
-    String ontologyLinkName = ontologyTerm.getName().replace("_", ":");
+    String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
     return String.format("%s (%s)", ontologyTerm.getLabel(), ontologyLinkName);
   }
 

@@ -43,7 +43,8 @@ public class TerminologyService {
    * @since 1.4.0
    */
   public List<OntologyTerm> query(String searchTerm, int offset, int limit) {
-    return terminologySelect.query(searchTerm, offset, limit);
+    return terminologySelect.query(searchTerm, offset, limit).stream().map(OntologyTerm::from)
+        .toList();
   }
 
   /**
@@ -57,7 +58,8 @@ public class TerminologyService {
    * @since 1.4.0
    */
   public List<OntologyTerm> searchByCurie(String curie, int offset, int limit) {
-    return terminologySelect.searchByCurie(curie, offset, limit);
+    return terminologySelect.searchByCurie(curie, offset, limit).stream().map(OntologyTerm::from)
+        .toList();
   }
 
   /**
@@ -74,7 +76,8 @@ public class TerminologyService {
    * @since 1.4.0
    */
   public List<OntologyTerm> search(String searchTerm, int offset, int limit) {
-    return terminologySelect.search(searchTerm, offset, limit);
+    return terminologySelect.search(searchTerm, offset, limit).stream().map(OntologyTerm::from)
+        .toList();
   }
 
 }

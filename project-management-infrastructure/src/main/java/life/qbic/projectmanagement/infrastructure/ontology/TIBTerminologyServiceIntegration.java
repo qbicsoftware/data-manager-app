@@ -17,10 +17,11 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -60,8 +61,9 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     this.searchEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(searchEndpoint);
   }
 
-  private static OntologyTerm convert(TibTerm term) {
-    return new OntologyTerm(term.ontologyPrefix, "", term.iri, term.label, term.shortForm, "", "");
+  private static OntologyClass convert(TibTerm term) {
+    return new OntologyClass(term.ontologyPrefix, "", term.iri, term.label, term.shortForm,
+        term.getDescription().orElse(""), "");
   }
 
   private static String createOntologyFilterQueryParameter() {
@@ -75,7 +77,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   }
 
   @Override
-  public List<OntologyTerm> query(String searchTerm, int offset, int limit) {
+  public List<OntologyClass> query(String searchTerm, int offset, int limit) {
     try {
       List<TibTerm> result = select(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
@@ -86,7 +88,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   }
 
   @Override
-  public List<OntologyTerm> searchByCurie(String curie, int offset, int limit) {
+  public List<OntologyClass> searchByCurie(String curie, int offset, int limit) {
     try {
       List<TibTerm> result = searchByOboId(curie, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
@@ -97,7 +99,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   }
 
   @Override
-  public List<OntologyTerm> search(String searchTerm, int offset, int limit) {
+  public List<OntologyClass> search(String searchTerm, int offset, int limit) {
     try {
       List<TibTerm> result = fullSearch(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
@@ -149,7 +151,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   private List<TibTerm> parseResponse(HttpResponse<String> response) {
     ObjectMapper mapper = new ObjectMapper().configure(
-        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).configure(
+        DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
     try {
       JsonNode node = mapper.readTree(response.body()).at("/response/docs");
       List<TibTerm> terms = new ArrayList<>();

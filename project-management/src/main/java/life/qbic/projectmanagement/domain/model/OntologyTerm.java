@@ -98,11 +98,11 @@ public class OntologyTerm implements Serializable {
     this.classLabel = termLabel;
   }
 
-  public String getName() {
+  public String getOboId() {
     return className;
   }
 
-  public void setName(String name) {
+  public void setOboId(String name) {
     this.className = name;
   }
 

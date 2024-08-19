@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.ontology;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
@@ -19,6 +17,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
@@ -26,7 +25,9 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.Ontology;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -43,24 +44,28 @@ public class OntologyLookupComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = -1777819501917841723L;
+  private static final int ONTOLOGY_SEARCH_LOWER_LIMIT = 2;
   private final TextField searchField = new TextField();
   private final Div ontologyGridSection = new Div();
-  private GridLazyDataView<OntologyClass> ontologyGridLazyDataView;
-  private String searchTerm = "";
+  private final TerminologyService terminologyService;
   private final Span numberOfHitsInfo = new Span();
   private final transient OntologyLookupService ontologyTermInformationService;
-  private static final int ONTOLOGY_SEARCH_LOWER_LIMIT = 2;
+  private GridLazyDataView<OntologyTerm> ontologyGridLazyDataView;
+  private String searchTerm = "";
 
   public OntologyLookupComponent(
-      @Autowired OntologyLookupService ontologyTermInformationService) {
-    requireNonNull(ontologyTermInformationService);
-    this.ontologyTermInformationService = ontologyTermInformationService;
+      @Autowired OntologyLookupService ontologyTermInformationService, @Autowired
+  TerminologyService terminologyService) {
+    this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService);
+    this.terminologyService = Objects.requireNonNull(terminologyService);
+
     Span title = new Span("Ontology Lookup");
     title.addClassName("title");
     add(title);
     int numOfOntologies = ontologyTermInformationService.findUniqueOntologies().size();
     Span description = new Span(String.format(
-        "Here you can search our database for ontology terms from %d different ontologies.", numOfOntologies));
+        "Here you can search our database for ontology terms from %d different ontologies.",
+        numOfOntologies));
     add(description);
     initSearchField();
     add(searchField);
@@ -69,26 +74,27 @@ public class OntologyLookupComponent extends PageArea {
     addClassName("ontology-lookup-component");
   }
 
-  private void setLazyDataProviderForOntologyGrid(Grid<OntologyClass> ontologyGrid) {
+  private void setLazyDataProviderForOntologyGrid(Grid<OntologyTerm> ontologyGrid) {
     ontologyGridLazyDataView = ontologyGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .toList();
       var allOntologyAbbreviations = Arrays.stream(Ontology.values()).map(Ontology::getAbbreviation)
           .toList();
-      return ontologyTermInformationService.queryOntologyTerm(searchTerm, allOntologyAbbreviations,
+      return terminologyService.search(searchTerm, query.getOffset(), query.getLimit()).stream();
+      /*return ontologyTermInformationService.queryOntologyTerm(searchTerm, allOntologyAbbreviations,
           query.getOffset(),
           query.getLimit(),
-          List.copyOf(sortOrders)).stream();
+          List.copyOf(sortOrders)).stream();*/
     });
   }
 
   private void initGridSection() {
-    Grid<OntologyClass> ontologyGrid = new Grid<>();
+    Grid<OntologyTerm> ontologyGrid = new Grid<>();
     ontologyGrid.setSelectionMode(SelectionMode.NONE);
     ontologyGrid.addComponentColumn(
-        ontologyClass -> new OntologyItem(ontologyClass.getClassLabel(),
-            ontologyClass.getCurie().replace("_", ":"),
+        ontologyClass -> new OntologyItem(ontologyClass.getLabel(),
+            ontologyClass.getOboId().replace("_", ":"),
             ontologyClass.getClassIri(), ontologyClass.getDescription(),
             Ontology.findOntologyByAbbreviation(ontologyClass.getOntologyAbbreviation())
                 .getName()));

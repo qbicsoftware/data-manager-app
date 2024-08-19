@@ -29,7 +29,7 @@ public interface TerminologySelect {
    * @return a list of matching terms given the provided search term
    * @since 1.4.0
    */
-  List<OntologyTerm> query(String searchTerm, int offset, int limit);
+  List<OntologyClass> query(String searchTerm, int offset, int limit);
 
   /**
    * Queries possible matching ontology terms given a provided CURIE, such as the OBO ID.
@@ -41,7 +41,7 @@ public interface TerminologySelect {
    * @return a list of matching terms given the provided CURIE
    * @since 1.4.0
    */
-  List<OntologyTerm> searchByCurie(String curie, int offset, int limit);
+  List<OntologyClass> searchByCurie(String curie, int offset, int limit);
 
   /**
    * Searches for possible matching ontology terms. This search returns rich {@link OntologyTerm}
@@ -56,5 +56,5 @@ public interface TerminologySelect {
    * @return a list of matching terms given the provided search term.
    * @since 1.4.0
    */
-  List<OntologyTerm> search(String searchTerm, int offset, int limit);
+  List<OntologyClass> search(String searchTerm, int offset, int limit);
 }

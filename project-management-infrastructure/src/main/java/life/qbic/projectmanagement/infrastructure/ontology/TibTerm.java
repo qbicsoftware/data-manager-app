@@ -1,7 +1,9 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * <b>Tib Term</b>
@@ -26,6 +28,8 @@ public class TibTerm {
   String ontologyName;
   @JsonProperty("ontology_prefix")
   String ontologyPrefix;
+  @JsonProperty("description")
+  List<String> description;
 
   @Override
   public boolean equals(Object o) {
@@ -59,5 +63,9 @@ public class TibTerm {
         ", ontologyName='" + ontologyName + '\'' +
         ", ontologyPrefix='" + ontologyPrefix + '\'' +
         '}';
+  }
+
+  public Optional<String> getDescription() {
+    return Optional.ofNullable(description == null ? null : String.join("", description));
   }
 }

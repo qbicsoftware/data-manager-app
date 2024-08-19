@@ -390,7 +390,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
     return new ComponentRenderer<>(instrument -> {
       Span instrumentLabel = new Span(instrument.getLabel());
-      Span instrumentOntologyLink = new Span(instrument.getName().replace("_", ":"));
+      Span instrumentOntologyLink = new Span(instrument.getOboId().replace("_", ":"));
       instrumentOntologyLink.addClassName("ontology-link");
       Anchor instrumentNameAnchor = new Anchor(instrument.getClassIri(), instrumentOntologyLink);
       instrumentNameAnchor.setTarget(AnchorTarget.BLANK);
