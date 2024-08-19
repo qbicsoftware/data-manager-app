@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.domain.model.experiment.repository.jpa;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
@@ -11,7 +12,8 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 public class OntologyClassAttributeConverter implements
     AttributeConverter<OntologyTerm, String> {
 
-  private static final ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = new ObjectMapper().configure(
+      DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   @Override
   public String convertToDatabaseColumn(OntologyTerm attribute) {
