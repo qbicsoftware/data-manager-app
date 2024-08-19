@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 /**
  * Raw Data Service
  * <p>
- * Service that provides an API to manage and query raw Data information
+ * Service that provides an API to manage and search raw Data information
  */
 @Service
 public class RawDataService {

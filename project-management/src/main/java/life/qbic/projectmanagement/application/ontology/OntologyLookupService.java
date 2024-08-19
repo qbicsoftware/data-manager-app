@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Service that provides an API to query basic ontology information
+ * Service that provides an API to search basic ontology information
  *
  * @since 1.0.0
  */

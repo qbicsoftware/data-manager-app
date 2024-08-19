@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 /**
- * Simple sample preview repository to query concise {@link Sample} information
+ * Simple sample preview repository to search concise {@link Sample} information
  *
  * @since 1.0.0
  */

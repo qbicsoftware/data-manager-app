@@ -43,7 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service that provides an API to query basic experiment information
+ * Service that provides an API to search basic experiment information
  *
  * @since 1.0.0
  */

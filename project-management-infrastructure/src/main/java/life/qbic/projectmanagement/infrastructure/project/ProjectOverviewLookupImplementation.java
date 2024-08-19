@@ -15,7 +15,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 /**
- * Basic implementation to query project overview information
+ * Basic implementation to search project overview information
  */
 @Component
 @Scope("singleton")

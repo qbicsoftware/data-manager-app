@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
- * Simple proteomics measurement JPA repository to query and filter concise
+ * Simple proteomics measurement JPA repository to search and filter concise
  * {@link ProteomicsMeasurement} information
  */
 public interface ProteomicsMeasurementJpaRepo extends

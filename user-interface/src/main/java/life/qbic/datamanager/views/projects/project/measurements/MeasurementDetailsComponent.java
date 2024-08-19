@@ -106,7 +106,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   /**
-   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to query the
+   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to search the
    * {@link MeasurementMetadata} shown in the grids of this component
    *
    * @param context Context with the projectId and experimentId containing the samples for which

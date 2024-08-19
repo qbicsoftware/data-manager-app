@@ -37,23 +37,27 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   private static final Logger log = logger(TIBTerminologyServiceIntegration.class);
   private static final List<String> ONTOLOGIES_WHITELIST = new ArrayList<>();
+  private static final HttpClient HTTP_CLIENT = httpClient();
 
   static {
-    ONTOLOGIES_WHITELIST.add("bao");
-    ONTOLOGIES_WHITELIST.add("bto");
-    ONTOLOGIES_WHITELIST.add("efo");
-    ONTOLOGIES_WHITELIST.add("ms");
-    ONTOLOGIES_WHITELIST.add("ncit");
-    ONTOLOGIES_WHITELIST.add("envo");
+    ONTOLOGIES_WHITELIST.add("bao"); // Bio-assay Ontology
+    ONTOLOGIES_WHITELIST.add("bto"); // Brenda Tissue Ontology
+    ONTOLOGIES_WHITELIST.add("efo"); // Experimental Factor Ontology
+    ONTOLOGIES_WHITELIST.add("ms");  // PSI Mass Spectrometry Ontology
+    ONTOLOGIES_WHITELIST.add("ncit"); // National Cancer Institute Thesaurus
+    ONTOLOGIES_WHITELIST.add("envo"); // Environmental Factor Ontology
   }
 
   private final URI selectEndpointAbsoluteUrl;
+  private final URI searchEndpointAbsoluteUrl;
 
   @Autowired
   public TIBTerminologyServiceIntegration(
       @Value("${tib.terminology.service.endpoint.select}") String selectEndpoint,
+      @Value("${tib.terminology.service.endpoint.search}") String searchEndpoint,
       @Value("${tib.terminology.service.api.url}") String tibApiUrl) {
     this.selectEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(selectEndpoint);
+    this.searchEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(searchEndpoint);
   }
 
   private static OntologyTerm convert(TibTerm term) {
@@ -64,30 +68,51 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     return String.join(",", ONTOLOGIES_WHITELIST);
   }
 
+  private static HttpClient httpClient() {
+    return HttpClient.newBuilder().version(Version.HTTP_2)
+        .followRedirects(Redirect.NORMAL).connectTimeout(
+            Duration.ofSeconds(10)).build();
+  }
+
   @Override
-  public List<OntologyTerm> query(String searchTerm, int offset, int limit) {
+  public List<OntologyTerm> search(String searchTerm, int offset, int limit) {
     try {
       List<TibTerm> result = select(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
     } catch (IOException | InterruptedException e) {
-      log.error("TIB Service query failed. ", e);
+      log.error("TIB Service search failed. ", e);
       throw new ApplicationException("Query failed. Please try again.");
     }
   }
 
-  public List<TibTerm> select(String searchTerm, int offset, int limit)
-      throws IOException, InterruptedException {
-    if (searchTerm.length() < 2) {
+  @Override
+  public List<OntologyTerm> searchByCurie(String curie, int offset, int limit) {
+    return List.of();
+  }
+
+  private List<TibTerm> select(String searchTerm, int offset, int limit)
+      throws IOException, InterruptedException, ApplicationException {
+    if (searchTerm.length() < 2) { // avoid unnecessary API calls
       return List.of();
     }
-    HttpClient client = HttpClient.newBuilder().version(Version.HTTP_2)
-        .followRedirects(Redirect.NORMAL).connectTimeout(
-            Duration.ofSeconds(10)).build();
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
             selectEndpointAbsoluteUrl.toString() + "?q=" + searchTerm.replace(" ", "%20") + "&rows="
                 + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
-    var response = client.send(termSelectQuery, BodyHandlers.ofString());
+    var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
+    return parseResponse(response);
+  }
+
+  private List<TibTerm> searchByOboId(String oboId, int offset, int limit)
+      throws IOException, InterruptedException, ApplicationException {
+    if (oboId.isBlank()) { // avoid unnecessary API calls
+      return List.of();
+    }
+    HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
+            searchEndpointAbsoluteUrl.toString() + "?q=" + oboId.replace(" ", "%20") + "&rows="
+                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
+        .header("Content-Type", "application/json").GET().build();
+    var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
   }
 
@@ -103,8 +128,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return terms;
     } catch (JsonProcessingException e) {
       log.error("Terminology Term Failure: Cannot process API response.", e);
+      throw new ApplicationException("Terminology service call failed.", e);
     }
-    return List.of();
   }
 }
 

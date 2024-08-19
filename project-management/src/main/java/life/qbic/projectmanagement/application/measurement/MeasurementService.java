@@ -54,7 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Measurement Service
  * <p>
- * Service that provides an API to manage and query measurement information
+ * Service that provides an API to manage and search measurement information
  */
 @Service
 public class MeasurementService {

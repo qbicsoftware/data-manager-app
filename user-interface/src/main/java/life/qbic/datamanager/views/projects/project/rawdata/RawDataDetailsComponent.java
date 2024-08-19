@@ -91,7 +91,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   }
 
   /**
-   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to query the raw data
+   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to search the raw data
    * information shown in the grids of this component
    *
    * @param context Context with the projectId and experimentId which contains the measurements with

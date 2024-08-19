@@ -17,7 +17,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 /**
- * Basic implementation to query measurement information
+ * Basic implementation to search measurement information
  * <p></p>
  * Employs JPA based {@link Specification} to provide the ability to filter each
  * {@link MeasurementMetadata} with the provided string based searchTerm

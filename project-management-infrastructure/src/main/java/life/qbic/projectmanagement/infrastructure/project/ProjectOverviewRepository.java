@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
- * Simple project overview repository to query concise project information
+ * Simple project overview repository to search concise project information
  *
  * @since 1.0.0
  */

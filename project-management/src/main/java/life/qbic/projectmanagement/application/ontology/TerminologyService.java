@@ -24,7 +24,7 @@ public class TerminologyService {
   }
 
   public List<OntologyTerm> query(String searchTerm, int offset, int limit) {
-    return terminologySelect.query(searchTerm, offset, limit);
+    return terminologySelect.search(searchTerm, offset, limit);
   }
 
 }
