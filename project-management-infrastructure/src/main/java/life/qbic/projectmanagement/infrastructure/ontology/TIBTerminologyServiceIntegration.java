@@ -17,7 +17,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -88,10 +88,14 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   }
 
   @Override
-  public List<OntologyClass> searchByCurie(String curie, int offset, int limit) {
+  public Optional<OntologyClass> searchByCurie(String curie) {
     try {
-      List<TibTerm> result = searchByOboId(curie, offset, limit);
-      return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
+      List<TibTerm> result = searchByOboId(curie, 0, 10);
+      if (result.isEmpty()) {
+        return Optional.empty();
+      }
+      return Optional.of(
+          result.stream().map(TIBTerminologyServiceIntegration::convert).toList().get(0));
     } catch (IOException | InterruptedException e) {
       log.error("TIB Service search failed. ", e);
       throw new ApplicationException("Query failed. Please try again.");

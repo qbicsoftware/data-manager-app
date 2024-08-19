@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.ontology;
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
@@ -41,7 +42,7 @@ public interface TerminologySelect {
    * @return a list of matching terms given the provided CURIE
    * @since 1.4.0
    */
-  List<OntologyClass> searchByCurie(String curie, int offset, int limit);
+  Optional<OntologyClass> searchByCurie(String curie);
 
   /**
    * Searches for possible matching ontology terms. This search returns rich {@link OntologyTerm}

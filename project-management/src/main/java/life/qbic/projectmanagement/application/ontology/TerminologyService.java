@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.ontology;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,18 +49,14 @@ public class TerminologyService {
   }
 
   /**
-   * Queries possible matching ontology terms given a provided CURIE, such as the OBO ID.
+   * Queries possible matching single ontology term given a provided CURIE, such as the OBO ID.
    *
-   * @param curie  the CURIE of the term to search for
-   * @param offset 0 for starting the listing from the beginning of all possible matches, or slice
-   *               through the results with an offset
-   * @param limit  the maximum number of matches returned per search
+   * @param curie the CURIE of the term to search for
    * @return a list of matching terms given the provided CURIE
    * @since 1.4.0
    */
-  public List<OntologyTerm> searchByCurie(String curie, int offset, int limit) {
-    return terminologySelect.searchByCurie(curie, offset, limit).stream().map(OntologyTerm::from)
-        .toList();
+  public Optional<OntologyTerm> findByCurie(String curie) {
+    return terminologySelect.searchByCurie(curie).map(OntologyTerm::from);
   }
 
   /**
