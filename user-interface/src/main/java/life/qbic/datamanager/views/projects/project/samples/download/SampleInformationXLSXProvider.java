@@ -121,8 +121,8 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     var labelCol = sampleRow.createCell(SamplePreviewColumn.LABEL.column());
     labelCol.setCellValue(sample.sampleName());
 
-    var organismIdCol = sampleRow.createCell(SamplePreviewColumn.ORGANISM_ID.column());
-    organismIdCol.setCellValue(sample.organismId());
+    var bioRepCol = sampleRow.createCell(SamplePreviewColumn.BIOLOGICAL_REPLICATE.column());
+    bioRepCol.setCellValue(sample.biologicalReplicate());
 
     var batchCol = sampleRow.createCell(SamplePreviewColumn.BATCH.column());
     batchCol.setCellValue(sample.batchLabel());
@@ -165,7 +165,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
 
     SAMPLE_ID("Sample ID", 0),
     LABEL("Sample Name", 1),
-    ORGANISM_ID("Organism ID", 2),
+    BIOLOGICAL_REPLICATE("Biological Replicate", 2),
     BATCH("Batch", 3),
     SPECIES("Species", 4),
     SPECIMEN("Specimen", 5),
