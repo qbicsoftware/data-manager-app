@@ -44,7 +44,7 @@ public class Sample {
   private SampleId id;
   private String label;
   @Column(name = "organism_id")
-  private String organismId;
+  private String biologicalReplicate;
   private String comment;
 
   @Column(name = "analysis_method")
@@ -58,13 +58,13 @@ public class Sample {
   private SampleOrigin sampleOrigin;
 
   private Sample(SampleId id, SampleCode sampleCode, BatchId assignedBatch, String label,
-      String organismId, ExperimentId experimentId, Long experimentalGroupId,
+      String biologicalReplicate, ExperimentId experimentId, Long experimentalGroupId,
       SampleOrigin sampleOrigin,
       AnalysisMethod analysisMethod, String comment) {
     this.id = id;
     this.sampleCode = Objects.requireNonNull(sampleCode);
     this.label = label;
-    this.organismId = organismId;
+    this.biologicalReplicate = biologicalReplicate;
     this.experimentId = experimentId;
     this.experimentalGroupId = experimentalGroupId;
     this.sampleOrigin = sampleOrigin;
@@ -89,7 +89,7 @@ public class Sample {
     Objects.requireNonNull(sampleRegistrationRequest);
     SampleId sampleId = SampleId.create();
     return new Sample(sampleId, sampleCode, sampleRegistrationRequest.assignedBatch(),
-        sampleRegistrationRequest.label(), sampleRegistrationRequest.organismId(),
+        sampleRegistrationRequest.label(), sampleRegistrationRequest.biologicalReplicate(),
         sampleRegistrationRequest.experimentId(), sampleRegistrationRequest.experimentalGroupId(),
         sampleRegistrationRequest.sampleOrigin(),
         sampleRegistrationRequest.analysisMethod(), sampleRegistrationRequest.comment());
@@ -119,8 +119,8 @@ public class Sample {
     return this.label;
   }
 
-  public String organismId() {
-    return this.organismId;
+  public String biologicalReplicate() {
+    return this.biologicalReplicate;
   }
 
   public Optional<String> comment() {
@@ -147,8 +147,8 @@ public class Sample {
     this.label = label;
   }
 
-  public void setOrganismId(String organismId) {
-    this.organismId = organismId;
+  public void setBiologicalReplicate(String biologicalReplicate) {
+    this.biologicalReplicate = biologicalReplicate;
   }
 
   public void setComment(String comment) {
@@ -165,7 +165,7 @@ public class Sample {
 
   public void update(SampleUpdateRequest sampleInfo) {
     setLabel(sampleInfo.sampleInformation().sampleName());
-    setOrganismId(sampleInfo.sampleInformation().organismId());
+    setBiologicalReplicate(sampleInfo.sampleInformation().biologicalReplicate());
     setAnalysisMethod(sampleInfo.sampleInformation().analysisMethod());
     setSampleOrigin(SampleOrigin.create(sampleInfo.sampleInformation().species(),
         sampleInfo.sampleInformation().specimen(), sampleInfo.sampleInformation().analyte()));
