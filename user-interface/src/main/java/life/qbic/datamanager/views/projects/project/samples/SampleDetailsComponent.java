@@ -104,10 +104,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(SamplePreview::sampleName)
         .setAutoWidth(true)
         .setResizable(true);
-    sampleGrid.addColumn(SamplePreview::organismId)
-        .setHeader("Organism ID")
-        .setSortProperty("organismId")
-        .setTooltipGenerator(SamplePreview::organismId)
+    sampleGrid.addColumn(SamplePreview::biologicalReplicate)
+        .setHeader("Biological Replicate")
+        .setSortProperty("biologicalReplicate")
+        .setTooltipGenerator(SamplePreview::biologicalReplicate)
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(SamplePreview::batchLabel)
