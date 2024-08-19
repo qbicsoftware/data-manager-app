@@ -11,7 +11,15 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 public interface TerminologySelect {
 
   /**
-   * Queries possible matching ontology terms given the provided search term
+   * Queries possible matching ontology terms given the provided search term. This method should be
+   * used by clients that want to support an auto-suggest use case. The implementation needs to
+   * optimise for fast lookup times.
+   * <p>
+   * <b>NOTE!</b>
+   * <p>
+   * The resulting {@link OntologyTerm} objects are not guaranteed to contain values for properties
+   * like "description". This depends highly on the implementation, use the
+   * {@link TerminologySelect#search(String, int, int)} method for a rich search.
    *
    * @param searchTerm a full or partial term that the client wants to select from potentials search
    *                   hits
@@ -21,7 +29,7 @@ public interface TerminologySelect {
    * @return a list of matching terms given the provided search term
    * @since 1.4.0
    */
-  List<OntologyTerm> search(String searchTerm, int offset, int limit);
+  List<OntologyTerm> query(String searchTerm, int offset, int limit);
 
   /**
    * Queries possible matching ontology terms given a provided CURIE, such as the OBO ID.
@@ -35,4 +43,18 @@ public interface TerminologySelect {
    */
   List<OntologyTerm> searchByCurie(String curie, int offset, int limit);
 
+  /**
+   * Searches for possible matching ontology terms. This search returns rich {@link OntologyTerm}
+   * objects, and should be used when information for properties like "description" needs to be
+   * used.
+   *
+   * @param searchTerm a full or partial term that the client wants to select from potentials search
+   *                   hits
+   * @param offset     0 for starting the listing from the beginning of all possible matches, or
+   *                   slice through the results with an offset
+   * @param limit      the maximum number of matches returned per search
+   * @return a list of matching terms given the provided search term.
+   * @since 1.4.0
+   */
+  List<OntologyTerm> search(String searchTerm, int offset, int limit);
 }

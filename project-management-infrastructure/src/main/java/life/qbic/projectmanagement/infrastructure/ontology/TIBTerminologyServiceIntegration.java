@@ -26,11 +26,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>TIB Terminology Service</b>
+ * <p>
+ * Integrates the tiB Terminology Service API Endpoint to support rich ontology terms.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.4.0
  */
 @Service
 public class TIBTerminologyServiceIntegration implements TerminologySelect {
@@ -75,7 +75,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   }
 
   @Override
-  public List<OntologyTerm> search(String searchTerm, int offset, int limit) {
+  public List<OntologyTerm> query(String searchTerm, int offset, int limit) {
     try {
       List<TibTerm> result = select(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
@@ -87,7 +87,37 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   @Override
   public List<OntologyTerm> searchByCurie(String curie, int offset, int limit) {
-    return List.of();
+    try {
+      List<TibTerm> result = searchByOboId(curie, offset, limit);
+      return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
+    } catch (IOException | InterruptedException e) {
+      log.error("TIB Service search failed. ", e);
+      throw new ApplicationException("Query failed. Please try again.");
+    }
+  }
+
+  @Override
+  public List<OntologyTerm> search(String searchTerm, int offset, int limit) {
+    try {
+      List<TibTerm> result = fullSearch(searchTerm, offset, limit);
+      return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
+    } catch (IOException | InterruptedException e) {
+      log.error("TIB Service search failed. ", e);
+      throw new ApplicationException("Query failed. Please try again.");
+    }
+  }
+
+  private List<TibTerm> fullSearch(String searchTerm, int offset, int limit)
+      throws IOException, InterruptedException, ApplicationException {
+    if (searchTerm.isBlank()) { // avoid unnecessary API calls
+      return List.of();
+    }
+    HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
+            searchEndpointAbsoluteUrl.toString() + "?q=" + searchTerm.replace(" ", "%20") + "&rows="
+                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
+        .header("Content-Type", "application/json").GET().build();
+    var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
+    return parseResponse(response);
   }
 
   private List<TibTerm> select(String searchTerm, int offset, int limit)
@@ -110,7 +140,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
             searchEndpointAbsoluteUrl.toString() + "?q=" + oboId.replace(" ", "%20") + "&rows="
-                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
+                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()
+                + "&queryFields=obo_id"))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
