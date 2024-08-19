@@ -25,7 +25,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -33,8 +32,8 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -76,6 +75,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ExperimentInformationService experimentInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
+  private final MessageSourceToastFactory messageSourceToastFactory;
   private OntologyLookupService ontologyTermInformationService;
   private Context context = new Context();
 
@@ -84,11 +84,14 @@ public class ProjectSideNavigationComponent extends Div implements
       ExperimentInformationService experimentInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserPermissions userPermissions,
-      OntologyLookupService ontologyTermInformationService) {
+      OntologyLookupService ontologyTermInformationService,
+      MessageSourceToastFactory messageSourceToastFactory) {
     content = new Div();
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(addExperimentToProjectService);
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(addExperimentToProjectService);
+    this.messageSourceToastFactory = requireNonNull(messageSourceToastFactory,
+        "messageSourceToastFactory must not be null");
     this.ontologyTermInformationService = ontologyTermInformationService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
@@ -321,7 +324,7 @@ public class ProjectSideNavigationComponent extends Div implements
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
     event.getSource().closeIgnoringListeners();
-    displayExperimentCreationSuccess();
+    displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
     routeToExperiment(createdExperiment);
   }
 
@@ -352,10 +355,11 @@ public class ProjectSideNavigationComponent extends Div implements
     }
   }
 
-  private void displayExperimentCreationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayExperimentCreationSuccess(String experimentName) {
+    Toast toast = messageSourceToastFactory.create("experiment.created.success",
+            new Object[]{experimentName}, getLocale())
+        .success();
+    toast.open();
   }
 
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {

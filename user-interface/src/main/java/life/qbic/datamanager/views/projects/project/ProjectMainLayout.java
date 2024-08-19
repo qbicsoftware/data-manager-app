@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.html.Span;
@@ -8,7 +10,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
-import java.util.Objects;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -16,6 +17,7 @@ import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
+import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -53,19 +55,22 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
       @Autowired OntologyLookupService ontologyLookupService,
-      @Autowired FooterComponentFactory footerComponentFactory) {
-    super(Objects.requireNonNull(footerComponentFactory));
-    Objects.requireNonNull(logoutService);
-    Objects.requireNonNull(userInformationService);
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(addExperimentToProjectService);
-    Objects.requireNonNull(ontologyLookupService);
+      @Autowired FooterComponentFactory footerComponentFactory,
+      MessageSourceToastFactory messageSourceToastFactory) {
+
+    super(requireNonNull(footerComponentFactory));
+    requireNonNull(logoutService);
+    requireNonNull(userInformationService);
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(addExperimentToProjectService);
+    requireNonNull(ontologyLookupService);
+    requireNonNull(messageSourceToastFactory, "messageSourceToastFactory must not be null");
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyLookupService);
+        userPermissions, ontologyLookupService, messageSourceToastFactory);
     dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");

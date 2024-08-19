@@ -23,13 +23,14 @@ import com.vaadin.flow.dom.Style.Display;
  *   <li>warning-icon</li>
  *   <li>error-icon</li>
  *   <li>info-icon</li>
- *
+ * </ul>
  * The dialog itself is assigned a corresponding CSS class
  * <ul>
  *   <li>success-dialog</li>
  *   <li>warning-dialog</li>
  *   <li>error-dialog</li>
  *   <li>info-dialog</li>
+ * </ul>
  */
 public class NotificationDialog extends ConfirmDialog {
 

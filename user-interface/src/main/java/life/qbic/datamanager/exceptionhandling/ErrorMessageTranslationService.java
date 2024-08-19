@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 /**
  * Translates an exception into a user-friendly message.
  * <p>
- * For ApplicationExceptions, messages can be defined in messages.properties, other exceptions will
+ * For ApplicationExceptions, messages can be defined in error-messages.properties, other exceptions will
  * be mapped to the default message.
  *
  * @since 1.0.0

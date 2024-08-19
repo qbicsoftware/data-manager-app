@@ -97,6 +97,7 @@ public class AppConfig {
     return new IdentityService(userRepository);
   }
 
+
   @Bean
   public NewPasswordInput newPasswordInput(IdentityService identityService) {
     return new NewPassword(identityService);
