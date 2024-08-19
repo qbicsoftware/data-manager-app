@@ -68,7 +68,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     Specification<SamplePreview> isBlankSpec = SamplePreviewSpecs.isBlank(filter);
     Specification<SamplePreview> experimentIdSpec = SamplePreviewSpecs.experimentIdEquals(
         experimentId);
-    Specification<SamplePreview> organismIdSpec = SamplePreviewSpecs.organismIdContains(filter);
+    Specification<SamplePreview> biologialReplicateSpec = SamplePreviewSpecs.biologicalReplicateContains(filter);
     Specification<SamplePreview> sampleCodeSpec = SamplePreviewSpecs.sampleCodeContains(filter);
     Specification<SamplePreview> sampleNameSpec = SamplePreviewSpecs.sampleNameContains(filter);
     Specification<SamplePreview> batchLabelSpec = SamplePreviewSpecs.batchLabelContains(filter);
@@ -80,7 +80,7 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
         filter);
     Specification<SamplePreview> commentSpec = SamplePreviewSpecs.commentContains(filter);
     Specification<SamplePreview> containsFilterSpec = Specification.anyOf(sampleCodeSpec,
-        sampleNameSpec, organismIdSpec, batchLabelSpec, conditionSpec, speciesSpec,
+        sampleNameSpec, biologialReplicateSpec, batchLabelSpec, conditionSpec, speciesSpec,
         specimenSpec, analyteSpec, analysisMethodContains, commentSpec);
     Specification<SamplePreview> isDistinctSpec = SamplePreviewSpecs.isDistinct();
     return Specification.where(experimentIdSpec).and(isBlankSpec)
@@ -158,9 +158,9 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
       };
     }
 
-    public static Specification<SamplePreview> organismIdContains(String filter) {
+    public static Specification<SamplePreview> biologicalReplicateContains(String filter) {
       return (root, query, builder) ->
-          builder.like(root.get("organismId"), "%" + filter + "%");
+          builder.like(root.get("biologicalReplicate"), "%" + filter + "%");
     }
 
     public static Specification<SamplePreview> speciesContains(String filter) {
