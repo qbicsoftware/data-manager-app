@@ -58,7 +58,8 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
         .requireDistinctValues()
         .setRequired();
 
-    addColumn("Organism ID", SampleInfo::getOrganismId, SampleInfo::setOrganismId);
+    addColumn("Biological Replicate", SampleInfo::getBiologicalReplicate,
+        SampleInfo::setBiologicalReplicate);
 
     addColumn("Condition", SampleInfo::getExperimentalGroup,
         experimentalGroup -> formatConditionString(experimentalGroup.condition()),
@@ -108,7 +109,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private SampleCode sampleCode;
     private AnalysisMethod analysisToBePerformed;
     private String sampleName;
-    private String organismId;
+    private String biologicalReplicate;
     private ExperimentalGroup experimentalGroup;
     private OntologyTerm species;
     private OntologyTerm specimen;
@@ -116,15 +117,15 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     private String customerComment;
 
     public static SampleInfo create(AnalysisMethod analysisMethod, String sampleName,
-        String organismId, ExperimentalGroup experimentalGroup, OntologyTerm species,
+        String biologicalReplicate, ExperimentalGroup experimentalGroup, OntologyTerm species,
         OntologyTerm specimen,
         OntologyTerm analyte, String customerComment) {
-      return create(null, null, analysisMethod, sampleName, organismId,
+      return create(null, null, analysisMethod, sampleName, biologicalReplicate,
           experimentalGroup, species, specimen, analyte, customerComment);
     }
 
     public static SampleInfo create(SampleId sampleId, SampleCode sampleCode,
-        AnalysisMethod analysisMethod, String sampleName, String organismId,
+        AnalysisMethod analysisMethod, String sampleName, String biologicalReplicate,
         ExperimentalGroup experimentalGroup,
         OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
         String customerComment) {
@@ -133,7 +134,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       sampleInfo.setSampleCode(sampleCode);
       sampleInfo.setAnalysisToBePerformed(analysisMethod);
       sampleInfo.setSampleName(sampleName);
-      sampleInfo.setOrganismId(organismId);
+      sampleInfo.setBiologicalReplicate(biologicalReplicate);
       sampleInfo.setExperimentalGroup(experimentalGroup);
       sampleInfo.setSpecies(species);
       sampleInfo.setSpecimen(specimen);
@@ -174,12 +175,12 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       this.sampleName = sampleName;
     }
 
-    public String getOrganismId() {
-      return organismId;
+    public String getBiologicalReplicate() {
+      return biologicalReplicate;
     }
 
-    public void setOrganismId(String organismId) {
-      this.organismId = organismId;
+    public void setBiologicalReplicate(String biologicalReplicate) {
+      this.biologicalReplicate = biologicalReplicate;
     }
 
     public OntologyTerm getSpecies() {
@@ -226,7 +227,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
     public String toString() {
       return new StringJoiner(", ", SampleInfo.class.getSimpleName() + "[", "]").add(
               "analysisToBePerformed=" + analysisToBePerformed).add("sampleName='" + sampleName + "'")
-          .add("organismId='" + organismId + "'")
+          .add("biologicalReplicate='" + biologicalReplicate + "'")
           .add("experimentalGroup=" + experimentalGroup).add("species=" + species)
           .add("specimen=" + specimen).add("analyte=" + analyte)
           .add("customerComment='" + customerComment + "'").toString();
@@ -241,7 +242,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       sampleInfo.sampleCode = original.sampleCode;
       sampleInfo.sampleId = original.sampleId;
       sampleInfo.sampleName = original.sampleName;
-      sampleInfo.organismId = original.organismId;
+      sampleInfo.biologicalReplicate = original.biologicalReplicate;
       sampleInfo.species = original.species;
       sampleInfo.specimen = original.specimen;
       return sampleInfo;
@@ -270,7 +271,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       if (!Objects.equals(sampleName, that.sampleName)) {
         return false;
       }
-      if (!Objects.equals(organismId, that.organismId)) {
+      if (!Objects.equals(biologicalReplicate, that.biologicalReplicate)) {
         return false;
       }
       if (!Objects.equals(experimentalGroup, that.experimentalGroup)) {
@@ -294,7 +295,7 @@ public class SampleBatchInformationSpreadsheet extends Spreadsheet<SampleInfo> {
       result = 31 * result + (sampleCode != null ? sampleCode.hashCode() : 0);
       result = 31 * result + (analysisToBePerformed != null ? analysisToBePerformed.hashCode() : 0);
       result = 31 * result + (sampleName != null ? sampleName.hashCode() : 0);
-      result = 31 * result + (organismId != null ? organismId.hashCode() : 0);
+      result = 31 * result + (biologicalReplicate != null ? biologicalReplicate.hashCode() : 0);
       result = 31 * result + (experimentalGroup != null ? experimentalGroup.hashCode() : 0);
       result = 31 * result + (species != null ? species.hashCode() : 0);
       result = 31 * result + (specimen != null ? specimen.hashCode() : 0);

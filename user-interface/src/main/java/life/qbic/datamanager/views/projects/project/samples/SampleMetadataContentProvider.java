@@ -32,7 +32,7 @@ public class SampleMetadataContentProvider implements DownloadContentProvider {
     TSVBuilder<SamplePreview> tsvBuilder = new TSVBuilder<>(samples);
     tsvBuilder.addColumn("Sample ID", SamplePreview::sampleCode);
     tsvBuilder.addColumn("Sample Name", SamplePreview::sampleName);
-    tsvBuilder.addColumn("Organism ID", SamplePreview::organismId);
+    tsvBuilder.addColumn("Biological Replicate", SamplePreview::biologicalReplicate);
     tsvBuilder.addColumn("Batch", SamplePreview::batchLabel);
     tsvBuilder.addColumn("Species", sample -> sample.species().getLabel());
     tsvBuilder.addColumn("Specimen", sample -> sample.specimen().getLabel());
