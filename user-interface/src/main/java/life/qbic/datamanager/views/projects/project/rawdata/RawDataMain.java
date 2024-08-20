@@ -30,6 +30,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.dataset.RawDataService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -74,6 +75,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final Disclaimer noRawDataRegisteredDisclaimer;
   private final String rawDataSourceURL;
   private final String documentationUrl;
+  private final ProjectInformationService projectInformationService;
   private transient Context context;
 
   public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
@@ -82,7 +84,9 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       @Autowired MeasurementService measurementService,
       @Autowired RawDataService rawDataService,
       @Value("${server.download.api.measurement.url}") String dataSourceURL,
-      @Value("${qbic.communication.documentation.url}") String documentationUrl) {
+      @Value("${qbic.communication.documentation.url}") String documentationUrl,
+      @Autowired ProjectInformationService projectInformationService) {
+    this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.rawdataDetailsComponent = Objects.requireNonNull(rawDataDetailsComponent);
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
@@ -160,7 +164,10 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     var currentExperiment = experimentInformationService.find(
             context.projectId().orElseThrow().value(), context.experimentId().orElseThrow())
         .orElseThrow();
-    urlDownloadFormatter.updateContext(currentExperiment, downloadUrls);
+    var currentProjectCode = projectInformationService.find(context.projectId().orElseThrow())
+        .orElseThrow().getProjectCode().value();
+    urlDownloadFormatter.updateContext(downloadUrls,
+        String.join("_", currentProjectCode, currentExperiment.getName().replace(" ", "_")));
     urlDownload.trigger();
   }
 
