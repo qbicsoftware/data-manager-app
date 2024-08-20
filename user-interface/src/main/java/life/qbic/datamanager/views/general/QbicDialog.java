@@ -30,7 +30,6 @@ public class QbicDialog extends com.vaadin.flow.component.dialog.Dialog implemen
     setCloseOnOutsideClick(false);
     setCloseOnEsc(false);
     Shortcuts.addShortcutListener(this, this::close, Key.ESCAPE);
-    requireCloseConfirmationListener = requireCloseConfirmation();
   }
 
   @Override
