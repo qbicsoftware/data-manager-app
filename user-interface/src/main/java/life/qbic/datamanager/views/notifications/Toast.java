@@ -127,19 +127,6 @@ public class Toast extends Notification {
 
 
   /**
-   * Creates a toast showing the text provided.
-   *
-   * @param text
-   * @return
-   */
-  public static Toast createWithText(String text) {
-    Div textDiv = new Div();
-    textDiv.addClassName("text-content");
-    textDiv.setText(text);
-    return create(textDiv);
-  }
-
-  /**
    * Creates a toast showing the component.
    *
    * @param content
