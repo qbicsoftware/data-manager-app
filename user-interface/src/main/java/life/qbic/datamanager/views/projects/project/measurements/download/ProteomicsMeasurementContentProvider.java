@@ -31,11 +31,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class ProteomicsMeasurementContentProvider implements DownloadContentProvider {
 
-  private static final String FILE_NAME = "proteomics_measurements.xlsx";
+  private static final String FILE_NAME_SUFFIX = "proteomics_measurements.xlsx";
   private static final Logger log = logger(ProteomicsMeasurementContentProvider.class);
   private static final byte[] DARK_GREY = {119, 119, 119};
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
   private final List<ProteomicsMeasurementEntry> measurements = new LinkedList<>();
+  private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
+  private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX;
 
   private static void setAutoWidth(Sheet sheet) {
     for (int col = 0; col <= 18; col++) {
@@ -139,9 +141,10 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
     entry.createCell(18).setCellValue(pxpEntry.comment());
   }
 
-  public void setMeasurements(List<ProteomicsMeasurementEntry> measurements) {
+  public void setMeasurements(List<ProteomicsMeasurementEntry> measurements, String fileNamePrefix) {
     this.measurements.clear();
     this.measurements.addAll(measurements);
+    this.fileNamePrefix = fileNamePrefix;
   }
 
   @Override
@@ -202,6 +205,6 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
 
   @Override
   public String getFileName() {
-    return FILE_NAME;
+    return String.join("_", fileNamePrefix, FILE_NAME_SUFFIX);
   }
 }

@@ -32,7 +32,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class NGSMeasurementContentProvider implements DownloadContentProvider {
 
-  private static final String FILE_NAME = "ngs_measurements.xlsx";
+  private static final String FILE_NAME_SUFFIX = "ngs_measurements.xlsx";
   private static final Logger log = logger(NGSMeasurementContentProvider.class);
   private static final byte[] DARK_GREY = {119, 119, 119};
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
@@ -40,6 +40,8 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
   private static CellStyle readOnlyHeaderStyle;
   private static CellStyle boldStyle;
   private final List<NGSMeasurementEntry> measurements = new LinkedList<>();
+  private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
+  private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX ;
 
   private static void setAutoWidth(Sheet sheet) {
     for (int col = 0; col <= NGSMeasurementColumns.values().length; col++) {
@@ -135,9 +137,10 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     setCellStyle(commentCol, NGSMeasurementColumns.COMMENT.readOnly());
   }
 
-  public void setMeasurements(List<NGSMeasurementEntry> measurements) {
+  public void setMeasurements(List<NGSMeasurementEntry> measurements, String fileNamePrefix) {
     this.measurements.clear();
     this.measurements.addAll(measurements);
+    this.fileNamePrefix = fileNamePrefix.trim();
   }
 
   private void defineBoldStyle(Workbook workbook) {
@@ -207,7 +210,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
 
   @Override
   public String getFileName() {
-    return FILE_NAME;
+    return String.join("_" , fileNamePrefix, FILE_NAME_SUFFIX);
   }
 
   /**

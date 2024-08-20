@@ -41,6 +41,7 @@ import life.qbic.datamanager.views.projects.project.samples.registration.batch.S
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
@@ -94,6 +95,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final TextField searchField = new TextField();
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
+  private final ProjectInformationService projectInformationService;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -102,7 +104,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
-      @Autowired BatchDetailsComponent batchDetailsComponent) {
+      @Autowired BatchDetailsComponent batchDetailsComponent,
+      ProjectInformationService projectInformationService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
     this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService,
@@ -144,6 +147,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
+    this.projectInformationService = projectInformationService;
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -188,7 +192,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         // sort by measurement codes first, then by sample codes
         .sorted(Comparator.comparing(SamplePreview::sampleCode, natOrder)
             .thenComparing(SamplePreview::sampleName, natOrder)).toList();
-    sampleInformationXLSXProvider.setSamples(result);
+    sampleInformationXLSXProvider.setSamples(result,
+        projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
+            .getProjectCode().value());
     metadataDownload.trigger();
   }
 
