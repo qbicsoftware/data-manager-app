@@ -38,7 +38,7 @@ public abstract class WizardDialogWindow extends DialogWindow {
    * @since 1.0.0
    */
   protected void onFinishClicked(ClickEvent<Button> clickEvent) {
-    this.close();
+    this.closeIgnoringListeners();
   }
 
   /**

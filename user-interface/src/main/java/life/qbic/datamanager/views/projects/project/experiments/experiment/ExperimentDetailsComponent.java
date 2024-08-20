@@ -471,7 +471,7 @@ public class ExperimentDetailsComponent extends PageArea {
       addExperimentalGroups(groupContents);
 
       reloadExperimentalGroups();
-      dialog.close();
+      dialog.closeIgnoringListeners();
     }
   }
 
