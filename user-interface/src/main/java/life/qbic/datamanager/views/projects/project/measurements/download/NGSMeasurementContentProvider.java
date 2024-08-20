@@ -32,7 +32,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class NGSMeasurementContentProvider implements DownloadContentProvider {
 
-  private static final String FILE_NAME = "ngs_measurements.xlsx";
+  private static final String FILE_NAME_SUFFIX = "ngs_measurements.xlsx";
   private static final Logger log = logger(NGSMeasurementContentProvider.class);
   private static final byte[] DARK_GREY = {119, 119, 119};
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
@@ -210,7 +210,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
 
   @Override
   public String getFileName() {
-    return String.join("_" , fileNamePrefix, FILE_NAME);
+    return String.join("_" , fileNamePrefix, FILE_NAME_SUFFIX);
   }
 
   /**
