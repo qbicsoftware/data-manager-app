@@ -245,9 +245,9 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
 
   private Disclaimer createNoRawDataRegisteredDisclaimer() {
     Disclaimer noRawDataRegistered = Disclaimer.createWithTitle(
-        "Register your Raw data first",
-        "Raw data should be registered before you can view and download Raw data files.\n"
-            + "You can refer to our documentation to register Raw data for your measurements.",
+        "Register your raw data first",
+        "Raw data should be registered before you can view and download raw data files.\n"
+            + "You can refer to our documentation to register raw data for your measurements.",
         "View Documentation");
     noRawDataRegistered.addDisclaimerConfirmedListener(
         this::routeToRawDataDocumentation);
