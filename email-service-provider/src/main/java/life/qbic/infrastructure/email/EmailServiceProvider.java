@@ -95,7 +95,8 @@ public class EmailServiceProvider {
       Content content)
       throws MessagingException {
     var message = setupMessageWithoutContent(subject, recipient);
-    message.setContent(combineMessageWithRegards(content).value(), "text/plain");
+    message.setText(combineMessageWithRegards(content).value(), StandardCharsets.UTF_8.name(),
+        "plain");
     return message;
   }
 
