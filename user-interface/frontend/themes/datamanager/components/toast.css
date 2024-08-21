@@ -3,13 +3,13 @@
 }
 
 .toast-notification.success-toast::part(content) {
-  border: var(--lumo-success-color-50pct) 2px solid;
+  background-color: var(--lumo-success-color-10pct);
   /*you can style the notification content here*/
 }
 
 .toast-notification.info-toast::part(content) {
   /*you can style the notification content here*/
-  border: var(--lumo-primary-color-50pct) 2px solid;
+  background-color: var(--lumo-primary-color-10pct);
 }
 
 .toast-notification .toast-content {
