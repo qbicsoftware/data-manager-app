@@ -8,12 +8,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +88,9 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     } catch (IOException | InterruptedException e) {
       log.error("TIB Service search failed. ", e);
       throw new LookupException("Query failed. Please try again.");
+    } catch (Exception e) {
+      log.error("Unknown exception during TIB search. ", e);
+      throw new LookupException("Query failed. Please try again.");
     }
   }
 
@@ -101,16 +106,23 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     } catch (IOException | InterruptedException e) {
       log.error("TIB Service search failed. ", e);
       throw new LookupException("Query failed. Please try again.");
+    } catch (Exception e) {
+      log.error("Unknown exception during TIB search. ", e);
+      throw new LookupException("Query failed. Please try again.");
     }
   }
 
   @Override
-  public List<OntologyClass> search(String searchTerm, int offset, int limit) throws LookupException {
+  public List<OntologyClass> search(String searchTerm, int offset, int limit)
+      throws LookupException {
     try {
       List<TibTerm> result = fullSearch(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
     } catch (IOException | InterruptedException e) {
       log.error("TIB Service search failed. ", e);
+      throw new LookupException("Query failed. Please try again.");
+    } catch (Exception e) {
+      log.error("Unknown exception during TIB search. ", e);
       throw new LookupException("Query failed. Please try again.");
     }
   }
@@ -121,7 +133,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return List.of();
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
-            searchEndpointAbsoluteUrl.toString() + "?q=" + searchTerm.replace(" ", "%20") + "&rows="
+            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(searchTerm,
+                StandardCharsets.UTF_8) + "&rows="
                 + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
@@ -134,8 +147,10 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return List.of();
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
-            selectEndpointAbsoluteUrl.toString() + "?q=" + searchTerm.replace(" ", "%20") + "&rows="
-                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
+            selectEndpointAbsoluteUrl.toString() +
+                "?q=" + URLEncoder.encode(searchTerm, StandardCharsets.UTF_8) + "&rows="
+                + limit + "&start=" + offset + "&ontology="
+                + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
@@ -147,7 +162,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return List.of();
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
-            searchEndpointAbsoluteUrl.toString() + "?q=" + oboId.replace(" ", "%20") + "&rows="
+            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(oboId,
+                StandardCharsets.UTF_8) + "&rows="
                 + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()
                 + "&queryFields=obo_id"))
         .header("Content-Type", "application/json").GET().build();
