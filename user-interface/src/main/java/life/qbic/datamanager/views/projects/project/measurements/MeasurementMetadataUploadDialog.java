@@ -38,6 +38,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.parser.ParseResult;
+import life.qbic.datamanager.parser.XLSXParser;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
@@ -96,6 +98,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     this.measurementFileItems = new ArrayList<>();
     Upload upload = new Upload(uploadBuffer);
     upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain");
+    upload.setAcceptedFileTypes(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
     setModeBasedLabels();
     uploadItemsDisplay = new UploadItemsDisplay(upload);
@@ -132,7 +136,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private static MetadataContent read(InputStream inputStream) {
-    var content = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_16)).lines().toList();
+    var content = new BufferedReader(
+        new InputStreamReader(inputStream, StandardCharsets.UTF_16)).lines().toList();
 
     return new MetadataContent(content.isEmpty() ? null : content.get(0),
         content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
@@ -316,6 +321,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
+    ParseResult parseResult = new XLSXParser().parse(
+        uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     MetadataContent content = read(
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     var contentHeader = content.theHeader()

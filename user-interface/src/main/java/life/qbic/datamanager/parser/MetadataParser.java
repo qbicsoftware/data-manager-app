@@ -1,7 +1,9 @@
 package life.qbic.datamanager.parser;
 
+import com.mysql.cj.xdevapi.RowResult;
 import java.io.InputStream;
 import java.util.List;
+import org.apache.poi.ss.formula.functions.T;
 
 /**
  * <b><interface short description - 1 Line!></b>
@@ -10,9 +12,9 @@ import java.util.List;
  *
  * @since <version tag>
  */
-public interface MetadataParser<T> {
+public interface MetadataParser {
 
-  List<T> parse(InputStream inputStream);
+  ParseResult parse(InputStream inputStream);
 
   class UnknownDomainException extends RuntimeException {
 
