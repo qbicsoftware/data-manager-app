@@ -91,6 +91,10 @@ public class Toast extends Notification {
     };
   }
 
+  public void setDuration(Duration duration) {
+    super.setDuration((int) duration.toMillis());
+  }
+
   /**
    * The toast contains a success message
    *
