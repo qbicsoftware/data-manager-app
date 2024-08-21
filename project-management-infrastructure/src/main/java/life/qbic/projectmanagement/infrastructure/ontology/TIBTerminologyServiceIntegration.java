@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.ontology.LookupException;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,8 @@ import org.springframework.stereotype.Service;
 public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   private static final Logger log = logger(TIBTerminologyServiceIntegration.class);
-  private static final HttpClient HTTP_CLIENT = httpClient();
+  private static final int TIMEOUT_5_SECONDS = 5;
+  private static final HttpClient HTTP_CLIENT = httpClient(TIMEOUT_5_SECONDS);
 
   private static final List<String> ONTOLOGIES_WHITELIST = List.of(
       "bao", // Bio-assay Ontology
@@ -69,25 +71,26 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     return String.join(",", ONTOLOGIES_WHITELIST);
   }
 
-  private static HttpClient httpClient() {
+  private static HttpClient httpClient(int timeoutSeconds) {
     return HttpClient.newBuilder().version(Version.HTTP_2)
         .followRedirects(Redirect.NORMAL).connectTimeout(
-            Duration.ofSeconds(10)).build();
+            Duration.ofSeconds(timeoutSeconds)).build();
   }
 
   @Override
-  public List<OntologyClass> query(String searchTerm, int offset, int limit) {
+  public List<OntologyClass> query(String searchTerm, int offset, int limit)
+      throws LookupException {
     try {
       List<TibTerm> result = select(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
     } catch (IOException | InterruptedException e) {
       log.error("TIB Service search failed. ", e);
-      throw new ApplicationException("Query failed. Please try again.");
+      throw new LookupException("Query failed. Please try again.");
     }
   }
 
   @Override
-  public Optional<OntologyClass> searchByCurie(String curie) {
+  public Optional<OntologyClass> searchByCurie(String curie) throws LookupException {
     try {
       List<TibTerm> result = searchByOboId(curie, 0, 10);
       if (result.isEmpty()) {
@@ -97,18 +100,18 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
           result.stream().map(TIBTerminologyServiceIntegration::convert).toList().get(0));
     } catch (IOException | InterruptedException e) {
       log.error("TIB Service search failed. ", e);
-      throw new ApplicationException("Query failed. Please try again.");
+      throw new LookupException("Query failed. Please try again.");
     }
   }
 
   @Override
-  public List<OntologyClass> search(String searchTerm, int offset, int limit) {
+  public List<OntologyClass> search(String searchTerm, int offset, int limit) throws LookupException {
     try {
       List<TibTerm> result = fullSearch(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
     } catch (IOException | InterruptedException e) {
       log.error("TIB Service search failed. ", e);
-      throw new ApplicationException("Query failed. Please try again.");
+      throw new LookupException("Query failed. Please try again.");
     }
   }
 

@@ -9,6 +9,8 @@ import java.util.Optional;
  * <b>Tib Term</b>
  * <p>
  * Class representing the TIB Terminology JSON response object for a term.
+ * <p>
+ * See https://service.tib.eu/ts4tib/swagger-ui.html for a definition of the term response
  *
  * @since 1.4.0
  */
@@ -21,7 +23,7 @@ public class TibTerm {
   @JsonProperty("short_form")
   String shortForm;
   @JsonProperty("obo_id")
-  String oboId;
+  String oboId;  // https://obofoundry.org/
   @JsonProperty("label")
   String label;
   @JsonProperty("ontology_name")

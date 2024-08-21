@@ -3,6 +3,9 @@ package life.qbic.projectmanagement.application.ontology;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,9 +46,15 @@ public class TerminologyService {
    * @return a list of matching terms given the provided search term
    * @since 1.4.0
    */
-  public List<OntologyTerm> query(String searchTerm, int offset, int limit) {
-    return terminologySelect.query(searchTerm, offset, limit).stream().map(OntologyTerm::from)
-        .toList();
+  public List<OntologyTerm> query(String searchTerm, int offset, int limit)
+      throws ApplicationException {
+    try {
+      return terminologySelect.query(searchTerm, offset, limit).stream().map(OntologyTerm::from)
+          .toList();
+    } catch (LookupException e) {
+      throw new ApplicationException(ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
+    }
+
   }
 
   /**
@@ -55,8 +64,12 @@ public class TerminologyService {
    * @return a list of matching terms given the provided CURIE
    * @since 1.4.0
    */
-  public Optional<OntologyTerm> findByCurie(String curie) {
-    return terminologySelect.searchByCurie(curie).map(OntologyTerm::from);
+  public Optional<OntologyTerm> findByCurie(String curie) throws ApplicationException {
+    try {
+      return terminologySelect.searchByCurie(curie).map(OntologyTerm::from);
+    } catch (LookupException e) {
+      throw new ApplicationException(ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
+    }
   }
 
   /**
@@ -72,9 +85,14 @@ public class TerminologyService {
    * @return a list of matching terms given the provided search term.
    * @since 1.4.0
    */
-  public List<OntologyTerm> search(String searchTerm, int offset, int limit) {
-    return terminologySelect.search(searchTerm, offset, limit).stream().map(OntologyTerm::from)
-        .toList();
+  public List<OntologyTerm> search(String searchTerm, int offset, int limit)
+      throws ApplicationException {
+    try {
+      return terminologySelect.search(searchTerm, offset, limit).stream().map(OntologyTerm::from)
+          .toList();
+    } catch (LookupException e) {
+      throw new ApplicationException(ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
+    }
   }
 
 }

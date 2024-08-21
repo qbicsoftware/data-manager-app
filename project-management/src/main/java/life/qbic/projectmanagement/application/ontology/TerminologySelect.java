@@ -28,21 +28,20 @@ public interface TerminologySelect {
    *                   slice through the results with an offset
    * @param limit      the maximum number of matches returned per search
    * @return a list of matching terms given the provided search term
+   * @throws LookupException if something unexpected went wrong during the term lookup
    * @since 1.4.0
    */
-  List<OntologyClass> query(String searchTerm, int offset, int limit);
+  List<OntologyClass> query(String searchTerm, int offset, int limit) throws LookupException;
 
   /**
    * Queries possible matching ontology terms given a provided CURIE, such as the OBO ID.
    *
-   * @param curie  the CURIE of the term to search for
-   * @param offset 0 for starting the listing from the beginning of all possible matches, or slice
-   *               through the results with an offset
-   * @param limit  the maximum number of matches returned per search
+   * @param curie the CURIE of the term to search for
    * @return a list of matching terms given the provided CURIE
+   * @throws LookupException if something unexpected went wrong during the term lookup
    * @since 1.4.0
    */
-  Optional<OntologyClass> searchByCurie(String curie);
+  Optional<OntologyClass> searchByCurie(String curie) throws LookupException;
 
   /**
    * Searches for possible matching ontology terms. This search returns rich {@link OntologyTerm}
@@ -55,7 +54,8 @@ public interface TerminologySelect {
    *                   slice through the results with an offset
    * @param limit      the maximum number of matches returned per search
    * @return a list of matching terms given the provided search term.
+   * @throws LookupException if something unexpected went wrong during the term lookup
    * @since 1.4.0
    */
-  List<OntologyClass> search(String searchTerm, int offset, int limit);
+  List<OntologyClass> search(String searchTerm, int offset, int limit) throws LookupException;
 }
