@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -20,12 +20,12 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  */
 public class OntologyComboboxFactory {
 
-  private final OntologyLookupService ontologyLookupService;
+  private final SpeciesLookupService speciesLookupService;
 
   private final TerminologyService terminologyService;
 
-  public OntologyComboboxFactory(OntologyLookupService ontologyLookupService, TerminologyService terminologyService) {
-    this.ontologyLookupService = requireNonNull(ontologyLookupService,
+  public OntologyComboboxFactory(SpeciesLookupService speciesLookupService, TerminologyService terminologyService) {
+    this.speciesLookupService = requireNonNull(speciesLookupService,
         "ontologyTermInformationService must not be null");
     this.terminologyService = Objects.requireNonNull(terminologyService);
   }
@@ -40,10 +40,10 @@ public class OntologyComboboxFactory {
     return box;
   }
 
-  private FetchCallback<OntologyTerm, String> ontologyFetchCallback(
+  private FetchCallback<OntologyTerm, String> speciesFetchCallback(
       List<Ontology> ontologies) {
     return query -> OntologyFilterConnector.loadOntologyTerms(ontologies, query,
-        ontologyLookupService);
+        speciesLookupService);
   }
 
   private FetchCallback<OntologyTerm, String> ontologyTermFetchCallback() {
@@ -54,7 +54,7 @@ public class OntologyComboboxFactory {
     List<Ontology> speciesOntologies = List.of(Ontology.NCBI_TAXONOMY);
 
     MultiSelectComboBox<OntologyTerm> box = newBox();
-    box.setItems(ontologyFetchCallback(speciesOntologies));
+    box.setItems(speciesFetchCallback(speciesOntologies));
 
     box.setPlaceholder("Search and select one or more species for your samples");
     box.setLabel("Species");

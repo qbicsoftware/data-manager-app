@@ -49,7 +49,7 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -79,7 +79,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
   private final TerminologyService terminologyService;
-  private OntologyLookupService ontologyTermInformationService;
+  private SpeciesLookupService ontologyTermInformationService;
   private Context context = new Context();
 
   public ProjectSideNavigationComponent(
@@ -87,7 +87,7 @@ public class ProjectSideNavigationComponent extends Div implements
       ExperimentInformationService experimentInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserPermissions userPermissions,
-      OntologyLookupService ontologyTermInformationService,
+      SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService) {
     content = new Div();
     Objects.requireNonNull(projectInformationService);

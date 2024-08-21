@@ -35,7 +35,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventSampleOriginEdit;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
@@ -55,7 +55,7 @@ public class EditExperimentDialog extends DialogWindow {
   private final Binder<ExperimentDraft> binder = new Binder<>();
   private Map<SampleOriginType, Set<OntologyTerm>> usedSampleOrigins;
 
-  public EditExperimentDialog(OntologyLookupService ontologyTermInformationService,
+  public EditExperimentDialog(SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService) {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
         ontologyTermInformationService, terminologyService);

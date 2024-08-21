@@ -16,13 +16,13 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class OntologyLookupService {
+public class SpeciesLookupService {
 
-  private final SpeciesLookupInterface ontologyTermLookup;
+  private final SpeciesLookupInterface speciesLookupInterface;
 
-  public OntologyLookupService(@Autowired SpeciesLookupInterface ontologyTermLookup) {
-    Objects.requireNonNull(ontologyTermLookup);
-    this.ontologyTermLookup = ontologyTermLookup;
+  public SpeciesLookupService(@Autowired SpeciesLookupInterface speciesLookupInterface) {
+    Objects.requireNonNull(speciesLookupInterface);
+    this.speciesLookupInterface = speciesLookupInterface;
   }
 
   /**
@@ -40,7 +40,7 @@ public class OntologyLookupService {
       List<String> ontologyAbbreviations,
       int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    List<OntologyClass> termList = ontologyTermLookup.query(new FilterTerm(filterTerm),
+    List<OntologyClass> termList = speciesLookupInterface.query(new FilterTerm(filterTerm),
         ontologyAbbreviations, offset, limit, sortOrders)
         .stream().distinct().toList();
     // the list must be modifiable for spring security to filter it
@@ -48,11 +48,11 @@ public class OntologyLookupService {
   }
 
   public Optional<OntologyClass> findByCURI(String curie) {
-    return ontologyTermLookup.query(new OntologyCurie(curie)).stream().findAny();
+    return speciesLookupInterface.query(new OntologyCurie(curie)).stream().findAny();
   }
 
   public List<String> findUniqueOntologies() {
-    return ontologyTermLookup.findUniqueOntologyAbbreviations();
+    return speciesLookupInterface.findUniqueOntologyAbbreviations();
   }
 
 }

@@ -45,7 +45,7 @@ import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlD
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
@@ -79,7 +79,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private static final Logger log = logger(ProjectInformationMain.class);
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient ExperimentInformationService experimentInformationService;
-  private final transient OntologyLookupService ontologyTermInformationService;
+  private final transient SpeciesLookupService ontologyTermInformationService;
   private final transient ProjectPurchaseService projectPurchaseService;
   private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
@@ -96,7 +96,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired ExperimentListComponent experimentListComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
-      @Autowired OntologyLookupService ontologyTermInformationService,
+      @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ProjectPurchaseService projectPurchaseService,
       @Autowired QualityControlService qualityControlService,

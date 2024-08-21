@@ -33,7 +33,7 @@ import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslation
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -58,7 +58,7 @@ public class ProjectOverviewMain extends Main {
   private final transient ProjectCreationService projectCreationService;
   private final transient ProjectInformationService projectInformationService;
   private final transient FinanceService financeService;
-  private final transient OntologyLookupService ontologyTermInformationService;
+  private final transient SpeciesLookupService ontologyTermInformationService;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient ContactRepository contactRepository;
   private final transient UserInformationService userInformationService;
@@ -68,7 +68,7 @@ public class ProjectOverviewMain extends Main {
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       ProjectInformationService projectInformationService,
-      OntologyLookupService ontologyTermInformationService,
+      SpeciesLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
       ContactRepository contactRepository,

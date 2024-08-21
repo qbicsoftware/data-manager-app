@@ -24,7 +24,7 @@ import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -49,12 +49,12 @@ public class OntologyLookupComponent extends PageArea {
   private final Div ontologyGridSection = new Div();
   private final TerminologyService terminologyService;
   private final Span numberOfHitsInfo = new Span();
-  private final transient OntologyLookupService ontologyTermInformationService;
+  private final transient SpeciesLookupService ontologyTermInformationService;
   private GridLazyDataView<OntologyTerm> ontologyGridLazyDataView;
   private String searchTerm = "";
 
   public OntologyLookupComponent(
-      @Autowired OntologyLookupService ontologyTermInformationService, @Autowired
+      @Autowired SpeciesLookupService ontologyTermInformationService, @Autowired
   TerminologyService terminologyService) {
     this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService);
     this.terminologyService = Objects.requireNonNull(terminologyService);
