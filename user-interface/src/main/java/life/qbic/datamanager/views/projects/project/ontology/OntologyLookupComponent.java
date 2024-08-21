@@ -1,10 +1,13 @@
 package life.qbic.datamanager.views.projects.project.ontology;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -45,28 +48,32 @@ public class OntologyLookupComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = -1777819501917841723L;
   private static final int ONTOLOGY_SEARCH_LOWER_LIMIT = 2;
+  private static final Boolean SPECIES_DISABLED = Boolean.TRUE;
   private final TextField searchField = new TextField();
   private final Div ontologyGridSection = new Div();
   private final TerminologyService terminologyService;
   private final Span numberOfHitsInfo = new Span();
-  private final transient SpeciesLookupService ontologyTermInformationService;
+  private final transient SpeciesLookupService speciesTermLookupService;
   private GridLazyDataView<OntologyTerm> ontologyGridLazyDataView;
   private String searchTerm = "";
+  private boolean speciesSearchActive = false;
+  private Checkbox speciesSearchCheckbox = new Checkbox("I want to search for species");
+  private Grid<OntologyTerm> searchGrid;
 
   public OntologyLookupComponent(
-      @Autowired SpeciesLookupService ontologyTermInformationService, @Autowired
+      @Autowired SpeciesLookupService speciesTermLookupService, @Autowired
   TerminologyService terminologyService) {
-    this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService);
+    this.speciesTermLookupService = Objects.requireNonNull(speciesTermLookupService);
     this.terminologyService = Objects.requireNonNull(terminologyService);
 
-    Span title = new Span("Ontology Lookup");
+    Span title = new Span("Ontology Search");
     title.addClassName("title");
     add(title);
-    int numOfOntologies = ontologyTermInformationService.findUniqueOntologies().size();
-    Span description = new Span(String.format(
-        "Here you can search our database for ontology terms from %d different ontologies.",
-        numOfOntologies));
+    Span description = new Span(
+        "Here you can search our database for ontology terms from various ontologies.");
     add(description);
+    initSearchScope(SPECIES_DISABLED);
+    add(speciesSearchCheckbox);
     initSearchField();
     add(searchField);
     initGridSection();
@@ -74,34 +81,55 @@ public class OntologyLookupComponent extends PageArea {
     addClassName("ontology-lookup-component");
   }
 
-  private void setLazyDataProviderForOntologyGrid(Grid<OntologyTerm> ontologyGrid) {
-    ontologyGridLazyDataView = ontologyGrid.setItems(query -> {
+  private void initSearchScope(boolean speciesSearchActive) {
+    this.speciesSearchActive = speciesSearchActive;
+    this.speciesSearchCheckbox.addValueChangeListener(event -> {
+      this.speciesSearchActive = event.getValue();
+      updateGrid();
+    });
+
+  }
+
+  private void updateGrid() {
+    if (speciesSearchActive) {
+      setSpeciesLazyDataProviderForOntologyGrid(searchGrid);
+    } else {
+      setLazyDataProviderForOntologyGrid(searchGrid);
+    }
+    updateResultSection(ontologyGridLazyDataView.getItems().count());
+  }
+
+  private void setSpeciesLazyDataProviderForOntologyGrid(Grid<OntologyTerm> searchGrid) {
+    ontologyGridLazyDataView = searchGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .toList();
-      var allOntologyAbbreviations = Arrays.stream(Ontology.values()).map(Ontology::getAbbreviation)
-          .toList();
-      return terminologyService.search(searchTerm, query.getOffset(), query.getLimit()).stream();
-      /*return ontologyTermInformationService.queryOntologyTerm(searchTerm, allOntologyAbbreviations,
+      return speciesTermLookupService.queryOntologyTerm(searchTerm,
           query.getOffset(),
           query.getLimit(),
-          List.copyOf(sortOrders)).stream();*/
+          List.copyOf(sortOrders)).stream().map(OntologyTerm::from);
     });
   }
 
+  private void setLazyDataProviderForOntologyGrid(Grid<OntologyTerm> ontologyGrid) {
+    ontologyGridLazyDataView = ontologyGrid.setItems(
+        query -> terminologyService.search(searchTerm, query.getOffset(), query.getLimit())
+            .stream());
+  }
+
   private void initGridSection() {
-    Grid<OntologyTerm> ontologyGrid = new Grid<>();
-    ontologyGrid.setSelectionMode(SelectionMode.NONE);
-    ontologyGrid.addComponentColumn(
+    this.searchGrid = new Grid<>();
+    searchGrid.setSelectionMode(SelectionMode.NONE);
+    searchGrid.addComponentColumn(
         ontologyClass -> new OntologyItem(ontologyClass.getLabel(),
             ontologyClass.getOboId().replace("_", ":"),
-            ontologyClass.getClassIri(), ontologyClass.getOboId(),
+            ontologyClass.getClassIri(), ontologyClass.getDescription(),
             Ontology.findOntologyByAbbreviation(ontologyClass.getOntologyAbbreviation())
                 .getName()));
-    ontologyGrid.addClassName("ontology-grid");
-    ontologyGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
-    setLazyDataProviderForOntologyGrid(ontologyGrid);
-    ontologyGridSection.add(numberOfHitsInfo, ontologyGrid);
+    searchGrid.addClassName("ontology-grid");
+    searchGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
+    setLazyDataProviderForOntologyGrid(searchGrid);
+    ontologyGridSection.add(numberOfHitsInfo, searchGrid);
     numberOfHitsInfo.addClassName("secondary");
     ontologyGridSection.addClassName("ontology-grid-section");
   }
@@ -140,6 +168,11 @@ public class OntologyLookupComponent extends PageArea {
     ontologyGridSection.setVisible(isVisible);
   }
 
+  private void updateResultSection(long numberOfHitsFound) {
+    numberOfHitsInfo.setText(
+        "%s results found".formatted(numberOfHitsFound));
+  }
+
   /**
    * Ontology Item
    * <p>
@@ -152,7 +185,7 @@ public class OntologyLookupComponent extends PageArea {
         String ontologyAbbreviation) {
       Span header = createHeader(label, curie);
       add(header);
-      Span url = createUrl(classIri);
+      Anchor url = createUrl(classIri);
       add(url);
       Div description = createDescription(descriptionText);
       add(description);
@@ -181,8 +214,8 @@ public class OntologyLookupComponent extends PageArea {
       return header;
     }
 
-    private Span createUrl(String ontologyURL) {
-      Span url = new Span(ontologyURL);
+    private Anchor createUrl(String ontologyURL) {
+      Anchor url = new Anchor(ontologyURL, ontologyURL,  AnchorTarget.BLANK);
       url.addClassName("url");
       return url;
     }

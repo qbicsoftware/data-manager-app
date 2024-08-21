@@ -18,7 +18,7 @@ public enum Ontology {
       "A structured controlled vocabulary for the annotation of experiments concerned with proteomics mass spectrometry."),
   NATIONAL_CANCER_INSTITUTE_THESAURUS("National Cancer Institute Thesaurus", "ncit",
       "Vocabulary for clinical care, translational and basic research, and public information and administrative activities."),
-  BIOASSAY_ONTOLOGY("BioAssay Ontology",       "bao_complete",
+  BIOASSAY_ONTOLOGY("BioAssay Ontology",       "bao",
       "Contains sample preparations."),
   PLANT_ONTOLOGY("Plant Ontology", "po", "Plant ontology"),
   BRENDA_TISSUE_ONTOLOGY("Brenda Tissue / Enzyme Ontology", "bto",

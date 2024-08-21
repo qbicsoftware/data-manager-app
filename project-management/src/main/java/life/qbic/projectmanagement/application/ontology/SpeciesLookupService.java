@@ -37,11 +37,10 @@ public class SpeciesLookupService {
    * @since 1.0.0
    */
   public List<OntologyClass> queryOntologyTerm(String filterTerm,
-      List<String> ontologyAbbreviations,
       int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
     List<OntologyClass> termList = speciesLookupInterface.query(new FilterTerm(filterTerm),
-        ontologyAbbreviations, offset, limit, sortOrders)
+        List.of("NCBITaxon"), offset, limit, sortOrders)
         .stream().distinct().toList();
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(termList);

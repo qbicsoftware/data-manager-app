@@ -65,8 +65,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   }
 
   private static OntologyClass convert(TibTerm term) {
-    return new OntologyClass(term.ontologyPrefix, "", term.iri, term.label, term.shortForm,
-        term.getDescription().orElse(""), "");
+    return new OntologyClass(term.ontologyPrefix, "", "", term.label, term.shortForm,
+        term.getDescription().orElse(""), term.iri);
   }
 
   private static String createOntologyFilterQueryParameter() {

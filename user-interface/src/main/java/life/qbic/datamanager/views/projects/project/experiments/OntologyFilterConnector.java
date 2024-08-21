@@ -39,7 +39,6 @@ public class OntologyFilterConnector {
         .toList();
     List<OntologyClass> ontologyClassEntities = ontologyTermInformationService
         .queryOntologyTerm(query.getFilter().orElse(""),
-            ontologyAbbreviations,
             query.getOffset(),
             query.getLimit(),
             sortOrders);
