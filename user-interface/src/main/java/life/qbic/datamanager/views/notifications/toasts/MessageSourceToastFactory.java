@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import life.qbic.datamanager.views.notifications.toasts.Toast.Level;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -91,8 +92,19 @@ public class MessageSourceToastFactory implements Serializable {
       try {
         toast.setDuration(Duration.parse(durationProperty));
       } catch (DateTimeParseException e) {
-        LOG.error("Could not parse duration for key %s: %s".formatted(key, durationProperty), e);
+        LOG.warn("Could not parse duration for key %s: %s".formatted(key, durationProperty));
       }
+    }
+
+    String levelProperty = messageSource.getMessage("%s.level".formatted(key),
+        EMPTY_PARAMETERS, null, locale);
+    try {
+      var enforceExhaustiveness = switch (Level.valueOf(levelProperty)) {
+        case SUCCESS -> toast.success();
+        case INFO -> toast.info();
+      };
+    } catch (IllegalArgumentException e) {
+      LOG.warn("Could not parse toast level for key %s: %s".formatted(key, levelProperty));
     }
 
     return toast;

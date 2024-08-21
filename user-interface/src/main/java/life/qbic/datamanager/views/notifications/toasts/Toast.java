@@ -35,17 +35,17 @@ public final class Toast extends Notification {
   private static final Position DEFAULT_POSITION = Position.BOTTOM_START;
   private static final boolean DEFAULT_CLOSEABLE = true;
   private static final boolean DEFAULT_CLOSE_ON_NAVIGATION = true;
-  private static final Type DEFAULT_TYPE = Type.INFO;
+  private static final Level DEFAULT_LEVEL = Level.INFO;
   private static final int DEFAULT_OPEN_DURATION = 5_000;
 
   private final List<Registration> closeOnNavigationListeners = new ArrayList<>();
   private final Button closeButton = closeButton(this);
 
   private Component content;
-  private Type type;
+  private Level level;
   private boolean closeable;
 
-  protected enum Type {
+  enum Level {
     SUCCESS,
     INFO;
   }
@@ -64,7 +64,7 @@ public final class Toast extends Notification {
     add(closeButton);
     setCloseable(DEFAULT_CLOSEABLE);
     setPosition(DEFAULT_POSITION);
-    setType(DEFAULT_TYPE);
+    setType(DEFAULT_LEVEL);
     closeOnNavigation(DEFAULT_CLOSE_ON_NAVIGATION);
     setDuration(DEFAULT_OPEN_DURATION);
   }
@@ -121,7 +121,7 @@ public final class Toast extends Notification {
    * @return
    */
   public Toast success() {
-    setType(Type.SUCCESS);
+    setType(Level.SUCCESS);
     return this;
   }
 
@@ -131,13 +131,13 @@ public final class Toast extends Notification {
    * @return
    */
   public Toast info() {
-    setType(Type.INFO);
+    setType(Level.INFO);
     return this;
   }
 
   @Override
   public void open() {
-    var cssClass = switch (type) {
+    var cssClass = switch (level) {
       case SUCCESS -> "success-toast";
       case INFO -> "info-toast";
     };
@@ -145,8 +145,8 @@ public final class Toast extends Notification {
     super.open();
   }
 
-  private void setType(Type type) {
-    this.type = requireNonNull(type, "type must not be null");
+  private void setType(Level level) {
+    this.level = requireNonNull(level, "type must not be null");
   }
 
 
