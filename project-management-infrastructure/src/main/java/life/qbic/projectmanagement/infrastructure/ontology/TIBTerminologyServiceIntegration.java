@@ -37,26 +37,25 @@ import org.springframework.stereotype.Service;
 public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   private static final Logger log = logger(TIBTerminologyServiceIntegration.class);
-  private static final List<String> ONTOLOGIES_WHITELIST = new ArrayList<>();
   private static final HttpClient HTTP_CLIENT = httpClient();
 
-  static {
-    ONTOLOGIES_WHITELIST.add("bao"); // Bio-assay Ontology
-    ONTOLOGIES_WHITELIST.add("bto"); // Brenda Tissue Ontology
-    ONTOLOGIES_WHITELIST.add("efo"); // Experimental Factor Ontology
-    ONTOLOGIES_WHITELIST.add("ms");  // PSI Mass Spectrometry Ontology
-    ONTOLOGIES_WHITELIST.add("ncit"); // National Cancer Institute Thesaurus
-    ONTOLOGIES_WHITELIST.add("envo"); // Environmental Factor Ontology
-  }
+  private static final List<String> ONTOLOGIES_WHITELIST = List.of(
+      "bao", // Bio-assay Ontology
+      "bto", // Brenda Tissue Ontology
+      "efo", // Experimental Factor Ontology
+      "ms",  // PSI Mass Spectrometry Ontology
+      "ncit", // National Cancer Institute Thesaurus
+      "envo" // Environmental Factor Ontology
+  );
 
   private final URI selectEndpointAbsoluteUrl;
   private final URI searchEndpointAbsoluteUrl;
 
   @Autowired
   public TIBTerminologyServiceIntegration(
-      @Value("${tib.terminology.service.endpoint.select}") String selectEndpoint,
-      @Value("${tib.terminology.service.endpoint.search}") String searchEndpoint,
-      @Value("${tib.terminology.service.api.url}") String tibApiUrl) {
+      @Value("${terminology.service.tib.endpoint.select}") String selectEndpoint,
+      @Value("${terminology.service.tib.endpoint.search}") String searchEndpoint,
+      @Value("${terminology.service.tib.api.url}") String tibApiUrl) {
     this.selectEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(selectEndpoint);
     this.searchEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(searchEndpoint);
   }

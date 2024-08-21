@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface.FilterTerm;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface.OntologyCurie;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupInterface.FilterTerm;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupInterface.OntologyCurie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +18,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class OntologyLookupService {
 
-  private final OntologyLookupInterface ontologyTermLookup;
+  private final SpeciesLookupInterface ontologyTermLookup;
 
-  public OntologyLookupService(@Autowired OntologyLookupInterface ontologyTermLookup) {
+  public OntologyLookupService(@Autowired SpeciesLookupInterface ontologyTermLookup) {
     Objects.requireNonNull(ontologyTermLookup);
     this.ontologyTermLookup = ontologyTermLookup;
   }
