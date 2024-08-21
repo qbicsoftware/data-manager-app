@@ -95,7 +95,7 @@ public class OntologyLookupComponent extends PageArea {
     ontologyGrid.addComponentColumn(
         ontologyClass -> new OntologyItem(ontologyClass.getLabel(),
             ontologyClass.getOboId().replace("_", ":"),
-            ontologyClass.getClassIri(), ontologyClass.getDescription(),
+            ontologyClass.getClassIri(), ontologyClass.getOboId(),
             Ontology.findOntologyByAbbreviation(ontologyClass.getOntologyAbbreviation())
                 .getName()));
     ontologyGrid.addClassName("ontology-grid");
