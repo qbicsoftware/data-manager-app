@@ -18,8 +18,8 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddToken
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
-import life.qbic.datamanager.views.notifications.Toast;
+import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
+import life.qbic.datamanager.views.notifications.toasts.Toast;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
@@ -48,7 +48,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   private final PersonalAccessTokenComponent personalAccessTokenComponent;
   private final PersonalAccessTokenService personalAccessTokenService;
   private final AuthenticationToUserIdTranslationService userIdTranslator;
-  private final MessageSourceToastFactory messageSourceToastFactory;
+  private final life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory messageSourceToastFactory;
 
   public PersonalAccessTokenMain(PersonalAccessTokenService personalAccessTokenService,
       PersonalAccessTokenComponent personalAccessTokenComponent,
