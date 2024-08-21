@@ -17,7 +17,7 @@ import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
-import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
+import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
