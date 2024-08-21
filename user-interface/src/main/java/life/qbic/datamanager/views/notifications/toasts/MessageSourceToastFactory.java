@@ -1,11 +1,17 @@
-package life.qbic.datamanager.views.notifications;
+package life.qbic.datamanager.views.notifications.toasts;
+
+import static java.util.Objects.nonNull;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.RouteParameters;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
@@ -21,6 +27,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class MessageSourceToastFactory implements Serializable {
 
+  private static final Logger LOG = LoggerFactory.logger(MessageSourceToastFactory.class);
   private final MessageSource messageSource;
   private static final Object[] EMPTY_PARAMETERS = new Object[]{};
 
@@ -69,12 +76,26 @@ public class MessageSourceToastFactory implements Serializable {
     };
     Toast toast = Toast.create(content);
 
-    boolean closeable = Boolean.parseBoolean(
-        messageSource.getMessage("%s.closeable".formatted(key), parameters,
-            String.valueOf(toast.isCloseable()), locale));
+    String closeableProperty = messageSource.getMessage("%s.closeable".formatted(key), parameters,
+        null, locale);
+    if (nonNull(closeableProperty)) {
+      toast.setCloseable(Boolean.parseBoolean(closeableProperty));
+    }
 
-    return toast
-        .setCloseable(closeable);
+    String durationProperty = messageSource.getMessage("%s.duration".formatted(key),
+        EMPTY_PARAMETERS, null, locale);
+    if (nonNull(durationProperty)) {
+      if (!durationProperty.startsWith("P")) {
+        durationProperty = "P" + durationProperty;
+      }
+      try {
+        toast.setDuration(Duration.parse(durationProperty));
+      } catch (DateTimeParseException e) {
+        LOG.error("Could not parse duration for key %s: %s".formatted(key, durationProperty), e);
+      }
+    }
+
+    return toast;
   }
 
 
@@ -114,9 +135,7 @@ public class MessageSourceToastFactory implements Serializable {
     } catch (NoSuchMessageException e) {
       throw new RuntimeException("No link text specified for " + key, e);
     }
-    toast = toast.withRouting(linkText, navigationTarget, routeParameters);
-
-    return toast;
+    return toast.withRouting(linkText, navigationTarget, routeParameters);
   }
 
 
