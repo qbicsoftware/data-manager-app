@@ -46,10 +46,16 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   private static final List<String> ONTOLOGIES_WHITELIST = List.of(
       "bao", // Bio-assay Ontology
       "bto", // Brenda Tissue Ontology
+      "chebi", // Chemical Entities of Biological Interest
+      "edam", // Bioinformatics operations, data types, formats, identifiers and topics
       "efo", // Experimental Factor Ontology
+      "envo", // Environmental Factor Ontology#
+      "go", // Gene Ontology
+      "mi", // Molecular Interaction
       "ms",  // PSI Mass Spectrometry Ontology
       "ncit", // National Cancer Institute Thesaurus
-      "envo" // Environmental Factor Ontology
+      "po" // Plant Ontology
+
   );
 
   private final URI selectEndpointAbsoluteUrl;
