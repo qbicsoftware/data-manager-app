@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Service that provides an API to search basic batch information
+ * Service that provides an API to query basic batch information
  *
  * @since 1.0.0
  */

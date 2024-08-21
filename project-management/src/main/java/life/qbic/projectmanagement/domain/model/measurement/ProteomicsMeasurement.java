@@ -189,7 +189,7 @@ public class ProteomicsMeasurement {
   }
 
   /**
-   * Convenience method to search if the measurement was derived from a pooled sample.
+   * Convenience method to query if the measurement was derived from a pooled sample.
    *
    * @return true, if the measurement was performed on a pooled sample, else returns false
    * @since 1.0.0
