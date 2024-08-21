@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
- * Simple repository to search concise ontology term information
+ * Simple repository to query concise ontology term information
  *
  * @since 1.0.0
  */

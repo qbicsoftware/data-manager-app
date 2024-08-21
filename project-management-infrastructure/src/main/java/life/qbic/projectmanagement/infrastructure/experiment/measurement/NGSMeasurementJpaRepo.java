@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
- * Simple NGS measurement JPA repository to search and filter concise
+ * Simple NGS measurement JPA repository to query and filter concise
  * {@link NGSMeasurement} information
  */
 public interface NGSMeasurementJpaRepo

@@ -17,7 +17,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 /**
- * Basic implementation to search sample preview information
+ * Basic implementation to query sample preview information
  *
  * @since 1.0.0
  */
