@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.notifications;
+package life.qbic.datamanager.views.notifications.toasts;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -16,6 +16,7 @@ import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.ComponentFunctions;
@@ -29,33 +30,52 @@ import life.qbic.datamanager.views.general.ComponentFunctions;
  *
  * @since 1.4.0
  */
-public class Toast extends Notification {
+public final class Toast extends Notification {
 
-  protected Component content;
-  private boolean closeable;
+  private static final Position DEFAULT_POSITION = Position.BOTTOM_START;
+  private static final boolean DEFAULT_CLOSEABLE = true;
+  private static final boolean DEFAULT_CLOSE_ON_NAVIGATION = true;
+  private static final Type DEFAULT_TYPE = Type.INFO;
+  private static final int DEFAULT_OPEN_DURATION = 5_000;
+
   private final List<Registration> closeOnNavigationListeners = new ArrayList<>();
+  private final Button closeButton = closeButton(this);
+
+  private Component content;
   private Type type;
-  private final Button closeButton;
+  private boolean closeable;
 
   protected enum Type {
     SUCCESS,
     INFO;
   }
 
-  protected Toast() {
+  static class ToastBuilder {
+
+    Toast build() {
+      return new Toast();
+    }
+
+  }
+
+  private Toast() {
     super();
     addClassName("toast-notification");
-    closeButton = new Button(LumoIcon.CROSS.create());
-    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    closeButton.addClickListener(it -> this.close());
-    closeButton.addClassName("close-button");
-    closeButton.setVisible(false);
     add(closeButton);
-    setCloseable(true);
-    setPosition(Position.BOTTOM_START);
-    setType(Type.INFO);
-    closeOnNavigation(true);
-    setDuration(5_000);
+    setCloseable(DEFAULT_CLOSEABLE);
+    setPosition(DEFAULT_POSITION);
+    setType(DEFAULT_TYPE);
+    closeOnNavigation(DEFAULT_CLOSE_ON_NAVIGATION);
+    setDuration(DEFAULT_OPEN_DURATION);
+  }
+
+  private static Button closeButton(Toast toast) {
+    var button = new Button(LumoIcon.CROSS.create());
+    button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    button.addClickListener(it -> toast.close());
+    button.addClassName("close-button");
+    button.setVisible(false);
+    return button;
   }
 
   /**
@@ -136,7 +156,7 @@ public class Toast extends Notification {
    * @param content
    * @return
    */
-  public static Toast create(Component content) {
+  static Toast create(Component content) {
     requireNonNull(content, "content must not be null");
     Toast toast = new Toast();
     toast.withContent(content);
@@ -163,7 +183,7 @@ public class Toast extends Notification {
    * @param content the content of the toast to set.
    * @return
    */
-  protected Toast withContent(Component content) {
+  private Toast withContent(Component content) {
     requireNonNull(content, "content must not be null");
     //we only want to remove the current content from its parent if the parent is not the new content.
     //Otherwise the current content would be removed from the new content as well.
@@ -209,7 +229,7 @@ public class Toast extends Notification {
    * @param routingComponent
    * @return
    */
-  public static Component createRoutingContent(Component content, Component routingComponent) {
+  private static Component createRoutingContent(Component content, Component routingComponent) {
     var container = new Div();
     container.addClassName("routing-container");
     content.addClassName("routing-content");
@@ -226,7 +246,7 @@ public class Toast extends Notification {
    * @param routeParameters
    * @return
    */
-  public Component createRoutingComponent(String text,
+  private Component createRoutingComponent(String text,
       Class<? extends Component> navigationTarget, RouteParameters routeParameters) {
     var routerLink = new RouterLink(navigationTarget, routeParameters);
     routerLink.addClassName("routing-link");
