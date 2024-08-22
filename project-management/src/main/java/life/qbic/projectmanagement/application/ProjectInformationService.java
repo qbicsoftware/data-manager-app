@@ -29,7 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
- * Service that provides an API to query basic project information
+ * Service that provides an API to search basic project information
  *
  * @since 1.0.0
  */

@@ -8,8 +8,8 @@ import java.util.Optional;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface;
-import life.qbic.projectmanagement.domain.repository.OntologyRepository;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupInterface;
+import life.qbic.projectmanagement.domain.repository.SpeciesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 /**
  * <b>Ontology term repository implementation</b>
  *
- * <p>Implementation for the {@link OntologyRepository} interface.
+ * <p>Implementation for the {@link SpeciesRepository} interface.
  *
  * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
  * with persistent {@link OntologyClass} data in the storage layer.
@@ -32,12 +32,12 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class OntologyTermRepository implements OntologyRepository, OntologyLookupInterface {
+public class SpeciesTermRepository implements SpeciesRepository, SpeciesLookupInterface {
 
   private final OntologyTermRepositoryJpaInterface jpaRepository;
 
   @Autowired
-  public OntologyTermRepository(OntologyTermRepositoryJpaInterface jpaRepository) {
+  public SpeciesTermRepository(OntologyTermRepositoryJpaInterface jpaRepository) {
     this.jpaRepository = jpaRepository;
   }
 

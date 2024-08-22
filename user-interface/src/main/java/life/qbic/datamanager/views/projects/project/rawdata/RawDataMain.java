@@ -30,6 +30,7 @@ import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.dataset.RawDataService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -73,6 +74,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   private final Disclaimer registerMeasurementsDisclaimer;
   private final Disclaimer noRawDataRegisteredDisclaimer;
   private final String rawDataSourceURL;
+  private final String documentationUrl;
+  private final ProjectInformationService projectInformationService;
   private transient Context context;
 
   public RawDataMain(@Autowired RawDataDetailsComponent rawDataDetailsComponent,
@@ -80,7 +83,10 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired RawDataService rawDataService,
-      @Value("${server.download.api.measurement.url}") String dataSourceURL) {
+      @Value("${server.download.api.measurement.url}") String dataSourceURL,
+      @Value("${qbic.communication.documentation.url}") String documentationUrl,
+      @Autowired ProjectInformationService projectInformationService) {
+    this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.rawdataDetailsComponent = Objects.requireNonNull(rawDataDetailsComponent);
     this.rawDataDownloadInformationComponent = Objects.requireNonNull(
         rawDataDownloadInformationComponent);
@@ -88,6 +94,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     this.measurementService = Objects.requireNonNull(measurementService);
     this.rawDataService = Objects.requireNonNull(rawDataService);
     this.rawDataSourceURL = Objects.requireNonNull(dataSourceURL);
+    this.documentationUrl = Objects.requireNonNull(documentationUrl);
     registerMeasurementsDisclaimer = createNoMeasurementsRegisteredDisclaimer();
     registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
     noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();
@@ -157,7 +164,10 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     var currentExperiment = experimentInformationService.find(
             context.projectId().orElseThrow().value(), context.experimentId().orElseThrow())
         .orElseThrow();
-    urlDownloadFormatter.updateContext(currentExperiment, downloadUrls);
+    var currentProjectCode = projectInformationService.find(context.projectId().orElseThrow())
+        .orElseThrow().getProjectCode().value();
+    urlDownloadFormatter.updateContext(downloadUrls,
+        String.join("_", currentProjectCode, currentExperiment.getName().replace(" ", "_")));
     urlDownload.trigger();
   }
 
@@ -242,12 +252,20 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
 
   private Disclaimer createNoRawDataRegisteredDisclaimer() {
     Disclaimer noRawDataRegistered = Disclaimer.createWithTitle(
-        "No Raw Data available",
-        "There is currently no raw data registered for the measurements within this experiment",
-        "Register Measurements");
+        "Register your raw data first",
+        "Raw data should be registered before you can view and download raw data files.\n"
+            + "You can refer to our documentation to register raw data for your measurements.",
+        "View Documentation");
     noRawDataRegistered.addDisclaimerConfirmedListener(
-        this::routeToMeasurementCreation);
+        this::routeToRawDataDocumentation);
     return noRawDataRegistered;
+  }
+
+  private void routeToRawDataDocumentation(ComponentEvent<?> componentEvent) {
+    if (componentEvent.isFromClient()) {
+      componentEvent.getSource().getUI().ifPresent(ui -> ui.getPage()
+          .open(documentationUrl, "_blank"));
+    }
   }
 
   private void routeToMeasurementCreation(ComponentEvent<?> componentEvent) {

@@ -45,6 +45,7 @@ import life.qbic.datamanager.views.projects.project.measurements.download.NGSMea
 import life.qbic.datamanager.views.projects.project.measurements.download.ProteomicsMeasurementContentProvider;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
@@ -97,6 +98,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final NGSMeasurementContentProvider ngsMeasurementContentProvider;
   private final DownloadProvider ngsDownloadProvider;
   private final DownloadProvider proteomicsDownloadProvider;
+  private final ProjectInformationService projectInformationService;
   private transient Context context;
 
   public MeasurementMain(
@@ -105,7 +107,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementPresenter measurementPresenter,
-      @Autowired MeasurementValidationService measurementValidationService) {
+      @Autowired MeasurementValidationService measurementValidationService,
+      ProjectInformationService projectInformationService) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
@@ -133,7 +136,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     add(measurementDetailsComponent);
 
     measurementDetailsComponent.addListener(
-        selectionChangedEvent -> setSelectedMeasurementsInfo(selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
+        selectionChangedEvent -> setSelectedMeasurementsInfo(
+            selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
 
     add(ngsDownloadProvider);
     add(proteomicsDownloadProvider);
@@ -143,6 +147,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         getClass().getSimpleName(), System.identityHashCode(this),
         measurementTemplateListComponent.getClass().getSimpleName(),
         System.identityHashCode(measurementTemplateListComponent)));
+    this.projectInformationService = projectInformationService;
   }
 
   private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
@@ -203,20 +208,20 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void onDeleteMeasurementsClicked() {
     Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
-    if(tabLabel.isEmpty()) {
+    if (tabLabel.isEmpty()) {
       return;
     }
     String label = tabLabel.get();
-    if(label.equals("Proteomics")) {
+    if (label.equals("Proteomics")) {
       handlePtxDeletionRequest(measurementDetailsComponent.getSelectedProteomicsMeasurements());
     }
-    if(label.equals("Genomics")) {
+    if (label.equals("Genomics")) {
       handleNGSDeletionRequest(measurementDetailsComponent.getSelectedNGSMeasurements());
     }
   }
 
   private void handlePtxDeletionRequest(Set<ProteomicsMeasurement> measurements) {
-    if(measurements.isEmpty()) {
+    if (measurements.isEmpty()) {
       return;
     }
     MeasurementDeletionConfirmationNotification notification =
@@ -231,7 +236,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void handleNGSDeletionRequest(Set<NGSMeasurement> measurements) {
-    if(measurements.isEmpty()) {
+    if (measurements.isEmpty()) {
       return;
     }
     MeasurementDeletionConfirmationNotification notification =
@@ -247,7 +252,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void deleteNGSMeasurements(Set<NGSMeasurement> measurements) {
     Result<Void, MeasurementDeletionException> result = measurementService.deleteNGSMeasurements(
-          context.projectId().orElseThrow(), measurements);
+        context.projectId().orElseThrow(), measurements);
     handleDeletionResults(result);
   }
 
@@ -328,7 +333,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void downloadMetadataForSelectedTab() {
     Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
-    if(tabLabel.isEmpty()) {
+    if (tabLabel.isEmpty()) {
       return;
     }
     switch (tabLabel.get()) {
@@ -358,7 +363,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         .flatMap(Collection::stream)
         .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
             .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
-    proteomicsMeasurementContentProvider.setMeasurements(result);
+    proteomicsMeasurementContentProvider.setMeasurements(result,
+        projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
+            .getProjectCode().value());
     proteomicsDownloadProvider.trigger();
   }
 
@@ -375,7 +382,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         // sort by measurement codes first, then by sample codes
         .sorted(Comparator.comparing(NGSMeasurementEntry::measurementCode, natOrder)
             .thenComparing(ngs -> ngs.sampleInformation().sampleId(), natOrder)).toList();
-    ngsMeasurementContentProvider.setMeasurements(result);
+    ngsMeasurementContentProvider.setMeasurements(result,
+        projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
+            .getProjectCode().value());
     ngsDownloadProvider.trigger();
   }
 
@@ -537,13 +546,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void setSelectedMeasurementsInfo(int selectedMeasurements) {
-      String text = "%s measurements are currently selected.".formatted(
-          String.valueOf(selectedMeasurements));
+    String text = "%s measurements are currently selected.".formatted(
+        String.valueOf(selectedMeasurements));
     if (selectedMeasurements > 0) {
       measurementsSelectedInfoBox.getStyle().setVisibility(Visibility.INITIAL);
     } else {
       measurementsSelectedInfoBox.getStyle().setVisibility(Visibility.HIDDEN);
     }
-      measurementsSelectedInfoBox.setText(text);
+    measurementsSelectedInfoBox.setText(text);
   }
 }

@@ -23,7 +23,8 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,23 +55,23 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
-      @Autowired OntologyLookupService ontologyLookupService,
+      @Autowired SpeciesLookupService speciesLookupService,
       @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired TerminologyService terminologyService,
       MessageSourceToastFactory messageSourceToastFactory) {
-
     super(requireNonNull(footerComponentFactory));
     requireNonNull(logoutService);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);
     requireNonNull(experimentInformationService);
     requireNonNull(addExperimentToProjectService);
-    requireNonNull(ontologyLookupService);
+    requireNonNull(speciesLookupService);
     requireNonNull(messageSourceToastFactory, "messageSourceToastFactory must not be null");
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyLookupService, messageSourceToastFactory);
+        userPermissions, terminologyService, messageSourceToastFactory);
     dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");

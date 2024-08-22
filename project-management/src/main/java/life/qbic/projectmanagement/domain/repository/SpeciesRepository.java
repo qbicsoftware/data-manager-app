@@ -11,7 +11,7 @@ import life.qbic.projectmanagement.application.ontology.OntologyClass;
  *
  * @since 1.0.0
  */
-public interface OntologyRepository {
+public interface SpeciesRepository {
 
   Optional<OntologyClass> findByCuri(String curie);
 

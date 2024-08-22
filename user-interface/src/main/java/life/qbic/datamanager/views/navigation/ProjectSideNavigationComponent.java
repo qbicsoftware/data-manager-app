@@ -47,7 +47,8 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -76,7 +77,8 @@ public class ProjectSideNavigationComponent extends Div implements
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
   private final MessageSourceToastFactory messageSourceToastFactory;
-  private OntologyLookupService ontologyTermInformationService;
+  private final TerminologyService terminologyService;
+  private final SpeciesLookupService speciesLookupService;
   private Context context = new Context();
 
   public ProjectSideNavigationComponent(
@@ -84,27 +86,29 @@ public class ProjectSideNavigationComponent extends Div implements
       ExperimentInformationService experimentInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserPermissions userPermissions,
-      OntologyLookupService ontologyTermInformationService,
-      MessageSourceToastFactory messageSourceToastFactory) {
+      SpeciesLookupService speciesLookupService,
+      TerminologyService terminologyService
+        MessageSourceToastFactory messageSourceToastFactory) {
     content = new Div();
     requireNonNull(projectInformationService);
     requireNonNull(experimentInformationService);
     requireNonNull(addExperimentToProjectService);
     this.messageSourceToastFactory = requireNonNull(messageSourceToastFactory,
         "messageSourceToastFactory must not be null");
-    this.ontologyTermInformationService = ontologyTermInformationService;
+    this.speciesLookupService = speciesLookupService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     addClassName("project-navigation-drawer");
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
+    this.terminologyService = requireNonNull(terminologyService);
     content.addClassName("content");
     add(content);
     addListener(ProjectNavigationEvent.class,
         ProjectSideNavigationComponent::addProjectNavigationListener);
     log.debug(
-        String.format("New instance for %s(#%s) created",
-            this.getClass().getSimpleName(), System.identityHashCode(this)));
+       "New instance for %s(#%s) created".formatted(
+            this.getClass().getSimpleName(), (Integer) System.identityHashCode(this)));
   }
 
   private static Div createProjectSection(Project project,
@@ -314,7 +318,8 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new AddExperimentDialog(ontologyTermInformationService);
+    var creationDialog = new AddExperimentDialog(speciesLookupService,
+        terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
     creationDialog.addCancelListener(event -> event.getSource().close());
     creationDialog.open();

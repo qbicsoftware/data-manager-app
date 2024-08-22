@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 /**
  * MeasurementLookupService
  * <p>
- * Service that provides an API to query and filter measurement information
+ * Service that provides an API to search and filter measurement information
  */
 @Service
 public class MeasurementLookupService {

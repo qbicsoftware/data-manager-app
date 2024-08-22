@@ -23,6 +23,7 @@ import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.general.download.QualityControlDownload;
 import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
 import life.qbic.datamanager.views.notifications.toasts.Toast;
+import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
@@ -45,7 +46,8 @@ import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlD
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
@@ -78,7 +80,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private static final Logger log = logger(ProjectInformationMain.class);
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient ExperimentInformationService experimentInformationService;
-  private final transient OntologyLookupService ontologyTermInformationService;
+  private final transient SpeciesLookupService ontologyTermInformationService;
   private final transient ProjectPurchaseService projectPurchaseService;
   private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
@@ -89,16 +91,18 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
   private final MessageSourceToastFactory messageSourceToastFactory;
+  private final TerminologyService terminologyService;
   private Context context;
 
   public ProjectInformationMain(@Autowired ProjectDetailsComponent projectDetailsComponent,
       @Autowired ExperimentListComponent experimentListComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
-      @Autowired OntologyLookupService ontologyTermInformationService,
+      @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ProjectPurchaseService projectPurchaseService,
       @Autowired QualityControlService qualityControlService,
+      @Autowired TerminologyService terminologyService,
       MessageSourceToastFactory messageSourceToastFactory) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
@@ -135,6 +139,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     addClassName("project");
     add(projectDetailsComponent, offerListComponent, offerDownload, experimentListComponent,
         qualityControlListComponent, qualityControlDownload);
+    this.terminologyService = terminologyService;
   }
 
   private static void refreshOffers(ProjectPurchaseService projectPurchaseService, String projectId,
@@ -317,7 +322,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new AddExperimentDialog(ontologyTermInformationService);
+    var creationDialog = new AddExperimentDialog(ontologyTermInformationService, terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
     creationDialog.addCancelListener(event -> event.getSource().close());
     creationDialog.open();

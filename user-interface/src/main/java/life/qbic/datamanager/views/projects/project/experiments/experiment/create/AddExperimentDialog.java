@@ -25,7 +25,8 @@ import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
 import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
@@ -45,11 +46,11 @@ public class AddExperimentDialog extends DialogWindow {
   private final Binder<ExperimentDraft> binder = new Binder<>();
 
   public AddExperimentDialog(
-      OntologyLookupService ontologyTermInformationService) {
+      SpeciesLookupService ontologyTermInformationService, TerminologyService terminologyService) {
     requireNonNull(ontologyTermInformationService,
         "ontologyTermInformationService must not be null");
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
-        ontologyTermInformationService);
+        ontologyTermInformationService, terminologyService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
     Span experimentHeader = new Span("Experiment");
