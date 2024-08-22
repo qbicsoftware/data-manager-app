@@ -35,7 +35,8 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventSampleOriginEdit;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
@@ -54,9 +55,10 @@ public class EditExperimentDialog extends DialogWindow {
   private final Binder<ExperimentDraft> binder = new Binder<>();
   private Map<SampleOriginType, Set<OntologyTerm>> usedSampleOrigins;
 
-  public EditExperimentDialog(OntologyLookupService ontologyTermInformationService) {
+  public EditExperimentDialog(SpeciesLookupService ontologyTermInformationService,
+      TerminologyService terminologyService) {
     OntologyComboboxFactory ontologyComboboxFactory = new OntologyComboboxFactory(
-        ontologyTermInformationService);
+        ontologyTermInformationService, terminologyService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
     specifyCancelShortcuts(this::onEditCanceled);
@@ -81,9 +83,8 @@ public class EditExperimentDialog extends DialogWindow {
             ExperimentDraft::setSpecies);
     initOriginEditListener(speciesBox, SPECIES);
 
-
     ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIES,
-    "Species icon");
+        "Species icon");
     binder.forField(speciesIconBox)
         .bind(ExperimentDraft::getSpeciesIcon,
             ExperimentDraft::setSpeciesIcon);
@@ -108,7 +109,6 @@ public class EditExperimentDialog extends DialogWindow {
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
             ExperimentDraft::setAnalytes);
     initOriginEditListener(analyteBox, ANALYTE);
-
 
     addClassName("edit-experiment-dialog");
     setHeaderTitle("Experimental Design");
@@ -192,7 +192,8 @@ public class EditExperimentDialog extends DialogWindow {
     onEditCanceled();
   }
 
-  public void setExperiment(ExperimentDraft experiment, Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
+  public void setExperiment(ExperimentDraft experiment,
+      Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
     this.usedSampleOrigins = usedTerms;
     binder.setBean(experiment);
   }
@@ -258,11 +259,10 @@ public class EditExperimentDialog extends DialogWindow {
 
     @Serial
     private static final long serialVersionUID = 5584396740927480418L;
-
-    private String experimentName;
     private final List<OntologyTerm> species;
     private final List<OntologyTerm> specimen;
     private final List<OntologyTerm> analytes;
+    private String experimentName;
     private String speciesIconName;
     private String specimenIconName;
 

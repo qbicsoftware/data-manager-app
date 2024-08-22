@@ -5,7 +5,7 @@ import life.qbic.projectmanagement.application.measurement.Labeling
 import life.qbic.projectmanagement.application.measurement.MeasurementService
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService
+import life.qbic.projectmanagement.application.ontology.TerminologyService
 import life.qbic.projectmanagement.application.sample.SampleInformationService
 import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.sample.SampleCode
@@ -39,8 +39,8 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
             "The Illumina MiSeq is a high-throughput sequencing machine developed by Illumina. Its primary applications include small whole-genome sequencing, targeted sequencing of a set of genes or gene regions and 16S metagenomic sequencing.",
             "http://www.ebi.ac.uk/efo/EFO_0004205"
     )
-    final OntologyLookupService ontologyLookupService = Mock(OntologyLookupService.class, {
-        findByCURI(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
+    final TerminologyService terminologyService = Mock(TerminologyService.class, {
+        findByCurie(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
     })
 
     final MeasurementService measurementService = Mock(MeasurementService.class)
@@ -112,7 +112,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
         when:
         def result = validator.validate(validMeasurementEntry, projectId)
@@ -152,7 +152,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry, projectId)
@@ -188,7 +188,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
         when:
         def result = validator.validate(invalidMeasurementEntry, projectId)
@@ -231,7 +231,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -278,7 +278,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -317,7 +317,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -361,7 +361,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -400,7 +400,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -443,7 +443,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -482,7 +482,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -519,7 +519,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create();
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -558,7 +558,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -597,7 +597,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:
@@ -635,7 +635,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         ProjectId projectId = ProjectId.create()
 
         and:
-        def validator = new MeasurementProteomicsValidator(sampleInformationService, ontologyLookupService, measurementService, projectInformationService)
+        def validator = new MeasurementProteomicsValidator(sampleInformationService, terminologyService, measurementService, projectInformationService)
 
 
         when:

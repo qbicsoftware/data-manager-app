@@ -9,10 +9,10 @@ import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.Ontolo
 
 /**
  * Describes Ontology Class objects and is used to store and display species, specimen, analyte etc.
- * when creating or editing experiments and samples. Other than {@link OntologyClass}, which
- * is used for lookup in the non-persistent ontology table, OntologyClassDTO objects
- * with ontology versions are stored persistently with experiments and samples. Storage
- * is facilitated by {@link OntologyClassAttributeConverter}.
+ * when creating or editing experiments and samples. Other than {@link OntologyClass}, which is used
+ * for lookup in the non-persistent ontology table, OntologyClassDTO objects with ontology versions
+ * are stored persistently with experiments and samples. Storage is facilitated by
+ * {@link OntologyClassAttributeConverter}.
  */
 public class OntologyTerm implements Serializable {
 
@@ -28,7 +28,7 @@ public class OntologyTerm implements Serializable {
   @JsonProperty("label")
   private String classLabel;
   @JsonProperty("name")
-  private String className;
+  private String oboId;
   @JsonProperty("description")
   private String description;
   @JsonProperty("classIri")
@@ -38,23 +38,22 @@ public class OntologyTerm implements Serializable {
   }
 
   /**
-   * @param ontologyAbbreviation - the abbreviation of the ontology a class/term belongs
-   *                             to
+   * @param ontologyAbbreviation - the abbreviation of the ontology a class/term belongs to
    * @param ontologyVersion      - the version of the ontology
    * @param ontologyIri          - the iri of this ontology (e.g. link to the owl)
-   * @param classLabel                - a humanly readable classLabel for the term
-   * @param className                 - the identifier unique for this ontology and term
-   *                             (e.g. NCBITaxon_9606)
+   * @param classLabel           - a humanly readable classLabel for the term
+   * @param oboId                - the identifier unique for this ontology and term (e.g.
+   *                             NCBITaxon:9606 [OBO ID])
    * @param description          - an optional description of the term
    * @param classIri             - the iri where this specific class is found/described
    */
   public OntologyTerm(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
-      String classLabel, String className, String description, String classIri) {
+      String classLabel, String oboId, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
     this.ontologyIri = ontologyIri;
     this.classLabel = classLabel;
-    this.className = className;
+    this.oboId = oboId;
     this.description = description;
     this.classIri = classIri;
   }
@@ -98,20 +97,20 @@ public class OntologyTerm implements Serializable {
     this.classLabel = termLabel;
   }
 
-  public String getName() {
-    return className;
-  }
-
-  public void setName(String name) {
-    this.className = name;
-  }
-
   public String getDescription() {
     return description;
   }
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public String getOboId() {
+    return oboId;
+  }
+
+  public void setOboId(String oboId) {
+    this.oboId = oboId;
   }
 
   public String getClassIri() {
@@ -132,7 +131,7 @@ public class OntologyTerm implements Serializable {
    * @return a formatted String representing the name and ontology
    */
   public String formatted() {
-    return "%s (%s)".formatted(className,
+    return "%s (%s)".formatted(oboId,
         Ontology.findOntologyByAbbreviation(ontologyAbbreviation).getName());
   }
 
@@ -159,7 +158,7 @@ public class OntologyTerm implements Serializable {
     if (!Objects.equals(classLabel, that.classLabel)) {
       return false;
     }
-    if (!Objects.equals(className, that.className)) {
+    if (!Objects.equals(oboId, that.oboId)) {
       return false;
     }
     if (!Objects.equals(description, that.description)) {
@@ -174,7 +173,7 @@ public class OntologyTerm implements Serializable {
     result = 31 * result + (ontologyVersion != null ? ontologyVersion.hashCode() : 0);
     result = 31 * result + (ontologyIri != null ? ontologyIri.hashCode() : 0);
     result = 31 * result + (classLabel != null ? classLabel.hashCode() : 0);
-    result = 31 * result + (className != null ? className.hashCode() : 0);
+    result = 31 * result + (oboId != null ? oboId.hashCode() : 0);
     result = 31 * result + (description != null ? description.hashCode() : 0);
     result = 31 * result + (classIri != null ? classIri.hashCode() : 0);
     return result;

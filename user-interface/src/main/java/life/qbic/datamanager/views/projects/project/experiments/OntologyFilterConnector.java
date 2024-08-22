@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
@@ -20,9 +21,15 @@ public class OntologyFilterConnector {
 
   }
 
+  public static Stream<OntologyTerm> loadOntologyTerms(Query<OntologyTerm, String> query,
+      TerminologyService terminologyService) {
+    return terminologyService.query(query.getFilter().orElse(""), query.getOffset(),
+        query.getLimit()).stream();
+  }
+
   public static Stream<OntologyTerm> loadOntologyTerms(List<Ontology> ontologies,
       Query<OntologyTerm, String> query,
-      OntologyLookupService ontologyTermInformationService) {
+      SpeciesLookupService ontologyTermInformationService) {
     List<String> ontologyAbbreviations = ontologies.stream()
         .map(Ontology::getAbbreviation)
         .toList();
@@ -32,7 +39,6 @@ public class OntologyFilterConnector {
         .toList();
     List<OntologyClass> ontologyClassEntities = ontologyTermInformationService
         .queryOntologyTerm(query.getFilter().orElse(""),
-            ontologyAbbreviations,
             query.getOffset(),
             query.getLimit(),
             sortOrders);
