@@ -50,6 +50,8 @@ final class ExperimentalVariableRowLayout extends Span {
     experimentalVariableFieldsLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 3));
     nameField.setRequired(true);
     levelArea.setRequired(true);
+    levelArea.setHelperText(
+        "Please enter each level on a new line. Comma separated values are treated as a single level.");
     add(experimentalVariableFieldsLayout, deleteIcon);
   }
 
