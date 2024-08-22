@@ -33,43 +33,36 @@ import life.qbic.datamanager.views.general.ComponentFunctions;
 public final class Toast extends Notification {
 
   private static final Position DEFAULT_POSITION = Position.BOTTOM_START;
-  private static final boolean DEFAULT_CLOSEABLE = true;
-  private static final boolean DEFAULT_CLOSE_ON_NAVIGATION = true;
-  private static final Level DEFAULT_LEVEL = Level.INFO;
-  private static final int DEFAULT_OPEN_DURATION = 5_000;
+  static final boolean DEFAULT_CLOSE_ON_NAVIGATION = true;
+  static final Duration DEFAULT_OPEN_DURATION = Duration.ofSeconds(5_000);
 
   private final List<Registration> closeOnNavigationListeners = new ArrayList<>();
-  private final Button closeButton = closeButton(this);
+  private final Button closeButton;
 
   private Component content;
-  private Level level;
-  private boolean closeable;
 
   enum Level {
     SUCCESS,
     INFO;
   }
 
-  static class ToastBuilder {
-
-    Toast build() {
-      return new Toast();
-    }
-
-  }
-
-  private Toast() {
+  Toast(Level level) {
     super();
     addClassName("toast-notification");
-    add(closeButton);
-    setCloseable(DEFAULT_CLOSEABLE);
+    addClassName(switch (level) {
+      case SUCCESS -> "success-toast";
+      case INFO -> "info-toast";
+    });
+
     setPosition(DEFAULT_POSITION);
-    setType(DEFAULT_LEVEL);
-    closeOnNavigation(DEFAULT_CLOSE_ON_NAVIGATION);
     setDuration(DEFAULT_OPEN_DURATION);
+
+    closeButton = buttonClosing(this);
+    add(closeButton);
+    closeOnNavigation(DEFAULT_CLOSE_ON_NAVIGATION);
   }
 
-  private static Button closeButton(Toast toast) {
+  private static Button buttonClosing(Toast toast) {
     var button = new Button(LumoIcon.CROSS.create());
     button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     button.addClickListener(it -> toast.close());
@@ -115,53 +108,6 @@ public final class Toast extends Notification {
     super.setDuration((int) duration.toMillis());
   }
 
-  /**
-   * The toast contains a success message
-   *
-   * @return
-   */
-  public Toast success() {
-    setType(Level.SUCCESS);
-    return this;
-  }
-
-  /**
-   * The toast contains an informational message only
-   *
-   * @return
-   */
-  public Toast info() {
-    setType(Level.INFO);
-    return this;
-  }
-
-  @Override
-  public void open() {
-    var cssClass = switch (level) {
-      case SUCCESS -> "success-toast";
-      case INFO -> "info-toast";
-    };
-    addClassName(cssClass);
-    super.open();
-  }
-
-  private void setType(Level level) {
-    this.level = requireNonNull(level, "type must not be null");
-  }
-
-
-  /**
-   * Creates a toast showing the component.
-   *
-   * @param content
-   * @return
-   */
-  static Toast create(Component content) {
-    requireNonNull(content, "content must not be null");
-    Toast toast = new Toast();
-    toast.withContent(content);
-    return toast;
-  }
 
   /**
    * Expands the toast and includes a link to a specific route target.
@@ -171,7 +117,7 @@ public final class Toast extends Notification {
    * @param routeParameters  the parameters used for navigation
    * @return
    */
-  public Toast withRouting(String linkText, Class<? extends Component> navigationTarget,
+  Toast withRouting(String linkText, Class<? extends Component> navigationTarget,
       RouteParameters routeParameters) {
     return this.withContent(Toast.createRoutingContent(this.content, createRoutingComponent(
         linkText, navigationTarget, routeParameters)));
@@ -183,7 +129,7 @@ public final class Toast extends Notification {
    * @param content the content of the toast to set.
    * @return
    */
-  private Toast withContent(Component content) {
+  Toast withContent(Component content) {
     requireNonNull(content, "content must not be null");
     //we only want to remove the current content from its parent if the parent is not the new content.
     //Otherwise the current content would be removed from the new content as well.
@@ -201,26 +147,6 @@ public final class Toast extends Notification {
     add(this.content, this.closeButton);
   }
 
-  /**
-   * Can this toast be closed by the user?
-   *
-   * @return
-   */
-  public boolean isCloseable() {
-    return closeable;
-  }
-
-  /**
-   * Specifies whether the toast includes a button for the user to close the toast.
-   *
-   * @param closeable
-   * @return
-   */
-  public Toast setCloseable(boolean closeable) {
-    closeButton.setVisible(closeable);
-    this.closeable = closeable;
-    return this;
-  }
 
   /**
    * Creates a matching toast content containing routing components with the correct css classes.

@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.notifications.toasts;
 
-import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.Optional;
 import life.qbic.datamanager.views.notifications.toasts.Toast.Level;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -55,59 +56,70 @@ public class MessageSourceToastFactory implements Serializable {
    * @return a Toast with loaded content
    */
   public Toast create(String key, Object[] parameters, Locale locale) {
-    MessageType type;
-    try {
-      String messageType = messageSource.getMessage("%s.message.type".formatted(key),
-          EMPTY_PARAMETERS, locale).strip().toUpperCase();
-      type = MessageType.valueOf(messageType);
-    } catch (NoSuchMessageException e) {
-      throw new RuntimeException("No message type specified for " + key, e);
-    }
-    String messageText;
-    try {
-      messageText = messageSource.getMessage("%s.message.text".formatted(key),
-          parameters, locale).strip();
-    } catch (NoSuchMessageException e) {
-      throw new RuntimeException("No message specified for " + key, e);
-    }
+    MessageType type = parseMessageType(key, locale);
+    String messageText = parseMessage(key, parameters, locale);
 
     Component content = switch (type) {
       case HTML -> new Html("<div style=\"display:contents\">%s</div>".formatted(messageText));
       case TEXT -> new Span(messageText);
     };
-    Toast toast = Toast.create(content);
 
-    String closeableProperty = messageSource.getMessage("%s.closeable".formatted(key), parameters,
-        null, locale);
-    if (nonNull(closeableProperty)) {
-      toast.setCloseable(Boolean.parseBoolean(closeableProperty));
-    }
+    Duration duration = parseDuration(key, locale).orElse(Toast.DEFAULT_OPEN_DURATION);
+    Level level = parseLevel(key, locale).orElse(Level.INFO);
 
-    String durationProperty = messageSource.getMessage("%s.duration".formatted(key),
-        EMPTY_PARAMETERS, null, locale);
-    if (nonNull(durationProperty)) {
-      if (!durationProperty.startsWith("P")) {
-        durationProperty = "P" + durationProperty;
-      }
-      try {
-        toast.setDuration(Duration.parse(durationProperty));
-      } catch (DateTimeParseException e) {
-        LOG.warn("Could not parse duration for key %s: %s".formatted(key, durationProperty));
-      }
-    }
-
-    String levelProperty = messageSource.getMessage("%s.level".formatted(key),
-        EMPTY_PARAMETERS, null, locale);
-    try {
-      var enforceExhaustiveness = switch (Level.valueOf(levelProperty)) {
-        case SUCCESS -> toast.success();
-        case INFO -> toast.info();
-      };
-    } catch (IllegalArgumentException e) {
-      LOG.warn("Could not parse toast level for key %s: %s".formatted(key, levelProperty));
-    }
+    Toast toast = new Toast(level);
+    toast.withContent(content);
+    toast.setDuration(duration);
 
     return toast;
+  }
+
+  private String parseMessage(String key, Object[] parameters, Locale locale) {
+    try {
+      return messageSource.getMessage("%s.message.text".formatted(key),
+          parameters, locale).strip();
+    } catch (NoSuchMessageException e) {
+      throw new RuntimeException("No message specified for " + key, e);
+    }
+  }
+
+  private MessageType parseMessageType(String key, Locale locale) {
+    try {
+      String messageType = messageSource.getMessage("%s.message.type".formatted(key),
+          EMPTY_PARAMETERS, locale).strip().toUpperCase();
+      return MessageType.valueOf(messageType);
+    } catch (NoSuchMessageException e) {
+      throw new RuntimeException("No message type specified for " + key, e);
+    }
+  }
+
+  private Optional<Level> parseLevel(String key, Locale locale) {
+    String levelProperty = messageSource.getMessage("%s.level".formatted(key),
+        EMPTY_PARAMETERS, null, locale);
+    if (isNull(levelProperty)) {
+      return Optional.empty();
+    }
+
+    try {
+      return Optional.of(Level.valueOf(levelProperty.trim().toUpperCase()));
+    } catch (IllegalArgumentException e) {
+      LOG.warn("Could not parse toast level for key %s: %s".formatted(key, levelProperty));
+      return Optional.empty();
+    }
+  }
+
+  private Optional<Duration> parseDuration(String key, Locale locale) {
+    String durationProperty = messageSource.getMessage("%s.duration".formatted(key),
+        EMPTY_PARAMETERS, null, locale);
+    if (isNull(durationProperty)) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(Duration.parse(durationProperty));
+    } catch (DateTimeParseException e) {
+      LOG.warn("Could not parse duration for key %s: %s".formatted(key, durationProperty));
+      return Optional.empty();
+    }
   }
 
 
@@ -140,6 +152,11 @@ public class MessageSourceToastFactory implements Serializable {
       Class<? extends Component> navigationTarget,
       RouteParameters routeParameters, Locale locale) {
     var toast = create(key, messageArgs, locale);
+    String linkText = parseLinkText(key, routeArgs, locale);
+    return toast.withRouting(linkText, navigationTarget, routeParameters);
+  }
+
+  private String parseLinkText(String key, Object[] routeArgs, Locale locale) {
     String linkText;
     try {
       linkText = messageSource.getMessage("%s.routing.link.text".formatted(key),
@@ -147,7 +164,7 @@ public class MessageSourceToastFactory implements Serializable {
     } catch (NoSuchMessageException e) {
       throw new RuntimeException("No link text specified for " + key, e);
     }
-    return toast.withRouting(linkText, navigationTarget, routeParameters);
+    return linkText;
   }
 
 
