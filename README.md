@@ -18,7 +18,7 @@ that enables FAIR-compliant data access.
 
 ## Overview:
 
-- [Syle Guide](#style-guide)
+- [Style Guide](#style-guide)
 - [How to Run](#how-to-run)
     * [Configuration](#configuration)
         * [Java Version](#java-version)
