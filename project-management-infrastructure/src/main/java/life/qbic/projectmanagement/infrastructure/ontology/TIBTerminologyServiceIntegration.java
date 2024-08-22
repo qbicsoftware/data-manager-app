@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -39,7 +40,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
-  private static final Logger log = logger(TIBTerminologyServiceIntegration.class);
   private static final int TIMEOUT_5_SECONDS = 5;
   private static final HttpClient HTTP_CLIENT = httpClient(TIMEOUT_5_SECONDS);
 
@@ -91,13 +91,33 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     try {
       List<TibTerm> result = select(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
-    } catch (IOException | InterruptedException e) {
-      log.error("TIB Service search failed. ", e);
-      throw new LookupException("Query failed. Please try again.");
+    } catch (IOException e) {
+      throw wrapIO(e);
+    } catch (InterruptedException e) {
+      throw wrapInterrupted(e);
     } catch (Exception e) {
-      log.error("Unknown exception during TIB search. ", e);
-      throw new LookupException("Query failed. Please try again.");
+      throw wrapUnknown(e);
     }
+  }
+
+  private static LookupException wrap(String message, Exception e) {
+    return new LookupException(message, e);
+  }
+
+  private static LookupException wrapIO(IOException e) {
+    return wrap("Terminology service search failed. Service might not be reachable", e);
+  }
+
+  private static LookupException wrapInterrupted(InterruptedException e) {
+    return wrap("Terminology service search failed. Process was interrupted", e);
+  }
+
+  private static LookupException wrapUnknown(Exception e) {
+    return new LookupException("Unknown exception during terminology search", e);
+  }
+
+  private static LookupException wrapProcessingException(JsonProcessingException e) {
+    return new LookupException("Terminology Term Failure: Cannot process response.", e);
   }
 
   @Override
@@ -109,12 +129,12 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       }
       return Optional.of(
           result.stream().map(TIBTerminologyServiceIntegration::convert).toList().get(0));
-    } catch (IOException | InterruptedException e) {
-      log.error("TIB Service search failed. ", e);
-      throw new LookupException("Query failed. Please try again.");
+    } catch (IOException e) {
+      throw wrapIO(e);
+    } catch (InterruptedException e) {
+      throw wrapInterrupted(e);
     } catch (Exception e) {
-      log.error("Unknown exception during TIB search. ", e);
-      throw new LookupException("Query failed. Please try again.");
+      throw wrapUnknown(e);
     }
   }
 
@@ -124,12 +144,12 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     try {
       List<TibTerm> result = fullSearch(searchTerm, offset, limit);
       return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
-    } catch (IOException | InterruptedException e) {
-      log.error("TIB Service search failed. ", e);
-      throw new LookupException("Query failed. Please try again.");
+    } catch (IOException e) {
+      throw wrapIO(e);
+    } catch (InterruptedException e) {
+      throw wrapInterrupted(e);
     } catch (Exception e) {
-      log.error("Unknown exception during TIB search. ", e);
-      throw new LookupException("Query failed. Please try again.");
+      throw wrapUnknown(e);
     }
   }
 
@@ -189,8 +209,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       }
       return terms;
     } catch (JsonProcessingException e) {
-      log.error("Terminology Term Failure: Cannot process API response.", e);
-      throw new ApplicationException("Terminology service call failed.", e);
+      throw wrapProcessingException(e);
     }
   }
 }
