@@ -87,8 +87,8 @@ public class ProjectSideNavigationComponent extends Div implements
       AddExperimentToProjectService addExperimentToProjectService,
       UserPermissions userPermissions,
       SpeciesLookupService speciesLookupService,
-      TerminologyService terminologyService
-        MessageSourceToastFactory messageSourceToastFactory) {
+      TerminologyService terminologyService,
+      MessageSourceToastFactory messageSourceToastFactory) {
     content = new Div();
     requireNonNull(projectInformationService);
     requireNonNull(experimentInformationService);
@@ -107,7 +107,7 @@ public class ProjectSideNavigationComponent extends Div implements
     addListener(ProjectNavigationEvent.class,
         ProjectSideNavigationComponent::addProjectNavigationListener);
     log.debug(
-       "New instance for %s(#%s) created".formatted(
+        "New instance for %s(#%s) created".formatted(
             this.getClass().getSimpleName(), (Integer) System.identityHashCode(this)));
   }
 
