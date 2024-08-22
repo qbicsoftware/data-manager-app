@@ -38,8 +38,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.IntStream;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.parser.ParseResult;
-import life.qbic.datamanager.parser.XLSXParser;
+import life.qbic.datamanager.parser.ParsingResult;
+import life.qbic.datamanager.parser.xlsx.XLSXParser;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
@@ -321,7 +321,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    ParseResult parseResult = new XLSXParser().parse(
+    ParsingResult parseResult = new XLSXParser().parse(
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     MetadataContent content = read(
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());

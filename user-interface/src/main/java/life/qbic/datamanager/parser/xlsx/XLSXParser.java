@@ -1,4 +1,4 @@
-package life.qbic.datamanager.parser;
+package life.qbic.datamanager.parser.xlsx;
 
 import static java.util.Objects.isNull;
 
@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import life.qbic.datamanager.parser.MetadataParser;
+import life.qbic.datamanager.parser.ParsingResult;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -42,7 +42,7 @@ public class XLSXParser implements MetadataParser {
   }
 
   @Override
-  public ParseResult parse(InputStream inputStream) {
+  public ParsingResult parse(InputStream inputStream) {
     XSSFWorkbook workbook = null;
     try {
       workbook = new XSSFWorkbook(inputStream);
@@ -80,6 +80,6 @@ public class XLSXParser implements MetadataParser {
       rows.add(Arrays.stream(rowData).toList());
     }
 
-    return new ParseResult(columns, rows);
+    return new ParsingResult(columns, rows);
   }
 }
