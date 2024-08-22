@@ -29,7 +29,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class XLSXParser implements MetadataParser {
 
-  public XLSXParser() {
+  public static XLSXParser create() {
+    return new XLSXParser();
+  }
+
+  private XLSXParser() {
   }
 
   private static String readCellAsString(Cell cell) {

@@ -12,6 +12,23 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
  */
 public interface MeasurementMetadataConverter {
 
-  List<MeasurementMetadata> convert(ParsingResult parsingResult);
 
+  List<MeasurementMetadata> convert(ParsingResult parsingResult)
+      throws UnknownMetadataTypeException, IllegalMetadataException, MissingMetadataPropertyException;
+
+  class UnknownMetadataTypeException extends RuntimeException {
+    public UnknownMetadataTypeException(String message) {
+      super(message);
+    }
+  }
+  class MissingMetadataPropertyException extends RuntimeException {
+    public MissingMetadataPropertyException(String message) {
+      super(message);
+    }
+  }
+  class IllegalMetadataException extends RuntimeException {
+    public IllegalMetadataException(String message) {
+      super(message);
+    }
+  }
 }
