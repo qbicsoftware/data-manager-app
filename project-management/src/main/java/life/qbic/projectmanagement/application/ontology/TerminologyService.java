@@ -52,7 +52,7 @@ public class TerminologyService {
       return terminologySelect.query(searchTerm, offset, limit).stream().map(OntologyTerm::from)
           .toList();
     } catch (LookupException e) {
-      throw new ApplicationException(ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
+      throw new ApplicationException("Lookup for term '%s' failed.".formatted(searchTerm), e, ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
     }
 
   }
@@ -68,7 +68,7 @@ public class TerminologyService {
     try {
       return terminologySelect.searchByCurie(curie).map(OntologyTerm::from);
     } catch (LookupException e) {
-      throw new ApplicationException(ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
+      throw new ApplicationException("Lookup for CURIE '%s' failed.".formatted(curie), e, ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
     }
   }
 
@@ -91,7 +91,7 @@ public class TerminologyService {
       return terminologySelect.search(searchTerm, offset, limit).stream().map(OntologyTerm::from)
           .toList();
     } catch (LookupException e) {
-      throw new ApplicationException(ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
+      throw new ApplicationException("Searching for term '%s' failed.".formatted(searchTerm), e, ErrorCode.SERVICE_FAILED, ErrorParameters.empty());
     }
   }
 
