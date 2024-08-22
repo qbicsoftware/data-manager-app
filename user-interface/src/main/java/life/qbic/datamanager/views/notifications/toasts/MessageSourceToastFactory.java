@@ -64,8 +64,8 @@ public class MessageSourceToastFactory implements Serializable {
       case TEXT -> new Span(messageText);
     };
 
+    Level level = parseLevel(key, locale);
     Duration duration = parseDuration(key, locale).orElse(Toast.DEFAULT_OPEN_DURATION);
-    Level level = parseLevel(key, locale).orElse(Level.INFO);
 
     Toast toast = new Toast(level);
     toast.withContent(content);
@@ -93,18 +93,20 @@ public class MessageSourceToastFactory implements Serializable {
     }
   }
 
-  private Optional<Level> parseLevel(String key, Locale locale) {
-    String levelProperty = messageSource.getMessage("%s.level".formatted(key),
-        EMPTY_PARAMETERS, null, locale);
-    if (isNull(levelProperty)) {
-      return Optional.empty();
+  private Level parseLevel(String key, Locale locale) {
+    String levelProperty;
+    try {
+      levelProperty = messageSource.getMessage("%s.level".formatted(key),
+          EMPTY_PARAMETERS, locale);
+    } catch (NoSuchMessageException e) {
+      throw new RuntimeException("Missing level info for %s.".formatted(key));
     }
 
     try {
-      return Optional.of(Level.valueOf(levelProperty.trim().toUpperCase()));
+      return Level.valueOf(levelProperty.trim().toUpperCase());
     } catch (IllegalArgumentException e) {
-      LOG.warn("Could not parse toast level for key %s: %s".formatted(key, levelProperty));
-      return Optional.empty();
+      throw new RuntimeException(
+          "Could not parse toast level for key %s: %s".formatted(key, levelProperty));
     }
   }
 

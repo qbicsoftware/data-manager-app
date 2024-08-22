@@ -67,7 +67,6 @@ public final class Toast extends Notification {
     button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     button.addClickListener(it -> toast.close());
     button.addClassName("close-button");
-    button.setVisible(false);
     return button;
   }
 

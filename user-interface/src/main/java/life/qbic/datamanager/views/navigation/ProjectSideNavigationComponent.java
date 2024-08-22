@@ -108,7 +108,7 @@ public class ProjectSideNavigationComponent extends Div implements
         ProjectSideNavigationComponent::addProjectNavigationListener);
     log.debug(
         "New instance for %s(#%s) created".formatted(
-            this.getClass().getSimpleName(), (Integer) System.identityHashCode(this)));
+            this.getClass().getSimpleName(), System.identityHashCode(this)));
   }
 
   private static Div createProjectSection(Project project,
@@ -362,8 +362,7 @@ public class ProjectSideNavigationComponent extends Div implements
 
   private void displayExperimentCreationSuccess(String experimentName) {
     Toast toast = messageSourceToastFactory.create("experiment.created.success",
-            new Object[]{experimentName}, getLocale())
-        .success();
+        new Object[]{experimentName}, getLocale());
     toast.open();
   }
 
