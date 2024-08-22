@@ -71,7 +71,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
-        userPermissions, terminologyService, messageSourceToastFactory);
+        userPermissions, speciesLookupService, terminologyService, messageSourceToastFactory);
     dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");
