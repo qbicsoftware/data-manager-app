@@ -1,12 +1,9 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.criteria.CriteriaBuilder.In;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -21,8 +18,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.application.commons.ApplicationException;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.LookupException;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
@@ -33,7 +28,7 @@ import org.springframework.stereotype.Service;
 /**
  * <b>TIB Terminology Service</b>
  * <p>
- * Integrates the tiB Terminology Service API Endpoint to support rich ontology terms.
+ * Integrates the TIB Terminology Service API Endpoint to support rich ontology terms.
  *
  * @since 1.4.0
  */
@@ -70,11 +65,28 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     this.searchEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(searchEndpoint);
   }
 
+  /**
+   * Converts a {@link TibTerm} to a {@link OntologyClass}.
+   * <p>
+   * DISCLAIMER: the TIB terms do not contain ontology version and ontology iri in the result
+   * objects. So the ontology class object will not contain this information.
+   *
+   * @param term the term to convert
+   * @return the converted term as ontology class, missing ontology version and ontology IRI
+   * @since 1.4.0
+   */
   private static OntologyClass convert(TibTerm term) {
     return new OntologyClass(term.ontologyPrefix, "", "", term.label, term.shortForm,
         term.getDescription().orElse(""), term.iri);
   }
 
+  /**
+   * Creates a comma-separated list of all white-listed ontologies to be used in the API as query
+   * parameters.
+   *
+   * @return a concatenated String of whitelisted ontologies
+   * @since 1.4.0
+   */
   private static String createOntologyFilterQueryParameter() {
     return String.join(",", ONTOLOGIES_WHITELIST);
   }
@@ -83,6 +95,65 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     return HttpClient.newBuilder().version(Version.HTTP_2)
         .followRedirects(Redirect.NORMAL).connectTimeout(
             Duration.ofSeconds(timeoutSeconds)).build();
+  }
+
+  /**
+   * Wraps a general exception with a custom message as a {@link LookupException} to comply with the
+   * interface requirements.
+   *
+   * @param message a custom message about what has happened.
+   * @param e       the exception to wrap
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrap(String message, Exception e) {
+    return new LookupException(message, e);
+  }
+
+  /**
+   * Wraps an {@link IOException} with a default message for IO-related exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapIO(IOException e) {
+    return wrap("Terminology service search failed. Service might not be reachable", e);
+  }
+
+  /**
+   * Wraps an {@link InterruptedException} with a default message for interrupted-related
+   * exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapInterrupted(InterruptedException e) {
+    return wrap("Terminology service search failed. Process was interrupted", e);
+  }
+
+  /**
+   * Wraps an {@link Exception} with a default message for unknown exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapUnknown(Exception e) {
+    return new LookupException("Unknown exception during terminology search", e);
+  }
+
+  /**
+   * Wraps an {@link JsonProcessingException} with a default message for JSON processing-related
+   * exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapProcessingException(JsonProcessingException e) {
+    return new LookupException("Terminology Term Failure: Cannot process response.", e);
   }
 
   @Override
@@ -98,26 +169,6 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     } catch (Exception e) {
       throw wrapUnknown(e);
     }
-  }
-
-  private static LookupException wrap(String message, Exception e) {
-    return new LookupException(message, e);
-  }
-
-  private static LookupException wrapIO(IOException e) {
-    return wrap("Terminology service search failed. Service might not be reachable", e);
-  }
-
-  private static LookupException wrapInterrupted(InterruptedException e) {
-    return wrap("Terminology service search failed. Process was interrupted", e);
-  }
-
-  private static LookupException wrapUnknown(Exception e) {
-    return new LookupException("Unknown exception during terminology search", e);
-  }
-
-  private static LookupException wrapProcessingException(JsonProcessingException e) {
-    return new LookupException("Terminology Term Failure: Cannot process response.", e);
   }
 
   @Override
@@ -153,8 +204,20 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     }
   }
 
+  /**
+   * Queries the /search endpoint of the TIB terminology service. This endpoint provides the
+   * ontology term `description` property, which the /select endpoint does not.
+   *
+   * @param searchTerm the search term
+   * @param offset     the offset of results to query the result
+   * @param limit      the max number of results to return per page
+   * @return a list of matching terms.
+   * @throws IOException          if e.g. the service cannot be reached
+   * @throws InterruptedException the query is interrupted before succeeding
+   * @since 1.4.0
+   */
   private List<TibTerm> fullSearch(String searchTerm, int offset, int limit)
-      throws IOException, InterruptedException, ApplicationException {
+      throws IOException, InterruptedException {
     if (searchTerm.isBlank()) { // avoid unnecessary API calls
       return List.of();
     }
@@ -167,8 +230,23 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     return parseResponse(response);
   }
 
+  /**
+   * Queries the /select endpoint of the TIB terminology service, which is optimized for the
+   * auto-complete use case. This endpoint DOES NOT provide the ontology term `description`
+   * property.
+   * <p>
+   * Use {@link #fullSearch(String, int, int)} instead.
+   *
+   * @param searchTerm the search term
+   * @param offset     the offset of results to query the result
+   * @param limit      the max number of results to return per page
+   * @return a list of matching terms.
+   * @throws IOException          if e.g. the service cannot be reached
+   * @throws InterruptedException the query is interrupted before succeeding
+   * @since 1.4.0
+   */
   private List<TibTerm> select(String searchTerm, int offset, int limit)
-      throws IOException, InterruptedException, ApplicationException {
+      throws IOException, InterruptedException {
     if (searchTerm.length() < 2) { // avoid unnecessary API calls
       return List.of();
     }
@@ -182,8 +260,21 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     return parseResponse(response);
   }
 
+  /**
+   * Queries the /search endpoint of the TIB terminology service, but filters any results by the
+   * terms `obo_id` property.
+   * <p>
+   *
+   * @param oboId  the search term
+   * @param offset the offset of results to query the result
+   * @param limit  the max number of results to return per page
+   * @return a list of matching terms.
+   * @throws IOException          if e.g. the service cannot be reached
+   * @throws InterruptedException the query is interrupted before succeeding
+   * @since 1.4.0
+   */
   private List<TibTerm> searchByOboId(String oboId, int offset, int limit)
-      throws IOException, InterruptedException, ApplicationException {
+      throws IOException, InterruptedException {
     if (oboId.isBlank()) { // avoid unnecessary API calls
       return List.of();
     }
@@ -197,6 +288,13 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     return parseResponse(response);
   }
 
+  /**
+   * Parses the TIB service response object and returns the wrapped terms.
+   *
+   * @param response the TIB service response
+   * @return a list of contained terms
+   * @since 1.4.0
+   */
   private List<TibTerm> parseResponse(HttpResponse<String> response) {
     ObjectMapper mapper = new ObjectMapper().configure(
         DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).configure(
