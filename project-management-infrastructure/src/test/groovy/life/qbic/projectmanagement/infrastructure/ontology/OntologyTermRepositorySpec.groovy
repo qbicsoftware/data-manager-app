@@ -12,7 +12,7 @@ class OntologyTermRepositorySpec extends Specification{
     def "Given a one-word search, the correct ontology searchterm is created"() {
         given:
         def searchWord = "Mus"
-        def repo = new OntologyTermRepository(Mock(OntologyTermRepositoryJpaInterface.class))
+        def repo = new SpeciesTermRepository(Mock(OntologyTermRepositoryJpaInterface.class))
 
         when:
         def result = repo.buildSearchTerm(searchWord).replace("  "," ")
@@ -24,7 +24,7 @@ class OntologyTermRepositorySpec extends Specification{
     def "Given a two-word search, the correct ontology searchterm is created"() {
         given:
         def searchWord = "Mus musc"
-        def repo = new OntologyTermRepository(Mock(OntologyTermRepositoryJpaInterface.class))
+        def repo = new SpeciesTermRepository(Mock(OntologyTermRepositoryJpaInterface.class))
 
         when:
         def result = repo.buildSearchTerm(searchWord).replace("  "," ")
@@ -36,7 +36,7 @@ class OntologyTermRepositorySpec extends Specification{
     def "Given a three-word search, the correct ontology searchterm is created"() {
         given:
         def searchWord = "Mus musculus domesticus"
-        def repo = new OntologyTermRepository(Mock(OntologyTermRepositoryJpaInterface.class))
+        def repo = new SpeciesTermRepository(Mock(OntologyTermRepositoryJpaInterface.class))
 
         when:
         def result = repo.buildSearchTerm(searchWord).replace("  "," ")

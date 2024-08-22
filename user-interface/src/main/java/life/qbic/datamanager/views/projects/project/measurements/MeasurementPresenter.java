@@ -35,7 +35,7 @@ public class MeasurementPresenter {
       ProteomicsSpecificMeasurementMetadata specificMeasurementMetadata) {
     return new ProteomicsMeasurementEntry(measurement.measurementCode().value(),
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
-        measurement.instrument().getName().replace("_", ":"),
+        measurement.instrument().getOboId().replace("_", ":"),
         measurement.instrument().getLabel(),
         measurement.samplePoolGroup().orElse(""), measurement.facility(),
         specificMeasurementMetadata.fractionName(),
@@ -49,7 +49,7 @@ public class MeasurementPresenter {
       SampleInformation sampleInfo, NGSSpecificMeasurementMetadata specificMeasurementMetadata) {
     return new NGSMeasurementEntry(measurement.measurementCode().value(),
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
-        measurement.instrument().getName().replace("_", ":"),
+        measurement.instrument().getOboId().replace("_", ":"),
         measurement.instrument().getLabel(),
         measurement.samplePoolGroup().orElse(""), measurement.facility(),
         measurement.sequencingReadType(),

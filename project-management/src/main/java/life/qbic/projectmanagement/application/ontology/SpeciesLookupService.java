@@ -5,24 +5,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface.FilterTerm;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupInterface.OntologyCurie;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupInterface.FilterTerm;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupInterface.OntologyCurie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Service that provides an API to query basic ontology information
+ * Service that provides an API to search basic ontology information
  *
  * @since 1.0.0
  */
 @Service
-public class OntologyLookupService {
+public class SpeciesLookupService {
 
-  private final OntologyLookupInterface ontologyTermLookup;
+  private final SpeciesLookupInterface speciesLookupInterface;
 
-  public OntologyLookupService(@Autowired OntologyLookupInterface ontologyTermLookup) {
-    Objects.requireNonNull(ontologyTermLookup);
-    this.ontologyTermLookup = ontologyTermLookup;
+  public SpeciesLookupService(@Autowired SpeciesLookupInterface speciesLookupInterface) {
+    Objects.requireNonNull(speciesLookupInterface);
+    this.speciesLookupInterface = speciesLookupInterface;
   }
 
   /**
@@ -37,22 +37,21 @@ public class OntologyLookupService {
    * @since 1.0.0
    */
   public List<OntologyClass> queryOntologyTerm(String filterTerm,
-      List<String> ontologyAbbreviations,
       int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    List<OntologyClass> termList = ontologyTermLookup.query(new FilterTerm(filterTerm),
-        ontologyAbbreviations, offset, limit, sortOrders)
+    List<OntologyClass> termList = speciesLookupInterface.query(new FilterTerm(filterTerm),
+        List.of("NCBITaxon"), offset, limit, sortOrders)
         .stream().distinct().toList();
     // the list must be modifiable for spring security to filter it
     return new ArrayList<>(termList);
   }
 
   public Optional<OntologyClass> findByCURI(String curie) {
-    return ontologyTermLookup.query(new OntologyCurie(curie)).stream().findAny();
+    return speciesLookupInterface.query(new OntologyCurie(curie)).stream().findAny();
   }
 
   public List<String> findUniqueOntologies() {
-    return ontologyTermLookup.findUniqueOntologyAbbreviations();
+    return speciesLookupInterface.findUniqueOntologyAbbreviations();
   }
 
 }

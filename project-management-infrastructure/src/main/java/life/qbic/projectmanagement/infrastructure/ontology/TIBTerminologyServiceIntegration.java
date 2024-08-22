@@ -1,0 +1,314 @@
+package life.qbic.projectmanagement.infrastructure.ontology;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import life.qbic.projectmanagement.application.ontology.LookupException;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
+import life.qbic.projectmanagement.application.ontology.TerminologySelect;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+/**
+ * <b>TIB Terminology Service</b>
+ * <p>
+ * Integrates the TIB Terminology Service API Endpoint to support rich ontology terms.
+ *
+ * @since 1.4.0
+ */
+@Service
+public class TIBTerminologyServiceIntegration implements TerminologySelect {
+
+  private static final int TIMEOUT_5_SECONDS = 5;
+  private static final HttpClient HTTP_CLIENT = httpClient(TIMEOUT_5_SECONDS);
+
+  private static final List<String> ONTOLOGIES_WHITELIST = List.of(
+      "bao", // Bio-assay Ontology
+      "bto", // Brenda Tissue Ontology
+      "chebi", // Chemical Entities of Biological Interest
+      "edam", // Bioinformatics operations, data types, formats, identifiers and topics
+      "efo", // Experimental Factor Ontology
+      "envo", // Environmental Factor Ontology#
+      "go", // Gene Ontology
+      "mi", // Molecular Interaction
+      "ms",  // PSI Mass Spectrometry Ontology
+      "ncit", // National Cancer Institute Thesaurus
+      "po" // Plant Ontology
+  );
+
+  private final URI selectEndpointAbsoluteUrl;
+  private final URI searchEndpointAbsoluteUrl;
+
+  @Autowired
+  public TIBTerminologyServiceIntegration(
+      @Value("${terminology.service.tib.endpoint.select}") String selectEndpoint,
+      @Value("${terminology.service.tib.endpoint.search}") String searchEndpoint,
+      @Value("${terminology.service.tib.api.url}") String tibApiUrl) {
+    this.selectEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(selectEndpoint);
+    this.searchEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(searchEndpoint);
+  }
+
+  /**
+   * Converts a {@link TibTerm} to a {@link OntologyClass}.
+   * <p>
+   * DISCLAIMER: the TIB terms do not contain ontology version and ontology iri in the result
+   * objects. So the ontology class object will not contain this information.
+   *
+   * @param term the term to convert
+   * @return the converted term as ontology class, missing ontology version and ontology IRI
+   * @since 1.4.0
+   */
+  private static OntologyClass convert(TibTerm term) {
+    return new OntologyClass(term.ontologyPrefix, "", "", term.label, term.shortForm,
+        term.getDescription().orElse(""), term.iri);
+  }
+
+  /**
+   * Creates a comma-separated list of all white-listed ontologies to be used in the API as query
+   * parameters.
+   *
+   * @return a concatenated String of whitelisted ontologies
+   * @since 1.4.0
+   */
+  private static String createOntologyFilterQueryParameter() {
+    return String.join(",", ONTOLOGIES_WHITELIST);
+  }
+
+  private static HttpClient httpClient(int timeoutSeconds) {
+    return HttpClient.newBuilder().version(Version.HTTP_2)
+        .followRedirects(Redirect.NORMAL).connectTimeout(
+            Duration.ofSeconds(timeoutSeconds)).build();
+  }
+
+  /**
+   * Wraps a general exception with a custom message as a {@link LookupException} to comply with the
+   * interface requirements.
+   *
+   * @param message a custom message about what has happened.
+   * @param e       the exception to wrap
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrap(String message, Exception e) {
+    return new LookupException(message, e);
+  }
+
+  /**
+   * Wraps an {@link IOException} with a default message for IO-related exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapIO(IOException e) {
+    return wrap("Terminology service search failed. Service might not be reachable", e);
+  }
+
+  /**
+   * Wraps an {@link InterruptedException} with a default message for interrupted-related
+   * exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapInterrupted(InterruptedException e) {
+    return wrap("Terminology service search failed. Process was interrupted", e);
+  }
+
+  /**
+   * Wraps an {@link Exception} with a default message for unknown exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapUnknown(Exception e) {
+    return new LookupException("Unknown exception during terminology search", e);
+  }
+
+  /**
+   * Wraps an {@link JsonProcessingException} with a default message for JSON processing-related
+   * exceptions.
+   *
+   * @param e the exception
+   * @return a lookup exception
+   * @since 1.4.0
+   */
+  private static LookupException wrapProcessingException(JsonProcessingException e) {
+    return new LookupException("Terminology Term Failure: Cannot process response.", e);
+  }
+
+  @Override
+  public List<OntologyClass> query(String searchTerm, int offset, int limit)
+      throws LookupException {
+    try {
+      List<TibTerm> result = select(searchTerm, offset, limit);
+      return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
+    } catch (IOException e) {
+      throw wrapIO(e);
+    } catch (InterruptedException e) {
+      throw wrapInterrupted(e);
+    } catch (Exception e) {
+      throw wrapUnknown(e);
+    }
+  }
+
+  @Override
+  public Optional<OntologyClass> searchByCurie(String curie) throws LookupException {
+    try {
+      List<TibTerm> result = searchByOboId(curie, 0, 10);
+      if (result.isEmpty()) {
+        return Optional.empty();
+      }
+      return Optional.of(
+          result.stream().map(TIBTerminologyServiceIntegration::convert).toList().get(0));
+    } catch (IOException e) {
+      throw wrapIO(e);
+    } catch (InterruptedException e) {
+      throw wrapInterrupted(e);
+    } catch (Exception e) {
+      throw wrapUnknown(e);
+    }
+  }
+
+  @Override
+  public List<OntologyClass> search(String searchTerm, int offset, int limit)
+      throws LookupException {
+    try {
+      List<TibTerm> result = fullSearch(searchTerm, offset, limit);
+      return result.stream().map(TIBTerminologyServiceIntegration::convert).toList();
+    } catch (IOException e) {
+      throw wrapIO(e);
+    } catch (InterruptedException e) {
+      throw wrapInterrupted(e);
+    } catch (Exception e) {
+      throw wrapUnknown(e);
+    }
+  }
+
+  /**
+   * Queries the /search endpoint of the TIB terminology service. This endpoint provides the
+   * ontology term `description` property, which the /select endpoint does not.
+   *
+   * @param searchTerm the search term
+   * @param offset     the offset of results to query the result
+   * @param limit      the max number of results to return per page
+   * @return a list of matching terms.
+   * @throws IOException          if e.g. the service cannot be reached
+   * @throws InterruptedException the query is interrupted before succeeding
+   * @since 1.4.0
+   */
+  private List<TibTerm> fullSearch(String searchTerm, int offset, int limit)
+      throws IOException, InterruptedException {
+    if (searchTerm.isBlank()) { // avoid unnecessary API calls
+      return List.of();
+    }
+    HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
+            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(searchTerm,
+                StandardCharsets.UTF_8) + "&rows="
+                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
+        .header("Content-Type", "application/json").GET().build();
+    var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
+    return parseResponse(response);
+  }
+
+  /**
+   * Queries the /select endpoint of the TIB terminology service, which is optimized for the
+   * auto-complete use case. This endpoint DOES NOT provide the ontology term `description`
+   * property.
+   * <p>
+   * Use {@link #fullSearch(String, int, int)} instead.
+   *
+   * @param searchTerm the search term
+   * @param offset     the offset of results to query the result
+   * @param limit      the max number of results to return per page
+   * @return a list of matching terms.
+   * @throws IOException          if e.g. the service cannot be reached
+   * @throws InterruptedException the query is interrupted before succeeding
+   * @since 1.4.0
+   */
+  private List<TibTerm> select(String searchTerm, int offset, int limit)
+      throws IOException, InterruptedException {
+    if (searchTerm.length() < 2) { // avoid unnecessary API calls
+      return List.of();
+    }
+    HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
+            selectEndpointAbsoluteUrl.toString() +
+                "?q=" + URLEncoder.encode(searchTerm, StandardCharsets.UTF_8) + "&rows="
+                + limit + "&start=" + offset + "&ontology="
+                + createOntologyFilterQueryParameter()))
+        .header("Content-Type", "application/json").GET().build();
+    var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
+    return parseResponse(response);
+  }
+
+  /**
+   * Queries the /search endpoint of the TIB terminology service, but filters any results by the
+   * terms `obo_id` property.
+   * <p>
+   *
+   * @param oboId  the search term
+   * @param offset the offset of results to query the result
+   * @param limit  the max number of results to return per page
+   * @return a list of matching terms.
+   * @throws IOException          if e.g. the service cannot be reached
+   * @throws InterruptedException the query is interrupted before succeeding
+   * @since 1.4.0
+   */
+  private List<TibTerm> searchByOboId(String oboId, int offset, int limit)
+      throws IOException, InterruptedException {
+    if (oboId.isBlank()) { // avoid unnecessary API calls
+      return List.of();
+    }
+    HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
+            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(oboId,
+                StandardCharsets.UTF_8) + "&rows="
+                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()
+                + "&queryFields=obo_id"))
+        .header("Content-Type", "application/json").GET().build();
+    var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
+    return parseResponse(response);
+  }
+
+  /**
+   * Parses the TIB service response object and returns the wrapped terms.
+   *
+   * @param response the TIB service response
+   * @return a list of contained terms
+   * @since 1.4.0
+   */
+  private List<TibTerm> parseResponse(HttpResponse<String> response) {
+    ObjectMapper mapper = new ObjectMapper().configure(
+        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).configure(
+        DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
+    try {
+      JsonNode node = mapper.readTree(response.body()).at("/response/docs");
+      List<TibTerm> terms = new ArrayList<>();
+      for (JsonNode currentNode : node) {
+        terms.add(mapper.treeToValue(currentNode, TibTerm.class));
+      }
+      return terms;
+    } catch (JsonProcessingException e) {
+      throw wrapProcessingException(e);
+    }
+  }
+}
+
+

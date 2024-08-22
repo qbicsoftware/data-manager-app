@@ -59,7 +59,8 @@ import life.qbic.datamanager.views.projects.project.samples.SampleInformationMai
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -90,7 +91,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
   private final SampleInformationService sampleInformationService;
-  private final transient OntologyLookupService ontologyTermInformationService;
+  private final transient SpeciesLookupService ontologyTermInformationService;
   private final Div content = new Div();
   private final Div header = new Div();
   private final Span title = new Span();
@@ -105,6 +106,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
   private final DeletionService deletionService;
+  private final TerminologyService terminologyService;
   private Context context;
   private int experimentalGroupCount;
 
@@ -113,7 +115,8 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired DeletionService deletionService,
-      @Autowired OntologyLookupService ontologyTermInformationService) {
+      @Autowired SpeciesLookupService ontologyTermInformationService,
+      TerminologyService terminologyService) {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
     this.deletionService = Objects.requireNonNull(deletionService);
@@ -124,6 +127,7 @@ public class ExperimentDetailsComponent extends PageArea {
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
+    this.terminologyService = terminologyService;
   }
 
   private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
@@ -131,7 +135,7 @@ public class ExperimentDetailsComponent extends PageArea {
       Span ontology = new Span();
       Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
       /*Ontology terms are delimited by a column, the underscore is only used in the web environment*/
-      String ontologyLinkName = ontologyClassDTO.getName().replace("_", ":");
+      String ontologyLinkName = ontologyClassDTO.getOboId().replace("_", ":");
       Span ontologyLink = new Span(ontologyLinkName);
       ontologyLink.addClassName("ontology-link");
       Anchor ontologyClassIri = new Anchor(ontologyClassDTO.getClassIri(), ontologyLink);
@@ -218,7 +222,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
     optionalExperiment.ifPresent(experiment -> {
       EditExperimentDialog editExperimentDialog = new EditExperimentDialog(
-          ontologyTermInformationService);
+          ontologyTermInformationService, terminologyService);
 
       ExperimentDraft experimentDraft = new ExperimentDraft();
       experimentDraft.setExperimentName(experiment.getName());

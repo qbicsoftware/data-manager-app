@@ -9,7 +9,7 @@ import life.qbic.application.commons.SortOrder;
  *
  * @since 1.0.0
  */
-public interface OntologyLookupInterface {
+public interface SpeciesLookupInterface {
 
   record OntologyCurie(String curie) {
 

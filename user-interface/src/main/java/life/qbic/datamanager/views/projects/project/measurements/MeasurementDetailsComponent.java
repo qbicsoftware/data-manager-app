@@ -106,7 +106,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   /**
-   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to query the
+   * Provides the {@link ExperimentId} to the {@link GridLazyDataView}s to search the
    * {@link MeasurementMetadata} shown in the grids of this component
    *
    * @param context Context with the projectId and experimentId containing the samples for which
@@ -390,7 +390,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
     return new ComponentRenderer<>(instrument -> {
       Span instrumentLabel = new Span(instrument.getLabel());
-      Span instrumentOntologyLink = new Span(instrument.getName().replace("_", ":"));
+      Span instrumentOntologyLink = new Span(instrument.getOboId().replace("_", ":"));
       instrumentOntologyLink.addClassName("ontology-link");
       Anchor instrumentNameAnchor = new Anchor(instrument.getClassIri(), instrumentOntologyLink);
       instrumentNameAnchor.setTarget(AnchorTarget.BLANK);
