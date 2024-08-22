@@ -50,7 +50,6 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       "ms",  // PSI Mass Spectrometry Ontology
       "ncit", // National Cancer Institute Thesaurus
       "po" // Plant Ontology
-
   );
 
   private final URI selectEndpointAbsoluteUrl;
