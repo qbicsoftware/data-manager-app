@@ -71,7 +71,7 @@ public final class Toast extends Notification {
   }
 
   /**
-   * Sets whether toasts are closed after navigation. By default, Toasts no not stay open after
+   * Sets whether toasts are closed after navigation. By default, Toasts do not stay open after
    * navigation.
    *
    * @param close whether to close the toast notification on navigation or not. true - closes the
