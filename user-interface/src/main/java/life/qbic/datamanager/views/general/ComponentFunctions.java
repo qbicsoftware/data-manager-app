@@ -10,7 +10,7 @@ public class ComponentFunctions {
   }
 
   /**
-   * Navigates up through the tree and checks whether the potential parent is an actual parent of
+   * Navigates up through the tree and checks whether the potential parent is an actual ancestor of
    * the other component.
    *
    * @param potentialParent the component suspected to be a parent of the other component
