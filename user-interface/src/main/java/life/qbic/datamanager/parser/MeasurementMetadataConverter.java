@@ -23,14 +23,16 @@ public interface MeasurementMetadataConverter {
    *   <li>Proteomics Measurement Metadata {@link life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata}</li>
    * </ul>
    *
-   * @param parsingResult the parsing result to take as input for the conversion.
+   * @param parsingResult       the parsing result to take as input for the conversion.
+   * @param ignoreMeasurementId weather to ignore the measurement identifier or not
    * @return a list of converted implementations of {@link MeasurementMetadata}.
    * @throws UnknownMetadataTypeException if no matching implementation of
    *                                      {@link MeasurementMetadata} can be associated from the
    *                                      provided {@link ParsingResult#keys()}.
    * @since 1.4.0
    */
-  List<? extends MeasurementMetadata> convert(ParsingResult parsingResult)
+  List<? extends MeasurementMetadata> convert(ParsingResult parsingResult,
+      boolean ignoreMeasurementId)
       throws UnknownMetadataTypeException;
 
   class UnknownMetadataTypeException extends RuntimeException {

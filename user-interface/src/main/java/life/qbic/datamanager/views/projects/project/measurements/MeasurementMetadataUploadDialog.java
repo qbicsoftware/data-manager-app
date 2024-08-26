@@ -37,9 +37,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.IntStream;
-import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.parser.MeasurementMetadataConverter.UnknownMetadataTypeException;
 import life.qbic.datamanager.parser.MetadataConverter;
@@ -148,135 +145,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
   }
 
-  private static boolean isRowNotEmpty(String row) {
-    return row.split("\t").length > 0;
-  }
-
-  private static Result<NGSMeasurementMetadata, String> generateNGSRequest(
-      String row, Map<String, Integer> columns) {
-    var columnValues = row.split("\t"); // tab separated values
-    // we consider an empty row as a reason to warn, not to fail
-    if (columnValues.length == 0) {
-      return Result.fromValue(null);
-    }
-
-    Integer measurementIdIndex = columns.getOrDefault(MeasurementProperty.MEASUREMENT_ID.label(),
-        -1);
-    Integer sampleCodeColumnIndex = columns.get(NGS_PROPERTY.QBIC_SAMPLE_ID.label());
-    Integer organisationColumnIndex = columns.get(NGS_PROPERTY.ORGANISATION_ID.label());
-    Integer instrumentColumnIndex = columns.get(NGS_PROPERTY.INSTRUMENT.label());
-    Integer facilityIndex = columns.get(NGS_PROPERTY.FACILITY.label());
-    Integer readTypeIndex = columns.get(NGS_PROPERTY.SEQUENCING_READ_TYPE.label());
-    Integer libraryKitIndex = columns.get(NGS_PROPERTY.LIBRARY_KIT.label());
-    Integer flowCellIndex = columns.get(NGS_PROPERTY.FLOW_CELL.label());
-    Integer runProtocolIndex = columns.get(NGS_PROPERTY.SEQUENCING_RUN_PROTOCOL.label());
-    Integer samplePoolIndex = columns.get(NGS_PROPERTY.SAMPLE_POOL_GROUP.label());
-    Integer indexI7Index = columns.get(NGS_PROPERTY.INDEX_I7.label());
-    Integer indexI5Index = columns.get(NGS_PROPERTY.INDEX_I5.label());
-    Integer commentIndex = columns.get(NGS_PROPERTY.COMMENT.label());
-
-    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex,
-            organisationColumnIndex,
-            instrumentColumnIndex)
-        .max().orElseThrow();
-    if (columns.size() <= maxPropertyIndex) {
-      return Result.fromError("Not enough columns provided for row: %s".formatted(row));
-    }
-
-    String measurementId = safeArrayAccess(columnValues, measurementIdIndex).orElse("");
-    List<SampleCode> sampleCodes = List.of(
-        SampleCode.create(safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse("")));
-
-    String organisationRoRId = safeArrayAccess(columnValues, organisationColumnIndex).orElse("");
-    String instrumentCURIE = safeArrayAccess(columnValues, instrumentColumnIndex).orElse("");
-    String facility = safeArrayAccess(columnValues, facilityIndex).orElse("");
-    String readType = safeArrayAccess(columnValues, readTypeIndex).orElse("");
-    String libraryKit = safeArrayAccess(columnValues, libraryKitIndex).orElse("");
-    String flowCell = safeArrayAccess(columnValues, flowCellIndex).orElse("");
-    String runProtocol = safeArrayAccess(columnValues, runProtocolIndex).orElse("");
-    String samplePool = safeArrayAccess(columnValues, samplePoolIndex).orElse("");
-    String indexI7 = safeArrayAccess(columnValues, indexI7Index).orElse("");
-    String indexI5 = safeArrayAccess(columnValues, indexI5Index).orElse("");
-    String comment = safeArrayAccess(columnValues, commentIndex).orElse("");
-    NGSMeasurementMetadata metadata = new NGSMeasurementMetadata(measurementId, sampleCodes,
-        organisationRoRId, instrumentCURIE, facility, readType,
-        libraryKit, flowCell, runProtocol, samplePool, indexI7, indexI5, comment);
-    return Result.fromValue(metadata);
-  }
-
-  private static Result<ProteomicsMeasurementMetadata, String> generatePxPRequest(
-      String row, Map<String, Integer> columns) {
-    var columnValues = row.split("\t"); // tab separated values
-    // we consider an empty row as a reason to warn, not to fail
-    if (columnValues.length == 0) {
-      return Result.fromValue(null);
-    }
-
-    Integer measurementIdIndex = columns.getOrDefault(MeasurementProperty.MEASUREMENT_ID.label(),
-        -1);
-    Integer sampleCodeColumnIndex = columns.get(PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
-    Integer organisationColumnIndex = columns.get(PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
-    Integer instrumentColumnIndex = columns.get(PROTEOMICS_PROPERTY.INSTRUMENT.label());
-    Integer samplePoolGroupIndex = columns.get(PROTEOMICS_PROPERTY.SAMPLE_POOL_GROUP.label());
-    Integer facilityIndex = columns.get(PROTEOMICS_PROPERTY.FACILITY.label());
-    Integer fractionNameIndex = columns.get(PROTEOMICS_PROPERTY.CYCLE_FRACTION_NAME.label());
-    Integer digestionEnzymeIndex = columns.get(PROTEOMICS_PROPERTY.DIGESTION_ENZYME.label());
-    Integer digestionMethodIndex = columns.get(PROTEOMICS_PROPERTY.DIGESTION_METHOD.label());
-    Integer enrichmentMethodIndex = columns.get(PROTEOMICS_PROPERTY.ENRICHMENT_METHOD.label());
-    Integer injectionVolumeIndex = columns.get(PROTEOMICS_PROPERTY.INJECTION_VOLUME.label());
-    Integer lcColumnIndex = columns.get(PROTEOMICS_PROPERTY.LC_COLUMN.label());
-    Integer lcmsMethodIndex = columns.get(PROTEOMICS_PROPERTY.LCMS_METHOD.label());
-    Integer labelingTypeIndex = columns.get(PROTEOMICS_PROPERTY.LABELING_TYPE.label());
-    Integer labelIndex = columns.get(PROTEOMICS_PROPERTY.LABEL.label());
-    Integer noteIndex = columns.get(PROTEOMICS_PROPERTY.COMMENT.label());
-
-    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex,
-            organisationColumnIndex,
-            instrumentColumnIndex)
-        .max().orElseThrow();
-    if (columns.size() <= maxPropertyIndex) {
-      return Result.fromError("Not enough columns provided for row: %s".formatted(row));
-    }
-
-    String measurementId = safeArrayAccess(columnValues, measurementIdIndex).orElse("");
-    SampleCode sampleCode = SampleCode.create(
-        safeArrayAccess(columnValues, sampleCodeColumnIndex).orElse(""));
-    String organisationRoRId = safeArrayAccess(columnValues, organisationColumnIndex).orElse("");
-    String instrumentCURIE = safeArrayAccess(columnValues, instrumentColumnIndex).orElse("");
-    String samplePoolGroup = safeArrayAccess(columnValues, samplePoolGroupIndex).orElse("");
-    String facility = safeArrayAccess(columnValues, facilityIndex).orElse("");
-    String fractionName = safeArrayAccess(columnValues, fractionNameIndex).orElse("");
-    String digestionEnzyme = safeArrayAccess(columnValues, digestionEnzymeIndex).orElse("");
-    String digestionMethod = safeArrayAccess(columnValues, digestionMethodIndex).orElse("");
-    String enrichmentMethod = safeArrayAccess(columnValues, enrichmentMethodIndex).orElse("");
-    String injectionVolume = safeArrayAccess(columnValues, injectionVolumeIndex).orElse("");
-    String lcColumn = safeArrayAccess(columnValues, lcColumnIndex).orElse("");
-    String lcmsMethod = safeArrayAccess(columnValues, lcmsMethodIndex).orElse("");
-    String labelingType = safeArrayAccess(columnValues, labelingTypeIndex).orElse("");
-    String label = safeArrayAccess(columnValues, labelIndex).orElse("");
-    String note = safeArrayAccess(columnValues, noteIndex).orElse("");
-
-    ProteomicsMeasurementMetadata metadata = new ProteomicsMeasurementMetadata(measurementId,
-        sampleCode,
-        organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
-        digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
-        new Labeling(labelingType, label), note);
-    return Result.fromValue(metadata);
-  }
-
-  private static List<SampleCode> parseSampleCode(String sampleCodeEntry) {
-    return Arrays.stream(sampleCodeEntry.split(",")).map(SampleCode::create).toList();
-  }
-
-  private static Optional<String> safeArrayAccess(String[] array, int index) {
-    try {
-      return Optional.of(array[index]);
-    } catch (ArrayIndexOutOfBoundsException e) {
-      return Optional.empty();
-    }
-  }
-
   private void setModeBasedLabels() {
     switch (mode) {
       case ADD -> {
@@ -341,10 +209,12 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
     List<MeasurementMetadata> result;
     try {
-      result = MetadataConverter.measurementConverter().convert(parseResult);
+      result = MetadataConverter.measurementConverter().convert(parseResult, mode.equals(MODE.ADD));
     } catch (
         UnknownMetadataTypeException e) { // we want to display this in the dialog, not via the notification system
-      throw new ApplicationException(e, ErrorCode.UNKNOWN_METADATA, ErrorParameters.empty());
+      displayError(succeededEvent.getFileName(),
+          "Unknown metadata file content. Please make sure to include all metadata properties, even the optional ones");
+      return;
     }
 
     var validationReport = validate(result);
@@ -363,45 +233,21 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     }
   }
 
+  private void displayError(String fileName, String reason) {
+    MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload<>(
+        fileName, Collections.emptyList());
+    MeasurementFileItem measurementFileItem = new MeasurementFileItem(
+        fileName,
+        new MeasurementValidationReport(1, ValidationResult.withFailures(1, List.of(
+            reason))));
+    addFile(measurementFileItem, metadataUpload);
+  }
+
   private void addFile(MeasurementFileItem measurementFileItem,
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload) {
     measurementMetadataUploads.add(metadataUpload);
     measurementFileItems.add(measurementFileItem);
     showFile(measurementFileItem);
-  }
-
-  private List<NGSMeasurementMetadata> generateNGSMetadata(
-      MetadataContent content) {
-    var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-
-    var results = content.rows().stream()
-        .map(row -> generateNGSRequest(row, propertyColumnMap))
-        .toList();
-    if (results.stream().anyMatch(Result::isError)) {
-      return new ArrayList<>();
-    }
-    return results.stream()
-        .filter(Result::isValue)
-        .map(Result::getValue)
-        .filter(Objects::nonNull)
-        .toList();
-  }
-
-  private List<ProteomicsMeasurementMetadata> generatePxPMetadata(
-      MetadataContent content) {
-    var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-
-    var results = content.rows().stream()
-        .map(row -> generatePxPRequest(row, propertyColumnMap))
-        .toList();
-    if (results.stream().anyMatch(Result::isError)) {
-      return new ArrayList<>();
-    }
-    return results.stream()
-        .filter(Result::isValue)
-        .map(Result::getValue)
-        .filter(Objects::nonNull)
-        .toList();
   }
 
   private MeasurementValidationReport validateNGS(List<NGSMeasurementMetadata> content) {
@@ -443,156 +289,10 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   private CompletableFuture<ValidationResult> validatePxpMetaDatum(
       ProteomicsMeasurementMetadata metaDatum) {
-    var proteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
+    MeasurementValidationExecutor<ProteomicsMeasurementMetadata> proteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
         measurementValidationService);
     return generateModeDependentValidationResult(
         proteomicsValidationExecutor, metaDatum);
-  }
-
-  private CompletableFuture<ValidationResult> validateNGSRow(Map<String, Integer> propertyColumnMap,
-      String row) {
-    var validationResult = ValidationResult.successful(0);
-    var metaDataValues = row.split("\t"); // tab separated values
-    // we consider an empty row as a reason to warn, not to fail
-    if (metaDataValues.length == 0) {
-      validationResult.combine(
-          ValidationResult.successful(1, List.of("Empty row provided.")));
-      return CompletableFuture.supplyAsync(() -> validationResult);
-    }
-    if (metaDataValues.length != propertyColumnMap.keySet().size()) {
-      validationResult.combine(ValidationResult.withFailures(1, List.of("")));
-    }
-    var measurementIdIndex = propertyColumnMap.getOrDefault(
-        MeasurementProperty.MEASUREMENT_ID.label(), -1);
-    var sampleCodeColumnIndex = propertyColumnMap.get(
-        NGS_PROPERTY.QBIC_SAMPLE_ID.label());
-    var organisationsColumnIndex = propertyColumnMap.get(
-        NGS_PROPERTY.ORGANISATION_ID.label());
-    var facilityIndex = propertyColumnMap.get(NGS_PROPERTY.FACILITY.label());
-    var instrumentColumnIndex = propertyColumnMap.get(
-        NGS_PROPERTY.INSTRUMENT.label());
-    var sequencingReadTypeIndex = propertyColumnMap.get(
-        NGS_PROPERTY.SEQUENCING_READ_TYPE.label());
-    var libraryKitIndex = propertyColumnMap.get(
-        NGS_PROPERTY.LIBRARY_KIT.label());
-    var flowCellIndex = propertyColumnMap.get(
-        NGS_PROPERTY.FLOW_CELL.label());
-    var sequencingRunProtocolIndex = propertyColumnMap.get(
-        NGS_PROPERTY.SEQUENCING_RUN_PROTOCOL.label());
-    var samplePoolIndex = propertyColumnMap.get(
-        NGS_PROPERTY.SAMPLE_POOL_GROUP.label());
-    var indexI7Index = propertyColumnMap.get(
-        NGS_PROPERTY.INDEX_I7.label());
-    var indexI5Index = propertyColumnMap.get(
-        NGS_PROPERTY.INDEX_I5.label());
-    Integer commentIndex = propertyColumnMap.get(NGS_PROPERTY.COMMENT.label());
-    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
-        instrumentColumnIndex).max().orElseThrow();
-    if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return CompletableFuture.supplyAsync(
-          () -> validationResult.combine(ValidationResult.withFailures(1,
-              List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
-    }
-    var measurementId = safeArrayAccess(metaDataValues, measurementIdIndex).orElse("");
-    var sampleCodes = SampleCode.create(
-        safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
-    var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
-    var instrumentCURIE = safeArrayAccess(metaDataValues, instrumentColumnIndex).orElse("");
-    var facility = safeArrayAccess(metaDataValues, facilityIndex).orElse("");
-    var sequencingReadType = safeArrayAccess(metaDataValues, sequencingReadTypeIndex).orElse("");
-    var libraryKit = safeArrayAccess(metaDataValues, libraryKitIndex).orElse("");
-    var flowCell = safeArrayAccess(metaDataValues, flowCellIndex).orElse("");
-    var sequencingRunProtocol = safeArrayAccess(metaDataValues, sequencingRunProtocolIndex).orElse(
-        "");
-    var samplePoolGroup = safeArrayAccess(metaDataValues, samplePoolIndex).orElse("");
-    var indexI7 = safeArrayAccess(metaDataValues, indexI7Index).orElse("");
-    var indexI5 = safeArrayAccess(metaDataValues, indexI5Index).orElse("");
-    var comment = safeArrayAccess(metaDataValues, commentIndex).orElse("");
-
-    var metadata = new NGSMeasurementMetadata(measurementId, List.of(sampleCodes),
-        organisationRoRId, instrumentCURIE, facility, sequencingReadType,
-        libraryKit, flowCell, sequencingRunProtocol, samplePoolGroup, indexI7, indexI5, comment);
-    var measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
-        measurementValidationService);
-    return generateModeDependentValidationResult(
-        measurementNGSValidationExecutor, metadata);
-  }
-
-  private CompletableFuture<ValidationResult> validatePxPRow(Map<String, Integer> propertyColumnMap,
-      String row) {
-    var validationResult = ValidationResult.successful(0);
-    var metaDataValues = row.split("\t"); // tab separated values
-    // we consider an empty row as a reason to warn, not to fail
-    if (metaDataValues.length == 0) {
-      validationResult.combine(
-          ValidationResult.successful(1, List.of("Empty row provided.")));
-      return CompletableFuture.supplyAsync(() -> validationResult);
-    }
-    if (metaDataValues.length != propertyColumnMap.keySet().size()) {
-      validationResult.combine(ValidationResult.withFailures(1, List.of("")));
-    }
-
-    var measurementIdIndex = propertyColumnMap.getOrDefault(
-        MeasurementProperty.MEASUREMENT_ID.label(), -1);
-    var sampleCodeColumnIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.QBIC_SAMPLE_ID.label());
-    var organisationsColumnIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.ORGANISATION_ID.label());
-    var instrumentColumnIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.INSTRUMENT.label());
-    var samplePoolGroupIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.SAMPLE_POOL_GROUP.label());
-    var facilityIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.FACILITY.label());
-    var fractionNameIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.CYCLE_FRACTION_NAME.label());
-    var digestionEnzymeIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.DIGESTION_ENZYME.label());
-    var digestionMethodIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.DIGESTION_METHOD.label());
-    Integer enrichmentMethodIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.ENRICHMENT_METHOD.label());
-    Integer injectionVolumeIndex = propertyColumnMap.get(
-        PROTEOMICS_PROPERTY.INJECTION_VOLUME.label());
-    Integer lcColumnIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LC_COLUMN.label());
-    Integer lcmsMethodIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LCMS_METHOD.label());
-    Integer labelingTypeIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LABELING_TYPE.label());
-    Integer labelIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.LABEL.label());
-    Integer noteIndex = propertyColumnMap.get(PROTEOMICS_PROPERTY.COMMENT.label());
-
-    int maxPropertyIndex = IntStream.of(sampleCodeColumnIndex, organisationsColumnIndex,
-        instrumentColumnIndex).max().orElseThrow();
-    if (propertyColumnMap.size() <= maxPropertyIndex) {
-      return CompletableFuture.completedFuture(
-          validationResult.combine(ValidationResult.withFailures(1,
-              List.of("Not enough columns provided for row: \"%s\"".formatted(row)))));
-    }
-
-    var measurementId = safeArrayAccess(metaDataValues, measurementIdIndex).orElse("");
-    var sampleCode = SampleCode.create(
-        safeArrayAccess(metaDataValues, sampleCodeColumnIndex).orElse(""));
-    var organisationRoRId = safeArrayAccess(metaDataValues, organisationsColumnIndex).orElse("");
-    var instrumentCURIE = safeArrayAccess(metaDataValues, instrumentColumnIndex).orElse("");
-    var samplePoolGroup = safeArrayAccess(metaDataValues, samplePoolGroupIndex).orElse("");
-    var facility = safeArrayAccess(metaDataValues, facilityIndex).orElse("");
-    var fractionName = safeArrayAccess(metaDataValues, fractionNameIndex).orElse("");
-    var digestionEnzyme = safeArrayAccess(metaDataValues, digestionEnzymeIndex).orElse("");
-    var digestionMethod = safeArrayAccess(metaDataValues, digestionMethodIndex).orElse("");
-    var enrichmentMethod = safeArrayAccess(metaDataValues, enrichmentMethodIndex).orElse("");
-    var injectionVolume = safeArrayAccess(metaDataValues, injectionVolumeIndex).orElse("");
-    var lcColumn = safeArrayAccess(metaDataValues, lcColumnIndex).orElse("");
-    var lcmsMethod = safeArrayAccess(metaDataValues, lcmsMethodIndex).orElse("");
-    var labelingType = safeArrayAccess(metaDataValues, labelingTypeIndex).orElse("");
-    var label = safeArrayAccess(metaDataValues, labelIndex).orElse("");
-
-    var note = safeArrayAccess(metaDataValues, noteIndex).orElse("");
-
-    var metadata = new ProteomicsMeasurementMetadata(measurementId, sampleCode,
-        organisationRoRId, instrumentCURIE, samplePoolGroup, facility, fractionName,
-        digestionEnzyme,
-        digestionMethod, enrichmentMethod, injectionVolume, lcColumn, lcmsMethod,
-        new Labeling(labelingType, label), note);
-    var measurementProteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
-        measurementValidationService);
-    var finalValidationResult = generateModeDependentValidationResult(
-        measurementProteomicsValidationExecutor, metadata);
-    return finalValidationResult;
   }
 
   private CompletableFuture<ValidationResult> generateModeDependentValidationResult(

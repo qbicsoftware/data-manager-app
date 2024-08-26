@@ -91,13 +91,13 @@ public class MetadataConverter implements MeasurementMetadataConverter {
   }
 
   @Override
-  public List<MeasurementMetadata> convert(ParsingResult parsingResult)
+  public List<MeasurementMetadata> convert(ParsingResult parsingResult, boolean ignoreMeasurementId)
       throws UnknownMetadataTypeException {
     Objects.requireNonNull(parsingResult);
     var properties = parsingResult.keys().keySet();
-    if (looksLikeNgsMeasurement(properties)) {
+    if (looksLikeNgsMeasurement(properties, ignoreMeasurementId)) {
       return convertNGSMeasurement(parsingResult);
-    } else if (looksLikeProteomicsMeasurement(properties)) {
+    } else if (looksLikeProteomicsMeasurement(properties, ignoreMeasurementId)) {
       return convertProteomicsMeasurement(parsingResult);
     } else {
       throw new UnknownMetadataTypeException(
@@ -139,19 +139,34 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     throw new RuntimeException("not implemented yet");
   }
 
-  private boolean looksLikeNgsMeasurement(Collection<String> properties) {
-    var confirmedProperties = 0;
-    for (String property : properties) {
-      if (NGSMeasurementProperty.fromStringTrailingIgnored(property).isPresent()) {
-        confirmedProperties++;
+  private boolean looksLikeNgsMeasurement(Collection<String> properties, boolean ignoreID) {
+    var formattedProperties = properties.stream().map(String::toLowerCase).collect(Collectors.toList());
+    if (ignoreID) {
+      formattedProperties.remove(MEASUREMENT_ID.propertyName());
+    }
+    var hitMap = countHits(formattedProperties,
+        Arrays.stream(NGSMeasurementProperty.values())
+            .map(NGSMeasurementProperty::propertyName).collect(
+                Collectors.toSet()));
+    var missingProperties = new ArrayList<>();
+    for (Entry<String, Integer> entry : hitMap.entrySet()) {
+      if (entry.getValue() == 0) {
+        missingProperties.add(entry.getKey());
       }
     }
-    return confirmedProperties == properties.size();
+    if (missingProperties.isEmpty()) {
+      return true;
+    } else {
+      log.debug("Missing properties for NGS measurement: %s".formatted(missingProperties));
+    }
+    return false;
   }
 
-  private boolean looksLikeProteomicsMeasurement(Collection<String> properties) {
-    var formattedProperties = properties.stream().map(String::toLowerCase).toList();
-    var hitMap = countHits(formattedProperties,
+  private boolean looksLikeProteomicsMeasurement(Collection<String> properties, boolean ignoreID) {
+    var formattedProperties = properties.stream().map(String::toLowerCase).collect(Collectors.toList());
+    if (ignoreID) {
+      formattedProperties.remove(MEASUREMENT_ID.propertyName());
+    }var hitMap = countHits(formattedProperties,
         Arrays.stream(ProteomicsMeasurementProperty.values())
             .map(ProteomicsMeasurementProperty::propertyName).collect(
                 Collectors.toSet()));
