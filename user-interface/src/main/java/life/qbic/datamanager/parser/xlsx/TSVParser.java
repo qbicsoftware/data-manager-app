@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import life.qbic.datamanager.parser.MetadataParser;
 import life.qbic.datamanager.parser.ParsingResult;
 
@@ -45,9 +46,9 @@ public class TSVParser implements MetadataParser {
 
   @Override
   public ParsingResult parse(InputStream inputStream) {
-    var content = new ArrayList<String>();
+    List<String> content;
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream,  StandardCharsets.UTF_16))) {
-      content = (ArrayList<String>) reader.lines().toList();
+      content = reader.lines().toList();
     } catch (IOException e) {
       throw new ParsingException("Cannot read from input stream", e);
     }
@@ -58,7 +59,11 @@ public class TSVParser implements MetadataParser {
 
     var header = content.get(0).split(VALUE_SEPARATOR);
     for (int i = 0; i < header.length; i++) {
-      keyMap.put(header[i], i);
+      if (headerToLowerCase) {
+        keyMap.put(header[i].toLowerCase(), i);
+      } else {
+        keyMap.put(header[i], i);
+      }
     }
 
     var values = firstRowIsHeader ? content.subList(1, content.size()) : content;
@@ -68,10 +73,17 @@ public class TSVParser implements MetadataParser {
       var row = iterator.next().split(VALUE_SEPARATOR);
       String[] rowData = new String[header.length];
       for (Entry<String, Integer> key : keyMap.entrySet()) {
-        rowData[key.getValue()] = row[key.getValue()];
+        rowData[key.getValue()] = safeAccess(row, key.getValue()).orElse("");
       }
       rows.add(Arrays.stream(rowData).toList());
     }
     return new ParsingResult(keyMap, rows);
+  }
+
+  private static Optional<String> safeAccess(String[] array, Integer index) {
+    if (index >= array.length) {
+      return Optional.empty();
+    }
+    return Optional.of(array[index]);
   }
 }

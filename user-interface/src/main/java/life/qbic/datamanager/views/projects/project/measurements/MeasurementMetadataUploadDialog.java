@@ -88,8 +88,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
     Upload upload = new Upload(uploadBuffer);
-    upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain");
-    upload.setAcceptedFileTypes(
+    upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
     setModeBasedLabels();
@@ -184,15 +183,17 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     ParsingResult parsingResult;
     if (fileName.endsWith(".xlsx")) {
       parsingResult = parseXLSX(uploadBuffer.inputStream(fileName).orElseThrow());
-    } else if (fileName.endsWith(".tsv")) {
+    } else if (fileName.endsWith(".tsv") || fileName.endsWith(".txt")) {
       parsingResult = parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
     } else {
-      displayError(succeededEvent.getFileName(), "Unsupported file type. Please make sure to upload a TSV or XLSX file.");
+      displayError(succeededEvent.getFileName(),
+          "Unsupported file type. Please make sure to upload a TSV or XLSX file.");
       return;
     }
     List<MeasurementMetadata> result;
     try {
-      result = MetadataConverter.measurementConverter().convert(parsingResult, mode.equals(MODE.ADD));
+      result = MetadataConverter.measurementConverter()
+          .convert(parsingResult, mode.equals(MODE.ADD));
     } catch (
         UnknownMetadataTypeException e) { // we want to display this in the dialog, not via the notification system
       displayError(succeededEvent.getFileName(),
@@ -521,12 +522,12 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       uploadSectionTitle.addClassName("section-title");
 
       var saveYourFileInfo = new InfoBox().setInfoText(
-              "Please save your excel file as UTF-16 Unicode Text (*.txt) before uploading.")
+              "Please save your Excel file as UTF-16 Unicode Text (*.txt) before uploading.")
           .setClosable(false);
 
       var restrictions = new Div();
       restrictions.addClassName("restrictions");
-      restrictions.add(new Span("Supported file formats: .txt, .tsv"));
+      restrictions.add(new Span("Supported file formats: .txt, .tsv, .xlsx"));
       restrictions.add(
           "Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / Math.pow(1024, 2)));
 
