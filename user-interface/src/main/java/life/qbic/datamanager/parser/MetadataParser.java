@@ -3,22 +3,17 @@ package life.qbic.datamanager.parser;
 import java.io.InputStream;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>Metadata Parser</b>
+ * <p>
+ * A generic interface to hide the details of input file formats to parse, and enables clients and
+ * downstream consumers to work with an intermediate abstraction of the content, which is contained
+ * in the {@link ParsingResult} object.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.4.0
  */
 public interface MetadataParser {
 
   ParsingResult parse(InputStream inputStream);
-
-  class UnknownDomainException extends RuntimeException {
-
-    public UnknownDomainException(String message) {
-      super(message);
-    }
-  }
 
   class UnknownPropertiesException extends RuntimeException {
 
@@ -28,6 +23,7 @@ public interface MetadataParser {
   }
 
   class ParsingException extends RuntimeException {
+
     public ParsingException(String message, Throwable cause) {
       super(message, cause);
     }
