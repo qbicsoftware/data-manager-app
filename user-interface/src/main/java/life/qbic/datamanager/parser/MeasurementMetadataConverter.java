@@ -4,11 +4,12 @@ import java.util.List;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>Measurement Metadata Converter</b>
+ * <p>
+ * Measurement metadata converter enable the client to process a {@link ParsingResult} object and
+ * convert them into known implementations of the {@link MeasurementMetadata} interface.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.4.0
  */
 public interface MeasurementMetadataConverter {
 

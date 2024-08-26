@@ -20,27 +20,20 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.DomEvent;
 import com.vaadin.flow.shared.Registration;
 import elemental.json.JsonObject;
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serial;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.stream.IntStream;
-import life.qbic.application.commons.Result;
 import life.qbic.datamanager.parser.MeasurementMetadataConverter.UnknownMetadataTypeException;
 import life.qbic.datamanager.parser.MetadataConverter;
 import life.qbic.datamanager.parser.ParsingResult;
+import life.qbic.datamanager.parser.xlsx.TSVParser;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.InfoBox;
@@ -48,17 +41,13 @@ import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
-import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementNGSValidator.NGS_PROPERTY;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.util.StringUtils;
 
 
@@ -123,28 +112,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   }
 
-  private static List<String> parseHeaderContent(String header) {
-    return Arrays.stream(header.replace("*", "").strip().split("\t")).map(String::strip).toList();
-  }
-
-  private static Map<String, Integer> propertyColumnMap(List<String> properties) {
-    var propertyIterator = properties.listIterator();
-    Map<String, Integer> map = new HashMap<>();
-    int index;
-    while ((index = propertyIterator.nextIndex()) < properties.size()) {
-      map.put(propertyIterator.next().toLowerCase(), index);
-    }
-    return map;
-  }
-
-  private static MetadataContent read(InputStream inputStream) {
-    var content = new BufferedReader(
-        new InputStreamReader(inputStream, StandardCharsets.UTF_16)).lines().toList();
-
-    return new MetadataContent(content.isEmpty() ? null : content.get(0),
-        content.size() > 1 ? content.subList(1, content.size()) : new ArrayList<>());
-  }
-
   private void setModeBasedLabels() {
     switch (mode) {
       case ADD -> {
@@ -204,12 +171,28 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     return validatePxP((List<ProteomicsMeasurementMetadata>) metadata);
   }
 
+  private ParsingResult parseXLSX(InputStream inputStream) {
+    return XLSXParser.createWithHeaderToLowerCase(true).parse(inputStream);
+  }
+
+  private ParsingResult parseTSV(InputStream inputStream) {
+    return TSVParser.createWithHeaderToLowerCase(true).parse(inputStream);
+  }
+
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    ParsingResult parseResult = XLSXParser.createWithHeaderToLowerCase(true).parse(
-        uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
+    var fileName = succeededEvent.getFileName();
+    ParsingResult parsingResult;
+    if (fileName.endsWith(".xlsx")) {
+      parsingResult = parseXLSX(uploadBuffer.inputStream(fileName).orElseThrow());
+    } else if (fileName.endsWith(".tsv")) {
+      parsingResult = parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
+    } else {
+      displayError(succeededEvent.getFileName(), "Unsupported file type. Please make sure to upload a TSV or XLSX file.");
+      return;
+    }
     List<MeasurementMetadata> result;
     try {
-      result = MetadataConverter.measurementConverter().convert(parseResult, mode.equals(MODE.ADD));
+      result = MetadataConverter.measurementConverter().convert(parsingResult, mode.equals(MODE.ADD));
     } catch (
         UnknownMetadataTypeException e) { // we want to display this in the dialog, not via the notification system
       displayError(succeededEvent.getFileName(),
