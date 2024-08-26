@@ -20,20 +20,36 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
- * TODO!
- * <b>short description</b>
+ * <b>XLSX parser implementation of the {@link MetadataParser} interface.</b>
+ * <p>
+ * Parses information from content following the XLSX format specification:
+ * <p>
+ * <a
+ * href="https://learn.microsoft.com/en-us/openspecs/office_standards/ms-xlsx/2c5dee00-eff2-4b22-92b6-0738acd4475e">
+ * https://learn.microsoft.com/en-us/openspecs/office_standards/ms-xlsx/2c5dee00-eff2-4b22-92b6-0738acd4475e</a>
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.4.0
  */
 public class XLSXParser implements MetadataParser {
 
-  public static XLSXParser create() {
-    return new XLSXParser();
-  }
+  private boolean headerToLowerCase = false;
+
+  private boolean firstRowIsHeader = true;
 
   private XLSXParser() {
+  }
+
+  private XLSXParser(boolean headerToLowerCase, boolean firstRowIsHeader) {
+    this.headerToLowerCase = headerToLowerCase;
+    this.firstRowIsHeader = firstRowIsHeader;
+  }
+
+  public static XLSXParser create(boolean firstRowIsHeader) {
+    return new XLSXParser(false, firstRowIsHeader);
+  }
+
+  public static XLSXParser createWithHeaderToLowerCase(boolean firstRowIsHeader) {
+    return new XLSXParser(true, firstRowIsHeader);
   }
 
   private static String readCellAsString(Cell cell) {
@@ -69,12 +85,16 @@ public class XLSXParser implements MetadataParser {
     Cell cell;
     while (cellIterator.hasNext()) {
       cell = cellIterator.next();
-      columns.put(readCellAsString(cell), cell.getColumnIndex());
+      var cellValue =
+          headerToLowerCase ? readCellAsString(cell).toLowerCase() : readCellAsString(cell);
+      columns.put(cellValue, cell.getColumnIndex());
     }
-
 
     Iterator<Row> rowIterator = metadataSheet.rowIterator();
     Row row;
+    if (firstRowIsHeader) {
+      rowIterator.next(); // skip the first entry, since it contains the header
+    }
     while (rowIterator.hasNext()) {
       row = rowIterator.next();
       String[] rowData = new String[columns.size()];

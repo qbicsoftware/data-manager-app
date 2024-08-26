@@ -37,7 +37,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.IntStream;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.parser.MeasurementMetadataConverter.UnknownMetadataTypeException;
 import life.qbic.datamanager.parser.MetadataConverter;
 import life.qbic.datamanager.parser.ParsingResult;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
@@ -321,22 +325,30 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     showErrorNotification("File upload was interrupted", failedEvent.getReason().getMessage());
   }
 
+  private MeasurementValidationReport validate(List<? extends MeasurementMetadata> metadata) {
+    if (metadata == null || metadata.isEmpty()) {
+      return new MeasurementValidationReport(0,
+          ValidationResult.withFailures(0, List.of("The metadata sheet seems to be empty")));
+    }
+    if (metadata.get(0) instanceof NGSMeasurementMetadata) {
+      return validateNGS((List<NGSMeasurementMetadata>) metadata);
+    }
+    return validatePxP((List<ProteomicsMeasurementMetadata>) metadata);
+  }
+
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
-    ParsingResult parseResult = XLSXParser.create().parse(
+    ParsingResult parseResult = XLSXParser.createWithHeaderToLowerCase(true).parse(
         uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
-    var result = MetadataConverter.create().convert(parseResult);
-    MetadataContent content = read(
-        uploadBuffer.inputStream(succeededEvent.getFileName()).orElseThrow());
-    var contentHeader = content.theHeader()
-        .orElseThrow(() -> new RuntimeException("No header row found"));
-    var domain = measurementValidationService.inferDomainByPropertyTypes(
-            parseHeaderContent(contentHeader))
-        .orElseThrow(() -> new RuntimeException(
-            "Header row could not be recognized, Please provide a valid template file"));
-    var validationReport = switch (domain) {
-      case PROTEOMICS -> validatePxP(content);
-      case NGS -> validateNGS(content);
-    };
+    List<MeasurementMetadata> result;
+    try {
+      result = MetadataConverter.measurementConverter().convert(parseResult);
+    } catch (
+        UnknownMetadataTypeException e) { // we want to display this in the dialog, not via the notification system
+      throw new ApplicationException(e, ErrorCode.UNKNOWN_METADATA, ErrorParameters.empty());
+    }
+
+    var validationReport = validate(result);
+
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(succeededEvent.getFileName(),
         validationReport);
     //We don't want to upload any invalid measurements in spreadsheet
@@ -345,12 +357,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
           succeededEvent.getFileName(), Collections.emptyList());
       addFile(measurementFileItem, metadataUpload);
     } else {
-      var measurementMetadata = switch (domain) {
-        case PROTEOMICS -> generatePxPMetadata(content);
-        case NGS -> generateNGSMetadata(content);
-      };
       MeasurementMetadataUpload<MeasurementMetadata> metadataUpload = new MeasurementMetadataUpload(
-          succeededEvent.getFileName(), measurementMetadata);
+          succeededEvent.getFileName(), result);
       addFile(measurementFileItem, metadataUpload);
     }
   }
@@ -396,24 +404,13 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         .toList();
   }
 
-  private MeasurementValidationReport validateNGS(MetadataContent content) {
+  private MeasurementValidationReport validateNGS(List<NGSMeasurementMetadata> content) {
     var validationResult = ValidationResult.successful(0);
-    var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-    // we check if there are any rows provided or if we have only rows with empty content
-    if (content.rows().isEmpty() || content.rows().stream()
-        .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
-      validationResult = validationResult.combine(
-          ValidationResult.withFailures(0,
-              List.of("The metadata sheet seems to be empty")));
-      return new MeasurementValidationReport(0, validationResult);
-    }
     ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
     List<CompletableFuture<Void>> tasks = new ArrayList<>();
-    for (String row : content.rows().stream()
-        .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      tasks.add(validateNGSRow(propertyColumnMap, row).thenAccept(concurrentLinkedDeque::add));
+    for (NGSMeasurementMetadata metaDatum : content) {
+      tasks.add(validateNGSMetaDatum(metaDatum).thenAccept(concurrentLinkedDeque::add));
     }
-
     CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
 
     return new MeasurementValidationReport(concurrentLinkedDeque.size(),
@@ -421,31 +418,35 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
             validationResult, ValidationResult::combine));
   }
 
-  private MeasurementValidationReport validatePxP(MetadataContent content) {
 
+  private MeasurementValidationReport validatePxP(List<ProteomicsMeasurementMetadata> content) {
     var validationResult = ValidationResult.successful(0);
-    var propertyColumnMap = propertyColumnMap(parseHeaderContent(content.header()));
-    // we check if there are any rows provided or if we have only rows with empty content
-    if (content.rows().isEmpty() || content.rows().stream()
-        .noneMatch(MeasurementMetadataUploadDialog::isRowNotEmpty)) {
-      validationResult = validationResult.combine(
-          ValidationResult.withFailures(0,
-              List.of("The metadata sheet seems to be empty")));
-      return new MeasurementValidationReport(0, validationResult);
-    }
-
     ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
     List<CompletableFuture<Void>> tasks = new ArrayList<>();
-    for (String row : content.rows().stream()
-        .filter(MeasurementMetadataUploadDialog::isRowNotEmpty).toList()) {
-      tasks.add(validatePxPRow(propertyColumnMap, row).thenAccept(concurrentLinkedDeque::add));
+    for (ProteomicsMeasurementMetadata metaDatum : content) {
+      tasks.add(validatePxpMetaDatum(metaDatum).thenAccept(concurrentLinkedDeque::add));
     }
-
     CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
 
     return new MeasurementValidationReport(concurrentLinkedDeque.size(),
         concurrentLinkedDeque.stream().reduce(
             validationResult, ValidationResult::combine));
+  }
+
+  private CompletableFuture<ValidationResult> validateNGSMetaDatum(
+      NGSMeasurementMetadata metaDatum) {
+    var measurementNGSValidationExecutor = new MeasurementNGSValidationExecutor(
+        measurementValidationService);
+    return generateModeDependentValidationResult(
+        measurementNGSValidationExecutor, metaDatum);
+  }
+
+  private CompletableFuture<ValidationResult> validatePxpMetaDatum(
+      ProteomicsMeasurementMetadata metaDatum) {
+    var proteomicsValidationExecutor = new MeasurementProteomicsValidationExecutor(
+        measurementValidationService);
+    return generateModeDependentValidationResult(
+        proteomicsValidationExecutor, metaDatum);
   }
 
   private CompletableFuture<ValidationResult> validateNGSRow(Map<String, Integer> propertyColumnMap,

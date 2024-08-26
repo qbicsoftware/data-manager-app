@@ -12,23 +12,32 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
  */
 public interface MeasurementMetadataConverter {
 
-
-  List<MeasurementMetadata> convert(ParsingResult parsingResult)
-      throws UnknownMetadataTypeException, IllegalMetadataException, MissingMetadataPropertyException;
+  /**
+   * Takes an instance of {@link ParsingResult} and tries to convert it to known implementations of
+   * the {@link MeasurementMetadata} interface.
+   * <p>
+   * Currently supported implementations are:
+   *
+   * <ul>
+   *   <li>NGS Measurement Metadata {@link life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata}</li>
+   *   <li>Proteomics Measurement Metadata {@link life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata}</li>
+   * </ul>
+   *
+   * @param parsingResult the parsing result to take as input for the conversion.
+   * @return a list of converted implementations of {@link MeasurementMetadata}.
+   * @throws UnknownMetadataTypeException if no matching implementation of
+   *                                      {@link MeasurementMetadata} can be associated from the
+   *                                      provided {@link ParsingResult#keys()}.
+   * @since 1.4.0
+   */
+  List<? extends MeasurementMetadata> convert(ParsingResult parsingResult)
+      throws UnknownMetadataTypeException;
 
   class UnknownMetadataTypeException extends RuntimeException {
+
     public UnknownMetadataTypeException(String message) {
       super(message);
     }
   }
-  class MissingMetadataPropertyException extends RuntimeException {
-    public MissingMetadataPropertyException(String message) {
-      super(message);
-    }
-  }
-  class IllegalMetadataException extends RuntimeException {
-    public IllegalMetadataException(String message) {
-      super(message);
-    }
-  }
+
 }
