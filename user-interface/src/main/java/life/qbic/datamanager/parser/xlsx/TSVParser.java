@@ -56,7 +56,7 @@ public class TSVParser implements MetadataParser {
    * @since 1.4.0
    */
   private static Optional<String> safeAccess(String[] array, Integer index) {
-    if (index >= array.length) {
+    if (index >= array.length || index < 0) {
       return Optional.empty();
     }
     return Optional.of(array[index]);
@@ -74,14 +74,14 @@ public class TSVParser implements MetadataParser {
     if (content.isEmpty()) {
       throw new ParsingException("No content provided!");
     }
-    var keyMap = new HashMap<String, Integer>();
+    var propertyToIndex = new HashMap<String, Integer>();
 
     var header = content.get(0).split(VALUE_SEPARATOR);
     for (int i = 0; i < header.length; i++) {
       if (headerToLowerCase) {
-        keyMap.put(header[i].toLowerCase(), i);
+        propertyToIndex.put(header[i].toLowerCase(), i);
       } else {
-        keyMap.put(header[i], i);
+        propertyToIndex.put(header[i], i);
       }
     }
 
@@ -91,11 +91,11 @@ public class TSVParser implements MetadataParser {
     while (iterator.hasNext()) {
       var row = iterator.next().split(VALUE_SEPARATOR);
       String[] rowData = new String[header.length];
-      for (Entry<String, Integer> key : keyMap.entrySet()) {
-        rowData[key.getValue()] = safeAccess(row, key.getValue()).orElse("");
+      for (Entry<String, Integer> propertyEntry : propertyToIndex.entrySet()) {
+        rowData[propertyEntry.getValue()] = safeAccess(row, propertyEntry.getValue()).orElse("");
       }
       rows.add(Arrays.stream(rowData).toList());
     }
-    return new ParsingResult(keyMap, rows);
+    return new ParsingResult(propertyToIndex, rows);
   }
 }

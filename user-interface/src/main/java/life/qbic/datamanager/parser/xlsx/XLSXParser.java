@@ -96,7 +96,7 @@ public class XLSXParser implements MetadataParser {
           "No properties have been found: did you provide a header row?");
     }
     List<List<String>> rows = new ArrayList<>();
-    Map<String, Integer> columns = new HashMap<>();
+    Map<String, Integer> propertyToIndex = new HashMap<>();
     Iterator<Cell> cellIterator = headerRow.cellIterator();
     //do not use while loop with the cell iterator!
     //It will not return null but the same cell over and over if hasNext is not checked.
@@ -106,7 +106,7 @@ public class XLSXParser implements MetadataParser {
       cell = cellIterator.next();
       var cellValue =
           headerToLowerCase ? readCellAsString(cell).toLowerCase() : readCellAsString(cell);
-      columns.put(cellValue, cell.getColumnIndex());
+      propertyToIndex.put(cellValue, cell.getColumnIndex());
     }
 
     Iterator<Row> rowIterator = metadataSheet.rowIterator();
@@ -115,13 +115,13 @@ public class XLSXParser implements MetadataParser {
 
     while (rowIterator.hasNext()) {
       row = rowIterator.next();
-      String[] rowData = new String[columns.size()];
-      for (Entry<String, Integer> columnEntry : columns.entrySet()) {
+      String[] rowData = new String[propertyToIndex.size()];
+      for (Entry<String, Integer> columnEntry : propertyToIndex.entrySet()) {
         rowData[columnEntry.getValue()] = readCellAsString(row.getCell(columnEntry.getValue()));
       }
       rows.add(Arrays.stream(rowData).toList());
     }
 
-    return new ParsingResult(columns, rows);
+    return new ParsingResult(propertyToIndex, rows);
   }
 }
