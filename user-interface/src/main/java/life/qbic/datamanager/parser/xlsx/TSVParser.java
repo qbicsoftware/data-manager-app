@@ -87,13 +87,12 @@ public class TSVParser implements MetadataParser {
     }
 
     var values = content.subList(1, content.size());
-    var iterator = values.iterator();
     List<ParsingResult.Row> rows = new ArrayList<>();
-    while (iterator.hasNext()) {
-      var row = iterator.next().split(VALUE_SEPARATOR);
+    for (String row : values) {
+      var rowContent = row.split(VALUE_SEPARATOR);
       String[] rowData = new String[header.length];
       for (Entry<String, Integer> propertyEntry : propertyToIndex.entrySet()) {
-        rowData[propertyEntry.getValue()] = safeAccess(row, propertyEntry.getValue()).orElse("");
+        rowData[propertyEntry.getValue()] = safeAccess(rowContent, propertyEntry.getValue()).orElse("");
       }
       rows.add(new Row(Arrays.stream(rowData).toList()));
     }
