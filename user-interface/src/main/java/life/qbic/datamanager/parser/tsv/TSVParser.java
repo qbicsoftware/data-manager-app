@@ -1,4 +1,4 @@
-package life.qbic.datamanager.parser.xlsx;
+package life.qbic.datamanager.parser.tsv;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +14,7 @@ import java.util.Optional;
 import life.qbic.datamanager.parser.MetadataParser;
 import life.qbic.datamanager.parser.ParsingResult;
 import life.qbic.datamanager.parser.ParsingResult.Row;
+import life.qbic.datamanager.parser.Sanitizer;
 
 /**
  * <b>TSV Parser</b>
@@ -32,18 +33,12 @@ public class TSVParser implements MetadataParser {
 
   private static final String VALUE_SEPARATOR = "\t";
 
-  private boolean headerToLowerCase = false;
-
   private TSVParser() {
 
   }
 
-  private TSVParser(boolean headerToLowerCase) {
-    this.headerToLowerCase = headerToLowerCase;
-  }
-
-  public static TSVParser createWithHeaderToLowerCase() {
-    return new TSVParser(true);
+  public static TSVParser create() {
+    return new TSVParser();
   }
 
   /**
@@ -79,11 +74,7 @@ public class TSVParser implements MetadataParser {
 
     var header = content.get(0).split(VALUE_SEPARATOR);
     for (int i = 0; i < header.length; i++) {
-      if (headerToLowerCase) {
-        propertyToIndex.put(header[i].toLowerCase(), i);
-      } else {
-        propertyToIndex.put(header[i], i);
-      }
+      propertyToIndex.put(Sanitizer.headerEncoder(header[i]), i);
     }
 
     var values = content.subList(1, content.size());
@@ -92,7 +83,8 @@ public class TSVParser implements MetadataParser {
       var rowContent = row.split(VALUE_SEPARATOR);
       String[] rowData = new String[header.length];
       for (Entry<String, Integer> propertyEntry : propertyToIndex.entrySet()) {
-        rowData[propertyEntry.getValue()] = safeAccess(rowContent, propertyEntry.getValue()).orElse("");
+        rowData[propertyEntry.getValue()] = safeAccess(rowContent, propertyEntry.getValue()).orElse(
+            "");
       }
       rows.add(new Row(Arrays.stream(rowData).toList()));
     }

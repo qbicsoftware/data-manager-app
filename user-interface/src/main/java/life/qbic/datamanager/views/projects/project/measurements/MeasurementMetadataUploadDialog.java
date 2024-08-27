@@ -34,7 +34,7 @@ import life.qbic.datamanager.parser.MeasurementMetadataConverter.MissingSampleId
 import life.qbic.datamanager.parser.MeasurementMetadataConverter.UnknownMetadataTypeException;
 import life.qbic.datamanager.parser.MetadataConverter;
 import life.qbic.datamanager.parser.ParsingResult;
-import life.qbic.datamanager.parser.xlsx.TSVParser;
+import life.qbic.datamanager.parser.tsv.TSVParser;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
 import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.InfoBox;
@@ -172,11 +172,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private ParsingResult parseXLSX(InputStream inputStream) {
-    return XLSXParser.createWithHeaderToLowerCase().parse(inputStream);
+    return XLSXParser.create().parse(inputStream);
   }
 
   private ParsingResult parseTSV(InputStream inputStream) {
-    return TSVParser.createWithHeaderToLowerCase().parse(inputStream);
+    return TSVParser.create().parse(inputStream);
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {

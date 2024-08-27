@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import life.qbic.datamanager.parser.MetadataParser;
 import life.qbic.datamanager.parser.ParsingResult;
+import life.qbic.datamanager.parser.Sanitizer;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -33,21 +34,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class XLSXParser implements MetadataParser {
 
-  private boolean headerToLowerCase = false;
-
   private XLSXParser() {
   }
 
-  private XLSXParser(boolean headerToLowerCase) {
-    this.headerToLowerCase = headerToLowerCase;
-  }
-
   public static XLSXParser create() {
-    return new XLSXParser(false);
-  }
-
-  public static XLSXParser createWithHeaderToLowerCase() {
-    return new XLSXParser(true);
+    return new XLSXParser();
   }
 
   /**
@@ -104,8 +95,7 @@ public class XLSXParser implements MetadataParser {
     Cell cell;
     while (cellIterator.hasNext()) {
       cell = cellIterator.next();
-      var cellValue =
-          headerToLowerCase ? readCellAsString(cell).toLowerCase() : readCellAsString(cell);
+      var cellValue = Sanitizer.headerEncoder(readCellAsString(cell));
       propertyToIndex.put(cellValue, cell.getColumnIndex());
     }
 
