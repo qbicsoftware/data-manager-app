@@ -97,6 +97,10 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     return hits;
   }
 
+  static String sanitizeValue(String value) {
+    return value.trim().toLowerCase();
+  }
+
   @Override
   public List<MeasurementMetadata> convert(ParsingResult parsingResult, boolean ignoreMeasurementId)
       throws UnknownMetadataTypeException {
@@ -122,12 +126,14 @@ public class MetadataConverter implements MeasurementMetadataConverter {
           safeListAccess(row.values(), keyIndices.getOrDefault(MEASUREMENT_ID.propertyName(), -1),
               ""),
           SampleCode.create(
-              safeListAccess(row.values(), keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
+              safeListAccess(row.values(),
+                  keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
                   "")),
           safeListAccess(row.values(), keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
               ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(INSTRUMENT.propertyName(), -1), ""),
-          safeListAccess(row.values(), keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
+          safeListAccess(row.values(),
+              keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
               ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(FACILITY.propertyName(), -1), ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(CYCLE.propertyName(), -1), ""),
@@ -135,14 +141,16 @@ public class MetadataConverter implements MeasurementMetadataConverter {
               ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(DIGESTION_METHOD.propertyName(), -1),
               ""),
-          safeListAccess(row.values(), keyIndices.getOrDefault(ENRICHMENT_METHOD.propertyName(), -1),
+          safeListAccess(row.values(),
+              keyIndices.getOrDefault(ENRICHMENT_METHOD.propertyName(), -1),
               ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(INJECTION_VOLUME.propertyName(), -1),
               ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(LC_COLUMN.propertyName(), -1), ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(LCMS_METHOD.propertyName(), -1), ""),
           new Labeling(
-              safeListAccess(row.values(), keyIndices.getOrDefault(LABELING_TYPE.propertyName(), -1),
+              safeListAccess(row.values(),
+                  keyIndices.getOrDefault(LABELING_TYPE.propertyName(), -1),
                   ""),
               safeListAccess(row.values(), keyIndices.getOrDefault(LABEL.propertyName(), -1), "")),
           safeListAccess(row.values(), keyIndices.getOrDefault(COMMENT.propertyName(), -1), "")
@@ -167,7 +175,8 @@ public class MetadataConverter implements MeasurementMetadataConverter {
           safeListAccess(row.values(), keyIndices.getOrDefault(MEASUREMENT_ID.propertyName(), -1),
               ""),
           List.of(SampleCode.create(
-              safeListAccess(row.values(), keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
+              safeListAccess(row.values(),
+                  keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
                   ""))),
           safeListAccess(row.values(), keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
               ""),
@@ -183,7 +192,8 @@ public class MetadataConverter implements MeasurementMetadataConverter {
           safeListAccess(row.values(), keyIndices.getOrDefault(
                   NGSMeasurementProperty.SEQUENCING_RUN_PROTOCOL.propertyName(), -1),
               ""),
-          safeListAccess(row.values(), keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
+          safeListAccess(row.values(),
+              keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
               ""),
           safeListAccess(row.values(),
               keyIndices.getOrDefault(NGSMeasurementProperty.INDEX_I7.propertyName(), -1),
@@ -283,10 +293,6 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       this.name = value;
     }
 
-    static String sanitizeValue(String value) {
-      return value.trim().toLowerCase();
-    }
-
     static Optional<ProteomicsMeasurementProperty> fromString(String value) {
       var sanitizedValue = sanitizeValue(value);
       return Arrays.stream(ProteomicsMeasurementProperty.values())
@@ -335,15 +341,15 @@ public class MetadataConverter implements MeasurementMetadataConverter {
      * @since 1.4.0
      */
     static Optional<NGSMeasurementProperty> fromStringTrimmed(String value) {
-      var trimmedValue = value.trim();
+      var sanitizedValue = sanitizeValue(value);
       return Arrays.stream(NGSMeasurementProperty.values())
-          .filter(property -> property.propertyName().equalsIgnoreCase(trimmedValue)).findFirst();
+          .filter(property -> property.propertyName().equalsIgnoreCase(sanitizedValue)).findFirst();
     }
 
     static boolean valueMatchesAnyProperty(String value) {
-      var trimmedValue = value.trim();
+      var sanitizedValue = sanitizeValue(value);
       return Arrays.stream(MeasurementProperty.values()).map(MeasurementProperty::name)
-          .anyMatch(trimmedValue::equalsIgnoreCase);
+          .anyMatch(sanitizedValue::equalsIgnoreCase);
     }
 
     String propertyName() {
