@@ -152,7 +152,7 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private Grid<ProjectUser> createProjectUserGrid() {
-    Grid<ProjectUser> pUserGrid = new Grid<>();
+    Grid<ProjectUser> pUserGrid = new Grid<>(ProjectUser.class, false);
     Editor<ProjectUser> editor = pUserGrid.getEditor();
     Binder<ProjectUser> binder = new Binder<>(ProjectUser.class);
     editor.setBinder(binder);
