@@ -18,6 +18,7 @@ that enables FAIR-compliant data access.
 
 ## Overview:
 
+- [Style Guide](#style-guide)
 - [How to Run](#how-to-run)
     * [Configuration](#configuration)
         * [Java Version](#java-version)
@@ -33,6 +34,10 @@ that enables FAIR-compliant data access.
     * [Vaadin Framework](#vaadin-framework)
         * [Additional Information](#additional-information)
 - [License](#license)
+
+## Style Guide
+
+Please find the [styleguide](https://github.com/qbicsoftware/data-manager-app-design-system) in its own repository.
 
 ## How to Run
 
