@@ -334,7 +334,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
      * @return the matching property, or {@link Optional#empty()}.
      * @since 1.4.0
      */
-    static Optional<NGSMeasurementProperty> fromStringTrailingIgnored(String value) {
+    static Optional<NGSMeasurementProperty> fromStringTrimmed(String value) {
       var trimmedValue = value.trim();
       return Arrays.stream(NGSMeasurementProperty.values())
           .filter(property -> property.propertyName().equalsIgnoreCase(trimmedValue)).findFirst();
