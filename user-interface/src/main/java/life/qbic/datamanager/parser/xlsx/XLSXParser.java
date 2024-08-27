@@ -50,10 +50,28 @@ public class XLSXParser implements MetadataParser {
     return new XLSXParser(true);
   }
 
+  /**
+   * Reads the cell value as String. If the cell is `null`, or one of the following types is
+   * present, the function will return an empty String:
+   *
+   * <ul>
+   *   <li>_NONE</li>
+   *   <li>ERROR</li>
+   *   <li>BOOLEAN</li>
+   *   <li>FORMULA</li>
+   *   <li>BLANK</li>
+   * </ul>
+   *
+   * @param cell the cell to extract the value from
+   * @return the cell value in String representation
+   * @since 1.4.0
+   */
   private static String readCellAsString(Cell cell) {
+    if (cell == null) {
+      return "";
+    }
     return switch (cell.getCellType()) {
-      case _NONE, ERROR, BOOLEAN, FORMULA -> null;
-      case BLANK -> "";
+      case _NONE, ERROR, BOOLEAN, FORMULA, BLANK -> "";
       case NUMERIC -> String.valueOf(cell.getNumericCellValue());
       case STRING -> cell.getStringCellValue();
     };
