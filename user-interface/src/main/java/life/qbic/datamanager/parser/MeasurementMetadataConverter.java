@@ -43,4 +43,10 @@ public interface MeasurementMetadataConverter {
     }
   }
 
+  class MissingSampleIdException extends RuntimeException {
+    public MissingSampleIdException(String message) {
+      super(message);
+    }
+  }
+
 }

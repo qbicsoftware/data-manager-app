@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import life.qbic.datamanager.parser.MeasurementMetadataConverter.MissingSampleIdException;
 import life.qbic.datamanager.parser.MeasurementMetadataConverter.UnknownMetadataTypeException;
 import life.qbic.datamanager.parser.MetadataConverter;
 import life.qbic.datamanager.parser.ParsingResult;
@@ -198,6 +199,9 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         UnknownMetadataTypeException e) { // we want to display this in the dialog, not via the notification system
       displayError(succeededEvent.getFileName(),
           "Unknown metadata file content. Please make sure to include all metadata properties, even the optional ones");
+      return;
+    } catch (MissingSampleIdException e) {
+      displayError(succeededEvent.getFileName(), "Looks like at least one sample id is missing.");
       return;
     }
 

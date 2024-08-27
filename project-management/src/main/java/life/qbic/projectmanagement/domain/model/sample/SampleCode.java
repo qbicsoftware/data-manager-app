@@ -19,7 +19,7 @@ public class SampleCode implements Serializable {
     // needed for JPA
   }
 
-  private SampleCode(String code) {
+  private SampleCode(String code) throws IllegalArgumentException{
     Objects.requireNonNull(code, "Sample code must not be null");
     if (code.isBlank()) {
       throw new IllegalArgumentException("Sample code must not be blank");
@@ -27,7 +27,7 @@ public class SampleCode implements Serializable {
     this.code = code;
   }
 
-  public static SampleCode create(String code) {
+  public static SampleCode create(String code) throws IllegalArgumentException {
     return new SampleCode(code);
   }
 

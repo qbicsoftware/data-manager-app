@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.parser.ParsingResult.Row;
 import life.qbic.logging.api.Logger;
@@ -102,17 +103,26 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
   @Override
   public List<MeasurementMetadata> convert(ParsingResult parsingResult, boolean ignoreMeasurementId)
-      throws UnknownMetadataTypeException {
+      throws UnknownMetadataTypeException, MissingSampleIdException {
     Objects.requireNonNull(parsingResult);
     var properties = parsingResult.keys().keySet();
     if (looksLikeNgsMeasurement(properties, ignoreMeasurementId)) {
-      return convertNGSMeasurement(parsingResult);
+      return tryConversion(this::convertNGSMeasurement, parsingResult);
     } else if (looksLikeProteomicsMeasurement(properties, ignoreMeasurementId)) {
-      return convertProteomicsMeasurement(parsingResult);
+      return tryConversion(this::convertProteomicsMeasurement, parsingResult);
     } else {
       throw new UnknownMetadataTypeException(
           "Unknown metadata type: cannot match properties to any known metadata type. Provided [%s]".formatted(
               String.join(", ", properties)));
+    }
+  }
+
+  private List<MeasurementMetadata> tryConversion(
+      Function<ParsingResult, List<MeasurementMetadata>> converter, ParsingResult parsingResult) {
+    try {
+      return converter.apply(parsingResult);
+    } catch (IllegalArgumentException e) {
+      throw new MissingSampleIdException("Missing sample ID metadata");
     }
   }
 
