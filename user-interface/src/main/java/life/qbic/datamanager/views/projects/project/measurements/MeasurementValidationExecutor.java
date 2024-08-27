@@ -5,7 +5,6 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import org.apache.poi.ss.formula.functions.T;
 
 /**
  * <b>Validation Executor</b>
