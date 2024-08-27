@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import life.qbic.datamanager.parser.MetadataParser;
 import life.qbic.datamanager.parser.ParsingResult;
+import life.qbic.datamanager.parser.ParsingResult.Row;
 
 /**
  * <b>TSV Parser</b>
@@ -87,14 +88,14 @@ public class TSVParser implements MetadataParser {
 
     var values = content.subList(1, content.size());
     var iterator = values.iterator();
-    List<List<String>> rows = new ArrayList<>();
+    List<ParsingResult.Row> rows = new ArrayList<>();
     while (iterator.hasNext()) {
       var row = iterator.next().split(VALUE_SEPARATOR);
       String[] rowData = new String[header.length];
       for (Entry<String, Integer> propertyEntry : propertyToIndex.entrySet()) {
         rowData[propertyEntry.getValue()] = safeAccess(row, propertyEntry.getValue()).orElse("");
       }
-      rows.add(Arrays.stream(rowData).toList());
+      rows.add(new Row(Arrays.stream(rowData).toList()));
     }
     return new ParsingResult(propertyToIndex, rows);
   }

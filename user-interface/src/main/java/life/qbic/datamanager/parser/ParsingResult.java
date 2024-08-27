@@ -57,22 +57,35 @@ import java.util.stream.Stream;
  *
  * @since 1.4.0
  */
-public record ParsingResult(Map<String, Integer> keys, List<List<String>> values) {
+public record ParsingResult(Map<String, Integer> keys, List<Row> rows) {
 
-  public Stream<List<String>> rows() {
-    return values.stream();
+  public ParsingResult(Map<String, Integer> keys, List<Row> rows) {
+    this.keys = Map.copyOf(keys);
+    this.rows = List.copyOf(rows);
   }
 
-  public Iterator<List<String>> iterator() {
-    return values.iterator();
+  public Stream<Row> rowsStream() {
+    return rows.stream();
   }
 
-  public List<String> getRow(int row) {
-    if (row < 0 || row >= values.size()) {
+  public Iterator<Row> iterator() {
+    return rows.iterator();
+  }
+
+  public List<String> getRow(int rowIndex) {
+    if (rowIndex < 0 || rowIndex >= rows.size()) {
       throw new IndexOutOfBoundsException(
-          "Row index out of bounds: %s but size is %s".formatted(row, values.size()));
+          "Row index out of bounds: %s but size is %s".formatted(rowIndex, rows.size()));
     }
-    return values.get(row);
+    return rows.get(rowIndex).values;
+  }
+
+  public record Row(List<String> values) {
+
+    public Row(List<String> values) {
+      this.values = List.copyOf(values);
+    }
+
   }
 
 }

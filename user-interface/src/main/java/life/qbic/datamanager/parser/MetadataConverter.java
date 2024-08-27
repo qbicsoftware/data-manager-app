@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.parser.ParsingResult.Row;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementProperty;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.Labeling;
@@ -92,7 +93,6 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       if (hits.containsKey((ignoredProperty))) {
         hits.remove(ignoredProperty);
       }
-      ;
     }
     return hits;
   }
@@ -116,35 +116,36 @@ public class MetadataConverter implements MeasurementMetadataConverter {
   private List<MeasurementMetadata> convertProteomicsMeasurement(ParsingResult parsingResult) {
     var result = new ArrayList<MeasurementMetadata>();
     var keyIndices = parsingResult.keys();
-    for (List<String> valueEntry : parsingResult.values()) {
+    for (ParsingResult.Row row : parsingResult.rows()) {
+      // we us -1 as default value if a property cannot be accessed, thus ending up in an empty String
       var pxpMetaDatum = new ProteomicsMeasurementMetadata(
-          safeListAccess(valueEntry, keyIndices.getOrDefault(MEASUREMENT_ID.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(MEASUREMENT_ID.propertyName(), -1),
               ""),
           SampleCode.create(
-              safeListAccess(valueEntry, keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
+              safeListAccess(row.values(), keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
                   "")),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(INSTRUMENT.propertyName(), -1), ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(INSTRUMENT.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(FACILITY.propertyName(), -1), ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(CYCLE.propertyName(), -1), ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(DIGESTION_ENZYME.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(FACILITY.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(CYCLE.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(DIGESTION_ENZYME.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(DIGESTION_METHOD.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(DIGESTION_METHOD.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(ENRICHMENT_METHOD.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(ENRICHMENT_METHOD.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(INJECTION_VOLUME.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(INJECTION_VOLUME.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(LC_COLUMN.propertyName(), -1), ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(LCMS_METHOD.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(LC_COLUMN.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(LCMS_METHOD.propertyName(), -1), ""),
           new Labeling(
-              safeListAccess(valueEntry, keyIndices.getOrDefault(LABELING_TYPE.propertyName(), -1),
+              safeListAccess(row.values(), keyIndices.getOrDefault(LABELING_TYPE.propertyName(), -1),
                   ""),
-              safeListAccess(valueEntry, keyIndices.getOrDefault(LABEL.propertyName(), -1), "")),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(COMMENT.propertyName(), -1), "")
+              safeListAccess(row.values(), keyIndices.getOrDefault(LABEL.propertyName(), -1), "")),
+          safeListAccess(row.values(), keyIndices.getOrDefault(COMMENT.propertyName(), -1), "")
       );
       result.add(pxpMetaDatum);
     }
@@ -161,36 +162,36 @@ public class MetadataConverter implements MeasurementMetadataConverter {
   private List<MeasurementMetadata> convertNGSMeasurement(ParsingResult parsingResult) {
     var result = new ArrayList<MeasurementMetadata>();
     var keyIndices = parsingResult.keys();
-    for (List<String> valueEntry : parsingResult.values()) {
+    for (Row row : parsingResult.rows()) {
       var ngsMeasurementMetadata = new NGSMeasurementMetadata(
-          safeListAccess(valueEntry, keyIndices.getOrDefault(MEASUREMENT_ID.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(MEASUREMENT_ID.propertyName(), -1),
               ""),
           List.of(SampleCode.create(
-              safeListAccess(valueEntry, keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
+              safeListAccess(row.values(), keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
                   ""))),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(INSTRUMENT.propertyName(), -1), ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(FACILITY.propertyName(), -1), ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(
+          safeListAccess(row.values(), keyIndices.getOrDefault(INSTRUMENT.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(FACILITY.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(
               NGSMeasurementProperty.SEQUENCING_READ_TYPE.propertyName(), -1), ""),
-          safeListAccess(valueEntry,
+          safeListAccess(row.values(),
               keyIndices.getOrDefault(NGSMeasurementProperty.LIBRARY_KIT.propertyName(), -1), ""),
-          safeListAccess(valueEntry,
+          safeListAccess(row.values(),
               keyIndices.getOrDefault(NGSMeasurementProperty.FLOW_CELL.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(
+          safeListAccess(row.values(), keyIndices.getOrDefault(
                   NGSMeasurementProperty.SEQUENCING_RUN_PROTOCOL.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
+          safeListAccess(row.values(), keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry,
+          safeListAccess(row.values(),
               keyIndices.getOrDefault(NGSMeasurementProperty.INDEX_I7.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry,
+          safeListAccess(row.values(),
               keyIndices.getOrDefault(NGSMeasurementProperty.INDEX_I5.propertyName(), -1),
               ""),
-          safeListAccess(valueEntry, keyIndices.getOrDefault(COMMENT.propertyName(), -1), "")
+          safeListAccess(row.values(), keyIndices.getOrDefault(COMMENT.propertyName(), -1), "")
       );
       result.add(ngsMeasurementMetadata);
     }

@@ -95,7 +95,7 @@ public class XLSXParser implements MetadataParser {
       throw new MetadataParser.UnknownPropertiesException(
           "No properties have been found: did you provide a header row?");
     }
-    List<List<String>> rows = new ArrayList<>();
+    List<ParsingResult.Row> rows = new ArrayList<>();
     Map<String, Integer> propertyToIndex = new HashMap<>();
     Iterator<Cell> cellIterator = headerRow.cellIterator();
     //do not use while loop with the cell iterator!
@@ -119,7 +119,7 @@ public class XLSXParser implements MetadataParser {
       for (Entry<String, Integer> columnEntry : propertyToIndex.entrySet()) {
         rowData[columnEntry.getValue()] = readCellAsString(row.getCell(columnEntry.getValue()));
       }
-      rows.add(Arrays.stream(rowData).toList());
+      rows.add(new ParsingResult.Row(Arrays.stream(rowData).toList()));
     }
 
     return new ParsingResult(propertyToIndex, rows);
