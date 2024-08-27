@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.parser.ParsingResult.Row;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementProperty;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -301,7 +300,8 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
     static boolean valueMatchesAnyProperty(String value) {
       var sanitizedValue = sanitizeValue(value);
-      return Arrays.stream(MeasurementProperty.values()).map(MeasurementProperty::name)
+      return Arrays.stream(ProteomicsMeasurementProperty.values())
+          .map(ProteomicsMeasurementProperty::name)
           .anyMatch(sanitizedValue::equalsIgnoreCase);
     }
 
@@ -348,7 +348,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
     static boolean valueMatchesAnyProperty(String value) {
       var sanitizedValue = sanitizeValue(value);
-      return Arrays.stream(MeasurementProperty.values()).map(MeasurementProperty::name)
+      return Arrays.stream(NGSMeasurementProperty.values()).map(NGSMeasurementProperty::name)
           .anyMatch(sanitizedValue::equalsIgnoreCase);
     }
 
