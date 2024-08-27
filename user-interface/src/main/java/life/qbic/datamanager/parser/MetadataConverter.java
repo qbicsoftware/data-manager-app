@@ -283,20 +283,20 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       this.name = value;
     }
 
-    static String trimValue(String value) {
+    static String sanitizeValue(String value) {
       return value.trim().toLowerCase();
     }
 
     static Optional<ProteomicsMeasurementProperty> fromString(String value) {
-      var trimmed = trimValue(value);
+      var sanitizedValue = sanitizeValue(value);
       return Arrays.stream(ProteomicsMeasurementProperty.values())
-          .filter(property -> property.propertyName().equals(trimmed)).findFirst();
+          .filter(property -> property.propertyName().equals(sanitizedValue)).findFirst();
     }
 
     static boolean valueMatchesAnyProperty(String value) {
-      var trimmedValue = trimValue(value);
+      var sanitizedValue = sanitizeValue(value);
       return Arrays.stream(MeasurementProperty.values()).map(MeasurementProperty::name)
-          .anyMatch(trimmedValue::equalsIgnoreCase);
+          .anyMatch(sanitizedValue::equalsIgnoreCase);
     }
 
     public String propertyName() {
