@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import life.qbic.datamanager.parser.MetadataParser;
 import life.qbic.datamanager.parser.ParsingResult;
 import org.apache.poi.ss.usermodel.Cell;
@@ -34,22 +35,19 @@ public class XLSXParser implements MetadataParser {
 
   private boolean headerToLowerCase = false;
 
-  private boolean firstRowIsHeader = true;
-
   private XLSXParser() {
   }
 
-  private XLSXParser(boolean headerToLowerCase, boolean firstRowIsHeader) {
+  private XLSXParser(boolean headerToLowerCase) {
     this.headerToLowerCase = headerToLowerCase;
-    this.firstRowIsHeader = firstRowIsHeader;
   }
 
-  public static XLSXParser create(boolean firstRowIsHeader) {
-    return new XLSXParser(false, firstRowIsHeader);
+  public static XLSXParser create() {
+    return new XLSXParser(false);
   }
 
-  public static XLSXParser createWithHeaderToLowerCase(boolean firstRowIsHeader) {
-    return new XLSXParser(true, firstRowIsHeader);
+  public static XLSXParser createWithHeaderToLowerCase() {
+    return new XLSXParser(true);
   }
 
   private static String readCellAsString(Cell cell) {
@@ -63,14 +61,17 @@ public class XLSXParser implements MetadataParser {
 
   @Override
   public ParsingResult parse(InputStream inputStream) {
-    XSSFWorkbook workbook = null;
-    try {
-      workbook = new XSSFWorkbook(inputStream);
+    try (XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
+      return parse(workbook);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new ParsingException("Parsing failed", e);
     }
+  }
+
+  private ParsingResult parse(XSSFWorkbook workbook) {
     XSSFSheet metadataSheet = workbook.getSheetAt(0);
-    XSSFRow headerRow = metadataSheet.getRow(0);
+    XSSFRow headerRow = Optional.ofNullable(metadataSheet.getRow(0))
+        .orElseThrow(() -> new ParsingException("No header row found"));
 
     if (isNull(headerRow)) {
       throw new MetadataParser.UnknownPropertiesException(
@@ -92,9 +93,8 @@ public class XLSXParser implements MetadataParser {
 
     Iterator<Row> rowIterator = metadataSheet.rowIterator();
     Row row;
-    if (firstRowIsHeader) {
-      rowIterator.next(); // skip the first entry, since it contains the header
-    }
+    rowIterator.next(); // skip the first entry, since it contains the header
+
     while (rowIterator.hasNext()) {
       row = rowIterator.next();
       String[] rowData = new String[columns.size()];

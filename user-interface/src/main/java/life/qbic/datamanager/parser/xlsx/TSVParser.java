@@ -18,8 +18,12 @@ import life.qbic.datamanager.parser.ParsingResult;
  * <b>TSV Parser</b>
  * <p>
  * Tab-seperated value format support for the {@link MetadataParser} interface.
- *
+ * <p>
  * Support for UTF-16 encoding available.
+ * <p>
+ * This implementation always considers the first line as the header, and will use its information
+ * to create the {@link ParsingResult#keys()} in the returned {@link ParsingResult} object
+ * instance.
  *
  * @since 1.4.0
  */
@@ -27,27 +31,42 @@ public class TSVParser implements MetadataParser {
 
   private static final String VALUE_SEPARATOR = "\t";
 
-  private boolean firstRowIsHeader = false;
-
   private boolean headerToLowerCase = false;
 
   private TSVParser() {
 
   }
 
-  private TSVParser(boolean firstRowIsHeader, boolean headerToLowerCase) {
-    this.firstRowIsHeader = firstRowIsHeader;
+  private TSVParser(boolean headerToLowerCase) {
     this.headerToLowerCase = headerToLowerCase;
   }
 
-  public static TSVParser createWithHeaderToLowerCase(boolean firstRowIsHeader) {
-    return new TSVParser(firstRowIsHeader, true);
+  public static TSVParser createWithHeaderToLowerCase() {
+    return new TSVParser(true);
+  }
+
+  /**
+   * Prevents nasty {@link IndexOutOfBoundsException} and supports a more fluent API and cleaner
+   * code through the usage of Java's {@link Optional}.
+   *
+   * @param array the array to access an element from
+   * @param index the index of the element in the array to access
+   * @return the array element at position of the index wrapped in {@link Optional}, or
+   * {@link Optional#empty}, if the index is out of bounds.
+   * @since 1.4.0
+   */
+  private static Optional<String> safeAccess(String[] array, Integer index) {
+    if (index >= array.length) {
+      return Optional.empty();
+    }
+    return Optional.of(array[index]);
   }
 
   @Override
   public ParsingResult parse(InputStream inputStream) {
     List<String> content;
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream,  StandardCharsets.UTF_16))) {
+    try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(inputStream, StandardCharsets.UTF_16))) {
       content = reader.lines().toList();
     } catch (IOException e) {
       throw new ParsingException("Cannot read from input stream", e);
@@ -66,7 +85,7 @@ public class TSVParser implements MetadataParser {
       }
     }
 
-    var values = firstRowIsHeader ? content.subList(1, content.size()) : content;
+    var values = content.subList(1, content.size());
     var iterator = values.iterator();
     List<List<String>> rows = new ArrayList<>();
     while (iterator.hasNext()) {
@@ -78,12 +97,5 @@ public class TSVParser implements MetadataParser {
       rows.add(Arrays.stream(rowData).toList());
     }
     return new ParsingResult(keyMap, rows);
-  }
-
-  private static Optional<String> safeAccess(String[] array, Integer index) {
-    if (index >= array.length) {
-      return Optional.empty();
-    }
-    return Optional.of(array[index]);
   }
 }

@@ -171,11 +171,11 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private ParsingResult parseXLSX(InputStream inputStream) {
-    return XLSXParser.createWithHeaderToLowerCase(true).parse(inputStream);
+    return XLSXParser.createWithHeaderToLowerCase().parse(inputStream);
   }
 
   private ParsingResult parseTSV(InputStream inputStream) {
-    return TSVParser.createWithHeaderToLowerCase(true).parse(inputStream);
+    return TSVParser.createWithHeaderToLowerCase().parse(inputStream);
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
