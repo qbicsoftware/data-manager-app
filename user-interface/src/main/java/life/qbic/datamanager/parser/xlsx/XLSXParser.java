@@ -62,7 +62,8 @@ public class XLSXParser implements MetadataParser {
       return "";
     }
     return switch (cell.getCellType()) {
-      case _NONE, ERROR, BOOLEAN, FORMULA, BLANK -> "";
+      case _NONE, ERROR, FORMULA, BLANK -> "";
+      case BOOLEAN -> Boolean.toString(cell.getBooleanCellValue());
       case NUMERIC -> String.valueOf(cell.getNumericCellValue());
       case STRING -> cell.getStringCellValue();
     };
