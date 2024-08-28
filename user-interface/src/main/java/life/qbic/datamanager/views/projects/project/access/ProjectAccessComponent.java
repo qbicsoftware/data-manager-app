@@ -98,7 +98,7 @@ public class ProjectAccessComponent extends PageArea {
     buttonBar.add(addCollaboratorButton);
     header.add(titleField);
     add(header);
-    Span userProjectAccessDescription = new Span("Users with access to this project");
+    Span userProjectAccessDescription = new Span("Users with access to this project.");
     projectUserGrid = createProjectUserGrid();
     add(userProjectAccessDescription, projectUserGrid);
   }
@@ -152,7 +152,7 @@ public class ProjectAccessComponent extends PageArea {
   }
 
   private Grid<ProjectUser> createProjectUserGrid() {
-    Grid<ProjectUser> pUserGrid = new Grid<>(ProjectUser.class);
+    Grid<ProjectUser> pUserGrid = new Grid<>(ProjectUser.class, false);
     Editor<ProjectUser> editor = pUserGrid.getEditor();
     Binder<ProjectUser> binder = new Binder<>(ProjectUser.class);
     editor.setBinder(binder);
