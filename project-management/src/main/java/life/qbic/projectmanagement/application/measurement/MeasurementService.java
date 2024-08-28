@@ -554,7 +554,7 @@ public class MeasurementService {
     if (value.isBlank()) {
       return -1;
     }
-    return Integer.parseInt(value);
+    return (int) Double.parseDouble(value);
   }
 
   /**
