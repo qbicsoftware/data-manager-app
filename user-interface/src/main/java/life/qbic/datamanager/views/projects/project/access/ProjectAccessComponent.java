@@ -98,7 +98,7 @@ public class ProjectAccessComponent extends PageArea {
     buttonBar.add(addCollaboratorButton);
     header.add(titleField);
     add(header);
-    Span userProjectAccessDescription = new Span("Users with access to this project");
+    Span userProjectAccessDescription = new Span("Users with access to this project.");
     projectUserGrid = createProjectUserGrid();
     add(userProjectAccessDescription, projectUserGrid);
   }
