@@ -36,12 +36,10 @@ import life.qbic.datamanager.parser.MetadataConverter;
 import life.qbic.datamanager.parser.ParsingResult;
 import life.qbic.datamanager.parser.tsv.TSVParser;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
-import java.util.stream.IntStream;
-import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -85,7 +83,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
         "The dialog mode needs to be defined");
-    specifyCancelShortcuts(this::onCanceled);
 
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
@@ -335,17 +332,22 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private void onCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("Uploaded information has not yet been saved.")
-        .withConfirmText("Discard upload")
-        .withTitle("Discard uploaded information?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
+
+    NotificationDialog dialog = NotificationDialog.warningDialog()
+        .withTitle("Discard uploaded information?")
+        .withContent(new Span("Uploaded information has not yet been saved."));
+    dialog.setCancelable(true);
+    dialog.setCancelText("Continue Editing");
+    Button redButton = new Button("Discard upload");
+    redButton.addClassName("danger");
+    dialog.setConfirmButton(redButton);
+    dialog.addConfirmListener(event -> {
+      event.getSource().close();
       fireEvent(new CancelEvent(this, true));
     });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
+    dialog.addCancelListener(event -> event.getSource().close());
+    dialog.open();
+
   }
 
   @Override
