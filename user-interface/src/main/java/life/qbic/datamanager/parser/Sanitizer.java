@@ -1,5 +1,6 @@
 package life.qbic.datamanager.parser;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -24,6 +25,23 @@ public class Sanitizer {
   public static String headerEncoder(String value) {
     Objects.requireNonNull(value);
     return value.replaceAll(ASTERIX, "").trim().toLowerCase();
+  }
+
+  /**
+   * Investigates an array for information and can be used to e.g. filter out blank arrays.
+   * <p>
+   * An array is considered to contain information, if at least one element contains a value that is
+   * NOT {@link String#isEmpty()} and NOT {@link String#isBlank()}.
+   * <p>
+   * If the array contains only empty or blank values, the function returns <code>false</code>.
+   *
+   * @param array the array to investigate
+   * @return <code>true</code>, if at least one value is not blank or empty, else returns
+   * <code>false</code>
+   * @since 1.4.0
+   */
+  public static boolean containsInformation(String[] array) {
+    return !Arrays.stream(array).allMatch(value -> value.isEmpty() || value.isBlank());
   }
 
 }

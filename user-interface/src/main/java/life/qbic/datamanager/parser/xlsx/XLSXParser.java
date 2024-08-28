@@ -109,7 +109,9 @@ public class XLSXParser implements MetadataParser {
       for (Entry<String, Integer> columnEntry : propertyToIndex.entrySet()) {
         rowData[columnEntry.getValue()] = readCellAsString(row.getCell(columnEntry.getValue()));
       }
-      rows.add(new ParsingResult.Row(Arrays.stream(rowData).toList()));
+      if (Sanitizer.containsInformation(rowData)) {
+        rows.add(new ParsingResult.Row(Arrays.stream(rowData).toList()));
+      }
     }
 
     return new ParsingResult(propertyToIndex, rows);

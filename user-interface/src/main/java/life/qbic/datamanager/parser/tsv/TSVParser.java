@@ -86,7 +86,9 @@ public class TSVParser implements MetadataParser {
         rowData[propertyEntry.getValue()] = safeAccess(rowContent, propertyEntry.getValue()).orElse(
             "");
       }
-      rows.add(new Row(Arrays.stream(rowData).toList()));
+      if (Sanitizer.containsInformation(rowData)) {
+        rows.add(new Row(Arrays.stream(rowData).toList()));
+      }
     }
     return new ParsingResult(propertyToIndex, rows);
   }
