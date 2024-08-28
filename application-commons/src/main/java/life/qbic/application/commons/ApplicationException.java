@@ -150,7 +150,8 @@ public class ApplicationException extends RuntimeException {
     NO_ANALYTE_DEFINED,
     DATA_ATTACHED_TO_SAMPLES,
     SAMPLES_ATTACHED_TO_EXPERIMENT,
-    SERVICE_FAILED;
+    SERVICE_FAILED,
+    UNKNOWN_METADATA;
 
     @Override
     public String toString() {
