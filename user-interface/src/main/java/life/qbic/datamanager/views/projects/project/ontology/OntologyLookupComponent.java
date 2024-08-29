@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.ontology;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -18,7 +17,6 @@ import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.SortOrder;
@@ -26,6 +24,7 @@ import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.ToggleButton;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -57,7 +56,7 @@ public class OntologyLookupComponent extends PageArea {
   private GridLazyDataView<OntologyTerm> ontologyGridLazyDataView;
   private String searchTerm = "";
   private boolean speciesSearchActive = false;
-  private Checkbox speciesSearchCheckbox = new Checkbox("I want to search for species");
+  private ToggleButton speciesSearchCheckbox = new ToggleButton("I want to search for species");
   private Grid<OntologyTerm> searchGrid;
 
   public OntologyLookupComponent(
