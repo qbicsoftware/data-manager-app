@@ -1,0 +1,21 @@
+title Sample Registration Process
+
+
+note over Client, Template Service: Provide experiment ID
+Client->Template Service:Request sample registration template
+Template Service->Experiment Service:Fetch experimental groups
+Experiment Service->Experiment Service:Load experimental groups
+Template Service<-Experiment Service:Return experimental groups
+Template Service->XLSXBuilder:Build template with selection choices
+Template Service<-XLSXBuilder:Return template
+Client<-Template Service: Return template
+Client->Client: Fill out template
+Client->Sample Registration Service: Register samples
+Sample Registration Service->Validation Service: Requests validation
+Validation Service->Validation Service: Validates
+Sample Registration Service<-Validation Service: Returns validation report
+Client<-Sample Registration Service: Notify about report
+Client->Client: Resolve potential conflicts
+Client->Sample Registration Service: Register sample batch
+Sample Registration Service->Sample Registration Service: Registers
+Client<-Sample Registration Service: Notify
