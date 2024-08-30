@@ -143,7 +143,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE,
         ButtonVariant.LUMO_ERROR);
     deleteButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE);
-    deleteButton.addClickListener(e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(),
+    deleteButton.addClickListener(
+        e -> fireEvent(new DeleteBatchEvent(this, batchPreview.batchId(), batchPreview.batchLabel(),
         e.isFromClient())));
     editButton.addClickListener(
         e -> fireEvent(new EditBatchEvent(this, batchPreview, e.isFromClient())));
@@ -276,15 +277,21 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     @Serial
     private static final long serialVersionUID = -5424056755722207848L;
     private final BatchId batchId;
+    private final String batchLabel;
 
     public DeleteBatchEvent(BatchDetailsComponent source, BatchId batchId,
-        boolean fromClient) {
+        String batchLabel, boolean fromClient) {
       super(source, fromClient);
       this.batchId = batchId;
+      this.batchLabel = batchLabel;
     }
 
     public BatchId batchId() {
       return batchId;
+    }
+
+    public String batchLabel() {
+      return batchLabel;
     }
   }
 }
