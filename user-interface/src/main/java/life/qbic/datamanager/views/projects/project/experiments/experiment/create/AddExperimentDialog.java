@@ -138,12 +138,6 @@ public class AddExperimentDialog extends DialogWindow {
     binder.setBean(experiment);
   }
 
-  @Override
-  public void closeIgnoringListeners() {
-    super.closeIgnoringListeners();
-    reset();
-  }
-
   public void reset() {
     binder.setBean(new ExperimentDraft());
   }

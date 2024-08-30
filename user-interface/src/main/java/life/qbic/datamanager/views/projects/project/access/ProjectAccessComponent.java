@@ -334,7 +334,7 @@ public class ProjectAccessComponent extends PageArea {
         event.projectCollaborator()
             .userId(), event.projectCollaborator().projectRole());
     refreshProjectUserGrid();
-    event.getSource().closeIgnoringListeners();
+    event.getSource().close();
   }
 
   private void displayError(String title, String description) {

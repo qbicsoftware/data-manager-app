@@ -26,6 +26,8 @@ import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
@@ -61,7 +63,7 @@ public class AddProjectDialog extends QbicDialog {
   private final Button nextButton;
 
   private final Map<String, Component> stepContent;
-  private final TerminologyService terminologyService;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
 
 
   private StepIndicator addStep(Stepper stepper, String label, Component layout) {
@@ -72,16 +74,17 @@ public class AddProjectDialog extends QbicDialog {
   public AddProjectDialog(ProjectInformationService projectInformationService,
       FinanceService financeService,
       SpeciesLookupService speciesLookupService,
-      ContactRepository contactRepository, TerminologyService terminologyService) {
+      ContactRepository contactRepository, TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
-    requireCloseConfirmation();
-    setIgnoreCloseCheckIfUnmodified(false);
 
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
     requireNonNull(speciesLookupService,
         "ontologyTermInformationService must not be null");
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(projectInformationService, financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
     this.collaboratorsLayout = new CollaboratorsLayout();
@@ -145,7 +148,6 @@ public class AddProjectDialog extends QbicDialog {
     rightButtons.add(cancelButton, nextButton, confirmButton);
     footer.add(backButton, rightButtons);
     adaptFooterButtons(stepper.getFirstStep());
-    this.terminologyService = terminologyService;
   }
 
   /**
@@ -156,7 +158,9 @@ public class AddProjectDialog extends QbicDialog {
   }
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
-    close();
+    NotificationDialog cancelConfirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        it -> close(), "create-project", getLocale());
+    cancelConfirmationDialog.open();
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {

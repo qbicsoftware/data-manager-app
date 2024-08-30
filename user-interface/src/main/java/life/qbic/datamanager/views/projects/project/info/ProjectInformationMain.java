@@ -23,7 +23,6 @@ import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.general.download.QualityControlDownload;
 import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
 import life.qbic.datamanager.views.notifications.toasts.Toast;
-import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
@@ -213,7 +212,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
           .toList();
       projectPurchaseService.addPurchases(projectId, offerDTOs);
       refreshOffers(projectPurchaseService, projectId, uploadOfferClickEvent.getSource());
-      confirmEvent.getSource().closeIgnoringListeners();
+      confirmEvent.getSource().close();
     });
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.open();
@@ -260,7 +259,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       qualityControlService.addQualityControls(context.projectId().orElseThrow().toString(),
           qualityControlReports);
       refreshQualityControls();
-      confirmEvent.getSource().closeIgnoringListeners();
+      confirmEvent.getSource().close();
     });
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.open();
@@ -307,7 +306,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private void onExperimentAddEvent(ExperimentAddEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
-    event.getSource().closeIgnoringListeners();
+    event.getSource().close();
     displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
     routeToExperiment(createdExperiment);
   }

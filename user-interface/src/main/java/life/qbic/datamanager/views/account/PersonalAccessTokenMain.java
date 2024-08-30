@@ -102,7 +102,7 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
           event.personalAccessTokenDTO()
               .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
       personalAccessTokenComponent.showCreatedToken(createdToken);
-      event.getSource().closeIgnoringListeners();
+      event.getSource().close();
       Toast toast = messageSourceToastFactory.create("personal-access-token.created.success",
           new Object[]{event.personalAccessTokenDTO().tokenDescription()}, getLocale());
       toast.open();

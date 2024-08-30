@@ -208,12 +208,6 @@ public class ExperimentalVariablesDialog extends DialogWindow {
         .toList();
   }
 
-  @Override
-  public void closeIgnoringListeners() {
-    reset();
-    super.closeIgnoringListeners();
-  }
-
 
   @DomEvent("confirm")
   public static class ConfirmEvent extends

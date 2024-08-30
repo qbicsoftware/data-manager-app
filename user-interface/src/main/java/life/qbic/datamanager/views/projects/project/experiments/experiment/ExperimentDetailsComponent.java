@@ -269,7 +269,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getSpeciesIcon().getLabel(),
         experimentDraft.getSpecimenIcon().getLabel());
     reloadExperimentInfo(experimentId);
-    event.getSource().closeIgnoringListeners();
+    event.getSource().close();
   }
 
   private void listenForExperimentalVariablesComponentEvents() {
@@ -305,7 +305,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onExperimentalVariablesAddConfirmed(
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
-    confirmEvent.getSource().closeIgnoringListeners();
+    confirmEvent.getSource().close();
     reloadExperimentInfo(context.experimentId().orElseThrow());
     if (hasExperimentalGroups()) {
       showSampleRegistrationPossibleNotification();
@@ -329,7 +329,7 @@ public class ExperimentDetailsComponent extends PageArea {
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     deleteExistingExperimentalVariables();
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
-    confirmEvent.getSource().closeIgnoringListeners();
+    confirmEvent.getSource().close();
     reloadExperimentInfo(context.experimentId().orElseThrow());
   }
 
@@ -475,7 +475,7 @@ public class ExperimentDetailsComponent extends PageArea {
       addExperimentalGroups(groupContents);
 
       reloadExperimentalGroups();
-      dialog.closeIgnoringListeners();
+      dialog.close();
     }
   }
 
@@ -508,7 +508,7 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentInformationService.updateExperimentalGroupsOfExperiment(
           context.projectId().orElseThrow().value(), experimentId, groupDTOs);
       reloadExperimentalGroups();
-      confirmEvent.getSource().closeIgnoringListeners();
+      confirmEvent.getSource().close();
     }
   }
 

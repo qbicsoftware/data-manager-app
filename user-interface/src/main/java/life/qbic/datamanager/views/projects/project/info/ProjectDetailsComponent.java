@@ -270,7 +270,7 @@ public class ProjectDetailsComponent extends PageArea {
       ProjectId projectId = context.projectId().orElseThrow();
       fireEvent(new ProjectEditEvent(this, projectId, projectUpdateEvent.isFromClient()));
     }
-    projectUpdateEvent.getSource().closeIgnoringListeners();
+    projectUpdateEvent.getSource().close();
   }
 
   private void updateProjectInformation(ProjectInformation projectInformationContent) {

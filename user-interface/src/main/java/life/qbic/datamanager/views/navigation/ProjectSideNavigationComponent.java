@@ -328,7 +328,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private void onExperimentAddEvent(ExperimentAddEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
-    event.getSource().closeIgnoringListeners();
+    event.getSource().close();
     displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
     routeToExperiment(createdExperiment);
   }

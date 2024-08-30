@@ -39,7 +39,6 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     this.editMode = editMode;
     this.experimentalVariableLevels = Objects.requireNonNull(experimentalVariableLevels);
     layoutComponent();
-    requireCloseConfirmation();
   }
 
   private ExperimentalGroupsDialog(Collection<VariableLevel> experimentalVariableLevels,

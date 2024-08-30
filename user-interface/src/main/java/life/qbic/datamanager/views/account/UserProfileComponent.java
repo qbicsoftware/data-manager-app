@@ -227,7 +227,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
     private void onChangeUserDetailsDialogConfirmed(ConfirmEvent event) {
       var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
         if (response.isSuccess()) {
-          event.getSource().closeIgnoringListeners();
+          event.getSource().close();
           // Trigger reload of UI reloading the username displayed in the datamanager menu
           // and within this component
           UI.getCurrent().getPage().reload();

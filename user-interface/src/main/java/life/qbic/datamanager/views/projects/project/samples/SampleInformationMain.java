@@ -229,7 +229,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
             context.projectId().orElseThrow())
         .onError(responseCode -> displayRegistrationFailure())
         .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
-        .onValue(ignored -> confirmEvent.getSource().closeIgnoringListeners())
+        .onValue(ignored -> confirmEvent.getSource().close())
         .onValue(batchId -> displayRegistrationSuccess())
         .onValue(ignored -> setBatchAndSampleInformation());
   }
@@ -375,7 +375,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var result = batchRegistrationService.editBatch(confirmEvent.getData().batchId(),
         confirmEvent.getData().batchName(), isPilot, createdSamples, editedSamples,
         deletedSamples, context.projectId().orElseThrow());
-    result.onValue(ignored -> confirmEvent.getSource().closeIgnoringListeners());
+    result.onValue(ignored -> confirmEvent.getSource().close());
     result.onValue(batchId -> displayUpdateSuccess());
     result.onValue(ignored -> setBatchAndSampleInformation());
   }

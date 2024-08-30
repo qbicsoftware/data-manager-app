@@ -176,16 +176,16 @@ public class EditExperimentDialog extends DialogWindow {
     close();
   }
 
+  @Override
+  public void close() {
+    super.close();
+    reset();
+  }
+
   public void setExperiment(ExperimentDraft experiment,
       Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
     this.usedSampleOrigins = usedTerms;
     binder.setBean(experiment);
-  }
-
-  @Override
-  public void closeIgnoringListeners() {
-    super.closeIgnoringListeners();
-    reset();
   }
 
   public void reset() {
