@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -18,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
@@ -26,9 +27,11 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
@@ -96,6 +99,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final ProjectInformationService projectInformationService;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final MessageSourceToastFactory messageSourceToastFactory;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -105,22 +110,27 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent,
-      ProjectInformationService projectInformationService) {
-    this.experimentInformationService = Objects.requireNonNull(experimentInformationService,
+      ProjectInformationService projectInformationService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceToastFactory messageSourceToastFactory) {
+    this.experimentInformationService = requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
-    this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService,
+    this.batchRegistrationService = requireNonNull(batchRegistrationService,
         "BatchRegistrationService cannot be null");
-    this.sampleRegistrationService = Objects.requireNonNull(sampleRegistrationService,
+    this.sampleRegistrationService = requireNonNull(sampleRegistrationService,
         "SampleRegistrationService cannot be null");
-    this.sampleInformationService = Objects.requireNonNull(sampleInformationService,
+    this.sampleInformationService = requireNonNull(sampleInformationService,
         "SampleInformationService cannot be null");
-    this.deletionService = Objects.requireNonNull(deletionService,
+    this.deletionService = requireNonNull(deletionService,
         "DeletionService cannot be null");
-    this.sampleDetailsComponent = Objects.requireNonNull(sampleDetailsComponent,
+    this.sampleDetailsComponent = requireNonNull(sampleDetailsComponent,
         "SampleDetailsComponent cannot be null");
-    this.batchDetailsComponent = Objects.requireNonNull(batchDetailsComponent,
+    this.batchDetailsComponent = requireNonNull(batchDetailsComponent,
         "BatchDetailsComponent cannot be null");
-
+    this.projectInformationService = projectInformationService;
+    this.messageSourceToastFactory = messageSourceToastFactory;
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
 
@@ -147,7 +157,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
-    this.projectInformationService = projectInformationService;
+
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -303,10 +313,10 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     notification.open();
   }
 
-  private void displayDeletionSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch deletion succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayDeletionSuccess(String batchName) {
+    messageSourceToastFactory.create("sample-batch.deleted.success", new String[]{batchName},
+            getLocale())
+        .open();
   }
 
   private void displayRegistrationSuccess() {
@@ -342,7 +352,11 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         editBatchEvent.batchPreview()
             .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos,
         this::isSampleRemovable);
-    editBatchDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    editBatchDialog.addCancelListener(cancelEvent -> cancelConfirmationDialogFactory
+        .cancelConfirmationDialog(
+            it -> cancelEvent.getSource().close(),
+            "sample-batch.edit",
+            getLocale()));
     editBatchDialog.addConfirmListener(this::editBatch);
     editBatchDialog.open();
   }
@@ -383,7 +397,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
     deletionService.deleteBatch(context.projectId().orElseThrow(),
         deleteBatchEvent.batchId());
-    displayDeletionSuccess();
+    displayDeletionSuccess(deleteBatchEvent.batchLabel());
     setBatchAndSampleInformation();
   }
 
