@@ -7,6 +7,8 @@
   grid-template-columns: 1fr;
   grid-template-rows: minmax(max-content, 95%) minmax(min-content, 5%);
   height: 100%;
+  /*Default design of components is too big for smaller screens*/
+  zoom: 90%;
   grid-template-areas:
     "content-area"
     "data-manager-footer";
