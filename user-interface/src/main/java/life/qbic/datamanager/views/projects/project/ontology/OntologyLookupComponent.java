@@ -55,8 +55,7 @@ public class OntologyLookupComponent extends PageArea {
   private final transient SpeciesLookupService speciesTermLookupService;
   private GridLazyDataView<OntologyTerm> ontologyGridLazyDataView;
   private String searchTerm = "";
-  private boolean speciesSearchActive = false;
-  private ToggleButton speciesSearchCheckbox = new ToggleButton("I want to search for species");
+  private final ToggleButton speciesSearchToggleButton = ToggleButton.createWithLabel("I want to search for species");
   private Grid<OntologyTerm> searchGrid;
 
   public OntologyLookupComponent(
@@ -71,26 +70,18 @@ public class OntologyLookupComponent extends PageArea {
     Span description = new Span(
         "Here you can search our database for ontology terms from various ontologies.");
     add(description);
-    initSearchScope(SPECIES_DISABLED);
-    add(speciesSearchCheckbox);
+    add(speciesSearchToggleButton);
     initSearchField();
     add(searchField);
     initGridSection();
     add(ontologyGridSection);
     addClassName("ontology-lookup-component");
-  }
-
-  private void initSearchScope(boolean speciesSearchActive) {
-    this.speciesSearchActive = speciesSearchActive;
-    this.speciesSearchCheckbox.addValueChangeListener(event -> {
-      this.speciesSearchActive = event.getValue();
-      updateGrid();
-    });
-
+    updateGrid();
+    speciesSearchToggleButton.addValueChangeListener(ignoredEvent -> updateGrid());
   }
 
   private void updateGrid() {
-    if (speciesSearchActive) {
+    if (speciesSearchToggleButton.isOn()) {
       setSpeciesLazyDataProviderForOntologyGrid(searchGrid);
     } else {
       setLazyDataProviderForOntologyGrid(searchGrid);
