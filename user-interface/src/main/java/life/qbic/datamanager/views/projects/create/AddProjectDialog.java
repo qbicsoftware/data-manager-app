@@ -159,7 +159,7 @@ public class AddProjectDialog extends QbicDialog {
 
   private void onCancelClicked(ClickEvent<Button> clickEvent) {
     NotificationDialog cancelConfirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        it -> close(), "create-project", getLocale());
+        it -> close(), "project.create", getLocale());
     cancelConfirmationDialog.open();
   }
 
