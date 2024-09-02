@@ -5,7 +5,6 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
@@ -23,7 +22,8 @@ import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.datamanager.views.login.passwordreset.ResetPasswordLayout;
+import life.qbic.datamanager.views.general.CardLayout;
+import life.qbic.datamanager.views.login.passwordreset.ResetPasswordMain;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.identity.api.UserInformationService;
 
@@ -35,7 +35,7 @@ import life.qbic.identity.api.UserInformationService;
  */
 @SpringComponent
 @UIScope
-public class UserRegistrationComponent extends Div {
+public class UserRegistrationComponent extends CardLayout {
 
   @Serial
   private static final long serialVersionUID = -1189104139053489520L;
@@ -64,7 +64,7 @@ public class UserRegistrationComponent extends Div {
   public UserRegistrationComponent(UserInformationService userInformationService) {
     this.userInformationService = Objects.requireNonNull(userInformationService);
     addClassName("user-registration-component");
-    registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    registerButton.addClassName("primary");
     username.setHelperText("Your unique user name, visible to other users");
     add(titleSpan, notificationLayout, fullName, email, username, password, registerButton);
     setFieldValidation();
@@ -73,7 +73,7 @@ public class UserRegistrationComponent extends Div {
   }
 
   private void addRoutingLinks() {
-    RouterLink resetLink = new RouterLink("RESET", ResetPasswordLayout.class);
+    RouterLink resetLink = new RouterLink("RESET", ResetPasswordMain.class);
     Span resetSpan = new Span(new Text("Forgot your password? "), resetLink);
     add(resetSpan);
   }
