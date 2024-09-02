@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.access;
 
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.ProjectUser;
 
 /**
@@ -13,7 +14,7 @@ import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponen
 public class ProjectUserRemovalConfirmationNotification extends NotificationDialog {
 
   public ProjectUserRemovalConfirmationNotification(ProjectUser projectUser) {
-    super(Type.WARNING);
+    super(NotificationLevel.WARNING);
     withTitle("Remove user from project");
     withContent(new Span(
         "Are you sure you want to remove the user %s from the project?".formatted(

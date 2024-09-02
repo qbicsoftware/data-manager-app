@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.notifications.toasts;
+package life.qbic.datamanager.views.notifications;
 
 import static java.util.Objects.isNull;
 
@@ -11,7 +11,6 @@ import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Optional;
-import life.qbic.datamanager.views.notifications.toasts.Toast.Level;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -55,7 +54,7 @@ public class MessageSourceToastFactory implements Serializable {
    * @param locale     the locale for which to load the message
    * @return a Toast with loaded content
    */
-  public Toast create(String key, Object[] parameters, Locale locale) {
+  private Toast create(String key, Object[] parameters, Locale locale) {
     MessageType type = parseMessageType(key, locale);
     String messageText = parseMessage(key, parameters, locale);
 
@@ -64,7 +63,7 @@ public class MessageSourceToastFactory implements Serializable {
       case TEXT -> new Span(messageText);
     };
 
-    Level level = parseLevel(key, locale);
+    NotificationLevel level = parseLevel(key, locale);
     Duration duration = parseDuration(key, locale).orElse(Toast.DEFAULT_OPEN_DURATION);
 
     Toast toast = new Toast(level);
@@ -93,7 +92,7 @@ public class MessageSourceToastFactory implements Serializable {
     }
   }
 
-  private Level parseLevel(String key, Locale locale) {
+  private NotificationLevel parseLevel(String key, Locale locale) {
     String levelProperty;
     try {
       levelProperty = messageSource.getMessage("%s.level".formatted(key),
@@ -103,7 +102,7 @@ public class MessageSourceToastFactory implements Serializable {
     }
 
     try {
-      return Level.valueOf(levelProperty.trim().toUpperCase());
+      return NotificationLevel.valueOf(levelProperty.trim().toUpperCase());
     } catch (IllegalArgumentException e) {
       throw new RuntimeException(
           "Could not parse toast level for key %s: %s".formatted(key, levelProperty));
@@ -150,7 +149,7 @@ public class MessageSourceToastFactory implements Serializable {
    * @return a Toast with loaded content
    * @see #create(String, Object[], Locale)
    */
-  public Toast createRouting(String key, Object[] messageArgs, Object[] routeArgs,
+  private Toast createRouting(String key, Object[] messageArgs, Object[] routeArgs,
       Class<? extends Component> navigationTarget,
       RouteParameters routeParameters, Locale locale) {
     var toast = create(key, messageArgs, locale);

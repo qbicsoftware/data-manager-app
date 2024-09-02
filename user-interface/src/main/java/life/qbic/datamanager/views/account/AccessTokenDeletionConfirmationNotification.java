@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.account;
 
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Warns the user that the personal access token will be deleted and cannot be used
@@ -11,7 +12,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class AccessTokenDeletionConfirmationNotification extends NotificationDialog {
 
   public AccessTokenDeletionConfirmationNotification() {
-    super(Type.WARNING);
+    super(NotificationLevel.WARNING);
     withTitle("Personal Access Token will be deleted");
     withContent(new Span(
         "Deleting this Personal Access Token will make it unusable. Proceed?"));

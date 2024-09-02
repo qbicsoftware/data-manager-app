@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.notifications.toasts;
+package life.qbic.datamanager.views.notifications;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -41,17 +41,14 @@ public final class Toast extends Notification {
 
   private Component content;
 
-  enum Level {
-    SUCCESS,
-    INFO;
-  }
 
-  Toast(Level level) {
+  Toast(NotificationLevel level) {
     super();
     addClassName("toast-notification");
     addClassName(switch (level) {
       case SUCCESS -> "success-toast";
       case INFO -> "info-toast";
+      case WARNING, ERROR -> "";
     });
 
     setPosition(DEFAULT_POSITION);

@@ -32,8 +32,8 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
-import life.qbic.datamanager.views.notifications.toasts.Toast;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -76,7 +76,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ExperimentInformationService experimentInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
-  private final MessageSourceToastFactory messageSourceToastFactory;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final TerminologyService terminologyService;
   private final SpeciesLookupService speciesLookupService;
   private Context context = new Context();
@@ -88,13 +88,13 @@ public class ProjectSideNavigationComponent extends Div implements
       UserPermissions userPermissions,
       SpeciesLookupService speciesLookupService,
       TerminologyService terminologyService,
-      MessageSourceToastFactory messageSourceToastFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     content = new Div();
     requireNonNull(projectInformationService);
     requireNonNull(experimentInformationService);
     requireNonNull(addExperimentToProjectService);
-    this.messageSourceToastFactory = requireNonNull(messageSourceToastFactory,
-        "messageSourceToastFactory must not be null");
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
     this.speciesLookupService = speciesLookupService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
@@ -361,7 +361,7 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private void displayExperimentCreationSuccess(String experimentName) {
-    Toast toast = messageSourceToastFactory.create("experiment.created.success",
+    Toast toast = messageSourceNotificationFactory.toast("experiment.created.success",
         new Object[]{experimentName}, getLocale());
     toast.open();
   }

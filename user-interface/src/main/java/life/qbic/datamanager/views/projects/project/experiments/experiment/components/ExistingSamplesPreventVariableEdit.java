@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Notifies the user that samples exist in the experiment.
@@ -14,7 +15,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class ExistingSamplesPreventVariableEdit extends NotificationDialog {
 
   public ExistingSamplesPreventVariableEdit(int sampleCount) {
-    super(Type.ERROR);
+    super(NotificationLevel.ERROR);
     addClassName("existing-samples-prevent-variable-edit");
     withTitle("Cannot edit variables");
     customizeContent(sampleCount);

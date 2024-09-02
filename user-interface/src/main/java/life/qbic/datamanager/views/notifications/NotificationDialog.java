@@ -35,26 +35,22 @@ import com.vaadin.flow.dom.Style.Display;
 public class NotificationDialog extends ConfirmDialog {
 
   private final H2 title;
-  private final Type type;
+  private final NotificationLevel level;
   protected final Div layout;
   private Icon headerIcon;
   protected Component content;
 
-  protected enum Type {
-    SUCCESS, WARNING, ERROR, INFO
-  }
-
-  protected NotificationDialog(Type type) {
+  protected NotificationDialog(NotificationLevel level) {
     addClassName("notification-dialog");
-    addClassName(switch (type) {
+    addClassName(switch (level) {
       case SUCCESS -> "success-dialog";
       case WARNING -> "warning-dialog";
       case ERROR -> "error-dialog";
       case INFO -> "info-dialog";
     });
-    this.type = requireNonNull(type, "type must not be null");
+    this.level = requireNonNull(level, "level must not be null");
 
-    var defaultTitle = switch (type) {
+    var defaultTitle = switch (level) {
       case SUCCESS -> "Success";
       case WARNING -> "Warning";
       case ERROR -> "Error";
@@ -62,7 +58,7 @@ public class NotificationDialog extends ConfirmDialog {
     };
     title = new H2(defaultTitle);
     title.addClassName("title");
-    withHeaderIcon(typeBasedHeaderIcon(this.type));
+    withHeaderIcon(typeBasedHeaderIcon(this.level));
     updateHeader();
 
     layout = new Div();
@@ -73,14 +69,14 @@ public class NotificationDialog extends ConfirmDialog {
     setConfirmText("Okay");
   }
 
-  protected static Icon typeBasedHeaderIcon(Type newType) {
-    var iconCssClass = switch (newType) {
+  protected static Icon typeBasedHeaderIcon(NotificationLevel notificationLevel) {
+    var iconCssClass = switch (notificationLevel) {
       case SUCCESS -> "success-icon";
       case WARNING -> "warning-icon";
       case ERROR -> "error-icon";
       case INFO -> "info-icon";
     };
-    var icon = switch (newType) {
+    var icon = switch (notificationLevel) {
       case SUCCESS -> VaadinIcon.CHECK.create();
       case WARNING -> VaadinIcon.WARNING.create();
       case ERROR -> VaadinIcon.CLOSE_CIRCLE.create();
@@ -96,7 +92,7 @@ public class NotificationDialog extends ConfirmDialog {
    * @return a notification dialog showing a success notification
    */
   public static NotificationDialog successDialog() {
-    return new NotificationDialog(Type.SUCCESS);
+    return new NotificationDialog(NotificationLevel.SUCCESS);
   }
 
   /**
@@ -105,7 +101,7 @@ public class NotificationDialog extends ConfirmDialog {
    * @return a notification dialog showing a warning notification
    */
   public static NotificationDialog warningDialog() {
-    return new NotificationDialog(Type.WARNING);
+    return new NotificationDialog(NotificationLevel.WARNING);
   }
 
   /**
@@ -114,7 +110,7 @@ public class NotificationDialog extends ConfirmDialog {
    * @return a notification dialog showing an error notification
    */
   public static NotificationDialog errorDialog() {
-    return new NotificationDialog(Type.ERROR);
+    return new NotificationDialog(NotificationLevel.ERROR);
   }
 
   /**
@@ -123,7 +119,7 @@ public class NotificationDialog extends ConfirmDialog {
    * @return a notification dialog showing an info notification
    */
   public static NotificationDialog infoDialog() {
-    return new NotificationDialog(Type.INFO);
+    return new NotificationDialog(NotificationLevel.INFO);
   }
 
   private void updateHeader() {

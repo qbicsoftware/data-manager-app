@@ -21,8 +21,8 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.general.download.QualityControlDownload;
-import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
-import life.qbic.datamanager.views.notifications.toasts.Toast;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
@@ -89,7 +89,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final QualityControlDownload qualityControlDownload;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
-  private final MessageSourceToastFactory messageSourceToastFactory;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final TerminologyService terminologyService;
   private Context context;
 
@@ -102,7 +102,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired ProjectPurchaseService projectPurchaseService,
       @Autowired QualityControlService qualityControlService,
       @Autowired TerminologyService terminologyService,
-      MessageSourceToastFactory messageSourceToastFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
     this.experimentListComponent = requireNonNull(experimentListComponent,
@@ -118,8 +118,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         "projectPurchaseService must not be null");
     this.qualityControlService = requireNonNull(qualityControlService,
         "qualityControlService must not be null");
-    this.messageSourceToastFactory = requireNonNull(messageSourceToastFactory,
-        "messageSourceToastFactory must not be null");
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
 
 
     offerListComponent = getConfiguredOfferList();
@@ -328,7 +328,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void displayExperimentCreationSuccess(String experimentName) {
-    Toast toast = messageSourceToastFactory.create("experiment.created.success",
+    Toast toast = messageSourceNotificationFactory.toast("experiment.created.success",
         new Object[]{experimentName}, getLocale());
     toast.open();
   }
