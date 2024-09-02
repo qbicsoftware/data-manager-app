@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Notifies the user that experimental groups exist in the experiment.
@@ -15,7 +16,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public final class ExistingGroupsPreventVariableEdit extends NotificationDialog {
 
   public ExistingGroupsPreventVariableEdit(int numberOfExperimentalGroups) {
-    super(Type.ERROR);
+    super(NotificationLevel.ERROR);
     addClassName("existing-groups-prevent-variable-edit");
     withTitle("Cannot edit variables");
     customizeContent(numberOfExperimentalGroups);

@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.samples;
 
 import com.vaadin.flow.component.html.Span;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Warns the user that the samples contained in the batch will also be deleted
@@ -12,7 +13,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class BatchDeletionConfirmationNotification extends NotificationDialog {
 
   public BatchDeletionConfirmationNotification() {
-    super(Type.WARNING);
+    super(NotificationLevel.ERROR);
     withTitle("Samples within batch will be deleted");
     withContent(new Span(
         "Deleting this Batch will also delete the samples contained within. Proceed?"));

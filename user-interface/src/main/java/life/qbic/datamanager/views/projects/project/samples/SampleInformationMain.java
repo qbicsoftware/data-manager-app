@@ -28,10 +28,10 @@ import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
@@ -101,6 +101,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final ProjectInformationService projectInformationService;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final MessageSourceToastFactory messageSourceToastFactory;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -112,7 +113,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired BatchDetailsComponent batchDetailsComponent,
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceToastFactory messageSourceToastFactory) {
+      MessageSourceToastFactory messageSourceToastFactory,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
     this.batchRegistrationService = requireNonNull(batchRegistrationService,
@@ -131,6 +133,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     this.messageSourceToastFactory = messageSourceToastFactory;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
 
@@ -157,7 +161,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
-
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -240,7 +243,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .onError(responseCode -> displayRegistrationFailure())
         .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
         .onValue(ignored -> confirmEvent.getSource().close())
-        .onValue(batchId -> displayRegistrationSuccess())
+        .onValue(batchId -> displayRegistrationSuccess(batchLabel))
         .onValue(ignored -> setBatchAndSampleInformation());
   }
 
@@ -313,22 +316,25 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     notification.open();
   }
 
-  private void displayDeletionSuccess(String batchName) {
-    messageSourceToastFactory.create("sample-batch.deleted.success", new String[]{batchName},
+  private void displayDeletionSuccess(String batchLabel) {
+    messageSourceNotificationFactory.toast("sample-batch.deleted.success", new String[]{batchLabel},
             getLocale())
         .open();
   }
 
-  private void displayRegistrationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayRegistrationSuccess(String batchLabel) {
+    messageSourceNotificationFactory.toast("sample-batch.registered.success",
+            new String[]{batchLabel},
+            getLocale())
+        .open();
+
   }
 
   private void displayRegistrationFailure() {
-    ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
+    messageSourceNotificationFactory.dialog(
+            "sample-batch.register.failure",
+            MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale())
+        .open();
   }
 
   private void onEditBatchClicked(EditBatchEvent editBatchEvent) {

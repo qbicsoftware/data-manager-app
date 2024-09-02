@@ -37,7 +37,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.notifications.toasts.MessageSourceToastFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
@@ -101,7 +101,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer addExperimentalVariablesNote;
   private final DeletionService deletionService;
   private final TerminologyService terminologyService;
-  private final MessageSourceToastFactory messageSourceToastFactory;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private Context context;
   private int experimentalGroupCount;
 
@@ -112,9 +112,9 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired DeletionService deletionService,
       @Autowired SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
-      MessageSourceToastFactory messageSourceToastFactory) {
-    this.messageSourceToastFactory = requireNonNull(messageSourceToastFactory,
-        "messageSourceToastFactory must not be null");
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
     this.deletionService = requireNonNull(deletionService);
@@ -151,7 +151,7 @@ public class ExperimentDetailsComponent extends PageArea {
     RouteParam experimentRouteParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
         context.experimentId().orElseThrow().value());
 
-    return messageSourceToastFactory.createRouting("from.experiment.to.sample.batch",
+    return messageSourceNotificationFactory.routingToast("from.experiment.to.sample.batch",
         new Object[]{},
         new Object[]{},
         SampleInformationMain.class,

@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment.comp
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Notifies the user that samples exist in the experiment and reference the Ontology term the user
@@ -14,7 +15,7 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class ExistingSamplesPreventSampleOriginEdit extends NotificationDialog {
 
   public ExistingSamplesPreventSampleOriginEdit(String ontologyLabel) {
-    super(Type.ERROR);
+    super(NotificationLevel.ERROR);
     addClassName("existing-samples-prevent-variable-edit");
     withTitle("Cannot remove sample origin");
     withContent(new Div(
