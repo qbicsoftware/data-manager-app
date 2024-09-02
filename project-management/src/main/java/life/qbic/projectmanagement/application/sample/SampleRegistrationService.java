@@ -3,8 +3,6 @@ package life.qbic.projectmanagement.application.sample;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
@@ -13,7 +11,6 @@ import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
