@@ -29,7 +29,6 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -100,7 +99,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final ProjectInformationService projectInformationService;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final MessageSourceToastFactory messageSourceToastFactory;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
 
@@ -113,7 +111,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired BatchDetailsComponent batchDetailsComponent,
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceToastFactory messageSourceToastFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
@@ -130,7 +127,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     this.batchDetailsComponent = requireNonNull(batchDetailsComponent,
         "BatchDetailsComponent cannot be null");
     this.projectInformationService = projectInformationService;
-    this.messageSourceToastFactory = messageSourceToastFactory;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
