@@ -24,7 +24,7 @@ import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
-import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
 import life.qbic.identity.api.UserInformationService;
@@ -69,7 +69,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired  TerminologyService terminologyService,
-      MessageSourceToastFactory messageSourceToastFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     super(requireNonNull(footerComponentFactory));
     requireNonNull(logoutService);
     requireNonNull(userInformationService);
@@ -78,14 +78,16 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
     requireNonNull(userPermissions);
     requireNonNull(addExperimentToProjectService);
     requireNonNull(ontologyTermInformationService);
-    requireNonNull(messageSourceToastFactory, "messageSourceToastFactory must not be null");
+    requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
 
     this.dataManagerMenu = new DataManagerMenu(logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyTermInformationService, terminologyService,messageSourceToastFactory);
+        userPermissions, ontologyTermInformationService, terminologyService,
+        messageSourceNotificationFactory);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");

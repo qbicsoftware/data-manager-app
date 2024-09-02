@@ -17,7 +17,7 @@ import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
-import life.qbic.datamanager.views.notifications.MessageSourceToastFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
@@ -58,7 +58,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired SpeciesLookupService speciesLookupService,
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired TerminologyService terminologyService,
-      MessageSourceToastFactory messageSourceToastFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     super(requireNonNull(footerComponentFactory));
     requireNonNull(logoutService);
     requireNonNull(userInformationService);
@@ -66,12 +66,14 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
     requireNonNull(experimentInformationService);
     requireNonNull(addExperimentToProjectService);
     requireNonNull(speciesLookupService);
-    requireNonNull(messageSourceToastFactory, "messageSourceToastFactory must not be null");
+    requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
-        userPermissions, speciesLookupService, terminologyService, messageSourceToastFactory);
+        userPermissions, speciesLookupService, terminologyService,
+        messageSourceNotificationFactory);
     dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");
