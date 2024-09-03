@@ -179,7 +179,7 @@ public class MessageSourceNotificationFactory {
           EMPTY_PARAMETERS, locale).strip().toUpperCase();
       return MessageType.valueOf(messageType);
     } catch (NoSuchMessageException e) {
-      throw new RuntimeException("No message type specified for " + key, e);
+      throw new RuntimeException("No message type specified for %s.message.type".formatted(key), e);
     }
   }
 

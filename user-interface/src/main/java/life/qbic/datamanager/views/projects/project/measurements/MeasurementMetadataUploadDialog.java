@@ -38,8 +38,8 @@ import life.qbic.datamanager.parser.tsv.TSVParser;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -68,6 +68,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private static final long serialVersionUID = -8253078073427291947L;
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private final MeasurementValidationService measurementValidationService;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final transient List<MeasurementFileItem> measurementFileItems;
@@ -77,7 +79,9 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private final UploadItemsDisplay uploadItemsDisplay;
 
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MODE mode, ProjectId projectId) {
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.projectId = requireNonNull(projectId, "projectId cannot be null");
     this.measurementValidationService = requireNonNull(measurementValidationService,
         "measurementValidationExecutor must not be null");
@@ -332,22 +336,10 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private void onCanceled() {
-
-    NotificationDialog dialog = NotificationDialog.warningDialog()
-        .withTitle("Discard uploaded information?")
-        .withContent(new Span("Uploaded information has not yet been saved."));
-    dialog.setCancelable(true);
-    dialog.setCancelText("Continue Editing");
-    Button redButton = new Button("Discard upload");
-    redButton.addClassName("danger");
-    dialog.setConfirmButton(redButton);
-    dialog.addConfirmListener(event -> {
-      event.getSource().close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    dialog.addCancelListener(event -> event.getSource().close());
-    dialog.open();
-
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(
+            it -> fireEvent(new CancelEvent(this, it.isFromClient())),
+            "measurement.metadata.upload", getLocale())
+        .open();
   }
 
   @Override
