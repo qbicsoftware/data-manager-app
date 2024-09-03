@@ -17,6 +17,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
@@ -63,12 +64,14 @@ public class ProjectDetailsComponent extends PageArea {
   private final transient ExperimentInformationService experimentInformationService;
   private final transient ContactRepository contactRepository;
   private final UserPermissions userPermissions;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private Context context;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ContactRepository contactRepository,
-      @Autowired UserPermissions userPermissions) {
+      @Autowired UserPermissions userPermissions,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "projectInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -76,6 +79,8 @@ public class ProjectDetailsComponent extends PageArea {
     this.contactRepository = requireNonNull(contactRepository,
         "contactRepository must not be null");
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
     layoutComponent();
     addListenerForNewEditEvent();
     addClassName("project-details-component");
@@ -227,6 +232,10 @@ public class ProjectDetailsComponent extends PageArea {
           EditProjectInformationDialog editProjectInformationDialog = generateEditProjectInformationDialog(
               proj);
           editProjectInformationDialog.addProjectUpdateEventListener(this::onProjectUpdateEvent);
+          editProjectInformationDialog.addCancelListener(
+              cancelEvent -> cancelConfirmationDialogFactory.cancelConfirmationDialog(
+                      it -> editProjectInformationDialog.close(), "project.edit", getLocale())
+                  .open());
           editProjectInformationDialog.open();
         }
         , () -> {

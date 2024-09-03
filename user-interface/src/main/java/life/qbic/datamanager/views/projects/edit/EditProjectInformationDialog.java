@@ -54,7 +54,7 @@ public class EditProjectInformationDialog extends DialogWindow {
     List<Contact> knownContacts = contactRepository.findAll().stream().map(contact ->
         new Contact(contact.fullName(), contact.emailAddress())).toList();
 
-    if(knownContacts.isEmpty()) {
+    if (knownContacts.isEmpty()) {
       formLayout.hideContactBox();
     } else {
       formLayout.setKnownContacts(knownContacts);
@@ -91,13 +91,26 @@ public class EditProjectInformationDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    close();
+    //as this is the first listener called on cancel event, no closing should happen here.
+    //If this method closes the dialog, the calling code has no opportunity to prevent that.
   }
+
 
   public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
     addListener(ProjectUpdateEvent.class, listener);
   }
 
+  public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
+    addListener(CancelEvent.class, listener);
+  }
+
+  public static class CancelEvent extends
+      life.qbic.datamanager.views.events.UserCancelEvent<EditProjectInformationDialog> {
+
+    public CancelEvent(EditProjectInformationDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
 
   /**
    * <b>Project Update Event</b>
@@ -192,6 +205,7 @@ public class EditProjectInformationDialog extends DialogWindow {
     public void setResponsiblePerson(Contact responsiblePerson) {
       this.responsiblePerson = responsiblePerson;
     }
+
     public Contact getProjectManager() {
       return projectManager;
     }
