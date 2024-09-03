@@ -13,7 +13,7 @@ import life.qbic.datamanager.views.notifications.NotificationLevel;
 public class BatchDeletionConfirmationNotification extends NotificationDialog {
 
   public BatchDeletionConfirmationNotification() {
-    super(NotificationLevel.ERROR);
+    super(NotificationLevel.WARNING);
     withTitle("Samples within batch will be deleted");
     withContent(new Span(
         "Deleting this Batch will also delete the samples contained within. Proceed?"));
