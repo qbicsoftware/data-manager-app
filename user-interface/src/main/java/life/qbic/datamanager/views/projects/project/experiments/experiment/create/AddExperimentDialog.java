@@ -133,6 +133,7 @@ public class AddExperimentDialog extends DialogWindow {
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     //as this is the first listener called on cancel event, no closing should happen here.
     //If this method closes the dialog, the calling code has no opportunity to prevent that.
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
   public void setExperiment(ExperimentDraft experiment) {
