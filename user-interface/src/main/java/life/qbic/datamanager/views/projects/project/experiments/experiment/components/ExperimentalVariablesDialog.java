@@ -122,6 +122,12 @@ public class ExperimentalVariablesDialog extends DialogWindow {
     appendEmptyRowForAddMode();
   }
 
+  @Override
+  public void close() {
+    super.close();
+    reset();
+  }
+
   private void appendEmptyRowForAddMode() {
     if (isAdding()) {
       appendEmptyRow();
