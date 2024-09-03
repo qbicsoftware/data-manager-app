@@ -36,6 +36,22 @@ public class MessageSourceNotificationFactory {
     this.messageSource = messageSource;
   }
 
+  /**
+   * Creates a toast notification with the contents found for the message key.
+   * <p>
+   * The following message keys have to be present:
+   * <ul>
+   *   <li>{@code <key>.message.type}
+   *   <li>{@code <key>.message.text}
+   * </ul>
+   * For more information please the toast-notifications.properties
+   *
+   * @param key        the key for the messages
+   * @param parameters the parameters shown in the message
+   * @param locale     the locale for which to load the message
+   * @return a Toast with loaded content
+   * @see #routingToast(String, Object[], Object[], Class, RouteParameters, Locale)
+   */
   public Toast toast(String key, Object[] parameters, Locale locale) {
     MessageType type = parseMessageType(key, locale);
     String messageText = parseMessage(key, parameters, locale);
@@ -55,6 +71,29 @@ public class MessageSourceNotificationFactory {
     return toast;
   }
 
+  /**
+   * Creates a toast notification with the contents found for the message key. This method produces
+   * a routing toast with the link text read from the message properties file.
+   *
+   * <p>
+   * The following message keys have to be present:
+   * <ul>
+   *   <li>{@code <key>.message.type}
+   *   <li>{@code <key>.message.text}
+   *   <li>{@code <key>.routing.link.text}
+   * </ul>
+   * <p>
+   * For more information please see toast-notifications.properties
+   *
+   * @param key              the key for the messages
+   * @param messageArgs      the parameters shown in the message
+   * @param routeArgs        the parameters shown in the link text message
+   * @param navigationTarget the navigation target to navigate to
+   * @param routeParameters  the routing parameters used for navigation
+   * @param locale           the locale for which to load the message
+   * @return a Toast with loaded content
+   * @see #toast(String, Object[], Locale)
+   */
   public Toast routingToast(String key, Object[] messageArgs, Object[] routeArgs,
       Class<? extends Component> navigationTarget, RouteParameters routeParameters, Locale locale) {
     var toast = toast(key, messageArgs, locale);
@@ -62,6 +101,27 @@ public class MessageSourceNotificationFactory {
     return toast.withRouting(linkText, navigationTarget, routeParameters);
   }
 
+  /**
+   * Creates a dialog notification with the contents found for the message key. This method produces
+   * a notification dialog with the link text read from the message properties file.
+   *
+   * <p>
+   * The following message keys have to be present:
+   * <ul>
+   *   <li>{@code <key>.title} - the title; optional
+   *   <li>{@code <key>.level} - the level; mandatory
+   *   <li>{@code <key>.message.type} - the type (text or html); mandatory
+   *   <li>{@code <key>.message.text} - the text; mandatory
+   *   <li>{@code <key>.confirm-text} - the text of the confirm button; optional
+   * </ul>
+   * <p>
+   * For more information please see dialog-notifications.properties
+   *
+   * @param key        the key for the messages
+   * @param parameters parameters to use in the message
+   * @param locale     the locale for which to load the message
+   * @return a notification dialog with loaded content
+   */
   public NotificationDialog dialog(String key, Object[] parameters, Locale locale) {
     MessageType type = parseMessageType(key, locale);
     String messageText = parseMessage(key, parameters, locale);
