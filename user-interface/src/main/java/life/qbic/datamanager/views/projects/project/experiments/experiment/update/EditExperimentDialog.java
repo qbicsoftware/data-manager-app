@@ -173,7 +173,8 @@ public class EditExperimentDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    close();
+    //as this is the first listener called on cancel event, no closing should happen here.
+    //If this method closes the dialog, the calling code has no opportunity to prevent that.
   }
 
   @Override

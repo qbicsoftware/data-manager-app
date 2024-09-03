@@ -37,6 +37,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
@@ -102,6 +103,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final DeletionService deletionService;
   private final TerminologyService terminologyService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private Context context;
   private int experimentalGroupCount;
 
@@ -112,7 +114,8 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired DeletionService deletionService,
       @Autowired SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
@@ -122,10 +125,11 @@ public class ExperimentDetailsComponent extends PageArea {
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
+    this.terminologyService = terminologyService;
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
-    this.terminologyService = terminologyService;
   }
 
   private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
@@ -227,7 +231,11 @@ public class ExperimentDetailsComponent extends PageArea {
       editExperimentDialog.setConfirmButtonLabel("Save");
 
       editExperimentDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
-      editExperimentDialog.addCancelListener(event -> event.getSource().close());
+      editExperimentDialog.addCancelListener(
+          cancelEvent -> cancelConfirmationDialogFactory.cancelConfirmationDialog(
+                  it -> editExperimentDialog.close(),
+                  "experiment.edit", getLocale())
+              .open());
       editExperimentDialog.open();
     });
   }
