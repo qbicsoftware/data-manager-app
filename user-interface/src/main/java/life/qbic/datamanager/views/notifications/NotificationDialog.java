@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.notifications;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -192,19 +191,4 @@ public class NotificationDialog extends ConfirmDialog {
     return withContent(hiddenCollectionDiv);
   }
 
-  /**
-   * Sets the content of the dialog.
-   * <p>
-   * The html content is added to the dialog. Please be aware that this method does not check the
-   * validity of the provided html. {@link Component}s. At least one component is required.
-   * <p>
-   * Previous content is removed from the dialog when calling this method.
-   *
-   * @param htmlContent the html string describing the content to set
-   * @param <T>
-   * @return the modified dialog
-   */
-  public <T extends NotificationDialog> T withHtmlContent(String htmlContent) {
-    return withContent(new Html("<div style=\"display:contents\">%s</div>".formatted(htmlContent)));
-  }
 }
