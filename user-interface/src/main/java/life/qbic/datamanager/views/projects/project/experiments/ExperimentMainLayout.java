@@ -29,7 +29,8 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -63,8 +64,9 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
-      @Autowired OntologyLookupService ontologyTermInformationService,
-      @Autowired FooterComponentFactory footerComponentFactory) {
+      @Autowired SpeciesLookupService ontologyTermInformationService,
+      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired  TerminologyService terminologyService) {
     super(Objects.requireNonNull(footerComponentFactory));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
@@ -78,7 +80,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyTermInformationService);
+        userPermissions, ontologyTermInformationService, terminologyService);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");

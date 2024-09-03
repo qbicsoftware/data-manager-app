@@ -76,10 +76,10 @@ class CachedOrganisationRepositorySpec extends Specification {
         and: // we override the cache entry since the size is 1
         singularRepoInstance.resolve("https://ror.org/00v34f693")
 
-        when: // we query the first ROR entry again
+        when: // we search the first ROR entry again
         singularRepoInstance.resolve("https://ror.org/03a1kwz48")
 
-        then: // the query did not read from the cache
+        then: // the search did not read from the cache
         !singularRepoInstance.cacheUsedForLastRequest()
     }
 }

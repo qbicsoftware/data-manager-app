@@ -116,7 +116,7 @@ public class ProjectDetailsComponent extends PageArea {
   }
 
   private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm){
-    String ontologyLinkName = ontologyTerm.getName().replace("_", ":");
+    String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
     Span ontologyEntryLink = new Span(new Anchor(ontologyTerm.getClassIri(), ontologyLinkName));
     ontologyEntryLink.addClassName("ontology-link");
     Span ontologyEntry = new Span(new Span(ontologyTerm.getLabel()), ontologyEntryLink);

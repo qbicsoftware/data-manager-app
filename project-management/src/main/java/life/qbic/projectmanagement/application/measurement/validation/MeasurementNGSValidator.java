@@ -12,8 +12,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.PROTEOMICS_PROPERTY;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -35,17 +34,17 @@ public class MeasurementNGSValidator implements
 
   private static final Logger log = logger(MeasurementNGSValidator.class);
   protected final MeasurementService measurementService;
-  protected final OntologyLookupService ontologyLookupService;
+  protected final TerminologyService terminologyService;
   protected final ProjectInformationService projectInformationService;
   private final SampleInformationService sampleInformationService;
 
   @Autowired
   public MeasurementNGSValidator(SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService,
+      TerminologyService terminologyService,
       ProjectInformationService projectInformationService,
       MeasurementService measurementService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
-    this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
+    this.terminologyService = Objects.requireNonNull(terminologyService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.measurementService = Objects.requireNonNull(measurementService);
   }
@@ -214,7 +213,7 @@ public class MeasurementNGSValidator implements
     }
 
     ValidationResult validateInstrument(String instrument) {
-      var result = ontologyLookupService.findByCURI(instrument);
+      var result = terminologyService.findByCurie(instrument);
       if (result.isPresent()) {
         return ValidationResult.successful(1);
       }

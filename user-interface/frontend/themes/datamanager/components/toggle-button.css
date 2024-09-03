@@ -1,0 +1,27 @@
+/*Adapted from example provided in
+https://vaadin.com/forum/t/togglebutton-for-flow-3-0-0-vaadin-24-3-10-problem-with-applying-custom-css/166148/17*/
+
+/*Define checkbox width and height*/
+.toggle-button::part(checkbox) {
+  width: var(--lumo-size-m);
+  border-radius: 1em;
+}
+
+/*Button size and style within checkbox*/
+.toggle-button::part(checkbox)::after {
+  content: "";
+  height: calc(var(--lumo-size-m) / 3);
+  background-color: var(--lumo-secondary-text-color);
+  border-radius: 1em;
+  inset: 0;
+  margin: calc(var(--lumo-size-m) / 12);
+  opacity: 1;
+  transition: transform 0.3s;
+  width: calc(var(--lumo-size-m) / 3);
+}
+
+/*After the checkbox is pressed, move the button to the right and change color*/
+.toggle-button[checked]::part(checkbox)::after {
+  background-color: var(--lumo-primary-contrast-color);
+  transform: translateX(calc(var(--lumo-size-m) / 2));
+}

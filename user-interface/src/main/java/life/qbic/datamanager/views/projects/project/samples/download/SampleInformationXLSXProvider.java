@@ -33,9 +33,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class SampleInformationXLSXProvider implements DownloadContentProvider {
 
-  private static final String FILE_NAME = "sample_information.xlsx";
+  private static final String FILE_NAME_SUFFIX = "sample_information.xlsx";
   private static final Logger log = logger(SampleInformationXLSXProvider.class);
   private final List<SamplePreview> samples = new ArrayList<>();
+  private static final String DEFAULT_FILE_PREFIX = "QBiC";
+  private String fileNamePrefix = DEFAULT_FILE_PREFIX;
 
 
   private static void setAutoWidth(Sheet sheet) {
@@ -119,8 +121,8 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     var labelCol = sampleRow.createCell(SamplePreviewColumn.LABEL.column());
     labelCol.setCellValue(sample.sampleName());
 
-    var organismIdCol = sampleRow.createCell(SamplePreviewColumn.ORGANISM_ID.column());
-    organismIdCol.setCellValue(sample.organismId());
+    var bioRepCol = sampleRow.createCell(SamplePreviewColumn.BIOLOGICAL_REPLICATE.column());
+    bioRepCol.setCellValue(sample.biologicalReplicate());
 
     var batchCol = sampleRow.createCell(SamplePreviewColumn.BATCH.column());
     batchCol.setCellValue(sample.batchLabel());
@@ -147,22 +149,23 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     }
   }
 
-  public void setSamples(List<SamplePreview> samplePreviews) {
+  public void setSamples(List<SamplePreview> samplePreviews, String fileNamePrefix) {
     this.samples.clear();
     this.samples.addAll(samplePreviews);
     this.samples.sort(Comparator.comparing(SamplePreview::sampleCode));
+    this.fileNamePrefix = fileNamePrefix;
   }
 
   @Override
   public String getFileName() {
-    return FILE_NAME;
+    return String.join("_", fileNamePrefix, FILE_NAME_SUFFIX);
   }
 
   enum SamplePreviewColumn {
 
     SAMPLE_ID("Sample ID", 0),
     LABEL("Sample Name", 1),
-    ORGANISM_ID("Organism ID", 2),
+    BIOLOGICAL_REPLICATE("Biological Replicate", 2),
     BATCH("Batch", 3),
     SPECIES("Species", 4),
     SPECIMEN("Specimen", 5),

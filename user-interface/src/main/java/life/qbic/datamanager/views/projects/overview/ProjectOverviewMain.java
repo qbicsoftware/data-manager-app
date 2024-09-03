@@ -33,7 +33,8 @@ import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslation
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,20 +58,22 @@ public class ProjectOverviewMain extends Main {
   private final transient ProjectCreationService projectCreationService;
   private final transient ProjectInformationService projectInformationService;
   private final transient FinanceService financeService;
-  private final transient OntologyLookupService ontologyTermInformationService;
+  private final transient SpeciesLookupService ontologyTermInformationService;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient ContactRepository contactRepository;
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
+  private final TerminologyService terminologyService;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       ProjectInformationService projectInformationService,
-      OntologyLookupService ontologyTermInformationService,
+      SpeciesLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
       ContactRepository contactRepository,
-      AuthenticationToUserIdTranslationService userIdTranslator) {
+      AuthenticationToUserIdTranslationService userIdTranslator,
+      TerminologyService terminologyService) {
     this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
     this.projectCreationService = requireNonNull(projectCreationService,
@@ -87,13 +90,14 @@ public class ProjectOverviewMain extends Main {
     this.userInformationService = requireNonNull(userInformationService,
         "user information service can not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
+    this.terminologyService = requireNonNull(terminologyService);
 
     addTitleAndDescription();
     add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
           this.financeService,
-          this.ontologyTermInformationService, this.contactRepository);
+          this.ontologyTermInformationService, this.contactRepository, terminologyService);
       if (isOfferSearchAllowed()) {
         addProjectDialog.enableOfferSearch();
       }
@@ -107,7 +111,6 @@ public class ProjectOverviewMain extends Main {
         this.getClass().getSimpleName(), System.identityHashCode(this),
         projectCollectionComponent.getClass().getSimpleName(),
         System.identityHashCode(projectCollectionComponent)));
-
   }
 
   private void addTitleAndDescription() {

@@ -21,7 +21,8 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,20 +53,21 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       ExperimentInformationService experimentInformationService,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
       @Autowired UserPermissions userPermissions,
-      @Autowired OntologyLookupService ontologyLookupService,
-      @Autowired FooterComponentFactory footerComponentFactory) {
+      @Autowired SpeciesLookupService speciesLookupService,
+      @Autowired FooterComponentFactory footerComponentFactory,
+      @Autowired TerminologyService terminologyService) {
     super(Objects.requireNonNull(footerComponentFactory));
     Objects.requireNonNull(logoutService);
     Objects.requireNonNull(userInformationService);
     Objects.requireNonNull(projectInformationService);
     Objects.requireNonNull(experimentInformationService);
     Objects.requireNonNull(addExperimentToProjectService);
-    Objects.requireNonNull(ontologyLookupService);
+    Objects.requireNonNull(speciesLookupService);
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyLookupService);
+        userPermissions, speciesLookupService, terminologyService);
     dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");

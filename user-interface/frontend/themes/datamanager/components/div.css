@@ -55,6 +55,7 @@
   font-weight: normal;
   color: #2d2d2d;
   font-size: var(--lumo-font-size-s);
+  white-space: pre-line;
 }
 
 .disclaimer .disclaimer-title {

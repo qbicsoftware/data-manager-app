@@ -22,7 +22,7 @@ import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -54,7 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Measurement Service
  * <p>
- * Service that provides an API to manage and query measurement information
+ * Service that provides an API to manage and search measurement information
  */
 @Service
 public class MeasurementService {
@@ -63,7 +63,7 @@ public class MeasurementService {
   private final MeasurementDomainService measurementDomainService;
   private final MeasurementLookupService measurementLookupService;
   private final SampleInformationService sampleInformationService;
-  private final OntologyLookupService ontologyLookupService;
+  private final SpeciesLookupService speciesLookupService;
   private final OrganisationLookupService organisationLookupService;
   private final ProjectInformationService projectInformationService;
   private final MeasurementRepository measurementRepository;
@@ -71,14 +71,14 @@ public class MeasurementService {
   @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
       SampleInformationService sampleInformationService,
-      OntologyLookupService ontologyLookupService,
+      SpeciesLookupService speciesLookupService,
       OrganisationLookupService organisationLookupService,
       MeasurementLookupService measurementLookupService,
       ProjectInformationService projectInformationService,
       MeasurementRepository measurementRepository) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
-    this.ontologyLookupService = Objects.requireNonNull(ontologyLookupService);
+    this.speciesLookupService = Objects.requireNonNull(speciesLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
@@ -554,7 +554,7 @@ public class MeasurementService {
     if (value.isBlank()) {
       return -1;
     }
-    return Integer.parseInt(value);
+    return (int) Double.parseDouble(value);
   }
 
   /**
@@ -761,7 +761,7 @@ public class MeasurementService {
   }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
-    return ontologyLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);
+    return speciesLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);
   }
 
   private Optional<SampleIdCodeEntry> queryIdCodePair(SampleCode sampleCode) {

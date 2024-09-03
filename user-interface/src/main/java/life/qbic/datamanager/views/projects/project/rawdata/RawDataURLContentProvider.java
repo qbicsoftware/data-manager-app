@@ -17,6 +17,8 @@ public class RawDataURLContentProvider implements DownloadContentProvider {
   private Experiment experiment;
   private List<RawDataURL> rawDataUrls;
   private static final String FILE_SUFFIX = "rawdata_urls.txt";
+  private static final String DEFAULT_FILE_PREFIX = "QBiC";
+  private String fileNamePrefix = DEFAULT_FILE_PREFIX;
 
   @Override
   public byte[] getContent() {
@@ -28,22 +30,14 @@ public class RawDataURLContentProvider implements DownloadContentProvider {
     return textFileBuilder.getRowString().getBytes(StandardCharsets.UTF_8);
   }
 
-  public void updateContext(Experiment experiment, List<RawDataURL> rawDataUrls) {
-    this.experiment = experiment;
+  public void updateContext(List<RawDataURL> rawDataUrls, String fileNamePrefix) {
+    this.fileNamePrefix = fileNamePrefix;
     this.rawDataUrls = rawDataUrls;
   }
 
-  /**
-   * Provides the file name in the following format: CURRENTTIMESTAMP.EXPERIMENTNAME.FILESUFFIX.
-   * CURRENTTIMESTAMP is provided in the format "yyyy-MM-dd"
-   * EXPERIMENTNAME is provided with at most 15 characters and replacing whitespace values with underscore
-   * FILESUFFIX is set to "rawdata_urls.txt"
-   */
   @Override
   public String getFileName() {
-    return String.format("%s.%s.%s",
-        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-        fileNamePrefixFromExperimentName(experiment.getName()), FILE_SUFFIX);
+    return String.join("_", fileNamePrefix, FILE_SUFFIX);
   }
 
   private String fileNamePrefixFromExperimentName(String experimentName) {

@@ -6,9 +6,11 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
-import life.qbic.projectmanagement.application.ontology.OntologyLookupService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
@@ -18,18 +20,19 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  */
 public class OntologyComboboxFactory {
 
-  private final OntologyLookupService ontologyLookupService;
+  private final SpeciesLookupService speciesLookupService;
 
-  public OntologyComboboxFactory(OntologyLookupService ontologyLookupService) {
-    this.ontologyLookupService = requireNonNull(ontologyLookupService,
+  private final TerminologyService terminologyService;
+
+  public OntologyComboboxFactory(SpeciesLookupService speciesLookupService, TerminologyService terminologyService) {
+    this.speciesLookupService = requireNonNull(speciesLookupService,
         "ontologyTermInformationService must not be null");
+    this.terminologyService = Objects.requireNonNull(terminologyService);
   }
 
   public MultiSelectComboBox<OntologyTerm> analyteBox() {
-    List<Ontology> analyteOntologies = List.of(Ontology.BIOASSAY_ONTOLOGY);
-
     MultiSelectComboBox<OntologyTerm> box = newBox();
-    box.setItems(ontologyFetchCallback(analyteOntologies));
+    box.setItems(ontologyTermFetchCallback());
 
     box.setPlaceholder("Search and select one or more analytes for your samples");
     box.setLabel("Analytes");
@@ -37,17 +40,21 @@ public class OntologyComboboxFactory {
     return box;
   }
 
-  private FetchCallback<OntologyTerm, String> ontologyFetchCallback(
+  private FetchCallback<OntologyTerm, String> speciesFetchCallback(
       List<Ontology> ontologies) {
     return query -> OntologyFilterConnector.loadOntologyTerms(ontologies, query,
-        ontologyLookupService);
+        speciesLookupService);
+  }
+
+  private FetchCallback<OntologyTerm, String> ontologyTermFetchCallback() {
+    return query -> OntologyFilterConnector.loadOntologyTerms(query, terminologyService);
   }
 
   public MultiSelectComboBox<OntologyTerm> speciesBox() {
     List<Ontology> speciesOntologies = List.of(Ontology.NCBI_TAXONOMY);
 
     MultiSelectComboBox<OntologyTerm> box = newBox();
-    box.setItems(ontologyFetchCallback(speciesOntologies));
+    box.setItems(speciesFetchCallback(speciesOntologies));
 
     box.setPlaceholder("Search and select one or more species for your samples");
     box.setLabel("Species");
@@ -55,11 +62,9 @@ public class OntologyComboboxFactory {
   }
 
   public MultiSelectComboBox<OntologyTerm> specimenBox() {
-    List<Ontology> specimenOntologies = List.of(Ontology.PLANT_ONTOLOGY,
-        Ontology.BRENDA_TISSUE_ONTOLOGY);
 
     MultiSelectComboBox<OntologyTerm> box = newBox();
-    box.setItems(ontologyFetchCallback(specimenOntologies));
+    box.setItems(ontologyTermFetchCallback());
 
     box.setPlaceholder("Search and select one or more specimen for your samples");
     box.setLabel("Specimen");
@@ -78,7 +83,7 @@ public class OntologyComboboxFactory {
   }
 
   private static String ontologyItemFormatted(OntologyTerm ontologyTerm) {
-    String ontologyLinkName = ontologyTerm.getName().replace("_", ":");
+    String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
     return String.format("%s (%s)", ontologyTerm.getLabel(), ontologyLinkName);
   }
 
