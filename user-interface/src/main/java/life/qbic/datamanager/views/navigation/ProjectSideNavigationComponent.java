@@ -32,7 +32,9 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
@@ -76,6 +78,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ExperimentInformationService experimentInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final TerminologyService terminologyService;
   private final SpeciesLookupService speciesLookupService;
@@ -88,6 +91,7 @@ public class ProjectSideNavigationComponent extends Div implements
       UserPermissions userPermissions,
       SpeciesLookupService speciesLookupService,
       TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     content = new Div();
     requireNonNull(projectInformationService);
@@ -95,6 +99,8 @@ public class ProjectSideNavigationComponent extends Div implements
     requireNonNull(addExperimentToProjectService);
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
     this.speciesLookupService = speciesLookupService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
@@ -321,7 +327,14 @@ public class ProjectSideNavigationComponent extends Div implements
     var creationDialog = new AddExperimentDialog(speciesLookupService,
         terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(event -> event.getSource().close());
+    creationDialog.addCancelListener(cancelEvent -> {
+      NotificationDialog confirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+          it -> creationDialog.close(),
+          "experiment.create",
+          getLocale()
+      );
+      confirmationDialog.open();
+    });
     creationDialog.open();
   }
 

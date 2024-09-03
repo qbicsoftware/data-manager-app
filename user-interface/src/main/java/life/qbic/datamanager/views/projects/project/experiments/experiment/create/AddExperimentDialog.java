@@ -131,7 +131,8 @@ public class AddExperimentDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    close();
+    //as this is the first listener called on cancel event, no closing should happen here.
+    //If this method closes the dialog, the calling code has no opportunity to prevent that.
   }
 
   public void setExperiment(ExperimentDraft experiment) {
@@ -148,12 +149,6 @@ public class AddExperimentDialog extends DialogWindow {
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
     addListener(CancelEvent.class, listener);
-  }
-
-  @Override
-  public void close() {
-    super.close();
-    reset();
   }
 
   public static class CancelEvent extends UserCancelEvent<AddExperimentDialog> {

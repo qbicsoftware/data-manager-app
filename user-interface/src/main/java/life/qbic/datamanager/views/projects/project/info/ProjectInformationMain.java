@@ -21,7 +21,9 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.general.download.QualityControlDownload;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -89,6 +91,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final QualityControlDownload qualityControlDownload;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final TerminologyService terminologyService;
   private Context context;
@@ -102,6 +105,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired ProjectPurchaseService projectPurchaseService,
       @Autowired QualityControlService qualityControlService,
       @Autowired TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
@@ -120,7 +124,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         "qualityControlService must not be null");
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
-
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
 
     offerListComponent = getConfiguredOfferList();
     qualityControlListComponent = getConfiguredQualityControlList();
@@ -323,7 +328,14 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private void showAddExperimentDialog() {
     var creationDialog = new AddExperimentDialog(ontologyTermInformationService, terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(event -> event.getSource().close());
+    creationDialog.addCancelListener(cancelEvent -> {
+      NotificationDialog confirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+          it -> creationDialog.close(),
+          "experiment.create",
+          getLocale()
+      );
+      confirmationDialog.open();
+    });
     creationDialog.open();
   }
 
