@@ -150,6 +150,12 @@ public class AddExperimentDialog extends DialogWindow {
     addListener(CancelEvent.class, listener);
   }
 
+  @Override
+  public void close() {
+    super.close();
+    reset();
+  }
+
   public static class CancelEvent extends UserCancelEvent<AddExperimentDialog> {
 
     public CancelEvent(AddExperimentDialog source, boolean fromClient) {
