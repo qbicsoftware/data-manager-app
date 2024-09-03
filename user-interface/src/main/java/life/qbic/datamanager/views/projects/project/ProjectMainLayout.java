@@ -17,6 +17,7 @@ import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.identity.api.UserInformationService;
@@ -58,6 +59,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired SpeciesLookupService speciesLookupService,
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     super(requireNonNull(footerComponentFactory));
     requireNonNull(logoutService);
@@ -73,6 +75,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
         projectInformationService,
         experimentInformationService, addExperimentToProjectService,
         userPermissions, speciesLookupService, terminologyService,
+        cancelConfirmationDialogFactory,
         messageSourceNotificationFactory);
     dataManagerMenu = new DataManagerMenu(logoutService);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
