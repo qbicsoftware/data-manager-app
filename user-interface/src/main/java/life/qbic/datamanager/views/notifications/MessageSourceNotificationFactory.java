@@ -17,12 +17,18 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Notifications created by this factory can be shown to the user.
+ * There are multiply types of notifications.
+ * <ul>
+ *   <li>Toast notification</li>
+ *   <li>Notification dialog</li>
+ * </ul>
+ * <b>Toasts</b> are notifications shown to the user only briefly in a non-blocking way.
+ * The user can choose to ignore them and won't be disturbed in what he/she is doing.
+ * <p>
+ * <b>Notification dialogs</b> are notifications shown to the user in a blocking way. The user has to interact with the dialog in order to continue working.
+ * <p>
+ * Notification dialogs show cases of error or warning notifications. Toast show informational and success notifications.
  */
 @SpringComponent
 public class MessageSourceNotificationFactory {
