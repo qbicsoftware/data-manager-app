@@ -105,7 +105,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     upload.addSucceededListener(this::onUploadSucceeded);
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
-
+    setEscAction(this::onCanceled);
     // Synchronise the Vaadin upload component with the purchase list display
     // When a file is removed from the upload component, we also want to remove it properly from memory
     // and from any additional display

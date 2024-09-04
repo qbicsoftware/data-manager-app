@@ -232,12 +232,18 @@ public class ExperimentDetailsComponent extends PageArea {
 
       editExperimentDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
       editExperimentDialog.addCancelListener(
-          cancelEvent -> cancelConfirmationDialogFactory.cancelConfirmationDialog(
-                  it -> editExperimentDialog.close(),
-                  "experiment.edit", getLocale())
-              .open());
+          cancelEvent -> showCancelConfirmationDialog(editExperimentDialog));
+      editExperimentDialog.setEscAction(
+          () -> showCancelConfirmationDialog(editExperimentDialog));
       editExperimentDialog.open();
     });
+  }
+
+  private void showCancelConfirmationDialog(EditExperimentDialog editExperimentDialog) {
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(
+            it -> editExperimentDialog.close(),
+            "experiment.edit", getLocale())
+        .open();
   }
 
   private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(ExperimentId experimentId) {

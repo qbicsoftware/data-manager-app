@@ -137,7 +137,7 @@ public class AddProjectDialog extends QbicDialog {
 
     Button cancelButton = new Button("Cancel");
     cancelButton.addClassName("cancel");
-    cancelButton.addClickListener(this::onCancelClicked);
+    cancelButton.addClickListener(clickEvent -> onCancelClicked());
     backButton = new Button("Back");
     backButton.addClassName("back");
     backButton.addClickListener(this::onBackClicked);
@@ -148,6 +148,7 @@ public class AddProjectDialog extends QbicDialog {
     rightButtons.add(cancelButton, nextButton, confirmButton);
     footer.add(backButton, rightButtons);
     adaptFooterButtons(stepper.getFirstStep());
+    setEscAction(it -> onCancelClicked());
   }
 
   /**
@@ -157,7 +158,7 @@ public class AddProjectDialog extends QbicDialog {
     projectDesignLayout.enableOfferSearch();
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
+  private void onCancelClicked() {
     NotificationDialog cancelConfirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
         it -> close(), "project.create", getLocale());
     cancelConfirmationDialog.open();

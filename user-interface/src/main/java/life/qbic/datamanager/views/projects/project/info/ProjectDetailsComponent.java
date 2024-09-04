@@ -233,15 +233,21 @@ public class ProjectDetailsComponent extends PageArea {
               proj);
           editProjectInformationDialog.addProjectUpdateEventListener(this::onProjectUpdateEvent);
           editProjectInformationDialog.addCancelListener(
-              cancelEvent -> cancelConfirmationDialogFactory.cancelConfirmationDialog(
-                      it -> editProjectInformationDialog.close(), "project.edit", getLocale())
-                  .open());
+              cancelEvent -> showCancelConfirmation(editProjectInformationDialog));
+          editProjectInformationDialog.setEscAction(
+              it -> showCancelConfirmation(editProjectInformationDialog));
           editProjectInformationDialog.open();
         }
         , () -> {
           throw new ApplicationException(
               "Project information could not be retrieved from service");
         });
+  }
+
+  private void showCancelConfirmation(EditProjectInformationDialog editProjectInformationDialog) {
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(
+            it -> editProjectInformationDialog.close(), "project.edit", getLocale())
+        .open();
   }
 
   private EditProjectInformationDialog generateEditProjectInformationDialog(Project project) {

@@ -354,13 +354,20 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         editBatchEvent.batchPreview()
             .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos,
         this::isSampleRemovable);
-    editBatchDialog.addCancelListener(cancelEvent -> cancelConfirmationDialogFactory
-        .cancelConfirmationDialog(
-            it -> cancelEvent.getSource().close(),
-            "sample-batch.edit",
-            getLocale()));
+    editBatchDialog.addCancelListener(
+        cancelEvent -> showCancelConfirmationDialog(editBatchDialog));
+    editBatchDialog.setEscAction(escEvent -> showCancelConfirmationDialog(editBatchDialog));
     editBatchDialog.addConfirmListener(this::editBatch);
     editBatchDialog.open();
+  }
+
+  private void showCancelConfirmationDialog(EditBatchDialog editBatchDialog) {
+    cancelConfirmationDialogFactory
+        .cancelConfirmationDialog(
+            it2 -> editBatchDialog.close(),
+            "sample-batch.edit",
+            getLocale())
+        .open();
   }
 
   private boolean isSampleRemovable(SampleId sampleId) {

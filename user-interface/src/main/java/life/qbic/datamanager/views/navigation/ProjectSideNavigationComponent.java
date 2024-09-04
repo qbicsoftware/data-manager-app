@@ -327,15 +327,18 @@ public class ProjectSideNavigationComponent extends Div implements
     var creationDialog = new AddExperimentDialog(speciesLookupService,
         terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(cancelEvent -> {
-      NotificationDialog confirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-          it -> creationDialog.close(),
-          "experiment.create",
-          getLocale()
-      );
-      confirmationDialog.open();
-    });
+    creationDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(creationDialog));
+    creationDialog.setEscAction(it -> showCancelConfirmationDialog(creationDialog));
     creationDialog.open();
+  }
+
+  private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
+    NotificationDialog confirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        it -> creationDialog.close(),
+        "experiment.create",
+        getLocale()
+    );
+    confirmationDialog.open();
   }
 
   private void onExperimentAddEvent(ExperimentAddEvent event) {

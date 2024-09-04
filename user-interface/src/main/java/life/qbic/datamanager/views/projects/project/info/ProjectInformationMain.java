@@ -23,7 +23,6 @@ import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.general.download.QualityControlDownload;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -328,15 +327,16 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private void showAddExperimentDialog() {
     var creationDialog = new AddExperimentDialog(ontologyTermInformationService, terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(cancelEvent -> {
-      NotificationDialog confirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-          it -> creationDialog.close(),
-          "experiment.create",
-          getLocale()
-      );
-      confirmationDialog.open();
-    });
+    creationDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(creationDialog));
+    creationDialog.setEscAction(() -> showCancelConfirmationDialog(creationDialog));
     creationDialog.open();
+  }
+
+  private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(
+            it -> creationDialog.close(),
+            "experiment.create", getLocale())
+        .open();
   }
 
   private void displayExperimentCreationSuccess(String experimentName) {
