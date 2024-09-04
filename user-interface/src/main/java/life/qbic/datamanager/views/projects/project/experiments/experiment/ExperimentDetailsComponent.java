@@ -27,6 +27,11 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,10 +45,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
@@ -72,6 +80,8 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -107,6 +117,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer addExperimentalVariablesNote;
   private final DeletionService deletionService;
   private final TerminologyService terminologyService;
+  private final TemplateService templateService;
   private Context context;
   private int experimentalGroupCount;
 
@@ -116,7 +127,9 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired DeletionService deletionService,
       @Autowired SpeciesLookupService ontologyTermInformationService,
-      TerminologyService terminologyService) {
+      @Autowired TerminologyService terminologyService,
+      @Autowired TemplateService templateService) {
+    this.templateService = Objects.requireNonNull(templateService);
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
     this.deletionService = Objects.requireNonNull(deletionService);
@@ -125,9 +138,36 @@ public class ExperimentDetailsComponent extends PageArea {
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.addClassName("experiment-details-component");
+    Button download = new Button("Download");
+    download.addClickListener(buttonClickEvent -> {
+      try (XSSFWorkbook workbook =templateService.sampleBatchRegistrationTemplate(context.projectId().orElseThrow().value(), context.experimentId().orElseThrow().value())) {
+        DownloadProvider downloadProvider = new DownloadProvider(new DownloadContentProvider() {
+          @Override
+          public byte[] getContent() {
+            try (ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream()) {
+              workbook.write(arrayOutputStream);
+              return arrayOutputStream.toByteArray();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+
+          @Override
+          public String getFileName() {
+            return context.projectId().orElseThrow().value() + "_registration_template.xlsx";
+          }
+        });
+        add(downloadProvider);
+        downloadProvider.trigger();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    this.add(download);
     layoutComponent();
     configureComponent();
     this.terminologyService = terminologyService;
+
   }
 
   private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {

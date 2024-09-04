@@ -1,11 +1,17 @@
 package life.qbic.datamanager.templates;
 
+import java.util.Arrays;
 import java.util.Objects;
+import life.qbic.datamanager.parser.PropertyToString;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
 
 /**
  * <b>Template Service</b>
@@ -15,11 +21,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
  *
  * @since 1.5.0
  */
+@Service
 public class TemplateService {
-
 
   private final ExperimentInformationService experimentInfoService;
 
+  @Autowired
   public TemplateService(ExperimentInformationService experimentInfoService) {
     this.experimentInfoService = Objects.requireNonNull(experimentInfoService);
   }
@@ -60,10 +67,18 @@ public class TemplateService {
   }
 
   private XSSFWorkbook createWorkbookFromExperiment(Experiment experiment) {
-    // TODO Load specimen, species, analyte, condition information
-    // TODO Load analysis to perform enums
-    throw new RuntimeException("Not yet implemented");
-    //return SampleBatchTemplate.createRegistrationTemplate();
+    var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
+        .map(
+            PropertyToString::condition).toList();
+    var species = experiment.getSpecies().stream().map(PropertyToString::ontologyTerm).toList();
+    var specimen = experiment.getSpecimens().stream().map(PropertyToString::ontologyTerm).toList();
+    var analytes = experiment.getAnalytes().stream().map(PropertyToString::ontologyTerm).toList();
+    var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
+        .toList();
+    return SampleBatchTemplate.createRegistrationTemplate(
+        conditions, species,
+        specimen, analytes,
+        analysisMethods);
   }
 
   public static class NoSuchExperimentException extends RuntimeException {
