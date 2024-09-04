@@ -356,9 +356,10 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 
 .experiment-variable-dialog .content .row {
   display: flex;
-  align-items: center;
-  gap: var(--lumo-space-l);
+  align-items: baseline;
+  column-gap: var(--lumo-space-l);
 }
+
 
 .add-project-dialog::part(content) {
   display: flex;
