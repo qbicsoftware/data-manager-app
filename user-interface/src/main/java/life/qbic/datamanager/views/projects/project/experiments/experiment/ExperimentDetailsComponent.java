@@ -312,6 +312,7 @@ public class ExperimentDetailsComponent extends PageArea {
     }
     var addDialog = new ExperimentalVariablesDialog();
     addDialog.addCancelEventListener(cancelEvent -> showCancelConfirmationDialog(addDialog, true));
+    addDialog.setEscAction(() -> showCancelConfirmationDialog(addDialog, true));
     addDialog.addConfirmEventListener(this::onExperimentalVariablesAddConfirmed);
     addDialog.open();
   }
@@ -336,6 +337,7 @@ public class ExperimentDetailsComponent extends PageArea {
             context.projectId().orElseThrow().value(), experimentId));
     editDialog.addCancelEventListener(
         cancelEvent -> showCancelConfirmationDialog(editDialog, false));
+    editDialog.setEscAction(() -> showCancelConfirmationDialog(editDialog, false));
     editDialog.addConfirmEventListener(this::onExperimentalVariablesEditConfirmed);
     editDialog.open();
   }
