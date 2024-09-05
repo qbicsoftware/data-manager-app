@@ -111,7 +111,7 @@ public class UserRegistrationComponent extends CardLayout {
         .asRequired("Please provide a password")
         .withValidator(
             name -> name.strip().length() >= 12,
-            "Please provide a password with at least 12 characters")
+            "Password does not contain at least 12 characters")
         .bind(UserRegistrationInformation::password, UserRegistrationInformation::setPassword);
   }
 
