@@ -66,6 +66,7 @@ public class UserRegistrationComponent extends CardLayout {
     addClassName("user-registration-component");
     registerButton.addClassName("primary");
     username.setHelperText("Your unique user name, visible to other users");
+    password.setHelperText("Please provide a password with at least 12 characters");
     add(titleSpan, notificationLayout, fullName, email, username, password, registerButton);
     setFieldValidation();
     addRegistrationButtonListener();
