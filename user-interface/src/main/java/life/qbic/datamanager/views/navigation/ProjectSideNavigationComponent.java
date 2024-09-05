@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.navigation;
 
+import com.vaadin.flow.component.textfield.TextField;
+
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
@@ -71,7 +73,7 @@ public class ProjectSideNavigationComponent extends Div implements
     BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  public static final StringEXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private static final Logger log = LoggerFactory.logger(ProjectSideNavigationComponent.class);
   private final Div content;
   private final transient ProjectInformationService projectInformationService;
@@ -107,6 +109,20 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug(
        "New instance for %s(#%s) created".formatted(
             this.getClass().getSimpleName(), (Integer) System.identityHashCode(this)));
+  }
+
+  private Div createInternationalPostalAddressFields() {
+    Div addressFields = new Div();
+    addressFields.addClassName("address-fields");
+
+    TextField streetField = new TextField("Street");
+    TextField cityField = new TextField("City");
+    TextField stateField = new TextField("State");
+    TextField postalCodeField = new TextField("Postal Code");
+    TextField countryField = new TextField("Country");
+
+    addressFields.add(streetField, cityField, stateField, postalCodeField, countryField);
+    return addressFields;
   }
 
   private static Div createProjectSection(Project project,
@@ -231,7 +247,7 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug("Routing to ProjectOverview page");
   }
 
-  private static void routeToProject(ProjectId projectId) {
+private static void routeToProject(ProjectId projectId) {
     RouteParameters routeParameters = new RouteParameters(
         new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()));
     //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
@@ -259,7 +275,7 @@ public class ProjectSideNavigationComponent extends Div implements
     content.add(
         generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
             .toArray(Component[]::new));
-    content.add(createOntologyLookupSideNavItem(projectId));
+    content.add(createOntologyLookupSideNavItem(projectId), createInternationalPostalAddressFields());
   }
 
   private Project loadProject(ProjectId id) {

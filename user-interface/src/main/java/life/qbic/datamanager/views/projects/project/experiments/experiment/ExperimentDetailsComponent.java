@@ -138,7 +138,7 @@ public class ExperimentDetailsComponent extends PageArea {
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.addClassName("experiment-details-component");
-    Button download = new Button("Download");
+    Button download = new Button("Registration Template");
     download.addClickListener(buttonClickEvent -> {
       try (XSSFWorkbook workbook =templateService.sampleBatchRegistrationTemplate(context.projectId().orElseThrow().value(), context.experimentId().orElseThrow().value())) {
         DownloadProvider downloadProvider = new DownloadProvider(new DownloadContentProvider() {
@@ -164,6 +164,32 @@ public class ExperimentDetailsComponent extends PageArea {
       }
     });
     this.add(download);
+    Button updateTemplate = new Button("Update Template");
+    updateTemplate.addClickListener(buttonClickEvent -> {
+      try (XSSFWorkbook workbook =templateService.sampleBatchUpdateTemplate(context.projectId().orElseThrow().value(), context.experimentId().orElseThrow().value())) {
+        DownloadProvider downloadProvider = new DownloadProvider(new DownloadContentProvider() {
+          @Override
+          public byte[] getContent() {
+            try (ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream()) {
+              workbook.write(arrayOutputStream);
+              return arrayOutputStream.toByteArray();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+
+          @Override
+          public String getFileName() {
+            return context.projectId().orElseThrow().value() + "_update_template.xlsx";
+          }
+        });
+        add(downloadProvider);
+        downloadProvider.trigger();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    this.add(updateTemplate);
     layoutComponent();
     configureComponent();
     this.terminologyService = terminologyService;

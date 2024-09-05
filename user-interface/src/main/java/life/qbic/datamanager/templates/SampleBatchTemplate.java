@@ -1,6 +1,8 @@
 package life.qbic.datamanager.templates;
 
 import java.util.List;
+import life.qbic.datamanager.parser.PropertyToString;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
@@ -18,6 +20,16 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * @since 1.5.0
  */
 public class SampleBatchTemplate {
+
+  private static int COLUMN_INDEX_ANALYSIS = 0;
+  private static int COLUMN_INDEX_SAMPLE_NAME = 1;
+  private static int COLUMN_INDEX_BIOLOGICAL_REPLICATE = 2;
+  private static int COLUMN_INDEX_CONDITION = 3;
+  private static int COLUMN_INDEX_SPECIES = 4;
+  private static int COLUMN_INDEX_SPECIMEN = 5;
+  private static int COLUMN_INDEX_ANALYTES = 6;
+  private static int COLUMN_INDEX_COMMENT = 7;
+  private static int COLUMN_INDEX_SAMPLE_ID = 8;
 
   /**
    * Creates a template {@link XSSFWorkbook} for sample batch registration.
@@ -177,10 +189,6 @@ public class SampleBatchTemplate {
     sheet.addValidationData(dataValidation);
   }
 
-  public static XSSFWorkbook createUpdateTemplate(List<Sample> samples) {
-    return new XSSFWorkbook();
-  }
-
   private static String createNameForListReference(XSSFWorkbook workbook, int rangeStart,
       int rangeEnd,
       String sheetName, String nameName, String columnChar) {
@@ -190,5 +198,69 @@ public class SampleBatchTemplate {
         rangeEnd);
     name.setRefersToFormula(reference);
     return name.getNameName();
+  }
+
+  /**
+   * Creates a {@link XSSFWorkbook} that contains a prefilled sheet of sample metadata based on the
+   * provided list of {@link Sample}.
+   * <p>
+   * Cell validation will be configured exactly like in
+   * {@link SampleBatchTemplate#createRegistrationTemplate(List, List, List, List, List)}.
+   *
+   * @param samples            a list of samples with metadata that will be used to fill the
+   *                           spreadsheet
+   * @param conditions         a list of conditions that are available for selection
+   * @param species            a list of species that are available for selection
+   * @param specimen           a list of specimen that are available for selection
+   * @param analytes           a list of analytes that are available for selection
+   * @param analysisToPerform  a list of analysis types available for the sample measurement
+   * @param experimentalGroups a list of experimental groups the samples belong to
+   * @return a workbook with a prefilled sheet at tab index 0 that contains the sample metadata
+   * @since 1.5.0
+   */
+  public static XSSFWorkbook createUpdateTemplate(List<Sample> samples, List<String> conditions,
+      List<String> species, List<String> specimen, List<String> analytes,
+      List<String> analysisToPerform, List<ExperimentalGroup> experimentalGroups) {
+    XSSFWorkbook workbook = createRegistrationTemplate(conditions, species, specimen, analytes,
+        analysisToPerform);
+    appendColumnHeader(workbook.getSheetAt(0), "Sample ID*");
+    fillSheetWithSampleMetadata(workbook.getSheetAt(0), samples, experimentalGroups);
+    setColumnAutoWidth(workbook.getSheetAt(0), 0, 20);
+    return workbook;
+  }
+
+  private static void fillSheetWithSampleMetadata(XSSFSheet sheet, List<Sample> samples,
+      List<ExperimentalGroup> experimentalGroups) {
+    int rowIndex = 1; // 0 will contain the header!
+    for (Sample sample : samples) {
+      XSSFRow row = sheet.createRow(rowIndex);
+      var experimentalGroup = experimentalGroups.stream()
+          .filter(group -> group.id() == sample.experimentalGroupId()).findFirst().orElseThrow();
+      fillRowWithSampleMetadata(row, sample, experimentalGroup);
+      rowIndex++;
+    }
+  }
+
+  private static void appendColumnHeader(XSSFSheet sheet, String header) {
+    XSSFRow row = (XSSFRow) sheet.rowIterator().next();
+    int indexNewColumn = row.getLastCellNum();
+    row.createCell(indexNewColumn).setCellValue(header);
+  }
+
+  private static void fillRowWithSampleMetadata(XSSFRow row, Sample sample,
+      ExperimentalGroup experimentalGroup) {
+    row.createCell(COLUMN_INDEX_ANALYSIS).setCellValue(sample.analysisMethod().abbreviation());
+    row.createCell(COLUMN_INDEX_SAMPLE_NAME).setCellValue(sample.label());
+    row.createCell(COLUMN_INDEX_BIOLOGICAL_REPLICATE).setCellValue(sample.biologicalReplicate());
+    row.createCell(COLUMN_INDEX_CONDITION)
+        .setCellValue(PropertyToString.condition(experimentalGroup.condition()));
+    row.createCell(COLUMN_INDEX_SPECIES)
+        .setCellValue(PropertyToString.ontologyTerm(sample.sampleOrigin().getSpecies()));
+    row.createCell(COLUMN_INDEX_SPECIMEN)
+        .setCellValue(PropertyToString.ontologyTerm(sample.sampleOrigin().getSpecimen()));
+    row.createCell(COLUMN_INDEX_ANALYTES)
+        .setCellValue(PropertyToString.ontologyTerm(sample.sampleOrigin().getAnalyte()));
+    row.createCell(COLUMN_INDEX_COMMENT).setCellValue(sample.comment().orElse(""));
+    row.createCell(COLUMN_INDEX_SAMPLE_ID).setCellValue(sample.sampleCode().code());
   }
 }

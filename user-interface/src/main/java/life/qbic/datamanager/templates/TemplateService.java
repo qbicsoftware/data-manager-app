@@ -1,13 +1,16 @@
 package life.qbic.datamanager.templates;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.parser.PropertyToString;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,9 +29,13 @@ public class TemplateService {
 
   private final ExperimentInformationService experimentInfoService;
 
+  private final SampleInformationService sampleInformationService;
+
   @Autowired
-  public TemplateService(ExperimentInformationService experimentInfoService) {
+  public TemplateService(ExperimentInformationService experimentInfoService,
+      SampleInformationService sampleInformationService) {
     this.experimentInfoService = Objects.requireNonNull(experimentInfoService);
+    this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
   }
 
   /**
@@ -66,6 +73,38 @@ public class TemplateService {
     return createWorkbookFromExperiment(experiment);
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public XSSFWorkbook sampleBatchUpdateTemplate(String projectId, String experimentId)
+      throws NoSuchExperimentException, SampleSearchException {
+    var experiment = experimentInfoService.find(projectId, ExperimentId.parse(experimentId))
+        .orElseThrow(
+            NoSuchExperimentException::new);
+    var samples = sampleInformationService.retrieveSamplesForExperiment(
+        ExperimentId.parse(experimentId));
+    samples.onError(responseCode -> {
+      throw new SampleSearchException();
+    });
+    return createPrefilledWorkbookFromExperiment(experiment, samples.getValue().stream().toList());
+  }
+
+  private XSSFWorkbook createPrefilledWorkbookFromExperiment(Experiment experiment,
+      List<Sample> samples) {
+    var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
+        .map(
+            PropertyToString::condition).toList();
+    var experimentalGroups = experiment.getExperimentalGroups();
+    var species = experiment.getSpecies().stream().map(PropertyToString::ontologyTerm).toList();
+    var specimen = experiment.getSpecimens().stream().map(PropertyToString::ontologyTerm).toList();
+    var analytes = experiment.getAnalytes().stream().map(PropertyToString::ontologyTerm).toList();
+    var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
+        .toList();
+    return SampleBatchTemplate.createUpdateTemplate(samples,
+        conditions, species,
+        specimen, analytes,
+        analysisMethods, experimentalGroups);
+  }
+
   private XSSFWorkbook createWorkbookFromExperiment(Experiment experiment) {
     var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
         .map(
@@ -82,6 +121,10 @@ public class TemplateService {
   }
 
   public static class NoSuchExperimentException extends RuntimeException {
+
+  }
+
+  public static class SampleSearchException extends RuntimeException {
 
   }
 
