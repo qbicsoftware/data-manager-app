@@ -311,7 +311,7 @@ public class ExperimentDetailsComponent extends PageArea {
       return;
     }
     var addDialog = new ExperimentalVariablesDialog();
-    addDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    addDialog.addCancelEventListener(cancelEvent -> showCancelConfirmationDialog(addDialog, true));
     addDialog.addConfirmEventListener(this::onExperimentalVariablesAddConfirmed);
     addDialog.open();
   }
@@ -334,9 +334,18 @@ public class ExperimentDetailsComponent extends PageArea {
     var editDialog = ExperimentalVariablesDialog.prefilled(
         experimentInformationService.getVariablesOfExperiment(
             context.projectId().orElseThrow().value(), experimentId));
-    editDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    editDialog.addCancelEventListener(
+        cancelEvent -> showCancelConfirmationDialog(editDialog, false));
     editDialog.addConfirmEventListener(this::onExperimentalVariablesEditConfirmed);
     editDialog.open();
+  }
+
+  private void showCancelConfirmationDialog(ExperimentalVariablesDialog editDialog,
+      boolean isCreate) {
+    var key = isCreate ? "experiment.variables.create" : "experiment.variables.edit";
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(it -> editDialog.close(),
+            key, getLocale())
+        .open();
   }
 
   private void onExperimentalVariablesEditConfirmed(

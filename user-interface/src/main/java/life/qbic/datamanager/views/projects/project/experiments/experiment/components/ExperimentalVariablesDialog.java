@@ -95,7 +95,7 @@ public class ExperimentalVariablesDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    close();
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
   /**
