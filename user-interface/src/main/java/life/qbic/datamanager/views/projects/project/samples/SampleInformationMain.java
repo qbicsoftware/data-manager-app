@@ -219,9 +219,16 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         experiment.getName(), new ArrayList<>(experiment.getSpecies()),
         new ArrayList<>(experiment.getSpecimens()), new ArrayList<>(experiment.getAnalytes()),
         experiment.getExperimentalGroups());
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(dialog));
+    dialog.setEscAction(() -> showCancelConfirmationDialog(dialog));
     dialog.addConfirmListener(this::registerBatch);
     dialog.open();
+  }
+
+  private void showCancelConfirmationDialog(BatchRegistrationDialog dialog) {
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(it -> dialog.close(),
+            "sample-batch.register", getLocale())
+        .open();
   }
 
   private void registerBatch(ConfirmEvent confirmEvent) {
