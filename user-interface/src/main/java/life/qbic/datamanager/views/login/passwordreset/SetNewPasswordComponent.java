@@ -55,7 +55,7 @@ public class SetNewPasswordComponent extends CardLayout {
         .asRequired("Please provide a password")
         .withValidator(
             name -> name.strip().length() >= 12,
-            "Password is too short")
+            "Please provide a password with at least 12 characters")
         .bind(value -> value, (bean, value) -> {
         });
   }
