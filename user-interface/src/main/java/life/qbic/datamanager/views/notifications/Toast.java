@@ -34,7 +34,7 @@ public final class Toast extends Notification {
 
   private static final Position DEFAULT_POSITION = Position.BOTTOM_START;
   static final boolean DEFAULT_CLOSE_ON_NAVIGATION = true;
-  static final Duration DEFAULT_OPEN_DURATION = Duration.ofSeconds(5_000);
+  static final Duration DEFAULT_OPEN_DURATION = Duration.ofSeconds(5);
 
   private final List<Registration> closeOnNavigationListeners = new ArrayList<>();
   private final Button closeButton;

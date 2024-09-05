@@ -193,7 +193,6 @@ public class BatchRegistrationDialog extends DialogWindow {
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
-
   }
 
   public void addCancelListener(ComponentEventListener<CancelEvent> listener) {
