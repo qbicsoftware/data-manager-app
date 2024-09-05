@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;
@@ -61,7 +60,6 @@ public class EditExperimentDialog extends DialogWindow {
         ontologyTermInformationService, terminologyService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
-    specifyCancelShortcuts(this::onEditCanceled);
 
     Span experimentHeader = new Span("Experiment");
     experimentHeader.addClassName("header");
@@ -173,35 +171,23 @@ public class EditExperimentDialog extends DialogWindow {
     }
   }
 
-  private void onEditCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose all the changes made to this experiment.")
-        .withConfirmText("Discard changes")
-        .withTitle("Discard experiment changes?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
-  }
-
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onEditCanceled();
-  }
-
-  public void setExperiment(ExperimentDraft experiment,
-      Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
-    this.usedSampleOrigins = usedTerms;
-    binder.setBean(experiment);
+    //as this is the first listener called on cancel event, no closing should happen here.
+    //If this method closes the dialog, the calling code has no opportunity to prevent that.
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
   @Override
   public void close() {
     super.close();
     reset();
+  }
+
+  public void setExperiment(ExperimentDraft experiment,
+      Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
+    this.usedSampleOrigins = usedTerms;
+    binder.setBean(experiment);
   }
 
   public void reset() {

@@ -1,12 +1,7 @@
 package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.server.Command;
 
 /**
  * <b>Dialog to create something</b>
@@ -17,27 +12,20 @@ import com.vaadin.flow.server.Command;
  *
  * @since 1.0.0
  */
-public abstract class DialogWindow extends Dialog {
+public abstract class DialogWindow extends QbicDialog {
 
   protected final Button confirmButton = new Button("Confirm");
   protected final Button cancelButton = new Button("Cancel");
 
   protected DialogWindow() {
     this.addClassName("dialog-window");
-    confirmButton.addClassName("primary");
-    cancelButton.setThemeName("tertiary");
-    setCloseOnOutsideClick(false);
-    setCloseOnEsc(false);
     getFooter().add(cancelButton, confirmButton);
-    cancelButton.addClickListener(this::onCancelClicked);
-    confirmButton.addClickListener(this::onConfirmClicked);
-  }
 
-  protected void specifyCancelShortcuts(Command onCreationCanceled) {
-      setCloseOnOutsideClick(false);
-      setCloseOnEsc(false);
-      Shortcuts.addShortcutListener(this,
-          onCreationCanceled, Key.ESCAPE);
+    confirmButton.addClassName("primary");
+    confirmButton.addClickListener(this::onConfirmClicked);
+
+    cancelButton.setThemeName("tertiary");
+    cancelButton.addClickListener(this::onCancelClicked);
   }
 
   /**

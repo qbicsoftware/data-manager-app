@@ -35,6 +35,7 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -99,6 +100,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final DownloadProvider ngsDownloadProvider;
   private final DownloadProvider proteomicsDownloadProvider;
   private final ProjectInformationService projectInformationService;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private transient Context context;
 
   public MeasurementMain(
@@ -108,7 +110,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService,
-      ProjectInformationService projectInformationService) {
+      ProjectInformationService projectInformationService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
@@ -123,6 +126,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
     this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
+    this.projectInformationService = projectInformationService;
+    this.cancelConfirmationDialogFactory = cancelConfirmationDialogFactory;
+
     measurementTemplateDownload = new MeasurementTemplateDownload();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
@@ -147,7 +153,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         getClass().getSimpleName(), System.identityHashCode(this),
         measurementTemplateListComponent.getClass().getSimpleName(),
         System.identityHashCode(measurementTemplateListComponent)));
-    this.projectInformationService = projectInformationService;
+
   }
 
   private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
@@ -325,7 +331,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openEditMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.EDIT,
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
+        cancelConfirmationDialogFactory,
+        MODE.EDIT,
         context.projectId().orElse(null));
     setupDialog(dialog);
     dialog.open();
@@ -513,7 +521,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService, MODE.ADD,
+    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
+        cancelConfirmationDialogFactory,
+        MODE.ADD,
         context.projectId().orElse(null));
     setupDialog(dialog);
     dialog.open();

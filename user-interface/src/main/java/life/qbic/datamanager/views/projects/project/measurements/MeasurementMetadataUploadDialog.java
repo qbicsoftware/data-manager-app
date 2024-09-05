@@ -36,9 +36,9 @@ import life.qbic.datamanager.parser.MetadataConverter;
 import life.qbic.datamanager.parser.ParsingResult;
 import life.qbic.datamanager.parser.tsv.TSVParser;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
@@ -68,6 +68,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private static final long serialVersionUID = -8253078073427291947L;
   private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private final MeasurementValidationService measurementValidationService;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final transient List<MeasurementFileItem> measurementFileItems;
@@ -77,13 +79,14 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private final UploadItemsDisplay uploadItemsDisplay;
 
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MODE mode, ProjectId projectId) {
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.projectId = requireNonNull(projectId, "projectId cannot be null");
     this.measurementValidationService = requireNonNull(measurementValidationService,
         "measurementValidationExecutor must not be null");
     this.mode = requireNonNull(mode,
         "The dialog mode needs to be defined");
-    specifyCancelShortcuts(this::onCanceled);
 
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementMetadataUploads = new ArrayList<>();
@@ -102,7 +105,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     upload.addSucceededListener(this::onUploadSucceeded);
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
-
+    setEscAction(this::onCanceled);
     // Synchronise the Vaadin upload component with the purchase list display
     // When a file is removed from the upload component, we also want to remove it properly from memory
     // and from any additional display
@@ -333,17 +336,10 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private void onCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("Uploaded information has not yet been saved.")
-        .withConfirmText("Discard upload")
-        .withTitle("Discard uploaded information?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(
+            it -> fireEvent(new CancelEvent(this, it.isFromClient())),
+            "measurement.metadata.upload", getLocale())
+        .open();
   }
 
   @Override

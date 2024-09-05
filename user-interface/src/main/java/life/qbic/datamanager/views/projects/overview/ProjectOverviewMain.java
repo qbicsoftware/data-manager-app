@@ -20,6 +20,7 @@ import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
@@ -63,7 +64,6 @@ public class ProjectOverviewMain extends Main {
   private final transient ContactRepository contactRepository;
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
-  private final TerminologyService terminologyService;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
@@ -73,7 +73,8 @@ public class ProjectOverviewMain extends Main {
       UserInformationService userInformationService,
       ContactRepository contactRepository,
       AuthenticationToUserIdTranslationService userIdTranslator,
-      TerminologyService terminologyService) {
+      TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
     this.projectCreationService = requireNonNull(projectCreationService,
@@ -90,14 +91,17 @@ public class ProjectOverviewMain extends Main {
     this.userInformationService = requireNonNull(userInformationService,
         "user information service can not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
-    this.terminologyService = requireNonNull(terminologyService);
+    requireNonNull(terminologyService, "terminologyService must not be null");
+    requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
 
     addTitleAndDescription();
     add(projectCollectionComponent);
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
           this.financeService,
-          this.ontologyTermInformationService, this.contactRepository, terminologyService);
+          this.ontologyTermInformationService, this.contactRepository, terminologyService,
+          cancelConfirmationDialogFactory);
       if (isOfferSearchAllowed()) {
         addProjectDialog.enableOfferSearch();
       }
@@ -180,6 +184,7 @@ public class ProjectOverviewMain extends Main {
   private void onProjectCreated(ConfirmEvent confirmEvent) {
     displaySuccessfulProjectCreationNotification();
     confirmEvent.getSource().close();
+
     projectCollectionComponent.refresh();
     projectCollectionComponent.resetSearch();
   }

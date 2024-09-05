@@ -1,0 +1,44 @@
+.toast-notification::part(content) {
+  /*you can style the notification content here*/
+}
+
+.toast-notification.success-toast::part(content) {
+  background-color: var(--lumo-success-color-10pct);
+  /*you can style the notification content here*/
+}
+
+.toast-notification.info-toast::part(content) {
+  /*you can style the notification content here*/
+  background-color: var(--lumo-primary-color-10pct);
+}
+
+.toast-notification .toast-content {
+  /*this is the content of your notification excluding the close button*/
+  width: 100%;
+}
+
+.toast-notification .toast-content strong {
+  margin-left: .5ch;
+  margin-right: .5ch;
+}
+
+.toast-notification .close-button {
+  /*you can style the toast close button here*/
+}
+
+.toast-notification .routing-container {
+  display: grid;
+  grid-template-columns: minmax(min-content, max-content) auto minmax(min-content, max-content);
+  column-gap: var(--lumo-space-m);
+}
+
+.toast-notification .routing-content {
+  /*in case of routing this can style the content without the routing link*/
+  align-content: center;
+}
+
+.toast-notification .routing-link {
+  grid-column: 3;
+  align-content: center;
+  justify-content: center;
+}
