@@ -19,7 +19,7 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
  * Set New Password Component
  * <p>
  * Card Stylized component similar to {@link com.vaadin.flow.component.login.LoginOverlay}
- * component, Providing the input fields necessary to enable a user to reset her password
+ * component, Providing the input fields necessary to enable a user to set a new password
  */
 @AnonymousAllowed
 @UIScope

@@ -12,7 +12,7 @@ import java.io.Serial;
 import life.qbic.datamanager.views.general.CardLayout;
 
 /**
- * Reset Email Sent Component
+ * Nwe Password Set Component
  * <p>
  * Card Stylized component similar to {@link com.vaadin.flow.component.login.LoginOverlay}
  * component. Informing the user that a reset password email was sent and directing her to the login

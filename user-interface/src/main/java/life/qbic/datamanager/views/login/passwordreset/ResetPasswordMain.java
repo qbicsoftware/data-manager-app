@@ -20,7 +20,9 @@ import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b> Defines the look of the password reset layout. </b>
+ * <b> Defines the look of the password reset layout.
+ * It hosts the {@link ResetPasswordComponent} to enable the user to input the email account which should receive a password reset email
+ * and a {@link ResetEmailSentComponent} component informing the user that an email has been sent to the provided email account /b>
  *
  * @since 1.0.0
  */

@@ -31,8 +31,10 @@ import org.springframework.beans.factory.annotation.Value;
 /**
  * Set New Password Main
  * <p>
- * Card Stylized component similar to {@link com.vaadin.flow.component.login.LoginOverlay}
- * component, Providing the input fields necessary to enable a user to reset her password
+ * Main component hosting the components necessary for a user to reset her password {@link SetNewPasswordComponent} a
+ * and informing her that her provided input is now set as a new password for her account
+ * {@link NewPasswordSetComponent}
+ * component.
  */
 @PageTitle("New Password")
 @Route(value = AppRoutes.NEW_PASSWORD, layout = LandingPageLayout.class)
