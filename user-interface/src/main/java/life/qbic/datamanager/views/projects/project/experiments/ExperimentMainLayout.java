@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -13,7 +15,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;
@@ -23,6 +24,8 @@ import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 import life.qbic.datamanager.views.navigation.ProjectSideNavigationComponent;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentNavigationComponent.RoutingTab;
 import life.qbic.identity.api.UserInformationService;
@@ -66,21 +69,27 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired UserPermissions userPermissions,
       @Autowired SpeciesLookupService ontologyTermInformationService,
       @Autowired FooterComponentFactory footerComponentFactory,
-      @Autowired  TerminologyService terminologyService) {
-    super(Objects.requireNonNull(footerComponentFactory));
-    Objects.requireNonNull(logoutService);
-    Objects.requireNonNull(userInformationService);
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(userPermissions);
-    Objects.requireNonNull(addExperimentToProjectService);
-    Objects.requireNonNull(ontologyTermInformationService);
+      @Autowired  TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+    super(requireNonNull(footerComponentFactory));
+    requireNonNull(logoutService);
+    requireNonNull(userInformationService);
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(userPermissions);
+    requireNonNull(addExperimentToProjectService);
+    requireNonNull(ontologyTermInformationService);
+    requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
+
     this.dataManagerMenu = new DataManagerMenu(logoutService);
     this.experimentInformationService = experimentInformationService;
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(
         projectInformationService, experimentInformationService, addExperimentToProjectService,
-        userPermissions, ontologyTermInformationService, terminologyService);
+        userPermissions, ontologyTermInformationService, terminologyService,
+        cancelConfirmationDialogFactory, messageSourceNotificationFactory);
     initializeNavbar();
     initializeAppDrawer();
     addClassName("experiment-main-layout");

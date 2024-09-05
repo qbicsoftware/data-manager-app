@@ -18,6 +18,8 @@ import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddToken
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.DeleteTokenEvent;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.PersonalAccessTokenFrontendBean;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;
@@ -46,15 +48,19 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   private final PersonalAccessTokenComponent personalAccessTokenComponent;
   private final PersonalAccessTokenService personalAccessTokenService;
   private final AuthenticationToUserIdTranslationService userIdTranslator;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
 
   public PersonalAccessTokenMain(PersonalAccessTokenService personalAccessTokenService,
       PersonalAccessTokenComponent personalAccessTokenComponent,
-      AuthenticationToUserIdTranslationService userIdTranslator) {
+      AuthenticationToUserIdTranslationService userIdTranslator,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.personalAccessTokenService = requireNonNull(personalAccessTokenService,
         "personalAccessTokenService must not be null");
     this.personalAccessTokenComponent = requireNonNull(personalAccessTokenComponent,
         "personalAccessTokenComponent must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceToastFactory must not be null");
 
     addClassName("personal-access-token");
     add(personalAccessTokenComponent);
@@ -97,6 +103,9 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
               .tokenDescription(), event.personalAccessTokenDTO().expirationDate());
       personalAccessTokenComponent.showCreatedToken(createdToken);
       event.getSource().close();
+      Toast toast = messageSourceNotificationFactory.toast("personal-access-token.created.success",
+          new Object[]{event.personalAccessTokenDTO().tokenDescription()}, getLocale());
+      toast.open();
     });
   }
 

@@ -1,9 +1,8 @@
 package life.qbic.datamanager.views.projects.qualityControl;
 
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Warns the user that the file will be deleted from the server.
@@ -13,17 +12,11 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class QCItemDeletionConfirmationNotification extends NotificationDialog {
 
   public QCItemDeletionConfirmationNotification() {
-    customizeHeader();
-    content.add(new Span(
+    super(NotificationLevel.WARNING);
+    withTitle("Quality control will be deleted");
+    withContent(new Span(
         "Are you sure you want to delete this file?"));
     setCancelable(true);
     setConfirmText("Confirm");
-  }
-
-  private void customizeHeader() {
-    Icon errorIcon = new Icon(VaadinIcon.WARNING);
-    errorIcon.setClassName("warning-icon");
-    setTitle("Quality control will be deleted");
-    setHeaderIcon(errorIcon);
   }
 }

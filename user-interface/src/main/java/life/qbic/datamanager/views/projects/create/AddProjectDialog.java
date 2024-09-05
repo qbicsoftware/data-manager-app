@@ -7,10 +7,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasValidation;
-import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -23,12 +20,14 @@ import java.io.Serial;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.HasBinderValidation;
+import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
@@ -48,7 +47,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 
 @SpringComponent
 @UIScope
-public class AddProjectDialog extends Dialog {
+public class AddProjectDialog extends QbicDialog {
 
   @Serial
   private static final long serialVersionUID = 7643754818237178416L;
@@ -64,7 +63,7 @@ public class AddProjectDialog extends Dialog {
   private final Button nextButton;
 
   private final Map<String, Component> stepContent;
-  private final TerminologyService terminologyService;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
 
 
   private StepIndicator addStep(Stepper stepper, String label, Component layout) {
@@ -75,16 +74,17 @@ public class AddProjectDialog extends Dialog {
   public AddProjectDialog(ProjectInformationService projectInformationService,
       FinanceService financeService,
       SpeciesLookupService speciesLookupService,
-      ContactRepository contactRepository, TerminologyService terminologyService) {
+      ContactRepository contactRepository, TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
-
-    initCancelShortcuts();
 
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
     requireNonNull(speciesLookupService,
         "ontologyTermInformationService must not be null");
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(projectInformationService, financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
     this.collaboratorsLayout = new CollaboratorsLayout();
@@ -137,7 +137,7 @@ public class AddProjectDialog extends Dialog {
 
     Button cancelButton = new Button("Cancel");
     cancelButton.addClassName("cancel");
-    cancelButton.addClickListener(this::onCancelClicked);
+    cancelButton.addClickListener(clickEvent -> onCancelClicked());
     backButton = new Button("Back");
     backButton.addClassName("back");
     backButton.addClickListener(this::onBackClicked);
@@ -148,28 +148,7 @@ public class AddProjectDialog extends Dialog {
     rightButtons.add(cancelButton, nextButton, confirmButton);
     footer.add(backButton, rightButtons);
     adaptFooterButtons(stepper.getFirstStep());
-    this.terminologyService = terminologyService;
-  }
-
-  private void initCancelShortcuts() {
-    setCloseOnOutsideClick(false);
-    setCloseOnEsc(false);
-    Shortcuts.addShortcutListener(this,
-        this::onCreationCanceled, Key.ESCAPE);
-  }
-
-  private void onCreationCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose all the information entered for this project.")
-        .withConfirmText("Discard project creation")
-        .withTitle("Discard new project creation?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
+    setEscAction(it -> onCancelClicked());
   }
 
   /**
@@ -179,8 +158,10 @@ public class AddProjectDialog extends Dialog {
     projectDesignLayout.enableOfferSearch();
   }
 
-  private void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onCreationCanceled();
+  private void onCancelClicked() {
+    NotificationDialog cancelConfirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        it -> close(), "project.create", getLocale());
+    cancelConfirmationDialog.open();
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {

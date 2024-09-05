@@ -3,9 +3,8 @@ package life.qbic.datamanager.views.projects.project.experiments.experiment.comp
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Notifies the user that samples exist in the experiment.
@@ -16,23 +15,18 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class ExistingSamplesPreventVariableEdit extends NotificationDialog {
 
   public ExistingSamplesPreventVariableEdit(int sampleCount) {
+    super(NotificationLevel.ERROR);
     addClassName("existing-samples-prevent-variable-edit");
-    customizeHeader();
+    withTitle("Cannot edit variables");
     customizeContent(sampleCount);
     setConfirmText("Okay");
   }
 
-  private void customizeHeader() {
-    Icon errorIcon = new Icon(VaadinIcon.CLOSE_CIRCLE);
-    errorIcon.setClassName("error-icon");
-    setTitle("Cannot edit variables");
-    setHeaderIcon(errorIcon);
-  }
 
   private void customizeContent(int sampleCount) {
     Span sampleCountSpan = new Span(String.valueOf(sampleCount));
     sampleCountSpan.addClassName("sample-count");
-    content.add(
+    withContent(
         new Div(new Text(
             "Editing experimental variables is only possible if samples are not registered.")),
         new Div(new Text("You have "), sampleCountSpan,
