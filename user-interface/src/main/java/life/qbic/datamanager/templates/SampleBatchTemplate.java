@@ -21,15 +21,16 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class SampleBatchTemplate {
 
-  private static int COLUMN_INDEX_ANALYSIS = 0;
-  private static int COLUMN_INDEX_SAMPLE_NAME = 1;
-  private static int COLUMN_INDEX_BIOLOGICAL_REPLICATE = 2;
-  private static int COLUMN_INDEX_CONDITION = 3;
-  private static int COLUMN_INDEX_SPECIES = 4;
-  private static int COLUMN_INDEX_SPECIMEN = 5;
-  private static int COLUMN_INDEX_ANALYTES = 6;
-  private static int COLUMN_INDEX_COMMENT = 7;
-  private static int COLUMN_INDEX_SAMPLE_ID = 8;
+  public static final int MAX_ROW_INDEX_TO = 2000;
+  private static final int COLUMN_INDEX_ANALYSIS = 0;
+  private static final int COLUMN_INDEX_SAMPLE_NAME = 1;
+  private static final int COLUMN_INDEX_BIOLOGICAL_REPLICATE = 2;
+  private static final int COLUMN_INDEX_CONDITION = 3;
+  private static final int COLUMN_INDEX_SPECIES = 4;
+  private static final int COLUMN_INDEX_SPECIMEN = 5;
+  private static final int COLUMN_INDEX_ANALYTES = 6;
+  private static final int COLUMN_INDEX_COMMENT = 7;
+  private static final int COLUMN_INDEX_SAMPLE_ID = 8;
 
   /**
    * Creates a template {@link XSSFWorkbook} for sample batch registration.
@@ -77,7 +78,7 @@ public class SampleBatchTemplate {
     setListDataTemplate(workbook.getSheetAt(1), 0, analysisToPerform);
     var rangedName = createNameForListReference(workbook, 1, analysisToPerform.size(), "ListSheet",
         "analysis", "A");
-    setListDataValidation(workbook.getSheetAt(0), 1, 2000, 0, rangedName);
+    setListDataValidation(workbook.getSheetAt(0), 1, MAX_ROW_INDEX_TO, 0, rangedName);
     setColumnHeader(workbook.getSheetAt(0), 0, "Analysis to be performed*");
 
     setColumnHeader(workbook.getSheetAt(0), 1, "Sample Name*");
@@ -88,25 +89,25 @@ public class SampleBatchTemplate {
     var rangedNameCondition = createNameForListReference(workbook, 1, conditions.size(),
         "ListSheet",
         "conditions", "B");
-    setListDataValidation(workbook.getSheetAt(0), 1, 2000, 3, rangedNameCondition);
+    setListDataValidation(workbook.getSheetAt(0), 1, MAX_ROW_INDEX_TO, 3, rangedNameCondition);
     setColumnHeader(workbook.getSheetAt(0), 3, "Condition*");
 
     setListDataTemplate(workbook.getSheetAt(1), 2, species);
     var rangedNameSpecies = createNameForListReference(workbook, 1, species.size(), "ListSheet",
         "species", "C");
-    setListDataValidation(workbook.getSheetAt(0), 1, 2000, 4, rangedNameSpecies);
+    setListDataValidation(workbook.getSheetAt(0), 1, MAX_ROW_INDEX_TO, 4, rangedNameSpecies);
     setColumnHeader(workbook.getSheetAt(0), 4, "Species*");
 
     setListDataTemplate(workbook.getSheetAt(1), 3, specimen);
     var rangedNameSpecimen = createNameForListReference(workbook, 1, specimen.size(), "ListSheet",
         "specimen", "D");
-    setListDataValidation(workbook.getSheetAt(0), 1, 2000, 5, rangedNameSpecimen);
+    setListDataValidation(workbook.getSheetAt(0), 1, MAX_ROW_INDEX_TO, 5, rangedNameSpecimen);
     setColumnHeader(workbook.getSheetAt(0), 5, "Specimen*");
 
     setListDataTemplate(workbook.getSheetAt(1), 4, analytes);
     var rangedNameAnalyte = createNameForListReference(workbook, 1, analytes.size(), "ListSheet",
         "analyte", "E");
-    setListDataValidation(workbook.getSheetAt(0), 1, 2000, 6, rangedNameAnalyte);
+    setListDataValidation(workbook.getSheetAt(0), 1, MAX_ROW_INDEX_TO, 6, rangedNameAnalyte);
     setColumnHeader(workbook.getSheetAt(0), 6, "Analyte*");
 
     setColumnHeader(workbook.getSheetAt(0), 7, "Comment");
