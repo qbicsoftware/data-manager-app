@@ -5,6 +5,7 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
 import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.VariableNameAttributeConverter;
@@ -19,7 +20,7 @@ import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.Variab
  */
 @Embeddable
 @Access(AccessType.FIELD)
-public class VariableLevel {
+public class VariableLevel implements Serializable {
 
   @Convert(converter = VariableNameAttributeConverter.class)
   private VariableName variableName;

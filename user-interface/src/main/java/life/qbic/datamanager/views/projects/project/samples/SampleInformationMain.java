@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -18,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
@@ -26,7 +27,8 @@ import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadProvider;
-import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -96,6 +98,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final ProjectInformationService projectInformationService;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -105,22 +109,28 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent,
-      ProjectInformationService projectInformationService) {
-    this.experimentInformationService = Objects.requireNonNull(experimentInformationService,
+      ProjectInformationService projectInformationService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+    this.experimentInformationService = requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
-    this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService,
+    this.batchRegistrationService = requireNonNull(batchRegistrationService,
         "BatchRegistrationService cannot be null");
-    this.sampleRegistrationService = Objects.requireNonNull(sampleRegistrationService,
+    this.sampleRegistrationService = requireNonNull(sampleRegistrationService,
         "SampleRegistrationService cannot be null");
-    this.sampleInformationService = Objects.requireNonNull(sampleInformationService,
+    this.sampleInformationService = requireNonNull(sampleInformationService,
         "SampleInformationService cannot be null");
-    this.deletionService = Objects.requireNonNull(deletionService,
+    this.deletionService = requireNonNull(deletionService,
         "DeletionService cannot be null");
-    this.sampleDetailsComponent = Objects.requireNonNull(sampleDetailsComponent,
+    this.sampleDetailsComponent = requireNonNull(sampleDetailsComponent,
         "SampleDetailsComponent cannot be null");
-    this.batchDetailsComponent = Objects.requireNonNull(batchDetailsComponent,
+    this.batchDetailsComponent = requireNonNull(batchDetailsComponent,
         "BatchDetailsComponent cannot be null");
-
+    this.projectInformationService = projectInformationService;
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
 
@@ -147,7 +157,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
-    this.projectInformationService = projectInformationService;
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -210,9 +219,16 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         experiment.getName(), new ArrayList<>(experiment.getSpecies()),
         new ArrayList<>(experiment.getSpecimens()), new ArrayList<>(experiment.getAnalytes()),
         experiment.getExperimentalGroups());
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    dialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(dialog));
+    dialog.setEscAction(() -> showCancelConfirmationDialog(dialog));
     dialog.addConfirmListener(this::registerBatch);
     dialog.open();
+  }
+
+  private void showCancelConfirmationDialog(BatchRegistrationDialog dialog) {
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(it -> dialog.close(),
+            "sample-batch.register", getLocale())
+        .open();
   }
 
   private void registerBatch(ConfirmEvent confirmEvent) {
@@ -230,7 +246,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .onError(responseCode -> displayRegistrationFailure())
         .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
         .onValue(ignored -> confirmEvent.getSource().close())
-        .onValue(batchId -> displayRegistrationSuccess())
+        .onValue(batchId -> displayRegistrationSuccess(batchLabel))
         .onValue(ignored -> setBatchAndSampleInformation());
   }
 
@@ -303,22 +319,25 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     notification.open();
   }
 
-  private void displayDeletionSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch deletion succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayDeletionSuccess(String batchLabel) {
+    messageSourceNotificationFactory.toast("sample-batch.deleted.success", new String[]{batchLabel},
+            getLocale())
+        .open();
   }
 
-  private void displayRegistrationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Batch registration succeeded.", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void displayRegistrationSuccess(String batchLabel) {
+    messageSourceNotificationFactory.toast("sample-batch.registered.success",
+            new String[]{batchLabel},
+            getLocale())
+        .open();
+
   }
 
   private void displayRegistrationFailure() {
-    ErrorMessage errorMessage = new ErrorMessage("Batch registration failed.", "");
-    StyledNotification notification = new StyledNotification(errorMessage);
-    notification.open();
+    messageSourceNotificationFactory.dialog(
+            "sample-batch.register.failure",
+            MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale())
+        .open();
   }
 
   private void onEditBatchClicked(EditBatchEvent editBatchEvent) {
@@ -330,7 +349,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         editBatchEvent.batchPreview().batchId()).stream().toList();
     var experimentalGroups = experimentInformationService.experimentalGroupsFor(
         context.projectId().orElseThrow().value(),
-        context.experimentId().get());
+        context.experimentId().orElseThrow());
     // need to create mutable list to order samples
     List<SampleBatchInformationSpreadsheet.SampleInfo> sampleInfos = new ArrayList<>(
         samples.stream()
@@ -342,9 +361,20 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         editBatchEvent.batchPreview()
             .batchId(), editBatchEvent.batchPreview().batchLabel(), sampleInfos,
         this::isSampleRemovable);
-    editBatchDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    editBatchDialog.addCancelListener(
+        cancelEvent -> showCancelConfirmationDialog(editBatchDialog));
+    editBatchDialog.setEscAction(escEvent -> showCancelConfirmationDialog(editBatchDialog));
     editBatchDialog.addConfirmListener(this::editBatch);
     editBatchDialog.open();
+  }
+
+  private void showCancelConfirmationDialog(EditBatchDialog editBatchDialog) {
+    cancelConfirmationDialogFactory
+        .cancelConfirmationDialog(
+            it2 -> editBatchDialog.close(),
+            "sample-batch.edit",
+            getLocale())
+        .open();
   }
 
   private boolean isSampleRemovable(SampleId sampleId) {
@@ -383,7 +413,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private void deleteBatch(DeleteBatchEvent deleteBatchEvent) {
     deletionService.deleteBatch(context.projectId().orElseThrow(),
         deleteBatchEvent.batchId());
-    displayDeletionSuccess();
+    displayDeletionSuccess(deleteBatchEvent.batchLabel());
     setBatchAndSampleInformation();
   }
 

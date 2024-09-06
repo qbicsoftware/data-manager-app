@@ -30,10 +30,10 @@
 
   <properties>
     <java.version>17</java.version>
-    <vaadin.version>24.4.8</vaadin.version>
+    <vaadin.version>24.4.11</vaadin.version>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
+    <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jackson.version>2.17.2</jackson.version>
   </properties>
@@ -41,7 +41,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.2</version>
+    <version>3.3.3</version>
   </parent>
 
   <repositories>
@@ -173,13 +173,6 @@
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
       </dependency>
-
-      <!--If not specified, spring-boot-starter-parent dependency will introduce transitively the 1.33 version of snakeyaml, for a CVE exists. -->
-      <dependency>
-        <groupId>org.yaml</groupId>
-        <artifactId>snakeyaml</artifactId>
-        <version>2.2</version>
-      </dependency>
     </dependencies>
 
   </dependencyManagement>
@@ -223,7 +216,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M5</version>
+        <version>3.5.0</version>
         <configuration>
           <useModulePath>false</useModulePath>
           <includes>

@@ -21,8 +21,9 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.OfferDownload;
 import life.qbic.datamanager.views.general.download.QualityControlDownload;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
@@ -89,6 +90,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final QualityControlDownload qualityControlDownload;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final TerminologyService terminologyService;
   private Context context;
 
@@ -100,7 +103,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ProjectPurchaseService projectPurchaseService,
       @Autowired QualityControlService qualityControlService,
-      @Autowired TerminologyService terminologyService) {
+      @Autowired TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectDetailsComponent = requireNonNull(projectDetailsComponent,
         "projectDetailsComponent must not be null");
     this.experimentListComponent = requireNonNull(experimentListComponent,
@@ -116,6 +121,10 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
         "projectPurchaseService must not be null");
     this.qualityControlService = requireNonNull(qualityControlService,
         "qualityControlService must not be null");
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
 
     offerListComponent = getConfiguredOfferList();
     qualityControlListComponent = getConfiguredQualityControlList();
@@ -302,7 +311,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
     event.getSource().close();
-    displayExperimentCreationSuccess();
+    displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
     routeToExperiment(createdExperiment);
   }
 
@@ -318,14 +327,22 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private void showAddExperimentDialog() {
     var creationDialog = new AddExperimentDialog(ontologyTermInformationService, terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(event -> event.getSource().close());
+    creationDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(creationDialog));
+    creationDialog.setEscAction(() -> showCancelConfirmationDialog(creationDialog));
     creationDialog.open();
   }
 
-  private void displayExperimentCreationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
+  private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(
+            it -> creationDialog.close(),
+            "experiment.create", getLocale())
+        .open();
+  }
+
+  private void displayExperimentCreationSuccess(String experimentName) {
+    Toast toast = messageSourceNotificationFactory.toast("experiment.created.success",
+        new Object[]{experimentName}, getLocale());
+    toast.open();
   }
 
   private ExperimentId createExperiment(ProjectId projectId,

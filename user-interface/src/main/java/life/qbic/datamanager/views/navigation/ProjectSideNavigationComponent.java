@@ -27,7 +27,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -35,12 +34,13 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
-import life.qbic.datamanager.views.projects.project.experiments.ExperimentListComponent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentAddEvent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.create.AddExperimentDialog.ExperimentDraft;
@@ -80,6 +80,8 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient ExperimentInformationService experimentInformationService;
   private final AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final TerminologyService terminologyService;
   private final SpeciesLookupService speciesLookupService;
   private Context context = new Context();
@@ -90,25 +92,31 @@ public class ProjectSideNavigationComponent extends Div implements
       AddExperimentToProjectService addExperimentToProjectService,
       UserPermissions userPermissions,
       SpeciesLookupService speciesLookupService,
-      TerminologyService terminologyService) {
+      TerminologyService terminologyService,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     content = new Div();
-    Objects.requireNonNull(projectInformationService);
-    Objects.requireNonNull(experimentInformationService);
-    Objects.requireNonNull(addExperimentToProjectService);
+    requireNonNull(projectInformationService);
+    requireNonNull(experimentInformationService);
+    requireNonNull(addExperimentToProjectService);
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
+        "cancelConfirmationDialogFactory must not be null");
     this.speciesLookupService = speciesLookupService;
     this.addExperimentToProjectService = addExperimentToProjectService;
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
     addClassName("project-navigation-drawer");
     this.projectInformationService = projectInformationService;
     this.experimentInformationService = experimentInformationService;
-    this.terminologyService = Objects.requireNonNull(terminologyService);
+    this.terminologyService = requireNonNull(terminologyService);
     content.addClassName("content");
     add(content);
     addListener(ProjectNavigationEvent.class,
         ProjectSideNavigationComponent::addProjectNavigationListener);
     log.debug(
-       "New instance for %s(#%s) created".formatted(
-            this.getClass().getSimpleName(), (Integer) System.identityHashCode(this)));
+        "New instance for %s(#%s) created".formatted(
+            this.getClass().getSimpleName(), System.identityHashCode(this)));
   }
 
   private Div createInternationalPostalAddressFields() {
@@ -335,15 +343,25 @@ private static void routeToProject(ProjectId projectId) {
     var creationDialog = new AddExperimentDialog(speciesLookupService,
         terminologyService);
     creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(event -> event.getSource().close());
+    creationDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(creationDialog));
+    creationDialog.setEscAction(it -> showCancelConfirmationDialog(creationDialog));
     creationDialog.open();
+  }
+
+  private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
+    NotificationDialog confirmationDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        it -> creationDialog.close(),
+        "experiment.create",
+        getLocale()
+    );
+    confirmationDialog.open();
   }
 
   private void onExperimentAddEvent(ExperimentAddEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
     event.getSource().close();
-    displayExperimentCreationSuccess();
+    displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
     routeToExperiment(createdExperiment);
   }
 
@@ -374,25 +392,10 @@ private static void routeToProject(ProjectId projectId) {
     }
   }
 
-  private void displayExperimentCreationSuccess() {
-    SuccessMessage successMessage = new SuccessMessage("Experiment Creation succeeded", "");
-    StyledNotification notification = new StyledNotification(successMessage);
-    notification.open();
-  }
-
-  public static class AddExperimentClickEvent extends ComponentEvent<ExperimentListComponent> {
-
-    /**
-     * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
-     *
-     * @param source     the source component
-     * @param fromClient <code>true</code> if the event originated from the client
-     *                   side, <code>false</code> otherwise
-     */
-    public AddExperimentClickEvent(ExperimentListComponent source, boolean fromClient) {
-      super(source, fromClient);
-    }
+  private void displayExperimentCreationSuccess(String experimentName) {
+    Toast toast = messageSourceNotificationFactory.toast("experiment.created.success",
+        new Object[]{experimentName}, getLocale());
+    toast.open();
   }
 
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {

@@ -1,9 +1,8 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
+import life.qbic.datamanager.views.notifications.NotificationLevel;
 
 /**
  * Warns the user that measurements will be deleted
@@ -13,17 +12,11 @@ import life.qbic.datamanager.views.notifications.NotificationDialog;
 public class MeasurementDeletionConfirmationNotification extends NotificationDialog {
 
   public MeasurementDeletionConfirmationNotification(String title, int amount) {
-    customizeHeader(title);
-    content.add(new Span(
+    super(NotificationLevel.WARNING);
+    withTitle(title);
+    withContent(new Span(
         "Are you sure you want to delete %s measurements?".formatted(String.valueOf(amount))));
     setCancelable(true);
     setConfirmText("Confirm");
-  }
-
-  private void customizeHeader(String title) {
-    Icon errorIcon = new Icon(VaadinIcon.WARNING);
-    errorIcon.setClassName("warning-icon");
-    setTitle(title);
-    setHeaderIcon(errorIcon);
   }
 }
