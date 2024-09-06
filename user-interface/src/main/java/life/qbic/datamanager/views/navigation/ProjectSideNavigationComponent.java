@@ -73,7 +73,7 @@ public class ProjectSideNavigationComponent extends Div implements
     BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
-  public static final StringEXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private static final Logger log = LoggerFactory.logger(ProjectSideNavigationComponent.class);
   private final Div content;
   private final transient ProjectInformationService projectInformationService;

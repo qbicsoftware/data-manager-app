@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 

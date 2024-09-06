@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application.measurement.validation;
+package life.qbic.projectmanagement.application;
 
 import java.util.ArrayList;
 import java.util.Collection;

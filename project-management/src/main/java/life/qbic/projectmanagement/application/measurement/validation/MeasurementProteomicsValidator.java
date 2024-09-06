@@ -9,6 +9,8 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ValidationException;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;

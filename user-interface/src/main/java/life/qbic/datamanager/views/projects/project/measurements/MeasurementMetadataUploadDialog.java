@@ -46,7 +46,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.util.StringUtils;

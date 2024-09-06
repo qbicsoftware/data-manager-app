@@ -1,7 +1,7 @@
 package life.qbic.datamanager.templates;
 
 import java.util.List;
-import life.qbic.datamanager.parser.PropertyToString;
+import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.apache.poi.ss.usermodel.DataValidation;
@@ -254,13 +254,13 @@ public class SampleBatchTemplate {
     row.createCell(COLUMN_INDEX_SAMPLE_NAME).setCellValue(sample.label());
     row.createCell(COLUMN_INDEX_BIOLOGICAL_REPLICATE).setCellValue(sample.biologicalReplicate());
     row.createCell(COLUMN_INDEX_CONDITION)
-        .setCellValue(PropertyToString.condition(experimentalGroup.condition()));
+        .setCellValue(PropertyConversion.toString(experimentalGroup.condition()));
     row.createCell(COLUMN_INDEX_SPECIES)
-        .setCellValue(PropertyToString.ontologyTerm(sample.sampleOrigin().getSpecies()));
+        .setCellValue(PropertyConversion.toString(sample.sampleOrigin().getSpecies()));
     row.createCell(COLUMN_INDEX_SPECIMEN)
-        .setCellValue(PropertyToString.ontologyTerm(sample.sampleOrigin().getSpecimen()));
+        .setCellValue(PropertyConversion.toString(sample.sampleOrigin().getSpecimen()));
     row.createCell(COLUMN_INDEX_ANALYTES)
-        .setCellValue(PropertyToString.ontologyTerm(sample.sampleOrigin().getAnalyte()));
+        .setCellValue(PropertyConversion.toString(sample.sampleOrigin().getAnalyte()));
     row.createCell(COLUMN_INDEX_COMMENT).setCellValue(sample.comment().orElse(""));
     row.createCell(COLUMN_INDEX_SAMPLE_ID).setCellValue(sample.sampleCode().code());
   }

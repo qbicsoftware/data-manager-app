@@ -1,4 +1,4 @@
-package life.qbic.datamanager.parser;
+package life.qbic.projectmanagement.application.sample;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
  *
  * @since 1.5.0
  */
-public class PropertyToString {
+public class PropertyConversion {
 
   private static final String CONDITION_VARIABLE_LEVEL_UNIT_TEMPLATE = "%s: %s %s"; // <variable name>: <value> [unit]
 
@@ -28,7 +28,7 @@ public class PropertyToString {
    * <p>
    * In its current implementation, the String representation results into a
    * <code>;</code>-separated concatenation of {@link VariableLevel}. See
-   * {@link PropertyToString#variableLevel(VariableLevel)} for more details.
+   * {@link PropertyConversion#toString(VariableLevel)} for more details.
    * <p>
    * Example: a condition with the two variable levels <code>size: 20 cm</code> and <code>hue:
    * blue</code> will result in:
@@ -43,11 +43,11 @@ public class PropertyToString {
    * @return the String representation
    * @since 1.5.0
    */
-  public static String condition(Condition condition) {
+  public static String toString(Condition condition) {
     Objects.requireNonNull(condition);
     List<String> stringValues = new ArrayList<>();
     condition.getVariableLevels()
-        .forEach(variableLevel -> stringValues.add(variableLevel(variableLevel)));
+        .forEach(variableLevel -> stringValues.add(toString(variableLevel)));
     return String.join("; ", stringValues);
   }
 
@@ -62,7 +62,7 @@ public class PropertyToString {
    * @return the String representation of the variable level
    * @since 1.5.0
    */
-  public static String variableLevel(VariableLevel variableLevel) {
+  public static String toString(VariableLevel variableLevel) {
     Objects.requireNonNull(variableLevel);
     if (variableLevel.experimentalValue().unit().isPresent()) {
       return CONDITION_VARIABLE_LEVEL_UNIT_TEMPLATE.formatted(variableLevel.variableName().value(),
@@ -89,8 +89,19 @@ public class PropertyToString {
    * @return the String representation of the ontology term
    * @since 1.5.0
    */
-  public static String ontologyTerm(OntologyTerm ontologyTerm) {
+  public static String toString(OntologyTerm ontologyTerm) {
     Objects.requireNonNull(ontologyTerm);
     return ONTOLOGY_TERM.formatted(ontologyTerm.getLabel(), ontologyTerm.getOboId());
   }
+
+  public static OntologyTerm fromString(String string) throws ParserException {
+
+  }
+
+  public static class ParserException extends RuntimeException {
+    public ParserException(String message) {
+      super(message);
+    }
+  }
+
 }
