@@ -10,22 +10,22 @@ import java.util.Optional;
  * @since 1.0.0
  */
 public record SampleMetadata(String sampleId, String analysisToBePerformed, String sampleName,
-                             String biologicalReplicate, String condition, String specimen,
+                             String biologicalReplicate, String condition, String species, String specimen,
                              String analyte, String comment) {
 
   public static SampleMetadata createNew(String analysisToBePerformed, String sampleName,
-      String biologicalReplicate, String condition, String specimen,
+      String biologicalReplicate, String condition, String species, String specimen,
       String analyte, String comment) {
     return new SampleMetadata("", analysisToBePerformed, sampleName, biologicalReplicate, condition,
-        specimen, analyte, comment);
+        species, specimen, analyte, comment);
   }
 
   public static SampleMetadata createUpdate(String sampleId, String analysisToBePerformed,
       String sampleName,
-      String biologicalReplicate, String condition, String specimen,
+      String biologicalReplicate, String condition, String species, String specimen,
       String analyte, String comment) {
     return new SampleMetadata(sampleId, analysisToBePerformed, sampleName, biologicalReplicate,
-        condition, specimen, analyte, comment);
+        condition, species, specimen, analyte, comment);
   }
 
   public Optional<String> getSampleId() {

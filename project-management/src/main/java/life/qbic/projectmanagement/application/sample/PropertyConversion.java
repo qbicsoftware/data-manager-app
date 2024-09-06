@@ -3,6 +3,9 @@ package life.qbic.projectmanagement.application.sample;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
@@ -22,6 +25,8 @@ public class PropertyConversion {
   private static final String CONDITION_VARIABLE_LEVEL_NO_UNIT_TEMPLATE = "%s: %s"; // <variable name>: <value>
 
   private static final String ONTOLOGY_TERM = "%s [%s]"; // <term label> [CURIE]
+
+  private static final Pattern CURIE_PATTERN = Pattern.compile("\\[.*\\]");
 
   /**
    * Takes a {@link Condition} and transforms it into a String representation.
@@ -94,14 +99,27 @@ public class PropertyConversion {
     return ONTOLOGY_TERM.formatted(ontologyTerm.getLabel(), ontologyTerm.getOboId());
   }
 
-  public static OntologyTerm fromString(String string) throws ParserException {
-
+  /**
+   * Expects a String that has been created with {@link #toString(OntologyTerm)} and tries to
+   * extract the CURIE of the ontology term.
+   * <p>
+   * The CURIE is expected to be surrounded with <code>[...]</code> squared brackets.
+   *
+   * @param term the term that might contain the CURIE (e.g. OBO ID)
+   * @return an Optional that contains the found CURIE, or is empty else if none was found
+   * @since 1.5.0
+   */
+  public static Optional<String> extractCURIE(String term) {
+    return CURIE_PATTERN.matcher(term).results().map(MatchResult::group).findFirst()
+        .map(PropertyConversion::sanitizeOntologyTerm);
   }
 
-  public static class ParserException extends RuntimeException {
-    public ParserException(String message) {
-      super(message);
-    }
+  private static String removeBrackets(String value) {
+    return value.replace("[", "").replace("]", "");
+  }
+
+  private static String sanitizeOntologyTerm(String term) {
+    return removeBrackets(term).trim();
   }
 
 }

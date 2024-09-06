@@ -13,6 +13,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -77,19 +78,82 @@ public class SampleValidation {
     var experimentQuery = experimentInformationService.find(projectId,
         ExperimentId.parse(experimentId));
     if (experimentQuery.isPresent()) {
-      return validateWithExperiment(sampleMetadata, experimentQuery.get(), projectId);
+      return validateWithExperiment(sampleMetadata, experimentQuery.get());
     } else {
       return ValidationResult.withFailures(1, List.of("Unknown experiment."));
     }
   }
 
   private ValidationResult validateWithExperiment(SampleMetadata sampleMetadata,
-      Experiment experiment, String projectId) {
+      Experiment experiment) {
+    var validationResult = ValidationResult.successful(0);
     var conditionsLookupTable = conditionLookup(experiment.getExperimentalGroups().stream().map(
         ExperimentalGroup::condition).toList());
-
-    throw new RuntimeException("Not implemented yet");
+    return validationResult.combine(validateConditions(sampleMetadata, conditionsLookupTable))
+        .combine(validateAnalysis(sampleMetadata))
+        .combine(validateSpecies(sampleMetadata))
+        .combine(validateSpecimen(sampleMetadata)).combine(validateAnalyte(sampleMetadata));
   }
+
+  private ValidationResult validateConditions(SampleMetadata sampleMetadata,
+      Map<String, Condition> conditionsLookupTable) {
+    if (conditionsLookupTable.containsKey(sampleMetadata.condition())) {
+      return ValidationResult.successful(1);
+    }
+    return ValidationResult.withFailures(0,
+        List.of("Unknown condition: " + sampleMetadata.condition()));
+  }
+
+  private ValidationResult validateSpecies(SampleMetadata sampleMetadata) {
+    var extractedTerm = PropertyConversion.extractCURIE(sampleMetadata.species());
+    if (extractedTerm.isEmpty()) {
+      return ValidationResult.withFailures(1,
+          List.of("Missing CURIE in species: " + sampleMetadata.species()));
+    }
+    var speciesLookup = speciesLookupService.findByCURI(extractedTerm.get());
+    if (speciesLookup.isPresent()) {
+      return ValidationResult.successful(1);
+    }
+    return ValidationResult.withFailures(1, List.of("Unknown species: " + extractedTerm.get()));
+
+  }
+
+  private ValidationResult validateSpecimen(SampleMetadata sampleMetadata) {
+    var extractedTerm = PropertyConversion.extractCURIE(sampleMetadata.specimen());
+    if (extractedTerm.isEmpty()) {
+      return ValidationResult.withFailures(1,
+          List.of("Missing CURIE in specimen: " + sampleMetadata.species()));
+    }
+    var speciesLookup = terminologyService.findByCurie(extractedTerm.get());
+    if (speciesLookup.isPresent()) {
+      return ValidationResult.successful(1);
+    }
+    return ValidationResult.withFailures(1, List.of("Unknown specimen: " + extractedTerm.get()));
+  }
+
+  private ValidationResult validateAnalyte(SampleMetadata sampleMetadata) {
+    var extractedTerm = PropertyConversion.extractCURIE(sampleMetadata.specimen());
+    if (extractedTerm.isEmpty()) {
+      return ValidationResult.withFailures(1,
+          List.of("Missing CURIE in analyte: " + sampleMetadata.species()));
+    }
+    var speciesLookup = terminologyService.findByCurie(extractedTerm.get());
+    if (speciesLookup.isPresent()) {
+      return ValidationResult.successful(1);
+    }
+    return ValidationResult.withFailures(1, List.of("Unknown analyte: " + extractedTerm.get()));
+  }
+
+  private ValidationResult validateAnalysis(SampleMetadata sampleMetadata) {
+    var analysisMethodQuery = AnalysisMethod.forAbbreviation(
+        sampleMetadata.analysisToBePerformed());
+    if (analysisMethodQuery.isEmpty()) {
+      return ValidationResult.withFailures(1,
+          List.of("Unknown analysis: " + sampleMetadata.analysisToBePerformed()));
+    }
+    return ValidationResult.successful(1);
+  }
+
 
   public ValidationResult validateExistingSample(SampleMetadata sampleMetadata, String experimentId,
       String projectId) {
