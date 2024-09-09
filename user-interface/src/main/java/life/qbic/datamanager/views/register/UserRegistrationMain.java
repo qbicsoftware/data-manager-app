@@ -8,6 +8,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
@@ -81,16 +82,27 @@ public class UserRegistrationMain extends Main {
     if (exceptionList.isEmpty()) {
       return;
     }
-    if (exceptionList.stream().anyMatch(e -> e instanceof UserExistsException)) {
-      userRegistrationComponent.showError("Email address already in use",
-          "If you have difficulties with your password you can reset it.");
-    } else if (exceptionList.stream().anyMatch(e -> e instanceof UserNameNotAvailableException)) {
-      userRegistrationComponent.showError("Username already in use", "Please try another username");
-    } else if (exceptionList.stream().anyMatch(e -> e instanceof EmptyUserNameException)) {
-      userRegistrationComponent.showError("Username must not be empty",
-          "Please try another username");
-    } else {
-      userRegistrationComponent.showError("Registration failed", "Please try again.");
+    for (RuntimeException e : exceptionList) {
+      if (e instanceof UserExistsException) {
+        userRegistrationComponent.showError("Email address already in use",
+            "If you have difficulties with your password you can reset it.");
+        break;
+      } else if (e instanceof UserNameNotAvailableException) {
+        userRegistrationComponent.showError("Username already in use",
+            "Please try another username");
+        break;
+      } else if (e instanceof EmptyUserNameException) {
+        userRegistrationComponent.showError("Username must not be empty",
+            "Please try another username");
+        break;
+      } else {
+        userRegistrationComponent.showError("Registration failed", "Please try again.");
+        break;
+      }
     }
+    String allErrorMessages = exceptionList.stream().map(Throwable::getMessage)
+        .collect(Collectors.joining("\n"));
+    log.error(allErrorMessages);
+    exceptionList.forEach(e -> log.debug(e.getMessage(), e));
   }
 }
