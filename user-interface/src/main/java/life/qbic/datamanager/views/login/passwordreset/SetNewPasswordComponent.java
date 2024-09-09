@@ -12,7 +12,6 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import life.qbic.datamanager.views.general.CardLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 
 /**
@@ -24,7 +23,7 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 @AnonymousAllowed
 @UIScope
 @SpringComponent
-public class SetNewPasswordComponent extends CardLayout {
+public class SetNewPasswordComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = 4482422913026333378L;
@@ -39,6 +38,7 @@ public class SetNewPasswordComponent extends CardLayout {
 
   public SetNewPasswordComponent() {
     addClassName("set-new-password-component");
+    addClassName("card-layout");
     confirmButton.addClassName("primary");
     password.setHelperText("Please provide a password with at least 12 characters");
     Div introduction = new Div();

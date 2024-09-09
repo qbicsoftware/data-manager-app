@@ -18,7 +18,6 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.CardLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.register.UserRegistrationMain;
 import life.qbic.identity.api.UserInformationService;
@@ -32,7 +31,7 @@ import life.qbic.identity.api.UserInformationService;
  */
 @SpringComponent
 @UIScope
-public class ResetPasswordComponent extends CardLayout {
+public class ResetPasswordComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = 6918803421532658723L;
@@ -61,6 +60,7 @@ public class ResetPasswordComponent extends CardLayout {
     RouterLink routerLink = new RouterLink("Register", UserRegistrationMain.class);
     Span registerSpan = new Span(new Text("Don't have an account? "), routerLink);
     registerSpan.addClassName("registration-link");
+    addClassName("card-layout");
     add(registerSpan);
   }
 

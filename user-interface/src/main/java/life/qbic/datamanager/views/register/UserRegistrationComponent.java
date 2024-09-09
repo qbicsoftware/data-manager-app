@@ -22,7 +22,6 @@ import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.CardLayout;
 import life.qbic.datamanager.views.login.passwordreset.ResetPasswordMain;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.identity.api.UserInformationService;
@@ -35,7 +34,7 @@ import life.qbic.identity.api.UserInformationService;
  */
 @SpringComponent
 @UIScope
-public class UserRegistrationComponent extends CardLayout {
+public class UserRegistrationComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = -1189104139053489520L;
@@ -71,6 +70,7 @@ public class UserRegistrationComponent extends CardLayout {
     setFieldValidation();
     addRegistrationButtonListener();
     addRoutingLinks();
+    addClassName("card-layout");
   }
 
   private void addRoutingLinks() {

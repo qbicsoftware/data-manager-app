@@ -9,7 +9,6 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import life.qbic.datamanager.views.general.CardLayout;
 
 /**
  * Nwe Password Set Component
@@ -20,7 +19,7 @@ import life.qbic.datamanager.views.general.CardLayout;
  */
 @SpringComponent
 @UIScope
-public class NewPasswordSetComponent extends CardLayout {
+public class NewPasswordSetComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = -1138757655198857262L;
@@ -34,6 +33,7 @@ public class NewPasswordSetComponent extends CardLayout {
     introduction.add("You can now log in with your new password.");
     introduction.addClassName("introduction");
     H2 titleSpan = new H2("New Password saved!");
+    addClassName("card-layout");
     add(titleSpan, introduction, loginButton);
   }
 

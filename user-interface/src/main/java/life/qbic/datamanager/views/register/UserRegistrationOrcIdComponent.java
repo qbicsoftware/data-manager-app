@@ -18,7 +18,6 @@ import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.CardLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.identity.api.UserInformationService;
 
@@ -31,7 +30,7 @@ import life.qbic.identity.api.UserInformationService;
  */
 @SpringComponent
 @UIScope
-public class UserRegistrationOrcIdComponent extends CardLayout {
+public class UserRegistrationOrcIdComponent extends Div {
 
   @Serial
   private static final long serialVersionUID = 822067456152829562L;
@@ -64,6 +63,7 @@ public class UserRegistrationOrcIdComponent extends CardLayout {
     username.setHelperText("Your unique user name, visible to other users");
     description.add(
         "Please complete missing information to create an account with us.");
+    addClassName("card-layout");
     add(titleSpan, notificationLayout, description, fullName, email, username, registerButton);
     setFieldValidation();
     addRegistrationButtonListener();
