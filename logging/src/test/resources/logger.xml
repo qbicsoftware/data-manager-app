@@ -3,13 +3,12 @@
 
   <property name="LOGS" value="${LOG_PATH:-./logs}"/>
 
-  <appender name="Console"
-    class="ch.qos.logback.core.ConsoleAppender">
-    <layout class="ch.qos.logback.classic.PatternLayout">
+  <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
       <Pattern>
         %black(%d{ISO8601}) %highlight(%-5level) [%blue(%t)] %yellow(%C{1.}): %msg%n%throwable
       </Pattern>
-    </layout>
+    </encoder>
   </appender>
 
   <!-- LOG everything at INFO level -->
