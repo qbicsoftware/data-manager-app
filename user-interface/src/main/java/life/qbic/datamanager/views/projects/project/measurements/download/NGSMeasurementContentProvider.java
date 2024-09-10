@@ -4,6 +4,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
@@ -29,11 +31,11 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-/** <b>NGS Measurement Content Provider</b>
+/**
+ * <b>NGS Measurement Content Provider</b>
  * <p>
- * Implementation of the {@link DownloadContentProvider} providing the content and file name for any files created
- * from {@link NGSMeasurement}
- * and {@link NGSMeasurementMetadata}
+ * Implementation of the {@link DownloadContentProvider} providing the content and file name for any
+ * files created from {@link NGSMeasurement} and {@link NGSMeasurementMetadata}
  * </p>
  */
 public class NGSMeasurementContentProvider implements DownloadContentProvider {
@@ -47,8 +49,22 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
   private static CellStyle boldStyle;
   private final List<NGSMeasurementEntry> measurements = new LinkedList<>();
   private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
-  private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX ;
+  private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX;
   private static final int DEFAULT_GENERATED_ROW_COUNT = 2_000;
+
+  private enum SequencingReadType {
+    SINGLE_END("singe-end"),
+    PAIRED_END("paired-end");
+    private final String presentationString;
+
+    SequencingReadType(String presentationString) {
+      this.presentationString = presentationString;
+    }
+
+    static List<String> getOptions() {
+      return Arrays.stream(values()).map(it -> it.presentationString).toList();
+    }
+  }
 
   private static void setAutoWidth(Sheet sheet) {
     for (int col = 0; col <= NGSMeasurementColumns.values().length; col++) {
@@ -78,68 +94,71 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     }
   }
 
-  private static void createMeasurementEntry(NGSMeasurementEntry ngsMeasurementEntry, Row entry) {
-    var measureCol = entry.createCell(NGSMeasurementColumns.MEASUREMENTCODE.columnNumber());
+  private static void writeMeasurementIntoRow(NGSMeasurementEntry ngsMeasurementEntry, Row entry) {
+    var measureCol = getCellNeverNull(entry, NGSMeasurementColumns.MEASUREMENTCODE.columnNumber());
     measureCol.setCellValue(ngsMeasurementEntry.measurementCode());
     setCellStyle(measureCol, NGSMeasurementColumns.MEASUREMENTCODE.readOnly());
 
-    var sampleIdCol = entry.createCell(NGSMeasurementColumns.SAMPLEID.columnNumber());
+    var sampleIdCol = getCellNeverNull(entry, NGSMeasurementColumns.SAMPLEID.columnNumber());
     sampleIdCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleId());
     setCellStyle(sampleIdCol, NGSMeasurementColumns.SAMPLEID.readOnly());
 
-    var sampleNameCol = entry.createCell(NGSMeasurementColumns.SAMPLENAME.columnNumber());
+    var sampleNameCol = getCellNeverNull(entry, NGSMeasurementColumns.SAMPLENAME.columnNumber());
     sampleNameCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleName());
     setCellStyle(sampleNameCol, NGSMeasurementColumns.SAMPLENAME.readOnly());
 
-    var orgIdCol = entry.createCell(NGSMeasurementColumns.ORGANISATIONID.columnNumber());
+    var orgIdCol = getCellNeverNull(entry, NGSMeasurementColumns.ORGANISATIONID.columnNumber());
     orgIdCol.setCellValue(ngsMeasurementEntry.organisationId());
     setCellStyle(orgIdCol, NGSMeasurementColumns.ORGANISATIONID.readOnly());
 
-    var organisationNameCol = entry.createCell(
+    var organisationNameCol = getCellNeverNull(entry,
         NGSMeasurementColumns.ORGANISATIONNAME.columnNumber());
+
     organisationNameCol.setCellValue(ngsMeasurementEntry.organisationName());
     setCellStyle(organisationNameCol, NGSMeasurementColumns.ORGANISATIONNAME.readOnly());
 
-    var facilityCol = entry.createCell(NGSMeasurementColumns.FACILITY.columnNumber());
+    var facilityCol = getCellNeverNull(entry, NGSMeasurementColumns.FACILITY.columnNumber());
     facilityCol.setCellValue(ngsMeasurementEntry.facility());
     setCellStyle(facilityCol, NGSMeasurementColumns.FACILITY.readOnly);
-    var instrumentCol = entry.createCell(NGSMeasurementColumns.INSTRUMENT.columnNumber());
+    var instrumentCol = getCellNeverNull(entry, NGSMeasurementColumns.INSTRUMENT.columnNumber());
     instrumentCol.setCellValue(ngsMeasurementEntry.instrumentCURI());
     setCellStyle(instrumentCol, NGSMeasurementColumns.INSTRUMENT.readOnly());
 
-    var instrumentNameCol = entry.createCell(NGSMeasurementColumns.INSTRUMENTNAME.columnNumber());
+    var instrumentNameCol = getCellNeverNull(entry,
+        NGSMeasurementColumns.INSTRUMENTNAME.columnNumber());
     instrumentNameCol.setCellValue(ngsMeasurementEntry.instrumentName());
     setCellStyle(instrumentNameCol, NGSMeasurementColumns.INSTRUMENTNAME.readOnly());
 
-    var readTypeCol = entry.createCell(NGSMeasurementColumns.SEQUENCINGREADTYPE.columnNumber());
+    var readTypeCol = getCellNeverNull(entry,
+        NGSMeasurementColumns.SEQUENCINGREADTYPE.columnNumber());
     readTypeCol.setCellValue(ngsMeasurementEntry.readType());
     setCellStyle(readTypeCol, NGSMeasurementColumns.SEQUENCINGREADTYPE.readOnly());
 
-    var libraryKitCol = entry.createCell(NGSMeasurementColumns.LIBRARYKIT.columnNumber());
+    var libraryKitCol = getCellNeverNull(entry, NGSMeasurementColumns.LIBRARYKIT.columnNumber());
     libraryKitCol.setCellValue(ngsMeasurementEntry.libraryKit());
     setCellStyle(libraryKitCol, NGSMeasurementColumns.LIBRARYKIT.readOnly());
 
-    var flowCellCol = entry.createCell(NGSMeasurementColumns.FLOWCELL.columnNumber());
+    var flowCellCol = getCellNeverNull(entry, NGSMeasurementColumns.FLOWCELL.columnNumber());
     flowCellCol.setCellValue(ngsMeasurementEntry.flowCell());
     setCellStyle(flowCellCol, NGSMeasurementColumns.FLOWCELL.readOnly());
 
-    var runProtocolCol = entry.createCell(NGSMeasurementColumns.RUNPROTOCOL.columnNumber());
+    var runProtocolCol = getCellNeverNull(entry, NGSMeasurementColumns.RUNPROTOCOL.columnNumber());
     runProtocolCol.setCellValue(ngsMeasurementEntry.runProtocol());
     setCellStyle(runProtocolCol, NGSMeasurementColumns.RUNPROTOCOL.readOnly());
 
-    var poolGroupCol = entry.createCell(NGSMeasurementColumns.POOLGROUP.columnNumber());
+    var poolGroupCol = getCellNeverNull(entry, NGSMeasurementColumns.POOLGROUP.columnNumber());
     poolGroupCol.setCellValue(ngsMeasurementEntry.samplePoolGroup());
     setCellStyle(poolGroupCol, NGSMeasurementColumns.POOLGROUP.readOnly());
 
-    var indexI7Col = entry.createCell(NGSMeasurementColumns.INDEXI7.columnNumber());
+    var indexI7Col = getCellNeverNull(entry, NGSMeasurementColumns.INDEXI7.columnNumber());
     indexI7Col.setCellValue(ngsMeasurementEntry.indexI7());
     setCellStyle(indexI7Col, NGSMeasurementColumns.INDEXI7.readOnly());
 
-    var indexI5Col = entry.createCell(NGSMeasurementColumns.INDEXI5.columnNumber());
+    var indexI5Col = getCellNeverNull(entry, NGSMeasurementColumns.INDEXI5.columnNumber());
     indexI5Col.setCellValue(ngsMeasurementEntry.indexI5());
     setCellStyle(indexI5Col, NGSMeasurementColumns.INDEXI5.readOnly());
 
-    var commentCol = entry.createCell(NGSMeasurementColumns.COMMENT.columnNumber());
+    var commentCol = getCellNeverNull(entry, NGSMeasurementColumns.COMMENT.columnNumber());
     commentCol.setCellValue(ngsMeasurementEntry.comment());
     setCellStyle(commentCol, NGSMeasurementColumns.COMMENT.readOnly());
   }
@@ -242,66 +261,34 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     ByteArrayOutputStream byteArrayOutputStream;
 
     try (Workbook workbook = new XSSFWorkbook()) {
+      defineReadOnlyHeaderStyle(workbook);
+      defineReadOnlyCellStyle(workbook);
+      defineBoldStyle(workbook);
 
       Sheet hiddenSheet = workbook.createSheet("hidden");
       //TODO hide sheet
-      Row hiddenSheetRow = hiddenSheet.createRow(0);
-      //sequencing read type
-      Cell hiddenSequencingReadTypeHeaderCell = hiddenSheetRow.createCell(0);
-      hiddenSequencingReadTypeHeaderCell.setCellValue("Sequencing read type");
-
-      var values = List.of("test", "test2", "test 42");
-      var maxRowNumber = values.size() + 1; // already 1 based but we need to add the header row
-      var sequencingReadTypeColumnIndex = hiddenSequencingReadTypeHeaderCell.getColumnIndex();
-      //insert values into spreadsheet
-      for (int i = 0; i < values.size(); i++) {
-        var rowIndex = i + 1; // we start with offset one because of the header row
-        Row row = getRowNeverNull(hiddenSheet, rowIndex);
-        row.createCell(sequencingReadTypeColumnIndex).setCellValue(values.get(i));
-      }
-
-      // row numbers start with 1 e.g. A1, A2, ... ; indexes start with 0 e.g. [0,0], [0,1], ...
-      String startColumnLetters = CellReference.convertNumToColString(
-          sequencingReadTypeColumnIndex); //takes an index not a number
-      int startRowNumber =
-          hiddenSequencingReadTypeHeaderCell.getRowIndex() + 1; // we need to add the header
-      String stopColumnLetters = CellReference.convertNumToColString(
-          sequencingReadTypeColumnIndex); //takes an index not a number
-      int stopRowNumber = maxRowNumber;
-      String reference = "'%s'!$%s$%s:$%s$%s".formatted( //e.g. 'My Sheet'!$A$1:$E$23
-          hiddenSheet.getSheetName(),
-          startColumnLetters,
-          startRowNumber,
-          stopColumnLetters,
-          stopRowNumber
-      );
-      Name sequencingReadTypeValues = workbook.createName();
-      sequencingReadTypeValues.setRefersToFormula(reference);
-      sequencingReadTypeValues.setNameName("sequencingReadTypes");
+      Name sequencingReadTypeArea = addValueListWithName("sequencingReadTypes", hiddenSheet,
+          new PropertyValues("Sequencing read type", SequencingReadType.getOptions()));
 
       Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
       workbook.setSheetOrder(sheet.getSheetName(), 0);
-      //TODO create header row
-      Row headerRow = sheet.createRow(0);
-      for (int i = 1; i < DEFAULT_GENERATED_ROW_COUNT; i++) {
-        Row row = sheet.createRow(i);
+
+      Row header = getRowNeverNull(sheet, 0);
+      for (NGSMeasurementColumns value : NGSMeasurementColumns.values()) {
+        var cell = header.createCell(value.columnNumber());
+        cell.setCellValue(value.headerName());
+        setHeaderStyle(cell, value.readOnly());
       }
 
-//      Row header = sheet.createRow(0);
-//      defineReadOnlyHeaderStyle(workbook);
-//      defineReadOnlyCellStyle(workbook);
-//      defineBoldStyle(workbook);
-//      formatHeader(header);
-//
-//      int rowCounter = 1;
-//
-//      for (NGSMeasurementEntry ngsMeasurementEntry : measurements) {
-//        Row entry = sheet.createRow(rowCounter);
-//        createMeasurementEntry(ngsMeasurementEntry, entry);
-//        rowCounter++;
-//      }
-//
-//      setAutoWidth(sheet);
+      for (int i = 0; i < measurements.size(); i++) {
+        var measurement = measurements.get(i);
+        var rowIndex = i + 1;
+        Row row = getRowNeverNull(sheet, rowIndex);
+        writeMeasurementIntoRow(measurement, row);
+      }
+      //TODO add data validation
+
+      setAutoWidth(sheet);
 
       byteArrayOutputStream = new ByteArrayOutputStream();
       workbook.write(byteArrayOutputStream);
@@ -327,16 +314,23 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
         .orElse(sheet.createRow(index));
   }
 
+  private static Cell getCellNeverNull(Row row, int colIndex) {
+    return Optional.ofNullable(row.getCell(colIndex, MissingCellPolicy.RETURN_BLANK_AS_NULL))
+        .orElse(row.createCell(colIndex));
+  }
+
   @Override
   public String getFileName() {
-    return String.join("_" , fileNamePrefix, FILE_NAME_SUFFIX);
+    return String.join("_", fileNamePrefix, FILE_NAME_SUFFIX);
   }
 
   /**
    * <b>NGS Measurement Columns</b>
    *
-   * <p>Enumeration of the columns shown in the file used for NGS measurement registration and edit in the context of measurement file based upload.
-   * Provides the name of the header column, the column index and if the column should be set to readOnly in the generated sheet
+   * <p>Enumeration of the columns shown in the file used for NGS measurement registration and edit
+   * in the context of measurement file based upload.
+   * Provides the name of the header column, the column index and if the column should be set to
+   * readOnly in the generated sheet
    * </p>
    */
   enum NGSMeasurementColumns {
@@ -361,7 +355,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     INSTRUMENTNAME("Instrument Name", 8,
         true),
     SEQUENCINGREADTYPE("Sequencing Read Type", 9,
-        false),
+        false, List.of("single-end", "paired-end")),
     LIBRARYKIT("Library Kit", 10,
         false),
     FLOWCELL("Flow Cell", 11,
@@ -373,17 +367,36 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     INDEXI5("Index i5", 14,
         false),
     COMMENT("Comment", 15,
-        false);
+        false),
+    ;
 
     private final String headerName;
     private final int columnNumber;
     private final boolean readOnly;
+    private final List<String> allowedValues;
 
 
-    NGSMeasurementColumns(String headerName, int columnNumber, boolean readOnly) {
+    /**
+     * @param headerName    the name in the header
+     * @param columnIndex   the index of the column this property is in
+     * @param readOnly      is the property read only
+     * @param allowedValues a list of allowed values; null if not applicable
+     */
+    NGSMeasurementColumns(String headerName, int columnIndex, boolean readOnly,
+        List<String> allowedValues) {
       this.headerName = headerName;
-      this.columnNumber = columnNumber;
+      this.columnNumber = columnIndex;
       this.readOnly = readOnly;
+      this.allowedValues = allowedValues;
+    }
+
+    /**
+     * @param headerName  the name in the header
+     * @param columnIndex the index of the column this property is in
+     * @param readOnly    is the property read only
+     */
+    NGSMeasurementColumns(String headerName, int columnIndex, boolean readOnly) {
+      this(headerName, columnIndex, readOnly, null);
     }
 
     public String headerName() {
@@ -396,6 +409,10 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
 
     public boolean readOnly() {
       return readOnly;
+    }
+
+    public List<String> allowedValues() {
+      return Optional.ofNullable(allowedValues).orElse(Collections.emptyList());
     }
   }
 }
