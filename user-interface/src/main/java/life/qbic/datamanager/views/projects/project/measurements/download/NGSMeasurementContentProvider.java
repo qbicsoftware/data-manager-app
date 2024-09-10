@@ -4,20 +4,26 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 import life.qbic.datamanager.views.projects.project.measurements.NGSMeasurementEntry;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
@@ -26,8 +32,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 /** <b>NGS Measurement Content Provider</b>
  * <p>
  * Implementation of the {@link DownloadContentProvider} providing the content and file name for any files created
- * from {@link life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement}
- * and {@link life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata}
+ * from {@link NGSMeasurement}
+ * and {@link NGSMeasurementMetadata}
  * </p>
  */
 public class NGSMeasurementContentProvider implements DownloadContentProvider {
@@ -42,6 +48,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
   private final List<NGSMeasurementEntry> measurements = new LinkedList<>();
   private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
   private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX ;
+  private static final int DEFAULT_GENERATED_ROW_COUNT = 2_000;
 
   private static void setAutoWidth(Sheet sheet) {
     for (int col = 0; col <= NGSMeasurementColumns.values().length; col++) {
@@ -171,6 +178,61 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     readOnlyHeaderStyle.setFont(fontHeader);
   }
 
+  /**
+   * Adds values to the sheet and returns the named area where they were added. The named area can
+   * later be used by calling {}
+   *
+   * @param name           the name to choose for the area
+   * @param sheet          the sheet where to add the values
+   * @param propertyValues the property values to add
+   * @return a defined name for a range of cells in the workbook.
+   */
+  protected static Name addValueListWithName(String name, Sheet sheet,
+      PropertyValues propertyValues) {
+    Row headerRow = getRowNeverNull(sheet, 0);
+    var columnNumber = Math.max(1,
+        headerRow.getLastCellNum()); // we want to obtain 1 for the first to come if there are none and not -1 -.-
+    var columnIndex = columnNumber - 1;
+
+    // create header cell
+    Cell headerRowCell = headerRow.createCell(columnIndex);
+    headerRowCell.setCellValue(propertyValues.propertyName());
+
+    for (int i = 0; i < propertyValues.size(); i++) {
+      var rowIndex = i + 1; // +1 because of header row
+      Row valueRow = getRowNeverNull(sheet, rowIndex);
+      valueRow.createCell(columnIndex).setCellValue(propertyValues.get(i));
+    }
+    var reference = "'%s'!$%s$%s:$%s$%s".formatted( //e.g. 'My Sheet'!$A$1:$E$23
+        sheet.getSheetName(),
+        CellReference.convertNumToColString(columnIndex),
+        1,
+        CellReference.convertNumToColString(columnIndex),
+        propertyValues.size() + 1
+    );
+    var namedArea = sheet.getWorkbook().createName();
+    namedArea.setNameName(name);
+    namedArea.setRefersToFormula(reference);
+    return namedArea;
+  }
+
+  protected record PropertyValues(String propertyName, List<String> values) {
+
+    public int size() {
+      return values.size();
+    }
+
+    public String get(int index) {
+      return values.get(index);
+    }
+
+    public PropertyValues(String propertyName, List<String> values) {
+      this.propertyName = propertyName;
+      this.values = Collections.unmodifiableList(values);
+    }
+  }
+
+
   @Override
   public byte[] getContent() {
     if (measurements.isEmpty()) {
@@ -180,23 +242,66 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     ByteArrayOutputStream byteArrayOutputStream;
 
     try (Workbook workbook = new XSSFWorkbook()) {
-      Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
 
-      Row header = sheet.createRow(0);
-      defineReadOnlyHeaderStyle(workbook);
-      defineReadOnlyCellStyle(workbook);
-      defineBoldStyle(workbook);
-      formatHeader(header);
+      Sheet hiddenSheet = workbook.createSheet("hidden");
+      //TODO hide sheet
+      Row hiddenSheetRow = hiddenSheet.createRow(0);
+      //sequencing read type
+      Cell hiddenSequencingReadTypeHeaderCell = hiddenSheetRow.createCell(0);
+      hiddenSequencingReadTypeHeaderCell.setCellValue("Sequencing read type");
 
-      int rowCounter = 1;
-
-      for (NGSMeasurementEntry ngsMeasurementEntry : measurements) {
-        Row entry = sheet.createRow(rowCounter);
-        createMeasurementEntry(ngsMeasurementEntry, entry);
-        rowCounter++;
+      var values = List.of("test", "test2", "test 42");
+      var maxRowNumber = values.size() + 1; // already 1 based but we need to add the header row
+      var sequencingReadTypeColumnIndex = hiddenSequencingReadTypeHeaderCell.getColumnIndex();
+      //insert values into spreadsheet
+      for (int i = 0; i < values.size(); i++) {
+        var rowIndex = i + 1; // we start with offset one because of the header row
+        Row row = getRowNeverNull(hiddenSheet, rowIndex);
+        row.createCell(sequencingReadTypeColumnIndex).setCellValue(values.get(i));
       }
 
-      setAutoWidth(sheet);
+      // row numbers start with 1 e.g. A1, A2, ... ; indexes start with 0 e.g. [0,0], [0,1], ...
+      String startColumnLetters = CellReference.convertNumToColString(
+          sequencingReadTypeColumnIndex); //takes an index not a number
+      int startRowNumber =
+          hiddenSequencingReadTypeHeaderCell.getRowIndex() + 1; // we need to add the header
+      String stopColumnLetters = CellReference.convertNumToColString(
+          sequencingReadTypeColumnIndex); //takes an index not a number
+      int stopRowNumber = maxRowNumber;
+      String reference = "'%s'!$%s$%s:$%s$%s".formatted( //e.g. 'My Sheet'!$A$1:$E$23
+          hiddenSheet.getSheetName(),
+          startColumnLetters,
+          startRowNumber,
+          stopColumnLetters,
+          stopRowNumber
+      );
+      Name sequencingReadTypeValues = workbook.createName();
+      sequencingReadTypeValues.setRefersToFormula(reference);
+      sequencingReadTypeValues.setNameName("sequencingReadTypes");
+
+      Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
+      workbook.setSheetOrder(sheet.getSheetName(), 0);
+      //TODO create header row
+      Row headerRow = sheet.createRow(0);
+      for (int i = 1; i < DEFAULT_GENERATED_ROW_COUNT; i++) {
+        Row row = sheet.createRow(i);
+      }
+
+//      Row header = sheet.createRow(0);
+//      defineReadOnlyHeaderStyle(workbook);
+//      defineReadOnlyCellStyle(workbook);
+//      defineBoldStyle(workbook);
+//      formatHeader(header);
+//
+//      int rowCounter = 1;
+//
+//      for (NGSMeasurementEntry ngsMeasurementEntry : measurements) {
+//        Row entry = sheet.createRow(rowCounter);
+//        createMeasurementEntry(ngsMeasurementEntry, entry);
+//        rowCounter++;
+//      }
+//
+//      setAutoWidth(sheet);
 
       byteArrayOutputStream = new ByteArrayOutputStream();
       workbook.write(byteArrayOutputStream);
@@ -206,6 +311,20 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     }
 
     return byteArrayOutputStream.toByteArray();
+  }
+
+  private static String getCellValue(Cell cell) {
+    return switch (cell.getCellType()) {
+      case FORMULA, _NONE, BLANK, ERROR -> "";
+      case STRING -> cell.getStringCellValue();
+      case BOOLEAN -> Boolean.toString(cell.getBooleanCellValue());
+      case NUMERIC -> Double.toString(cell.getNumericCellValue());
+    };
+  }
+
+  private static Row getRowNeverNull(Sheet sheet, int index) {
+    return Optional.ofNullable(sheet.getRow(index))
+        .orElse(sheet.createRow(index));
   }
 
   @Override
