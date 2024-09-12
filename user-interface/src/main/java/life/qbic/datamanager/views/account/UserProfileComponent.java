@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.account;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -9,6 +10,8 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
@@ -17,15 +20,19 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Arrays;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.account.UserProfileComponent.ChangeUserDetailsDialog.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.projects.project.access.UserAvatarWithNameComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
+import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -44,6 +51,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
   @Serial
   private static final long serialVersionUID = -65339437186530376L;
   private static final String TITLE = "My Profile";
+  private static final Logger log = logger(UserProfileComponent.class);
   private final transient IdentityService identityService;
   private UserDetailsCard userDetailsCard;
 
@@ -183,6 +191,8 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private final UserInfo userInfo;
 
+    private final Div userDetails = new Div();
+
     public UserDetailsCard(UserInfo userInfo) {
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
@@ -199,17 +209,16 @@ public class UserProfileComponent extends PageArea implements Serializable {
           changePlatformUserName);
       Span userEmail = new Span();
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
-      Div userDetails = new Div(userNameDetail, userEmailDetail);
+      userDetails.add(userNameDetail, userEmailDetail);
       userDetails.addClassName("details");
-
       add(avatarWithName, userDetails);
       addClassName("user-details-card");
-
       this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
       platformUserName.setText(userInfo.platformUserName());
       userEmail.setText(this.userInfo.emailAddress());
       userAvatar.setName(this.userInfo.platformUserName());
       userAvatar.setUserId(this.userInfo.id());
+      setLinkedAccounts();
     }
 
     private void onChangePlatformUserNameClicked(ClickEvent<Span> event) {
@@ -226,24 +235,60 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private void onChangeUserDetailsDialogConfirmed(ConfirmEvent event) {
       var response = identityService.requestUserNameChange(userInfo.id(), event.userName());
-        if (response.isSuccess()) {
-          event.getSource().close();
-          // Trigger reload of UI reloading the username displayed in the datamanager menu
-          // and within this component
-          UI.getCurrent().getPage().reload();
-          return;
-        }
+      if (response.isSuccess()) {
+        event.getSource().close();
+        // Trigger reload of UI reloading the username displayed in the datamanager menu
+        // and within this component
+        UI.getCurrent().getPage().reload();
+        return;
+      }
 
-        RuntimeException e = response.failures().stream().findFirst().orElseThrow();
-        if (e instanceof UserNameNotAvailableException) {
-          event.getSource().setUserNameNotAvailable();
-          return;
-        }
-        if (e instanceof EmptyUserNameException) {
-          event.getSource().setUserNameEmpty();
-          return;
-        }
-        throw ApplicationException.wrapping("Unexpected exception in username change.", e);
+      RuntimeException e = response.failures().stream().findFirst().orElseThrow();
+      if (e instanceof UserNameNotAvailableException) {
+        event.getSource().setUserNameNotAvailable();
+        return;
+      }
+      if (e instanceof EmptyUserNameException) {
+        event.getSource().setUserNameEmpty();
+        return;
+      }
+      throw ApplicationException.wrapping("Unexpected exception in username change.", e);
+    }
+
+    private void setLinkedAccounts() {
+      //Todo handle Orcid login
+      Anchor linkOidcAccount = new Anchor("", "Link ORCID Account");
+      if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null) {
+        userDetails.add(new UserDetail("Linked Accounts", linkOidcAccount));
+        return;
+      }
+      if (userInfo.oidcIssuer().isEmpty() || userInfo.oidcId().isEmpty()) {
+        userDetails.add(new UserDetail("Linked Accounts", linkOidcAccount));
+        return;
+      }
+      Arrays.stream(OidcType.values())
+          .filter(ot -> ot.getIssuer().equals(userInfo.oidcIssuer()))
+          .findFirst()
+          .ifPresentOrElse(oidcType -> userDetails.add(
+                  new UserDetail("Linked Accounts", generateLinkedAccountCard())),
+              () -> log.warn("Unknown oidc Issuer %s".formatted(userInfo.oidcIssuer())));
+    }
+
+    private Div generateLinkedAccountCard() {
+      //Should be extended once more than orcid is possible with a check which oidc is relevant
+      OidcLogo oidcLogo = new OidcLogo(OidcType.ORCID);
+      Span orcIdAccount = new Span(oidcLogo, new Span(userInfo.oidcId()));
+      orcIdAccount.addClassName("logo-with-text");
+      Anchor orcIdPublicRecordLink = new Anchor(generateOidCRecordURL(userInfo.oidcId()),
+          "View public record", AnchorTarget.BLANK);
+      Div linkedAccountCard = new Div(orcIdAccount, orcIdPublicRecordLink);
+      linkedAccountCard.addClassName("linked-account");
+      return linkedAccountCard;
+    }
+
+    private String generateOidCRecordURL(String oidcId) {
+      return String.format("https://orcid.org/%s", oidcId);
     }
   }
+
 }
