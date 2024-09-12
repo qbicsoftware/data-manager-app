@@ -111,6 +111,8 @@ public class SetNewPasswordMain extends Main implements HasUrlParameter<String> 
 
   private void handleNewPasswordError(Result<?, RuntimeException> applicationResponse) {
     Predicate<RuntimeException> isPasswordValidationException = e -> e instanceof PasswordValidationException;
+        /*These Cases should not happen anymore since we validate before we send the event,
+    however they can still be used as a failsafe*/
     applicationResponse
         .onErrorMatching(isPasswordValidationException, ignored -> {
           log.error("Invalid password provided during reset");
