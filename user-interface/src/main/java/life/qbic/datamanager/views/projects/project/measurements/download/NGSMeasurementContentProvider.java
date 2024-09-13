@@ -263,15 +263,6 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     return byteArrayOutputStream.toByteArray();
   }
 
-  private static String getCellValue(Cell cell) {
-    return switch (cell.getCellType()) {
-      case FORMULA, _NONE, BLANK, ERROR -> "";
-      case STRING -> cell.getStringCellValue();
-      case BOOLEAN -> Boolean.toString(cell.getBooleanCellValue());
-      case NUMERIC -> Double.toString(cell.getNumericCellValue());
-    };
-  }
-
   private static Row getOrCreateRow(Sheet sheet, int index) {
     return Optional.ofNullable(sheet.getRow(index))
         .orElse(sheet.createRow(index));
