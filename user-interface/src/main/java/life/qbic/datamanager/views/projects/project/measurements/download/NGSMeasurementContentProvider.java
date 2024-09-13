@@ -1,5 +1,8 @@
 package life.qbic.datamanager.views.projects.project.measurements.download;
 
+import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.createOptionArea;
+import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.hideSheet;
+import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.lockSheet;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
@@ -11,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.datamanager.spreadsheet.XLSXTemplateHelper;
 import life.qbic.datamanager.views.general.download.DownloadContentProvider;
 import life.qbic.datamanager.views.projects.project.measurements.NGSMeasurementEntry;
 import life.qbic.logging.api.Logger;
@@ -18,9 +22,6 @@ import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadat
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataValidation;
-import org.apache.poi.ss.usermodel.DataValidationConstraint;
-import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Name;
@@ -28,9 +29,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.CellRangeAddressList;
-import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
@@ -202,60 +200,6 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     readOnlyHeaderStyle.setFont(fontHeader);
   }
 
-  /**
-   * Adds values to the sheet and returns the named area where they were added. The named area can
-   * later be used by calling {}
-   *
-   * @param name           the name to choose for the area
-   * @param sheet          the sheet where to add the values
-   * @param propertyValues the property values to add
-   * @return a defined name for a range of cells in the workbook.
-   */
-  protected static Name addValueListWithName(String name, Sheet sheet,
-      PropertyValues propertyValues) {
-    Row headerRow = getOrCreateRow(sheet, 0);
-    var columnNumber = Math.max(1,
-        headerRow.getLastCellNum()); // we want to obtain 1 for the first to come if there are none and not -1 -.-
-    var columnIndex = columnNumber - 1;
-
-    // create header cell
-    Cell headerRowCell = headerRow.createCell(columnIndex);
-    headerRowCell.setCellValue(propertyValues.propertyName());
-
-    for (int i = 0; i < propertyValues.size(); i++) {
-      var rowIndex = i + 1; // +1 because of header row
-      Row valueRow = getOrCreateRow(sheet, rowIndex);
-      valueRow.createCell(columnIndex).setCellValue(propertyValues.get(i));
-    }
-    var reference = "'%s'!$%s$%s:$%s$%s".formatted( //e.g. 'My Sheet'!$A$2:$E$23
-        sheet.getSheetName(),
-        CellReference.convertNumToColString(columnIndex),
-        2, //ignore the header
-        CellReference.convertNumToColString(columnIndex),
-        propertyValues.size() + 1
-    );
-    var namedArea = sheet.getWorkbook().createName();
-    namedArea.setNameName(name);
-    namedArea.setRefersToFormula(reference);
-    return namedArea;
-  }
-
-  protected record PropertyValues(String propertyName, List<String> values) {
-
-    public int size() {
-      return values.size();
-    }
-
-    public String get(int index) {
-      return values.get(index);
-    }
-
-    public PropertyValues(String propertyName, List<String> values) {
-      this.propertyName = propertyName;
-      this.values = Collections.unmodifiableList(values);
-    }
-  }
-
 
   @Override
   public byte[] getContent() {
@@ -271,9 +215,9 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
       defineBoldStyle(workbook);
 
       Sheet hiddenSheet = workbook.createSheet("hidden");
-      //TODO hide sheet
-      Name sequencingReadTypeArea = addValueListWithName("sequencingReadTypes", hiddenSheet,
-          new PropertyValues("Sequencing read type", SequencingReadType.getOptions()));
+
+      Name sequencingReadTypeArea = createOptionArea(hiddenSheet,
+          "Sequencing read type", SequencingReadType.getOptions());
 
       Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
 
@@ -295,38 +239,19 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
       var generatedRowCount = rowIndex - startIndex;
       assert generatedRowCount == measurements.size() : "all measurements have a corresponding row";
 
-      for (int i = generatedRowCount + startIndex; i < DEFAULT_GENERATED_ROW_COUNT; i++) {
-        Row row = getOrCreateRow(sheet, i);
-        for (int j = 0; j < NGSMeasurementColumns.maxColumnIndex(); j++) {
-          getOrCreateCell(row, j); // make sure all cells exist
-        }
-      }
-
-      //TODO add data validation
-      CellRangeAddressList sequencingReadTypeValueCells = new CellRangeAddressList(startIndex,
-          DEFAULT_GENERATED_ROW_COUNT - 1, //need the index
+      XLSXTemplateHelper.addDataValidation(sheet,
           NGSMeasurementColumns.SEQUENCINGREADTYPE.columnIndex(),
-          NGSMeasurementColumns.SEQUENCINGREADTYPE.columnIndex());
-      DataValidationHelper dvHelper = sheet.getDataValidationHelper();
-      DataValidationConstraint dvConstraint = dvHelper.createFormulaListConstraint(
-          sequencingReadTypeArea.getNameName());
-      System.out.println("dvConstraint.getFormula1() = " + dvConstraint.getFormula1());
-      DataValidation sequencingReadTypeValidation = dvHelper.createValidation(dvConstraint,
-          sequencingReadTypeValueCells);
-      System.out.println("sequencingReadTypeValidation.getRegions() = "
-          + Arrays.stream(sequencingReadTypeValidation.getRegions().getCellRangeAddresses())
-          .map(CellRangeAddress::formatAsString).toList());
-      System.out.println("sequencingReadTypeValidation.getSuppressDropDownArrow() = "
-          + sequencingReadTypeValidation.getSuppressDropDownArrow());
-      sequencingReadTypeValidation.setShowErrorBox(true);
-      sequencingReadTypeValidation.createErrorBox("Invalid entry",
-          "Please select from " + String.join(", ",
-              SequencingReadType.getOptions()));
-      sheet.addValidationData(sequencingReadTypeValidation);
+          startIndex,
+          NGSMeasurementColumns.SEQUENCINGREADTYPE.columnIndex(),
+          DEFAULT_GENERATED_ROW_COUNT - 1,
+          sequencingReadTypeArea);
 
       setAutoWidth(sheet);
       workbook.setSheetOrder(sheet.getSheetName(), 0);
       workbook.setActiveSheet(0);
+
+      lockSheet(hiddenSheet);
+      hideSheet(workbook, hiddenSheet);
 
       byteArrayOutputStream = new ByteArrayOutputStream();
       workbook.write(byteArrayOutputStream);
