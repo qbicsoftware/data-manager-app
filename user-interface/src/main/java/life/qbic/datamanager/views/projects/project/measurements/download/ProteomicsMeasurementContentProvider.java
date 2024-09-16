@@ -126,14 +126,8 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       font.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
       readOnlyStyle.setFont(font);
 
-      Sheet hiddenSheet = workbook.createSheet("hidden");
-      Name digestionMethodArea = createOptionArea(hiddenSheet, "Digestion Method",
-          DigestionMethod.getOptions());
-
       Sheet sheet = workbook.createSheet("Proteomics Measurement Metadata");
-
       Row header = getOrCreateRow(sheet, 0);
-
       for (ProteomicsMeasurementColumns measurementColumn : ProteomicsMeasurementColumns.values()) {
         var cell = getOrCreateCell(header, measurementColumn.columnIndex());
         cell.setCellValue(measurementColumn.headerName());
@@ -155,6 +149,11 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       var generatedRowCount = rowIndex - startIndex;
       assert generatedRowCount == measurements.size() : "all measurements have a corresponding row";
 
+      // make sure to create the visible sheet first
+      Sheet hiddenSheet = workbook.createSheet("hidden");
+      Name digestionMethodArea = createOptionArea(hiddenSheet, "Digestion Method",
+          DigestionMethod.getOptions());
+
       addDataValidation(sheet,
           ProteomicsMeasurementColumns.DIGESTION_METHOD.columnIndex(), startIndex,
           ProteomicsMeasurementColumns.DIGESTION_METHOD.columnIndex(),
@@ -162,7 +161,6 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
           digestionMethodArea);
 
       setAutoWidth(sheet);
-      workbook.setSheetOrder(sheet.getSheetName(), 0);
       workbook.setActiveSheet(0);
 
       lockSheet(hiddenSheet);
