@@ -180,6 +180,10 @@ public class MeasurementProteomicsValidator implements
     public String getName() {
       return name;
     }
+
+    public static List<String> getOptions() {
+      return Arrays.stream(values()).map(DigestionMethod::getName).toList();
+    }
   }
 
   private class ValidationPolicy {
