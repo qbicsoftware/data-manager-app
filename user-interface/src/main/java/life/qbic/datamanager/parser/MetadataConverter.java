@@ -7,12 +7,12 @@ import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasureme
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.ENRICHMENT_METHOD;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.FACILITY;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.INJECTION_VOLUME;
-import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.INSTRUMENT;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.LABEL;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.LABELING_TYPE;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.LCMS_METHOD;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.LC_COLUMN;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.MEASUREMENT_ID;
+import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.MS_DEVICE;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.ORGANISATION_ID;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.QBIC_SAMPLE_ID;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.SAMPLE_POOL_GROUP;
@@ -140,7 +140,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
                   "")),
           safeListAccess(row.values(), keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
               ""),
-          safeListAccess(row.values(), keyIndices.getOrDefault(INSTRUMENT.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(MS_DEVICE.propertyName(), -1), ""),
           safeListAccess(row.values(),
               keyIndices.getOrDefault(SAMPLE_POOL_GROUP.propertyName(), -1),
               ""),
@@ -189,7 +189,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
                   ""))),
           safeListAccess(row.values(), keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
               ""),
-          safeListAccess(row.values(), keyIndices.getOrDefault(INSTRUMENT.propertyName(), -1), ""),
+          safeListAccess(row.values(), keyIndices.getOrDefault(MS_DEVICE.propertyName(), -1), ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(FACILITY.propertyName(), -1), ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(
               NGSMeasurementProperty.SEQUENCING_READ_TYPE.propertyName(), -1), ""),
@@ -284,12 +284,12 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     SAMPLE_POOL_GROUP("sample pool group"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),
-    INSTRUMENT("instrument"),
+    MS_DEVICE("ms device"),
     CYCLE("cycle/fraction name"),
     DIGESTION_METHOD("digestion method"),
     DIGESTION_ENZYME("digestion enzyme"),
     ENRICHMENT_METHOD("enrichment method"),
-    INJECTION_VOLUME("injection volume (ul)"),
+    INJECTION_VOLUME("injection volume (µl)"),
     LC_COLUMN("lc column"),
     LCMS_METHOD("lcms method"),
     LABELING_TYPE("labeling type"),
