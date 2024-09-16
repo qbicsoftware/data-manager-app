@@ -35,8 +35,8 @@ public class MeasurementPresenter {
       ProteomicsSpecificMeasurementMetadata specificMeasurementMetadata) {
     return new ProteomicsMeasurementEntry(measurement.measurementCode().value(),
         sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
-        measurement.instrument().getOboId().replace("_", ":"),
-        measurement.instrument().getLabel(),
+        measurement.msDevice().getOboId().replace("_", ":"),
+        measurement.msDevice().getLabel(),
         measurement.samplePoolGroup().orElse(""), measurement.facility(),
         specificMeasurementMetadata.fractionName(),
         measurement.digestionEnzyme(), measurement.digestionMethod(),

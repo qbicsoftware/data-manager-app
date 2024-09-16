@@ -389,12 +389,12 @@ public class MeasurementService {
       throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
     }
 
-    var instrumentQuery = resolveOntologyCURI(firstMetadataEntry.instrumentCURI());
-    if (instrumentQuery.isEmpty()) {
+    var msDeviceQuery = resolveOntologyCURI(firstMetadataEntry.msDeviceCURIE());
+    if (msDeviceQuery.isEmpty()) {
       throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
-    var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstMetadataEntry.facility(),
+    var method = new ProteomicsMethodMetadata(msDeviceQuery.get(), firstMetadataEntry.facility(),
         firstMetadataEntry.digestionMethod(), firstMetadataEntry.digestionEnzyme(),
         firstMetadataEntry.enrichmentMethod(), firstMetadataEntry.lcColumn(),
         firstMetadataEntry.lcmsMethod(), readInjectionVolume(firstMetadataEntry.injectionVolume()),
@@ -611,12 +611,12 @@ public class MeasurementService {
         throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
       }
 
-      var instrumentQuery = resolveOntologyCURI(measurementMetadata.instrumentCURI());
-      if (instrumentQuery.isEmpty()) {
+      var msDeviceQuery = resolveOntologyCURI(measurementMetadata.msDeviceCURIE());
+      if (msDeviceQuery.isEmpty()) {
         throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
       }
 
-      var method = new ProteomicsMethodMetadata(instrumentQuery.get(),
+      var method = new ProteomicsMethodMetadata(msDeviceQuery.get(),
           measurementMetadata.facility(),
           measurementMetadata.digestionMethod(), measurementMetadata.digestionEnzyme(),
           measurementMetadata.enrichmentMethod(), measurementMetadata.lcColumn(),
@@ -642,12 +642,12 @@ public class MeasurementService {
         throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
       }
 
-      var instrumentQuery = resolveOntologyCURI(firstEntry.instrumentCURI());
-      if (instrumentQuery.isEmpty()) {
+      var msDeviceQuery = resolveOntologyCURI(firstEntry.msDeviceCURIE());
+      if (msDeviceQuery.isEmpty()) {
         throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
       }
 
-      var method = new ProteomicsMethodMetadata(instrumentQuery.get(), firstEntry.facility(),
+      var method = new ProteomicsMethodMetadata(msDeviceQuery.get(), firstEntry.facility(),
           firstEntry.digestionMethod(), firstEntry.digestionEnzyme(),
           firstEntry.enrichmentMethod(), firstEntry.lcColumn(),
           firstEntry.lcmsMethod(), readInjectionVolume(firstEntry.injectionVolume()),

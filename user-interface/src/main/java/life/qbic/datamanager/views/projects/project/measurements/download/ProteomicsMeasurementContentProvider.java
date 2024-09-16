@@ -68,8 +68,8 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
         case ORGANISATION_ID -> pxpEntry.organisationId();
         case ORGANISATION_NAME -> pxpEntry.organisationName();
         case FACILITY -> pxpEntry.facility();
-        case MS_DEVICE -> pxpEntry.instrumentCURI();
-        case MS_DEVICE_NAME -> pxpEntry.instrumentName();
+        case MS_DEVICE -> pxpEntry.msDeviceCURIE();
+        case MS_DEVICE_NAME -> pxpEntry.msDeviceName();
         case CYCLE_FRACTION_NAME -> pxpEntry.fractionName();
         case DIGESTION_METHOD -> pxpEntry.digestionMethod();
         case DIGESTION_ENZYME -> pxpEntry.digestionEnzyme();

@@ -40,14 +40,14 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
             "http://www.ebi.ac.uk/efo/EFO_0004205"
     )
     final TerminologyService terminologyService = Mock(TerminologyService.class, {
-        findByCurie(validMetadata.instrumentCURI()) >> Optional.of(illuminaMiSeq)
+        findByCurie(validMetadata.msDeviceCURIE()) >> Optional.of(illuminaMiSeq)
     })
 
     final MeasurementService measurementService = Mock(MeasurementService.class)
 
     final ProjectInformationService projectInformationService = Mock(ProjectInformationService.class)
 
-    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample name", "organisation id", "facility", "instrument",
+    final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample name", "organisation id", "facility", "ms device",
                                                     "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
                                                     "enrichment method", "injection volume (uL)", "lc column",
                                                     "lcms method", "labeling type", "label", "comment"])
@@ -336,7 +336,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     }
 
 
-    def "If no instrument Curie for the instrument information is provided, the validation must fail"() {
+    def "If no MS device Curie for the MS device information is provided, the validation must fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
@@ -372,15 +372,15 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.containsWarnings()
         result.containsFailures()
         result.failedEntries() == 1
-        result.failures()[0] == "Instrument: missing mandatory metadata"
+        result.failures()[0] == "MS Device: missing mandatory metadata"
     }
 
-    def "If a valid instrument curie for the instrument information is provided, the validation must pass"() {
+    def "If a valid ms device curie for the ms device information is provided, the validation must pass"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
-                validInstrumentCurie, //Illumina MiSeq
+                validMsDeviceCurie, //Illumina MiSeq
                 "1",
                 "The geniuses of ITSS",
                 "4 Nations lived in harmony",
@@ -412,7 +412,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.containsFailures()
 
         where:
-        validInstrumentCurie << [
+        validMsDeviceCurie << [
                 "EFO:0004205", // Illumina MiSeq
         ]
     }
