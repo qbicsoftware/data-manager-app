@@ -10,16 +10,24 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public record ProteomicsMeasurementMetadata(String measurementId,
-                                            SampleCode sampleCode,
-                                            String organisationId, String msDeviceCURIE,
-                                            String samplePoolGroup, String facility,
-                                            String fractionName,
-                                            String digestionEnzyme,
-                                            String digestionMethod, String enrichmentMethod,
-                                            String injectionVolume, String lcColumn,
-                                            String lcmsMethod, Labeling labeling,
-                                            String comment) implements MeasurementMetadata {
+public record ProteomicsMeasurementMetadata(
+    String measurementId,
+    SampleCode sampleCode,
+    String technicalReplicateName,
+    String organisationId,
+    String msDeviceCURIE,
+    String samplePoolGroup,
+    String facility,
+    String fractionName,
+    String digestionEnzyme,
+    String digestionMethod,
+    String enrichmentMethod,
+    String injectionVolume,
+    String lcColumn,
+    String lcmsMethod,
+    Labeling labeling,
+    String comment
+) implements MeasurementMetadata {
 
 
   @Override
@@ -52,4 +60,5 @@ public record ProteomicsMeasurementMetadata(String measurementId,
   public int hashCode() {
     return measurementId.hashCode();
   }
+
 }

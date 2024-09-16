@@ -34,15 +34,24 @@ public class MeasurementPresenter {
       SampleInformation sampleInfo,
       ProteomicsSpecificMeasurementMetadata specificMeasurementMetadata) {
     return new ProteomicsMeasurementEntry(measurement.measurementCode().value(),
-        sampleInfo, measurement.organisation().IRI(), measurement.organisation().label(),
+        sampleInfo,
+        measurement.technicalReplicateName().orElse(""),
+        measurement.organisation().IRI(),
+        measurement.organisation().label(),
         measurement.msDevice().getOboId().replace("_", ":"),
         measurement.msDevice().getLabel(),
-        measurement.samplePoolGroup().orElse(""), measurement.facility(),
+        measurement.samplePoolGroup().orElse(""),
+        measurement.facility(),
         specificMeasurementMetadata.fractionName(),
-        measurement.digestionEnzyme(), measurement.digestionMethod(),
-        measurement.enrichmentMethod(), String.valueOf(measurement.injectionVolume()),
-        measurement.lcColumn(), measurement.lcmsMethod(), measurement.labelType(),
-        specificMeasurementMetadata.label(), "");
+        measurement.digestionEnzyme(),
+        measurement.digestionMethod(),
+        measurement.enrichmentMethod(),
+        String.valueOf(measurement.injectionVolume()),
+        measurement.lcColumn(),
+        measurement.lcmsMethod(),
+        measurement.labelType(),
+        specificMeasurementMetadata.label(),
+        "");
   }
 
   private static NGSMeasurementEntry convertNGSMeasurement(NGSMeasurement measurement,

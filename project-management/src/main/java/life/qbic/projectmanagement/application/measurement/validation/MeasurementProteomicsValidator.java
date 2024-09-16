@@ -129,6 +129,7 @@ public class MeasurementProteomicsValidator implements
   public enum PROTEOMICS_PROPERTY {
     QBIC_SAMPLE_ID("qbic sample id"),
     SAMPLE_LABEL("sample name"),
+    TECHNICAL_REPLICATE_NAME("technical replicate"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),
     MS_DEVICE("ms device"),

@@ -394,10 +394,15 @@ public class MeasurementService {
       throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
     }
 
-    var method = new ProteomicsMethodMetadata(msDeviceQuery.get(), firstMetadataEntry.facility(),
-        firstMetadataEntry.digestionMethod(), firstMetadataEntry.digestionEnzyme(),
-        firstMetadataEntry.enrichmentMethod(), firstMetadataEntry.lcColumn(),
-        firstMetadataEntry.lcmsMethod(), readInjectionVolume(firstMetadataEntry.injectionVolume()),
+    var method = new ProteomicsMethodMetadata(msDeviceQuery.get(),
+        firstMetadataEntry.technicalReplicateName(),
+        firstMetadataEntry.facility(),
+        firstMetadataEntry.digestionMethod(),
+        firstMetadataEntry.digestionEnzyme(),
+        firstMetadataEntry.enrichmentMethod(),
+        firstMetadataEntry.lcColumn(),
+        firstMetadataEntry.lcmsMethod(),
+        readInjectionVolume(firstMetadataEntry.injectionVolume()),
         firstMetadataEntry.labeling()
             .labelType());
 
@@ -617,6 +622,7 @@ public class MeasurementService {
       }
 
       var method = new ProteomicsMethodMetadata(msDeviceQuery.get(),
+          measurementMetadata.technicalReplicateName(),
           measurementMetadata.facility(),
           measurementMetadata.digestionMethod(), measurementMetadata.digestionEnzyme(),
           measurementMetadata.enrichmentMethod(), measurementMetadata.lcColumn(),
@@ -647,10 +653,15 @@ public class MeasurementService {
         throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
       }
 
-      var method = new ProteomicsMethodMetadata(msDeviceQuery.get(), firstEntry.facility(),
-          firstEntry.digestionMethod(), firstEntry.digestionEnzyme(),
-          firstEntry.enrichmentMethod(), firstEntry.lcColumn(),
-          firstEntry.lcmsMethod(), readInjectionVolume(firstEntry.injectionVolume()),
+      var method = new ProteomicsMethodMetadata(msDeviceQuery.get(),
+          firstEntry.technicalReplicateName(),
+          firstEntry.facility(),
+          firstEntry.digestionMethod(),
+          firstEntry.digestionEnzyme(),
+          firstEntry.enrichmentMethod(),
+          firstEntry.lcColumn(),
+          firstEntry.lcmsMethod(),
+          readInjectionVolume(firstEntry.injectionVolume()),
           firstEntry.labeling()
               .labelType());
 

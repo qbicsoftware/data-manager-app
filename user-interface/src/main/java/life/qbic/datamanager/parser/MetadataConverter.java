@@ -16,6 +16,7 @@ import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasureme
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.ORGANISATION_ID;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.QBIC_SAMPLE_ID;
 import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.SAMPLE_POOL_GROUP;
+import static life.qbic.datamanager.parser.MetadataConverter.ProteomicsMeasurementProperty.TECHNICAL_REPLICATE_NAME;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.ArrayList;
@@ -138,6 +139,8 @@ public class MetadataConverter implements MeasurementMetadataConverter {
               safeListAccess(row.values(),
                   keyIndices.getOrDefault(QBIC_SAMPLE_ID.propertyName(), -1),
                   "")),
+          safeListAccess(row.values(),
+              keyIndices.getOrDefault(TECHNICAL_REPLICATE_NAME.propertyName(), -1), ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(ORGANISATION_ID.propertyName(), -1),
               ""),
           safeListAccess(row.values(), keyIndices.getOrDefault(MS_DEVICE.propertyName(), -1), ""),
@@ -280,6 +283,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
   enum ProteomicsMeasurementProperty {
     MEASUREMENT_ID("measurement id"),
+    TECHNICAL_REPLICATE_NAME("technical replicate"),
     QBIC_SAMPLE_ID("qbic sample id"),
     SAMPLE_POOL_GROUP("sample pool group"),
     ORGANISATION_ID("organisation id"),

@@ -59,6 +59,9 @@ public class ProteomicsMeasurement {
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
   private OntologyTerm msDevice;
 
+  @Column(name = "technicalReplicateName")
+  private String technicalReplicateName;
+
   @Column(name = "samplePool")
   private String samplePool = "";
 
@@ -258,6 +261,7 @@ public class ProteomicsMeasurement {
 
   private void setMethodMetadata(ProteomicsMethodMetadata methodMetadata) {
     this.msDevice = methodMetadata.msDevice();
+    this.technicalReplicateName = methodMetadata.technicalReplicate();
     this.facility = methodMetadata.facility();
     this.digestionMethod = methodMetadata.digestionMethod();
     this.digestionEnzyme = methodMetadata.digestionEnzyme();
@@ -318,5 +322,9 @@ public class ProteomicsMeasurement {
 
   public Optional<String> comment() {
     return Optional.empty();
+  }
+
+  public Optional<String> technicalReplicateName() {
+    return Optional.ofNullable(technicalReplicateName);
   }
 }
