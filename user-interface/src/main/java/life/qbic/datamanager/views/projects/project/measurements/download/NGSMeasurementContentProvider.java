@@ -96,74 +96,103 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     }
   }
 
-  private static void writeMeasurementIntoRow(NGSMeasurementEntry ngsMeasurementEntry, Row entry) {
-    var measureCol = getOrCreateCell(entry, NGSMeasurementColumns.MEASUREMENT_ID.columnIndex());
+  private static void writeMeasurementIntoRow(NGSMeasurementEntry ngsMeasurementEntry,
+      Row entryRow) {
+    var measureCol = getOrCreateCell(entryRow, NGSMeasurementColumns.MEASUREMENT_ID.columnIndex());
     measureCol.setCellValue(ngsMeasurementEntry.measurementCode());
     setCellStyle(measureCol, NGSMeasurementColumns.MEASUREMENT_ID.readOnly());
 
-    var sampleIdCol = getOrCreateCell(entry, NGSMeasurementColumns.SAMPLE_ID.columnIndex());
+    var sampleIdCol = getOrCreateCell(entryRow, NGSMeasurementColumns.SAMPLE_ID.columnIndex());
     sampleIdCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleId());
     setCellStyle(sampleIdCol, NGSMeasurementColumns.SAMPLE_ID.readOnly());
 
-    var sampleNameCol = getOrCreateCell(entry, NGSMeasurementColumns.SAMPLE_NAME.columnIndex());
+    var sampleNameCol = getOrCreateCell(entryRow, NGSMeasurementColumns.SAMPLE_NAME.columnIndex());
     sampleNameCol.setCellValue(ngsMeasurementEntry.sampleInformation().sampleName());
     setCellStyle(sampleNameCol, NGSMeasurementColumns.SAMPLE_NAME.readOnly());
 
-    var orgIdCol = getOrCreateCell(entry, NGSMeasurementColumns.ORGANISATION_ID.columnIndex());
+    var orgIdCol = getOrCreateCell(entryRow, NGSMeasurementColumns.ORGANISATION_ID.columnIndex());
     orgIdCol.setCellValue(ngsMeasurementEntry.organisationId());
     setCellStyle(orgIdCol, NGSMeasurementColumns.ORGANISATION_ID.readOnly());
 
-    var organisationNameCol = getOrCreateCell(entry,
+    var organisationNameCol = getOrCreateCell(entryRow,
         NGSMeasurementColumns.ORGANISATION_NAME.columnIndex());
 
     organisationNameCol.setCellValue(ngsMeasurementEntry.organisationName());
     setCellStyle(organisationNameCol, NGSMeasurementColumns.ORGANISATION_NAME.readOnly());
 
-    var facilityCol = getOrCreateCell(entry, NGSMeasurementColumns.FACILITY.columnIndex());
+    var facilityCol = getOrCreateCell(entryRow, NGSMeasurementColumns.FACILITY.columnIndex());
     facilityCol.setCellValue(ngsMeasurementEntry.facility());
     setCellStyle(facilityCol, NGSMeasurementColumns.FACILITY.readOnly);
-    var instrumentCol = getOrCreateCell(entry, NGSMeasurementColumns.INSTRUMENT.columnIndex());
+    var instrumentCol = getOrCreateCell(entryRow, NGSMeasurementColumns.INSTRUMENT.columnIndex());
     instrumentCol.setCellValue(ngsMeasurementEntry.instrumentCURI());
     setCellStyle(instrumentCol, NGSMeasurementColumns.INSTRUMENT.readOnly());
 
-    var instrumentNameCol = getOrCreateCell(entry,
+    var instrumentNameCol = getOrCreateCell(entryRow,
         NGSMeasurementColumns.INSTRUMENT_NAME.columnIndex());
     instrumentNameCol.setCellValue(ngsMeasurementEntry.instrumentName());
     setCellStyle(instrumentNameCol, NGSMeasurementColumns.INSTRUMENT_NAME.readOnly());
 
-    var readTypeCol = getOrCreateCell(entry,
+    var readTypeCol = getOrCreateCell(entryRow,
         NGSMeasurementColumns.SEQUENCING_READ_TYPE.columnIndex());
     readTypeCol.setCellValue(ngsMeasurementEntry.readType());
     setCellStyle(readTypeCol, NGSMeasurementColumns.SEQUENCING_READ_TYPE.readOnly());
 
-    var libraryKitCol = getOrCreateCell(entry, NGSMeasurementColumns.LIBRARY_KIT.columnIndex());
+    var libraryKitCol = getOrCreateCell(entryRow, NGSMeasurementColumns.LIBRARY_KIT.columnIndex());
     libraryKitCol.setCellValue(ngsMeasurementEntry.libraryKit());
     setCellStyle(libraryKitCol, NGSMeasurementColumns.LIBRARY_KIT.readOnly());
 
-    var flowCellCol = getOrCreateCell(entry, NGSMeasurementColumns.FLOW_CELL.columnIndex());
+    var flowCellCol = getOrCreateCell(entryRow, NGSMeasurementColumns.FLOW_CELL.columnIndex());
     flowCellCol.setCellValue(ngsMeasurementEntry.flowCell());
     setCellStyle(flowCellCol, NGSMeasurementColumns.FLOW_CELL.readOnly());
 
-    var runProtocolCol = getOrCreateCell(entry,
+    var runProtocolCol = getOrCreateCell(entryRow,
         NGSMeasurementColumns.SEQUENCING_RUN_PROTOCOL.columnIndex());
     runProtocolCol.setCellValue(ngsMeasurementEntry.runProtocol());
     setCellStyle(runProtocolCol, NGSMeasurementColumns.SEQUENCING_RUN_PROTOCOL.readOnly());
 
-    var poolGroupCol = getOrCreateCell(entry, NGSMeasurementColumns.POOL_GROUP.columnIndex());
+    var poolGroupCol = getOrCreateCell(entryRow, NGSMeasurementColumns.POOL_GROUP.columnIndex());
     poolGroupCol.setCellValue(ngsMeasurementEntry.samplePoolGroup());
     setCellStyle(poolGroupCol, NGSMeasurementColumns.POOL_GROUP.readOnly());
 
-    var indexI7Col = getOrCreateCell(entry, NGSMeasurementColumns.INDEX_I7.columnIndex());
+    var indexI7Col = getOrCreateCell(entryRow, NGSMeasurementColumns.INDEX_I7.columnIndex());
     indexI7Col.setCellValue(ngsMeasurementEntry.indexI7());
     setCellStyle(indexI7Col, NGSMeasurementColumns.INDEX_I7.readOnly());
 
-    var indexI5Col = getOrCreateCell(entry, NGSMeasurementColumns.INDEX_I5.columnIndex());
+    var indexI5Col = getOrCreateCell(entryRow, NGSMeasurementColumns.INDEX_I5.columnIndex());
     indexI5Col.setCellValue(ngsMeasurementEntry.indexI5());
     setCellStyle(indexI5Col, NGSMeasurementColumns.INDEX_I5.readOnly());
 
-    var commentCol = getOrCreateCell(entry, NGSMeasurementColumns.COMMENT.columnIndex());
+    var commentCol = getOrCreateCell(entryRow, NGSMeasurementColumns.COMMENT.columnIndex());
     commentCol.setCellValue(ngsMeasurementEntry.comment());
     setCellStyle(commentCol, NGSMeasurementColumns.COMMENT.readOnly());
+
+    for (NGSMeasurementColumns measurementColumn : NGSMeasurementColumns.values()) {
+      var value = switch (measurementColumn) {
+        case MEASUREMENT_ID -> ngsMeasurementEntry.measurementCode();
+        case SAMPLE_ID -> ngsMeasurementEntry.sampleInformation().sampleId();
+        case SAMPLE_NAME -> ngsMeasurementEntry.sampleInformation().sampleName();
+        case POOL_GROUP -> ngsMeasurementEntry.samplePoolGroup();
+        case ORGANISATION_ID -> ngsMeasurementEntry.organisationId();
+        case ORGANISATION_NAME -> ngsMeasurementEntry.organisationName();
+        case FACILITY -> ngsMeasurementEntry.facility();
+        case INSTRUMENT -> ngsMeasurementEntry.instrumentCURI();
+        case INSTRUMENT_NAME -> ngsMeasurementEntry.instrumentName();
+        case SEQUENCING_READ_TYPE -> ngsMeasurementEntry.readType();
+        case LIBRARY_KIT -> ngsMeasurementEntry.libraryKit();
+        case FLOW_CELL -> ngsMeasurementEntry.flowCell();
+        case SEQUENCING_RUN_PROTOCOL -> ngsMeasurementEntry.runProtocol();
+        case INDEX_I7 -> ngsMeasurementEntry.indexI7();
+        case INDEX_I5 -> ngsMeasurementEntry.indexI5();
+        case COMMENT -> ngsMeasurementEntry.comment();
+      };
+      var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
+      cell.setCellValue(value);
+      if (measurementColumn.readOnly()) {
+        cell.setCellStyle(readOnlyCellStyle);
+      }
+    }
+    
+    
   }
 
   public void setMeasurements(List<NGSMeasurementEntry> measurements, String fileNamePrefix) {
