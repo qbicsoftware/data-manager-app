@@ -16,6 +16,7 @@ import java.util.stream.Collectors
 class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
     final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", SampleCode.create("QTEST001AE"),
+            "",
             "https://ror.org/03a1kwz48", //Universität Tübingen,
             "EFO:0004205", //Illumina MiSeq
             "1",
@@ -131,6 +132,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "An unknown sample code in a proteomics measurement metadata object must return a failed validation "() {
         given:
         def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", SampleCode.create("QNKWN001AE"),
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -168,6 +170,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no sample code is provided, the validation must fail"() {
         given:
         def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", null,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -210,6 +213,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                  invalidRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -257,6 +261,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "", // missing entry
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -296,6 +301,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 validRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -340,6 +346,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "", //Illumina MiSeq
                 "1",
@@ -379,6 +386,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 validMsDeviceCurie, //Illumina MiSeq
                 "1",
@@ -422,6 +430,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -461,6 +470,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -498,6 +508,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -537,6 +548,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -576,6 +588,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
@@ -614,6 +627,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
         ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+                "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
