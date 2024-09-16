@@ -131,7 +131,7 @@ public class MeasurementProteomicsValidator implements
     SAMPLE_LABEL("sample name"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),
-    MS_DEVICE("msDevice"),
+    MS_DEVICE("ms device"),
     SAMPLE_POOL_GROUP("sample pool group"),
     CYCLE_FRACTION_NAME("cycle/fraction name"),
     DIGESTION_METHOD("digestion method"),
