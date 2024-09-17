@@ -199,7 +199,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
               ""),
           List.of(SampleCode.create(
               safeListAccess(row.values(),
-                  keyIndices.getOrDefault(NGSMeasurementProperty.SAMPLE_CODE.propertyName(), -1),
+                  keyIndices.getOrDefault(NGSMeasurementProperty.QBIC_SAMPLE_ID.propertyName(), -1),
                   ""))),
           safeListAccess(row.values(),
               keyIndices.getOrDefault(NGSMeasurementProperty.ORGANISATION_ID.propertyName(), -1),
@@ -342,7 +342,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
   enum NGSMeasurementProperty {
     MEASUREMENT_ID("measurement id"),
-    SAMPLE_CODE("sample code"),
+    QBIC_SAMPLE_ID("qbic sample id"),
     ORGANISATION_ID("organisation id"),
     SAMPLE_POOL_GROUP("sample pool group"),
     FACILITY("facility"),
