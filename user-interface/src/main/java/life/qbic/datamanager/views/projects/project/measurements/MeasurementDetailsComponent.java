@@ -302,10 +302,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderInstrument().createComponent(
-                proteomicsMeasurement.instrument()))
-        .setHeader("Instrument")
+                proteomicsMeasurement.msDevice()))
+        .setHeader("MS Device")
         .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.instrument().formatted())
+            proteomicsMeasurement -> proteomicsMeasurement.msDevice().formatted())
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme)
         .setHeader("Digestion Enzyme").setTooltipGenerator(

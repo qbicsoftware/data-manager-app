@@ -9,10 +9,11 @@ package life.qbic.datamanager.views.projects.project.measurements;
  */
 public record ProteomicsMeasurementEntry(String measurementCode,
                                          SampleInformation sampleInformation,
+                                         String technicalReplicateName,
                                          String organisationId,
                                          String organisationName,
-                                         String instrumentCURI,
-                                         String instrumentName,
+                                         String msDeviceCURIE,
+                                         String msDeviceName,
                                          String samplePoolGroup,
                                          String facility,
                                          String fractionName,
@@ -25,6 +26,4 @@ public record ProteomicsMeasurementEntry(String measurementCode,
                                          String labelingType,
                                          String label,
                                          String comment) {
-
-
 }
