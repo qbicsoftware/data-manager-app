@@ -105,12 +105,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     upload.addSucceededListener(this::onUploadSucceeded);
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
+    upload.addFileRemovedListener(this::onFileRemoved);
     setEscAction(this::onCanceled);
-    // Synchronise the Vaadin upload component with the purchase list display
-    // When a file is removed from the upload component, we also want to remove it properly from memory
-    // and from any additional display
-    upload.getElement().addEventListener("file-remove", this::onFileRemoved)
-        .addEventData(VAADIN_FILENAME_EVENT);
     addClassName("measurement-upload-dialog");
 
   }
@@ -135,11 +131,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     return mode;
   }
 
-  private void onFileRemoved(DomEvent domEvent) {
-    JsonObject jsonObject = domEvent.getEventData();
-    var fileName = jsonObject.getString(VAADIN_FILENAME_EVENT);
-    removeFile(fileName);
-
+  private void onFileRemoved(FileRemovedEvent fileRemovedEvent) {
+    removeFile(fileRemovedEvent.getFileName());
   }
 
   private void showFile(MeasurementFileItem measurementFileItem) {
