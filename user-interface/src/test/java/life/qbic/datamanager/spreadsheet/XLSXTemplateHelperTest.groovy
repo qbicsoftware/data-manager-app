@@ -1,5 +1,8 @@
 package life.qbic.datamanager.spreadsheet
 
+
+import org.apache.poi.ss.usermodel.Workbook
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import spock.lang.Specification
 
 class XLSXTemplateHelperTest extends Specification {
@@ -18,5 +21,19 @@ class XLSXTemplateHelperTest extends Specification {
         "thisIsATest"     | "thisIsATest"
         "this is a test*" | "thisIsATest"
 
+    }
+
+    def "test that column reference works"() {
+        given:
+        Workbook workbook = WorkbookFactory.create(true)
+        def sheet = workbook.createSheet("My sheet")
+        when:
+        var result = XLSXTemplateHelper.createOptionArea(sheet,
+                "test values",
+                List.of("test1", "test2", "aböüß"))
+        then:
+        result.getRefersToFormula() == "'My sheet'!\$A\$1:\$A\$4"
+        result.getNameName() == "testValues"
+        workbook.getName("testValues") != null
     }
 }
