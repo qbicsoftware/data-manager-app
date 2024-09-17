@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.projects.project.measurements.download;
 
 import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.createOptionArea;
+import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.getOrCreateCell;
+import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.getOrCreateRow;
 import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.hideSheet;
 import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.lockSheet;
 import static life.qbic.logging.service.LoggerFactory.logger;
@@ -10,7 +12,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.spreadsheet.XLSXTemplateHelper;
@@ -25,7 +26,6 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
@@ -180,7 +180,7 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
 
       Row header = getOrCreateRow(sheet, 0);
       for (NGSMeasurementColumns value : NGSMeasurementColumns.values()) {
-        var cell = header.createCell(value.columnIndex());
+        var cell = getOrCreateCell(header, value.columnIndex());
         cell.setCellValue(value.headerName());
         setHeaderStyle(cell, value.readOnly());
       }
@@ -222,16 +222,6 @@ public class NGSMeasurementContentProvider implements DownloadContentProvider {
     }
 
     return byteArrayOutputStream.toByteArray();
-  }
-
-  private static Row getOrCreateRow(Sheet sheet, int index) {
-    return Optional.ofNullable(sheet.getRow(index))
-        .orElse(sheet.createRow(index));
-  }
-
-  private static Cell getOrCreateCell(Row row, int colIndex) {
-    return Optional.ofNullable(row.getCell(colIndex, MissingCellPolicy.RETURN_BLANK_AS_NULL))
-        .orElse(row.createCell(colIndex));
   }
 
   @Override
