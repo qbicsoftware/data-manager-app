@@ -78,6 +78,27 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private final UploadProgressDisplay uploadProgressDisplay;
   private final UploadItemsDisplay uploadItemsDisplay;
 
+  private enum AcceptedFileType {
+    EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    TSV("text/tab-separated-values", "text/plain");
+    private final List<String> mimeTypes;
+
+    AcceptedFileType(String... mimeTypes) {
+      this.mimeTypes = List.of(mimeTypes);
+    }
+
+    static Optional<AcceptedFileType> forMimeType(String mimeType) {
+      return Arrays.stream(values())
+          .filter(it -> it.mimeTypes.contains(mimeType))
+          .findFirst();
+    }
+
+    static Set<String> allMimeTypes() {
+      return Arrays.stream(values()).flatMap(it -> it.mimeTypes.stream())
+          .collect(Collectors.toUnmodifiableSet());
+    }
+  }
+
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MODE mode, ProjectId projectId) {
@@ -92,8 +113,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
     Upload upload = new Upload(uploadBuffer);
-    upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
     setModeBasedLabels();
     uploadItemsDisplay = new UploadItemsDisplay(upload);
@@ -177,16 +197,17 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
     var fileName = succeededEvent.getFileName();
-    ParsingResult parsingResult;
-    if (fileName.endsWith(".xlsx")) {
-      parsingResult = parseXLSX(uploadBuffer.inputStream(fileName).orElseThrow());
-    } else if (fileName.endsWith(".tsv") || fileName.endsWith(".txt")) {
-      parsingResult = parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
-    } else {
+    Optional<AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
+        succeededEvent.getMIMEType());
+    if (knownFileType.isEmpty()) {
       displayError(succeededEvent.getFileName(),
           "Unsupported file type. Please make sure to upload a TSV or XLSX file.");
       return;
     }
+    var parsingResult = switch (knownFileType.get()) {
+      case EXCEL -> parseXLSX(uploadBuffer.inputStream(fileName).orElseThrow());
+      case TSV -> parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
+    };
     List<MeasurementMetadata> result;
     try {
       result = MetadataConverter.measurementConverter()
