@@ -57,7 +57,10 @@ public class ProteomicsMeasurement {
   private MeasurementId measurementId;
 
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
-  private OntologyTerm instrument;
+  private OntologyTerm msDevice;
+
+  @Column(name = "technicalReplicateName")
+  private String technicalReplicateName;
 
   @Column(name = "samplePool")
   private String samplePool = "";
@@ -127,8 +130,8 @@ public class ProteomicsMeasurement {
 
   private static void evaluateMandatoryMetadata(ProteomicsMethodMetadata method)
       throws IllegalArgumentException {
-    if (method.instrument() == null) {
-      throw new IllegalArgumentException("Instrument: Missing metadata.");
+    if (method.msDevice() == null) {
+      throw new IllegalArgumentException("MS Device: Missing metadata.");
     }
     if (method.facility().isBlank()) {
       throw new IllegalArgumentException("Facility: Missing metadata");
@@ -157,7 +160,7 @@ public class ProteomicsMeasurement {
       MeasurementCode measurementCode, Organisation organisation, ProteomicsMethodMetadata method,
       Collection<ProteomicsSpecificMeasurementMetadata> proteomicsSpecificMeasurementMetadata)
       throws IllegalArgumentException {
-    requireNonNull(method.instrument());
+    requireNonNull(method.msDevice());
     requireNonNull(measurementCode);
     requireNonNull(proteomicsSpecificMeasurementMetadata);
     if (!measurementCode.isMSDomain()) {
@@ -215,8 +218,8 @@ public class ProteomicsMeasurement {
         .toList();
   }
 
-  public OntologyTerm instrument() {
-    return instrument;
+  public OntologyTerm msDevice() {
+    return msDevice;
   }
 
   public Organisation organisation() {
@@ -257,7 +260,8 @@ public class ProteomicsMeasurement {
   }
 
   private void setMethodMetadata(ProteomicsMethodMetadata methodMetadata) {
-    this.instrument = methodMetadata.instrument();
+    this.msDevice = methodMetadata.msDevice();
+    this.technicalReplicateName = methodMetadata.technicalReplicate();
     this.facility = methodMetadata.facility();
     this.digestionMethod = methodMetadata.digestionMethod();
     this.digestionEnzyme = methodMetadata.digestionEnzyme();
@@ -318,5 +322,9 @@ public class ProteomicsMeasurement {
 
   public Optional<String> comment() {
     return Optional.empty();
+  }
+
+  public Optional<String> technicalReplicateName() {
+    return Optional.ofNullable(technicalReplicateName);
   }
 }
