@@ -29,7 +29,7 @@ public class SampleRegistrationServiceV2 {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public CompletableFuture<Void> registerNewSamples(Collection<SampleMetadata> sampleMetadata,
       ExperimentId experimentId, ProjectId projectId, String batchLabel, boolean batchIsPilot) {
-    ba
+
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
