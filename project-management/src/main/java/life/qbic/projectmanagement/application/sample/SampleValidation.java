@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -154,10 +155,34 @@ public class SampleValidation {
     return ValidationResult.successful(1);
   }
 
-
+  /**
+   * Validates the metadata for a sample that has previously been registered. A registered sample
+   * has a sample code (sample id to the user) and an internal technical sample id.
+   * <p>
+   * The method verifies the existence of a sample with the provided sample code and resolves it to
+   * the matching internal sample id.
+   * <p>
+   * All other validation steps are equal to a
+   * {@link SampleValidation#validateNewSample(SampleMetadata, String, String)} call.
+   *
+   * @param sampleMetadata the sample metadata with a sample code to do the lookup
+   * @param experimentId the experiment the sample belongs to
+   * @param projectId the project the sample belongs to
+   * @return a {@link ValidationResult} with detailed information about the validation
+   * @since 1.5.0
+   */
   public ValidationResult validateExistingSample(SampleMetadata sampleMetadata, String experimentId,
       String projectId) {
-    throw new RuntimeException("Not yet implemented");
+    if (sampleMetadata.getSampleCode().isEmpty()) {
+      return ValidationResult.withFailures(1, List.of("Missing sample id."));
+    }
+    var result = sampleInformationService.findSampleId(
+        SampleCode.create(sampleMetadata.sampleCode()));
+    if (result.isEmpty()) {
+      return ValidationResult.withFailures(1,
+          List.of("Unknown sample id: " + sampleMetadata.sampleCode()));
+    }
+    return validateNewSample(sampleMetadata, experimentId, projectId);
   }
 
 
