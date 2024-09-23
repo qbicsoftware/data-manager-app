@@ -28,15 +28,19 @@ public class SampleRegistrationServiceV2 {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public CompletableFuture<Void> registerNewSamples(Collection<SampleMetadata> sampleMetadata,
-      ExperimentId experimentId, ProjectId projectId, String batchLabel, boolean batchIsPilot) {
-
+      ExperimentId experimentId, ProjectId projectId, String batchLabel, boolean batchIsPilot) throws RegistrationException{
+    batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId);
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public CompletableFuture<Void> updateSamples(Collection<SampleMetadata> sampleMetadata,
-      ExperimentId experimentId, ProjectId projectId) {
+      ExperimentId experimentId, ProjectId projectId) throws RegistrationException{
     throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  public static class RegistrationException extends RuntimeException {
+    public RegistrationException(String message) {}
   }
 
 }
