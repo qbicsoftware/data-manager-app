@@ -4,13 +4,16 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -89,6 +92,18 @@ public class XLSXTemplateHelper {
     };
   }
 
+  static Optional<CellStyle> findBoldCellStyle(Sheet sheet) {
+    for (int i = 0; i < sheet.getWorkbook().getNumCellStyles(); i++) {
+      CellStyle cellStyleAt = sheet.getWorkbook().getCellStyleAt(i);
+      int fontIndex = cellStyleAt.getFontIndex();
+      Font fontAt = sheet.getWorkbook().getFontAt(fontIndex);
+      if (fontAt.getBold()) {
+        return Optional.of(cellStyleAt);
+      }
+    }
+    return Optional.empty();
+  }
+
   /**
    * Adds values to the sheet and returns the named area where they were added.
    *
@@ -109,6 +124,9 @@ public class XLSXTemplateHelper {
     // create header cell
     Cell headerRowCell = headerRow.createCell(columnIndex);
     headerRowCell.setCellValue(propertyName);
+
+    //if a bold cell style exists, use it
+    findBoldCellStyle(sheet).ifPresent(headerRowCell::setCellStyle);
 
     var startIndex = 1; // ignore the header at 0
     var rowIndex = startIndex;
