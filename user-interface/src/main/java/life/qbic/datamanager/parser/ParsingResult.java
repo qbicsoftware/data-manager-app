@@ -72,20 +72,18 @@ public record ParsingResult(Map<String, Integer> keys, List<Row> rows) {
     return rows.iterator();
   }
 
-  public List<String> getRow(int rowIndex) {
+  public Row getRow(int rowIndex) {
     if (rowIndex < 0 || rowIndex >= rows.size()) {
       throw new IndexOutOfBoundsException(
           "Row index out of bounds: %s but size is %s".formatted(rowIndex, rows.size()));
     }
-    return rows.get(rowIndex).values;
+    return rows.get(rowIndex);
   }
 
   public record Row(List<String> values) {
-
     public Row(List<String> values) {
       this.values = List.copyOf(values);
     }
-
   }
 
 }
