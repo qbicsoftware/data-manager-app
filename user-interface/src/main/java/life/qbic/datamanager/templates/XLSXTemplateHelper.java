@@ -118,7 +118,7 @@ public class XLSXTemplateHelper {
       List<String> options) {
     Row headerRow = getOrCreateRow(sheet, 0);
     var columnNumber = Math.max(1,
-        headerRow.getLastCellNum()); // we want to obtain 1 for the first to come if there are none and not -1 -.-
+        headerRow.getLastCellNum() + 1); // the column to use for the property. Starts with 1
     var columnIndex = columnNumber - 1;
 
     // create header cell
