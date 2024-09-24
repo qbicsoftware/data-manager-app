@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
@@ -21,6 +22,9 @@ import org.apache.poi.ss.usermodel.SheetVisibility;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 
 /**
  * Helps to create excel template sheets.
@@ -33,6 +37,8 @@ import org.apache.poi.ss.util.CellReference;
 public class XLSXTemplateHelper {
 
   private static final Random RANDOM = new Random();
+  private static final byte[] DARK_GREY = {(byte) 119, (byte) 119, (byte) 119};
+  private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
 
   protected XLSXTemplateHelper() {
     //hide constructor as static methods only are used
@@ -102,6 +108,55 @@ public class XLSXTemplateHelper {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Sets a range of columns via {@link Sheet#autoSizeColumn(int)} to set the width automatically to
+   * the maximum cell value length observed in a column.
+   *
+   * @param sheet            the sheet for which the columns shall be adjusted
+   * @param columnIndexStart the first column index to start the formatting
+   * @param columnIndexEnd   the last column (inclusive) to have to formatting included
+   * @since 1.5.0
+   */
+  public static void setColumnAutoWidth(Sheet sheet, int columnIndexStart,
+      int columnIndexEnd) {
+    for (int currentColumn = columnIndexStart; currentColumn <= columnIndexEnd;
+        currentColumn++) {
+      sheet.autoSizeColumn(currentColumn);
+    }
+  }
+
+
+  public static CellStyle createBoldCellStyle(Workbook workbook) {
+    CellStyle boldStyle = workbook.createCellStyle();
+    Font fontBold = workbook.createFont();
+    fontBold.setBold(true);
+    boldStyle.setFont(fontBold);
+
+    return boldStyle;
+  }
+
+  public static CellStyle createReadOnlyCellStyle(Workbook workbook) {
+    CellStyle readOnlyStyle = workbook.createCellStyle();
+    readOnlyStyle.setFillForegroundColor(new XSSFColor(LIGHT_GREY, new DefaultIndexedColorMap()));
+    readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+    XSSFFont font = (XSSFFont) workbook.createFont();
+    font.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
+    readOnlyStyle.setFont(font);
+    return readOnlyStyle;
+  }
+
+  public static CellStyle createReadOnlyHeaderCellStyle(Workbook workbook) {
+    CellStyle readOnlyHeaderStyle = workbook.createCellStyle();
+    readOnlyHeaderStyle.setFillForegroundColor(
+        new XSSFColor(LIGHT_GREY, new DefaultIndexedColorMap()));
+    readOnlyHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+    XSSFFont fontHeader = (XSSFFont) workbook.createFont();
+    fontHeader.setBold(true);
+    fontHeader.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
+    readOnlyHeaderStyle.setFont(fontHeader);
+    return readOnlyHeaderStyle;
   }
 
   /**
