@@ -3,8 +3,10 @@ package life.qbic.datamanager.templates;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.sample.PropertyConversion;
+import life.qbic.datamanager.templates.sample.SampleBatchRegistrationTemplate;
+import life.qbic.datamanager.templates.sample.SampleBatchUpdateTemplate;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -65,7 +67,7 @@ public class TemplateService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public XSSFWorkbook sampleBatchRegistrationTemplate(String projectId, String experimentId)
+  public XSSFWorkbook sampleBatchRegistrationXLSXTemplate(String projectId, String experimentId)
       throws NoSuchExperimentException {
     var experiment = experimentInfoService.find(projectId, ExperimentId.parse(experimentId))
         .orElseThrow(
@@ -75,7 +77,7 @@ public class TemplateService {
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public XSSFWorkbook sampleBatchUpdateTemplate(String projectId, String experimentId)
+  public XSSFWorkbook sampleBatchUpdateXLSXTemplate(String projectId, String experimentId)
       throws NoSuchExperimentException, SampleSearchException {
     var experiment = experimentInfoService.find(projectId, ExperimentId.parse(experimentId))
         .orElseThrow(
@@ -99,7 +101,7 @@ public class TemplateService {
     var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
     var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
         .toList();
-    return SampleBatchTemplate.createUpdateTemplate(samples,
+    return SampleBatchUpdateTemplate.createUpdateTemplate(samples,
         conditions, species,
         specimen, analytes,
         analysisMethods, experimentalGroups);
@@ -114,7 +116,7 @@ public class TemplateService {
     var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
     var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
         .toList();
-    return SampleBatchTemplate.createRegistrationTemplate(
+    return SampleBatchRegistrationTemplate.createRegistrationTemplate(
         conditions, species,
         specimen, analytes,
         analysisMethods);
