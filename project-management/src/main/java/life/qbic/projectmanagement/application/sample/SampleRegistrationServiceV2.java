@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -43,7 +42,7 @@ public class SampleRegistrationServiceV2 {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public CompletableFuture<Void> registerNewSamples(Collection<SampleMetadata> sampleMetadata,
+  public CompletableFuture<Void> registerSamples(Collection<SampleMetadata> sampleMetadata,
       ProjectId projectId, String batchLabel, boolean batchIsPilot)
       throws RegistrationException {
     var result = batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId);
