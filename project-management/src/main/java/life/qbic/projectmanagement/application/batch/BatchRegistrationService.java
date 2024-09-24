@@ -197,6 +197,10 @@ public class BatchRegistrationService {
     return Result.fromValue(batch.batchId());
   }
 
+  public void deleteBatch(BatchId batchId) {
+    batchRepository.deleteById(batchId);
+  }
+
   private void dispatchSuccessfulBatchUpdate(BatchId batchId, ProjectId projectId) {
     BatchUpdated batchUpdated = BatchUpdated.create(batchId, projectId);
     DomainEventDispatcher.instance().dispatch(batchUpdated);

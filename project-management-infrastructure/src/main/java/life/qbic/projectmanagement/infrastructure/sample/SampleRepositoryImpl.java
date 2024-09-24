@@ -16,9 +16,11 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import life.qbic.projectmanagement.domain.service.SampleDomainService.ResponseCode;
 import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisConnector.SampleNotDeletedException;
@@ -48,12 +50,14 @@ public class SampleRepositoryImpl implements SampleRepository {
   private static final Logger log = logger(SampleRepositoryImpl.class);
   private final QbicSampleRepository qbicSampleRepository;
   private final QbicSampleDataRepo sampleDataRepo;
+  private final ProjectRepository projectRepository;
 
   @Autowired
   public SampleRepositoryImpl(QbicSampleRepository qbicSampleRepository,
-      QbicSampleDataRepo sampleDataRepo) {
-    this.qbicSampleRepository = qbicSampleRepository;
-    this.sampleDataRepo = sampleDataRepo;
+      QbicSampleDataRepo sampleDataRepo, ProjectRepository projectRepository) {
+    this.qbicSampleRepository = Objects.requireNonNull(qbicSampleRepository);
+    this.sampleDataRepo = Objects.requireNonNull(sampleDataRepo);
+    this.projectRepository = Objects.requireNonNull(projectRepository);
   }
 
   @Override
@@ -76,6 +80,15 @@ public class SampleRepositoryImpl implements SampleRepository {
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
     return Result.fromValue(samples);
+  }
+
+  @Override
+  public Result<Collection<Sample>, ResponseCode> addAll(ProjectId projectId, Collection<Sample> samples) {
+    var projectQuery = projectRepository.find(projectId);
+    if (projectQuery.isPresent()) {
+      return addAll(projectQuery.get(), samples);
+    }
+    return Result.fromError(ResponseCode.REGISTRATION_FAILED);
   }
 
   private String buildCommaSeparatedSampleIds(Collection<SampleId> sampleIds) {
@@ -132,6 +145,16 @@ public class SampleRepositoryImpl implements SampleRepository {
       Collection<Sample> updatedSamples) {
     qbicSampleRepository.saveAll(updatedSamples);
     sampleDataRepo.updateAll(project, updatedSamples);
+  }
+
+  @Override
+  public void updateAll(ProjectId projectId, Collection<Sample> updatedSamples) {
+    var projectQuery = projectRepository.find(projectId);
+    if (projectQuery.isPresent()) {
+      updateAll(projectQuery.get(), updatedSamples);
+    } else {
+      throw new SampleRepositoryException("Could not find project with id " + projectId.value());
+    }
   }
 
   @Override
