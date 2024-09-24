@@ -597,7 +597,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
     public UploadProgressDisplay(MODE mode) {
 
-      Objects.requireNonNull(mode, "Mode cannot be null");
+      requireNonNull(mode, "Mode cannot be null");
       String modeBasedTask = (mode == MODE.ADD ? "register" : "update");
       Span title = new Span(
           String.format("%s" + " the measurement data", StringUtils.capitalize(modeBasedTask)));

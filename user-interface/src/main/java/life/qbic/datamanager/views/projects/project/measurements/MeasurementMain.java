@@ -28,12 +28,14 @@ import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.templates.measurement.NGSMeasurementEditTemplate;
+import life.qbic.datamanager.templates.measurement.ProteomicsMeasurementEditTemplate;
 import life.qbic.datamanager.views.AppRoutes.Projects;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -42,8 +44,6 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.measurements.download.NGSMeasurementEditTemplate;
-import life.qbic.datamanager.views.projects.project.measurements.download.ProteomicsMeasurementEditContent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -95,7 +95,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
-  private final ProteomicsMeasurementEditContent proteomicsMeasurementEditContent;
+  private final ProteomicsMeasurementEditTemplate proteomicsMeasurementEditTemplate;
   private final NGSMeasurementEditTemplate ngsMeasurementEditTemplate;
   private final DownloadProvider ngsDownloadProvider;
   private final DownloadProvider proteomicsDownloadProvider;
@@ -120,10 +120,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
     this.measurementPresenter = measurementPresenter;
-    this.proteomicsMeasurementEditContent = new ProteomicsMeasurementEditContent();
+    this.proteomicsMeasurementEditTemplate = new ProteomicsMeasurementEditTemplate();
     this.ngsMeasurementEditTemplate = new NGSMeasurementEditTemplate();
     this.ngsDownloadProvider = new DownloadProvider(ngsMeasurementEditTemplate);
-    this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementEditContent);
+    this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementEditTemplate);
     this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.projectInformationService = projectInformationService;
@@ -371,7 +371,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         .flatMap(Collection::stream)
         .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
             .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
-    proteomicsMeasurementEditContent.setMeasurements(result,
+    proteomicsMeasurementEditTemplate.setMeasurements(result,
         projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
             .getProjectCode().value());
     proteomicsDownloadProvider.trigger();

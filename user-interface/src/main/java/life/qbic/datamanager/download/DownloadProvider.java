@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.general.download;
+package life.qbic.datamanager.download;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Anchor;

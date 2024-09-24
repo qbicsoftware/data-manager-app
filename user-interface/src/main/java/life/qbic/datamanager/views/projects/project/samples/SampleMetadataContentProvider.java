@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.download.DownloadContentProvider;
 import life.qbic.datamanager.views.general.download.TSVBuilder;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
