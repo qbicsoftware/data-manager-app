@@ -3,8 +3,11 @@ package life.qbic.projectmanagement.application.sample;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -60,9 +63,43 @@ public class SampleRegistrationServiceV2 {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public CompletableFuture<Void> updateSamples(
-      Collection<SampleMetadata> sampleRegistrationRequests,
-      ExperimentId experimentId, ProjectId projectId) throws RegistrationException {
-    throw new UnsupportedOperationException("Not implemented yet");
+      Collection<SampleMetadata> sampleRegistrationRequests, ProjectId projectId) throws RegistrationException {
+    var samples = fetchSamples(
+        sampleRegistrationRequests.stream().map(SampleMetadata::sampleCode).map(SampleCode::create)
+            .toList());
+    var sampleBySampleCode = samples.stream().collect(Collectors.toMap(sample -> sample.sampleCode().code(), Function.identity()));
+    var updatedSamples = updateSamples(sampleBySampleCode, sampleRegistrationRequests);
+    sampleRepository.updateAll(projectId, updatedSamples);
+    return CompletableFuture.completedFuture( null);
+  }
+
+  private List<Sample> updateSamples(Map<String, Sample> samples,
+      Collection<SampleMetadata> sampleRegistrationRequests) {
+    var updatedSamples = new ArrayList<Sample>();
+    for (SampleMetadata sampleMetadata : sampleRegistrationRequests) {
+      var sampleForUpdate = samples.get(sampleMetadata.sampleCode());
+      sampleForUpdate.setLabel(sampleMetadata.sampleName());
+      var sampleOrigin = SampleOrigin.create(sampleMetadata.species(), sampleMetadata.specimen(), sampleMetadata.analyte());
+      sampleForUpdate.setSampleOrigin(sampleOrigin);
+      sampleForUpdate.setExperimentalGroupId(sampleMetadata.experimentalGroupId());
+      sampleForUpdate.setAnalysisMethod(sampleMetadata.analysisToBePerformed());
+      sampleForUpdate.setComment(sampleMetadata.comment());
+      updatedSamples.add(sampleForUpdate);
+    }
+    return updatedSamples;
+  }
+
+  private List<Sample> fetchSamples(Collection<SampleCode> sampleCodes)
+      throws UnknownSampleException {
+    return sampleCodes.stream().map(this::fetchSample).toList();
+  }
+
+  private Sample fetchSample(SampleCode sampleCode) throws UnknownSampleException {
+    var sampleQuery = sampleRepository.findSample(sampleCode);
+    if (sampleQuery.isEmpty()) {
+      throw new UnknownSampleException("Unknown sample code: " + sampleCode);
+    }
+    return sampleQuery.get();
   }
 
   private void registerSamples(Collection<SampleMetadata> sampleMetadata, BatchId batchId,
@@ -78,7 +115,7 @@ public class SampleRegistrationServiceV2 {
 
   private Sample buildSample(SampleMetadata sample, BatchId batchId, SampleCode sampleCode) {
     var sampleOrigin = SampleOrigin.create(sample.species(), sample.specimen(), sample.analyte());
-    return  Sample.create(sampleCode,
+    return Sample.create(sampleCode,
         new SampleRegistrationRequest(sample.sampleName(), sample.biologicalReplicate(), batchId,
             ExperimentId.parse(sample.experimentId()), sample.experimentalGroupId(), sampleOrigin,
             sample.analysisToBePerformed(), sample.comment()));
@@ -99,6 +136,13 @@ public class SampleRegistrationServiceV2 {
   public static class RegistrationException extends RuntimeException {
 
     public RegistrationException(String message) {
+      super(message);
+    }
+  }
+
+  public static class UnknownSampleException extends RuntimeException {
+
+    public UnknownSampleException(String message) {
       super(message);
     }
   }
