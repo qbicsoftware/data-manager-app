@@ -67,7 +67,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
-  private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private final MeasurementValidationService measurementValidationService;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
 
