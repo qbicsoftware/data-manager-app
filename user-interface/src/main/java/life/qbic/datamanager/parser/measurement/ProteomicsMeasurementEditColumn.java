@@ -8,7 +8,7 @@ package life.qbic.datamanager.parser.measurement;
  * column index and if the column should be set to readOnly in the generated sheet
  * </p>
  */
-public enum ProteomicsMeasurementEditColumns {
+public enum ProteomicsMeasurementEditColumn {
 
   MEASUREMENT_ID("Measurement ID", 0, true),
   SAMPLE_ID("QBiC Sample Id", 1, true),
@@ -36,7 +36,7 @@ public enum ProteomicsMeasurementEditColumns {
   private final int columnIndex;
   private final boolean readOnly;
 
-  ProteomicsMeasurementEditColumns(String headerName, int columnIndex, boolean readOnly) {
+  ProteomicsMeasurementEditColumn(String headerName, int columnIndex, boolean readOnly) {
     this.headerName = headerName;
     this.columnIndex = columnIndex;
     this.readOnly = readOnly;

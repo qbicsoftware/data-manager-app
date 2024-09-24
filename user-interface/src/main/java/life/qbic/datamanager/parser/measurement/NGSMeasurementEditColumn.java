@@ -10,7 +10,7 @@ import java.util.Arrays;
  * column index and if the column should be set to readOnly in the generated sheet
  * </p>
  */
-public enum NGSMeasurementEditColumns {
+public enum NGSMeasurementEditColumn {
 
   MEASUREMENT_ID("Measurement ID", 0, true),
   SAMPLE_ID("QBiC Sample Id", 1, true),
@@ -36,7 +36,7 @@ public enum NGSMeasurementEditColumns {
 
   static int maxColumnIndex() {
     return Arrays.stream(values())
-        .mapToInt(NGSMeasurementEditColumns::columnIndex)
+        .mapToInt(NGSMeasurementEditColumn::columnIndex)
         .max().orElse(0);
   }
 
@@ -45,7 +45,7 @@ public enum NGSMeasurementEditColumns {
    * @param columnIndex the index of the column this property is in
    * @param readOnly    is the property read only
    */
-  NGSMeasurementEditColumns(String headerName, int columnIndex, boolean readOnly) {
+  NGSMeasurementEditColumn(String headerName, int columnIndex, boolean readOnly) {
     this.headerName = headerName;
     this.columnIndex = columnIndex;
     this.readOnly = readOnly;

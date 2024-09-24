@@ -8,5 +8,5 @@ package life.qbic.datamanager.parser.measurement;
  *
  * @since <version tag>
  */
-public enum ProteomicsMeasurementRegisterColumns {
+public enum ProteomicsMeasurementRegisterColumn {
 }

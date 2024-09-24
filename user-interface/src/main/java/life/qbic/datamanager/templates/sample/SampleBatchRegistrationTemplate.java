@@ -8,7 +8,7 @@ import static life.qbic.datamanager.templates.XLSXTemplateHelper.lockSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.setColumnAutoWidth;
 
 import java.util.List;
-import life.qbic.datamanager.parser.sample.RegisterColumns;
+import life.qbic.datamanager.parser.sample.RegisterColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
@@ -68,7 +68,7 @@ public class SampleBatchRegistrationTemplate {
     var sheet = workbook.createSheet("Sample Metadata");
 
     Row header = getOrCreateRow(sheet, 0);
-    for (RegisterColumns column : RegisterColumns.values()) {
+    for (RegisterColumn column : RegisterColumn.values()) {
       var cell = XLSXTemplateHelper.getOrCreateCell(header, column.columnIndex());
       cell.setCellValue(column.headerName());
       cell.setCellStyle(boldCellStyle);
@@ -87,37 +87,37 @@ public class SampleBatchRegistrationTemplate {
     Name specimenOptions = createOptionArea(hiddenSheet, "Specimen", specimen);
 
     addDataValidation(sheet,
-        RegisterColumns.ANALYSIS.columnIndex(),
+        RegisterColumn.ANALYSIS.columnIndex(),
         startIndex,
-        RegisterColumns.ANALYSIS.columnIndex(),
+        RegisterColumn.ANALYSIS.columnIndex(),
         MAX_ROW_INDEX_TO,
         analysisToBePerformedOptions);
     addDataValidation(sheet,
-        RegisterColumns.CONDITION.columnIndex(),
+        RegisterColumn.CONDITION.columnIndex(),
         startIndex,
-        RegisterColumns.CONDITION.columnIndex(),
+        RegisterColumn.CONDITION.columnIndex(),
         MAX_ROW_INDEX_TO,
         conditionOptions);
     addDataValidation(sheet,
-        RegisterColumns.ANALYTE.columnIndex(),
+        RegisterColumn.ANALYTE.columnIndex(),
         startIndex,
-        RegisterColumns.ANALYTE.columnIndex(),
+        RegisterColumn.ANALYTE.columnIndex(),
         MAX_ROW_INDEX_TO,
         analyteOptions);
     addDataValidation(sheet,
-        RegisterColumns.SPECIES.columnIndex(),
+        RegisterColumn.SPECIES.columnIndex(),
         startIndex,
-        RegisterColumns.SPECIES.columnIndex(),
+        RegisterColumn.SPECIES.columnIndex(),
         MAX_ROW_INDEX_TO,
         speciesOptions);
     addDataValidation(sheet,
-        RegisterColumns.SPECIMEN.columnIndex(),
+        RegisterColumn.SPECIMEN.columnIndex(),
         startIndex,
-        RegisterColumns.SPECIMEN.columnIndex(),
+        RegisterColumn.SPECIMEN.columnIndex(),
         MAX_ROW_INDEX_TO,
         specimenOptions);
 
-    setColumnAutoWidth(sheet, 0, RegisterColumns.maxColumnIndex());
+    setColumnAutoWidth(sheet, 0, RegisterColumn.maxColumnIndex());
     setColumnAutoWidth(hiddenSheet, 0, 4);
     workbook.setActiveSheet(0);
     lockSheet(hiddenSheet);

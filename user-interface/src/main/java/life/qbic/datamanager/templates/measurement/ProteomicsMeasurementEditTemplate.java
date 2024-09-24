@@ -17,7 +17,7 @@ import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
-import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementEditColumns;
+import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementEditColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import life.qbic.datamanager.views.projects.project.measurements.ProteomicsMeasurementEntry;
 import life.qbic.logging.api.Logger;
@@ -56,7 +56,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
 
   private static void createMeasurementEntry(ProteomicsMeasurementEntry pxpEntry, Row entryRow,
       CellStyle readOnlyStyle) {
-    for (ProteomicsMeasurementEditColumns measurementColumn : ProteomicsMeasurementEditColumns.values()) {
+    for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
       var value = switch (measurementColumn) {
         case MEASUREMENT_ID -> pxpEntry.measurementCode();
         case SAMPLE_ID -> pxpEntry.sampleInformation().sampleId();
@@ -108,7 +108,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
 
       Sheet sheet = workbook.createSheet("Proteomics Measurement Metadata");
       Row header = getOrCreateRow(sheet, 0);
-      for (ProteomicsMeasurementEditColumns measurementColumn : ProteomicsMeasurementEditColumns.values()) {
+      for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
         var cell = getOrCreateCell(header, measurementColumn.columnIndex());
         cell.setCellValue(measurementColumn.headerName());
         if (measurementColumn.readOnly()) {
@@ -135,8 +135,8 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
           DigestionMethod.getOptions());
 
       addDataValidation(sheet,
-          ProteomicsMeasurementEditColumns.DIGESTION_METHOD.columnIndex(), startIndex,
-          ProteomicsMeasurementEditColumns.DIGESTION_METHOD.columnIndex(),
+          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(), startIndex,
+          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           digestionMethodArea);
 

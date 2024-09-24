@@ -18,7 +18,7 @@ import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
-import life.qbic.datamanager.parser.measurement.NGSMeasurementEditColumns;
+import life.qbic.datamanager.parser.measurement.NGSMeasurementEditColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import life.qbic.datamanager.views.projects.project.measurements.NGSMeasurementEntry;
 import life.qbic.logging.api.Logger;
@@ -62,7 +62,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
   }
 
   private static void setAutoWidth(Sheet sheet) {
-    for (int col = 0; col <= NGSMeasurementEditColumns.values().length; col++) {
+    for (int col = 0; col <= NGSMeasurementEditColumn.values().length; col++) {
       sheet.autoSizeColumn(col);
     }
   }
@@ -70,7 +70,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
   private static void writeMeasurementIntoRow(NGSMeasurementEntry ngsMeasurementEntry,
       Row entryRow, CellStyle readOnlyCellStyle) {
 
-    for (NGSMeasurementEditColumns measurementColumn : NGSMeasurementEditColumns.values()) {
+    for (NGSMeasurementEditColumn measurementColumn : NGSMeasurementEditColumn.values()) {
       var value = switch (measurementColumn) {
         case MEASUREMENT_ID -> ngsMeasurementEntry.measurementCode();
         case SAMPLE_ID -> ngsMeasurementEntry.sampleInformation().sampleId();
@@ -121,7 +121,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
 
       Row header = getOrCreateRow(sheet, 0);
-      for (NGSMeasurementEditColumns value : NGSMeasurementEditColumns.values()) {
+      for (NGSMeasurementEditColumn value : NGSMeasurementEditColumn.values()) {
         var cell = getOrCreateCell(header, value.columnIndex());
         cell.setCellValue(value.headerName());
         cell.setCellStyle(boldStyle);
@@ -147,9 +147,9 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
           "Sequencing read type", SequencingReadType.getOptions());
 
       XLSXTemplateHelper.addDataValidation(sheet,
-          NGSMeasurementEditColumns.SEQUENCING_READ_TYPE.columnIndex(),
+          NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.columnIndex(),
           startIndex,
-          NGSMeasurementEditColumns.SEQUENCING_READ_TYPE.columnIndex(),
+          NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           sequencingReadTypeArea);
 

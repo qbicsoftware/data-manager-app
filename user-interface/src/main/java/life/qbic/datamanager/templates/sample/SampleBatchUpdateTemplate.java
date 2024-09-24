@@ -89,37 +89,37 @@ public class SampleBatchUpdateTemplate {
     Name specimenOptions = createOptionArea(hiddenSheet, "Specimen", specimen);
 
     addDataValidation(sheet,
-        EditColumns.ANALYSIS.columnIndex(),
+        EditColumn.ANALYSIS.columnIndex(),
         startIndex,
-        EditColumns.ANALYSIS.columnIndex(),
+        EditColumn.ANALYSIS.columnIndex(),
         MAX_ROW_INDEX_TO,
         analysisToBePerformedOptions);
     addDataValidation(sheet,
-        EditColumns.CONDITION.columnIndex(),
+        EditColumn.CONDITION.columnIndex(),
         startIndex,
-        EditColumns.CONDITION.columnIndex(),
+        EditColumn.CONDITION.columnIndex(),
         MAX_ROW_INDEX_TO,
         conditionOptions);
     addDataValidation(sheet,
-        EditColumns.ANALYTE.columnIndex(),
+        EditColumn.ANALYTE.columnIndex(),
         startIndex,
-        EditColumns.ANALYTE.columnIndex(),
+        EditColumn.ANALYTE.columnIndex(),
         MAX_ROW_INDEX_TO,
         analyteOptions);
     addDataValidation(sheet,
-        EditColumns.SPECIES.columnIndex(),
+        EditColumn.SPECIES.columnIndex(),
         startIndex,
-        EditColumns.SPECIES.columnIndex(),
+        EditColumn.SPECIES.columnIndex(),
         MAX_ROW_INDEX_TO,
         speciesOptions);
     addDataValidation(sheet,
-        EditColumns.SPECIMEN.columnIndex(),
+        EditColumn.SPECIMEN.columnIndex(),
         startIndex,
-        EditColumns.SPECIMEN.columnIndex(),
+        EditColumn.SPECIMEN.columnIndex(),
         MAX_ROW_INDEX_TO,
         specimenOptions);
 
-    setColumnAutoWidth(sheet, 0, EditColumns.maxColumnIndex());
+    setColumnAutoWidth(sheet, 0, EditColumn.maxColumnIndex());
     workbook.setActiveSheet(0);
     lockSheet(hiddenSheet);
     hideSheet(workbook, hiddenSheet);
@@ -129,7 +129,7 @@ public class SampleBatchUpdateTemplate {
 
   private static void fillRowWithSampleMetadata(Row row, Sample sample,
       Condition condition, CellStyle readOnlyCellStyle) {
-    for (EditColumns column : EditColumns.values()) {
+    for (EditColumn column : EditColumn.values()) {
       var value = switch (column) {
         case SAMPLE_ID -> sample.sampleCode().code();
         case ANALYSIS -> sample.analysisMethod().abbreviation();

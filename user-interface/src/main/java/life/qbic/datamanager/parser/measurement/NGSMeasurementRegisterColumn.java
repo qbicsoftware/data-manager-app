@@ -8,6 +8,6 @@ package life.qbic.datamanager.parser.measurement;
  *
  * @since <version tag>
  */
-public enum NGSMeasurementRegisterColumns {
+public enum NGSMeasurementRegisterColumn {
 
 }
