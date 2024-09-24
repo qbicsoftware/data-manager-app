@@ -252,7 +252,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
     public static Specification<ProteomicsMeasurement> isOntologyTermName(String filter) {
       return (root, query, builder) -> {
         Expression<String> function = builder.function("JSON_EXTRACT", String.class,
-            root.get("instrument"),
+            root.get("msDevice"),
             builder.literal("$.name"));
         return builder.like(function,
             "%" + filter + "%");
@@ -263,7 +263,7 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       return (root, query, builder) ->
       {
         Expression<String> function = builder.function("JSON_EXTRACT", String.class,
-            root.get("instrument"), builder.literal("$.label"));
+            root.get("msDevice"), builder.literal("$.label"));
         return builder.like(function,
             "%" + filter + "%");
       };
