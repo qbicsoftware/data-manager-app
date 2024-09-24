@@ -10,37 +10,25 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public record ProteomicsMeasurementMetadata(String measurementId,
-                                            SampleCode sampleCode,
-                                            String organisationId, String instrumentCURI,
-                                            String samplePoolGroup, String facility,
-                                            String fractionName,
-                                            String digestionEnzyme,
-                                            String digestionMethod, String enrichmentMethod,
-                                            String injectionVolume, String lcColumn,
-                                            String lcmsMethod, Labeling labeling,
-                                            String comment) implements MeasurementMetadata {
+public record ProteomicsMeasurementMetadata(
+    String measurementId,
+    SampleCode sampleCode,
+    String technicalReplicateName,
+    String organisationId,
+    String msDeviceCURIE,
+    String samplePoolGroup,
+    String facility,
+    String fractionName,
+    String digestionEnzyme,
+    String digestionMethod,
+    String enrichmentMethod,
+    String injectionVolume,
+    String lcColumn,
+    String lcmsMethod,
+    Labeling labeling,
+    String comment
+) implements MeasurementMetadata {
 
-
-  public static ProteomicsMeasurementMetadata copyWithNewProperties(SampleCode associatedSample,
-      Labeling labeling,
-      ProteomicsMeasurementMetadata metadata) {
-    return new ProteomicsMeasurementMetadata(metadata.measurementId(),
-        associatedSample,
-        metadata.organisationId(),
-        metadata.instrumentCURI(),
-        metadata.samplePoolGroup(),
-        metadata.facility(),
-        metadata.fractionName(),
-        metadata.digestionEnzyme(),
-        metadata.digestionMethod(),
-        metadata.enrichmentMethod(),
-        metadata.injectionVolume(),
-        metadata.lcColumn(),
-        metadata.lcmsMethod(),
-        labeling,
-        metadata.comment());
-  }
 
   @Override
   public Optional<String> assignedSamplePoolGroup() {
@@ -72,4 +60,5 @@ public record ProteomicsMeasurementMetadata(String measurementId,
   public int hashCode() {
     return measurementId.hashCode();
   }
+
 }
