@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import life.qbic.datamanager.parser.ParsingResult.Row;
+import life.qbic.datamanager.parser.measurement.NGSMeasurementEditColumns;
+import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementEditColumns;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -31,8 +31,8 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  * Currently supported metadata properties cover:
  *
  * <ul>
- *   <li>Proteomics Measurement {@link ProteomicsMeasurementProperty}</li>
- *   <li>NGS Measurement {@link NGSMeasurementProperty}</li>
+ *   <li>Proteomics Measurement {@link ProteomicsMeasurementEditColumns}</li>
+ *   <li>NGS Measurement {@link NGSMeasurementEditColumns}</li>
  * </ul>
  *
  * @since 1.4.0
@@ -81,15 +81,11 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     return hits;
   }
 
-  static String sanitizeValue(String value) {
-    return value.trim().toLowerCase();
-  }
-
   @Override
   public List<MeasurementMetadata> convert(ParsingResult parsingResult, boolean ignoreMeasurementId)
       throws UnknownMetadataTypeException, MissingSampleIdException {
     Objects.requireNonNull(parsingResult);
-    var properties = parsingResult.keys().keySet();
+    var properties = parsingResult.columnMap().keySet();
     if (looksLikeNgsMeasurement(properties, ignoreMeasurementId)) {
       return tryConversion(this::convertNGSMeasurement, parsingResult);
     } else if (looksLikeProteomicsMeasurement(properties, ignoreMeasurementId)) {
@@ -112,125 +108,111 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
   private List<MeasurementMetadata> convertProteomicsMeasurement(ParsingResult parsingResult) {
     var result = new ArrayList<MeasurementMetadata>();
-    var keyIndices = parsingResult.keys();
-    for (ParsingResult.Row row : parsingResult.rows()) {
-      // we us -1 as default value if a property cannot be accessed, thus ending up in an empty String
-      var pxpMetaDatum = new ProteomicsMeasurementMetadata(
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.MEASUREMENT_ID.propertyName(),
-                  -1),
-              ""),
-          SampleCode.create(
-              safeListAccess(row.values(),
-                  keyIndices.getOrDefault(
-                      ProteomicsMeasurementProperty.QBIC_SAMPLE_ID.propertyName(), -1),
-                  "")),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(
-                  ProteomicsMeasurementProperty.TECHNICAL_REPLICATE_NAME.propertyName(), -1), ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.ORGANISATION_ID.propertyName(),
-                  -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.MS_DEVICE.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(
-                  ProteomicsMeasurementProperty.SAMPLE_POOL_GROUP.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.FACILITY.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.CYCLE.propertyName(), -1), ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.DIGESTION_ENZYME.propertyName(),
-                  -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.DIGESTION_METHOD.propertyName(),
-                  -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(
-                  ProteomicsMeasurementProperty.ENRICHMENT_METHOD.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.INJECTION_VOLUME.propertyName(),
-                  -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.LC_COLUMN.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.LCMS_METHOD.propertyName(), -1),
-              ""),
-          new Labeling(
-              safeListAccess(row.values(),
-                  keyIndices.getOrDefault(
-                      ProteomicsMeasurementProperty.LABELING_TYPE.propertyName(), -1),
-                  ""),
-              safeListAccess(row.values(),
-                  keyIndices.getOrDefault(ProteomicsMeasurementProperty.LABEL.propertyName(), -1),
-                  "")),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(ProteomicsMeasurementProperty.COMMENT.propertyName(), -1), "")
-      );
-      result.add(pxpMetaDatum);
+    for (int i = 0; i < parsingResult.rows().size(); i++) {
+      var measurementId = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.MEASUREMENT_ID.headerName(), "");
+      var sampleCode = SampleCode.create(parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.SAMPLE_ID.headerName(), ""));
+      var technicalReplicateName = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.TECHNICAL_REPLICATE_NAME.headerName(), "");
+      var organisationId = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.ORGANISATION_ID.headerName(), "");
+      var msDevice = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.MS_DEVICE.headerName(), "");
+      var samplePoolGroup = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.POOL_GROUP.headerName(), "");
+      var facility = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.FACILITY.headerName(), "");
+      var fractionName = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.CYCLE_FRACTION_NAME.headerName(), "");
+      var digestionEnzyme = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.DIGESTION_ENZYME.headerName(), "");
+      var digestionMethod = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.DIGESTION_METHOD.headerName(), "");
+      var enrichmentMethod = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.ENRICHMENT_METHOD.headerName(), "");
+      var injectionVolume = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.INJECTION_VOLUME.headerName(), "");
+      var lcColumn = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.LC_COLUMN.headerName(), "");
+      var lcmsMethod = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.LCMS_METHOD.headerName(), "");
+      var labelingType = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.LABELING_TYPE.headerName(), "");
+      var label = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.LABEL.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumns.COMMENT.headerName(), "");
+      var pxpMetaDaturm = new ProteomicsMeasurementMetadata(measurementId,
+          sampleCode,
+          technicalReplicateName,
+          organisationId,
+          msDevice,
+          samplePoolGroup,
+          facility,
+          fractionName,
+          digestionEnzyme,
+          digestionMethod,
+          enrichmentMethod,
+          injectionVolume,
+          lcColumn,
+          lcmsMethod,
+          new Labeling(labelingType, label),
+          comment);
+      result.add(pxpMetaDaturm);
     }
     return result;
   }
 
-  private String safeListAccess(List<String> list, Integer index, String defaultValue) {
-    if (index >= list.size() || index < 0) {
-      return defaultValue;
-    }
-    return list.get(index);
-  }
-
   private List<MeasurementMetadata> convertNGSMeasurement(ParsingResult parsingResult) {
     var result = new ArrayList<MeasurementMetadata>();
-    var keyIndices = parsingResult.keys();
-    for (Row row : parsingResult.rows()) {
-      var ngsMeasurementMetadata = new NGSMeasurementMetadata(
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.MEASUREMENT_ID.propertyName(), -1),
-              ""),
-          List.of(SampleCode.create(
-              safeListAccess(row.values(),
-                  keyIndices.getOrDefault(NGSMeasurementProperty.QBIC_SAMPLE_ID.propertyName(), -1),
-                  ""))),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.ORGANISATION_ID.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.INSTRUMENT.propertyName(), -1), ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.FACILITY.propertyName(), -1), ""),
-          safeListAccess(row.values(), keyIndices.getOrDefault(
-              NGSMeasurementProperty.SEQUENCING_READ_TYPE.propertyName(), -1), ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.LIBRARY_KIT.propertyName(), -1), ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.FLOW_CELL.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(), keyIndices.getOrDefault(
-                  NGSMeasurementProperty.SEQUENCING_RUN_PROTOCOL.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.SAMPLE_POOL_GROUP.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.INDEX_I7.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.INDEX_I5.propertyName(), -1),
-              ""),
-          safeListAccess(row.values(),
-              keyIndices.getOrDefault(NGSMeasurementProperty.COMMENT.propertyName(), -1), "")
+
+    for (int i = 0; i < parsingResult.rows().size(); i++) {
+      var measurementId = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.MEASUREMENT_ID.headerName(), "");
+      var sampleCodes = List.of(
+          SampleCode.create(
+              parsingResult.getValueOrDefault(i, NGSMeasurementEditColumns.SAMPLE_ID.headerName(),
+                  ""))
       );
-      result.add(ngsMeasurementMetadata);
+      var organisationId = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.ORGANISATION_ID.headerName(), "");
+      var instrument = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.INSTRUMENT.headerName(), "");
+      var facility = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.FACILITY.headerName(), "");
+      var sequencingReadType = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.SEQUENCING_RUN_PROTOCOL.headerName(), "");
+      var libraryKit = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.LIBRARY_KIT.headerName(), "");
+      var flowCell = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.FLOW_CELL.headerName(), "");
+      var runProtocol = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.SEQUENCING_RUN_PROTOCOL.headerName(), "");
+      var poolGroup = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.POOL_GROUP.headerName(), "");
+      var indexI7 = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.INDEX_I7.headerName(), "");
+      var indexI5 = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.INDEX_I5.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumns.COMMENT.headerName(), "");
+      var metadatum = new NGSMeasurementMetadata(
+          measurementId,
+          sampleCodes,
+          organisationId,
+          instrument,
+          facility,
+          sequencingReadType,
+          libraryKit,
+          flowCell,
+          runProtocol,
+          poolGroup,
+          indexI7,
+          indexI5,
+          comment
+      );
+      result.add(metadatum);
     }
     return result;
   }
@@ -240,15 +222,16 @@ public class MetadataConverter implements MeasurementMetadataConverter {
         .collect(Collectors.toList());
     Map<String, Integer> hitMap;
     if (ignoreID) {
-      formattedProperties.remove(NGSMeasurementProperty.MEASUREMENT_ID.propertyName());
+      formattedProperties.remove(NGSMeasurementEditColumns.MEASUREMENT_ID.headerName());
       hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementProperty.values())
-              .map(NGSMeasurementProperty::propertyName).collect(
-                  Collectors.toSet()), NGSMeasurementProperty.MEASUREMENT_ID.propertyName());
+          Arrays.stream(NGSMeasurementEditColumns.values())
+              .map(NGSMeasurementEditColumns::headerName)
+              .collect(
+                  Collectors.toSet()), NGSMeasurementEditColumns.MEASUREMENT_ID.headerName());
     } else {
       hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementProperty.values())
-              .map(NGSMeasurementProperty::propertyName).collect(
+          Arrays.stream(NGSMeasurementEditColumns.values())
+              .map(NGSMeasurementEditColumns::headerName).collect(
                   Collectors.toSet()));
     }
     var missingProperties = new ArrayList<>();
@@ -270,15 +253,15 @@ public class MetadataConverter implements MeasurementMetadataConverter {
         .collect(Collectors.toList());
     Map<String, Integer> hitMap;
     if (ignoreID) {
-      formattedProperties.remove(ProteomicsMeasurementProperty.MEASUREMENT_ID.propertyName());
+      formattedProperties.remove(ProteomicsMeasurementEditColumns.MEASUREMENT_ID.headerName());
       hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementProperty.values())
-              .map(ProteomicsMeasurementProperty::propertyName).collect(
-                  Collectors.toSet()), ProteomicsMeasurementProperty.MEASUREMENT_ID.propertyName());
+          Arrays.stream(ProteomicsMeasurementEditColumns.values())
+              .map(ProteomicsMeasurementEditColumns::headerName).collect(
+                  Collectors.toSet()), ProteomicsMeasurementEditColumns.MEASUREMENT_ID.headerName());
     } else {
       hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementProperty.values())
-              .map(ProteomicsMeasurementProperty::propertyName).collect(
+          Arrays.stream(ProteomicsMeasurementEditColumns.values())
+              .map(ProteomicsMeasurementEditColumns::headerName).collect(
                   Collectors.toSet()));
     }
     var missingProperties = new ArrayList<>();
@@ -293,97 +276,5 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       log.debug("Missing properties for proteomics measurement: %s".formatted(missingProperties));
     }
     return false;
-  }
-
-
-  enum ProteomicsMeasurementProperty {
-    MEASUREMENT_ID("measurement id"),
-    TECHNICAL_REPLICATE_NAME("technical replicate"),
-    QBIC_SAMPLE_ID("qbic sample id"),
-    SAMPLE_POOL_GROUP("sample pool group"),
-    ORGANISATION_ID("organisation id"),
-    FACILITY("facility"),
-    MS_DEVICE("ms device"),
-    CYCLE("cycle/fraction name"),
-    DIGESTION_METHOD("digestion method"),
-    DIGESTION_ENZYME("digestion enzyme"),
-    ENRICHMENT_METHOD("enrichment method"),
-    INJECTION_VOLUME("injection volume (µl)"),
-    LC_COLUMN("lc column"),
-    LCMS_METHOD("lcms method"),
-    LABELING_TYPE("labeling type"),
-    LABEL("label"),
-    COMMENT("comment");
-
-    private final String name;
-
-    ProteomicsMeasurementProperty(String value) {
-      this.name = value;
-    }
-
-    static Optional<ProteomicsMeasurementProperty> fromString(String value) {
-      var sanitizedValue = sanitizeValue(value);
-      return Arrays.stream(ProteomicsMeasurementProperty.values())
-          .filter(property -> property.propertyName().equals(sanitizedValue)).findFirst();
-    }
-
-    static boolean valueMatchesAnyProperty(String value) {
-      var sanitizedValue = sanitizeValue(value);
-      return Arrays.stream(ProteomicsMeasurementProperty.values())
-          .map(ProteomicsMeasurementProperty::name)
-          .anyMatch(sanitizedValue::equalsIgnoreCase);
-    }
-
-    public String propertyName() {
-      return name;
-    }
-
-  }
-
-  enum NGSMeasurementProperty {
-    MEASUREMENT_ID("measurement id"),
-    QBIC_SAMPLE_ID("qbic sample id"),
-    ORGANISATION_ID("organisation id"),
-    SAMPLE_POOL_GROUP("sample pool group"),
-    FACILITY("facility"),
-    INSTRUMENT("instrument"),
-    SEQUENCING_READ_TYPE("sequencing read type"),
-    LIBRARY_KIT("library kit"),
-    FLOW_CELL("flow cell"),
-    SEQUENCING_RUN_PROTOCOL("sequencing run protocol"),
-    INDEX_I7("index i7"),
-    INDEX_I5("index i5"),
-    COMMENT("comment");
-
-    private final String name;
-
-    NGSMeasurementProperty(String value) {
-      this.name = value;
-    }
-
-    /**
-     * Tries to convert an input property value to a known {@link NGSMeasurementProperty}.
-     * <p>
-     * Trailing whitespace will be ignored.
-     *
-     * @param value the presumed value to convert to a known {@link NGSMeasurementProperty}
-     * @return the matching property, or {@link Optional#empty()}.
-     * @since 1.4.0
-     */
-    static Optional<NGSMeasurementProperty> fromStringTrimmed(String value) {
-      var sanitizedValue = sanitizeValue(value);
-      return Arrays.stream(NGSMeasurementProperty.values())
-          .filter(property -> property.propertyName().equalsIgnoreCase(sanitizedValue)).findFirst();
-    }
-
-    static boolean valueMatchesAnyProperty(String value) {
-      var sanitizedValue = sanitizeValue(value);
-      return Arrays.stream(NGSMeasurementProperty.values()).map(NGSMeasurementProperty::name)
-          .anyMatch(sanitizedValue::equalsIgnoreCase);
-    }
-
-    String propertyName() {
-      return name;
-    }
   }
 }

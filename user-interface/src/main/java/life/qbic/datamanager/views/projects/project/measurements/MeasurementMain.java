@@ -42,8 +42,8 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.measurements.download.NGSMeasurementContentProvider;
-import life.qbic.datamanager.views.projects.project.measurements.download.ProteomicsMeasurementContentProvider;
+import life.qbic.datamanager.views.projects.project.measurements.download.NGSMeasurementEditTemplate;
+import life.qbic.datamanager.views.projects.project.measurements.download.ProteomicsMeasurementEditContent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -95,8 +95,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
-  private final ProteomicsMeasurementContentProvider proteomicsMeasurementContentProvider;
-  private final NGSMeasurementContentProvider ngsMeasurementContentProvider;
+  private final ProteomicsMeasurementEditContent proteomicsMeasurementEditContent;
+  private final NGSMeasurementEditTemplate ngsMeasurementEditTemplate;
   private final DownloadProvider ngsDownloadProvider;
   private final DownloadProvider proteomicsDownloadProvider;
   private final ProjectInformationService projectInformationService;
@@ -120,10 +120,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
     this.measurementPresenter = measurementPresenter;
-    this.proteomicsMeasurementContentProvider = new ProteomicsMeasurementContentProvider();
-    this.ngsMeasurementContentProvider = new NGSMeasurementContentProvider();
-    this.ngsDownloadProvider = new DownloadProvider(ngsMeasurementContentProvider);
-    this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementContentProvider);
+    this.proteomicsMeasurementEditContent = new ProteomicsMeasurementEditContent();
+    this.ngsMeasurementEditTemplate = new NGSMeasurementEditTemplate();
+    this.ngsDownloadProvider = new DownloadProvider(ngsMeasurementEditTemplate);
+    this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementEditContent);
     this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.projectInformationService = projectInformationService;
@@ -371,7 +371,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         .flatMap(Collection::stream)
         .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
             .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
-    proteomicsMeasurementContentProvider.setMeasurements(result,
+    proteomicsMeasurementEditContent.setMeasurements(result,
         projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
             .getProjectCode().value());
     proteomicsDownloadProvider.trigger();
@@ -390,7 +390,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         // sort by measurement codes first, then by sample codes
         .sorted(Comparator.comparing(NGSMeasurementEntry::measurementCode, natOrder)
             .thenComparing(ngs -> ngs.sampleInformation().sampleId(), natOrder)).toList();
-    ngsMeasurementContentProvider.setMeasurements(result,
+    ngsMeasurementEditTemplate.setMeasurements(result,
         projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
             .getProjectCode().value());
     ngsDownloadProvider.trigger();

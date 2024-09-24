@@ -1,9 +1,7 @@
 package life.qbic.datamanager.parser;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * <b>Parsing Result</b>
@@ -39,7 +37,7 @@ import java.util.stream.Stream;
  *   </tr>
  * </table>
  * <p>
- * So the resulting stored positions of every key in a row can be accessed via {@link #keys()} and would look like:
+ * So the resulting stored positions of every key in a row can be accessed via {@link #columnMap()} and would look like:
  *
  * <ul>
  *   <li>A - 0</li>
@@ -57,19 +55,11 @@ import java.util.stream.Stream;
  *
  * @since 1.4.0
  */
-public record ParsingResult(Map<String, Integer> keys, List<Row> rows) {
+public record ParsingResult(Map<String, Integer> columnMap, List<Row> rows) {
 
-  public ParsingResult(Map<String, Integer> keys, List<Row> rows) {
-    this.keys = Map.copyOf(keys);
+  public ParsingResult(Map<String, Integer> columnMap, List<Row> rows) {
+    this.columnMap = Map.copyOf(columnMap);
     this.rows = List.copyOf(rows);
-  }
-
-  public Stream<Row> rowsStream() {
-    return rows.stream();
-  }
-
-  public Iterator<Row> iterator() {
-    return rows.iterator();
   }
 
   public Row getRow(int rowIndex) {
@@ -78,6 +68,15 @@ public record ParsingResult(Map<String, Integer> keys, List<Row> rows) {
           "Row index out of bounds: %s but size is %s".formatted(rowIndex, rows.size()));
     }
     return rows.get(rowIndex);
+  }
+
+  public String getValueOrDefault(int rowIndex, String columnHeader, String defaultValue) {
+    var key = columnHeader.trim().toLowerCase();
+    if (!columnMap().containsKey(key)) {
+      return defaultValue;
+    }
+    Row row = getRow(rowIndex);
+    return row.values().get(columnMap().get(key));
   }
 
   public record Row(List<String> values) {
