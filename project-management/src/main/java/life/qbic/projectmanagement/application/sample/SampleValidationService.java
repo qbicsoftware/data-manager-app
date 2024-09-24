@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.sample;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -25,29 +25,42 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResult validateNewSample(SampleMetadata sampleMetadata, String experimentId,
+  public ValidationResultWithPayload<SampleMetadata> validateNewSample(String condition,
+      String species, String specimen,
+      String analyte, String analysisMethod, String experimentId,
       String projectId) {
-    return sampleValidation.validateNewSample(sampleMetadata, experimentId, projectId);
+    return sampleValidation.validateNewSample(condition, species, specimen, analyte, analysisMethod,
+        experimentId, projectId);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResult validateExistingSample(SampleMetadata sampleMetadata, String experimentId,
+  public ValidationResultWithPayload<SampleMetadata> validateExistingSample(String sampleId,
+      String condition, String species,
+      String specimen, String analyte, String analysisMethod, String experimentId,
       String projectId) {
-    return sampleValidation.validateExistingSample(sampleMetadata, experimentId, projectId);
+    return sampleValidation.validateExistingSample(sampleId, condition, species, specimen, analyte,
+        analysisMethod, experimentId, projectId);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public CompletableFuture<ValidationResult> validateNewSampleAsync(SampleMetadata sampleMetadata,
-      String experimentId, String projectId) {
+  public CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validateNewSampleAsync(
+      String condition,
+      String species, String specimen,
+      String analyte, String analysisMethod, String experimentId,
+      String projectId) {
     return CompletableFuture.completedFuture(
-        validateNewSample(sampleMetadata, experimentId, projectId));
+        validateNewSample(condition, species, specimen, analyte, analysisMethod,
+            experimentId, projectId));
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public CompletableFuture<ValidationResult> validateExistingSampleAsync(
-      SampleMetadata sampleMetadata, String experimentId, String projectId) {
+  public CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validateExistingSampleAsync(
+      String sampleId, String condition, String species,
+      String specimen, String analyte, String analysisMethod, String experimentId,
+      String projectId) {
     return CompletableFuture.completedFuture(
-        validateExistingSample(sampleMetadata, experimentId, projectId));
+        validateExistingSample(sampleId, condition, species, specimen, analyte,
+            analysisMethod, experimentId, projectId));
   }
 
 }

@@ -1,6 +1,8 @@
 package life.qbic.projectmanagement.application.sample;
 
 import java.util.Optional;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 
 /**
  * <b>Sample Metadata</b>
@@ -9,23 +11,30 @@ import java.util.Optional;
  *
  * @since 1.0.0
  */
-public record SampleMetadata(String sampleId, String sampleCode, String analysisToBePerformed, String sampleName,
-                             String biologicalReplicate, String condition, String species, String specimen,
-                             String analyte, String comment) {
+public record SampleMetadata(String sampleId, String sampleCode,
+                             AnalysisMethod analysisToBePerformed, String sampleName,
+                             String biologicalReplicate, String experimentId,
+                             long experimentalGroupId, OntologyTerm species, OntologyTerm specimen,
+                             OntologyTerm analyte, String comment) {
 
-  public static SampleMetadata createNew(String analysisToBePerformed, String sampleName,
-      String biologicalReplicate, String condition, String species, String specimen,
-      String analyte, String comment) {
-    return new SampleMetadata("", "", analysisToBePerformed, sampleName, biologicalReplicate, condition,
+  public static SampleMetadata createNew(AnalysisMethod analysisToBePerformed, String sampleName,
+      String biologicalReplicate, String experimentId, long experimentalGroupId,
+      OntologyTerm species, OntologyTerm specimen,
+      OntologyTerm analyte, String comment) {
+    return new SampleMetadata("", "", analysisToBePerformed, sampleName, biologicalReplicate,
+        experimentId, experimentalGroupId,
         species, specimen, analyte, comment);
   }
 
-  public static SampleMetadata createUpdate(String sampleId, String sampleCode, String analysisToBePerformed,
+  public static SampleMetadata createUpdate(String sampleId, String sampleCode,
+      AnalysisMethod analysisToBePerformed,
       String sampleName,
-      String biologicalReplicate, String condition, String species, String specimen,
-      String analyte, String comment) {
-    return new SampleMetadata(sampleId, sampleCode, analysisToBePerformed, sampleName, biologicalReplicate,
-        condition, species, specimen, analyte, comment);
+      String biologicalReplicate, String experimentId, long experimentalGroupId,
+      OntologyTerm species, OntologyTerm specimen,
+      OntologyTerm analyte, String comment) {
+    return new SampleMetadata(sampleId, sampleCode, analysisToBePerformed, sampleName,
+        biologicalReplicate, experimentId, experimentalGroupId,
+        species, specimen, analyte, comment);
   }
 
   public Optional<String> getSampleId() {
@@ -34,6 +43,17 @@ public record SampleMetadata(String sampleId, String sampleCode, String analysis
 
   public Optional<String> getSampleCode() {
     return Optional.ofNullable(sampleCode.isBlank() ? null : sampleCode);
+  }
+
+  /**
+   * Creates a deep copy of the current {@link SampleMetadata} object instance. The returned instance does not share
+   * @return
+   * @since
+   */
+  public SampleMetadata copy() {
+    return new SampleMetadata(sampleId, sampleCode, analysisToBePerformed, sampleName,
+        biologicalReplicate, experimentId, experimentalGroupId, species, specimen, analyte,
+        comment);
   }
 
 }

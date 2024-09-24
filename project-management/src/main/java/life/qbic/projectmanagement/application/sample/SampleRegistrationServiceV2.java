@@ -1,11 +1,18 @@
 package life.qbic.projectmanagement.application.sample;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -20,27 +27,67 @@ public class SampleRegistrationServiceV2 {
 
   private final BatchRegistrationService batchRegistrationService;
   private final SampleRepository sampleRepository;
+  private final SampleCodeService sampleCodeService;
+  private final ExperimentInformationService experimentInformationService;
 
-  public SampleRegistrationServiceV2(BatchRegistrationService batchRegistrationService, SampleRepository sampleRepository) {
+  public SampleRegistrationServiceV2(BatchRegistrationService batchRegistrationService,
+      SampleRepository sampleRepository, SampleCodeService sampleCodeService,
+      ExperimentInformationService experimentInformationService) {
     this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService);
     this.sampleRepository = Objects.requireNonNull(sampleRepository);
+    this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public CompletableFuture<Void> registerNewSamples(Collection<SampleMetadata> sampleMetadata,
-      ExperimentId experimentId, ProjectId projectId, String batchLabel, boolean batchIsPilot) throws RegistrationException{
-    batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId);
+  public CompletableFuture<Void> registerNewSamples(Collection<SampleRegistrationRequest> sampleRegistrationRequests,
+      ProjectId projectId, String batchLabel, boolean batchIsPilot)
+      throws RegistrationException {
+    var result = batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId);
+    if (result.isError()) {
+      throw new RegistrationException("Batch registration failed");
+    }
+    var batchId = result.getValue();
+
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public CompletableFuture<Void> updateSamples(Collection<SampleMetadata> sampleMetadata,
-      ExperimentId experimentId, ProjectId projectId) throws RegistrationException{
+  public CompletableFuture<Void> updateSamples(Collection<SampleRegistrationRequest> sampleRegistrationRequests,
+      ExperimentId experimentId, ProjectId projectId) throws RegistrationException {
     throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  private void registerSamples(Collection<SampleRegistrationRequest> sampleRegistrationRequests, BatchId batchId, ExperimentId experimentId, ProjectId projectId)
+      throws RegistrationException {
+    var experimentQuery = experimentInformationService.find(projectId.value(), experimentId);
+    if (experimentQuery.isEmpty()) {
+      throw new RegistrationException("Experiment not found");
+    }
+    var registeredSamples = new ArrayList<SampleId>();
+    try {
+      //sampleRepository.addAll()
+    } catch (Exception e) {
+      rollbackSampleRegistration(registeredSamples);
+    }
+  }
+
+  private void rollbackSampleRegistration(Collection<SampleId> registeredSamples) {
+
+  }
+
+  private Sample buildSample(SampleRegistrationRequest sampleRegistrationRequest, ProjectId projectId) {
+    var result = sampleCodeService.generateFor(projectId);
+    if (result.isError()) {
+      throw new RegistrationException("Sample code generation failed");
+    }
+    return Sample.create(result.getValue(), sampleRegistrationRequest);
   }
 
   public static class RegistrationException extends RuntimeException {
-    public RegistrationException(String message) {}
+
+    public RegistrationException(String message) {
+    }
   }
 
 }
