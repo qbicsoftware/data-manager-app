@@ -12,7 +12,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -40,7 +39,7 @@ public class SampleRegistrationServiceV2 {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public CompletableFuture<Void> registerNewSamples(Collection<SampleRegistrationRequest> sampleRegistrationRequests,
+  public CompletableFuture<Void> registerNewSamples(Collection<SampleMetadata> sampleRegistrationRequests,
       ProjectId projectId, String batchLabel, boolean batchIsPilot)
       throws RegistrationException {
     var result = batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId);
@@ -53,12 +52,12 @@ public class SampleRegistrationServiceV2 {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public CompletableFuture<Void> updateSamples(Collection<SampleRegistrationRequest> sampleRegistrationRequests,
+  public CompletableFuture<Void> updateSamples(Collection<SampleMetadata> sampleRegistrationRequests,
       ExperimentId experimentId, ProjectId projectId) throws RegistrationException {
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
-  private void registerSamples(Collection<SampleRegistrationRequest> sampleRegistrationRequests, BatchId batchId, ExperimentId experimentId, ProjectId projectId)
+  private void registerSamples(Collection<SampleMetadata> sampleMetadata, BatchId batchId, ExperimentId experimentId, ProjectId projectId)
       throws RegistrationException {
     var experimentQuery = experimentInformationService.find(projectId.value(), experimentId);
     if (experimentQuery.isEmpty()) {
@@ -76,17 +75,9 @@ public class SampleRegistrationServiceV2 {
 
   }
 
-  private Sample buildSample(SampleRegistrationRequest sampleRegistrationRequest, ProjectId projectId) {
-    var result = sampleCodeService.generateFor(projectId);
-    if (result.isError()) {
-      throw new RegistrationException("Sample code generation failed");
-    }
-    return Sample.create(result.getValue(), sampleRegistrationRequest);
-  }
-
   public static class RegistrationException extends RuntimeException {
-
     public RegistrationException(String message) {
+      super(message);
     }
   }
 
