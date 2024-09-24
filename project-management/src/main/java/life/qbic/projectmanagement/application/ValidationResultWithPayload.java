@@ -17,5 +17,4 @@ public record ValidationResultWithPayload<T>(ValidationResult validationResult, 
     this.payload = Objects.requireNonNull(payload);
   }
 
-  public static ValidationResultWithPayload<ValidationResult> getValidationResultWithPayload(ValidationResult validationResult) {}
 }
