@@ -10,8 +10,7 @@ import static life.qbic.datamanager.templates.XLSXTemplateHelper.lockSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.setColumnAutoWidth;
 
 import java.util.List;
-import life.qbic.datamanager.parser.sample.EditColumns;
-import life.qbic.datamanager.parser.sample.RegisterColumns;
+import life.qbic.datamanager.parser.sample.EditColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
@@ -62,7 +61,7 @@ public class SampleBatchUpdateTemplate {
     var sheet = workbook.createSheet("Sample Metadata");
 
     Row header = getOrCreateRow(sheet, 0);
-    for (RegisterColumns column : RegisterColumns.values()) {
+    for (EditColumn column : EditColumn.values()) {
       var cell = XLSXTemplateHelper.getOrCreateCell(header, column.columnIndex());
       cell.setCellValue(column.headerName());
       cell.setCellStyle(boldCellStyle);
