@@ -70,7 +70,6 @@ public class CopyToClipBoardComponent extends Span {
     CompletableFuture.runAsync(() -> ui.access(() -> {
       copyIcon.setVisible(true);
       copySuccessIcon.setVisible(false);
-      ui.push();
     }), delayedExecutor).thenRun(() ->
         fireEvent(new SwitchToCopyIconEvent(this, componentEvent.isFromClient())));
   }
