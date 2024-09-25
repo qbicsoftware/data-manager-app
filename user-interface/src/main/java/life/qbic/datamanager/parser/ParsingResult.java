@@ -71,7 +71,7 @@ public record ParsingResult(Map<String, Integer> columnMap, List<Row> rows) {
   }
 
   public String getValueOrDefault(int rowIndex, String columnHeader, String defaultValue) {
-    var key = columnHeader.trim().toLowerCase();
+    var key = Sanitizer.headerEncoder(columnHeader);
     if (!columnMap().containsKey(key)) {
       return defaultValue;
     }
