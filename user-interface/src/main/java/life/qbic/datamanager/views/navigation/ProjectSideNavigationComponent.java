@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.navigation;
 
-import com.vaadin.flow.component.textfield.TextField;
-
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Component;
@@ -117,20 +115,6 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug(
         "New instance for %s(#%s) created".formatted(
             this.getClass().getSimpleName(), System.identityHashCode(this)));
-  }
-
-  private Div createInternationalPostalAddressFields() {
-    Div addressFields = new Div();
-    addressFields.addClassName("address-fields");
-
-    TextField streetField = new TextField("Street");
-    TextField cityField = new TextField("City");
-    TextField stateField = new TextField("State");
-    TextField postalCodeField = new TextField("Postal Code");
-    TextField countryField = new TextField("Country");
-
-    addressFields.add(streetField, cityField, stateField, postalCodeField, countryField);
-    return addressFields;
   }
 
   private static Div createProjectSection(Project project,
@@ -283,7 +267,7 @@ private static void routeToProject(ProjectId projectId) {
     content.add(
         generateNavigationSections(project, lastModifiedProjects, experiments, canUserAdministrate)
             .toArray(Component[]::new));
-    content.add(createOntologyLookupSideNavItem(projectId), createInternationalPostalAddressFields());
+    content.add(createOntologyLookupSideNavItem(projectId));
   }
 
   private Project loadProject(ProjectId id) {
