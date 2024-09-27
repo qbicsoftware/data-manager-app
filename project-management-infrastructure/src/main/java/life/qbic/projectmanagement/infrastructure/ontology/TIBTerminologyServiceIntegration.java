@@ -221,9 +221,12 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return List.of();
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
-            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(searchTerm,
-                StandardCharsets.UTF_8) + "&rows="
-                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
+            searchEndpointAbsoluteUrl.toString() + "?q="
+                + URLEncoder.encode(
+                searchTerm,
+                StandardCharsets.UTF_8)
+                + "&rows=" + limit + "&start=" + offset
+                + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
@@ -278,10 +281,13 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return List.of();
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
-            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(oboId,
-                StandardCharsets.UTF_8) + "&rows="
-                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()
-                + "&queryFields=obo_id"))
+            searchEndpointAbsoluteUrl.toString() + "?q="
+                + URLEncoder.encode(
+                oboId.replace("_", ":") + "&queryFields=obo_id",
+                //obo_id query field requires `:` separator instead of `_`
+                StandardCharsets.UTF_8)
+                + "&rows=" + limit + "&start=" + offset
+                + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
@@ -310,5 +316,3 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     }
   }
 }
-
-
