@@ -32,11 +32,13 @@ public class SampleInformationExtractor {
       var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.headerName(), "");
       var analysisMethod = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYSIS.headerName(),
           "");
+      var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.headerName(), "");
       result.add(new SampleInformationForNewSample(condition,
           species,
           specimen,
           analyte,
-          analysisMethod));
+          analysisMethod,
+          comment));
     }
     return result;
   }
@@ -83,7 +85,8 @@ public class SampleInformationExtractor {
       String species,
       String specimen,
       String analyte,
-      String analysisMethod
+      String analysisMethod,
+      String comment
   ) {
 
   }

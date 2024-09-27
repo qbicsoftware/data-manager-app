@@ -56,12 +56,14 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.updat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
+import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -123,7 +125,8 @@ public class ExperimentDetailsComponent extends PageArea {
       TerminologyService terminologyService,
       @Autowired TemplateService templateService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      SampleValidationService sampleValidationService) {
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
@@ -165,6 +168,18 @@ public class ExperimentDetailsComponent extends PageArea {
       }
     });
     this.add(updateTemplate);
+    Button registerDialogBtn = new Button("Register Dialog");
+    registerDialogBtn.addClickListener(buttonClickEvent -> {
+      RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
+          sampleValidationService, context.experimentId().map(ExperimentId::value).orElseThrow(),
+          context.projectId().map(ProjectId::value).orElseThrow());
+      registerSampleBatchDialog.addCancelListener(event -> event.getSource().close());
+      registerSampleBatchDialog.addConfirmListener(event -> {
+        System.out.println("event.validatedSampleMetadata() = " + event.validatedSampleMetadata());
+      });
+      registerSampleBatchDialog.open();
+    });
+    this.add(registerDialogBtn);
     layoutComponent();
     configureComponent();
   }

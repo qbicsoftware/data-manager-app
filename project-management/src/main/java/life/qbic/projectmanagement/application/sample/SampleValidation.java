@@ -88,15 +88,16 @@ public class SampleValidation {
    */
   public ValidationResultWithPayload<SampleMetadata> validateNewSample(String condition,
       String species, String specimen,
-      String analyte, String analysisMethod, String experimentId,
+      String analyte, String analysisMethod,
+      String experimentId,
       String projectId) {
     this.assembledMetadata = sampleMetadataWithExperimentId(experimentId);
     ValidationResultWithPayload<SampleMetadata> result = null;
     var experimentQuery = experimentInformationService.find(projectId,
         ExperimentId.parse(experimentId));
     if (experimentQuery.isPresent()) {
-      var validationResult = validateWithExperiment(condition, species, specimen, analyte,
-          analysisMethod,
+      var validationResult = validateWithExperiment(condition, analysisMethod, species, specimen,
+          analyte,
           experimentQuery.get());
       result = new ValidationResultWithPayload<>(validationResult, assembledMetadata.copy());
     } else {
