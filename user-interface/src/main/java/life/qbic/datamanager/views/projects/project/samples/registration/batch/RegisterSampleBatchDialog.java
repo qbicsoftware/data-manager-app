@@ -81,6 +81,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
             sampleInformationForNewSample.specimen(),
             sampleInformationForNewSample.analyte(),
             sampleInformationForNewSample.analysisMethod(),
+            sampleInformationForNewSample.comment(),
             experimentId,
             projectId
         ).orTimeout(1, TimeUnit.MINUTES);

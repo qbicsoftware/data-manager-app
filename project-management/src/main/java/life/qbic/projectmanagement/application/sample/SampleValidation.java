@@ -73,7 +73,7 @@ public class SampleValidation {
    * id and no sample information lookups are done in this case.
    * <p>
    * If the client wants to validate the sample id as well, please refer to
-   * {@link SampleValidation#validateExistingSample(String, String, String, String, String, String,
+   * {@link SampleValidation#validateExistingSample(String, String, String, String, String, String, String,
    * String, String)}
    *
    * @param condition      the condition the sample was collected from
@@ -87,11 +87,15 @@ public class SampleValidation {
    * @since 1.5.0
    */
   public ValidationResultWithPayload<SampleMetadata> validateNewSample(String condition,
-      String species, String specimen,
-      String analyte, String analysisMethod,
+      String species,
+      String specimen,
+      String analyte,
+      String analysisMethod,
+      String comment,
       String experimentId,
       String projectId) {
     this.assembledMetadata = sampleMetadataWithExperimentId(experimentId);
+    this.assembledMetadata = withComment(this.assembledMetadata, comment);
     ValidationResultWithPayload<SampleMetadata> result = null;
     var experimentQuery = experimentInformationService.find(projectId,
         ExperimentId.parse(experimentId));
@@ -217,7 +221,7 @@ public class SampleValidation {
    * the matching internal sample id.
    * <p>
    * All other validation steps are equal to a
-   * {@link SampleValidation#validateNewSample(String, String, String, String, String, String,
+   * {@link SampleValidation#validateNewSample(String, String, String, String, String, String, String,
    * String)} call.
    *
    * @param sampleCode     the sample code of the sample, known as sample id to the user
@@ -232,9 +236,11 @@ public class SampleValidation {
    * @since 1.5.0
    */
   public ValidationResultWithPayload<SampleMetadata> validateExistingSample(String sampleCode, String condition,
-      String species, String specimen, String analyte, String analysisMethod, String experimentId,
+      String species, String specimen, String analyte, String analysisMethod, String comment,
+      String experimentId,
       String projectId) {
     assembledMetadata = sampleMetadataWithExperimentId(experimentId);
+    assembledMetadata = withComment(assembledMetadata, comment);
     if (sampleCode.isBlank()) {
       return new ValidationResultWithPayload<>(ValidationResult.withFailures(1, List.of("Missing sample id.")), assembledMetadata.copy());
     }
@@ -244,12 +250,27 @@ public class SampleValidation {
       return new ValidationResultWithPayload<>(ValidationResult.withFailures(1,
           List.of("Unknown sample id: " + sampleCode)), assembledMetadata.copy());
     }
-    return validateNewSample(condition, species, specimen, analyte, analysisMethod, experimentId,
+    return validateNewSample(condition, species, specimen, analyte, analysisMethod, comment,
+        experimentId,
         projectId);
   }
 
   private static SampleMetadata sampleMetadataWithExperimentId(String experimentId) {
     return new SampleMetadata("", "",
         null, "", "", experimentId, -1L, null, null, null, "");
+  }
+
+  private static SampleMetadata withComment(SampleMetadata sampleMetadata, String comment) {
+    return new SampleMetadata(sampleMetadata.sampleId(),
+        sampleMetadata.sampleCode(),
+        sampleMetadata.analysisToBePerformed(),
+        sampleMetadata.sampleName(),
+        sampleMetadata.biologicalReplicate(),
+        sampleMetadata.experimentId(),
+        sampleMetadata.experimentalGroupId(),
+        sampleMetadata.species(),
+        sampleMetadata.specimen(),
+        sampleMetadata.analyte(),
+        comment);
   }
 }
