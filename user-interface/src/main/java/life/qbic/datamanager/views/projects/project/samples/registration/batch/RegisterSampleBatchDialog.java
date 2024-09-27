@@ -26,6 +26,8 @@ import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.UploadedData;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
@@ -42,6 +44,7 @@ import life.qbic.projectmanagement.application.sample.SampleValidationService;
 public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private final List<SampleMetadata> validatedSampleMetadata;
+  private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
 
   private void setValidatedSampleMetadata(List<SampleMetadata> validatedSampleMetadata) {
     this.validatedSampleMetadata.clear();
@@ -80,51 +83,62 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
             sampleInformationForNewSample.analysisMethod(),
             experimentId,
             projectId
-        ).orTimeout(2, TimeUnit.MINUTES);
+        ).orTimeout(1, TimeUnit.MINUTES);
         validations.add(validation);
       }
       CompletableFuture<Void> validationTasks = CompletableFuture.allOf(
               validations.toArray(new CompletableFuture[0]))
-          .orTimeout(1, TimeUnit.MINUTES);
+          .orTimeout(5, TimeUnit.MINUTES);
 
-      validationTasks.thenRunAsync(() -> {
-        if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
-          //failed validations should still complete normally but return a failed validaiton result
-          //TODO display that validation could not complete
-          throw new RuntimeException("At least one validation task could not complete.");
-        }
+      validationTasks
+          .thenAccept(ignored -> {
+            if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
+              throw new IllegalStateException(
+                  "validation task still in execution although expected to be done");
+            }
 
-        List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
-            .filter(CompletableFuture::isDone)
-            .map(future -> {
-              try {
-                return future.get();
-              } catch (InterruptedException | ExecutionException e) {
-                throw new IllegalStateException(
-                    "validation task still in execution although expected to be done", e);
+            List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
+                .filter(CompletableFuture::isDone)
+                .map(future -> {
+                  try {
+                    return future.get();
+                  } catch (InterruptedException | ExecutionException e) {
+                    throw new IllegalStateException(
+                        "validation task still in execution although expected to be done", e);
+                  }
+                }).toList();
+            List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
+                .filter(validation -> validation.validationResult().containsFailures())
+                .toList();
+            List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
+                .filter(validation -> validation.validationResult().allPassed())
+                .toList();
+            ValidationResult combinedValidationResult = failedValidations.stream()
+                .map(ValidationResultWithPayload::validationResult)
+                .reduce(ValidationResult.successful(0), ValidationResult::combine);
+            if (combinedValidationResult.allPassed()) {
+              ui.access(() -> it.getSource()
+                  .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
+                      combinedValidationResult.validatedEntries())));
+              setValidatedSampleMetadata(
+                  succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
+            } else {
+              ui.access(() -> it.getSource()
+                  .setDisplay(invalidDisplay(combinedValidationResult)));
+              setValidatedSampleMetadata(List.of());
+            }
+          })
+          .exceptionally(e -> {
+                RuntimeException runtimeException = new RuntimeException(
+                    "At least one validation task could not complete.", e);
+                log.error("Could not complete validation tasks", runtimeException);
+                InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(
+                    ValidationResult.withFailures(0,
+                        List.of("Could not complete validation. Please try again.")));
+                ui.access(() -> it.getSource().setDisplay(invalidUploadDisplay));
+                throw runtimeException;
               }
-            }).toList();
-        List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
-            .filter(validation -> validation.validationResult().containsFailures())
-            .toList();
-        List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
-            .filter(validation -> validation.validationResult().allPassed())
-            .toList();
-        ValidationResult combinedValidationResult = failedValidations.stream()
-            .map(ValidationResultWithPayload::validationResult)
-            .reduce(ValidationResult.successful(0), ValidationResult::combine);
-        if (combinedValidationResult.allPassed()) {
-          ui.access(() -> it.getSource()
-              .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
-                  combinedValidationResult.validatedEntries())));
-          setValidatedSampleMetadata(
-              succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
-        } else {
-          ui.access(() -> it.getSource()
-              .setDisplay(invalidDisplay(combinedValidationResult)));
-          setValidatedSampleMetadata(List.of());
-        }
-      });
+          );
     });
     add(uploadWithDisplay);
   }
