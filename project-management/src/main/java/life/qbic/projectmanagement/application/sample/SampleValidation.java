@@ -151,7 +151,7 @@ public class SampleValidation {
           assembledMetadata.comment());
       return ValidationResult.successful(1);
     }
-    return ValidationResult.withFailures(1, List.of("Unknown species: " + extractedTerm.get()));
+    return ValidationResult.withFailures(1, List.of("Unknown species: " + species));
 
   }
 
@@ -161,17 +161,17 @@ public class SampleValidation {
       return ValidationResult.withFailures(1,
           List.of("Missing CURIE in specimen: " + specimen));
     }
-    var speciesLookup = terminologyService.findByCurie(extractedTerm.get());
-    if (speciesLookup.isPresent()) {
+    var specimenLookup = terminologyService.findByCurie(extractedTerm.get());
+    if (specimenLookup.isPresent()) {
       assembledMetadata = new SampleMetadata(assembledMetadata.sampleId(),
           assembledMetadata.sampleCode(), assembledMetadata.analysisToBePerformed(),
           assembledMetadata.sampleName(), assembledMetadata.biologicalReplicate(),
           assembledMetadata.experimentId(), assembledMetadata.experimentalGroupId(),
-          assembledMetadata.species(), speciesLookup.get(), assembledMetadata.analyte(),
+          assembledMetadata.species(), specimenLookup.get(), assembledMetadata.analyte(),
           assembledMetadata.comment());
       return ValidationResult.successful(1);
     }
-    return ValidationResult.withFailures(1, List.of("Unknown specimen: " + extractedTerm.get()));
+    return ValidationResult.withFailures(1, List.of("Unknown specimen: " + specimen));
   }
 
   private ValidationResult validateAnalyte(String analyte) {
@@ -190,7 +190,7 @@ public class SampleValidation {
           assembledMetadata.comment());
       return ValidationResult.successful(1);
     }
-    return ValidationResult.withFailures(1, List.of("Unknown analyte: " + extractedTerm.get()));
+    return ValidationResult.withFailures(1, List.of("Unknown analyte: " + analyte));
   }
 
   private ValidationResult validateAnalysis(String analysisMethod) {
