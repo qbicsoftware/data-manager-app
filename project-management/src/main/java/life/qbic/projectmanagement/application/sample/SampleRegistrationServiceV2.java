@@ -19,6 +19,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +46,7 @@ public class SampleRegistrationServiceV2 {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  @Async
   public CompletableFuture<Void> registerSamples(Collection<SampleMetadata> sampleMetadata,
       ProjectId projectId, String batchLabel, boolean batchIsPilot)
       throws RegistrationException {
@@ -62,6 +64,7 @@ public class SampleRegistrationServiceV2 {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  @Async
   public CompletableFuture<Void> updateSamples(
       Collection<SampleMetadata> sampleRegistrationRequests, ProjectId projectId) throws RegistrationException {
     var samples = fetchSamples(

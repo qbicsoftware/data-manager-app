@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +44,7 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  @Async
   public CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validateNewSampleAsync(
       String condition,
       String species, String specimen,
@@ -54,6 +56,7 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  @Async
   public CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validateExistingSampleAsync(
       String sampleId, String condition, String species,
       String specimen, String analyte, String analysisMethod, String experimentId,
