@@ -34,7 +34,7 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   FooterComponentFactory footerComponentFactory) {
     super(Objects.requireNonNull(footerComponentFactory));
     Objects.requireNonNull(handlerInterface);
-    setId("landing-page-layout");
+    addClassName("landing-page-layout");
     //CSS class hosting the background image for all our landing pages
     landingPageContent.addClassName("landing-page-content");
     createNavBarContent();

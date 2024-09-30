@@ -1,10 +1,10 @@
-.data-manager-layout::part(navbar) {
+#data-manager-layout::part(navbar) {
   display: inline-flex;
   justify-content: space-between;
   background-image: linear-gradient(var(--lumo-contrast-5pct), var(--lumo-contrast-5pct));
 }
 
-.data-manager-layout .data-manager-title {
+#data-manager-layout .data-manager-title {
   font-size: var(--lumo-font-size-l);
   color: var(--lumo-header-text-color);
   font-weight: 600;
@@ -87,7 +87,7 @@
   width: 100%;
 }
 
-#landing-page-layout::part(navbar) {
+.landing-page-layout::part(navbar) {
   padding-inline: var(--lumo-space-m);
 }
 
