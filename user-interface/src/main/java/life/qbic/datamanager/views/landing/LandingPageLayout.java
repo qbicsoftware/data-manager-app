@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.landing;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -35,7 +34,7 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   FooterComponentFactory footerComponentFactory) {
     super(Objects.requireNonNull(footerComponentFactory));
     Objects.requireNonNull(handlerInterface);
-    setId("landing-page-layout");
+    addClassName("landing-page-layout");
     //CSS class hosting the background image for all our landing pages
     landingPageContent.addClassName("landing-page-content");
     createNavBarContent();
@@ -65,7 +64,7 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   }
 
   private void styleHeaderButtons() {
-    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    login.addClassName("primary");
   }
 
   /**

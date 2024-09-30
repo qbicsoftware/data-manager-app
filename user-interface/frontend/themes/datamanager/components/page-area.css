@@ -95,20 +95,14 @@
   font-size: var(--lumo-font-size-s);
 }
 
-.experiment-details-component vaadin-tabsheet {
-  height: 100%;
+.experiment-details-component .details-content .experimental-sheet {
   width: 100%;
+  height: 100%;
 }
 
-/*Necessary so the disclaimers are aligned to the center of the tab*/
 .experiment-details-component .details-content .experimental-groups-container {
-  height: 100%;
   width: 100%;
-}
-
-.experiment-details-component .details-content .experimental-variables-container {
   height: 100%;
-  width: 100%;
 }
 
 .experiment-details-component .sample-registration-possible {
