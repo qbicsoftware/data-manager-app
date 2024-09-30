@@ -102,7 +102,7 @@ public class MeasurementProteomicsValidator implements
     return validationPolicy.validateSampleId(measurementMetadata.sampleCode())
         .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
         .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
-            .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
+            .combine(validationPolicy.validateMsDevice(measurementMetadata.msDeviceCURIE())));
   }
 
   /**
@@ -121,7 +121,7 @@ public class MeasurementProteomicsValidator implements
         .combine(validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
             .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
             .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-                .combine(validationPolicy.validateInstrument(metadata.instrumentCURI())
+                .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())
                     .combine(
                         validationPolicy.validateDigestionMethod(metadata.digestionMethod())))));
   }
@@ -129,9 +129,10 @@ public class MeasurementProteomicsValidator implements
   public enum PROTEOMICS_PROPERTY {
     QBIC_SAMPLE_ID("qbic sample id"),
     SAMPLE_LABEL("sample name"),
+    TECHNICAL_REPLICATE_NAME("technical replicate"),
     ORGANISATION_ID("organisation id"),
     FACILITY("facility"),
-    INSTRUMENT("instrument"),
+    MS_DEVICE("ms device"),
     SAMPLE_POOL_GROUP("sample pool group"),
     CYCLE_FRACTION_NAME("cycle/fraction name"),
     DIGESTION_METHOD("digestion method"),
@@ -180,6 +181,10 @@ public class MeasurementProteomicsValidator implements
     public String getName() {
       return name;
     }
+
+    public static List<String> getOptions() {
+      return Arrays.stream(values()).map(DigestionMethod::getName).toList();
+    }
   }
 
   private class ValidationPolicy {
@@ -188,7 +193,7 @@ public class MeasurementProteomicsValidator implements
 
     private static final String UNKNOWN_ORGANISATION_ID_MESSAGE = "The organisation ID does not seem to be a ROR ID: \"%s\"";
 
-    private static final String UNKNOWN_INSTRUMENT_ID = "Unknown instrument id: \"%s\"";
+    private static final String UNKNOWN_MS_DEVICE_ID = "Unknown ms device id: \"%s\"";
 
     private static final String UNKNOWN_DIGESTION_METHOD = "Unknown digestion method: \"%s\"";
 
@@ -242,13 +247,13 @@ public class MeasurementProteomicsValidator implements
               List.of("Measurement Code: Unknown measurement for id '%s'".formatted(measurementCode))));
     }
 
-    ValidationResult validateInstrument(String instrument) {
-      var result = terminologyService.findByCurie(instrument);
+    ValidationResult validateMsDevice(String msDevice) {
+      var result = terminologyService.findByCurie(msDevice);
       if (result.isPresent()) {
         return ValidationResult.successful(1);
       }
       return ValidationResult.withFailures(1,
-          List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
+          List.of(UNKNOWN_MS_DEVICE_ID.formatted(msDevice)));
     }
 
     ValidationResult validateDigestionMethod(String digestionMethod) {
@@ -273,9 +278,9 @@ public class MeasurementProteomicsValidator implements
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (metadata.instrumentCURI().isBlank()) {
+      if (metadata.msDeviceCURIE().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+            ValidationResult.withFailures(1, List.of("MS Device: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
@@ -323,10 +328,10 @@ public class MeasurementProteomicsValidator implements
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }
-      if (metadata.instrumentCURI().isBlank()) {
+      if (metadata.msDeviceCURIE().isBlank()) {
         validation = validation.combine(
             ValidationResult.withFailures(1,
-                List.of("Instrument: missing mandatory metadata")));
+                List.of("MS Device: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful(1));
       }

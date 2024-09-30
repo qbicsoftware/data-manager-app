@@ -18,8 +18,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import java.util.Set;
+import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
@@ -93,7 +93,7 @@ public class NGSMeasurement {
     this.measurementId = measurementId;
     this.projectId = requireNonNull(projectId, "projectId must not be null");
     this.organisation = requireNonNull(organisation, "organisation must not be null");
-    this.instrument = requireNonNull(method.instrument(), "instrument must not be null");
+    this.instrument = requireNonNull(method.instrument(), "msDevice must not be null");
     this.measurementCode = requireNonNull(measurementCode, "measurement code must not be null");
     this.facility = requireNonNull(method.facility(), "facility must not be null");
     this.sequencingReadType = requireNonNull(method.sequencingReadType(),
@@ -136,7 +136,7 @@ public class NGSMeasurement {
       throws IllegalArgumentException {
     requireNonNull(measurementCode, "measurement Code must not be null");
     requireNonNull(method, "method must not be null");
-    requireNonNull(method.instrument(), "instrument must not be null");
+    requireNonNull(method.instrument(), "msDevice must not be null");
     if (samplePool.isBlank()) {
       throw new IllegalArgumentException("Sample Pool: no value provided");
     }
