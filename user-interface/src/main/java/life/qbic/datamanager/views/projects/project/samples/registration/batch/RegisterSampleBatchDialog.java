@@ -104,7 +104,42 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
       validationTasks
           .thenAccept(ignored -> {
-            reactOnValidations(validations, ui, component, uploadedData);
+            if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
+              throw new IllegalStateException(
+                  "validation task still in execution although expected to be done");
+            }
+            ValidationResultWithPayload<SampleMetadata> valueIfAbsent = new ValidationResultWithPayload<>(
+                ValidationResult.withFailures(
+                    List.of("Validation could not complete normally.")),
+                new SampleMetadata("", "", null, "", "", "", 0, null, null, null,
+                    "")); //not expected to occur
+
+            List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
+                .filter(result ->
+                    result.isDone() && !result.isCancelled() && !result.isCompletedExceptionally())
+                .map(future -> future.getNow(valueIfAbsent))
+                .toList();
+            List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
+                .filter(validation -> validation.validationResult().containsFailures())
+                .toList();
+            List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
+                .filter(validation -> validation.validationResult().allPassed())
+                .toList();
+
+            if (!failedValidations.isEmpty()) {
+              ui.access(() -> component.setDisplay(invalidDisplay(
+                  failedValidations.stream().map(ValidationResultWithPayload::validationResult)
+                      .toList())));
+              setValidatedSampleMetadata(List.of());
+              return;
+            }
+            if (!succeededValidations.isEmpty()) {
+              ui.access(() -> component
+                  .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
+                      succeededValidations.size())));
+              setValidatedSampleMetadata(
+                  succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
+            }
           })
           .exceptionally(e -> {
                 RuntimeException runtimeException = new RuntimeException(
@@ -120,52 +155,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     });
 
     add(batchNameField, pilotCheck, uploadWithDisplay);
-  }
-
-  private void reactOnValidations(
-      List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations,
-      UI ui,
-      UploadWithDisplay component,
-      UploadedData uploadedData) {
-    if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
-      throw new IllegalStateException(
-          "validation task still in execution although expected to be done");
-    }
-    ValidationResultWithPayload<SampleMetadata> valueIfAbsent = new ValidationResultWithPayload<>(
-        ValidationResult.withFailures(
-            List.of("Validation could not complete normally.")),
-        new SampleMetadata("", "", null, "", "", "", 0, null, null, null,
-            "")); //not expected to occur
-
-    List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
-        .filter(result ->
-            result.isDone() && !result.isCancelled() && !result.isCompletedExceptionally())
-        .map(future -> future.getNow(valueIfAbsent))
-        .toList();
-    List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
-        .filter(validation -> validation.validationResult().containsFailures())
-        .toList();
-    List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
-        .filter(validation -> validation.validationResult().allPassed())
-        .toList();
-
-    if (!failedValidations.isEmpty()) {
-      ui.access(() -> component.setDisplay(invalidDisplay(
-          failedValidations.stream().map(ValidationResultWithPayload::validationResult).toList())));
-      setValidatedSampleMetadata(List.of());
-      return;
-    }
-    if (!succeededValidations.isEmpty()) {
-      ui.access(() -> component
-          .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
-              succeededValidations.size())));
-      setValidatedSampleMetadata(
-          succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
-    }
-  }
-
-  private void runValidation(List<SampleInformationForNewSample> sampleInformationForNewSamples) {
-
   }
 
   private static List<SampleInformationForNewSample> extractSampleInformationForNewSamples(
