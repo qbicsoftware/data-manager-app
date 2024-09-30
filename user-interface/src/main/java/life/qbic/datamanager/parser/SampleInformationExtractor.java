@@ -26,6 +26,8 @@ public class SampleInformationExtractor {
       ParsingResult parsingResult) {
     var result = new ArrayList<SampleInformationForNewSample>();
     for (int i = 0; i < parsingResult.rows().size(); i++) {
+      var sampleName = parsingResult.getValueOrDefault(i, RegisterColumn.SAMPLE_NAME.headerName(),
+          "");
       var condition = parsingResult.getValueOrDefault(i, RegisterColumn.CONDITION.headerName(), "");
       var species = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIES.headerName(), "");
       var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.headerName(), "");
@@ -33,7 +35,9 @@ public class SampleInformationExtractor {
       var analysisMethod = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYSIS.headerName(),
           "");
       var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.headerName(), "");
-      result.add(new SampleInformationForNewSample(condition,
+      result.add(new SampleInformationForNewSample(
+          sampleName,
+          condition,
           species,
           specimen,
           analyte,
@@ -81,6 +85,7 @@ public class SampleInformationExtractor {
    * @param analysisMethod
    */
   public record SampleInformationForNewSample(
+      String sampleName,
       String condition,
       String species,
       String specimen,

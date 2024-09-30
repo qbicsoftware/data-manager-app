@@ -26,7 +26,8 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResultWithPayload<SampleMetadata> validateNewSample(String condition,
+  public ValidationResultWithPayload<SampleMetadata> validateNewSample(String sampleName,
+      String condition,
       String species,
       String specimen,
       String analyte,
@@ -34,7 +35,8 @@ public class SampleValidationService {
       String comment,
       String experimentId,
       String projectId) {
-    return sampleValidation.validateNewSample(condition, species, specimen, analyte, analysisMethod,
+    return sampleValidation.validateNewSample(sampleName, condition, species, specimen, analyte,
+        analysisMethod,
         comment,
         experimentId, projectId);
   }
@@ -56,6 +58,7 @@ public class SampleValidationService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   @Async
   public CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validateNewSampleAsync(
+      String sampleName,
       String condition,
       String species,
       String specimen,
@@ -65,7 +68,8 @@ public class SampleValidationService {
       String experimentId,
       String projectId) {
     return CompletableFuture.completedFuture(
-        validateNewSample(condition, species, specimen, analyte, analysisMethod, comment,
+        validateNewSample(sampleName, condition, species, specimen, analyte, analysisMethod,
+            comment,
             experimentId, projectId));
   }
 
