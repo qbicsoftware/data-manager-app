@@ -157,8 +157,8 @@ public class MeasurementNGSValidator implements
 
     ValidationResult validateMeasurementCode(String measurementCode) {
       var queryMeasurement = measurementService.findNGSMeasurement(measurementCode);
-      return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
-          ValidationResult.withFailures(1,
+      return queryMeasurement.map(measurement -> ValidationResult.successful()).orElse(
+          ValidationResult.withFailures(
               List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementCode))));
     }
 
@@ -174,23 +174,23 @@ public class MeasurementNGSValidator implements
           sampleIdCodeEntry -> sampleInformationService.findSample(sampleIdCodeEntry.sampleId()));
       if (sampleQuery.isEmpty()) {
         log.error("No sample information found for sample id: " + sampleCode);
-        return ValidationResult.withFailures(1,
+        return ValidationResult.withFailures(
             List.of("No sample information found for sample id: %s".formatted(sampleCode.code())));
       }
       if (experimentIds.contains(sampleQuery.get().experimentId())) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
     }
 
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
       if (sampleCodes.isEmpty()) {
-        return ValidationResult.withFailures(1,
+        return ValidationResult.withFailures(
             List.of("A measurement must contain at least one sample reference. Provided: none"));
       }
       ValidationResult validationResult = ValidationResult.successful(
-          0);
+      );
       for (SampleCode sample : sampleCodes) {
         validationResult = validationResult.combine(validateSampleId(sample));
       }
@@ -200,103 +200,103 @@ public class MeasurementNGSValidator implements
     ValidationResult validateSampleId(SampleCode sampleCode) {
       var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
       if (queriedSampleEntry.isPresent()) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCode.code())));
     }
 
     ValidationResult validateOrganisation(String organisationId) {
       if (Pattern.compile(ROR_ID_REGEX).matcher(organisationId).find()) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
     }
 
     ValidationResult validateInstrument(String instrument) {
       var result = terminologyService.findByCurie(instrument);
       if (result.isPresent()) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
     }
 
     ValidationResult validateMandatoryDataProvided(
         NGSMeasurementMetadata measurementMetadata) {
-      var validation = ValidationResult.successful(0);
+      var validation = ValidationResult.successful();
       if (measurementMetadata.sampleCodes().isEmpty()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Sample id: missing sample id reference")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (measurementMetadata.organisationId().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Organisation: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (measurementMetadata.instrumentCURI().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Instrument: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (measurementMetadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Facility: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (measurementMetadata.sequencingReadType().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Read Type: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       return validation;
     }
 
 
     ValidationResult validateMandatoryDataForUpdate(NGSMeasurementMetadata metadata) {
-      var validation = ValidationResult.successful(1);
+      var validation = ValidationResult.successful();
       if (metadata.measurementIdentifier().isEmpty()) {
-        validation.combine(ValidationResult.withFailures(1,
+        validation.combine(ValidationResult.withFailures(
             List.of("Measurement id: missing measurement id for update")));
       } else {
-        validation.combine(ValidationResult.successful(1));
+        validation.combine(ValidationResult.successful());
       }
       if (metadata.organisationId().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+            ValidationResult.withFailures(List.of("Organisation: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.instrumentCURI().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Instrument: missing mandatory metadata")));
+            ValidationResult.withFailures(List.of("Instrument: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Facility: missing mandatory meta;data")));
+            ValidationResult.withFailures(List.of("Facility: missing mandatory meta;data")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.sequencingReadType().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Read Type: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       return validation;
     }

@@ -179,7 +179,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private MeasurementValidationReport validate(List<? extends MeasurementMetadata> metadata) {
     if (metadata == null || metadata.isEmpty()) {
       return new MeasurementValidationReport(0,
-          ValidationResult.withFailures(0, List.of("The metadata sheet seems to be empty")));
+          ValidationResult.withFailures(List.of("The metadata sheet seems to be empty")));
     }
     if (metadata.get(0) instanceof NGSMeasurementMetadata) {
       return validateNGS((List<NGSMeasurementMetadata>) metadata);
@@ -243,7 +243,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         fileName, Collections.emptyList());
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(
         fileName,
-        new MeasurementValidationReport(1, ValidationResult.withFailures(1, List.of(
+        new MeasurementValidationReport(1, ValidationResult.withFailures(List.of(
             reason))));
     addFile(measurementFileItem, metadataUpload);
   }
@@ -256,7 +256,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private MeasurementValidationReport validateNGS(List<NGSMeasurementMetadata> content) {
-    var validationResult = ValidationResult.successful(0);
+    var validationResult = ValidationResult.successful();
     ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
     List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (NGSMeasurementMetadata metaDatum : content) {
@@ -271,7 +271,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
 
   private MeasurementValidationReport validatePxP(List<ProteomicsMeasurementMetadata> content) {
-    var validationResult = ValidationResult.successful(0);
+    var validationResult = ValidationResult.successful();
     ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
     List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (ProteomicsMeasurementMetadata metaDatum : content) {

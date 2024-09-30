@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * <b><class short description - 1 Line!></b>
