@@ -63,6 +63,7 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -113,6 +114,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final TemplateService templateService;
+  private final SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private Context context;
   private int experimentalGroupCount;
 
@@ -126,7 +128,8 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired TemplateService templateService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      SampleValidationService sampleValidationService) {
+      SampleValidationService sampleValidationService,
+      SampleRegistrationServiceV2 sampleRegistrationServiceV2) {
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
@@ -139,6 +142,7 @@ public class ExperimentDetailsComponent extends PageArea {
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.terminologyService = terminologyService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
+    this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
     this.addClassName("experiment-details-component");
     Button download = new Button("Registration Template");
     download.addClickListener(buttonClickEvent -> {
@@ -176,6 +180,10 @@ public class ExperimentDetailsComponent extends PageArea {
       registerSampleBatchDialog.addCancelListener(event -> event.getSource().close());
       registerSampleBatchDialog.addConfirmListener(event -> {
         System.out.println("event.validatedSampleMetadata() = " + event.validatedSampleMetadata());
+        sampleRegistrationServiceV2.registerSamples(event.validatedSampleMetadata(),
+            context.projectId()
+                .orElseThrow(), "test batch", false);
+        event.getSource().close();
       });
       registerSampleBatchDialog.open();
     });
