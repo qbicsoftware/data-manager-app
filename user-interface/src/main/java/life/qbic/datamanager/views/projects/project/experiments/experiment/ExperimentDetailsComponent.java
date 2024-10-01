@@ -33,7 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -115,7 +114,6 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired DeletionService deletionService,
       @Autowired SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
-      @Autowired TemplateService templateService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
