@@ -134,20 +134,6 @@ public class ExperimentDetailsComponent extends PageArea {
     this.terminologyService = terminologyService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
-    Button download = new Button("Registration Template");
-    download.addClickListener(buttonClickEvent -> {
-      try (XSSFWorkbook workbook = templateService.sampleBatchRegistrationXLSXTemplate(
-          context.projectId().orElseThrow().value(),
-          context.experimentId().orElseThrow().value())) {
-        var downloadProvider = new DownloadProvider(new XLSXDownloadContentProvider(
-            context.projectId().orElseThrow().value() + "_registration_template.xlsx", workbook));
-        add(downloadProvider);
-        downloadProvider.trigger();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
-    this.add(download);
     Button updateTemplate = new Button("Update Template");
     updateTemplate.addClickListener(buttonClickEvent -> {
       try (XSSFWorkbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
