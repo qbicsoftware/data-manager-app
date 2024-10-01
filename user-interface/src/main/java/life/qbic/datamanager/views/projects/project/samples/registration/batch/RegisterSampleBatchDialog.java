@@ -60,20 +60,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     batchNameField.setRequired(true);
     batchNameField.setPlaceholder("Please enter a name for your batch");
     pilotCheck = new Checkbox("this batch is a pilot");
-    Button downloadTemplate = new Button("Download metadata template");
 
-    downloadTemplate.addClickListener(buttonClickEvent -> {
-      try (XSSFWorkbook workbook = templateService.sampleBatchRegistrationXLSXTemplate(
-          projectId,
-          experimentId)) {
-        var downloadProvider = new DownloadProvider(
-            new XLSXDownloadContentProvider(projectId + "_registration_template.xlsx", workbook));
-        add(downloadProvider);
-        downloadProvider.trigger();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    Div downloadMetadataSection = setupDownloadMetadataSection(templateService, experimentId,
+        projectId);
 
     validatedSampleMetadata = new ArrayList<>();
     UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(25 * 1024 * 1024, new FileType[]{
@@ -166,7 +155,38 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           );
     });
 
-    add(batchNameField, pilotCheck, downloadTemplate, uploadWithDisplay);
+    add(batchNameField, pilotCheck, downloadMetadataSection, uploadWithDisplay);
+  }
+
+  private Div setupDownloadMetadataSection(TemplateService templateService, String experimentId,
+      String projectId) {
+    Button downloadTemplate = new Button("Download metadata template");
+    downloadTemplate.addClassName("download-metadata-button");
+    downloadTemplate.addClickListener(buttonClickEvent -> {
+      try (XSSFWorkbook workbook = templateService.sampleBatchRegistrationXLSXTemplate(
+          projectId,
+          experimentId)) {
+        var downloadProvider = new DownloadProvider(
+            new XLSXDownloadContentProvider(projectId + "_registration_template.xlsx", workbook));
+        add(downloadProvider);
+        downloadProvider.trigger();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    Div text = new Div();
+    text.addClassName("download-metadata-text");
+    text.setText(
+        "Please download the metadata template, fill in the sample properties and upload the metadata sheet below to register the sample batch.");
+    Div downloadMetadataSection = new Div();
+    downloadMetadataSection.addClassName("download-metadata");
+    Span sectionTitle = new Span("Download metadata template");
+    sectionTitle.addClassName("download-metadata-section-title");
+    Div sectionContent = new Div();
+    sectionContent.addClassName("download-metadata-section-content");
+    sectionContent.add(text, downloadTemplate);
+    downloadMetadataSection.add(sectionTitle, sectionContent);
+    return downloadMetadataSection;
   }
 
   private static List<SampleInformationForNewSample> extractSampleInformationForNewSamples(

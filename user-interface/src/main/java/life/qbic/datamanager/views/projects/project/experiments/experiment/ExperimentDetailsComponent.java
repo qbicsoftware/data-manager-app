@@ -21,7 +21,6 @@ import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.io.IOException;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,8 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
-import life.qbic.datamanager.download.DownloadProvider;
 import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
@@ -71,7 +68,6 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -134,21 +130,6 @@ public class ExperimentDetailsComponent extends PageArea {
     this.terminologyService = terminologyService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
-    Button updateTemplate = new Button("Update Template");
-    updateTemplate.addClickListener(buttonClickEvent -> {
-      try (XSSFWorkbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
-          context.projectId().orElseThrow().value(),
-          context.experimentId().orElseThrow().value())) {
-        DownloadProvider downloadProvider = new DownloadProvider(new XLSXDownloadContentProvider(
-            context.projectId().orElseThrow().value() + "_update_template.xlsx", workbook));
-        add(downloadProvider);
-        downloadProvider.trigger();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
-    this.add(updateTemplate);
-
     layoutComponent();
     configureComponent();
   }
