@@ -14,15 +14,19 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
+import life.qbic.datamanager.download.DownloadProvider;
 import life.qbic.datamanager.parser.ParsingResult;
 import life.qbic.datamanager.parser.SampleInformationExtractor;
 import life.qbic.datamanager.parser.SampleInformationExtractor.SampleInformationForNewSample;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
+import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
@@ -33,15 +37,8 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-/**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private final List<SampleMetadata> validatedSampleMetadata;
@@ -55,12 +52,28 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
   public RegisterSampleBatchDialog(SampleValidationService sampleValidationService,
-      String experimentId, String projectId) {
+      TemplateService templateService,
+      String experimentId,
+      String projectId) {
     addClassName("register-samples-dialog");
     batchNameField = new TextField("Batch name");
     batchNameField.setRequired(true);
     batchNameField.setPlaceholder("Please enter a name for your batch");
     pilotCheck = new Checkbox("this batch is a pilot");
+    Button downloadTemplate = new Button("Download metadata template");
+
+    downloadTemplate.addClickListener(buttonClickEvent -> {
+      try (XSSFWorkbook workbook = templateService.sampleBatchRegistrationXLSXTemplate(
+          projectId,
+          experimentId)) {
+        var downloadProvider = new DownloadProvider(
+            new XLSXDownloadContentProvider(projectId + "_registration_template.xlsx", workbook));
+        add(downloadProvider);
+        downloadProvider.trigger();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
 
     validatedSampleMetadata = new ArrayList<>();
     UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(25 * 1024 * 1024, new FileType[]{
@@ -73,8 +86,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       UploadWithDisplay component = uploadSucceeded.getSource();
       UI ui = component.getUI().orElseThrow();
       UploadedData uploadedData = component.getUploadedData().orElseThrow();
-      
-      
+
       InProgressDisplay uploadProgressDisplay = new InProgressDisplay(
           component.getUploadedData().get().fileName());
       component.setDisplay(uploadProgressDisplay);
@@ -154,7 +166,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           );
     });
 
-    add(batchNameField, pilotCheck, uploadWithDisplay);
+    add(batchNameField, pilotCheck, downloadTemplate, uploadWithDisplay);
   }
 
   private static List<SampleInformationForNewSample> extractSampleInformationForNewSamples(
@@ -285,6 +297,14 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
     public List<SampleMetadata> validatedSampleMetadata() {
       return Collections.unmodifiableList(validatedSampleMetadata);
+    }
+
+    public String batchName() {
+      return batchName;
+    }
+
+    public boolean isPilot() {
+      return pilot;
     }
   }
 

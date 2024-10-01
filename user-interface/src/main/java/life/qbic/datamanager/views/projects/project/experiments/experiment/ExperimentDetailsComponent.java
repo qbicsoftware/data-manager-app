@@ -30,7 +30,6 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,15 +55,12 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.updat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
-import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -113,8 +109,6 @@ public class ExperimentDetailsComponent extends PageArea {
   private final TerminologyService terminologyService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final TemplateService templateService;
-  private final SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private Context context;
   private int experimentalGroupCount;
 
@@ -127,13 +121,10 @@ public class ExperimentDetailsComponent extends PageArea {
       TerminologyService terminologyService,
       @Autowired TemplateService templateService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      SampleValidationService sampleValidationService,
-      SampleRegistrationServiceV2 sampleRegistrationServiceV2) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
-    this.templateService = Objects.requireNonNull(templateService);
     this.sampleInformationService = sampleInformationService;
     this.deletionService = requireNonNull(deletionService);
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService);
@@ -142,7 +133,6 @@ public class ExperimentDetailsComponent extends PageArea {
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
     this.terminologyService = terminologyService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
-    this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
     this.addClassName("experiment-details-component");
     Button download = new Button("Registration Template");
     download.addClickListener(buttonClickEvent -> {
@@ -172,22 +162,7 @@ public class ExperimentDetailsComponent extends PageArea {
       }
     });
     this.add(updateTemplate);
-    Button registerDialogBtn = new Button("Register Dialog");
-    registerDialogBtn.addClickListener(buttonClickEvent -> {
-      RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
-          sampleValidationService, context.experimentId().map(ExperimentId::value).orElseThrow(),
-          context.projectId().map(ProjectId::value).orElseThrow());
-      registerSampleBatchDialog.addCancelListener(event -> event.getSource().close());
-      registerSampleBatchDialog.addConfirmListener(event -> {
-        System.out.println("event.validatedSampleMetadata() = " + event.validatedSampleMetadata());
-        sampleRegistrationServiceV2.registerSamples(event.validatedSampleMetadata(),
-            context.projectId()
-                .orElseThrow(), "test batch", false);
-        event.getSource().close();
-      });
-      registerSampleBatchDialog.open();
-    });
-    this.add(registerDialogBtn);
+
     layoutComponent();
     configureComponent();
   }
