@@ -243,9 +243,16 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
                   .orElseThrow(), event.batchName(), event.isPilot())
           .orTimeout(5, TimeUnit.MINUTES);
       registrationTask
-          .thenRun(() -> ui.access(() -> event.getSource().close()))
-          .exceptionally(e -> null /*TODO show failed*/);
-      event.getSource().close();
+          .thenRun(() -> ui.access(() -> {
+            event.getSource().taskSucceeded("", ""); //todo label and description
+          }))
+          .exceptionally(e -> {
+            ui.access(() -> {
+              event.getSource().taskFailed("", ""); //todo label and description s
+            });
+            return null;
+          });
+//      event.getSource().close();
     });
     registerSampleBatchDialog.addCancelListener(
         event -> showCancelConfirmationDialog(event.getSource()));

@@ -45,6 +45,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private final TextField batchNameField;
   private final Checkbox pilotCheck;
   private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
+  private final Div initialView;
+  private final Div inProgressView;
+  private final Div failedView;
+  private final Div succeededView;
 
   private void setValidatedSampleMetadata(List<SampleMetadata> validatedSampleMetadata) {
     this.validatedSampleMetadata.clear();
@@ -55,6 +59,12 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       TemplateService templateService,
       String experimentId,
       String projectId) {
+
+    initialView = new Div();
+    inProgressView = new Div();
+    failedView = new Div();
+    succeededView = new Div();
+
     addClassName("register-samples-dialog");
     batchNameField = new TextField("Batch name");
     batchNameField.setRequired(true);
@@ -155,7 +165,12 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           );
     });
 
-    add(batchNameField, pilotCheck, downloadMetadataSection, uploadWithDisplay);
+    initialView.add(batchNameField, pilotCheck, downloadMetadataSection, uploadWithDisplay);
+    initialView.setVisible(true);
+    inProgressView.setVisible(false);
+    failedView.setVisible(false);
+    succeededView.setVisible(false);
+    add(initialView, inProgressView, failedView, succeededView);
   }
 
   private Div setupDownloadMetadataSection(TemplateService templateService, String experimentId,
@@ -209,17 +224,41 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   public void taskFailed(String label, String description) {
+    failedView.removeAll();
+    failedView.add(new Span("Sample registration failed."));
+    failedView.setVisible(true);
+    setConfirmButtonLabel("Register Again");
+    showFailed();
 
+    initialView.setVisible(false);
+    inProgressView.setVisible(false);
+    succeededView.setVisible(false);
   }
 
   @Override
   public void taskSucceeded(String label, String description) {
+    succeededView.removeAll();
+    succeededView.add(new Span("Successfully registered samples!"));
+    succeededView.setVisible(true);
+    showSucceeded();
 
+    initialView.setVisible(false);
+    inProgressView.setVisible(false);
+    failedView.setVisible(false);
   }
 
   @Override
   public void taskInProgress(String label, String description) {
+    inProgressView.removeAll();
+    ProgressBar progressBar = new ProgressBar();
+    progressBar.setIndeterminate(true);
+    inProgressView.add(new Span("Sample registration in progress"), progressBar);
+    inProgressView.setVisible(true);
+    showInProgress();
 
+    initialView.setVisible(false);
+    failedView.setVisible(false);
+    succeededView.setVisible(false);
   }
 
   static class InvalidUploadDisplay extends Div {
