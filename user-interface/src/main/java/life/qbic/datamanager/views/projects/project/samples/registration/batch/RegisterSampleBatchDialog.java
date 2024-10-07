@@ -315,7 +315,16 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), pilotCheck.getValue(),
+    if (batchNameField.isInvalid()) {
+      // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
+      return;
+    }
+    if (batchNameField.isEmpty()) {
+      // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
+      batchNameField.setInvalid(true);
+      return;
+    }
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
         batchNameField.getValue(), validatedSampleMetadata));
   }
 
