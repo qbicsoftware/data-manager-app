@@ -60,7 +60,6 @@ public class SampleRegistrationServiceV2 {
     } catch (Exception e) {
       rollbackSampleRegistration(batchId);
     }
-    throw new UnsupportedOperationException("Not implemented yet");
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
