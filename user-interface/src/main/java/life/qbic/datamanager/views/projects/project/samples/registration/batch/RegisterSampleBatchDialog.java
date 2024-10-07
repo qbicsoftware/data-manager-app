@@ -7,7 +7,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -43,7 +42,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private final List<SampleMetadata> validatedSampleMetadata;
   private final TextField batchNameField;
-  private final Checkbox pilotCheck;
   private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
   private final Div initialView;
   private final Div inProgressView;
@@ -69,7 +67,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     batchNameField = new TextField("Batch name");
     batchNameField.setRequired(true);
     batchNameField.setPlaceholder("Please enter a name for your batch");
-    pilotCheck = new Checkbox("this batch is a pilot");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(templateService, experimentId,
         projectId);
@@ -165,7 +162,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           );
     });
 
-    initialView.add(batchNameField, pilotCheck, downloadMetadataSection, uploadWithDisplay);
+    initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);
@@ -329,7 +326,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<RegisterSampleBatchDialog> {
 
-    private final boolean pilot;
     private final String batchName;
     private final List<SampleMetadata> validatedSampleMetadata;
 
@@ -341,15 +337,13 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param pilot
      * @param batchName
      * @param validatedSampleMetadata
      */
-    public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient, boolean pilot,
+    public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient,
         String batchName,
         List<SampleMetadata> validatedSampleMetadata) {
       super(source, fromClient);
-      this.pilot = pilot;
       this.batchName = batchName;
       this.validatedSampleMetadata = validatedSampleMetadata;
     }
@@ -360,10 +354,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
     public String batchName() {
       return batchName;
-    }
-
-    public boolean isPilot() {
-      return pilot;
     }
   }
 

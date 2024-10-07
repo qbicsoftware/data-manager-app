@@ -240,7 +240,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
               event.validatedSampleMetadata(),
               context.projectId()
-                  .orElseThrow(), event.batchName(), event.isPilot())
+                  .orElseThrow(), event.batchName(), false)
           .orTimeout(5, TimeUnit.MINUTES);
       registrationTask
           .thenRun(() -> ui.access(() -> {
