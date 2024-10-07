@@ -59,6 +59,7 @@ public class SampleRegistrationServiceV2 {
       registerSamples(sampleMetadata, batchId, projectId);
     } catch (Exception e) {
       rollbackSampleRegistration(batchId);
+      throw new RegistrationException("Sample batch registration failed");
     }
     return CompletableFuture.completedFuture(null);
   }
