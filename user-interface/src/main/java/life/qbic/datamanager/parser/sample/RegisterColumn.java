@@ -12,18 +12,19 @@ import java.util.Arrays;
  */
 public enum RegisterColumn {
 
-  ANALYSIS("Analysis to be performed", 0, false),
-  SAMPLE_NAME("Sample Name", 1, false),
-  BIOLOGICAL_REPLICATE("Biological Replicate", 2, false),
-  CONDITION("Condition", 3, false),
-  SPECIES("Species", 4, false),
-  ANALYTE("Analyte", 5, false),
-  SPECIMEN("Specimen", 6, false),
-  COMMENT("Comment", 7, false);
+  ANALYSIS("Analysis to be performed", 0, false, true),
+  SAMPLE_NAME("Sample Name", 1, false, true),
+  BIOLOGICAL_REPLICATE("Biological Replicate", 2, false, false),
+  CONDITION("Condition", 3, false, true),
+  SPECIES("Species", 4, false, true),
+  ANALYTE("Analyte", 5, false, true),
+  SPECIMEN("Specimen", 6, false, true),
+  COMMENT("Comment", 7, false, false);
 
   private final String headerName;
   private final int columnIndex;
   private final boolean readOnly;
+  private final boolean mandatory;
 
   public static int maxColumnIndex() {
     return Arrays.stream(values())
@@ -35,11 +36,13 @@ public enum RegisterColumn {
    * @param headerName  the name in the header
    * @param columnIndex the index of the column this property is in
    * @param readOnly    is the property read only
+   * @param mandatory
    */
-  RegisterColumn(String headerName, int columnIndex, boolean readOnly) {
+  RegisterColumn(String headerName, int columnIndex, boolean readOnly, boolean mandatory) {
     this.headerName = headerName;
     this.columnIndex = columnIndex;
     this.readOnly = readOnly;
+    this.mandatory = mandatory;
   }
 
   public String headerName() {
@@ -50,8 +53,11 @@ public enum RegisterColumn {
     return columnIndex;
   }
 
-  public boolean readOnly() {
+  public boolean isReadOnly() {
     return readOnly;
   }
 
+  public boolean isMandatory() {
+    return mandatory;
+  }
 }
