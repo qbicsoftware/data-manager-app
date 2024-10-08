@@ -11,19 +11,20 @@ import java.util.Arrays;
  * </p>
  */
 public enum EditColumn {
-  SAMPLE_ID("QBiC Sample Id", 0, true),
-  ANALYSIS("Analysis to be performed", 1, false),
-  SAMPLE_NAME("Sample Name", 2, false),
-  BIOLOGICAL_REPLICATE("Biological Replicate", 3, false),
-  CONDITION("Condition", 4, false),
-  SPECIES("Species", 5, false),
-  ANALYTE("Analyte", 6, false),
-  SPECIMEN("Specimen", 7, false),
-  COMMENT("Comment", 8, false);
+  SAMPLE_ID("QBiC Sample Id", 0, true, true),
+  ANALYSIS("Analysis to be performed", 1, false, true),
+  SAMPLE_NAME("Sample Name", 2, false, true),
+  BIOLOGICAL_REPLICATE("Biological Replicate", 3, false, false),
+  CONDITION("Condition", 4, false, true),
+  SPECIES("Species", 5, false, true),
+  ANALYTE("Analyte", 6, false, true),
+  SPECIMEN("Specimen", 7, false, true),
+  COMMENT("Comment", 8, false, false);
 
   private final String headerName;
   private final int columnIndex;
   private final boolean readOnly;
+  private final boolean mandatory;
 
   public static int maxColumnIndex() {
     return Arrays.stream(values())
@@ -35,11 +36,13 @@ public enum EditColumn {
    * @param headerName  the name in the header
    * @param columnIndex the index of the column this property is in
    * @param readOnly    is the property read only
+   * @param mandatory
    */
-  EditColumn(String headerName, int columnIndex, boolean readOnly) {
+  EditColumn(String headerName, int columnIndex, boolean readOnly, boolean mandatory) {
     this.headerName = headerName;
     this.columnIndex = columnIndex;
     this.readOnly = readOnly;
+    this.mandatory = mandatory;
   }
 
   public String headerName() {
@@ -50,8 +53,12 @@ public enum EditColumn {
     return columnIndex;
   }
 
-  public boolean readOnly() {
+  public boolean isReadOnly() {
     return readOnly;
+  }
+
+  public boolean isMandatory() {
+    return mandatory;
   }
 
 }

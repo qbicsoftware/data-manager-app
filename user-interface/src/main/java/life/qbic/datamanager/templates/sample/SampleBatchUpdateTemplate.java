@@ -63,9 +63,13 @@ public class SampleBatchUpdateTemplate {
     Row header = getOrCreateRow(sheet, 0);
     for (EditColumn column : EditColumn.values()) {
       var cell = XLSXTemplateHelper.getOrCreateCell(header, column.columnIndex());
-      cell.setCellValue(column.headerName());
+      if (column.isMandatory()) {
+        cell.setCellValue(column.headerName() + "*");
+      } else {
+        cell.setCellValue(column.headerName());
+      }
       cell.setCellStyle(boldCellStyle);
-      if (column.readOnly()) {
+      if (column.isReadOnly()) {
         cell.setCellStyle(readOnlyHeaderStyle);
       }
     }
@@ -142,7 +146,7 @@ public class SampleBatchUpdateTemplate {
       };
       var cell = getOrCreateCell(row, column.columnIndex());
       cell.setCellValue(value);
-      if (column.readOnly()) {
+      if (column.isReadOnly()) {
         cell.setCellStyle(readOnlyCellStyle);
       }
     }
