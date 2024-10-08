@@ -29,6 +29,7 @@ import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
+import life.qbic.datamanager.views.general.upload.UploadWithDisplay.SucceededEvent;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.UploadedData;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -47,6 +48,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private final Div inProgressView;
   private final Div failedView;
   private final Div succeededView;
+  private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
 
   private void setValidatedSampleMetadata(List<SampleMetadata> validatedSampleMetadata) {
     this.validatedSampleMetadata.clear();
@@ -72,7 +74,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         projectId);
 
     validatedSampleMetadata = new ArrayList<>();
-    UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(25 * 1024 * 1024, new FileType[]{
+    UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(MAX_FILE_SIZE, new FileType[]{
         new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     });
     uploadWithDisplay.addFailureListener(
