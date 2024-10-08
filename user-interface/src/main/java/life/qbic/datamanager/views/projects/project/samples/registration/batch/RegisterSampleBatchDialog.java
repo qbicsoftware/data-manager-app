@@ -79,90 +79,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     });
     uploadWithDisplay.addFailureListener(
         uploadFailed -> {/* display of the error is handled by the uploadWithDisplay component. So nothing to do here.*/});
-
-    uploadWithDisplay.addSuccessListener(uploadSucceeded -> {
-      UploadWithDisplay component = uploadSucceeded.getSource();
-      UI ui = component.getUI().orElseThrow();
-      UploadedData uploadedData = component.getUploadedData().orElseThrow();
-
-      InProgressDisplay uploadProgressDisplay = new InProgressDisplay(
-          component.getUploadedData().get().fileName());
-      component.setDisplay(uploadProgressDisplay);
-
-      List<SampleInformationForNewSample> sampleInformationForNewSamples = extractSampleInformationForNewSamples(
-          uploadedData);
-
-      List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
-      for (SampleInformationForNewSample sampleInformationForNewSample : sampleInformationForNewSamples) {
-        CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validation = sampleValidationService.validateNewSampleAsync(
-            sampleInformationForNewSample.sampleName(),
-            sampleInformationForNewSample.condition(),
-            sampleInformationForNewSample.species(),
-            sampleInformationForNewSample.specimen(),
-            sampleInformationForNewSample.analyte(),
-            sampleInformationForNewSample.analysisMethod(),
-            sampleInformationForNewSample.comment(),
-            experimentId,
-            projectId
-        ).orTimeout(1, TimeUnit.MINUTES);
-        validations.add(validation);
-      }
-      CompletableFuture<Void> validationTasks = CompletableFuture
-          //allOf makes sure exceptional state is transferred to outer completable future.
-          .allOf(validations.toArray(new CompletableFuture[0]))
-          .orTimeout(5, TimeUnit.MINUTES);
-
-      validationTasks
-          .thenAccept(ignored -> {
-            if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
-              throw new IllegalStateException(
-                  "validation task still in execution although expected to be done");
-            }
-            ValidationResultWithPayload<SampleMetadata> valueIfAbsent = new ValidationResultWithPayload<>(
-                ValidationResult.withFailures(
-                    List.of("Validation could not complete normally.")),
-                new SampleMetadata("", "", null, "", "", "", 0, null, null, null,
-                    "")); //not expected to occur
-
-            List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
-                .filter(result ->
-                    result.isDone() && !result.isCancelled() && !result.isCompletedExceptionally())
-                .map(future -> future.getNow(valueIfAbsent))
-                .toList();
-            List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
-                .filter(validation -> validation.validationResult().containsFailures())
-                .toList();
-            List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
-                .filter(validation -> validation.validationResult().allPassed())
-                .toList();
-
-            if (!failedValidations.isEmpty()) {
-              ui.access(() -> component.setDisplay(invalidDisplay(
-                  failedValidations.stream().map(ValidationResultWithPayload::validationResult)
-                      .toList())));
-              setValidatedSampleMetadata(List.of());
-              return;
-            }
-            if (!succeededValidations.isEmpty()) {
-              ui.access(() -> component
-                  .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
-                      succeededValidations.size())));
-              setValidatedSampleMetadata(
-                  succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
-            }
-          })
-          .exceptionally(e -> {
-                RuntimeException runtimeException = new RuntimeException(
-                    "At least one validation task could not complete.", e);
-            log.error("Could not complete validation. Please try again.", runtimeException);
-            InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(List.of(
-                ValidationResult.withFailures(
-                    List.of("Could not complete validation. Please try again."))));
-            ui.access(() -> component.setDisplay(invalidUploadDisplay));
-                throw runtimeException;
-              }
-          );
-    });
+    uploadWithDisplay.addSuccessListener(
+        uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
+            uploadSucceeded));
 
     initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
     initialView.setVisible(true);
@@ -170,6 +89,93 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     failedView.setVisible(false);
     succeededView.setVisible(false);
     add(initialView, inProgressView, failedView, succeededView);
+  }
+
+  private void onUploadSucceeded(SampleValidationService sampleValidationService,
+      String experimentId,
+      String projectId,
+      SucceededEvent uploadSucceeded) {
+    UploadWithDisplay component = uploadSucceeded.getSource();
+    UI ui = component.getUI().orElseThrow();
+    UploadedData uploadedData = component.getUploadedData().orElseThrow();
+
+    InProgressDisplay uploadProgressDisplay = new InProgressDisplay(
+        component.getUploadedData().get().fileName());
+    component.setDisplay(uploadProgressDisplay);
+
+    List<SampleInformationForNewSample> sampleInformationForNewSamples = extractSampleInformationForNewSamples(
+        uploadedData);
+
+    List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
+    for (SampleInformationForNewSample sampleInformationForNewSample : sampleInformationForNewSamples) {
+      CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validation = sampleValidationService.validateNewSampleAsync(
+          sampleInformationForNewSample.sampleName(),
+          sampleInformationForNewSample.condition(),
+          sampleInformationForNewSample.species(),
+          sampleInformationForNewSample.specimen(),
+          sampleInformationForNewSample.analyte(),
+          sampleInformationForNewSample.analysisMethod(),
+          sampleInformationForNewSample.comment(),
+          experimentId,
+          projectId
+      ).orTimeout(1, TimeUnit.MINUTES);
+      validations.add(validation);
+    }
+    CompletableFuture<Void> validationTasks = CompletableFuture
+        //allOf makes sure exceptional state is transferred to outer completable future.
+        .allOf(validations.toArray(new CompletableFuture[0]))
+        .orTimeout(5, TimeUnit.MINUTES);
+
+    validationTasks
+        .thenAccept(ignored -> {
+          if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
+            throw new IllegalStateException(
+                "validation task still in execution although expected to be done");
+          }
+          ValidationResultWithPayload<SampleMetadata> valueIfAbsent = new ValidationResultWithPayload<>(
+              ValidationResult.withFailures(
+                  List.of("Validation could not complete normally.")),
+              new SampleMetadata("", "", null, "", "", "", 0, null, null, null,
+                  "")); //not expected to occur
+
+          List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
+              .filter(result ->
+                  result.isDone() && !result.isCancelled() && !result.isCompletedExceptionally())
+              .map(future -> future.getNow(valueIfAbsent))
+              .toList();
+          List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
+              .filter(validation -> validation.validationResult().containsFailures())
+              .toList();
+          List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
+              .filter(validation -> validation.validationResult().allPassed())
+              .toList();
+
+          if (!failedValidations.isEmpty()) {
+            ui.access(() -> component.setDisplay(invalidDisplay(
+                failedValidations.stream().map(ValidationResultWithPayload::validationResult)
+                    .toList())));
+            setValidatedSampleMetadata(List.of());
+            return;
+          }
+          if (!succeededValidations.isEmpty()) {
+            ui.access(() -> component
+                .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
+                    succeededValidations.size())));
+            setValidatedSampleMetadata(
+                succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
+          }
+        })
+        .exceptionally(e -> {
+              RuntimeException runtimeException = new RuntimeException(
+                  "At least one validation task could not complete.", e);
+              log.error("Could not complete validation. Please try again.", runtimeException);
+              InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(List.of(
+                  ValidationResult.withFailures(
+                      List.of("Could not complete validation. Please try again."))));
+              ui.access(() -> component.setDisplay(invalidUploadDisplay));
+              throw runtimeException;
+            }
+        );
   }
 
   private Div setupDownloadMetadataSection(TemplateService templateService, String experimentId,
