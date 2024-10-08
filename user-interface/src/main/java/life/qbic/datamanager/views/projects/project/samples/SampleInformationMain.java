@@ -39,7 +39,6 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet;
@@ -222,6 +221,13 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     metadataDownload.trigger();
   }
 
+  private static class HandledException extends RuntimeException {
+
+    public HandledException(Throwable cause) {
+      super(cause);
+    }
+  }
+
   private void onRegisterBatchClicked() {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId experimentId = context.experimentId().orElseThrow();
@@ -245,16 +251,27 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
               event.validatedSampleMetadata(),
               projectId, event.batchName(), false)
           .orTimeout(5, TimeUnit.MINUTES);
-      registrationTask
-          .thenRun(() -> ui.access(() -> {
-            event.getSource().taskSucceeded("", ""); //todo label and description
-          }))
-          .exceptionally(e -> {
-            ui.access(() -> {
-              event.getSource().taskFailed("", ""); //todo label and description s
+      try {
+        registrationTask
+            .exceptionally(e -> {
+              ui.access(() -> {
+                //this needs to come before all the success events
+                event.getSource().taskFailed("", ""); //todo label and description s
+                displayRegistrationFailure();
+              });
+              throw new HandledException(e);
+            })
+            .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
+            .thenRun(() -> ui.access(() -> event.getSource().taskSucceeded("", "")))
+            .thenRun(() -> displayRegistrationSuccess(event.batchName()))
+            .exceptionally(e -> {
+              //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
+              throw new HandledException(e); //we need the future to complete exceptionally
             });
-            return null;
-          });
+      } catch (HandledException e) {
+        // we only log the exception as the user was presented with the error already and nothing we can do here.
+        log.error(e.getMessage(), e);
+      }
     });
     registerSampleBatchDialog.addCancelListener(
         event -> showCancelConfirmationDialog(event.getSource()));
@@ -269,24 +286,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .open();
   }
 
-  private void registerBatch(ConfirmEvent confirmEvent) {
-    String batchLabel = confirmEvent.getData().batchName();
-    List<SampleInfo> samples = confirmEvent.getData().samples();
-    List<SampleRegistrationRequest> sampleRegistrationRequests = batchRegistrationService.registerBatch(
-            batchLabel, false,
-            context.projectId().orElseThrow())
-        .map(batchId -> generateSampleRequestsFromSampleInfo(batchId, samples))
-        .onError(responseCode -> displayRegistrationFailure())
-        .valueOrElseThrow(() ->
-            new ApplicationException("Could not create sample registration requests"));
-    sampleRegistrationService.registerSamples(sampleRegistrationRequests,
-            context.projectId().orElseThrow())
-        .onError(responseCode -> displayRegistrationFailure())
-        .onValue(ignored -> fireEvent(new BatchRegisteredEvent(this, false)))
-        .onValue(ignored -> confirmEvent.getSource().close())
-        .onValue(batchId -> displayRegistrationSuccess(batchLabel))
-        .onValue(ignored -> setBatchAndSampleInformation());
-  }
 
   private List<SampleRegistrationRequest> generateSampleRequestsFromSampleInfo(BatchId batchId,
       List<SampleInfo> sampleInfos) {
