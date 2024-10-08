@@ -48,6 +48,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
@@ -222,25 +223,27 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void onRegisterBatchClicked() {
-    Experiment experiment = context.experimentId()
-        .flatMap(
-            id -> experimentInformationService.find(context.projectId().orElseThrow().value(), id))
+    ProjectId projectId = context.projectId().orElseThrow();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+
+    Experiment experiment = experimentInformationService.find(projectId.value(), experimentId)
         .orElseThrow();
+
     if (experiment.getExperimentalGroups().isEmpty()) {
       return;
     }
+    ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
+        .orElseThrow();
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
-        sampleValidationService, templateService,
-        context.experimentId().map(ExperimentId::value).orElseThrow(),
-        context.projectId().map(ProjectId::value).orElseThrow());
+        sampleValidationService, templateService, experimentId.value(),
+        projectId.value(), projectOverview.projectCode());
     registerSampleBatchDialog.addConfirmListener(event -> {
       event.getSource().taskInProgress("Register the sample batch metadata",
           "It may take about a minute for the registration task to complete.");
       UI ui = event.getSource().getUI().orElseThrow();
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
               event.validatedSampleMetadata(),
-              context.projectId()
-                  .orElseThrow(), event.batchName(), false)
+              projectId, event.batchName(), false)
           .orTimeout(5, TimeUnit.MINUTES);
       registrationTask
           .thenRun(() -> ui.access(() -> {
@@ -252,7 +255,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
             });
             return null;
           });
-//      event.getSource().close();
     });
     registerSampleBatchDialog.addCancelListener(
         event -> showCancelConfirmationDialog(event.getSource()));

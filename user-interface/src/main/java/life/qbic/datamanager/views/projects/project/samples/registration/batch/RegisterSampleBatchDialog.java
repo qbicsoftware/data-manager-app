@@ -58,7 +58,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   public RegisterSampleBatchDialog(SampleValidationService sampleValidationService,
       TemplateService templateService,
       String experimentId,
-      String projectId) {
+      String projectId,
+      String projectCode) {
 
     initialView = new Div();
     inProgressView = new Div();
@@ -71,7 +72,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     batchNameField.setPlaceholder("Please enter a name for your batch");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(templateService, experimentId,
-        projectId);
+        projectId, projectCode);
 
     validatedSampleMetadata = new ArrayList<>();
     UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(MAX_FILE_SIZE, new FileType[]{
@@ -178,7 +179,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
   private Div setupDownloadMetadataSection(TemplateService templateService, String experimentId,
-      String projectId) {
+      String projectId, String projectCode) {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(buttonClickEvent -> {
@@ -186,7 +187,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           projectId,
           experimentId)) {
         var downloadProvider = new DownloadProvider(
-            new XLSXDownloadContentProvider(projectId + "_registration_template.xlsx", workbook));
+            new XLSXDownloadContentProvider(projectCode + "_registration_template.xlsx", workbook));
         add(downloadProvider);
         downloadProvider.trigger();
       } catch (IOException e) {
