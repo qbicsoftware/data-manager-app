@@ -60,16 +60,13 @@ public class SampleRegistrationServiceV2 {
       throw new RegistrationException("Batch registration failed");
     }
     var batchId = result.getValue();
-    List<Sample> registeredSamples;
     try {
-      registeredSamples = registerSamples(sampleMetadata, batchId, projectId);
-      for (Sample registeredSample : registeredSamples) {
-        batchRegistrationService.addSampleToBatch(registeredSample.sampleId(), batchId);
-      }
+      var sampleIds = registerSamples(sampleMetadata, batchId, projectId);
+      batchRegistrationService.addSamplesToBatch(sampleIds, batchId, projectId);
     } catch (RuntimeException e) {
-      List<SampleId> sampleIds = sampleMetadata.stream().map(SampleMetadata::sampleId)
-          .map(SampleId::parse).toList();
-      deletionService.deleteSamples(projectId, batchId, sampleIds);
+      rollbackSampleRegistration(batchId);
+      deletionService.deleteSamples(projectId, batchId,
+          sampleMetadata.stream().map(SampleMetadata::sampleId).map(SampleId::parse).toList());
       deletionService.deleteBatch(projectId, batchId);
       throw e;
     }
@@ -79,14 +76,16 @@ public class SampleRegistrationServiceV2 {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
   public CompletableFuture<Void> updateSamples(
-      Collection<SampleMetadata> sampleRegistrationRequests, ProjectId projectId) throws RegistrationException {
+      Collection<SampleMetadata> sampleRegistrationRequests, ProjectId projectId)
+      throws RegistrationException {
     var samples = fetchSamples(
         sampleRegistrationRequests.stream().map(SampleMetadata::sampleCode).map(SampleCode::create)
             .toList());
-    var sampleBySampleCode = samples.stream().collect(Collectors.toMap(sample -> sample.sampleCode().code(), Function.identity()));
+    var sampleBySampleCode = samples.stream()
+        .collect(Collectors.toMap(sample -> sample.sampleCode().code(), Function.identity()));
     var updatedSamples = updateSamples(sampleBySampleCode, sampleRegistrationRequests);
     sampleRepository.updateAll(projectId, updatedSamples);
-    return CompletableFuture.completedFuture( null);
+    return CompletableFuture.completedFuture(null);
   }
 
   private List<Sample> updateSamples(Map<String, Sample> samples,
@@ -95,7 +94,8 @@ public class SampleRegistrationServiceV2 {
     for (SampleMetadata sampleMetadata : sampleRegistrationRequests) {
       var sampleForUpdate = samples.get(sampleMetadata.sampleCode());
       sampleForUpdate.setLabel(sampleMetadata.sampleName());
-      var sampleOrigin = SampleOrigin.create(sampleMetadata.species(), sampleMetadata.specimen(), sampleMetadata.analyte());
+      var sampleOrigin = SampleOrigin.create(sampleMetadata.species(), sampleMetadata.specimen(),
+          sampleMetadata.analyte());
       sampleForUpdate.setSampleOrigin(sampleOrigin);
       sampleForUpdate.setExperimentalGroupId(sampleMetadata.experimentalGroupId());
       sampleForUpdate.setAnalysisMethod(sampleMetadata.analysisToBePerformed());
@@ -118,7 +118,8 @@ public class SampleRegistrationServiceV2 {
     return sampleQuery.get();
   }
 
-  private List<Sample> registerSamples(Collection<SampleMetadata> sampleMetadata, BatchId batchId,
+  private Collection<SampleId> registerSamples(Collection<SampleMetadata> sampleMetadata,
+      BatchId batchId,
       ProjectId projectId)
       throws RegistrationException {
     var samplesToRegister = new ArrayList<Sample>();
@@ -128,7 +129,7 @@ public class SampleRegistrationServiceV2 {
     }
     return sampleRepository.addAll(projectId, samplesToRegister)
         .valueOrElseThrow(e -> new RegistrationException("Could not register samples: " + e.name()))
-        .stream()
+        .stream().map(Sample::sampleId)
         .toList();
   }
 
@@ -146,6 +147,10 @@ public class SampleRegistrationServiceV2 {
       codes.add(sampleCodeService.generateFor(projectId).getValue());
     }
     return codes;
+  }
+
+  private void rollbackSampleRegistration(BatchId batchId) {
+    batchRegistrationService.deleteBatch(batchId);
   }
 
   public static class RegistrationException extends RuntimeException {
