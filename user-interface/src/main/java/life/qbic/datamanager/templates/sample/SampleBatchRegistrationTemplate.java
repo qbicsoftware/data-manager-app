@@ -70,9 +70,14 @@ public class SampleBatchRegistrationTemplate {
     Row header = getOrCreateRow(sheet, 0);
     for (RegisterColumn column : RegisterColumn.values()) {
       var cell = XLSXTemplateHelper.getOrCreateCell(header, column.columnIndex());
-      cell.setCellValue(column.headerName());
+
       cell.setCellStyle(boldCellStyle);
-      if (column.readOnly()) {
+      if (column.isMandatory()) {
+        cell.setCellValue(column.headerName() + "*");
+      } else {
+        cell.setCellValue(column.headerName());
+      }
+      if (column.isReadOnly()) {
         cell.setCellStyle(readOnlyHeaderStyle);
       }
     }

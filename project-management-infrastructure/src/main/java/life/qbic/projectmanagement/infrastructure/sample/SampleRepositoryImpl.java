@@ -65,21 +65,22 @@ public class SampleRepositoryImpl implements SampleRepository {
       Collection<Sample> samples) {
     String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(
         samples.stream().map(Sample::sampleId).toList());
+    List<Sample> savedSamples;
     try {
-      this.qbicSampleRepository.saveAll(samples);
+      savedSamples = this.qbicSampleRepository.saveAll(samples);
     } catch (Exception e) {
       log.error("The samples:" + commaSeperatedSampleIds + "could not be saved", e);
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
     try {
-      sampleDataRepo.addSamplesToProject(project, samples.stream().toList());
+      sampleDataRepo.addSamplesToProject(project, savedSamples);
     } catch (Exception e) {
       log.error("The samples:" + commaSeperatedSampleIds + "could not be stored in openBIS", e);
       log.error("Removing samples from repository, as well.");
-      qbicSampleRepository.deleteAll(samples);
+      qbicSampleRepository.deleteAll(savedSamples);
       return Result.fromError(ResponseCode.REGISTRATION_FAILED);
     }
-    return Result.fromValue(samples);
+    return Result.fromValue(savedSamples);
   }
 
   @Override
@@ -113,7 +114,7 @@ public class SampleRepositoryImpl implements SampleRepository {
 
   @Override
   public boolean isSampleRemovable(SampleId sampleId) {
-    SampleCode sampleCode = qbicSampleRepository.findById(sampleId).get().sampleCode();
+    SampleCode sampleCode = qbicSampleRepository.findById(sampleId).orElseThrow().sampleCode();
     return sampleDataRepo.canDeleteSample(sampleCode);
   }
 
@@ -147,6 +148,7 @@ public class SampleRepositoryImpl implements SampleRepository {
     sampleDataRepo.updateAll(project, updatedSamples);
   }
 
+  @Transactional
   @Override
   public void updateAll(ProjectId projectId, Collection<Sample> updatedSamples) {
     var projectQuery = projectRepository.find(projectId);

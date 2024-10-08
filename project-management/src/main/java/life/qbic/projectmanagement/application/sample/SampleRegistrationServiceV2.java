@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -37,13 +38,16 @@ public class SampleRegistrationServiceV2 {
   private final BatchRegistrationService batchRegistrationService;
   private final SampleRepository sampleRepository;
   private final SampleCodeService sampleCodeService;
+  private final DeletionService deletionService;
 
   @Autowired
   public SampleRegistrationServiceV2(BatchRegistrationService batchRegistrationService,
-      SampleRepository sampleRepository, SampleCodeService sampleCodeService) {
+      SampleRepository sampleRepository, SampleCodeService sampleCodeService,
+      DeletionService deletionService) {
     this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService);
     this.sampleRepository = Objects.requireNonNull(sampleRepository);
     this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
+    this.deletionService = Objects.requireNonNull(deletionService);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -59,9 +63,12 @@ public class SampleRegistrationServiceV2 {
     try {
       var sampleIds = registerSamples(sampleMetadata, batchId, projectId);
       batchRegistrationService.addSamplesToBatch(sampleIds, batchId, projectId);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       rollbackSampleRegistration(batchId);
-      throw new RegistrationException("Sample batch registration failed");
+      deletionService.deleteSamples(projectId, batchId,
+          sampleMetadata.stream().map(SampleMetadata::sampleId).map(SampleId::parse).toList());
+      deletionService.deleteBatch(projectId, batchId);
+      throw e;
     }
     return CompletableFuture.completedFuture(null);
   }
@@ -69,14 +76,16 @@ public class SampleRegistrationServiceV2 {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
   public CompletableFuture<Void> updateSamples(
-      Collection<SampleMetadata> sampleRegistrationRequests, ProjectId projectId) throws RegistrationException {
+      Collection<SampleMetadata> sampleRegistrationRequests, ProjectId projectId)
+      throws RegistrationException {
     var samples = fetchSamples(
         sampleRegistrationRequests.stream().map(SampleMetadata::sampleCode).map(SampleCode::create)
             .toList());
-    var sampleBySampleCode = samples.stream().collect(Collectors.toMap(sample -> sample.sampleCode().code(), Function.identity()));
+    var sampleBySampleCode = samples.stream()
+        .collect(Collectors.toMap(sample -> sample.sampleCode().code(), Function.identity()));
     var updatedSamples = updateSamples(sampleBySampleCode, sampleRegistrationRequests);
     sampleRepository.updateAll(projectId, updatedSamples);
-    return CompletableFuture.completedFuture( null);
+    return CompletableFuture.completedFuture(null);
   }
 
   private List<Sample> updateSamples(Map<String, Sample> samples,
@@ -85,7 +94,8 @@ public class SampleRegistrationServiceV2 {
     for (SampleMetadata sampleMetadata : sampleRegistrationRequests) {
       var sampleForUpdate = samples.get(sampleMetadata.sampleCode());
       sampleForUpdate.setLabel(sampleMetadata.sampleName());
-      var sampleOrigin = SampleOrigin.create(sampleMetadata.species(), sampleMetadata.specimen(), sampleMetadata.analyte());
+      var sampleOrigin = SampleOrigin.create(sampleMetadata.species(), sampleMetadata.specimen(),
+          sampleMetadata.analyte());
       sampleForUpdate.setSampleOrigin(sampleOrigin);
       sampleForUpdate.setExperimentalGroupId(sampleMetadata.experimentalGroupId());
       sampleForUpdate.setAnalysisMethod(sampleMetadata.analysisToBePerformed());
@@ -108,7 +118,8 @@ public class SampleRegistrationServiceV2 {
     return sampleQuery.get();
   }
 
-  private Collection<SampleId> registerSamples(Collection<SampleMetadata> sampleMetadata, BatchId batchId,
+  private Collection<SampleId> registerSamples(Collection<SampleMetadata> sampleMetadata,
+      BatchId batchId,
       ProjectId projectId)
       throws RegistrationException {
     var samplesToRegister = new ArrayList<Sample>();
@@ -116,7 +127,10 @@ public class SampleRegistrationServiceV2 {
     for (SampleMetadata sample : sampleMetadata) {
       samplesToRegister.add(buildSample(sample, batchId, sampleCodes.next()));
     }
-    return sampleRepository.addAll(projectId, samplesToRegister).getValue().stream().map(Sample::sampleId).toList();
+    return sampleRepository.addAll(projectId, samplesToRegister)
+        .valueOrElseThrow(e -> new RegistrationException("Could not register samples: " + e.name()))
+        .stream().map(Sample::sampleId)
+        .toList();
   }
 
   private Sample buildSample(SampleMetadata sample, BatchId batchId, SampleCode sampleCode) {

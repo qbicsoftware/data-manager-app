@@ -7,7 +7,6 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -30,6 +29,7 @@ import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
+import life.qbic.datamanager.views.general.upload.UploadWithDisplay.SucceededEvent;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.UploadedData;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -43,8 +43,12 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private final List<SampleMetadata> validatedSampleMetadata;
   private final TextField batchNameField;
-  private final Checkbox pilotCheck;
   private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
+  private final Div initialView;
+  private final Div inProgressView;
+  private final Div failedView;
+  private final Div succeededView;
+  private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
 
   private void setValidatedSampleMetadata(List<SampleMetadata> validatedSampleMetadata) {
     this.validatedSampleMetadata.clear();
@@ -54,112 +58,128 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   public RegisterSampleBatchDialog(SampleValidationService sampleValidationService,
       TemplateService templateService,
       String experimentId,
-      String projectId) {
+      String projectId,
+      String projectCode) {
+
+    initialView = new Div();
+    inProgressView = new Div();
+    failedView = new Div();
+    succeededView = new Div();
+
     addClassName("register-samples-dialog");
     batchNameField = new TextField("Batch name");
     batchNameField.setRequired(true);
     batchNameField.setPlaceholder("Please enter a name for your batch");
-    pilotCheck = new Checkbox("this batch is a pilot");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(templateService, experimentId,
-        projectId);
+        projectId, projectCode);
 
     validatedSampleMetadata = new ArrayList<>();
-    UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(25 * 1024 * 1024, new FileType[]{
+    UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(MAX_FILE_SIZE, new FileType[]{
         new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     });
     uploadWithDisplay.addFailureListener(
         uploadFailed -> {/* display of the error is handled by the uploadWithDisplay component. So nothing to do here.*/});
+    uploadWithDisplay.addSuccessListener(
+        uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
+            uploadSucceeded));
 
-    uploadWithDisplay.addSuccessListener(uploadSucceeded -> {
-      UploadWithDisplay component = uploadSucceeded.getSource();
-      UI ui = component.getUI().orElseThrow();
-      UploadedData uploadedData = component.getUploadedData().orElseThrow();
+    initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
+    initialView.setVisible(true);
+    inProgressView.setVisible(false);
+    failedView.setVisible(false);
+    succeededView.setVisible(false);
+    add(initialView, inProgressView, failedView, succeededView);
+  }
 
-      InProgressDisplay uploadProgressDisplay = new InProgressDisplay(
-          component.getUploadedData().get().fileName());
-      component.setDisplay(uploadProgressDisplay);
+  private void onUploadSucceeded(SampleValidationService sampleValidationService,
+      String experimentId,
+      String projectId,
+      SucceededEvent uploadSucceeded) {
+    UploadWithDisplay component = uploadSucceeded.getSource();
+    UI ui = component.getUI().orElseThrow();
+    UploadedData uploadedData = component.getUploadedData().orElseThrow();
 
-      List<SampleInformationForNewSample> sampleInformationForNewSamples = extractSampleInformationForNewSamples(
-          uploadedData);
+    InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
+    component.setDisplay(uploadProgressDisplay);
 
-      List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
-      for (SampleInformationForNewSample sampleInformationForNewSample : sampleInformationForNewSamples) {
-        CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validation = sampleValidationService.validateNewSampleAsync(
-            sampleInformationForNewSample.sampleName(),
-            sampleInformationForNewSample.condition(),
-            sampleInformationForNewSample.species(),
-            sampleInformationForNewSample.specimen(),
-            sampleInformationForNewSample.analyte(),
-            sampleInformationForNewSample.analysisMethod(),
-            sampleInformationForNewSample.comment(),
-            experimentId,
-            projectId
-        ).orTimeout(1, TimeUnit.MINUTES);
-        validations.add(validation);
-      }
-      CompletableFuture<Void> validationTasks = CompletableFuture
-          //allOf makes sure exceptional state is transferred to outer completable future.
-          .allOf(validations.toArray(new CompletableFuture[0]))
-          .orTimeout(5, TimeUnit.MINUTES);
+    List<SampleInformationForNewSample> sampleInformationForNewSamples = extractSampleInformationForNewSamples(
+        uploadedData);
 
-      validationTasks
-          .thenAccept(ignored -> {
-            if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
-              throw new IllegalStateException(
-                  "validation task still in execution although expected to be done");
+    List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
+    for (SampleInformationForNewSample sampleInformationForNewSample : sampleInformationForNewSamples) {
+      CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validation = sampleValidationService.validateNewSampleAsync(
+          sampleInformationForNewSample.sampleName(),
+          sampleInformationForNewSample.condition(),
+          sampleInformationForNewSample.species(),
+          sampleInformationForNewSample.specimen(),
+          sampleInformationForNewSample.analyte(),
+          sampleInformationForNewSample.analysisMethod(),
+          sampleInformationForNewSample.comment(),
+          experimentId,
+          projectId
+      ).orTimeout(1, TimeUnit.MINUTES);
+      validations.add(validation);
+    }
+    CompletableFuture<Void> validationTasks = CompletableFuture
+        //allOf makes sure exceptional state is transferred to outer completable future.
+        .allOf(validations.toArray(new CompletableFuture[0]))
+        .orTimeout(5, TimeUnit.MINUTES);
+
+    validationTasks
+        .thenAccept(ignored -> {
+          if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
+            throw new IllegalStateException(
+                "validation task still in execution although expected to be done");
+          }
+          ValidationResultWithPayload<SampleMetadata> valueIfAbsent = new ValidationResultWithPayload<>(
+              ValidationResult.withFailures(
+                  List.of("Validation could not complete normally.")),
+              new SampleMetadata("", "", null, "", "", "", 0, null, null, null,
+                  "")); //not expected to occur
+
+          List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
+              .filter(result ->
+                  result.isDone() && !result.isCancelled() && !result.isCompletedExceptionally())
+              .map(future -> future.getNow(valueIfAbsent))
+              .toList();
+          List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
+              .filter(validation -> validation.validationResult().containsFailures())
+              .toList();
+          List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
+              .filter(validation -> validation.validationResult().allPassed())
+              .toList();
+
+          if (!failedValidations.isEmpty()) {
+            ui.access(() -> component.setDisplay(invalidDisplay(
+                failedValidations.stream().map(ValidationResultWithPayload::validationResult)
+                    .toList())));
+            setValidatedSampleMetadata(List.of());
+            return;
+          }
+          if (!succeededValidations.isEmpty()) {
+            ui.access(() -> component
+                .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
+                    succeededValidations.size())));
+            setValidatedSampleMetadata(
+                succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
+          }
+        })
+        .exceptionally(e -> {
+              RuntimeException runtimeException = new RuntimeException(
+                  "At least one validation task could not complete.", e);
+              log.error("Could not complete validation. Please try again.", runtimeException);
+              InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(List.of(
+                  ValidationResult.withFailures(
+                      List.of("Could not complete validation. Please try again."))));
+              ui.access(() -> component.setDisplay(invalidUploadDisplay));
+              throw runtimeException;
             }
-            ValidationResultWithPayload<SampleMetadata> valueIfAbsent = new ValidationResultWithPayload<>(
-                ValidationResult.withFailures(
-                    List.of("Validation could not complete normally.")),
-                new SampleMetadata("", "", null, "", "", "", 0, null, null, null,
-                    "")); //not expected to occur
-
-            List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
-                .filter(result ->
-                    result.isDone() && !result.isCancelled() && !result.isCompletedExceptionally())
-                .map(future -> future.getNow(valueIfAbsent))
-                .toList();
-            List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
-                .filter(validation -> validation.validationResult().containsFailures())
-                .toList();
-            List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
-                .filter(validation -> validation.validationResult().allPassed())
-                .toList();
-
-            if (!failedValidations.isEmpty()) {
-              ui.access(() -> component.setDisplay(invalidDisplay(
-                  failedValidations.stream().map(ValidationResultWithPayload::validationResult)
-                      .toList())));
-              setValidatedSampleMetadata(List.of());
-              return;
-            }
-            if (!succeededValidations.isEmpty()) {
-              ui.access(() -> component
-                  .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
-                      succeededValidations.size())));
-              setValidatedSampleMetadata(
-                  succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
-            }
-          })
-          .exceptionally(e -> {
-                RuntimeException runtimeException = new RuntimeException(
-                    "At least one validation task could not complete.", e);
-            log.error("Could not complete validation. Please try again.", runtimeException);
-            InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(List.of(
-                ValidationResult.withFailures(
-                    List.of("Could not complete validation. Please try again."))));
-            ui.access(() -> component.setDisplay(invalidUploadDisplay));
-                throw runtimeException;
-              }
-          );
-    });
-
-    add(batchNameField, pilotCheck, downloadMetadataSection, uploadWithDisplay);
+        );
   }
 
   private Div setupDownloadMetadataSection(TemplateService templateService, String experimentId,
-      String projectId) {
+      String projectId, String projectCode) {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(buttonClickEvent -> {
@@ -167,7 +187,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           projectId,
           experimentId)) {
         var downloadProvider = new DownloadProvider(
-            new XLSXDownloadContentProvider(projectId + "_registration_template.xlsx", workbook));
+            new XLSXDownloadContentProvider(projectCode + "_registration_template.xlsx", workbook));
         add(downloadProvider);
         downloadProvider.trigger();
       } catch (IOException e) {
@@ -209,17 +229,41 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   public void taskFailed(String label, String description) {
+    failedView.removeAll();
+    failedView.add(new Span("Sample registration failed."));
+    failedView.setVisible(true);
+    setConfirmButtonLabel("Register Again");
+    showFailed();
 
+    initialView.setVisible(false);
+    inProgressView.setVisible(false);
+    succeededView.setVisible(false);
   }
 
   @Override
   public void taskSucceeded(String label, String description) {
+    succeededView.removeAll();
+    succeededView.add(new Span("Successfully registered samples!"));
+    succeededView.setVisible(true);
+    showSucceeded();
 
+    initialView.setVisible(false);
+    inProgressView.setVisible(false);
+    failedView.setVisible(false);
   }
 
   @Override
   public void taskInProgress(String label, String description) {
+    inProgressView.removeAll();
+    ProgressBar progressBar = new ProgressBar();
+    progressBar.setIndeterminate(true);
+    inProgressView.add(new Span("Sample registration in progress"), progressBar);
+    inProgressView.setVisible(true);
+    showInProgress();
 
+    initialView.setVisible(false);
+    failedView.setVisible(false);
+    succeededView.setVisible(false);
   }
 
   static class InvalidUploadDisplay extends Div {
@@ -279,7 +323,16 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), pilotCheck.getValue(),
+    if (batchNameField.isInvalid()) {
+      // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
+      return;
+    }
+    if (batchNameField.isEmpty()) {
+      // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
+      batchNameField.setInvalid(true);
+      return;
+    }
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
         batchNameField.getValue(), validatedSampleMetadata));
   }
 
@@ -290,7 +343,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<RegisterSampleBatchDialog> {
 
-    private final boolean pilot;
     private final String batchName;
     private final List<SampleMetadata> validatedSampleMetadata;
 
@@ -302,15 +354,13 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param pilot
      * @param batchName
      * @param validatedSampleMetadata
      */
-    public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient, boolean pilot,
+    public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient,
         String batchName,
         List<SampleMetadata> validatedSampleMetadata) {
       super(source, fromClient);
-      this.pilot = pilot;
       this.batchName = batchName;
       this.validatedSampleMetadata = validatedSampleMetadata;
     }
@@ -321,10 +371,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
     public String batchName() {
       return batchName;
-    }
-
-    public boolean isPilot() {
-      return pilot;
     }
   }
 
