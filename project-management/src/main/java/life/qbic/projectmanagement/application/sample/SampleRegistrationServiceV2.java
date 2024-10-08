@@ -15,6 +15,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
@@ -56,7 +57,8 @@ public class SampleRegistrationServiceV2 {
     }
     var batchId = result.getValue();
     try {
-      registerSamples(sampleMetadata, batchId, projectId);
+      var sampleIds = registerSamples(sampleMetadata, batchId, projectId);
+      batchRegistrationService.addSamplesToBatch(sampleIds, batchId, projectId);
     } catch (Exception e) {
       rollbackSampleRegistration(batchId);
       throw new RegistrationException("Sample batch registration failed");
@@ -106,7 +108,7 @@ public class SampleRegistrationServiceV2 {
     return sampleQuery.get();
   }
 
-  private void registerSamples(Collection<SampleMetadata> sampleMetadata, BatchId batchId,
+  private Collection<SampleId> registerSamples(Collection<SampleMetadata> sampleMetadata, BatchId batchId,
       ProjectId projectId)
       throws RegistrationException {
     var samplesToRegister = new ArrayList<Sample>();
@@ -114,7 +116,7 @@ public class SampleRegistrationServiceV2 {
     for (SampleMetadata sample : sampleMetadata) {
       samplesToRegister.add(buildSample(sample, batchId, sampleCodes.next()));
     }
-    sampleRepository.addAll(projectId, samplesToRegister);
+    return sampleRepository.addAll(projectId, samplesToRegister).getValue().stream().map(Sample::sampleId).toList();
   }
 
   private Sample buildSample(SampleMetadata sample, BatchId batchId, SampleCode sampleCode) {
