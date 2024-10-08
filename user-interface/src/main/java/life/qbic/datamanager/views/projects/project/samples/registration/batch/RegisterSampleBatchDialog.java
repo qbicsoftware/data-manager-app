@@ -99,8 +99,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     UI ui = component.getUI().orElseThrow();
     UploadedData uploadedData = component.getUploadedData().orElseThrow();
 
-    InProgressDisplay uploadProgressDisplay = new InProgressDisplay(
-        component.getUploadedData().get().fileName());
+    InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
     component.setDisplay(uploadProgressDisplay);
 
     List<SampleInformationForNewSample> sampleInformationForNewSamples = extractSampleInformationForNewSamples(
