@@ -38,7 +38,7 @@ public class SampleValidation {
 
   private final SpeciesLookupService speciesLookupService;
 
-  private SampleMetadata assembledMetadata;
+  private ThreadLocal<SampleMetadata> assembledMetadata;
 
   @Autowired
   public SampleValidation(SampleInformationService sampleInformationService,
@@ -48,7 +48,7 @@ public class SampleValidation {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.terminologyService = Objects.requireNonNull(terminologyService);
     this.speciesLookupService = Objects.requireNonNull(speciesLookupService);
-    this.assembledMetadata = null;
+    this.assembledMetadata = new ThreadLocal<>();
   }
 
   /**
@@ -97,7 +97,7 @@ public class SampleValidation {
       String experimentId,
       String projectId) {
 
-    this.assembledMetadata = new SampleMetadata("",
+    this.assembledMetadata.set(new SampleMetadata("",
         "",
         null,
         sampleName,
@@ -107,9 +107,8 @@ public class SampleValidation {
         null,
         null,
         null,
-        comment);
-
-    this.assembledMetadata = withComment(this.assembledMetadata, comment);
+        comment));
+    this.assembledMetadata.set(withComment(this.assembledMetadata.get(), comment));
     ValidationResultWithPayload<SampleMetadata> result = null;
     var experimentQuery = experimentInformationService.find(projectId,
         ExperimentId.parse(experimentId));
@@ -117,10 +116,11 @@ public class SampleValidation {
       var validationResult = validateWithExperiment(condition, analysisMethod, species, specimen,
           analyte,
           experimentQuery.get());
-      result = new ValidationResultWithPayload<>(validationResult, assembledMetadata.copy());
+      result = new ValidationResultWithPayload<>(validationResult, assembledMetadata.get().copy());
     } else {
       result = new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Unknown experiment.")), assembledMetadata.copy());
+          ValidationResult.withFailures(List.of("Unknown experiment.")),
+          assembledMetadata.get().copy());
     }
     return result;
   }
@@ -140,12 +140,13 @@ public class SampleValidation {
   private ValidationResult validateConditions(String condition,
       Map<String, ExperimentalGroup> conditionsLookupTable) {
     if (conditionsLookupTable.containsKey(condition)) {
-      assembledMetadata = new SampleMetadata(assembledMetadata.sampleId(),
-          assembledMetadata.sampleCode(), assembledMetadata.analysisToBePerformed(),
-          assembledMetadata.sampleName(), assembledMetadata.biologicalReplicate(),
-          assembledMetadata.experimentId(), conditionsLookupTable.get(condition).id(),
-          assembledMetadata.species(), assembledMetadata.specimen(), assembledMetadata.analyte(),
-          assembledMetadata.comment());
+      assembledMetadata.set(new SampleMetadata(assembledMetadata.get().sampleId(),
+          assembledMetadata.get().sampleCode(), assembledMetadata.get().analysisToBePerformed(),
+          assembledMetadata.get().sampleName(), assembledMetadata.get().biologicalReplicate(),
+          assembledMetadata.get().experimentId(), conditionsLookupTable.get(condition).id(),
+          assembledMetadata.get().species(), assembledMetadata.get().specimen(),
+          assembledMetadata.get().analyte(),
+          assembledMetadata.get().comment()));
       return ValidationResult.successful();
     }
     return ValidationResult.withFailures(
@@ -160,13 +161,14 @@ public class SampleValidation {
     }
     var speciesLookup = speciesLookupService.findByCURI(extractedTerm.get());
     if (speciesLookup.isPresent()) {
-      assembledMetadata = new SampleMetadata(assembledMetadata.sampleId(),
-          assembledMetadata.sampleCode(), assembledMetadata.analysisToBePerformed(),
-          assembledMetadata.sampleName(), assembledMetadata.biologicalReplicate(),
-          assembledMetadata.experimentId(), assembledMetadata.experimentalGroupId(),
-          OntologyTerm.from(speciesLookup.get()), assembledMetadata.specimen(),
-          assembledMetadata.analyte(),
-          assembledMetadata.comment());
+      assembledMetadata.set(new SampleMetadata(assembledMetadata.get().sampleId(),
+          assembledMetadata.get().sampleCode(), assembledMetadata.get().analysisToBePerformed(),
+          assembledMetadata.get().sampleName(), assembledMetadata.get().biologicalReplicate(),
+          assembledMetadata.get().experimentId(), assembledMetadata.get().experimentalGroupId(),
+          OntologyTerm.from(speciesLookup.get()), assembledMetadata.get().specimen(),
+          assembledMetadata.get().analyte(),
+          assembledMetadata.get().comment()));
+
       return ValidationResult.successful();
     }
     return ValidationResult.withFailures(List.of("Unknown species: " + species));
@@ -181,12 +183,14 @@ public class SampleValidation {
     }
     var specimenLookup = terminologyService.findByCurie(extractedTerm.get());
     if (specimenLookup.isPresent()) {
-      assembledMetadata = new SampleMetadata(assembledMetadata.sampleId(),
-          assembledMetadata.sampleCode(), assembledMetadata.analysisToBePerformed(),
-          assembledMetadata.sampleName(), assembledMetadata.biologicalReplicate(),
-          assembledMetadata.experimentId(), assembledMetadata.experimentalGroupId(),
-          assembledMetadata.species(), specimenLookup.get(), assembledMetadata.analyte(),
-          assembledMetadata.comment());
+      assembledMetadata.set(new SampleMetadata(assembledMetadata.get().sampleId(),
+          assembledMetadata.get().sampleCode(), assembledMetadata.get().analysisToBePerformed(),
+          assembledMetadata.get().sampleName(), assembledMetadata.get().biologicalReplicate(),
+          assembledMetadata.get().experimentId(), assembledMetadata.get().experimentalGroupId(),
+          assembledMetadata.get().species(), specimenLookup.get(),
+          assembledMetadata.get().analyte(),
+          assembledMetadata.get().comment()));
+
       return ValidationResult.successful();
     }
     return ValidationResult.withFailures(List.of("Unknown specimen: " + specimen));
@@ -200,12 +204,14 @@ public class SampleValidation {
     }
     var analyteLookup = terminologyService.findByCurie(extractedTerm.get());
     if (analyteLookup.isPresent()) {
-      assembledMetadata = new SampleMetadata(assembledMetadata.sampleId(),
-          assembledMetadata.sampleCode(), assembledMetadata.analysisToBePerformed(),
-          assembledMetadata.sampleName(), assembledMetadata.biologicalReplicate(),
-          assembledMetadata.experimentId(), assembledMetadata.experimentalGroupId(),
-          assembledMetadata.species(), assembledMetadata.specimen(), analyteLookup.get(),
-          assembledMetadata.comment());
+      assembledMetadata.set(new SampleMetadata(assembledMetadata.get().sampleId(),
+          assembledMetadata.get().sampleCode(), assembledMetadata.get().analysisToBePerformed(),
+          assembledMetadata.get().sampleName(), assembledMetadata.get().biologicalReplicate(),
+          assembledMetadata.get().experimentId(), assembledMetadata.get().experimentalGroupId(),
+          assembledMetadata.get().species(), assembledMetadata.get().specimen(),
+          analyteLookup.get(),
+          assembledMetadata.get().comment()));
+
       return ValidationResult.successful();
     }
     return ValidationResult.withFailures(List.of("Unknown analyte: " + analyte));
@@ -218,12 +224,14 @@ public class SampleValidation {
       return ValidationResult.withFailures(
           List.of("Unknown analysis: " + analysisMethod));
     }
-    assembledMetadata = new SampleMetadata(assembledMetadata.sampleId(),
-        assembledMetadata.sampleCode(), analysisMethodQuery.get(),
-        assembledMetadata.sampleName(), assembledMetadata.biologicalReplicate(),
-        assembledMetadata.experimentId(), assembledMetadata.experimentalGroupId(),
-        assembledMetadata.species(), assembledMetadata.specimen(), assembledMetadata.analyte(),
-        assembledMetadata.comment());
+    assembledMetadata.set(new SampleMetadata(assembledMetadata.get().sampleId(),
+        assembledMetadata.get().sampleCode(), analysisMethodQuery.get(),
+        assembledMetadata.get().sampleName(), assembledMetadata.get().biologicalReplicate(),
+        assembledMetadata.get().experimentId(), assembledMetadata.get().experimentalGroupId(),
+        assembledMetadata.get().species(), assembledMetadata.get().specimen(),
+        assembledMetadata.get().analyte(),
+        assembledMetadata.get().comment()));
+
     return ValidationResult.successful();
   }
 
@@ -252,17 +260,18 @@ public class SampleValidation {
       String species, String specimen, String analyte, String analysisMethod, String comment,
       String experimentId,
       String projectId) {
-    assembledMetadata = sampleMetadataWithExperimentId(experimentId);
-    assembledMetadata = withComment(assembledMetadata, comment);
+    assembledMetadata.set(sampleMetadataWithExperimentId(experimentId));
+    assembledMetadata.set(withComment(assembledMetadata.get(), comment));
     if (sampleCode.isBlank()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Missing sample id.")), assembledMetadata.copy());
+          ValidationResult.withFailures(List.of("Missing sample id.")),
+          assembledMetadata.get().copy());
     }
     var result = sampleInformationService.findSampleId(
         SampleCode.create(sampleCode));
     if (result.isEmpty()) {
       return new ValidationResultWithPayload<>(ValidationResult.withFailures(
-          List.of("Unknown sample id: " + sampleCode)), assembledMetadata.copy());
+          List.of("Unknown sample id: " + sampleCode)), assembledMetadata.get().copy());
     }
     return validateExistingSample(sampleCode, condition, species, specimen, analyte, analysisMethod,
         comment,
