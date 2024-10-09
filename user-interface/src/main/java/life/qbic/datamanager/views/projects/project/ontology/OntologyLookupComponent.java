@@ -194,11 +194,9 @@ public class OntologyLookupComponent extends PageArea {
       ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
       copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(event -> ui.access(() -> {
         addClassName("success-background-hue");
-        ui.push();
       }));
       copyToClipBoardComponent.addSwitchToCopyIconListener(event -> ui.access(() -> {
         removeClassName("success-background-hue");
-        ui.push();
       }));
       header.addClassName("header");
       return header;

@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application.measurement.validation;
+package life.qbic.projectmanagement.application;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,43 +16,32 @@ import java.util.stream.Stream;
  */
 public class ValidationResult {
 
-  private final int validatedEntries;
 
   private final List<String> warnings;
 
   private final List<String> failures;
 
   private ValidationResult() {
-    this.validatedEntries = 0;
     this.warnings = Collections.emptyList();
     this.failures = Collections.emptyList();
   }
 
-  private ValidationResult(int validatedEntries) {
-    this.validatedEntries = validatedEntries;
-    this.warnings = Collections.emptyList();
-    this.failures = Collections.emptyList();
-  }
-
-  private ValidationResult(int validatedEntries, Collection<String> warnings,
+  private ValidationResult(Collection<String> warnings,
       Collection<String> failures) {
-    this.validatedEntries = validatedEntries;
     this.warnings = warnings.stream().toList();
     this.failures = failures.stream().toList();
   }
 
-  public static ValidationResult successful(int validatedEntries) {
-    return new ValidationResult(validatedEntries);
+  public static ValidationResult successful() {
+    return new ValidationResult();
   }
 
-  public static ValidationResult withFailures(int validatedEntries,
-      Collection<String> failureReports) {
-    return new ValidationResult(validatedEntries, new ArrayList<>(), failureReports);
+  public static ValidationResult withFailures(Collection<String> failureReports) {
+    return new ValidationResult(new ArrayList<>(), failureReports);
   }
 
-  public static ValidationResult successful(int validatedEntries,
-      Collection<String> warnings) {
-    return new ValidationResult(validatedEntries, warnings, new ArrayList<>());
+  public static ValidationResult successful(Collection<String> warnings) {
+    return new ValidationResult(warnings, new ArrayList<>());
   }
 
 
@@ -79,20 +68,12 @@ public class ValidationResult {
     return failures.stream().toList();
   }
 
-  public int failedEntries() {
-    return failures.size();
-  }
-
-  public int validatedEntries() {
-    return validatedEntries;
-  }
-
   public boolean containsWarnings() {
     return !warnings.isEmpty();
   }
 
   public ValidationResult combine(ValidationResult otherResult) {
-    return new ValidationResult(this.validatedEntries + otherResult.validatedEntries,
+    return new ValidationResult(
         Stream.concat(this.warnings.stream(), otherResult.warnings.stream()).toList(),
         Stream.concat(this.failures.stream(), otherResult.failures.stream()).toList());
   }

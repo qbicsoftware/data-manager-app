@@ -8,6 +8,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -31,6 +32,8 @@ public interface SampleRepository {
    */
   Result<Collection<Sample>, ResponseCode> addAll(Project project, Collection<Sample> samples);
 
+  Result<Collection<Sample>, ResponseCode> addAll(ProjectId projectId, Collection<Sample> samples);
+
   void deleteAll(Project project, Collection<SampleId> sampleIds);
 
   Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
@@ -39,6 +42,8 @@ public interface SampleRepository {
   List<Sample> findSamplesByBatchId(BatchId batchId);
 
   void updateAll(Project project, Collection<Sample> updatedSamples);
+
+  void updateAll(ProjectId projectId, Collection<Sample> updatedSamples);
 
   List<Sample> findSamplesBySampleId(List<SampleId> sampleId);
 
@@ -49,4 +54,11 @@ public interface SampleRepository {
   boolean isSampleRemovable(SampleId sampleId);
 
   long countSamplesWithExperimentId(ExperimentId experimentId);
+
+  class SampleRepositoryException extends RuntimeException {
+    public SampleRepositoryException(String message) {
+      super(message);
+    }
+  }
+
 }

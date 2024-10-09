@@ -358,12 +358,10 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
           ui.access(() -> {
             addClassName("success-background-hue");
             copyDisclaimerText.setText("Token successfully copied.");
-            ui.push();
           }));
       copyToClipBoardComponent.addSwitchToCopyIconListener(event ->
           ui.access(() -> {
             removeClassName("success-background-hue");
-            ui.push();
           }));
     }
   }

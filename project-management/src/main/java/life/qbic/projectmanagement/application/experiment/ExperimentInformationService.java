@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.experiment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -508,6 +509,13 @@ public class ExperimentInformationService {
   public Optional<ProjectId> findProjectID(ExperimentId experimentId) {
     Optional<String> id = experimentRepository.findProjectId(experimentId);
     return id.map(ProjectId::parse);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public List<ExperimentalGroup> fetchGroups(String projectId, ExperimentId experimentId) {
+   return experimentRepository.find(experimentId).map(Experiment::getExperimentalGroups).orElse(
+       Collections.emptyList());
   }
 
   /**

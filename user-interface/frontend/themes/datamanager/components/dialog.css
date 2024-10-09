@@ -503,7 +503,8 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   font-weight: bold;
 }
 
-.measurement-upload-dialog::part(overlay) {
+.measurement-upload-dialog::part(overlay),
+.register-samples-dialog::part(overlay) {
   min-width: 66%;
   min-height: 66%;
   max-height: 66%;
@@ -528,12 +529,14 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   gap: var(--lumo-space-s);
 }
 
-.measurement-upload-dialog .upload-items-display .upload-section .restrictions {
+.measurement-upload-dialog .upload-items-display .upload-section .restrictions,
+.register-samples-dialog .restrictions {
   font-size: smaller;
   display: inline-flex;
   justify-content: space-between;
   color: var(--lumo-contrast-60pct);
   column-gap: var(--lumo-space-s);
+  width: 100%;
 }
 
 .measurement-upload-dialog .upload-items-display .uploaded-items-section .section-title {
@@ -546,17 +549,18 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   font-size: var(--lumo-font-size-s);
 }
 
-.measurement-upload-dialog .upload-items-display .uploaded-measurement-items {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items,
+.register-samples-dialog .uploaded-items-section,
+.edit-samples-dialog .uploaded-items-section {
   border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-l);
   display: flex;
   flex-direction: column;
 }
 
-.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item {
-  border-bottom-color: var(--lumo-contrast-20pct);
-  border-bottom-style: solid;
-  border-width: 1px;
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item,
+.register-samples-dialog .uploaded-items-section .uploaded-item,
+.edit-samples-dialog .uploaded-items-section .uploaded-item {
   font-size: var(--lumo-font-size-s);
   display: flex;
   padding-top: var(--lumo-space-m);
@@ -566,20 +570,32 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   row-gap: var(--lumo-space-m);
 }
 
-.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-name {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item {
+  border-bottom-color: var(--lumo-contrast-20pct);
+  border-bottom-style: solid;
+  border-width: 1px;
+}
+
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-name,
+.register-samples-dialog .uploaded-items-section .uploaded-item .file-name,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .file-name {
   display: inline-flex;
   align-items: center;
   column-gap: var(--lumo-space-s);
 }
 
-.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-icon {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .file-icon,
+.register-samples-dialog .uploaded-items-section .uploaded-item .file-icon,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .file-icon {
   display: inline-flex;
   flex-shrink: 0;
   font-size: smaller;
   color: var(--lumo-tertiary-text-color);
 }
 
-.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box,
+.register-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-s);
@@ -590,7 +606,9 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   border-radius: var(--lumo-border-radius-m);
 }
 
-.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .header {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .header,
+.register-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .header,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .header {
   font-size: small;
   align-items: center;
   display: inline-flex;
@@ -598,7 +616,9 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   font-weight: bold;
 }
 
-.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .invalid-measurement-list {
+.measurement-upload-dialog .upload-items-display .uploaded-measurement-items .measurement-item .validation-display-box .invalid-measurement-list,
+.register-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .invalid-list,
+.edit-samples-dialog .uploaded-items-section .uploaded-item .validation-display-box .invalid-list {
   padding-left: var(--lumo-space-m);
 }
 

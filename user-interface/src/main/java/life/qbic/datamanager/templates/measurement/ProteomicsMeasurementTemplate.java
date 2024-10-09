@@ -1,7 +1,8 @@
-package life.qbic.datamanager.templates;
+package life.qbic.datamanager.templates.measurement;
 
 import java.io.IOException;
 import java.util.Objects;
+import life.qbic.datamanager.templates.Template;
 
 /**
  * <b>MS measurement template</b>
@@ -11,7 +12,7 @@ import java.util.Objects;
  *
  * @since 1.0.0
  */
-public class MSMeasurementTemplate extends Template {
+public class ProteomicsMeasurementTemplate extends Template {
 
   private static final String MS_MEASUREMENT_TEMPLATE_PATH = "templates/proteomics_measurement_registration_sheet.xlsx";
 
@@ -19,7 +20,7 @@ public class MSMeasurementTemplate extends Template {
 
   private static final String MS_MEASUREMENT_TEMPLATE_DOMAIN_NAME = "Proteomics Template";
 
-  public MSMeasurementTemplate() {
+  public ProteomicsMeasurementTemplate() {
   }
 
   @Override

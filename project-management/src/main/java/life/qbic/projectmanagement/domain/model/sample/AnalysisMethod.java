@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.domain.model.sample;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * <b>Analysis method</b>
@@ -86,10 +87,19 @@ public enum AnalysisMethod {
 
   private static final Map<String, AnalysisMethod> labelToEnum;
 
+  private static final Map<String, AnalysisMethod> abbreviationToEnum;
+
   static {
     labelToEnum = new HashMap<>();
     for (AnalysisMethod method : AnalysisMethod.values()) {
       labelToEnum.put(method.label(), method);
+    }
+  }
+
+  static {
+    abbreviationToEnum = new HashMap<>();
+    for (AnalysisMethod method : AnalysisMethod.values()) {
+      abbreviationToEnum.put(method.abbreviation(), method);
     }
   }
 
@@ -110,6 +120,14 @@ public enum AnalysisMethod {
       return labelToEnum.get(label);
     } catch (NullPointerException e) {
       throw new IllegalArgumentException("Unknown label " + label);
+    }
+  }
+
+  public static Optional<AnalysisMethod> forAbbreviation(String abbreviation) {
+    try {
+      return Optional.of(abbreviationToEnum.get(abbreviation));
+    } catch (NullPointerException e) {
+      return Optional.empty();
     }
   }
 

@@ -24,7 +24,7 @@ import life.qbic.datamanager.parser.Sanitizer;
  * Support for UTF-16 encoding available.
  * <p>
  * This implementation always considers the first line as the header, and will use its information
- * to create the {@link ParsingResult#keys()} in the returned {@link ParsingResult} object
+ * to create the {@link ParsingResult#columnMap()} in the returned {@link ParsingResult} object
  * instance.
  *
  * @since 1.4.0

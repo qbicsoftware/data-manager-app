@@ -29,7 +29,7 @@ public interface MeasurementMetadataConverter {
    * @return a list of converted implementations of {@link MeasurementMetadata}.
    * @throws UnknownMetadataTypeException if no matching implementation of
    *                                      {@link MeasurementMetadata} can be associated from the
-   *                                      provided {@link ParsingResult#keys()}.
+   *                                      provided {@link ParsingResult#columnMap()}.
    * @since 1.4.0
    */
   List<? extends MeasurementMetadata> convert(ParsingResult parsingResult,

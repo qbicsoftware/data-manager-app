@@ -1,7 +1,8 @@
-package life.qbic.datamanager.templates;
+package life.qbic.datamanager.templates.measurement;
 
 import java.io.IOException;
 import java.util.Objects;
+import life.qbic.datamanager.templates.Template;
 
 /**
  * <b>NGS measurement template</b>

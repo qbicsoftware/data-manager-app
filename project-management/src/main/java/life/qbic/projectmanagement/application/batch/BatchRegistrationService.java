@@ -89,6 +89,21 @@ public class BatchRegistrationService {
     return Result.fromValue(result.getValue());
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public Result<BatchId, ResponseCode> addSamplesToBatch(Collection<SampleId> sampleIds, BatchId batchId, ProjectId projectId) {
+    var batchQuery = batchRepository.find(batchId);
+    if (batchQuery.isEmpty()) {
+      log.error("No batch with id found: " + batchId);
+      return Result.fromError(ResponseCode.BATCH_UPDATE_FAILED);
+    }
+    var batch = batchQuery.get();
+    for (SampleId sampleId : sampleIds) {
+      batch.addSample(sampleId);
+    }
+    batchRepository.update(batch);
+    return Result.fromValue(batchId);
+  }
+
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
     var random = new Random();
     while (true) {
@@ -195,6 +210,10 @@ public class BatchRegistrationService {
       deletionService.deleteSamples(projectId, batchId, deletedSamples);
     }
     return Result.fromValue(batch.batchId());
+  }
+
+  public void deleteBatch(BatchId batchId) {
+    batchRepository.deleteById(batchId);
   }
 
   private void dispatchSuccessfulBatchUpdate(BatchId batchId, ProjectId projectId) {
