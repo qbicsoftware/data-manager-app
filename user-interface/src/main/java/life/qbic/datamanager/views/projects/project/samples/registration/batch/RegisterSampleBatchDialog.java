@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
-import static java.util.function.Predicate.not;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -121,28 +119,17 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       ).orTimeout(1, TimeUnit.MINUTES);
       validations.add(validation);
     }
-    CompletableFuture<Void> validationTasks = CompletableFuture
+    var validationTasks = CompletableFuture
         //allOf makes sure exceptional state is transferred to outer completable future.
-        .allOf(validations.toArray(new CompletableFuture[0]))
+        .allOf(validations.toArray(new CompletableFuture[validations.size()]))
+        .thenApply(v -> validations.stream()
+            .map(CompletableFuture::join)
+            .toList())
         .orTimeout(5, TimeUnit.MINUTES);
 
     validationTasks
-        .thenAccept(ignored -> {
-          if (validations.stream().anyMatch(not(CompletableFuture::isDone))) {
-            throw new IllegalStateException(
-                "validation task still in execution although expected to be done");
-          }
-          ValidationResultWithPayload<SampleMetadata> valueIfAbsent = new ValidationResultWithPayload<>(
-              ValidationResult.withFailures(
-                  List.of("Validation could not complete normally.")),
-              new SampleMetadata("", "", null, "", "", "", 0, null, null, null,
-                  "")); //not expected to occur
+        .thenAccept(validationResults -> {
 
-          List<ValidationResultWithPayload<SampleMetadata>> validationResults = validations.stream()
-              .filter(result ->
-                  result.isDone() && !result.isCancelled() && !result.isCompletedExceptionally())
-              .map(future -> future.getNow(valueIfAbsent))
-              .toList();
           List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
               .filter(validation -> validation.validationResult().containsFailures())
               .toList();
@@ -176,6 +163,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
               throw runtimeException;
             }
         );
+
   }
 
   private Div setupDownloadMetadataSection(TemplateService templateService, String experimentId,
