@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.component.upload.UploadI18N.Error;
@@ -25,6 +26,7 @@ public class UploadWithDisplay extends Div {
   private final Upload upload;
   private final Div errorArea;
   private final Div displayContainer;
+  private final Span displayContainerTitle;
   private final FileMemoryBuffer fileMemoryBuffer;
 
   public UploadWithDisplay(int maxFileSize) {
@@ -45,6 +47,10 @@ public class UploadWithDisplay extends Div {
     errorArea.addClassName("error-message-box");
     displayContainer.addClassName("uploaded-items-section");
     displayContainer.setVisible(false);
+
+    displayContainerTitle = new Span("Uploaded files");
+    displayContainerTitle.addClassName("section-title");
+    displayContainerTitle.setVisible(false);
 
     restrictions.addClassName("restrictions");
     var allowedExtensions = Arrays.stream(fileTypes)
@@ -69,10 +75,11 @@ public class UploadWithDisplay extends Div {
     upload.addFileRemovedListener(fileRemovedEvent -> {
       fileMemoryBuffer.clear();
       displayContainer.removeAll();
+      displayContainerTitle.setVisible(false);
       displayContainer.setVisible(false);
     });
 
-    Error errorTranslation = new UploadI18N.Error();
+    Error errorTranslation = new Error();
     errorTranslation.setFileIsTooBig(
         "The provided file is too big. Please make sure your file is smaller than "
             + formatFileSize(maxFileSize));
@@ -90,7 +97,7 @@ public class UploadWithDisplay extends Div {
       errorArea.setText(fileRejected.getErrorMessage());
     });
     upload.addFinishedListener(it -> errorArea.setVisible(false));
-    add(errorArea, upload, restrictions, displayContainer);
+    add(errorArea, upload, restrictions, displayContainerTitle, displayContainer);
   }
 
   private static String formatFileSize(int bytes) {
@@ -114,22 +121,26 @@ public class UploadWithDisplay extends Div {
   public <T extends Component> void setDisplay(T uploadProgressDisplay) {
     displayContainer.removeAll();
     if (uploadProgressDisplay == null) {
+      displayContainerTitle.setVisible(false);
       displayContainer.setVisible(false);
       return;
     }
     uploadProgressDisplay.addClassName("uploaded-item");
     displayContainer.add(uploadProgressDisplay);
+    displayContainerTitle.setVisible(true);
     displayContainer.setVisible(true);
   }
 
   public <T extends Component> void removeDisplay(T display) {
     displayContainer.remove(display);
+    displayContainerTitle.setVisible(false);
     displayContainer.setVisible(false);
   }
 
   public void clear() {
     upload.clearFileList();
     displayContainer.removeAll();
+    displayContainerTitle.setVisible(false);
     displayContainer.setVisible(false);
     errorArea.removeAll();
     fileMemoryBuffer.clear();

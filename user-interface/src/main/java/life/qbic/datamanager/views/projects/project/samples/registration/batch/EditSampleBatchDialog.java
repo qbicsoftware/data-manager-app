@@ -65,10 +65,16 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
       String projectId,
       String projectCode) {
 
+    setHeaderTitle("Edit Sample Batch");
+    setConfirmButtonLabel("Edit Batch");
     initialView = new Div();
+    initialView.addClassName("initial-view");
     inProgressView = new Div();
+    inProgressView.addClassName("in-progress-view");
     failedView = new Div();
+    failedView.addClassName("failed-view");
     succeededView = new Div();
+    succeededView.addClassName("succeeded-view");
 
     addClassName("edit-samples-dialog");
     batchNameField = new TextField("Batch name");

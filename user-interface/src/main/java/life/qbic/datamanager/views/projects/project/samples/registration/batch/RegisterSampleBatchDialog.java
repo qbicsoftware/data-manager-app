@@ -59,10 +59,17 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       String projectId,
       String projectCode) {
 
+    setHeaderTitle("Register Sample Batch");
+    setConfirmButtonLabel("Register");
+
     initialView = new Div();
+    initialView.addClassName("initial-view");
     inProgressView = new Div();
+    inProgressView.addClassName("in-progress-view");
     failedView = new Div();
+    failedView.addClassName("failed-view");
     succeededView = new Div();
+    succeededView.addClassName("succeeded-view");
 
     addClassName("register-samples-dialog");
     batchNameField = new TextField("Batch name");
@@ -82,7 +89,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
             uploadSucceeded));
 
-    initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
+    Span uploadTheSampleDataTitle = new Span("Upload the sample data");
+    uploadTheSampleDataTitle.addClassName("section-title");
+    initialView.add(batchNameField, downloadMetadataSection,
+        new Div(uploadTheSampleDataTitle, uploadWithDisplay));
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);
@@ -191,6 +201,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     downloadMetadataSection.addClassName("download-metadata");
     Span sectionTitle = new Span("Download metadata template");
     sectionTitle.addClassName("download-metadata-section-title");
+    sectionTitle.addClassName("section-title");
+
     Div sectionContent = new Div();
     sectionContent.addClassName("download-metadata-section-content");
     sectionContent.add(text, downloadTemplate);

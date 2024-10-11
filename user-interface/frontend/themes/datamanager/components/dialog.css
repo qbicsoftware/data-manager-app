@@ -512,6 +512,14 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   max-width: 66%;
 }
 
+.register-samples-dialog::part(overlay),
+.edit-samples-dialog::part(overlay) {
+  min-width: 66%;
+  min-height: 80%;
+  max-height: 80%;
+  max-width: 66%;
+}
+
 .measurement-upload-dialog::part(content) {
   display: flex;
   flex-direction: column;
@@ -827,6 +835,32 @@ vaadin-upload-file::part(meta){
   color: white;
   padding-inline: var(--lumo-space-xs);
   border-radius: var(--lumo-border-radius-s);
+}
+
+
+.register-samples-dialog .section-title,
+.edit-samples-dialog .section-title {
+  /*font-size: var(--lumo-font-size-l);*/
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+}
+
+.register-samples-dialog .download-metadata-section-content,
+.edit-samples-dialog .download-metadata-section-content {
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-l);
+  display: flex;
+  flex-direction: row;
+  padding: 1em;
+  align-content: baseline;
+  display: flex;
+  align-items: center;
+}
+
+.edit-samples-dialog .initial-view,
+.register-samples-dialog .initial-view {
+  display: grid;
+  row-gap: 1em;
 }
 
 
