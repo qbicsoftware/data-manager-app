@@ -322,17 +322,41 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   public void taskFailed(String label, String description) {
-    //TODO
+    failedView.removeAll();
+    failedView.add(new Span("Sample batch editing failed."));
+    failedView.setVisible(true);
+    setConfirmButtonLabel("Try Again");
+    showFailed();
+
+    initialView.setVisible(false);
+    inProgressView.setVisible(false);
+    succeededView.setVisible(false);
   }
 
   @Override
   public void taskSucceeded(String label, String description) {
-    //TODO
+    succeededView.removeAll();
+    succeededView.add(new Span("Successfully updated the sample batch!"));
+    succeededView.setVisible(true);
+    showSucceeded();
+
+    initialView.setVisible(false);
+    inProgressView.setVisible(false);
+    failedView.setVisible(false);
   }
 
   @Override
   public void taskInProgress(String label, String description) {
-    //TODO
+    inProgressView.removeAll();
+    ProgressBar progressBar = new ProgressBar();
+    progressBar.setIndeterminate(true);
+    inProgressView.add(new Span("Updating sample batch"), progressBar);
+    inProgressView.setVisible(true);
+    showInProgress();
+
+    initialView.setVisible(false);
+    failedView.setVisible(false);
+    succeededView.setVisible(false);
   }
 
   public static class ConfirmEvent extends ComponentEvent<EditSampleBatchDialog> {
