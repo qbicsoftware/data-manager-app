@@ -8,6 +8,7 @@ import life.qbic.datamanager.templates.sample.SampleBatchUpdateTemplate;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
@@ -77,7 +78,8 @@ public class TemplateService {
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public XSSFWorkbook sampleBatchUpdateXLSXTemplate(String projectId, String experimentId)
+  public XSSFWorkbook sampleBatchUpdateXLSXTemplate(BatchId batchId, String projectId,
+      String experimentId)
       throws NoSuchExperimentException, SampleSearchException {
     var experiment = experimentInfoService.find(projectId, ExperimentId.parse(experimentId))
         .orElseThrow(
@@ -87,7 +89,10 @@ public class TemplateService {
     samples.onError(responseCode -> {
       throw new SampleSearchException();
     });
-    return createPrefilledWorkbookFromExperiment(experiment, samples.getValue().stream().toList());
+    var samplesInBatch = samples.getValue().stream()
+        .filter(sample -> sample.assignedBatch().equals(batchId))
+        .toList();
+    return createPrefilledWorkbookFromExperiment(experiment, samplesInBatch);
   }
 
   private XSSFWorkbook createPrefilledWorkbookFromExperiment(Experiment experiment,

@@ -26,7 +26,9 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResultWithPayload<SampleMetadata> validateNewSample(String sampleName,
+  public ValidationResultWithPayload<SampleMetadata> validateNewSample(
+      String sampleName,
+      String biologicalReplicate,
       String condition,
       String species,
       String specimen,
@@ -35,14 +37,23 @@ public class SampleValidationService {
       String comment,
       String experimentId,
       String projectId) {
-    return sampleValidation.validateNewSample(sampleName, condition, species, specimen, analyte,
+    return sampleValidation.validateNewSample(sampleName,
+        biologicalReplicate,
+        condition,
+        species,
+        specimen,
+        analyte,
         analysisMethod,
         comment,
-        experimentId, projectId);
+        experimentId,
+        projectId);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResultWithPayload<SampleMetadata> validateExistingSample(String sampleId,
+  public ValidationResultWithPayload<SampleMetadata> validateExistingSample(
+      String sampleCode,
+      String sampleName,
+      String biologicalReplicate,
       String condition,
       String species,
       String specimen,
@@ -51,14 +62,24 @@ public class SampleValidationService {
       String comment,
       String experimentId,
       String projectId) {
-    return sampleValidation.validateExistingSample(sampleId, condition, species, specimen, analyte,
-        analysisMethod, comment, experimentId, projectId);
+    return sampleValidation.validateExistingSample(sampleCode,
+        sampleName,
+        biologicalReplicate,
+        condition,
+        species,
+        specimen,
+        analyte,
+        analysisMethod,
+        comment,
+        experimentId,
+        projectId);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   @Async
   public CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validateNewSampleAsync(
       String sampleName,
+      String biologicalReplicate,
       String condition,
       String species,
       String specimen,
@@ -68,15 +89,24 @@ public class SampleValidationService {
       String experimentId,
       String projectId) {
     return CompletableFuture.completedFuture(
-        validateNewSample(sampleName, condition, species, specimen, analyte, analysisMethod,
+        validateNewSample(sampleName,
+            biologicalReplicate,
+            condition,
+            species,
+            specimen,
+            analyte,
+            analysisMethod,
             comment,
-            experimentId, projectId));
+            experimentId,
+            projectId));
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   @Async
   public CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validateExistingSampleAsync(
-      String sampleId,
+      String sampleCode,
+      String sampleName,
+      String biologicalReplicate,
       String condition,
       String species,
       String specimen,
@@ -86,8 +116,17 @@ public class SampleValidationService {
       String experimentId,
       String projectId) {
     return CompletableFuture.completedFuture(
-        validateExistingSample(sampleId, condition, species, specimen, analyte,
-            analysisMethod, comment, experimentId, projectId));
+        validateExistingSample(sampleCode,
+            sampleName,
+            biologicalReplicate,
+            condition,
+            species,
+            specimen,
+            analyte,
+            analysisMethod,
+            comment,
+            experimentId,
+            projectId));
   }
 
 }

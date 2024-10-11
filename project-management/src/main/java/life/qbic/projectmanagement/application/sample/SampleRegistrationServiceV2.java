@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -19,6 +20,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -37,15 +39,18 @@ public class SampleRegistrationServiceV2 {
 
   private final BatchRegistrationService batchRegistrationService;
   private final SampleRepository sampleRepository;
+  private final BatchRepository batchRepository;
   private final SampleCodeService sampleCodeService;
   private final DeletionService deletionService;
 
   @Autowired
   public SampleRegistrationServiceV2(BatchRegistrationService batchRegistrationService,
-      SampleRepository sampleRepository, SampleCodeService sampleCodeService,
+      SampleRepository sampleRepository, BatchRepository batchRepository,
+      SampleCodeService sampleCodeService,
       DeletionService deletionService) {
     this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService);
     this.sampleRepository = Objects.requireNonNull(sampleRepository);
+    this.batchRepository = Objects.requireNonNull(batchRepository);
     this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
     this.deletionService = Objects.requireNonNull(deletionService);
   }
@@ -66,7 +71,7 @@ public class SampleRegistrationServiceV2 {
     } catch (RuntimeException e) {
       rollbackSampleRegistration(batchId);
       deletionService.deleteSamples(projectId, batchId,
-          sampleMetadata.stream().map(SampleMetadata::sampleId).map(SampleId::parse).toList());
+          sampleMetadata.stream().map(SampleMetadata::sampleId).toList());
       deletionService.deleteBatch(projectId, batchId);
       throw e;
     }
@@ -76,46 +81,46 @@ public class SampleRegistrationServiceV2 {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
   public CompletableFuture<Void> updateSamples(
-      Collection<SampleMetadata> sampleRegistrationRequests, ProjectId projectId)
+      Collection<SampleMetadata> sampleMetadata,
+      ProjectId projectId,
+      BatchId batchId,
+      String batchLabel,
+      boolean isPilot)
       throws RegistrationException {
-    var samples = fetchSamples(
-        sampleRegistrationRequests.stream().map(SampleMetadata::sampleCode).map(SampleCode::create)
-            .toList());
+
+    Batch batch = batchRepository.find(batchId)
+        .orElseThrow(() -> new RegistrationException("Batch not found."));
+    batch.setLabel(batchLabel);
+    batch.setPilot(isPilot);
+
+    var sampleIds = sampleMetadata.stream()
+        .map(SampleMetadata::sampleId)
+        .toList();
+    var samples = sampleRepository.findSamplesBySampleId(sampleIds);
     var sampleBySampleCode = samples.stream()
         .collect(Collectors.toMap(sample -> sample.sampleCode().code(), Function.identity()));
-    var updatedSamples = updateSamples(sampleBySampleCode, sampleRegistrationRequests);
+    var updatedSamples = updateSamples(sampleBySampleCode, sampleMetadata);
     sampleRepository.updateAll(projectId, updatedSamples);
+    batchRepository.update(batch);
     return CompletableFuture.completedFuture(null);
   }
 
   private List<Sample> updateSamples(Map<String, Sample> samples,
-      Collection<SampleMetadata> sampleRegistrationRequests) {
+      Collection<SampleMetadata> sampleMetadataList) {
     var updatedSamples = new ArrayList<Sample>();
-    for (SampleMetadata sampleMetadata : sampleRegistrationRequests) {
+    for (SampleMetadata sampleMetadata : sampleMetadataList) {
       var sampleForUpdate = samples.get(sampleMetadata.sampleCode());
       sampleForUpdate.setLabel(sampleMetadata.sampleName());
+      sampleForUpdate.setAnalysisMethod(sampleMetadata.analysisToBePerformed());
       var sampleOrigin = SampleOrigin.create(sampleMetadata.species(), sampleMetadata.specimen(),
           sampleMetadata.analyte());
       sampleForUpdate.setSampleOrigin(sampleOrigin);
+      sampleForUpdate.setBiologicalReplicate(sampleMetadata.biologicalReplicate());
       sampleForUpdate.setExperimentalGroupId(sampleMetadata.experimentalGroupId());
-      sampleForUpdate.setAnalysisMethod(sampleMetadata.analysisToBePerformed());
       sampleForUpdate.setComment(sampleMetadata.comment());
       updatedSamples.add(sampleForUpdate);
     }
     return updatedSamples;
-  }
-
-  private List<Sample> fetchSamples(Collection<SampleCode> sampleCodes)
-      throws UnknownSampleException {
-    return sampleCodes.stream().map(this::fetchSample).toList();
-  }
-
-  private Sample fetchSample(SampleCode sampleCode) throws UnknownSampleException {
-    var sampleQuery = sampleRepository.findSample(sampleCode);
-    if (sampleQuery.isEmpty()) {
-      throw new UnknownSampleException("Unknown sample code: " + sampleCode);
-    }
-    return sampleQuery.get();
   }
 
   private Collection<SampleId> registerSamples(Collection<SampleMetadata> sampleMetadata,

@@ -3,65 +3,316 @@ package life.qbic.datamanager.views.projects.project.samples.registration.batch;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.progressbar.ProgressBar;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.shared.Registration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.parser.ParsingResult;
+import life.qbic.datamanager.parser.SampleInformationExtractor;
+import life.qbic.datamanager.parser.SampleInformationExtractor.SampleInformationForExistingSample;
+import life.qbic.datamanager.parser.xlsx.XLSXParser;
 import life.qbic.datamanager.templates.TemplateService;
-import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.WizardDialogWindow;
+import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
+import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
+import life.qbic.datamanager.views.general.upload.UploadWithDisplay.SucceededEvent;
+import life.qbic.datamanager.views.general.upload.UploadWithDisplay.UploadedData;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
- * //TODO replace {@link BatchRegistrationDialog} with this one
+ * A dialog used for editing sample and batch information.
  *
- * @since <version tag>
+ * @since 1.4.0
  */
-public class EditSampleBatchDialog extends DialogWindow {
+public class EditSampleBatchDialog extends WizardDialogWindow {
 
-  private final List<SampleMetadata> sampleMetadata;
-  private final BatchId batchId;
+  private static final Logger log = LoggerFactory.logger(EditSampleBatchDialog.class);
+
+  private final List<SampleMetadata> validatedSampleMetadata;
+  private final TextField batchNameField;
+  private final Div initialView;
+  private final Div inProgressView;
+  private final Div failedView;
+  private final Div succeededView;
+  private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
+
 
   public EditSampleBatchDialog(SampleValidationService sampleValidationService,
       TemplateService templateService,
       BatchId batchId,
+      String batchName,
       String experimentId,
-      String projectId) {
-    this.batchId = Objects.requireNonNull(batchId, "Batch ID cannot be null");
-    setHeaderTitle("Edit Sample Batch");
-    sampleMetadata = new ArrayList<>();
+      String projectId,
+      String projectCode) {
 
-    Button updateTemplate = new Button("Download Metadata Template");
-    updateTemplate.addClickListener(buttonClickEvent -> {
-      try (XSSFWorkbook workbook = templateService.sampleBatchUpdateXLSXTemplate(projectId,
+    initialView = new Div();
+    inProgressView = new Div();
+    failedView = new Div();
+    succeededView = new Div();
+
+    addClassName("batch-update-dialog");
+    batchNameField = new TextField();
+    batchNameField.setRequired(true);
+    batchNameField.setValue(batchName);
+    batchNameField.setPlaceholder("Please enter a name for your batch");
+
+    Div downloadMetadataSection = setupDownloadMetadataSection(templateService, batchId,
+        experimentId,
+        projectId, projectCode);
+
+
+
+    setHeaderTitle("Edit Sample Batch");
+    validatedSampleMetadata = new ArrayList<>();
+
+    UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(
+        MAX_FILE_SIZE, new FileType[]{
+        new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    });
+    uploadWithDisplay.addFailureListener(uploadFailed -> {
+      /* display of the error is handled by the uploadWithDisplay component. So nothing to do here.*/
+    });
+    uploadWithDisplay.addSuccessListener(
+        uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
+            uploadSucceeded)
+    );
+
+    initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
+    initialView.setVisible(true);
+    inProgressView.setVisible(false);
+    failedView.setVisible(false);
+    succeededView.setVisible(false);
+    add(initialView, inProgressView, failedView, succeededView);
+  }
+
+  static class InvalidUploadDisplay extends Div {
+
+  }
+
+  static class ValidUploadDisplay extends Div {
+
+    private ValidUploadDisplay(String fileName, int count) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
+      fileNameLabel.addClassName("file-name");
+      Div validationBox = new Div();
+      validationBox.addClassName("validation-display-box");
+      var box = new Div();
+      var approvedTitle = new Span("Approved");
+      var validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
+      validIcon.addClassName("success");
+      var header = new Span(validIcon, approvedTitle);
+      header.addClassName("header");
+      var instruction = new Span("Please click Register to register your samples");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+      var approvedSamples = new Span("%d samples".formatted(count));
+      approvedSamples.addClassName("bold");
+      validationDetails.add(new Span("Sample data for "), approvedSamples,
+          new Span(" is now ready to be registered."));
+      box.add(header, validationDetails, instruction);
+      validationBox.add(box);
+      add(fileNameLabel, validationBox);
+    }
+  }
+
+  private static class InProgressDisplay extends Div {
+
+    private InProgressDisplay(String fileName) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
+      fileNameLabel.addClassName("file-name");
+      ProgressBar progressBar = new ProgressBar();
+      progressBar.setIndeterminate(true);
+      add(fileNameLabel, new Div("Validating file..."), progressBar);
+    }
+  }
+
+  private static InvalidUploadDisplay invalidDisplay(List<ValidationResult> validationResults) {
+    InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay();
+    List<String> failureReasons = validationResults.stream()
+        .flatMap(res -> res.failures().stream()).toList();
+    for (String failureReason : failureReasons) {
+      invalidUploadDisplay.add(new Span(failureReason));
+    }
+    return invalidUploadDisplay;
+  }
+
+
+  private void onUploadSucceeded(SampleValidationService sampleValidationService,
+      String experimentId, String projectId, SucceededEvent uploadSucceeded) {
+    UploadWithDisplay component = uploadSucceeded.getSource();
+    UI ui = component.getUI().orElseThrow();
+    UploadedData uploadedData = component.getUploadedData().orElseThrow();
+
+    InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
+    component.setDisplay(uploadProgressDisplay);
+
+    List<SampleInformationForExistingSample> sampleInformationForExistingSamples = extractSampleInformationForExistingSamples(
+        uploadedData);
+
+    List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
+    for (SampleInformationForExistingSample sampleInformationForExistingSample : sampleInformationForExistingSamples) {
+      CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validation = sampleValidationService.validateExistingSampleAsync(
+          sampleInformationForExistingSample.sampleCode(),
+          sampleInformationForExistingSample.sampleName(),
+          sampleInformationForExistingSample.biologicalReplicate(),
+          sampleInformationForExistingSample.condition(),
+          sampleInformationForExistingSample.species(),
+          sampleInformationForExistingSample.specimen(),
+          sampleInformationForExistingSample.analyte(),
+          sampleInformationForExistingSample.analysisMethod(),
+          sampleInformationForExistingSample.comment(),
+          experimentId,
+          projectId
+      ).orTimeout(1, TimeUnit.MINUTES);
+      validations.add(validation);
+    }
+    var validationTasks = CompletableFuture
+        //allOf makes sure exceptional state is transferred to outer completable future.
+        .allOf(validations.toArray(new CompletableFuture[0]))
+        .thenApply(v -> validations.stream()
+            .map(CompletableFuture::join)
+            .toList())
+        .orTimeout(5, TimeUnit.MINUTES);
+
+    validationTasks
+        .thenAccept(validationResults -> {
+
+          List<ValidationResultWithPayload<SampleMetadata>> failedValidations = validationResults.stream()
+              .filter(validation -> validation.validationResult().containsFailures())
+              .toList();
+          List<ValidationResultWithPayload<SampleMetadata>> succeededValidations = validationResults.stream()
+              .filter(validation -> validation.validationResult().allPassed())
+              .toList();
+
+          if (!failedValidations.isEmpty()) {
+            ui.access(() -> component.setDisplay(invalidDisplay(
+                failedValidations.stream().map(ValidationResultWithPayload::validationResult)
+                    .toList())));
+            setValidatedSampleMetadata(List.of());
+            return;
+          }
+          if (!succeededValidations.isEmpty()) {
+            ui.access(() -> component
+                .setDisplay(new ValidUploadDisplay(uploadedData.fileName(),
+                    succeededValidations.size())));
+            setValidatedSampleMetadata(
+                succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
+          }
+        })
+        .exceptionally(e -> {
+              RuntimeException runtimeException = new RuntimeException(
+                  "At least one validation task could not complete.", e);
+              log.error("Could not complete validation. Please try again.", runtimeException);
+              InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(List.of(
+                  ValidationResult.withFailures(
+                      List.of("Could not complete validation. Please try again."))));
+              ui.access(() -> component.setDisplay(invalidUploadDisplay));
+              throw runtimeException;
+            }
+        );
+  }
+
+  private void setValidatedSampleMetadata(List<SampleMetadata> metadata) {
+    this.validatedSampleMetadata.clear();
+    this.validatedSampleMetadata.addAll(metadata);
+  }
+
+  private List<SampleInformationForExistingSample> extractSampleInformationForExistingSamples(
+      UploadedData uploadedData) {
+    ParsingResult parsingResult = XLSXParser.create().parse(uploadedData.inputStream());
+    return new SampleInformationExtractor()
+        .extractInformationForExistingSamples(parsingResult);
+
+  }
+
+  private Div setupDownloadMetadataSection(TemplateService templateService,
+      BatchId batchId,
+      String experimentId,
+      String projectId, String projectCode) {
+    Button downloadTemplate = new Button("Download metadata template");
+    downloadTemplate.addClassName("download-metadata-button");
+    downloadTemplate.addClickListener(buttonClickEvent -> {
+      try (XSSFWorkbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
+          batchId,
+          projectId,
           experimentId)) {
-        DownloadProvider downloadProvider = new DownloadProvider(
-            new XLSXDownloadContentProvider(projectId + "_update_template.xlsx", workbook));
+        var downloadProvider = new DownloadProvider(
+            new XLSXDownloadContentProvider(projectCode + "_edit_batch_template.xlsx", workbook));
         add(downloadProvider);
         downloadProvider.trigger();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     });
-    this.add(updateTemplate);
+    Div text = new Div();
+    text.addClassName("download-metadata-text");
+    text.setText(
+        "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the sample batch.");
+    Div downloadMetadataSection = new Div();
+    downloadMetadataSection.addClassName("download-metadata");
+    Span sectionTitle = new Span("Download metadata template");
+    sectionTitle.addClassName("download-metadata-section-title");
+    Div sectionContent = new Div();
+    sectionContent.addClassName("download-metadata-section-content");
+    sectionContent.add(text, downloadTemplate);
+    downloadMetadataSection.add(sectionTitle, sectionContent);
+    return downloadMetadataSection;
+  }
+
+  public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
+    return addListener(ConfirmEvent.class, listener);
+  }
+
+  public Registration addCancelListener(ComponentEventListener<CancelEvent> listener) {
+    return addListener(CancelEvent.class, listener);
   }
 
   @Override
   public void close() {
-    sampleMetadata.clear();
+    validatedSampleMetadata.clear();
     super.close();
   }
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
-        Collections.unmodifiableList(sampleMetadata)));
+    if (batchNameField.isInvalid()) {
+      // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
+      return;
+    }
+    if (batchNameField.isEmpty()) {
+      // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
+      batchNameField.setInvalid(true);
+      return;
+    }
+    fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), batchNameField.getValue(),
+        Collections.unmodifiableList(validatedSampleMetadata)));
+
   }
 
   @Override
@@ -69,23 +320,50 @@ public class EditSampleBatchDialog extends DialogWindow {
     fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
+  @Override
+  public void taskFailed(String label, String description) {
+    //TODO
+  }
+
+  @Override
+  public void taskSucceeded(String label, String description) {
+    //TODO
+  }
+
+  @Override
+  public void taskInProgress(String label, String description) {
+    //TODO
+  }
+
   public static class ConfirmEvent extends ComponentEvent<EditSampleBatchDialog> {
 
-    final List<SampleMetadata> sampleMetadata;
+    private final String batchName;
+    private final List<SampleMetadata> validatedSampleMetadata;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
      * the client side or the server side.
      *
-     * @param source         the source component
-     * @param fromClient     <code>true</code> if the event originated from the client
-     *                       side, <code>false</code> otherwise
-     * @param sampleMetadata
+     * @param source                  the source component
+     * @param fromClient              <code>true</code> if the event originated from the client
+     *                                side, <code>false</code> otherwise
+     * @param batchName
+     * @param validatedSampleMetadata
      */
     public ConfirmEvent(EditSampleBatchDialog source, boolean fromClient,
-        List<SampleMetadata> sampleMetadata) {
+        String batchName,
+        List<SampleMetadata> validatedSampleMetadata) {
       super(source, fromClient);
-      this.sampleMetadata = sampleMetadata;
+      this.batchName = batchName;
+      this.validatedSampleMetadata = validatedSampleMetadata;
+    }
+
+    public List<SampleMetadata> validatedSampleMetadata() {
+      return validatedSampleMetadata;
+    }
+
+    public String batchName() {
+      return batchName;
     }
   }
 

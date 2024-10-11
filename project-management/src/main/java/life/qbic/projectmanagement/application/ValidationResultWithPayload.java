@@ -11,9 +11,7 @@ import java.util.Objects;
  */
 public record ValidationResultWithPayload<T>(ValidationResult validationResult, T payload) {
 
-  public ValidationResultWithPayload(ValidationResult validationResult, T payload) {
-    this.validationResult = Objects.requireNonNull(validationResult);
-    this.payload = Objects.requireNonNull(payload);
+  public ValidationResultWithPayload {
+    Objects.requireNonNull(validationResult);
   }
-
 }

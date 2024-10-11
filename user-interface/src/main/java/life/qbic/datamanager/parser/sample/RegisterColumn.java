@@ -12,8 +12,8 @@ import java.util.Arrays;
  */
 public enum RegisterColumn {
 
-  ANALYSIS("Analysis to be performed", 0, false, true),
-  SAMPLE_NAME("Sample Name", 1, false, true),
+  SAMPLE_NAME("Sample Name", 0, false, true),
+  ANALYSIS("Analysis to be performed", 1, false, true),
   BIOLOGICAL_REPLICATE("Biological Replicate", 2, false, false),
   CONDITION("Condition", 3, false, true),
   SPECIES("Species", 4, false, true),

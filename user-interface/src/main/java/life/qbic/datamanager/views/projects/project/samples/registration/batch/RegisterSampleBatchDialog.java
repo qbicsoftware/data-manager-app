@@ -108,6 +108,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     for (SampleInformationForNewSample sampleInformationForNewSample : sampleInformationForNewSamples) {
       CompletableFuture<ValidationResultWithPayload<SampleMetadata>> validation = sampleValidationService.validateNewSampleAsync(
           sampleInformationForNewSample.sampleName(),
+          sampleInformationForNewSample.biologicalReplicate(),
           sampleInformationForNewSample.condition(),
           sampleInformationForNewSample.species(),
           sampleInformationForNewSample.specimen(),
@@ -121,7 +122,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     }
     var validationTasks = CompletableFuture
         //allOf makes sure exceptional state is transferred to outer completable future.
-        .allOf(validations.toArray(new CompletableFuture[validations.size()]))
+        .allOf(validations.toArray(new CompletableFuture[0]))
         .thenApply(v -> validations.stream()
             .map(CompletableFuture::join)
             .toList())

@@ -28,20 +28,23 @@ public class SampleInformationExtractor {
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var sampleName = parsingResult.getValueOrDefault(i, RegisterColumn.SAMPLE_NAME.headerName(),
           "");
-      var condition = parsingResult.getValueOrDefault(i, RegisterColumn.CONDITION.headerName(), "");
-      var species = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIES.headerName(), "");
-      var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.headerName(), "");
-      var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.headerName(), "");
       var analysisMethod = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYSIS.headerName(),
           "");
+      var biologicalReplicate = parsingResult.getValueOrDefault(i,
+          RegisterColumn.BIOLOGICAL_REPLICATE.headerName(), "");
+      var condition = parsingResult.getValueOrDefault(i, RegisterColumn.CONDITION.headerName(), "");
+      var species = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIES.headerName(), "");
+      var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.headerName(), "");
+      var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.headerName(), "");
       result.add(new SampleInformationForNewSample(
           sampleName,
+          analysisMethod,
+          biologicalReplicate,
           condition,
           species,
-          specimen,
           analyte,
-          analysisMethod,
+          specimen,
           comment));
     }
     return result;
@@ -59,18 +62,26 @@ public class SampleInformationExtractor {
     var result = new ArrayList<SampleInformationForExistingSample>();
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var sampleCode = parsingResult.getValueOrDefault(i, EditColumn.SAMPLE_ID.headerName(), "");
-      var condition = parsingResult.getValueOrDefault(i, EditColumn.CONDITION.headerName(), "");
-      var species = parsingResult.getValueOrDefault(i, EditColumn.SPECIES.headerName(), "");
-      var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.headerName(), "");
-      var analyte = parsingResult.getValueOrDefault(i, EditColumn.ANALYTE.headerName(), "");
+      var sampleName = parsingResult.getValueOrDefault(i, EditColumn.SAMPLE_NAME.headerName(), "");
       var analysisMethod = parsingResult.getValueOrDefault(i, EditColumn.ANALYSIS.headerName(),
           "");
+      var biologicalReplicate = parsingResult.getValueOrDefault(i,
+          RegisterColumn.BIOLOGICAL_REPLICATE.headerName(), "");
+      var condition = parsingResult.getValueOrDefault(i, EditColumn.CONDITION.headerName(), "");
+      var species = parsingResult.getValueOrDefault(i, EditColumn.SPECIES.headerName(), "");
+      var analyte = parsingResult.getValueOrDefault(i, EditColumn.ANALYTE.headerName(), "");
+      var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i, EditColumn.COMMENT.headerName(), "");
       result.add(new SampleInformationForExistingSample(sampleCode,
+          sampleName,
+          analysisMethod,
+          biologicalReplicate,
           condition,
           species,
           specimen,
           analyte,
-          analysisMethod));
+          comment
+      ));
     }
     return result;
   }
@@ -86,11 +97,12 @@ public class SampleInformationExtractor {
    */
   public record SampleInformationForNewSample(
       String sampleName,
+      String analysisMethod,
+      String biologicalReplicate,
       String condition,
       String species,
-      String specimen,
       String analyte,
-      String analysisMethod,
+      String specimen,
       String comment
   ) {
 
@@ -108,12 +120,14 @@ public class SampleInformationExtractor {
    */
   public record SampleInformationForExistingSample(
       String sampleCode,
+      String sampleName,
+      String analysisMethod,
+      String biologicalReplicate,
       String condition,
       String species,
       String specimen,
       String analyte,
-      String analysisMethod
-  ) {
+      String comment) {
 
   }
 }

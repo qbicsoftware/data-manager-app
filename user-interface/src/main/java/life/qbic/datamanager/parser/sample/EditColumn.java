@@ -12,8 +12,8 @@ import java.util.Arrays;
  */
 public enum EditColumn {
   SAMPLE_ID("QBiC Sample Id", 0, true, true),
-  ANALYSIS("Analysis to be performed", 1, false, true),
-  SAMPLE_NAME("Sample Name", 2, false, true),
+  SAMPLE_NAME("Sample Name", 1, false, true),
+  ANALYSIS("Analysis to be performed", 2, false, true),
   BIOLOGICAL_REPLICATE("Biological Replicate", 3, false, false),
   CONDITION("Condition", 4, false, true),
   SPECIES("Species", 5, false, true),
