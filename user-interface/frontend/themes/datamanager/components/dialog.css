@@ -504,7 +504,8 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 }
 
 .measurement-upload-dialog::part(overlay),
-.register-samples-dialog::part(overlay) {
+.register-samples-dialog::part(overlay),
+.edit-samples-dialog::part(overlay) {
   min-width: 66%;
   min-height: 66%;
   max-height: 66%;
@@ -530,7 +531,8 @@ Since we want to remove the spacing between the cancel and confirm button we rep
 }
 
 .measurement-upload-dialog .upload-items-display .upload-section .restrictions,
-.register-samples-dialog .restrictions {
+.register-samples-dialog .restrictions,
+.edit-samples-dialog .restrictions {
   font-size: smaller;
   display: inline-flex;
   justify-content: space-between;
