@@ -14,12 +14,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * TODO!
- * <b>short description</b>
+ * A component supporting a file upload and a display of the currently uploaded file.
+ * <p>
+ * Only supports uploading one file at a time, decreasing complexity of display behaviour and data.
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.4.0
  */
 public class UploadWithDisplay extends Div {
 
@@ -34,7 +33,6 @@ public class UploadWithDisplay extends Div {
   }
 
   public record FileType(String extension, String mimeType) {
-
   }
 
   public UploadWithDisplay(int maxFileSize, FileType[] fileTypes) {
@@ -118,6 +116,13 @@ public class UploadWithDisplay extends Div {
     addListener(FailedEvent.class, listener);
   }
 
+  /**
+   * Sets component to display the currently available file. This component will be cleared when the
+   * file is removed from the upload component.
+   *
+   * @param uploadProgressDisplay a component to display
+   * @param <T>                   the type of component to display
+   */
   public <T extends Component> void setDisplay(T uploadProgressDisplay) {
     displayContainer.removeAll();
     if (uploadProgressDisplay == null) {
@@ -131,12 +136,22 @@ public class UploadWithDisplay extends Div {
     displayContainer.setVisible(true);
   }
 
+  /**
+   * Removes component from display.
+   * <p>
+   * If the component is not displayed, does nothing.
+   * @param display
+   * @param <T>
+   */
   public <T extends Component> void removeDisplay(T display) {
     displayContainer.remove(display);
     displayContainerTitle.setVisible(false);
     displayContainer.setVisible(false);
   }
 
+  /**
+   * Clears the upload as well as resets the display.
+   */
   public void clear() {
     upload.clearFileList();
     displayContainer.removeAll();
@@ -146,6 +161,9 @@ public class UploadWithDisplay extends Div {
     fileMemoryBuffer.clear();
   }
 
+  /**
+   * @return the uploaded data or {@link Optional#empty()} is nothing was uploaded yet.
+   */
   public Optional<UploadedData> getUploadedData() {
     if (fileMemoryBuffer.hasUploadedData()) {
       var fileName = fileMemoryBuffer.getFileName().orElseThrow();
@@ -156,8 +174,21 @@ public class UploadWithDisplay extends Div {
     return Optional.empty();
   }
 
+  /**
+   * A representation of uploaded data
+   * @param fileName the name of the uploaded file
+   * @param inputStream the contents of the file
+   * @param mimeType the type of file
+   */
   public record UploadedData(String fileName, InputStream inputStream, String mimeType) {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <b>This method ignores the file content and only compares filename and mime tpye.</b>
+     * @param o   the reference object with which to compare.
+     * @return {@inheritDoc}
+     */
     @Override
     public boolean equals(Object o) {
       if (this == o) {
