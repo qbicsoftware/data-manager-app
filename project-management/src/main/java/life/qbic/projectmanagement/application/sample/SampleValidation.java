@@ -181,7 +181,7 @@ public class SampleValidation {
           conditionsLookupTable.get(condition).id());
     } else {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Unknown condition.")), null);
+          ValidationResult.withFailures(List.of("Unknown condition: " + condition)), null);
     }
   }
 
