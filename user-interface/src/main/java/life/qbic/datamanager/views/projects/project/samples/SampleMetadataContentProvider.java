@@ -37,7 +37,8 @@ public class SampleMetadataContentProvider implements DownloadContentProvider {
     tsvBuilder.addColumn("Species", sample -> sample.species().getLabel());
     tsvBuilder.addColumn("Specimen", sample -> sample.specimen().getLabel());
     tsvBuilder.addColumn("Analyte", sample -> sample.analyte().getLabel());
-    tsvBuilder.addColumn("Analysis to Perform", SamplePreview::analysisMethod);
+    tsvBuilder.addColumn("Analysis to Perform",
+        samplePreview -> samplePreview.analysisMethod().abbreviation());
     tsvBuilder.addColumn("Comment", SamplePreview::comment);
 
     SamplePreview firstSample = samples.stream().findFirst().get();

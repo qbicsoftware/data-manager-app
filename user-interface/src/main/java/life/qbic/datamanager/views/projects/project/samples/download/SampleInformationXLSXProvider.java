@@ -137,7 +137,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     analyteCol.setCellValue(sample.analyte().getLabel());
 
     var analysisCol = sampleRow.createCell(SamplePreviewColumn.ANALYSIS.column());
-    analysisCol.setCellValue(sample.analysisMethod());
+    analysisCol.setCellValue(sample.analysisMethod().abbreviation());
 
     var commentCol = sampleRow.createCell(SamplePreviewColumn.COMMENT.column());
     commentCol.setCellValue(sample.comment());

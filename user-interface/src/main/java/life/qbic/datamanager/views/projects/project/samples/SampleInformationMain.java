@@ -183,7 +183,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     searchField.setValueChangeMode(ValueChangeMode.LAZY);
     searchField.addValueChangeListener(
         event -> sampleDetailsComponent.onSearchFieldValueChanged((event.getValue())));
-    Button metadataDownloadButton = new Button("Download Sample Metadata",
+    Button metadataDownloadButton = new Button("Download sample metadata",
         event -> downloadSampleMetadata());
     Span buttonBar = new Span(metadataDownloadButton);
     buttonBar.addClassName("button-bar");

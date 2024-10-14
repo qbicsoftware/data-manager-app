@@ -15,6 +15,7 @@ import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -45,7 +46,8 @@ public class SamplePreview {
   private String biologicalReplicate;
   private String comment;
   @Column(name = "analysis_method")
-  private String analysisMethod;
+  private AnalysisMethod analysisMethod;
+
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private ExperimentalGroup experimentalGroup;
@@ -60,7 +62,7 @@ public class SamplePreview {
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
       String batchLabel, String sampleName, String biologicalReplicate,
       ExperimentalGroup experimentalGroup, OntologyTerm species,
-      OntologyTerm specimen, OntologyTerm analyte, String analysisMethod, String comment) {
+      OntologyTerm specimen, OntologyTerm analyte, AnalysisMethod analysisMethod, String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
@@ -114,7 +116,7 @@ public class SamplePreview {
       String batchLabel,
       String sampleName, String biologicalReplicate, ExperimentalGroup experimentalGroup,
       OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
-      String analysisMethod, String comment) {
+      AnalysisMethod analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel,
         sampleName, biologicalReplicate, experimentalGroup, species, specimen, analyte, analysisMethod,
         comment);
@@ -152,7 +154,7 @@ public class SamplePreview {
     return analyte;
   }
 
-  public String analysisMethod() {
+  public AnalysisMethod analysisMethod() {
     return analysisMethod;
   }
 
