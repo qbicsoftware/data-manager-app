@@ -12,7 +12,7 @@ public class AnalysisMethodConverter implements AttributeConverter<AnalysisMetho
     if (attribute == null) {
       return null;
     }
-    return attribute.getAbbreviation();
+    return attribute.abbreviation();
   }
 
   @Override
