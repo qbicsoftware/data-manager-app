@@ -1,5 +1,6 @@
 package life.qbic.datamanager.templates.sample;
 
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.*;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidation;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateRow;
@@ -7,6 +8,7 @@ import static life.qbic.datamanager.templates.XLSXTemplateHelper.hideSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.lockSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.setColumnAutoWidth;
 
+import java.util.Collection;
 import java.util.List;
 import life.qbic.datamanager.parser.sample.RegisterColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
@@ -62,14 +64,14 @@ public class SampleBatchRegistrationTemplate {
       List<String> species, List<String> specimen, List<String> analytes,
       List<String> analysisToPerform) {
     XSSFWorkbook workbook = new XSSFWorkbook();
-    var readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
-    var boldCellStyle = XLSXTemplateHelper.createBoldCellStyle(workbook);
+    var readOnlyHeaderStyle = createReadOnlyHeaderCellStyle(workbook);
+    var boldCellStyle = createBoldCellStyle(workbook);
 
     var sheet = workbook.createSheet("Sample Metadata");
 
     Row header = getOrCreateRow(sheet, 0);
     for (RegisterColumn column : RegisterColumn.values()) {
-      var cell = XLSXTemplateHelper.getOrCreateCell(header, column.columnIndex());
+      var cell = getOrCreateCell(header, column.columnIndex());
 
       cell.setCellStyle(boldCellStyle);
       if (column.isMandatory()) {
@@ -123,11 +125,22 @@ public class SampleBatchRegistrationTemplate {
         specimenOptions);
 
     setColumnAutoWidth(sheet, 0, RegisterColumn.maxColumnIndex());
+    // Auto width ignores cell validation values (e.g. a list of valid entries). So we need
+    // to set them explicit
+    setColumnWidth(sheet, RegisterColumn.CONDITION.columnIndex(), maxLength(conditions));
+    setColumnWidth(sheet, RegisterColumn.SPECIES.columnIndex(), maxLength(species));
+    setColumnWidth(sheet, RegisterColumn.SPECIMEN.columnIndex(), maxLength(specimen));
+    setColumnWidth(sheet, RegisterColumn.ANALYTE.columnIndex(), maxLength(analytes));
+    setColumnWidth(sheet, RegisterColumn.ANALYSIS.columnIndex(), maxLength(analysisToPerform));
     setColumnAutoWidth(hiddenSheet, 0, 4);
     workbook.setActiveSheet(0);
     lockSheet(hiddenSheet);
     hideSheet(workbook, hiddenSheet);
 
     return workbook;
+  }
+
+  static int maxLength(Collection<String> collection) {
+    return collection.stream().mapToInt(String::length).max().orElse(0);
   }
 }

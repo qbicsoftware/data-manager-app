@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Predicate;
@@ -39,6 +40,7 @@ public class XLSXTemplateHelper {
   private static final Random RANDOM = new Random();
   private static final byte[] DARK_GREY = {(byte) 119, (byte) 119, (byte) 119};
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
+  private static final int COLUMN_MAX_WIDTH = 255;
 
   protected XLSXTemplateHelper() {
     //hide constructor as static methods only are used
@@ -125,6 +127,29 @@ public class XLSXTemplateHelper {
         currentColumn++) {
       sheet.autoSizeColumn(currentColumn);
     }
+  }
+
+  /**
+   * Sets the width of a column explicitly. The width is expected to be the number in characters to
+   * show.
+   * <p>
+   * Disclaimer: The current maximal value for the width is 255, since we inherit this restraint
+   * from the underlying framework. See {@link Sheet#setColumnWidth(int, int)} for more.
+   *
+   * @param sheet             the sheet for which the column shall be adjusted
+   * @param columnIndex       the index of the column to adjust
+   * @param widthInCharacters the designated width of the column in number of characters
+   * @throws IllegalArgumentException if the number of characters > 255
+   * @since 1.5.0
+   */
+  public static void setColumnWidth(Sheet sheet, int columnIndex, int widthInCharacters)
+      throws IllegalArgumentException {
+    Objects.requireNonNull(sheet);
+    if (widthInCharacters > COLUMN_MAX_WIDTH) {
+      throw new IllegalArgumentException(
+          "Column width must be less than %s characters. Provided: %s".formatted(COLUMN_MAX_WIDTH, widthInCharacters));
+    }
+    sheet.setColumnWidth(columnIndex, widthInCharacters * 256);
   }
 
 
