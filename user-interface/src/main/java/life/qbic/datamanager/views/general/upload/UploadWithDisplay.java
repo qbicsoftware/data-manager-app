@@ -48,7 +48,7 @@ public class UploadWithDisplay extends Div {
     displayContainer.addClassName("uploaded-items-section");
     displayContainer.setVisible(false);
 
-    displayContainerTitle = new Span("Uploaded files");
+    displayContainerTitle = new Span("Uploaded file");
     displayContainerTitle.addClassName("section-title");
     displayContainerTitle.setVisible(false);
 

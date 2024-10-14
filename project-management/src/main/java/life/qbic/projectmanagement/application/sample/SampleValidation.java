@@ -172,12 +172,16 @@ public class SampleValidation {
 
   private ValidationResultWithPayload<Long> validateExperimentalGroupForCondition(String condition,
       Map<String, ExperimentalGroup> conditionsLookupTable) {
+    if (isNull(condition) || condition.isBlank()) {
+      return new ValidationResultWithPayload<>(
+          ValidationResult.withFailures(List.of("Missing condition")), null);
+    }
     if (conditionsLookupTable.containsKey(condition)) {
       return new ValidationResultWithPayload<>(ValidationResult.successful(),
           conditionsLookupTable.get(condition).id());
     } else {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Unknown condition.")), null);
+          ValidationResult.withFailures(List.of("Unknown condition: " + condition)), null);
     }
   }
 
