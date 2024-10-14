@@ -81,6 +81,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     batchNameField.setRequired(true);
     batchNameField.setValue(batchName);
     batchNameField.setPlaceholder("Please enter a name for your batch");
+    batchNameField.addClassName("batch-name-field");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(templateService, batchId,
         experimentId,
@@ -283,6 +284,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     Div downloadMetadataSection = new Div();
     downloadMetadataSection.addClassName("download-metadata");
     Span sectionTitle = new Span("Download metadata template");
+    sectionTitle.addClassName("section-title");
     sectionTitle.addClassName("download-metadata-section-title");
     Div sectionContent = new Div();
     sectionContent.addClassName("download-metadata-section-content");

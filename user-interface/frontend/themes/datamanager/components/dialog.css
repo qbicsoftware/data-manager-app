@@ -837,7 +837,7 @@ vaadin-upload-file::part(meta){
   border-radius: var(--lumo-border-radius-s);
 }
 
-
+.batch-name-field label,
 .register-samples-dialog .section-title,
 .edit-samples-dialog .section-title {
   /*font-size: var(--lumo-font-size-l);*/
