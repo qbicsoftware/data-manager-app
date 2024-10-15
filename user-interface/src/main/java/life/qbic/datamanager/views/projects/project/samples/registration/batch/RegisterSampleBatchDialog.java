@@ -155,6 +155,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
           if (!failedValidations.isEmpty()) {
             ui.access(() -> component.setDisplay(invalidDisplay(
+                uploadedData.fileName(),
                 failedValidations.stream().map(ValidationResultWithPayload::validationResult)
                     .toList())));
             setValidatedSampleMetadata(List.of());
@@ -172,7 +173,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
               RuntimeException runtimeException = new RuntimeException(
                   "At least one validation task could not complete.", e);
               log.error("Could not complete validation. Please try again.", runtimeException);
-              InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(List.of(
+          InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(uploadedData.fileName(),
+              List.of(
                   ValidationResult.withFailures(
                       List.of("Could not complete validation. Please try again."))));
               ui.access(() -> component.setDisplay(invalidUploadDisplay));
@@ -223,14 +225,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
   private static InvalidUploadDisplay invalidDisplay(
-      List<ValidationResult> validationResults) {
-    InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay();
+      String fileName, List<ValidationResult> validationResults) {
     List<String> failureReasons = validationResults.stream()
         .flatMap(res -> res.failures().stream()).toList();
-    for (String failureReason : failureReasons) {
-      invalidUploadDisplay.add(new Span(failureReason));
-    }
-    return invalidUploadDisplay;
+    return new InvalidUploadDisplay(fileName, failureReasons);
   }
 
   @Override
@@ -314,6 +312,49 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   static class InvalidUploadDisplay extends Div {
 
+    public InvalidUploadDisplay(String error) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Div validationBox = new Div();
+      validationBox.addClassName("validation-display-box");
+      var box = new Div();
+      var failuresTitle = new Span(error);
+      var errorIcon = VaadinIcon.CLOSE_CIRCLE.create();
+      errorIcon.addClassName("error");
+      var header = new Span(errorIcon, failuresTitle);
+      header.addClassName("header");
+      box.add(header);
+      validationBox.add(box);
+      add(validationBox);
+    }
+
+    public InvalidUploadDisplay(String fileName, List<String> failureReasons) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
+      fileNameLabel.addClassName("file-name");
+      Div validationBox = new Div();
+      validationBox.addClassName("validation-display-box");
+      var box = new Div();
+      var failuresTitle = new Span("Invalid sample metadata");
+      var errorIcon = VaadinIcon.CLOSE_CIRCLE.create();
+      errorIcon.addClassName("error");
+      var header = new Span(errorIcon, failuresTitle);
+      header.addClassName("header");
+      var instruction = new Span(
+          "Please correct the entries in the uploaded file and re-upload the file.");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+      for (int i = 1; i <= failureReasons.size(); i++) {
+        String reason = failureReasons.get(i - 1);
+        validationDetails.add(new Span(i + ". " + reason));
+      }
+      box.add(header, validationDetails, instruction);
+      validationBox.add(box);
+      add(fileNameLabel, validationBox);
+    }
   }
 
   static class ValidUploadDisplay extends Div {
@@ -379,11 +420,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       return;
     }
     if (validatedSampleMetadata.isEmpty()) {
-      var uploadProgressDisplay = new InvalidUploadDisplay();
-      Span span = new Span(
+      var uploadProgressDisplay = new InvalidUploadDisplay(
           "Nothing was uploaded. Please upload the sample metadata and try again.");
-      span.addClassName("error-text");
-      uploadProgressDisplay.add(span);
       uploadWithDisplay.setDisplay(uploadProgressDisplay);
       return;
     }
