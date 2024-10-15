@@ -1,10 +1,8 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.download.DownloadContentProvider;
 import life.qbic.datamanager.views.general.download.TextFileBuilder;
 import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain.RawDataURL;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;

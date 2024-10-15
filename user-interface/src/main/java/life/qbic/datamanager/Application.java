@@ -34,7 +34,7 @@ import org.springframework.context.annotation.ComponentScan;
     offlineResources = {"images/logo.png"})
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 @ComponentScan(value = {"life.qbic"})
-@Push(value = PushMode.MANUAL, transport = Transport.LONG_POLLING)
+@Push(value = PushMode.AUTOMATIC, transport = Transport.LONG_POLLING)
 public class Application extends SpringBootServletInitializer implements AppShellConfigurator {
 
   private static final Logger log = LoggerFactory.logger(Application.class.getName());

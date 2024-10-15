@@ -1,4 +1,4 @@
-package life.qbic.datamanager.spreadsheet
+package life.qbic.datamanager.templates
 
 
 import org.apache.poi.ss.usermodel.Workbook

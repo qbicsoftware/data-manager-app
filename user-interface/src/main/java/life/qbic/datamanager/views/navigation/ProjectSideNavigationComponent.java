@@ -239,7 +239,7 @@ public class ProjectSideNavigationComponent extends Div implements
     log.debug("Routing to ProjectOverview page");
   }
 
-  private static void routeToProject(ProjectId projectId) {
+private static void routeToProject(ProjectId projectId) {
     RouteParameters routeParameters = new RouteParameters(
         new RouteParam(PROJECT_ID_ROUTE_PARAMETER, projectId.value()));
     //getUI is not possible on the ProjectSideNavigationComponent directly in a static context
