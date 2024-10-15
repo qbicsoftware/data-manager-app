@@ -187,6 +187,10 @@ public class SampleValidation {
 
   private ValidationResultWithPayload<AnalysisMethod> validateAnalysisMethod(
       String analysisMethod) {
+    if (analysisMethod == null || analysisMethod.isBlank()) {
+      return new ValidationResultWithPayload<>(
+          ValidationResult.withFailures(List.of("No analysis method provided.")), null);
+    }
     return AnalysisMethod.forAbbreviation(analysisMethod)
         .map(it -> new ValidationResultWithPayload<>(ValidationResult.successful(), it))
         .orElse(new ValidationResultWithPayload<>(
