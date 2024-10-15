@@ -168,6 +168,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
             setValidatedSampleMetadata(
                 succeededValidations.stream().map(ValidationResultWithPayload::payload).toList());
           }
+          if (succeededValidations.isEmpty()) {
+            // the empty case!
+            ui.access(() -> component.setDisplay(new InvalidUploadDisplay("No sample metadata provided.")));
+          }
         })
         .exceptionally(e -> {
               RuntimeException runtimeException = new RuntimeException(
