@@ -12,7 +12,7 @@ import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 /**
  * <b>Data Manager Layout</b>
  *
- * <p>Defines the basic look of the application for all sites that do not require the user to login
+ * <p>Defines the basic look of the application for all sites within the datamanager.
  *
  */
 @PageTitle("Data Manager")
@@ -22,7 +22,7 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
 
   protected DataManagerLayout(FooterComponentFactory footerComponentFactory) {
     Objects.requireNonNull(footerComponentFactory);
-    addClassName("data-manager-layout");
+    setId("data-manager-layout");
     // Create content area
     contentArea = new Div();
     contentArea.setId("content-area");

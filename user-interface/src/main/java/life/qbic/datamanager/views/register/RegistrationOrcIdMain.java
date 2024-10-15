@@ -99,17 +99,23 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
     if (exceptionList.isEmpty()) {
       return;
     }
-    if (exceptionList.contains(UserExistsException.class)) {
-      userRegistrationOrcIdComponent.showError("Email address already in use",
-          "If you have difficulties with your password you can reset it.");
-    } else if (exceptionList.contains(UserNameNotAvailableException.class)) {
-      userRegistrationOrcIdComponent.showError("Username already in use",
-          "Please try another username");
-    } else if (exceptionList.contains(EmptyUserNameException.class)) {
-      userRegistrationOrcIdComponent.showError("Username must not be empty",
-          "Please try another username");
-    } else {
-      userRegistrationOrcIdComponent.showError("Registration failed", "Please try again.");
+    for (RuntimeException e : exceptionList) {
+      if (e instanceof UserExistsException) {
+        userRegistrationOrcIdComponent.showError("Email address already in use",
+            "If you have difficulties with your password you can reset it.");
+        break;
+      } else if (e instanceof UserNameNotAvailableException) {
+        userRegistrationOrcIdComponent.showError("Username already in use",
+            "Please try another username");
+        break;
+      } else if (e instanceof EmptyUserNameException) {
+        userRegistrationOrcIdComponent.showError("Username must not be empty",
+            "Please try another username");
+        break;
+      } else {
+        userRegistrationOrcIdComponent.showError("Registration failed", "Please try again.");
+        break;
+      }
     }
     String allErrorMessages = exceptionList.stream().map(Throwable::getMessage)
         .collect(Collectors.joining("\n"));

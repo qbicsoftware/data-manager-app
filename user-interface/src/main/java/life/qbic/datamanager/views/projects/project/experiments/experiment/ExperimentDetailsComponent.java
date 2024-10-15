@@ -456,6 +456,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void layoutTabSheet() {
+    experimentSheet.addClassName("experimental-sheet");
     experimentSheet.add("Experimental Variables", experimentalVariables);
     experimentalVariables.addClassName("experimental-groups-container");
     experimentSheet.add("Experimental Groups", experimentalGroups);
