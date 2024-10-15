@@ -8,6 +8,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.component.upload.UploadI18N.Error;
+import com.vaadin.flow.shared.Registration;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
@@ -75,6 +76,7 @@ public class UploadWithDisplay extends Div {
       displayContainer.removeAll();
       displayContainerTitle.setVisible(false);
       displayContainer.setVisible(false);
+      fireEvent(new UploadRemovedEvent(this, fileRemovedEvent.isFromClient()));
     });
 
     Error errorTranslation = new Error();
@@ -108,12 +110,16 @@ public class UploadWithDisplay extends Div {
     return bytes + " B";
   }
 
-  public void addSuccessListener(ComponentEventListener<SucceededEvent> listener) {
-    addListener(SucceededEvent.class, listener);
+  public Registration addSuccessListener(ComponentEventListener<SucceededEvent> listener) {
+    return addListener(SucceededEvent.class, listener);
   }
 
-  public void addFailureListener(ComponentEventListener<FailedEvent> listener) {
-    addListener(FailedEvent.class, listener);
+  public Registration addFailureListener(ComponentEventListener<FailedEvent> listener) {
+    return addListener(FailedEvent.class, listener);
+  }
+
+  public Registration addRemovedListener(ComponentEventListener<UploadRemovedEvent> listener) {
+    return addListener(UploadRemovedEvent.class, listener);
   }
 
   /**
@@ -147,6 +153,7 @@ public class UploadWithDisplay extends Div {
     displayContainer.remove(display);
     displayContainerTitle.setVisible(false);
     displayContainer.setVisible(false);
+    fireEvent(new UploadRemovedEvent(this, false));
   }
 
   /**
@@ -236,6 +243,24 @@ public class UploadWithDisplay extends Div {
      *                   side, <code>false</code> otherwise
      */
     public FailedEvent(UploadWithDisplay source, boolean fromClient) {
+      super(source, fromClient);
+    }
+  }
+
+  /**
+   * Indicates that the upload was removed.
+   */
+  public static class UploadRemovedEvent extends ComponentEvent<UploadWithDisplay> {
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public UploadRemovedEvent(UploadWithDisplay source, boolean fromClient) {
       super(source, fromClient);
     }
   }

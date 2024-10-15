@@ -104,6 +104,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
         uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
             uploadSucceeded)
     );
+    uploadWithDisplay.addRemovedListener(it -> setValidatedSampleMetadata(List.of()));
 
     initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
     initialView.setVisible(true);

@@ -48,6 +48,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private final Div failedView;
   private final Div succeededView;
   private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
+  private final UploadWithDisplay uploadWithDisplay;
 
   private void setValidatedSampleMetadata(List<SampleMetadata> validatedSampleMetadata) {
     this.validatedSampleMetadata.clear();
@@ -81,7 +82,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         projectId, projectCode);
 
     validatedSampleMetadata = new ArrayList<>();
-    UploadWithDisplay uploadWithDisplay = new UploadWithDisplay(MAX_FILE_SIZE, new FileType[]{
+    uploadWithDisplay = new UploadWithDisplay(MAX_FILE_SIZE, new FileType[]{
         new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     });
     uploadWithDisplay.addFailureListener(
@@ -89,6 +90,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     uploadWithDisplay.addSuccessListener(
         uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
             uploadSucceeded));
+    uploadWithDisplay.addRemovedListener(uploadRemoved -> {
+      setValidatedSampleMetadata(List.of());
+    });
 
     Span uploadTheSampleDataTitle = new Span("Upload the sample data");
     uploadTheSampleDataTitle.addClassName("section-title");
@@ -375,6 +379,12 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       return;
     }
     if (validatedSampleMetadata.isEmpty()) {
+      var uploadProgressDisplay = new InvalidUploadDisplay();
+      Span span = new Span(
+          "Nothing was uploaded. Please upload the sample metadata and try again.");
+      span.addClassName("error-text");
+      uploadProgressDisplay.add(span);
+      uploadWithDisplay.setDisplay(uploadProgressDisplay);
       return;
     }
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
