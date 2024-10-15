@@ -136,7 +136,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
       Div validationDetails = new Div();
       for (int i = 1; i <= failureReasons.size(); i++) {
         String reason = failureReasons.get(i - 1);
-        validationDetails.add(new Span(i + ". " + reason));
+        validationDetails.add(new Div(i + ". " + reason));
       }
       box.add(header, validationDetails, instruction);
       validationBox.add(box);
