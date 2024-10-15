@@ -867,3 +867,40 @@ vaadin-upload-file::part(meta){
 .validation-display-box {
   display: grid;
 }
+
+.in-progress-view,
+.failed-view,
+.succeeded-view {
+  display: grid;
+  row-gap: var(--lumo-space-l);
+}
+
+.content-part > .title {
+  font-size: larger;
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+}
+
+.content-part > .body {
+
+}
+
+.content-part > .body.success-box {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+}
+
+.content-part > .body.error-box {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+}
+
+.content-part[highlighted] {
+  border: solid var(--lumo-contrast-20pct) 2px;
+  border-radius: var(--lumo-border-radius-l);
+  padding: var(--lumo-space-m);
+}

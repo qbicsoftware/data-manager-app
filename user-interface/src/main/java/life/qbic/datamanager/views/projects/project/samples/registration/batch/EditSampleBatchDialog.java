@@ -8,6 +8,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
@@ -331,7 +332,23 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   @Override
   public void taskFailed(String label, String description) {
     failedView.removeAll();
-    failedView.add(new Span("Sample batch editing failed."));
+    StepInformation top = new StepInformation(
+        new Div("Edit the sample batch metadata"),
+        new Div("It may take some time for the update to complete"),
+        false);
+
+    Span errorText = new Span("There was an error registering the sample data. Please try again.");
+    errorText.addClassName("error-text");
+    Icon icon = VaadinIcon.CLOSE_CIRCLE.create();
+    icon.addClassName("error");
+    Div errorBox = new Div(
+        icon,
+        errorText
+    );
+    errorBox.addClassName("error-box");
+    var bottom = new StepInformation(new Div("Sample batch editing failed."),
+        errorBox, true);
+    failedView.add(top.asComponent(), bottom.asComponent());
     failedView.setVisible(true);
     setConfirmButtonLabel("Try Again");
     showFailed();
@@ -344,7 +361,23 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   @Override
   public void taskSucceeded(String label, String description) {
     succeededView.removeAll();
-    succeededView.add(new Span("Successfully updated the sample batch!"));
+    StepInformation top = new StepInformation(
+        new Div("Edit the sample batch metadata"),
+        new Div("It may take some time for the update to complete"),
+        false);
+
+    Span successText = new Span("Sample batch updated successfully.");
+    successText.addClassName("success-text");
+    Icon icon = VaadinIcon.CHECK_CIRCLE_O.create();
+    icon.addClassName("success");
+    Div successBox = new Div(
+        icon,
+        successText
+    );
+    successBox.addClassName("success-box");
+    var bottom = new StepInformation(new Div("Sample batch update is complete."),
+        successBox, true);
+    succeededView.add(top.asComponent(), bottom.asComponent());
     succeededView.setVisible(true);
     showSucceeded();
 
@@ -353,12 +386,20 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     failedView.setVisible(false);
   }
 
+
   @Override
   public void taskInProgress(String label, String description) {
-    inProgressView.removeAll();
+
+    StepInformation top = new StepInformation(
+        new Div("Edit the sample batch metadata"),
+        new Div("It may take some time for the update to complete"),
+        false);
     ProgressBar progressBar = new ProgressBar();
     progressBar.setIndeterminate(true);
-    inProgressView.add(new Span("Updating sample batch"), progressBar);
+    StepInformation bottom = new StepInformation(new Div("Updating samples.."),
+        progressBar, true);
+    inProgressView.removeAll();
+    inProgressView.add(top.asComponent(), bottom.asComponent());
     inProgressView.setVisible(true);
     showInProgress();
 

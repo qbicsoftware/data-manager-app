@@ -7,6 +7,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
@@ -231,9 +232,25 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   @Override
   public void taskFailed(String label, String description) {
     failedView.removeAll();
-    failedView.add(new Span("Sample registration failed."));
+    StepInformation top = new StepInformation(
+        new Div("Register the sample batch metadata"),
+        new Div("It may take some time for the sample registration to complete."),
+        false);
+
+    Span errorText = new Span("There was an error registering the sample data. Please try again.");
+    errorText.addClassName("error-text");
+    Icon icon = VaadinIcon.CLOSE_CIRCLE.create();
+    icon.addClassName("error");
+    Div errorBox = new Div(
+        icon,
+        errorText
+    );
+    errorBox.addClassName("error-box");
+    var bottom = new StepInformation(new Div("Sample registration could not be completed."),
+        errorBox, true);
+    failedView.add(top.asComponent(), bottom.asComponent());
     failedView.setVisible(true);
-    setConfirmButtonLabel("Register Again");
+    setConfirmButtonLabel("Try Again");
     showFailed();
 
     initialView.setVisible(false);
@@ -244,7 +261,24 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   @Override
   public void taskSucceeded(String label, String description) {
     succeededView.removeAll();
-    succeededView.add(new Span("Successfully registered samples!"));
+    StepInformation top = new StepInformation(
+        new Div("Register the sample batch metadata"),
+        new Div("It may take some time for the sample registration to complete."),
+        false);
+
+    Span successText = new Span("Sample batch is successfully registered.");
+    successText.addClassName("success-text");
+    Icon icon = VaadinIcon.CHECK_CIRCLE_O.create();
+    icon.addClassName("success");
+    Div successBox = new Div(
+        icon,
+        successText
+    );
+    successBox.addClassName("success-box");
+    var bottom = new StepInformation(new Div("Sample batch update is complete."),
+        successBox, true);
+
+    succeededView.add(top.asComponent(), bottom.asComponent());
     succeededView.setVisible(true);
     showSucceeded();
 
@@ -255,10 +289,17 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   @Override
   public void taskInProgress(String label, String description) {
-    inProgressView.removeAll();
+
+    StepInformation top = new StepInformation(
+        new Div("Register the sample batch metadata"),
+        new Div("It may take some time for the sample registration to complete."),
+        false);
     ProgressBar progressBar = new ProgressBar();
     progressBar.setIndeterminate(true);
-    inProgressView.add(new Span("Sample registration in progress"), progressBar);
+    StepInformation bottom = new StepInformation(new Div("Registering samples.."),
+        progressBar, true);
+    inProgressView.removeAll();
+    inProgressView.add(top.asComponent(), bottom.asComponent());
     inProgressView.setVisible(true);
     showInProgress();
 
