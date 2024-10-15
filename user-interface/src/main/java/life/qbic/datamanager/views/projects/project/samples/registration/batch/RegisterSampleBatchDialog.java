@@ -374,6 +374,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       batchNameField.setInvalid(true);
       return;
     }
+    if (validatedSampleMetadata.isEmpty()) {
+      return;
+    }
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
         batchNameField.getValue(), validatedSampleMetadata));
   }
