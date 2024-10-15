@@ -16,8 +16,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
 import life.qbic.datamanager.parser.ParsingResult;
@@ -351,10 +354,15 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           "Please correct the entries in the uploaded file and re-upload the file.");
       instruction.addClassName("secondary");
       Div validationDetails = new Div();
-      for (int i = 1; i <= failureReasons.size(); i++) {
-        String reason = failureReasons.get(i - 1);
-        validationDetails.add(new Div(i + ". " + reason));
-      }
+
+      Map<String, Integer> frequencyMap = failureReasons.stream()
+          .distinct()
+          .collect(Collectors.toMap(
+              Function.identity(),
+              v -> Collections.frequency(failureReasons, v)
+          ));
+      frequencyMap.forEach(
+          (key, frequency) -> validationDetails.add(new Div(frequency + " times: " + key)));
       box.add(header, validationDetails, instruction);
       validationBox.add(box);
       add(fileNameLabel, validationBox);
