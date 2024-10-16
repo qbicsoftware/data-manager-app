@@ -1,4 +1,4 @@
-# RO-crates support in the data manager
+# RO-crates support in the data manager app
 
 [RO-crates](https://www.researchobject.org/ro-crate/) (RO: Research Object) provide a way structured and machine-actionable way to bundle metadata and files in one single digital object. We will
 look into how RO-Crates can be supported in the data manager.
@@ -17,7 +17,13 @@ How can this metadata be provided in a FAIR compliant manner and serving both: h
 
 ### Suggested RO-Crate implementation
 
+Possible structure for an RO-Crate containing QBiC project information:
+
 ![Example project information RO-Crate](project-information-example-ro-crate.png)
 
+This simple RO-Crate consists of only three files:
 
+ - _ro-crate-metadata.json_: part of the RO-Crate specification, this file describes the content of the RO-crate object. You will see this file in every RO-Crate.
+ - _project-information.yml_: some machine-actionable high level metadata about a QBiC project, e.g. title, identifier, contact
+ - _project-information.docx_: some human-readable, visually appealing information about a QBiC project
 
