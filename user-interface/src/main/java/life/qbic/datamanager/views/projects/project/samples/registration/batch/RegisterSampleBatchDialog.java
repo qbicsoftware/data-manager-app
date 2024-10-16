@@ -384,7 +384,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       Div validationBox = new Div();
       validationBox.addClassName("validation-display-box");
       var box = new Div();
-      var approvedTitle = new Span("Approved");
+      var approvedTitle = new Span("Your data has been approved");
       var validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
       validIcon.addClassName("success");
       var header = new Span(validIcon, approvedTitle);
