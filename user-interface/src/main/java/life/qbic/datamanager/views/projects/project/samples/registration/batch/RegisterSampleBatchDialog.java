@@ -366,7 +366,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
               v -> Collections.frequency(failureReasons, v)
           ));
       frequencyMap.forEach(
-          (key, frequency) -> validationDetails.add(new Div(frequency + " times: " + key)));
+          (key, frequency) -> validationDetails.add(
+              new Div(key + "  for " + frequency + " sample" + ((frequency > 1) ? "s" : ""))));
       box.add(header, validationDetails, instruction);
       validationBox.add(box);
       add(fileNameLabel, validationBox);
