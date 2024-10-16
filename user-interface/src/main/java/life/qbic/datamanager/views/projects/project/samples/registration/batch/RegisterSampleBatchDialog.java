@@ -78,6 +78,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
     addClassName("register-samples-dialog");
     batchNameField = new TextField("Batch name");
+    batchNameField.addClassName("batch-name-field");
     batchNameField.setRequired(true);
     batchNameField.setPlaceholder("Please enter a name for your batch");
 
@@ -99,8 +100,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
     Span uploadTheSampleDataTitle = new Span("Upload the sample data");
     uploadTheSampleDataTitle.addClassName("section-title");
-    initialView.add(batchNameField, downloadMetadataSection,
-        new Div(uploadTheSampleDataTitle, uploadWithDisplay));
+    Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay);
+    uploadSection.addClassName("upload-section");
+    initialView.add(batchNameField, downloadMetadataSection, uploadSection);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);

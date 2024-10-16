@@ -128,64 +128,6 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   font-weight: bold;
 }
 
-.batch-registration-dialog::part(content),
-.batch-update-dialog::part(content) {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lumo-space-s);
-}
-
-.batch-update-dialog::part(overlay),
-.batch-registration-dialog::part(overlay) {
-  min-width: 80vw;
-  height: 100%;
-}
-
-.batch-update-dialog .batch-name,
-.batch-update-dialog .experiment-name,
-.batch-registration-dialog .experiment-name {
-  margin: auto 0.3em;
-  font-weight: bolder;
-}
-
-.batch-registration-dialog .prefill-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.batch-registration-dialog .spreadsheet-container,
-.batch-update-dialog .spreadsheet-container {
-  display: flex;
-  flex-direction: column;
-  column-gap: var(--lumo-space-s);
-  margin-top: var(--lumo-space-m);
-}
-
-.batch-registration-dialog .spreadsheet-header,
-.batch-update-dialog .spreadsheet-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.batch-update-dialog .spreadsheet-controls,
-.batch-registration-dialog .spreadsheet-controls {
-  display: inline-flex;
-  column-gap: 0.5em;
-  justify-content: end;
-}
-
-.batch-update-dialog .spreadsheet-controls .error-text,
-.batch-registration-dialog .spreadsheet-controls .error-text {
-  color: var(--lumo-error-text-color);
-}
-
-.batch-update-dialog .batch-controls > .batch-name-field,
-.batch-registration-dialog .batch-controls > .batch-name-field {
-  width: calc(100% / 3);
-}
-
 .add-experiment-dialog::part(overlay),
 .edit-experiment-dialog::part(overlay) {
   width: 66vw;
@@ -837,12 +779,26 @@ vaadin-upload-file::part(meta){
   border-radius: var(--lumo-border-radius-s);
 }
 
-.batch-name-field label,
+.register-samples-dialog .batch-name-field label,
+.edit-samples-dialog .batch-name-field label,
 .register-samples-dialog .section-title,
 .edit-samples-dialog .section-title {
   /*font-size: var(--lumo-font-size-l);*/
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
+  margin-bottom: var(--lumo-space-s);
+}
+
+.register-samples-dialog .download-metadata,
+.edit-samples-dialog .download-metadata {
+  display: flex;
+  flex-direction: column;
+}
+
+.register-samples-dialog .upload-section,
+.edit-samples-dialog .upload-section {
+  display: flex;
+  flex-direction: column;
 }
 
 .register-samples-dialog .download-metadata-section-content,
@@ -853,53 +809,61 @@ vaadin-upload-file::part(meta){
   flex-direction: row;
   padding: 1em;
   align-content: baseline;
-  display: flex;
+  column-gap: var(--lumo-space-m);
   align-items: center;
 }
 
-.edit-samples-dialog .initial-view,
-.register-samples-dialog .initial-view {
+.register-samples-dialog .initial-view,
+.edit-samples-dialog .initial-view {
   display: grid;
   row-gap: 1em;
 }
 
+.register-samples-dialog .batch-name-field,
+.edit-samples-dialog .batch-name-field {
+  max-width: 50%;
+}
 
-.validation-display-box {
+.register-samples-dialog .validation-display-box,
+.edit-samples-dialog .validation-display-box {
   display: grid;
 }
 
-.in-progress-view,
-.failed-view,
-.succeeded-view {
+.register-samples-dialog .in-progress-view,
+.register-samples-dialog .failed-view,
+.register-samples-dialog .succeeded-view,
+.edit-samples-dialog .in-progress-view,
+.edit-samples-dialog .failed-view,
+.edit-samples-dialog .succeeded-view {
   display: grid;
   row-gap: var(--lumo-space-l);
 }
 
-.content-part > .title {
+.register-samples-dialog .content-part > .title,
+.edit-samples-dialog .content-part > .title {
   font-size: larger;
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
 }
 
-.content-part > .body {
-
-}
-
-.content-part > .body.success-box {
+.register-samples-dialog .content-part > .body.success-box,
+.edit-samples-dialog .content-part > .body.success-box {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   column-gap: var(--lumo-space-s);
 }
 
-.content-part > .body.error-box {
+.register-samples-dialog .content-part > .body.error-box,
+.edit-samples-dialog .content-part > .body.error-box {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   column-gap: var(--lumo-space-s);
 }
 
-.content-part[highlighted] {
+.register-samples-dialog .content-part[highlighted],
+.edit-samples-dialog .content-part[highlighted] {
   border: solid var(--lumo-contrast-20pct) 2px;
   border-radius: var(--lumo-border-radius-l);
   padding: var(--lumo-space-m);

@@ -109,7 +109,11 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     );
     uploadWithDisplay.addRemovedListener(it -> setValidatedSampleMetadata(List.of()));
 
-    initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
+    Span uploadTheSampleDataTitle = new Span("Upload the sample data");
+    uploadTheSampleDataTitle.addClassName("section-title");
+    Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay);
+    uploadSection.addClassName("upload-section");
+    initialView.add(batchNameField, downloadMetadataSection, uploadSection);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);
