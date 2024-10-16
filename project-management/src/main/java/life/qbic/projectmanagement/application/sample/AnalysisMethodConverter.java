@@ -12,7 +12,7 @@ public class AnalysisMethodConverter implements AttributeConverter<AnalysisMetho
     if (attribute == null) {
       return null;
     }
-    return attribute.abbreviation();
+    return attribute.name();
   }
 
   @Override
@@ -20,7 +20,7 @@ public class AnalysisMethodConverter implements AttributeConverter<AnalysisMetho
     if (dbData == null) {
       return null;
     }
-    return AnalysisMethod.forAbbreviation(dbData).orElse(null);
+    return AnalysisMethod.valueOf(dbData);
   }
 
 }
