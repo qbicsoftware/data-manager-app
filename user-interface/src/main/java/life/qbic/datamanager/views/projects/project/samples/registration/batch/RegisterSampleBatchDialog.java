@@ -102,6 +102,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     uploadTheSampleDataTitle.addClassName("section-title");
     Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay);
     uploadSection.addClassName("upload-section");
+    uploadSection.addClassName("section-with-title");
     initialView.add(batchNameField, downloadMetadataSection, uploadSection);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
@@ -215,6 +216,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         "Please download the metadata template, fill in the sample properties and upload the metadata sheet below to register the sample batch.");
     Div downloadMetadataSection = new Div();
     downloadMetadataSection.addClassName("download-metadata");
+    downloadMetadataSection.addClassName("section-with-title");
     Span sectionTitle = new Span("Download metadata template");
     sectionTitle.addClassName("download-metadata-section-title");
     sectionTitle.addClassName("section-title");

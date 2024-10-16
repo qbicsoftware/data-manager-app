@@ -789,14 +789,8 @@ vaadin-upload-file::part(meta){
   margin-bottom: var(--lumo-space-s);
 }
 
-.register-samples-dialog .download-metadata,
-.edit-samples-dialog .download-metadata {
-  display: flex;
-  flex-direction: column;
-}
-
-.register-samples-dialog .upload-section,
-.edit-samples-dialog .upload-section {
+.register-samples-dialog .section-with-title,
+.edit-samples-dialog .section-with-title {
   display: flex;
   flex-direction: column;
 }

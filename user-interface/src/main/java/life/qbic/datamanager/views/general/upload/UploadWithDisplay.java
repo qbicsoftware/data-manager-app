@@ -97,7 +97,9 @@ public class UploadWithDisplay extends Div {
       errorArea.setText(fileRejected.getErrorMessage());
     });
     upload.addFinishedListener(it -> errorArea.setVisible(false));
-    add(errorArea, upload, restrictions, displayContainerTitle, displayContainer);
+    Div sectionWithTitle = new Div(displayContainerTitle, displayContainer);
+    sectionWithTitle.addClassName("section-with-title");
+    add(errorArea, upload, restrictions, sectionWithTitle);
   }
 
   private static String formatFileSize(int bytes) {
