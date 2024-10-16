@@ -17,10 +17,7 @@ How can this metadata be provided in a FAIR compliant manner and serving both: h
 
 ### Suggested RO-Crate implementation
 
-![img.png](img.png)
-```bash
-./project-summary-ro-crate
-|-- ro-crate
-```
+![Example project information RO-Crate](project-information-example-ro-crate.png)
+
 
 
