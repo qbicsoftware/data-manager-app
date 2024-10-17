@@ -1,9 +1,8 @@
-package life.qbic.datamanager.parser;
+package life.qbic.datamanager.parser.sample;
 
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.datamanager.parser.sample.EditColumn;
-import life.qbic.datamanager.parser.sample.RegisterColumn;
+import life.qbic.datamanager.parser.ParsingResult;
 
 /**
  * Extracts sample information from a parsing result.

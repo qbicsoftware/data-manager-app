@@ -14,7 +14,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.parser.measurement.NGSMeasurementEditColumn;
+import life.qbic.datamanager.parser.measurement.NGSMeasurementRegisterColumn;
 import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementEditColumn;
+import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementRegisterColumn;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -222,17 +224,17 @@ public class MetadataConverter implements MeasurementMetadataConverter {
         .collect(Collectors.toList());
     Map<String, Integer> hitMap;
     if (ignoreID) {
-      formattedProperties.remove(NGSMeasurementEditColumn.MEASUREMENT_ID.headerName());
       hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementEditColumn.values())
-              .map(NGSMeasurementEditColumn::headerName)
-              .collect(
-                  Collectors.toSet()), NGSMeasurementEditColumn.MEASUREMENT_ID.headerName());
+          Arrays.stream(NGSMeasurementRegisterColumn.values())
+              .map(NGSMeasurementRegisterColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()), NGSMeasurementEditColumn.MEASUREMENT_ID.headerName());
     } else {
       hitMap = countHits(formattedProperties,
           Arrays.stream(NGSMeasurementEditColumn.values())
-              .map(NGSMeasurementEditColumn::headerName).collect(
-                  Collectors.toSet()));
+              .map(NGSMeasurementEditColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()));
     }
     var missingProperties = new ArrayList<>();
     for (Entry<String, Integer> entry : hitMap.entrySet()) {
@@ -253,16 +255,18 @@ public class MetadataConverter implements MeasurementMetadataConverter {
         .collect(Collectors.toList());
     Map<String, Integer> hitMap;
     if (ignoreID) {
-      formattedProperties.remove(ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName());
       hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementEditColumn.values())
-              .map(ProteomicsMeasurementEditColumn::headerName).collect(
-                  Collectors.toSet()), ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName());
+          Arrays.stream(ProteomicsMeasurementRegisterColumn.values())
+              .map(ProteomicsMeasurementRegisterColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()),
+          ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName());
     } else {
       hitMap = countHits(formattedProperties,
           Arrays.stream(ProteomicsMeasurementEditColumn.values())
-              .map(ProteomicsMeasurementEditColumn::headerName).collect(
-                  Collectors.toSet()));
+              .map(ProteomicsMeasurementEditColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()));
     }
     var missingProperties = new ArrayList<>();
     for (Entry<String, Integer> entry : hitMap.entrySet()) {
