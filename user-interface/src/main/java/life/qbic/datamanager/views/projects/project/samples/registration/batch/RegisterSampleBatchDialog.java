@@ -176,17 +176,17 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           }
           if (succeededValidations.isEmpty()) {
             // the empty case!
-            ui.access(() -> component.setDisplay(new InvalidUploadDisplay("No sample metadata provided.")));
+            ui.access(() -> component.setDisplay(
+                new InvalidUploadDisplay(uploadedData.fileName(),
+                    "No valid sample metadata provided.")));
           }
         })
         .exceptionally(e -> {
               RuntimeException runtimeException = new RuntimeException(
                   "At least one validation task could not complete.", e);
               log.error("Could not complete validation. Please try again.", runtimeException);
-          InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(uploadedData.fileName(),
-              List.of(
-                  ValidationResult.withFailures(
-                      List.of("Could not complete validation. Please try again."))));
+          InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
+              uploadedData.fileName(), "Could not complete validation. Please try again.");
               ui.access(() -> component.setDisplay(invalidUploadDisplay));
               throw runtimeException;
             }
@@ -366,8 +366,37 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
               v -> Collections.frequency(failureReasons, v)
           ));
       frequencyMap.forEach(
-          (key, frequency) -> validationDetails.add(
-              new Div(key + "  for " + frequency + " sample" + ((frequency > 1) ? "s" : ""))));
+          (key, frequency) -> {
+            String s = frequency + " sample" + ((frequency > 1) ? "s." : ".");
+            Span span = new Span(s);
+            span.addClassName("bold");
+            validationDetails.add(new Div(new Span(key + " for "), span));
+          });
+      box.add(header, validationDetails, instruction);
+      validationBox.add(box);
+      add(fileNameLabel, validationBox);
+    }
+
+    public InvalidUploadDisplay(String fileName, String failureReason) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
+      fileNameLabel.addClassName("file-name");
+      Div validationBox = new Div();
+      validationBox.addClassName("validation-display-box");
+      var box = new Div();
+      var failuresTitle = new Span("Invalid sample metadata");
+      var errorIcon = VaadinIcon.CLOSE_CIRCLE.create();
+      errorIcon.addClassName("error");
+      var header = new Span(errorIcon, failuresTitle);
+      header.addClassName("header");
+      var instruction = new Span(
+          "Please correct the entries in the uploaded file and re-upload the file.");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+
+      validationDetails.add(new Div(failureReason));
       box.add(header, validationDetails, instruction);
       validationBox.add(box);
       add(fileNameLabel, validationBox);
