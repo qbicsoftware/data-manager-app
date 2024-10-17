@@ -461,15 +461,20 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
       return;
     }
-    if (batchNameField.isEmpty()) {
+    if (batchNameField.isEmpty() || batchNameField.getValue().isBlank()) {
       // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
       batchNameField.setInvalid(true);
       return;
     }
-    if (validatedSampleMetadata.isEmpty()) {
+    if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData().isEmpty()) {
+      // nothing is uploaded
       var uploadProgressDisplay = new InvalidUploadDisplay(
           "Nothing was uploaded. Please upload the sample metadata and try again.");
       uploadWithDisplay.setDisplay(uploadProgressDisplay);
+      return;
+    } else if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData()
+        .isPresent()) {
+      // the uploaded data is not valid
       return;
     }
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
