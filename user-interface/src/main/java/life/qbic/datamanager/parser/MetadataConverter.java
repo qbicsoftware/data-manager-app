@@ -89,7 +89,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     Objects.requireNonNull(parsingResult);
     var properties = parsingResult.columnMap().keySet();
     if (looksLikeNgsMeasurement(properties, false)) {
-      return tryConversion(this::convertExistingNGSMeasurement, parsingResult);
+      return tryConversion(this::convertNewNGSMeasurement, parsingResult);
     } else if (looksLikeProteomicsMeasurement(properties, false)) {
       return tryConversion(this::convertNewProteomicsMeasurement, parsingResult);
     } else {
