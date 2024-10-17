@@ -91,7 +91,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       };
       var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
       cell.setCellValue(value);
-      if (measurementColumn.readOnly()) {
+      if (measurementColumn.isReadOnly()) {
         cell.setCellStyle(readOnlyCellStyle);
       }
     }
@@ -123,9 +123,13 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       Row header = getOrCreateRow(sheet, 0);
       for (NGSMeasurementEditColumn value : NGSMeasurementEditColumn.values()) {
         var cell = getOrCreateCell(header, value.columnIndex());
-        cell.setCellValue(value.headerName());
+        if (value.isMandatory()) {
+          cell.setCellValue(value.headerName() + "*");
+        } else {
+          cell.setCellValue(value.headerName());
+        }
         cell.setCellStyle(boldStyle);
-        if (value.readOnly()) {
+        if (value.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
         }
       }

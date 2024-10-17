@@ -9,6 +9,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
+import com.vaadin.flow.component.html.OrderedList.NumberingType;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -210,8 +211,12 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     };
     List<MeasurementMetadata> result;
     try {
-      result = MetadataConverter.measurementConverter()
-          .convert(parsingResult, mode.equals(MODE.ADD));
+      result = switch (mode) {
+        case ADD -> MetadataConverter.measurementConverter()
+            .convertRegister(parsingResult);
+        case EDIT -> MetadataConverter.measurementConverter()
+            .convertEdit(parsingResult);
+      };
     } catch (
         UnknownMetadataTypeException e) { // we want to display this in the dialog, not via the notification system
       displayError(succeededEvent.getFileName(),
@@ -477,7 +482,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       OrderedList invalidMeasurementsList = new OrderedList(
           invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
       invalidMeasurementsList.addClassName("invalid-measurement-list");
-      invalidMeasurementsList.setType(OrderedList.NumberingType.NUMBER);
+      invalidMeasurementsList.setType(NumberingType.NUMBER);
       validationDetails.add(invalidMeasurementsList);
       box.add(header, validationDetails, instruction);
       return box;

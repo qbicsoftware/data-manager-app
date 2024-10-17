@@ -25,16 +25,17 @@ public interface MeasurementMetadataConverter {
    * </ul>
    *
    * @param parsingResult       the parsing result to take as input for the conversion.
-   * @param ignoreMeasurementId weather to ignore the measurement identifier or not
    * @return a list of converted implementations of {@link MeasurementMetadata}.
    * @throws UnknownMetadataTypeException if no matching implementation of
    *                                      {@link MeasurementMetadata} can be associated from the
    *                                      provided {@link ParsingResult#columnMap()}.
    * @since 1.4.0
    */
-  List<? extends MeasurementMetadata> convert(ParsingResult parsingResult,
-      boolean ignoreMeasurementId)
+  List<? extends MeasurementMetadata> convertRegister(ParsingResult parsingResult)
       throws UnknownMetadataTypeException;
+
+  List<MeasurementMetadata> convertEdit(ParsingResult parsingResult)
+      throws UnknownMetadataTypeException, MissingSampleIdException;
 
   class UnknownMetadataTypeException extends RuntimeException {
 

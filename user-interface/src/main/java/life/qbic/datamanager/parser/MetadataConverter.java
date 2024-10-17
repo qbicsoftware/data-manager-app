@@ -14,7 +14,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.parser.measurement.NGSMeasurementEditColumn;
+import life.qbic.datamanager.parser.measurement.NGSMeasurementRegisterColumn;
 import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementEditColumn;
+import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementRegisterColumn;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
@@ -82,14 +84,30 @@ public class MetadataConverter implements MeasurementMetadataConverter {
   }
 
   @Override
-  public List<MeasurementMetadata> convert(ParsingResult parsingResult, boolean ignoreMeasurementId)
+  public List<MeasurementMetadata> convertRegister(ParsingResult parsingResult)
       throws UnknownMetadataTypeException, MissingSampleIdException {
     Objects.requireNonNull(parsingResult);
     var properties = parsingResult.columnMap().keySet();
-    if (looksLikeNgsMeasurement(properties, ignoreMeasurementId)) {
-      return tryConversion(this::convertNGSMeasurement, parsingResult);
-    } else if (looksLikeProteomicsMeasurement(properties, ignoreMeasurementId)) {
-      return tryConversion(this::convertProteomicsMeasurement, parsingResult);
+    if (looksLikeNgsMeasurement(properties, true)) {
+      return tryConversion(this::convertNewNGSMeasurement, parsingResult);
+    } else if (looksLikeProteomicsMeasurement(properties, true)) {
+      return tryConversion(this::convertNewProteomicsMeasurement, parsingResult);
+    } else {
+      throw new UnknownMetadataTypeException(
+          "Unknown metadata type: cannot match properties to any known metadata type. Provided [%s]".formatted(
+              String.join(", ", properties)));
+    }
+  }
+
+  @Override
+  public List<MeasurementMetadata> convertEdit(ParsingResult parsingResult)
+      throws UnknownMetadataTypeException, MissingSampleIdException {
+    Objects.requireNonNull(parsingResult);
+    var properties = parsingResult.columnMap().keySet();
+    if (looksLikeNgsMeasurement(properties, false)) {
+      return tryConversion(this::convertExistingNGSMeasurement, parsingResult);
+    } else if (looksLikeProteomicsMeasurement(properties, false)) {
+      return tryConversion(this::convertExistingProteomicsMeasurement, parsingResult);
     } else {
       throw new UnknownMetadataTypeException(
           "Unknown metadata type: cannot match properties to any known metadata type. Provided [%s]".formatted(
@@ -106,7 +124,65 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     }
   }
 
-  private List<MeasurementMetadata> convertProteomicsMeasurement(ParsingResult parsingResult) {
+  private List<MeasurementMetadata> convertNewProteomicsMeasurement(ParsingResult parsingResult) {
+    var result = new ArrayList<MeasurementMetadata>();
+    for (int i = 0; i < parsingResult.rows().size(); i++) {
+      var sampleCode = SampleCode.create(parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.SAMPLE_ID.headerName(), ""));
+      var technicalReplicateName = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.TECHNICAL_REPLICATE_NAME.headerName(), "");
+      var organisationId = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.ORGANISATION_ID.headerName(), "");
+      var msDevice = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.MS_DEVICE.headerName(), "");
+      var samplePoolGroup = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.POOL_GROUP.headerName(), "");
+      var facility = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.FACILITY.headerName(), "");
+      var fractionName = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.CYCLE_FRACTION_NAME.headerName(), "");
+      var digestionEnzyme = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.DIGESTION_ENZYME.headerName(), "");
+      var digestionMethod = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.headerName(), "");
+      var enrichmentMethod = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.ENRICHMENT_METHOD.headerName(), "");
+      var injectionVolume = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.INJECTION_VOLUME.headerName(), "");
+      var lcColumn = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.LC_COLUMN.headerName(), "");
+      var lcmsMethod = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.LCMS_METHOD.headerName(), "");
+      var labelingType = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.LABELING_TYPE.headerName(), "");
+      var label = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.LABEL.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.COMMENT.headerName(), "");
+      var pxpMetaDaturm = new ProteomicsMeasurementMetadata(
+          "",
+          sampleCode,
+          technicalReplicateName,
+          organisationId,
+          msDevice,
+          samplePoolGroup,
+          facility,
+          fractionName,
+          digestionEnzyme,
+          digestionMethod,
+          enrichmentMethod,
+          injectionVolume,
+          lcColumn,
+          lcmsMethod,
+          new Labeling(labelingType, label),
+          comment);
+      result.add(pxpMetaDaturm);
+    }
+    return result;
+  }
+
+  private List<MeasurementMetadata> convertExistingProteomicsMeasurement(
+      ParsingResult parsingResult) {
     var result = new ArrayList<MeasurementMetadata>();
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var measurementId = parsingResult.getValueOrDefault(i,
@@ -164,7 +240,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     return result;
   }
 
-  private List<MeasurementMetadata> convertNGSMeasurement(ParsingResult parsingResult) {
+  private List<MeasurementMetadata> convertExistingNGSMeasurement(ParsingResult parsingResult) {
     var result = new ArrayList<MeasurementMetadata>();
 
     for (int i = 0; i < parsingResult.rows().size(); i++) {
@@ -182,7 +258,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       var facility = parsingResult.getValueOrDefault(i,
           NGSMeasurementEditColumn.FACILITY.headerName(), "");
       var sequencingReadType = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.SEQUENCING_RUN_PROTOCOL.headerName(), "");
+          NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.headerName(), "");
       var libraryKit = parsingResult.getValueOrDefault(i,
           NGSMeasurementEditColumn.LIBRARY_KIT.headerName(), "");
       var flowCell = parsingResult.getValueOrDefault(i,
@@ -217,22 +293,74 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     return result;
   }
 
+  private List<MeasurementMetadata> convertNewNGSMeasurement(ParsingResult parsingResult) {
+    var result = new ArrayList<MeasurementMetadata>();
+
+    for (int i = 0; i < parsingResult.rows().size(); i++) {
+      var sampleCodes = List.of(
+          SampleCode.create(
+              parsingResult.getValueOrDefault(i,
+                  NGSMeasurementRegisterColumn.SAMPLE_ID.headerName(),
+                  ""))
+      );
+      var organisationId = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.ORGANISATION_ID.headerName(), "");
+      var instrument = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.INSTRUMENT.headerName(), "");
+      var facility = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.FACILITY.headerName(), "");
+      var sequencingReadType = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.SEQUENCING_READ_TYPE.headerName(), "");
+      var libraryKit = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.LIBRARY_KIT.headerName(), "");
+      var flowCell = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.FLOW_CELL.headerName(), "");
+      var runProtocol = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.SEQUENCING_RUN_PROTOCOL.headerName(), "");
+      var poolGroup = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.POOL_GROUP.headerName(), "");
+      var indexI7 = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.INDEX_I7.headerName(), "");
+      var indexI5 = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.INDEX_I5.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i,
+          NGSMeasurementRegisterColumn.COMMENT.headerName(), "");
+      var metadatum = new NGSMeasurementMetadata(
+          "",
+          sampleCodes,
+          organisationId,
+          instrument,
+          facility,
+          sequencingReadType,
+          libraryKit,
+          flowCell,
+          runProtocol,
+          poolGroup,
+          indexI7,
+          indexI5,
+          comment
+      );
+      result.add(metadatum);
+    }
+    return result;
+  }
+
   private boolean looksLikeNgsMeasurement(Collection<String> properties, boolean ignoreID) {
     var formattedProperties = properties.stream().map(String::toLowerCase)
         .collect(Collectors.toList());
     Map<String, Integer> hitMap;
     if (ignoreID) {
-      formattedProperties.remove(NGSMeasurementEditColumn.MEASUREMENT_ID.headerName());
       hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementEditColumn.values())
-              .map(NGSMeasurementEditColumn::headerName)
-              .collect(
-                  Collectors.toSet()), NGSMeasurementEditColumn.MEASUREMENT_ID.headerName());
+          Arrays.stream(NGSMeasurementRegisterColumn.values())
+              .map(NGSMeasurementRegisterColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()), NGSMeasurementEditColumn.MEASUREMENT_ID.headerName());
     } else {
       hitMap = countHits(formattedProperties,
           Arrays.stream(NGSMeasurementEditColumn.values())
-              .map(NGSMeasurementEditColumn::headerName).collect(
-                  Collectors.toSet()));
+              .map(NGSMeasurementEditColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()));
     }
     var missingProperties = new ArrayList<>();
     for (Entry<String, Integer> entry : hitMap.entrySet()) {
@@ -253,16 +381,18 @@ public class MetadataConverter implements MeasurementMetadataConverter {
         .collect(Collectors.toList());
     Map<String, Integer> hitMap;
     if (ignoreID) {
-      formattedProperties.remove(ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName());
       hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementEditColumn.values())
-              .map(ProteomicsMeasurementEditColumn::headerName).collect(
-                  Collectors.toSet()), ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName());
+          Arrays.stream(ProteomicsMeasurementRegisterColumn.values())
+              .map(ProteomicsMeasurementRegisterColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()),
+          ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName());
     } else {
       hitMap = countHits(formattedProperties,
           Arrays.stream(ProteomicsMeasurementEditColumn.values())
-              .map(ProteomicsMeasurementEditColumn::headerName).collect(
-                  Collectors.toSet()));
+              .map(ProteomicsMeasurementEditColumn::headerName)
+              .map(Sanitizer::headerEncoder)
+              .collect(Collectors.toSet()));
     }
     var missingProperties = new ArrayList<>();
     for (Entry<String, Integer> entry : hitMap.entrySet()) {
