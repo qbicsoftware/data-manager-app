@@ -81,11 +81,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       };
       var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
       cell.setCellValue(value);
-      if (measurementColumn.isMandatory()) {
-        cell.setCellValue(value + "*");
-      } else {
-        cell.setCellValue(value);
-      }
+      cell.setCellValue(value);
       if (measurementColumn.isReadOnly()) {
         cell.setCellStyle(readOnlyStyle);
       }
@@ -115,7 +111,11 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       Row header = getOrCreateRow(sheet, 0);
       for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
         var cell = getOrCreateCell(header, measurementColumn.columnIndex());
-        cell.setCellValue(measurementColumn.headerName());
+        if (measurementColumn.isMandatory()) {
+          cell.setCellValue(measurementColumn.headerName() + "*");
+        } else {
+          cell.setCellValue(measurementColumn.headerName());
+        }
         if (measurementColumn.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
         } else {
