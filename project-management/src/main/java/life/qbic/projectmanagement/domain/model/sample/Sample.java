@@ -178,6 +178,9 @@ public class Sample {
 
     @Override
     public String convertToDatabaseColumn(AnalysisMethod analysisMethod) {
+      if (analysisMethod == null) {
+        return null;
+      }
       return analysisMethod.name();
     }
 
