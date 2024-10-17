@@ -37,6 +37,7 @@ public class UploadWithDisplay extends Div {
   }
 
   public UploadWithDisplay(int maxFileSize, FileType[] fileTypes) {
+    addClassName("upload-with-display");
     errorArea = new Div();
     displayContainer = new Div();
     fileMemoryBuffer = new FileMemoryBuffer();
@@ -97,7 +98,10 @@ public class UploadWithDisplay extends Div {
       errorArea.setText(fileRejected.getErrorMessage());
     });
     upload.addFinishedListener(it -> errorArea.setVisible(false));
-    add(errorArea, upload, restrictions, displayContainerTitle, displayContainer);
+    errorArea.setVisible(false);
+    Div sectionWithTitle = new Div(displayContainerTitle, displayContainer);
+    sectionWithTitle.addClassName("section-with-title");
+    add(errorArea, new Div(upload, restrictions), sectionWithTitle);
   }
 
   private static String formatFileSize(int bytes) {

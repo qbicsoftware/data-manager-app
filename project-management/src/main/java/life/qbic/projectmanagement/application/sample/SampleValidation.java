@@ -103,7 +103,7 @@ public class SampleValidation {
         ExperimentId.parse(experimentId));
     if (experimentQuery.isEmpty()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Unknown experiment.")), null);
+          ValidationResult.withFailures(List.of("Unknown experiment")), null);
     }
     var experiment = experimentQuery.orElseThrow();
     var experimentalGroupLookupTable = conditionLookup(experiment.getExperimentalGroups());
@@ -165,7 +165,7 @@ public class SampleValidation {
   private ValidationResultWithPayload<String> validateSampleName(String sampleName) {
     if (isNull(sampleName) || sampleName.isBlank()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Missing sample name.")), null);
+          ValidationResult.withFailures(List.of("Missing sample name")), null);
     }
     return new ValidationResultWithPayload<>(ValidationResult.successful(), sampleName);
   }
@@ -181,7 +181,7 @@ public class SampleValidation {
           conditionsLookupTable.get(condition).id());
     } else {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Unknown condition: " + condition)), null);
+          ValidationResult.withFailures(List.of("Unknown condition: '" + condition + "'")), null);
     }
   }
 
@@ -189,19 +189,26 @@ public class SampleValidation {
       String analysisMethod) {
     if (analysisMethod == null || analysisMethod.isBlank()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("No analysis method provided.")), null);
+          ValidationResult.withFailures(List.of("No analysis method provided")), null);
     }
     return AnalysisMethod.forAbbreviation(analysisMethod)
         .map(it -> new ValidationResultWithPayload<>(ValidationResult.successful(), it))
         .orElse(new ValidationResultWithPayload<>(
-            ValidationResult.withFailures(List.of("Unknown analysis: " + analysisMethod)), null));
+            ValidationResult.withFailures(List.of("Unknown analysis: '" + analysisMethod + "'")),
+            null));
   }
 
   private ValidationResultWithPayload<OntologyTerm> validateSpecies(String species) {
+    if (isNull(species) || species.isBlank()) {
+      return new ValidationResultWithPayload<>(
+          ValidationResult.withFailures(List.of("Missing species")),
+          null);
+    }
     var extractedTerm = PropertyConversion.extractCURIE(species);
     if (extractedTerm.isEmpty()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Missing CURIE in species: " + species)), null);
+          ValidationResult.withFailures(List.of("Missing CURIE in species: '" + species + "'")),
+          null);
     }
     var speciesLookup = speciesLookupService.findByCURI(extractedTerm.get());
     return speciesLookup
@@ -209,48 +216,60 @@ public class SampleValidation {
         .map(it ->
             new ValidationResultWithPayload<>(ValidationResult.successful(), it))
         .orElse(new ValidationResultWithPayload<>(
-            ValidationResult.withFailures(List.of("Unknown species: " + species)), null));
+            ValidationResult.withFailures(List.of("Unknown species: '" + species + "'")), null));
   }
 
   private ValidationResultWithPayload<OntologyTerm> validateSpecimen(String specimen) {
+    if (isNull(specimen) || specimen.isBlank()) {
+      return new ValidationResultWithPayload<>(
+          ValidationResult.withFailures(List.of("Missing specimen")),
+          null);
+    }
     var extractedTerm = PropertyConversion.extractCURIE(specimen);
     if (extractedTerm.isEmpty()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Missing CURIE in specimen: " + specimen)), null);
+          ValidationResult.withFailures(List.of("Missing CURIE in specimen: '" + specimen + "'")),
+          null);
     }
     var speciesLookup = terminologyService.findByCurie(extractedTerm.get());
     return speciesLookup
         .map(it ->
             new ValidationResultWithPayload<>(ValidationResult.successful(), it))
         .orElse(new ValidationResultWithPayload<>(
-            ValidationResult.withFailures(List.of("Unknown specimen: " + specimen)), null));
+            ValidationResult.withFailures(List.of("Unknown specimen: '" + specimen + "'")), null));
   }
 
   private ValidationResultWithPayload<OntologyTerm> validateAnalyte(String analyte) {
+    if (isNull(analyte) || analyte.isBlank()) {
+      return new ValidationResultWithPayload<>(
+          ValidationResult.withFailures(List.of("Missing analyte")),
+          null);
+    }
     var extractedTerm = PropertyConversion.extractCURIE(analyte);
     if (extractedTerm.isEmpty()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Missing CURIE in analyte: " + analyte)), null);
+          ValidationResult.withFailures(List.of("Missing CURIE in analyte: '" + analyte + "'")),
+          null);
     }
     var speciesLookup = terminologyService.findByCurie(extractedTerm.get());
     return speciesLookup
         .map(it ->
             new ValidationResultWithPayload<>(ValidationResult.successful(), it))
         .orElse(new ValidationResultWithPayload<>(
-            ValidationResult.withFailures(List.of("Unknown analyte: " + analyte)), null));
+            ValidationResult.withFailures(List.of("Unknown analyte: '" + analyte + "'")), null));
   }
 
   private ValidationResultWithPayload<SampleId> validateSampleIdForSampleCode(String sampleCode) {
     if (sampleCode.isBlank()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Missing sample id.")),
+          ValidationResult.withFailures(List.of("Missing sample id")),
           null
       );
     }
     var sampleIdQuery = sampleInformationService.findSampleId(SampleCode.create(sampleCode));
     if (sampleIdQuery.isEmpty()) {
       return new ValidationResultWithPayload<>(ValidationResult.withFailures(List.of(
-          "Unknown sample id: " + sampleCode)), null);
+          "Unknown sample id: '" + sampleCode + "'")), null);
     }
     var sampleId = sampleIdQuery.orElseThrow().sampleId();
     return new ValidationResultWithPayload<>(ValidationResult.successful(), sampleId);
@@ -294,7 +313,7 @@ public class SampleValidation {
         ExperimentId.parse(experimentId));
     if (experimentQuery.isEmpty()) {
       return new ValidationResultWithPayload<>(
-          ValidationResult.withFailures(List.of("Unknown experiment.")), null);
+          ValidationResult.withFailures(List.of("Unknown experiment")), null);
     }
 
     var experiment = experimentQuery.orElseThrow();

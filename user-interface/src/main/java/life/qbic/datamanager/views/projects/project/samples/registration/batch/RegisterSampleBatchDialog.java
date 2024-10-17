@@ -78,7 +78,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
     addClassName("register-samples-dialog");
     batchNameField = new TextField("Batch name");
+    batchNameField.addClassName("batch-name-field");
     batchNameField.setRequired(true);
+    batchNameField.setErrorMessage("Please provide a name for your batch.");
     batchNameField.setPlaceholder("Please enter a name for your batch");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(templateService, experimentId,
@@ -99,8 +101,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
     Span uploadTheSampleDataTitle = new Span("Upload the sample data");
     uploadTheSampleDataTitle.addClassName("section-title");
-    initialView.add(batchNameField, downloadMetadataSection,
-        new Div(uploadTheSampleDataTitle, uploadWithDisplay));
+    Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay);
+    uploadSection.addClassName("upload-section");
+    uploadSection.addClassName("section-with-title");
+    initialView.add(batchNameField, downloadMetadataSection, uploadSection);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);
@@ -173,17 +177,17 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           }
           if (succeededValidations.isEmpty()) {
             // the empty case!
-            ui.access(() -> component.setDisplay(new InvalidUploadDisplay("No sample metadata provided.")));
+            ui.access(() -> component.setDisplay(
+                new InvalidUploadDisplay(uploadedData.fileName(),
+                    "No valid sample metadata provided.")));
           }
         })
         .exceptionally(e -> {
               RuntimeException runtimeException = new RuntimeException(
                   "At least one validation task could not complete.", e);
               log.error("Could not complete validation. Please try again.", runtimeException);
-          InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(uploadedData.fileName(),
-              List.of(
-                  ValidationResult.withFailures(
-                      List.of("Could not complete validation. Please try again."))));
+          InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
+              uploadedData.fileName(), "Could not complete validation. Please try again.");
               ui.access(() -> component.setDisplay(invalidUploadDisplay));
               throw runtimeException;
             }
@@ -213,6 +217,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         "Please download the metadata template, fill in the sample properties and upload the metadata sheet below to register the sample batch.");
     Div downloadMetadataSection = new Div();
     downloadMetadataSection.addClassName("download-metadata");
+    downloadMetadataSection.addClassName("section-with-title");
     Span sectionTitle = new Span("Download metadata template");
     sectionTitle.addClassName("download-metadata-section-title");
     sectionTitle.addClassName("section-title");
@@ -362,7 +367,37 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
               v -> Collections.frequency(failureReasons, v)
           ));
       frequencyMap.forEach(
-          (key, frequency) -> validationDetails.add(new Div(frequency + " times: " + key)));
+          (key, frequency) -> {
+            String s = frequency + " sample" + ((frequency > 1) ? "s." : ".");
+            Span span = new Span(s);
+            span.addClassName("bold");
+            validationDetails.add(new Div(new Span(key + " for "), span));
+          });
+      box.add(header, validationDetails, instruction);
+      validationBox.add(box);
+      add(fileNameLabel, validationBox);
+    }
+
+    public InvalidUploadDisplay(String fileName, String failureReason) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
+      fileNameLabel.addClassName("file-name");
+      Div validationBox = new Div();
+      validationBox.addClassName("validation-display-box");
+      var box = new Div();
+      var failuresTitle = new Span("Invalid sample metadata");
+      var errorIcon = VaadinIcon.CLOSE_CIRCLE.create();
+      errorIcon.addClassName("error");
+      var header = new Span(errorIcon, failuresTitle);
+      header.addClassName("header");
+      var instruction = new Span(
+          "Please correct the entries in the uploaded file and re-upload the file.");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+
+      validationDetails.add(new Div(failureReason));
       box.add(header, validationDetails, instruction);
       validationBox.add(box);
       add(fileNameLabel, validationBox);
@@ -380,7 +415,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       Div validationBox = new Div();
       validationBox.addClassName("validation-display-box");
       var box = new Div();
-      var approvedTitle = new Span("Approved");
+      var approvedTitle = new Span("Your data has been approved");
       var validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
       validIcon.addClassName("success");
       var header = new Span(validIcon, approvedTitle);
@@ -426,15 +461,20 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
       return;
     }
-    if (batchNameField.isEmpty()) {
+    if (batchNameField.isEmpty() || batchNameField.getValue().isBlank()) {
       // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
       batchNameField.setInvalid(true);
       return;
     }
-    if (validatedSampleMetadata.isEmpty()) {
+    if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData().isEmpty()) {
+      // nothing is uploaded
       var uploadProgressDisplay = new InvalidUploadDisplay(
           "Nothing was uploaded. Please upload the sample metadata and try again.");
       uploadWithDisplay.setDisplay(uploadProgressDisplay);
+      return;
+    } else if (validatedSampleMetadata.isEmpty() && uploadWithDisplay.getUploadedData()
+        .isPresent()) {
+      // the uploaded data is not valid
       return;
     }
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(),
