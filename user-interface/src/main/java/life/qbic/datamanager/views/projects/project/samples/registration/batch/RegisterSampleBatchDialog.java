@@ -80,6 +80,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     batchNameField = new TextField("Batch name");
     batchNameField.addClassName("batch-name-field");
     batchNameField.setRequired(true);
+    batchNameField.setErrorMessage("Please provide a name for your batch.");
     batchNameField.setPlaceholder("Please enter a name for your batch");
 
     Div downloadMetadataSection = setupDownloadMetadataSection(templateService, experimentId,

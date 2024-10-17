@@ -83,6 +83,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     addClassName("edit-samples-dialog");
     batchNameField = new TextField("Batch name");
     batchNameField.setRequired(true);
+    batchNameField.setErrorMessage("Please provide a name for your batch.");
     batchNameField.setValue(batchName);
     batchNameField.setPlaceholder("Please enter a name for your batch");
     batchNameField.addClassName("batch-name-field");
