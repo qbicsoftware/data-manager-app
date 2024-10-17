@@ -810,7 +810,7 @@ vaadin-upload-file::part(meta){
 .register-samples-dialog .initial-view,
 .edit-samples-dialog .initial-view {
   display: grid;
-  row-gap: 1em;
+  row-gap: var(--lumo-space-m);
 }
 
 .register-samples-dialog .batch-name-field,
@@ -832,7 +832,7 @@ vaadin-upload-file::part(meta){
 .edit-samples-dialog .succeeded-view,
 .edit-samples-dialog .upload-with-display {
   display: grid;
-  row-gap: var(--lumo-space-l);
+  row-gap: var(--lumo-space-m);
 }
 
 .register-samples-dialog .content-part > .title,
