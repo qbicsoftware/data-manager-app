@@ -88,9 +88,9 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       throws UnknownMetadataTypeException, MissingSampleIdException {
     Objects.requireNonNull(parsingResult);
     var properties = parsingResult.columnMap().keySet();
-    if (looksLikeNgsMeasurement(properties, false)) {
+    if (looksLikeNgsMeasurement(properties, true)) {
       return tryConversion(this::convertNewNGSMeasurement, parsingResult);
-    } else if (looksLikeProteomicsMeasurement(properties, false)) {
+    } else if (looksLikeProteomicsMeasurement(properties, true)) {
       return tryConversion(this::convertNewProteomicsMeasurement, parsingResult);
     } else {
       throw new UnknownMetadataTypeException(
@@ -104,9 +104,9 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       throws UnknownMetadataTypeException, MissingSampleIdException {
     Objects.requireNonNull(parsingResult);
     var properties = parsingResult.columnMap().keySet();
-    if (looksLikeNgsMeasurement(properties, true)) {
+    if (looksLikeNgsMeasurement(properties, false)) {
       return tryConversion(this::convertExistingNGSMeasurement, parsingResult);
-    } else if (looksLikeProteomicsMeasurement(properties, true)) {
+    } else if (looksLikeProteomicsMeasurement(properties, false)) {
       return tryConversion(this::convertExistingProteomicsMeasurement, parsingResult);
     } else {
       throw new UnknownMetadataTypeException(
