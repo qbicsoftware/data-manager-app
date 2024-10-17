@@ -8,14 +8,22 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
+import edu.kit.datamanager.ro_crate.writer.ZipWriter;
+import java.io.IOException;
 import java.io.Serial;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.export.TempDirectory;
+import life.qbic.datamanager.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.views.general.download.DownloadProvider;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
@@ -55,7 +63,8 @@ public class ProjectDetailsComponent extends PageArea {
   private final Div projectManagerField = new Div();
   private final Div principalInvestigatorField = new Div();
   private final Div responsiblePersonField = new Div();
-  private final InformationComponent projectInformationSection = InformationComponent.create("", "");
+  private final InformationComponent projectInformationSection = InformationComponent.create("",
+      "");
   private final InformationComponent fundingInformationSection = InformationComponent.create(
       "Funding Information", "Information about project funding");
   private final InformationComponent collaboratorSection = InformationComponent.create(
@@ -65,13 +74,17 @@ public class ProjectDetailsComponent extends PageArea {
   private final transient ContactRepository contactRepository;
   private final UserPermissions userPermissions;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final ROCreateBuilder roCrateBuilder;
+  private final TempDirectory tempDirectory;
+  private DownloadProvider downloadProvider;
   private Context context;
 
   public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ContactRepository contactRepository,
       @Autowired UserPermissions userPermissions,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      @Autowired ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "projectInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -84,6 +97,10 @@ public class ProjectDetailsComponent extends PageArea {
     layoutComponent();
     addListenerForNewEditEvent();
     addClassName("project-details-component");
+    this.roCrateBuilder = rOCreateBuilder;
+    this.tempDirectory = tempDirectory;
+    downloadProvider = new DownloadProvider(null);
+    add(downloadProvider);
   }
 
   private static List<Entry> extractProjectInfo(Project project, List<Experiment> experiments) {
@@ -120,7 +137,7 @@ public class ProjectDetailsComponent extends PageArea {
     return entries;
   }
 
-  private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm){
+  private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm) {
     String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
     Span ontologyEntryLink = new Span(new Anchor(ontologyTerm.getClassIri(), ontologyLinkName));
     ontologyEntryLink.addClassName("ontology-link");
@@ -206,6 +223,8 @@ public class ProjectDetailsComponent extends PageArea {
     content.add(projectInformationSection, fundingInformationSection, collaboratorSection);
     content.addClassName("project-information-content");
 
+    buttonBar.addClassName("button-bar");
+
     titleField.setText("Project Summary");
     header.addClassName("header");
     header.add(titleField, buttonBar);
@@ -218,11 +237,53 @@ public class ProjectDetailsComponent extends PageArea {
     return editButton;
   }
 
+  private Button exortButton() {
+    Button exortButton = new Button("Export as RO-Crate");
+    exortButton.addClickListener(event -> triggerRoCrateDownload());
+    return exortButton;
+  }
+
+  private void triggerRoCrateDownload() {
+    ProjectId projectId = context.projectId().orElseThrow();
+    Optional<Project> project = projectInformationService.find(projectId);
+    var roCrate = roCrateBuilder.projectInformation(project.orElseThrow());
+    var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
+    try {
+      var zippedRoCrateDir = tempDirectory.createDirectory();
+      var zippedRoCrateFile = zippedRoCrateDir.resolve(
+          "%s-project-summary-ro-crate.zip".formatted(project.get().getProjectCode().value()));
+      roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
+      remove(downloadProvider);
+      downloadProvider = new DownloadProvider(new DownloadContentProvider() {
+        @Override
+        public byte[] getContent() {
+          try {
+            return Files.readAllBytes(zippedRoCrateFile);
+          } catch (IOException e) {
+            throw new ApplicationException("Could not read RO-Crate file", e);
+          }
+        }
+
+        @Override
+        public String getFileName() {
+          return zippedRoCrateFile.getFileName().toString();
+        }
+      });
+      add(downloadProvider);
+      downloadProvider.trigger();
+    } catch (IOException e) {
+      throw new ApplicationException("Error exporting ro-crate.zip", e);
+    }
+
+  }
+
   private void showControls(boolean enabled) {
     buttonBar.removeAll();
+    buttonBar.add(exortButton());
     if (enabled) {
       buttonBar.add(editButton());
     }
+
   }
 
   private void openProjectInformationDialog() {

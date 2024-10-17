@@ -25,7 +25,6 @@
     <module>email-service-provider</module>
     <module>finances-infrastructure</module>
     <module>finances-api</module>
-    <module>project-management-api</module>
   </modules>
   <packaging>pom</packaging>
 
@@ -174,6 +173,7 @@
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
       </dependency>
+
     </dependencies>
 
   </dependencyManagement>
