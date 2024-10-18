@@ -9,8 +9,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ContactPoint {
 
-  @JsonProperty(value = "@type", defaultValue = "ContactPoint")
-  private String type;
+  @JsonProperty(value = "@type")
+  private final String type = "ContactPoint";
 
   @JsonProperty(value = "name")
   private String name;
@@ -18,11 +18,27 @@ public class ContactPoint {
   @JsonProperty(value = "email")
   private String email;
 
-  public static ContactPoint from(String name, String email) {
+  @JsonProperty(value = "contactType")
+  private String contactType;
+
+  public static ContactPoint from(String name, String email, String contactType) {
     ContactPoint contactPoint = new ContactPoint();
     contactPoint.name = name;
     contactPoint.email = email;
+    contactPoint.contactType = contactType;
     return contactPoint;
+  }
+
+  public String name() {
+    return name;
+  }
+
+  public String email() {
+    return email;
+  }
+
+  public String contactType() {
+    return contactType;
   }
 
 }

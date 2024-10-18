@@ -8,9 +8,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <b>Temporary Director</b>
+ * <p>
+ * Provides a temporary directory for the application to use when files need to be created for
+ * exporting them.
  *
  * @since <version tag>
  */
@@ -23,15 +24,15 @@ public class TempDirectory {
       throws IOException {
     Path tempDirPath = Path.of(tempDirectoryPath);
     if (!Files.exists(tempDirPath)) {
-        throw new IOException(tempDirectoryPath + " does not exist");
-      }
-      if (!Files.isWritable(tempDirPath)) {
-        throw new IOException(tempDirectoryPath + " is not writable");
-      }
-      if (!Files.isExecutable(tempDirPath)) {
-        throw new IOException(tempDirectoryPath + " is not executable");
-      }
-      tempDir = tempDirPath;
+      throw new IOException(tempDirectoryPath + " does not exist");
+    }
+    if (!Files.isWritable(tempDirPath)) {
+      throw new IOException(tempDirectoryPath + " is not writable");
+    }
+    if (!Files.isExecutable(tempDirPath)) {
+      throw new IOException(tempDirectoryPath + " is not executable");
+    }
+    tempDir = tempDirPath;
   }
 
   /**

@@ -8,11 +8,11 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  * <b>Project Edit Event</b>
  * <p>
  * Event that indicates that the user wants to edit a project via the
- * {@link ProjectDetailsComponent}
+ * {@link ProjectSummaryComponent}
  *
  * @since 1.0.0
  */
-public class ProjectEditEvent extends ComponentEvent<ProjectDetailsComponent> {
+public class ProjectEditEvent extends ComponentEvent<ProjectSummaryComponent> {
 
   @Serial
   private static final long serialVersionUID = -4045489562991683868L;
@@ -27,7 +27,7 @@ public class ProjectEditEvent extends ComponentEvent<ProjectDetailsComponent> {
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public ProjectEditEvent(ProjectDetailsComponent source, ProjectId projectId,
+  public ProjectEditEvent(ProjectSummaryComponent source, ProjectId projectId,
       boolean fromClient) {
     super(source, fromClient);
     this.projectId = projectId;

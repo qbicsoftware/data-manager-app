@@ -50,7 +50,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ProjectDetailsComponent extends PageArea {
+public class ProjectSummaryComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
@@ -79,7 +79,7 @@ public class ProjectDetailsComponent extends PageArea {
   private DownloadProvider downloadProvider;
   private Context context;
 
-  public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
+  public ProjectSummaryComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ContactRepository contactRepository,
       @Autowired UserPermissions userPermissions,
@@ -246,7 +246,7 @@ public class ProjectDetailsComponent extends PageArea {
   private void triggerRoCrateDownload() {
     ProjectId projectId = context.projectId().orElseThrow();
     Optional<Project> project = projectInformationService.find(projectId);
-    var roCrate = roCrateBuilder.projectInformation(project.orElseThrow());
+    var roCrate = roCrateBuilder.projectSummary(project.orElseThrow());
     var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
     try {
       var zippedRoCrateDir = tempDirectory.createDirectory();
