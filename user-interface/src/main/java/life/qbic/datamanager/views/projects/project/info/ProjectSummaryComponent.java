@@ -8,11 +8,20 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
+import edu.kit.datamanager.ro_crate.writer.ZipWriter;
+import java.io.File;
+import java.io.IOException;
 import java.io.Serial;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.download.DownloadContentProvider;
+import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.export.TempDirectory;
+import life.qbic.datamanager.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
@@ -42,7 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ProjectDetailsComponent extends PageArea {
+public class ProjectSummaryComponent extends PageArea {
 
   @Serial
   private static final long serialVersionUID = -5781313306040217724L;
@@ -55,7 +64,8 @@ public class ProjectDetailsComponent extends PageArea {
   private final Div projectManagerField = new Div();
   private final Div principalInvestigatorField = new Div();
   private final Div responsiblePersonField = new Div();
-  private final InformationComponent projectInformationSection = InformationComponent.create("", "");
+  private final InformationComponent projectInformationSection = InformationComponent.create("",
+      "");
   private final InformationComponent fundingInformationSection = InformationComponent.create(
       "Funding Information", "Information about project funding");
   private final InformationComponent collaboratorSection = InformationComponent.create(
@@ -65,13 +75,17 @@ public class ProjectDetailsComponent extends PageArea {
   private final transient ContactRepository contactRepository;
   private final UserPermissions userPermissions;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final ROCreateBuilder roCrateBuilder;
+  private final TempDirectory tempDirectory;
+  private DownloadProvider downloadProvider;
   private Context context;
 
-  public ProjectDetailsComponent(@Autowired ProjectInformationService projectInformationService,
+  public ProjectSummaryComponent(@Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired ContactRepository contactRepository,
       @Autowired UserPermissions userPermissions,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      @Autowired ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "projectInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -84,6 +98,10 @@ public class ProjectDetailsComponent extends PageArea {
     layoutComponent();
     addListenerForNewEditEvent();
     addClassName("project-details-component");
+    this.roCrateBuilder = rOCreateBuilder;
+    this.tempDirectory = tempDirectory;
+    downloadProvider = new DownloadProvider(null);
+    add(downloadProvider);
   }
 
   private static List<Entry> extractProjectInfo(Project project, List<Experiment> experiments) {
@@ -120,7 +138,7 @@ public class ProjectDetailsComponent extends PageArea {
     return entries;
   }
 
-  private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm){
+  private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm) {
     String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
     Span ontologyEntryLink = new Span(new Anchor(ontologyTerm.getClassIri(), ontologyLinkName));
     ontologyEntryLink.addClassName("ontology-link");
@@ -206,6 +224,8 @@ public class ProjectDetailsComponent extends PageArea {
     content.add(projectInformationSection, fundingInformationSection, collaboratorSection);
     content.addClassName("project-information-content");
 
+    buttonBar.addClassName("button-bar");
+
     titleField.setText("Project Summary");
     header.addClassName("header");
     header.add(titleField, buttonBar);
@@ -218,11 +238,73 @@ public class ProjectDetailsComponent extends PageArea {
     return editButton;
   }
 
+  private Button exportButton() {
+    Button exortButton = new Button("Export as RO-Crate");
+    exortButton.addClickListener(event -> {
+      try {
+        triggerRoCrateDownload();
+      } catch (IOException e) {
+        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
+      }
+    });
+    return exortButton;
+  }
+
+  private void triggerRoCrateDownload() throws IOException {
+    ProjectId projectId = context.projectId().orElseThrow();
+    Project project = projectInformationService.find(projectId).orElseThrow();
+    var tempBuildDir = tempDirectory.createDirectory();
+    var zippedRoCrateDir = tempDirectory.createDirectory();
+    try {
+      var roCrate = roCrateBuilder.projectSummary(project, tempBuildDir);
+      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
+      var zippedRoCrateFile = zippedRoCrateDir.resolve(
+          "%s-project-summary-ro-crate.zip".formatted(project.getProjectCode().value()));
+      roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
+      remove(downloadProvider);
+      var cachedZipContent = Files.readAllBytes(zippedRoCrateFile);
+      downloadProvider = new DownloadProvider(new DownloadContentProvider() {
+        @Override
+        public byte[] getContent() {
+          return cachedZipContent;
+        }
+
+        @Override
+        public String getFileName() {
+          return zippedRoCrateFile.getFileName().toString();
+        }
+      });
+      add(downloadProvider);
+      downloadProvider.trigger();
+    } catch (IOException e) {
+      throw new ApplicationException("Error exporting ro-crate.zip", e);
+    } finally {
+      deleteTempDir(tempBuildDir.toFile());
+      deleteTempDir(zippedRoCrateDir.toFile());
+    }
+
+  }
+
+  private boolean deleteTempDir(File dir) throws IOException {
+    File[] files = dir.listFiles(); //null if not a directory
+    // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
+    if (files != null) {
+      for (File file : files) {
+        if (!deleteTempDir(file)) {
+          return false;
+        }
+      }
+    }
+    return dir.delete();
+  }
+
   private void showControls(boolean enabled) {
     buttonBar.removeAll();
+    buttonBar.add(exportButton());
     if (enabled) {
       buttonBar.add(editButton());
     }
+
   }
 
   private void openProjectInformationDialog() {
