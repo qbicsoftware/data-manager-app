@@ -238,7 +238,7 @@ public class ProjectSummaryComponent extends PageArea {
     return editButton;
   }
 
-  private Button exortButton() {
+  private Button exportButton() {
     Button exortButton = new Button("Export as RO-Crate");
     exortButton.addClickListener(event -> {
       try {
@@ -301,7 +301,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void showControls(boolean enabled) {
     buttonBar.removeAll();
-    buttonBar.add(exortButton());
+    buttonBar.add(exportButton());
     if (enabled) {
       buttonBar.add(editButton());
     }
