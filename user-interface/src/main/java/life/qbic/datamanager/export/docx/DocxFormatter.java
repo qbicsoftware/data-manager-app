@@ -1,7 +1,6 @@
 package life.qbic.datamanager.export.docx;
 
 import java.io.File;
-import java.util.List;
 import life.qbic.datamanager.export.Formatter;
 import life.qbic.datamanager.export.model.ContactPoint;
 import life.qbic.datamanager.export.model.ResearchProject;
@@ -10,11 +9,11 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>DOCX formatter implementation</b>
+ * <p>
+ * Creates DOCX representations of various content types in a Data Manager's project.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class DocxFormatter implements Formatter {
 
@@ -31,7 +30,8 @@ public class DocxFormatter implements Formatter {
       addProjectId(mainDocument, researchProject);
       addSection(mainDocument, "Description", researchProject.description());
       addSectionTitle(mainDocument, "Contact Points");
-      researchProject.contactPoint().forEach(contactPoint -> addContactPoint(mainDocument, contactPoint));
+      researchProject.contactPoint()
+          .forEach(contactPoint -> addContactPoint(mainDocument, contactPoint));
       File file = new File(fileName);
       wordPackage.save(file);
       return file;
@@ -45,10 +45,12 @@ public class DocxFormatter implements Formatter {
   }
 
   private void addProjectId(MainDocumentPart mainDocumentPart, ResearchProject researchProject) {
-    mainDocumentPart.addStyledParagraphOfText("Subtitle", "Project ID: " + researchProject.identifier());
+    mainDocumentPart.addStyledParagraphOfText("Subtitle",
+        "Project ID: " + researchProject.identifier());
   }
 
-  private void addSection(MainDocumentPart mainDocumentPart, String sectionTitle, String sectionContent) {
+  private void addSection(MainDocumentPart mainDocumentPart, String sectionTitle,
+      String sectionContent) {
     mainDocumentPart.addStyledParagraphOfText("Heading1", sectionTitle);
     mainDocumentPart.addParagraphOfText(sectionContent);
   }
@@ -58,7 +60,8 @@ public class DocxFormatter implements Formatter {
   }
 
   private void addContactPoint(MainDocumentPart mainDocumentPart, ContactPoint contactPoint) {
-    var contactPointFormatted = "%s (%s) - %s".formatted(contactPoint.name(), contactPoint.contactType(), contactPoint.email());
+    var contactPointFormatted = "%s (%s) - %s".formatted(contactPoint.name(),
+        contactPoint.contactType(), contactPoint.email());
     mainDocumentPart.addParagraphOfText(contactPointFormatted);
   }
 }

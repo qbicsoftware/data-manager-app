@@ -8,11 +8,11 @@ import life.qbic.datamanager.export.Formatter;
 import life.qbic.datamanager.export.model.ResearchProject;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>YAML formatter implementation</b>
+ * <p>
+ * Creates YAML representations of various content types in a Data Manager's project.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 public class YamlFormatter implements Formatter {
 
