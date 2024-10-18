@@ -4,8 +4,14 @@ import static life.qbic.datamanager.export.rocrate.ROCreateBuilder.ResearchProje
 import static life.qbic.datamanager.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_YAML;
 
 import edu.kit.datamanager.ro_crate.RoCrate;
-import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
+import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
+import edu.kit.datamanager.ro_crate.context.CrateMetadataContext;
+import edu.kit.datamanager.ro_crate.context.RoCrateMetadataContext;
+import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity;
+import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity.ContextualEntityBuilder;
+import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Objects;
 import life.qbic.datamanager.export.TempDirectory;
@@ -31,9 +37,37 @@ public class ROCreateBuilder {
 
   private final TempDirectory tempDirectory;
 
+  private static final String ROR_URL_QBIC = "https://ror.org/00v34f693";
+
+  private static final String DATA_PROVIDER_QBIC = "Quantitative Biology Center";
+
+  private static final String LICENSE_URL_CCBY_4 = "https://creativecommons.org/licenses/by/4.0/";
+
+  private static final String CONTACT_EMAIL_QBIC = "support@qbic.zendesk.com";
+
+
   @Autowired
   public ROCreateBuilder(TempDirectory tempDir) {
     this.tempDirectory = Objects.requireNonNull(tempDir);
+  }
+
+  private static ContextualEntity licenseCCBY() {
+    return new ContextualEntityBuilder()
+        .addType("CreativeWork")
+        .setId(LICENSE_URL_CCBY_4)
+        .addProperty("description", "This work is licensed under the Creative Commons Attribution 4.0 International License. To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/ .")
+        .addProperty("identifier", LICENSE_URL_CCBY_4)
+        .addProperty("name", "Attribution-4.0 International (CC BY 4.0)")
+        .build();
+  }
+
+  private static ContextualEntity qbicOrganisation() {
+    return new ContextualEntityBuilder()
+        .addType("Organization")
+        .setId(ROR_URL_QBIC)
+        .addProperty("identifier", ROR_URL_QBIC)
+        .addProperty("name", DATA_PROVIDER_QBIC)
+        .build();
   }
 
   private static RoCrate buildRoCrate(Path buildDir, ResearchProject researchProject) {
@@ -41,12 +75,14 @@ public class ROCreateBuilder {
         .from(buildDir.resolve(SUMMARY_FILENAME_DOCX.value()).toString(), researchProject);
     var projectInfoYaml = YamlSupplier.create()
         .from(buildDir.resolve(SUMMARY_FILENAME_YAML.value()).toString(), researchProject);
-    return new RoCrate.RoCrateBuilder(
+    var crate = new RoCrateBuilder(
         "QBiC-project-%s-ro-crate".formatted(researchProject.identifier()),
         "Description of the project %s with the title '%s', managed on the Data Manager, Quantitative Biology Center, University of Tübingen.".formatted(
             researchProject.identifier(), researchProject.name()))
+        .addContextualEntity(licenseCCBY())// default is CC BY 4.0 international (https://creativecommons.org/licenses/by/4.0/)
+        .addContextualEntity(qbicOrganisation())
         .addDataEntity(
-            new FileEntity.FileEntityBuilder()
+            new FileEntityBuilder()
                 .setSource(projectInfoDocx)
                 .setId(SUMMARY_FILENAME_DOCX.value())
                 .addProperty("name", "Project Summary")
@@ -54,13 +90,17 @@ public class ROCreateBuilder {
                     MimeTypes.DOCX.value())
                 .build())
         .addDataEntity(
-            new FileEntity.FileEntityBuilder()
+            new FileEntityBuilder()
                 .setSource(projectInfoYaml)
                 .setId(SUMMARY_FILENAME_YAML.value())
                 .addProperty("name", "Project Summary")
                 .addProperty("encodingFormat", MimeTypes.YAML.value())
                 .build())
         .build();
+    crate.getRootDataEntity().addIdProperty("publisher", ROR_URL_QBIC);
+    crate.getRootDataEntity().addIdProperty("license", LICENSE_URL_CCBY_4);
+    crate.getRootDataEntity().addProperty("datePublished", Instant.now().toString());
+    return crate;
   }
 
   public RoCrate projectSummary(Project project, Path buildDirectory) throws ROCrateBuildException {
