@@ -4,19 +4,23 @@ import java.io.File;
 import life.qbic.datamanager.export.model.ResearchProject;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>File format supplier</b>
+ * <p>
+ * Interface describing the API of suppliers for different file formats.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public interface FileFormatSupplier {
 
   File from(String fileName, ResearchProject researchProject) throws FormatException;
 
   class FormatException extends RuntimeException {
-    public FormatException(String message) {}
-    public FormatException(String message, Throwable cause) {}
+
+    public FormatException(String message) {
+    }
+
+    public FormatException(String message, Throwable cause) {
+    }
   }
 
 }
