@@ -10,9 +10,12 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
 import edu.kit.datamanager.ro_crate.writer.ZipWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serial;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -239,29 +242,33 @@ public class ProjectSummaryComponent extends PageArea {
 
   private Button exortButton() {
     Button exortButton = new Button("Export as RO-Crate");
-    exortButton.addClickListener(event -> triggerRoCrateDownload());
+    exortButton.addClickListener(event -> {
+      try {
+        triggerRoCrateDownload();
+      } catch (IOException e) {
+        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
+      }
+    });
     return exortButton;
   }
 
-  private void triggerRoCrateDownload() {
+  private void triggerRoCrateDownload() throws IOException {
     ProjectId projectId = context.projectId().orElseThrow();
     Optional<Project> project = projectInformationService.find(projectId);
-    var roCrate = roCrateBuilder.projectSummary(project.orElseThrow());
-    var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
+    var tempBuildDir = tempDirectory.createDirectory();
+    var zippedRoCrateDir = tempDirectory.createDirectory();
     try {
-      var zippedRoCrateDir = tempDirectory.createDirectory();
+      var roCrate = roCrateBuilder.projectSummary(project.orElseThrow(), tempBuildDir);
+      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
       var zippedRoCrateFile = zippedRoCrateDir.resolve(
           "%s-project-summary-ro-crate.zip".formatted(project.get().getProjectCode().value()));
       roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
       remove(downloadProvider);
+      var cachedZipContent = Files.readAllBytes(zippedRoCrateFile);
       downloadProvider = new DownloadProvider(new DownloadContentProvider() {
         @Override
         public byte[] getContent() {
-          try {
-            return Files.readAllBytes(zippedRoCrateFile);
-          } catch (IOException e) {
-            throw new ApplicationException("Could not read RO-Crate file", e);
-          }
+          return cachedZipContent;
         }
 
         @Override
@@ -273,8 +280,25 @@ public class ProjectSummaryComponent extends PageArea {
       downloadProvider.trigger();
     } catch (IOException e) {
       throw new ApplicationException("Error exporting ro-crate.zip", e);
+    } finally {
+      deleteTempDir(tempBuildDir.toFile());
+      deleteTempDir(zippedRoCrateDir.toFile());
     }
 
+  }
+
+  private boolean deleteTempDir(File dir) throws IOException {
+    if (dir.isDirectory()) {
+      File[] files = dir.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (!deleteTempDir(file)) {
+            return false;
+          }
+        }
+      }
+    }
+    return dir.delete();
   }
 
   private void showControls(boolean enabled) {

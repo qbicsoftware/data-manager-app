@@ -5,7 +5,6 @@ import static life.qbic.datamanager.export.rocrate.ROCreateBuilder.ResearchProje
 
 import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -64,15 +63,12 @@ public class ROCreateBuilder {
         .build();
   }
 
-  public RoCrate projectSummary(Project project) throws ROCrateBuildException {
+  public RoCrate projectSummary(Project project, Path buildDirectory) throws ROCrateBuildException {
     var researchProject = convertToResearchProject(project);
-    try {
-      var assignedBuildDirectory = tempDirectory.createDirectory();
-      return buildRoCrate(assignedBuildDirectory, researchProject);
-    } catch (IOException e) {
-      throw new ROCrateBuildException("RO-Crate creation failed", e);
+    if (!buildDirectory.toFile().exists()) {
+      throw new ROCrateBuildException("File does not exist: " + buildDirectory);
     }
-
+    return buildRoCrate(buildDirectory, researchProject);
   }
 
   private ResearchProject convertToResearchProject(Project project) {
