@@ -78,7 +78,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private void createTitleAndControls() {
     title.addClassName("title");
     titleAndControls.addClassName("title-and-controls");
-    Button registerButton = new Button("Register");
+    Button registerButton = new Button("Register sample batch");
+    registerButton.setClassName("primary");
     registerButton.addClickListener(event -> fireEvent(new CreateBatchEvent(this,
         event.isFromClient())));
     titleAndControls.add(title, registerButton);

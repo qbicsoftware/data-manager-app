@@ -19,7 +19,9 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 
 /**
  * A dialog used for sample batch registration.
+ * @deprecated this is replaced by {@link RegisterSampleBatchDialog}
  */
+@Deprecated(forRemoval = true, since = "1.4.0")
 public class BatchRegistrationDialog extends DialogWindow {
 
   private final TextField batchNameField;

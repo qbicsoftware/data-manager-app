@@ -102,6 +102,13 @@ public class ProjectInformationService {
     return find(ProjectId.parse(projectId));
   }
 
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public Optional<ProjectOverview> findOverview(ProjectId projectId) {
+    Objects.requireNonNull(projectId);
+    return projectOverviewLookup.query("", 0, 1, List.of(), List.of(projectId)).stream()
+        .findFirst();
+  }
+
   public boolean isProjectCodeUnique(String projectCode) throws IllegalArgumentException {
     return !projectRepository.existsProjectByProjectCode(ProjectCode.parse(projectCode));
   }

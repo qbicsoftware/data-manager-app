@@ -3,13 +3,17 @@ package life.qbic.projectmanagement.infrastructure.sample;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.OffsetBasedRequest;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SamplePreviewLookup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
@@ -176,8 +180,13 @@ public class SamplePreviewJpaRepository implements SamplePreviewLookup {
     }
 
     public static Specification<SamplePreview> analysisMethodContains(String filter) {
-      return (root, query, builder) ->
-          builder.like(root.get("analysisMethod"), "%" + filter + "%");
+      return (root, query, builder) -> {
+        Set<String> matchingValues = Arrays.stream(AnalysisMethod.values())
+            .filter(method -> method.label().toUpperCase().contains(filter.toUpperCase()))
+            .map(AnalysisMethod::abbreviation)
+            .collect(Collectors.toUnmodifiableSet());
+        return root.get("analysisMethod").in(matchingValues);
+      };
     }
 
     public static Specification<SamplePreview> commentContains(String filter) {

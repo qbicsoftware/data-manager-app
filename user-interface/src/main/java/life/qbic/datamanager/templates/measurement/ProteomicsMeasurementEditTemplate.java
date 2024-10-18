@@ -1,11 +1,13 @@
-package life.qbic.datamanager.views.projects.project.measurements.download;
+package life.qbic.datamanager.templates.measurement;
 
-import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.addDataValidation;
-import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.createOptionArea;
-import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.getOrCreateCell;
-import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.getOrCreateRow;
-import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.hideSheet;
-import static life.qbic.datamanager.spreadsheet.XLSXTemplateHelper.lockSheet;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidation;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateCell;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateRow;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.hideSheet;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.lockSheet;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
@@ -14,22 +16,19 @@ import java.util.LinkedList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.download.DownloadContentProvider;
+import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementEditColumn;
+import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import life.qbic.datamanager.views.projects.project.measurements.ProteomicsMeasurementEntry;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.DigestionMethod;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
-import org.apache.poi.xssf.usermodel.XSSFColor;
-import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /** <b>Proteomics Measurement Content Provider</b>
@@ -39,12 +38,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * and {@link ProteomicsMeasurementMetadata}
  * </p>
  */
-public class ProteomicsMeasurementContentProvider implements DownloadContentProvider {
+public class ProteomicsMeasurementEditTemplate implements DownloadContentProvider {
 
   private static final String FILE_NAME_SUFFIX = "proteomics_measurements.xlsx";
-  private static final Logger log = logger(ProteomicsMeasurementContentProvider.class);
-  private static final byte[] DARK_GREY = {119, 119, 119};
-  private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
+  private static final Logger log = logger(ProteomicsMeasurementEditTemplate.class);
   private final List<ProteomicsMeasurementEntry> measurements = new LinkedList<>();
   private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
   private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX;
@@ -59,7 +56,7 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
 
   private static void createMeasurementEntry(ProteomicsMeasurementEntry pxpEntry, Row entryRow,
       CellStyle readOnlyStyle) {
-    for (ProteomicsMeasurementColumns measurementColumn : ProteomicsMeasurementColumns.values()) {
+    for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
       var value = switch (measurementColumn) {
         case MEASUREMENT_ID -> pxpEntry.measurementCode();
         case SAMPLE_ID -> pxpEntry.sampleInformation().sampleId();
@@ -84,7 +81,8 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       };
       var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
       cell.setCellValue(value);
-      if (measurementColumn.readOnly()) {
+      cell.setCellValue(value);
+      if (measurementColumn.isReadOnly()) {
         cell.setCellStyle(readOnlyStyle);
       }
     }
@@ -102,37 +100,23 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       return new byte[0];
     }
 
-    ByteArrayOutputStream byteArrayOutputStream;
+    try (Workbook workbook = new XSSFWorkbook();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();) {
 
-    try (Workbook workbook = new XSSFWorkbook()) {
-
-      CellStyle readOnlyHeaderStyle = workbook.createCellStyle();
-      readOnlyHeaderStyle.setFillForegroundColor(
-          new XSSFColor(LIGHT_GREY, new DefaultIndexedColorMap()));
-      readOnlyHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-      XSSFFont fontHeader = (XSSFFont) workbook.createFont();
-      fontHeader.setBold(true);
-      fontHeader.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
-      readOnlyHeaderStyle.setFont(fontHeader);
-
-      CellStyle boldStyle = workbook.createCellStyle();
-      Font fontBold = workbook.createFont();
-      fontBold.setBold(true);
-      boldStyle.setFont(fontBold);
-
-      CellStyle readOnlyStyle = workbook.createCellStyle();
-      readOnlyStyle.setFillForegroundColor(new XSSFColor(LIGHT_GREY, new DefaultIndexedColorMap()));
-      readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-      XSSFFont font = (XSSFFont) workbook.createFont();
-      font.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
-      readOnlyStyle.setFont(font);
+      CellStyle readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
+      CellStyle boldStyle = createBoldCellStyle(workbook);
+      CellStyle readOnlyStyle = createReadOnlyCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("Proteomics Measurement Metadata");
       Row header = getOrCreateRow(sheet, 0);
-      for (ProteomicsMeasurementColumns measurementColumn : ProteomicsMeasurementColumns.values()) {
+      for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
         var cell = getOrCreateCell(header, measurementColumn.columnIndex());
-        cell.setCellValue(measurementColumn.headerName());
-        if (measurementColumn.readOnly()) {
+        if (measurementColumn.isMandatory()) {
+          cell.setCellValue(measurementColumn.headerName() + "*");
+        } else {
+          cell.setCellValue(measurementColumn.headerName());
+        }
+        if (measurementColumn.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
         } else {
           cell.setCellStyle(boldStyle);
@@ -156,8 +140,8 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
           DigestionMethod.getOptions());
 
       addDataValidation(sheet,
-          ProteomicsMeasurementColumns.DIGESTION_METHOD.columnIndex(), startIndex,
-          ProteomicsMeasurementColumns.DIGESTION_METHOD.columnIndex(),
+          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(), startIndex,
+          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           digestionMethodArea);
 
@@ -167,62 +151,14 @@ public class ProteomicsMeasurementContentProvider implements DownloadContentProv
       lockSheet(hiddenSheet);
       hideSheet(workbook, hiddenSheet);
 
-      byteArrayOutputStream = new ByteArrayOutputStream();
       workbook.write(byteArrayOutputStream);
+      return byteArrayOutputStream.toByteArray();
     } catch (IOException e) {
       log.error(e.getMessage(), e);
       throw new ApplicationException(ErrorCode.GENERAL, null);
     }
-
-    return byteArrayOutputStream.toByteArray();
   }
 
-  enum ProteomicsMeasurementColumns {
-
-    MEASUREMENT_ID("Measurement ID", 0, true),
-    SAMPLE_ID("QBiC Sample Id", 1, true),
-    SAMPLE_NAME(
-        "Sample Name", 2, true),
-    POOL_GROUP("Sample Pool Group", 3, true),
-    TECHNICAL_REPLICATE_NAME("Technical Replicate", 4, false),
-    ORGANISATION_ID("Organisation ID", 5, false),
-    ORGANISATION_NAME("Organisation Name", 6, true),
-    FACILITY("Facility", 7, false),
-    MS_DEVICE("MS Device", 8, false),
-    MS_DEVICE_NAME("MS Device Name", 9, true),
-    CYCLE_FRACTION_NAME("Cycle/Fraction Name", 10, false),
-    DIGESTION_METHOD("Digestion Method", 11, false),
-    DIGESTION_ENZYME("Digestion Enzyme", 12, false),
-    ENRICHMENT_METHOD("Enrichment Method", 13, false),
-    INJECTION_VOLUME("Injection Volume (µL)", 14, false),
-    LC_COLUMN("LC Column", 15, false),
-    LCMS_METHOD("LCMS Method", 16, false),
-    LABELING_TYPE("Labeling Type", 17, false),
-    LABEL("Label", 18, false),
-    COMMENT("Comment", 19, false),
-    ;
-    private final String headerName;
-    private final int columnIndex;
-    private final boolean readOnly;
-
-    ProteomicsMeasurementColumns(String headerName, int columnIndex, boolean readOnly) {
-      this.headerName = headerName;
-      this.columnIndex = columnIndex;
-      this.readOnly = readOnly;
-    }
-
-    public String headerName() {
-      return headerName;
-    }
-
-    public int columnIndex() {
-      return columnIndex;
-    }
-
-    public boolean readOnly() {
-      return readOnly;
-    }
-  }
 
   @Override
   public String getFileName() {

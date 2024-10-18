@@ -1,6 +1,6 @@
 package life.qbic.datamanager.templates;
 
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.download.DownloadContentProvider;
 
 /**
  * <class short description - One Line!>

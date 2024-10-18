@@ -138,10 +138,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
         .setTooltipGenerator(preview -> preview.analyte().formatted())
         .setAutoWidth(true)
         .setResizable(true);
-    sampleGrid.addColumn(SamplePreview::analysisMethod)
+    sampleGrid.addColumn(preview -> preview.analysisMethod().label())
         .setHeader("Analysis to Perform")
         .setSortProperty("analysisMethod")
-        .setTooltipGenerator(SamplePreview::analysisMethod)
+        .setTooltipGenerator(samplePreview -> samplePreview.analysisMethod().label())
         .setAutoWidth(true)
         .setResizable(true);
     sampleGrid.addColumn(SamplePreview::comment)

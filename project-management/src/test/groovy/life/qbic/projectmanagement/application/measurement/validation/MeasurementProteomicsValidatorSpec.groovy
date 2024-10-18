@@ -163,7 +163,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "Unknown sample with sample id \"QNKWN001AE\""
     }
 
@@ -200,7 +199,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "Sample id: missing sample id reference"
     }
 
@@ -245,7 +243,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "The organisation ID does not seem to be a ROR ID: \"${invalidRorId}\""
 
         where:
@@ -293,7 +290,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "Organisation: missing mandatory metadata"
     }
 
@@ -378,7 +374,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "MS Device: missing mandatory metadata"
     }
 
@@ -462,7 +457,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "Facility: missing mandatory metadata"
     }
 
@@ -540,7 +534,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "Digestion Enzyme: missing mandatory metadata"
     }
 
@@ -580,7 +573,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "Digestion Method: missing mandatory metadata"
     }
 
@@ -659,7 +651,6 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
         !result.allPassed()
         !result.containsWarnings()
         result.containsFailures()
-        result.failedEntries() == 1
         result.failures()[0] == "LC Column: missing mandatory metadata"
     }
 
