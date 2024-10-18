@@ -7,15 +7,12 @@ import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Objects;
-import life.qbic.datamanager.export.TempDirectory;
 import life.qbic.datamanager.export.docx.DocxSupplier;
 import life.qbic.datamanager.export.model.ContactPoint;
 import life.qbic.datamanager.export.model.ResearchProject;
 import life.qbic.datamanager.export.yaml.YamlSupplier;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,13 +25,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ROCreateBuilder {
-
-  private final TempDirectory tempDirectory;
-
-  @Autowired
-  public ROCreateBuilder(TempDirectory tempDir) {
-    this.tempDirectory = Objects.requireNonNull(tempDir);
-  }
 
   private static RoCrate buildRoCrate(Path buildDir, ResearchProject researchProject) {
     var projectInfoDocx = DocxSupplier.create()
