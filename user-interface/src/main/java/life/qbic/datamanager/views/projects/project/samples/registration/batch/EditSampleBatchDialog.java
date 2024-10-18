@@ -83,6 +83,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     addClassName("edit-samples-dialog");
     batchNameField = new TextField("Batch name");
     batchNameField.setRequired(true);
+    batchNameField.setErrorMessage("Please provide a name for your batch.");
     batchNameField.setValue(batchName);
     batchNameField.setPlaceholder("Please enter a name for your batch");
     batchNameField.addClassName("batch-name-field");
@@ -109,7 +110,12 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     );
     uploadWithDisplay.addRemovedListener(it -> setValidatedSampleMetadata(List.of()));
 
-    initialView.add(batchNameField, downloadMetadataSection, uploadWithDisplay);
+    Span uploadTheSampleDataTitle = new Span("Upload the sample data");
+    uploadTheSampleDataTitle.addClassName("section-title");
+    Div uploadSection = new Div(uploadTheSampleDataTitle, uploadWithDisplay);
+    uploadSection.addClassName("upload-section");
+    uploadSection.addClassName("section-with-title");
+    initialView.add(batchNameField, downloadMetadataSection, uploadSection);
     initialView.setVisible(true);
     inProgressView.setVisible(false);
     failedView.setVisible(false);
@@ -144,7 +150,38 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
               v -> Collections.frequency(failureReasons, v)
           ));
       frequencyMap.forEach(
-          (key, frequency) -> validationDetails.add(new Div(frequency + " times: " + key)));
+          (key, frequency) -> {
+            String s = frequency + " sample" + ((frequency > 1) ? "s." : ".");
+            Span span = new Span(s);
+            span.addClassName("bold");
+            validationDetails.add(new Div(new Span(key + " for "), span));
+          });
+      box.add(header, validationDetails, instruction);
+      validationBox.add(box);
+      add(fileNameLabel, validationBox);
+    }
+
+
+    public InvalidUploadDisplay(String fileName, String failureReason) {
+      addClassName("uploaded-item");
+      var fileIcon = VaadinIcon.FILE.create();
+      fileIcon.addClassName("file-icon");
+      Span fileNameLabel = new Span(fileIcon, new Span(fileName));
+      fileNameLabel.addClassName("file-name");
+      Div validationBox = new Div();
+      validationBox.addClassName("validation-display-box");
+      var box = new Div();
+      var failuresTitle = new Span("Invalid sample metadata");
+      var errorIcon = VaadinIcon.CLOSE_CIRCLE.create();
+      errorIcon.addClassName("error");
+      var header = new Span(errorIcon, failuresTitle);
+      header.addClassName("header");
+      var instruction = new Span(
+          "Please correct the entries in the uploaded file and re-upload the file.");
+      instruction.addClassName("secondary");
+      Div validationDetails = new Div();
+
+      validationDetails.add(new Div(failureReason));
       box.add(header, validationDetails, instruction);
       validationBox.add(box);
       add(fileNameLabel, validationBox);
@@ -268,10 +305,9 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
               RuntimeException runtimeException = new RuntimeException(
                   "At least one validation task could not complete.", e);
               log.error("Could not complete validation. Please try again.", runtimeException);
-          InvalidUploadDisplay invalidUploadDisplay = invalidDisplay(uploadedData.fileName(),
-              List.of(
-                  ValidationResult.withFailures(
-                      List.of("Could not complete validation. Please try again."))));
+          InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
+              uploadedData.fileName(),
+              "Could not complete validation. Please try again.");
               ui.access(() -> component.setDisplay(invalidUploadDisplay));
               throw runtimeException;
             }
@@ -316,6 +352,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
         "Please download the metadata template, adapt the sample properties and upload the metadata sheet below to edit the sample batch.");
     Div downloadMetadataSection = new Div();
     downloadMetadataSection.addClassName("download-metadata");
+    downloadMetadataSection.addClassName("section-with-title");
     Span sectionTitle = new Span("Download metadata template");
     sectionTitle.addClassName("section-title");
     sectionTitle.addClassName("download-metadata-section-title");
