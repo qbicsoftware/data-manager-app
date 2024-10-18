@@ -252,14 +252,14 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void triggerRoCrateDownload() throws IOException {
     ProjectId projectId = context.projectId().orElseThrow();
-    Optional<Project> project = projectInformationService.find(projectId);
+    Project project = projectInformationService.find(projectId).orElseThrow();
     var tempBuildDir = tempDirectory.createDirectory();
     var zippedRoCrateDir = tempDirectory.createDirectory();
     try {
-      var roCrate = roCrateBuilder.projectSummary(project.orElseThrow(), tempBuildDir);
+      var roCrate = roCrateBuilder.projectSummary(project, tempBuildDir);
       var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
       var zippedRoCrateFile = zippedRoCrateDir.resolve(
-          "%s-project-summary-ro-crate.zip".formatted(project.get().getProjectCode().value()));
+          "%s-project-summary-ro-crate.zip".formatted(project.getProjectCode().value()));
       roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
       remove(downloadProvider);
       var cachedZipContent = Files.readAllBytes(zippedRoCrateFile);
