@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
-import life.qbic.datamanager.export.Formatter;
+import life.qbic.datamanager.export.FileFormatSupplier;
 import life.qbic.datamanager.export.model.ResearchProject;
 
 /**
@@ -14,10 +14,10 @@ import life.qbic.datamanager.export.model.ResearchProject;
  *
  * @since 1.0.0
  */
-public class YamlFormatter implements Formatter {
+public class YamlSupplier implements FileFormatSupplier {
 
-  public static YamlFormatter create() {
-    return new YamlFormatter();
+  public static YamlSupplier create() {
+    return new YamlSupplier();
   }
 
   @Override

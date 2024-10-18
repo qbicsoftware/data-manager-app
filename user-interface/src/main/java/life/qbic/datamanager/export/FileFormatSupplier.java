@@ -10,7 +10,7 @@ import life.qbic.datamanager.export.model.ResearchProject;
  *
  * @since <version tag>
  */
-public interface Formatter {
+public interface FileFormatSupplier {
 
   File from(String fileName, ResearchProject researchProject) throws FormatException;
 

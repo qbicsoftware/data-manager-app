@@ -9,10 +9,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Objects;
 import life.qbic.datamanager.export.TempDirectory;
-import life.qbic.datamanager.export.docx.DocxFormatter;
+import life.qbic.datamanager.export.docx.DocxSupplier;
 import life.qbic.datamanager.export.model.ContactPoint;
 import life.qbic.datamanager.export.model.ResearchProject;
-import life.qbic.datamanager.export.yaml.YamlFormatter;
+import life.qbic.datamanager.export.yaml.YamlSupplier;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +37,9 @@ public class ROCreateBuilder {
   }
 
   private static RoCrate buildRoCrate(Path buildDir, ResearchProject researchProject) {
-    var projectInfoDocx = DocxFormatter.create()
+    var projectInfoDocx = DocxSupplier.create()
         .from(buildDir.resolve(SUMMARY_FILENAME_DOCX.value()).toString(), researchProject);
-    var projectInfoYaml = YamlFormatter.create()
+    var projectInfoYaml = YamlSupplier.create()
         .from(buildDir.resolve(SUMMARY_FILENAME_YAML.value()).toString(), researchProject);
     return new RoCrate.RoCrateBuilder(
         "QBiC-project-%s-ro-crate".formatted(researchProject.identifier()),

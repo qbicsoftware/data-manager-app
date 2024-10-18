@@ -1,7 +1,7 @@
 package life.qbic.datamanager.export.docx;
 
 import java.io.File;
-import life.qbic.datamanager.export.Formatter;
+import life.qbic.datamanager.export.FileFormatSupplier;
 import life.qbic.datamanager.export.model.ContactPoint;
 import life.qbic.datamanager.export.model.ResearchProject;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
@@ -15,10 +15,10 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
  *
  * @since 1.0.0
  */
-public class DocxFormatter implements Formatter {
+public class DocxSupplier implements FileFormatSupplier {
 
-  public static DocxFormatter create() {
-    return new DocxFormatter();
+  public static DocxSupplier create() {
+    return new DocxSupplier();
   }
 
   @Override
