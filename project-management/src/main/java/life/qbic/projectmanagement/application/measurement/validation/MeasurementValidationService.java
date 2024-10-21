@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.measurement.validation;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;

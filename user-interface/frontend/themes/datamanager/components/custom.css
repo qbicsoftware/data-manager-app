@@ -18,6 +18,7 @@
 @import "toggle-button.css";
 @import "vaadin-custom.css";
 @import "virtuallist.css";
+@import "toast.css";
 
 vaadin-avatar-group vaadin-avatar,
 .user-avatar {

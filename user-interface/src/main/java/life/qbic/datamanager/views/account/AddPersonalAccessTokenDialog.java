@@ -39,7 +39,8 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
     setConfirmButtonLabel("Generate");
     tokenDescription.setLabel("Token Description");
     tokenDescription.setPlaceholder("Please enter the description of its usage");
-    expirationDate.setItems(computeSelectableExpirationDates());
+    List<Duration> selectableExpirationDates = computeSelectableExpirationDates();
+    expirationDate.setItems(selectableExpirationDates);
     expirationDate.setItemLabelGenerator(
         item -> item.toDays() + " days");
     expirationDate.setLabel("Expiration");
@@ -49,6 +50,7 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
       expirationDate.setHelperText("The token will expire " + formattedDate);
     });
     expirationDate.addClassName("expiration-date");
+    expirationDate.setValue(selectableExpirationDates.get(0));
     personalAccessTokenDTOBinder = new Binder<>(PersonalAccessTokenFrontendBean.class);
     personalAccessTokenDTOBinder.forField(tokenDescription)
         .asRequired("Please provide a token description")

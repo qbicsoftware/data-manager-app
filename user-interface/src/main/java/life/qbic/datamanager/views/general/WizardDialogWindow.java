@@ -38,7 +38,7 @@ public abstract class WizardDialogWindow extends DialogWindow {
    * @since 1.0.0
    */
   protected void onFinishClicked(ClickEvent<Button> clickEvent) {
-    this.close();
+    close();
   }
 
   /**
@@ -72,9 +72,9 @@ public abstract class WizardDialogWindow extends DialogWindow {
    * @since 1.0.0
    */
   public void showInProgress() {
-    this.cancelButton.setVisible(true);
+    this.cancelButton.setVisible(false);
     this.cancelButton.setEnabled(false);
-    this.finishButton.setVisible(true);
+    this.finishButton.setVisible(false);
     this.finishButton.setEnabled(false);
     this.confirmButton.setVisible(false);
   }

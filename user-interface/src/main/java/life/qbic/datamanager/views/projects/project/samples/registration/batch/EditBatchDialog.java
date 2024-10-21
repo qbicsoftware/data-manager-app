@@ -15,7 +15,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditBatchDialog.ConfirmEvent.Data;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
@@ -26,7 +25,9 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
  * A dialog used for editing sample and batch information within an experiment
+ * @Deprecated replaced by {@link EditSampleBatchDialog}
  */
+@Deprecated(forRemoval = true, since = "1.4.0")
 public class EditBatchDialog extends DialogWindow {
 
   private final SampleBatchInformationSpreadsheet spreadsheet;
@@ -56,8 +57,6 @@ public class EditBatchDialog extends DialogWindow {
     this.batchId = batchId;
 
     this.existingSamples = existingSamples.stream().map(SampleInfo::copy).toList();
-
-    specifyCancelShortcuts(this::onCanceled);
 
     spreadsheet = new SampleBatchInformationSpreadsheet(experimentalGroups, species, specimen,
         analytes, true);
@@ -224,23 +223,9 @@ public class EditBatchDialog extends DialogWindow {
         .toList();
   }
 
-  private void onCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose any changes you made.")
-        .withConfirmText("Discard changes")
-        .withTitle("Discard batch changes?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
-  }
-
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onCanceled();
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
 
   /**

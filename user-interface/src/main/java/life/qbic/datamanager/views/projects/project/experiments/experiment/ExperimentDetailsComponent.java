@@ -1,13 +1,11 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -16,34 +14,31 @@ import com.vaadin.flow.component.icon.AbstractIcon;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import com.vaadin.flow.theme.lumo.LumoIcon;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
@@ -71,7 +66,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -107,6 +102,8 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer addExperimentalVariablesNote;
   private final DeletionService deletionService;
   private final TerminologyService terminologyService;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private Context context;
   private int experimentalGroupCount;
 
@@ -116,18 +113,23 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired DeletionService deletionService,
       @Autowired SpeciesLookupService ontologyTermInformationService,
-      TerminologyService terminologyService) {
-    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
+      TerminologyService terminologyService,
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+        "messageSourceNotificationFactory must not be null");
+    this.experimentInformationService = requireNonNull(experimentInformationService);
     this.sampleInformationService = sampleInformationService;
-    this.deletionService = Objects.requireNonNull(deletionService);
-    this.ontologyTermInformationService = Objects.requireNonNull(ontologyTermInformationService);
+    this.deletionService = requireNonNull(deletionService);
+    this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService);
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
     this.addExperimentalVariablesNote = createNoVariableDisclaimer();
+    this.terminologyService = terminologyService;
+    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
     layoutComponent();
     configureComponent();
-    this.terminologyService = terminologyService;
   }
 
   private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
@@ -147,27 +149,18 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Notification createSampleRegistrationPossibleNotification() {
-    Notification notification = new Notification();
 
     RouteParam projectRouteParam = new RouteParam(PROJECT_ID_ROUTE_PARAMETER,
         context.projectId().orElseThrow().value());
     RouteParam experimentRouteParam = new RouteParam(EXPERIMENT_ID_ROUTE_PARAMETER,
         context.experimentId().orElseThrow().value());
-    String samplesUrl = RouteConfiguration.forSessionScope().getUrl(SampleInformationMain.class,
-        new RouteParameters(projectRouteParam, experimentRouteParam));
-    Div text = new Div(new Text("You can now register sample batches. "),
-        new Anchor(samplesUrl, new Button("Go to Samples", event -> notification.close())));
 
-    Button closeButton = new Button(LumoIcon.CROSS.create());
-    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    closeButton.addClickListener(event -> notification.close());
-
-    Component layout = new HorizontalLayout(text, closeButton);
-    layout.addClassName("content");
-    notification.setPosition(Position.BOTTOM_START);
-    notification.setDuration(3_000);
-    notification.add(layout);
-    return notification;
+    return messageSourceNotificationFactory.routingToast("from.experiment.to.sample.batch",
+        new Object[]{},
+        new Object[]{},
+        SampleInformationMain.class,
+        new RouteParameters(projectRouteParam, experimentRouteParam),
+        getLocale());
   }
 
   private Disclaimer createNoVariableDisclaimer() {
@@ -238,24 +231,41 @@ public class ExperimentDetailsComponent extends PageArea {
       editExperimentDialog.setConfirmButtonLabel("Save");
 
       editExperimentDialog.addExperimentUpdateEventListener(this::onExperimentUpdateEvent);
-      editExperimentDialog.addCancelListener(event -> event.getSource().close());
+      editExperimentDialog.addCancelListener(
+          cancelEvent -> showCancelConfirmationDialog(editExperimentDialog));
+      editExperimentDialog.setEscAction(
+          () -> showCancelConfirmationDialog(editExperimentDialog));
       editExperimentDialog.open();
     });
   }
 
+  private void showCancelConfirmationDialog(EditExperimentDialog editExperimentDialog) {
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(
+            it -> editExperimentDialog.close(),
+            "experiment.edit", getLocale())
+        .open();
+  }
+
   private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(ExperimentId experimentId) {
     Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
-    result.put(SPECIES, new HashSet<>());
-    result.put(SPECIMEN, new HashSet<>());
-    result.put(ANALYTE, new HashSet<>());
-    sampleInformationService.retrieveSamplesForExperiment(experimentId).onValue(samples -> {
-      samples.forEach(sample -> {
-        SampleOrigin origin = sample.sampleOrigin();
-        result.get(SPECIES).add(origin.getSpecies());
-        result.get(SPECIMEN).add(origin.getSpecimen());
-        result.get(ANALYTE).add(origin.getAnalyte());
-      });
-    });
+    Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(experimentId)
+        .valueOrElse(new ArrayList<>());
+
+    Set<OntologyTerm> speciesSet = samples.stream()
+        .map(sample -> sample.sampleOrigin().getSpecies())
+        .collect(Collectors.toSet());
+    result.put(SPECIES, speciesSet);
+
+    Set<OntologyTerm> specimenSet = samples.stream()
+        .map(sample -> sample.sampleOrigin().getSpecimen())
+        .collect(Collectors.toSet());
+    result.put(SPECIMEN, specimenSet);
+
+    Set<OntologyTerm> analyteSet = samples.stream()
+        .map(sample -> sample.sampleOrigin().getAnalyte())
+        .collect(Collectors.toSet());
+    result.put(ANALYTE, analyteSet);
+
     return result;
   }
 
@@ -301,7 +311,8 @@ public class ExperimentDetailsComponent extends PageArea {
       return;
     }
     var addDialog = new ExperimentalVariablesDialog();
-    addDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    addDialog.addCancelEventListener(cancelEvent -> showCancelConfirmationDialog(addDialog, true));
+    addDialog.setEscAction(() -> showCancelConfirmationDialog(addDialog, true));
     addDialog.addConfirmEventListener(this::onExperimentalVariablesAddConfirmed);
     addDialog.open();
   }
@@ -324,9 +335,19 @@ public class ExperimentDetailsComponent extends PageArea {
     var editDialog = ExperimentalVariablesDialog.prefilled(
         experimentInformationService.getVariablesOfExperiment(
             context.projectId().orElseThrow().value(), experimentId));
-    editDialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
+    editDialog.addCancelEventListener(
+        cancelEvent -> showCancelConfirmationDialog(editDialog, false));
+    editDialog.setEscAction(() -> showCancelConfirmationDialog(editDialog, false));
     editDialog.addConfirmEventListener(this::onExperimentalVariablesEditConfirmed);
     editDialog.open();
+  }
+
+  private void showCancelConfirmationDialog(ExperimentalVariablesDialog editDialog,
+      boolean isCreate) {
+    var key = isCreate ? "experiment.variables.create" : "experiment.variables.edit";
+    cancelConfirmationDialogFactory.cancelConfirmationDialog(it -> editDialog.close(),
+            key, getLocale())
+        .open();
   }
 
   private void onExperimentalVariablesEditConfirmed(
@@ -435,6 +456,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void layoutTabSheet() {
+    experimentSheet.addClassName("experimental-sheet");
     experimentSheet.add("Experimental Variables", experimentalVariables);
     experimentalVariables.addClassName("experimental-groups-container");
     experimentSheet.add("Experimental Groups", experimentalGroups);
@@ -751,6 +773,6 @@ public class ExperimentDetailsComponent extends PageArea {
    * Describes the source level of a sample: species, specimen or analyte
    */
   public enum SampleSourceType {
-    SPECIES, SPECIMEN, ANALYTE;
+    SPECIES, SPECIMEN, ANALYTE
   }
 }

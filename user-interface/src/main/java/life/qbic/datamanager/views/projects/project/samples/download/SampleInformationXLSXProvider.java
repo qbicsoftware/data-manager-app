@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.download.DownloadContentProvider;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
@@ -137,7 +137,7 @@ public class SampleInformationXLSXProvider implements DownloadContentProvider {
     analyteCol.setCellValue(sample.analyte().getLabel());
 
     var analysisCol = sampleRow.createCell(SamplePreviewColumn.ANALYSIS.column());
-    analysisCol.setCellValue(sample.analysisMethod());
+    analysisCol.setCellValue(sample.analysisMethod().abbreviation());
 
     var commentCol = sampleRow.createCell(SamplePreviewColumn.COMMENT.column());
     commentCol.setCellValue(sample.comment());

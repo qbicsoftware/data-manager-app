@@ -3,7 +3,7 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 
 /**

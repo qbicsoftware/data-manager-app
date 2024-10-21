@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
-import life.qbic.datamanager.views.CancelConfirmationNotificationDialog;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
@@ -45,8 +44,6 @@ public class EditProjectInformationDialog extends DialogWindow {
   public EditProjectInformationDialog(ContactRepository contactRepository) {
     super();
 
-    specifyCancelShortcuts(this::onEditCanceled);
-
     addClassName("edit-project-dialog");
     setHeaderTitle("Project Information");
     setConfirmButtonLabel("Save");
@@ -57,16 +54,13 @@ public class EditProjectInformationDialog extends DialogWindow {
     List<Contact> knownContacts = contactRepository.findAll().stream().map(contact ->
         new Contact(contact.fullName(), contact.emailAddress())).toList();
 
-    if(knownContacts.isEmpty()) {
+    if (knownContacts.isEmpty()) {
       formLayout.hideContactBox();
     } else {
       formLayout.setKnownContacts(knownContacts);
     }
 
     binder = formLayout.getBinder();
-
-    // Calls the reset method for all possible closure methods of the dialogue window:
-    addDialogCloseActionListener(closeActionEvent -> close());
 
     add(formLayout);
   }
@@ -95,24 +89,13 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
   }
 
-  private void onEditCanceled() {
-    CancelConfirmationNotificationDialog cancelDialog = new CancelConfirmationNotificationDialog()
-        .withBodyText("You will lose all the changes made to this project.")
-        .withConfirmText("Discard changes")
-        .withTitle("Discard project changes?");
-    cancelDialog.open();
-    cancelDialog.addConfirmListener(event -> {
-      cancelDialog.close();
-      fireEvent(new CancelEvent(this, true));
-    });
-    cancelDialog.addCancelListener(
-        event -> cancelDialog.close());
-  }
-
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    onEditCanceled();
+    //as this is the first listener called on cancel event, no closing should happen here.
+    //If this method closes the dialog, the calling code has no opportunity to prevent that.
+    fireEvent(new CancelEvent(this, clickEvent.isFromClient()));
   }
+
 
   public void addProjectUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
     addListener(ProjectUpdateEvent.class, listener);
@@ -223,6 +206,7 @@ public class EditProjectInformationDialog extends DialogWindow {
     public void setResponsiblePerson(Contact responsiblePerson) {
       this.responsiblePerson = responsiblePerson;
     }
+
     public Contact getProjectManager() {
       return projectManager;
     }

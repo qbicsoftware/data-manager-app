@@ -14,7 +14,7 @@
     "data-manager-footer";
 }
 
-#landing-page-layout .landing-page-content {
+.landing-page-layout .landing-page-content {
   /*Static resources have to be loaded in css form the Meta-INF directory see vaadin cheatsheet
   https://vaadin.com/vaadin-reference-card#static-content */
   /*background-image: url("../images/");*/
@@ -25,7 +25,7 @@
   min-height: 100%;
 }
 
-#landing-page-layout .landing-page-title-and-logo {
+.landing-page-layout .landing-page-title-and-logo {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,17 +35,17 @@
   padding-top: var(--lumo-space-xl);
 }
 
-#landing-page-layout .landing-page-title-and-logo .title {
+.landing-page-layout .landing-page-title-and-logo .title {
   font-weight: bold;
   font-size: var(--lumo-font-size-xxl);
 }
 
-#landing-page-layout .landing-page-title-and-logo .subtitle {
+.landing-page-layout .landing-page-title-and-logo .subtitle {
   color: var(--lumo-tertiary-text-color);
   font-weight: bold;
 }
 
-#landing-page-layout .landing-page-title-and-logo .ut-logo {
+.landing-page-layout .landing-page-title-and-logo .ut-logo {
   height: 2.5em;
   margin-bottom: var(--lumo-space-xl);
 }
@@ -425,11 +425,35 @@
   grid-area: sampledetails;
 }
 
+.main.reset-password {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
+}
+
+.main.set-new-password {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
+}
+
 .main.user-profile {
   grid-template-columns: minmax(min-content, auto);
   grid-template-rows: minmax(min-content, auto);
   grid-template-areas:
     "user-profile-component"
+}
+
+.main.user-registration {
+  grid-template-columns: auto;
+  grid-template-rows: auto;
+  justify-content: center;
+  /*Should be moved to the parent layout once Login and forgot password components are overhauled*/
+  padding-bottom: var(--lumo-space-m);
 }
 
 /*Large devices (large desktops, 1200px and up)*/

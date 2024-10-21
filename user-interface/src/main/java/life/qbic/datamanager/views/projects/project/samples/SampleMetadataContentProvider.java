@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.datamanager.views.general.download.DownloadContentProvider;
+import life.qbic.datamanager.download.DownloadContentProvider;
 import life.qbic.datamanager.views.general.download.TSVBuilder;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
@@ -37,7 +37,8 @@ public class SampleMetadataContentProvider implements DownloadContentProvider {
     tsvBuilder.addColumn("Species", sample -> sample.species().getLabel());
     tsvBuilder.addColumn("Specimen", sample -> sample.specimen().getLabel());
     tsvBuilder.addColumn("Analyte", sample -> sample.analyte().getLabel());
-    tsvBuilder.addColumn("Analysis to Perform", SamplePreview::analysisMethod);
+    tsvBuilder.addColumn("Analysis to Perform",
+        samplePreview -> samplePreview.analysisMethod().abbreviation());
     tsvBuilder.addColumn("Comment", SamplePreview::comment);
 
     SamplePreview firstSample = samples.stream().findFirst().get();

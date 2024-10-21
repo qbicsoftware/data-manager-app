@@ -173,15 +173,11 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   @Override
   public Optional<OntologyClass> searchByCurie(String curie) throws LookupException {
     try {
-      List<TibTerm> result = searchByOboId(curie, 0, 10);
-      if (result.isEmpty()) {
-        return Optional.empty();
-      }
-      return Optional.of(
-          result.stream().map(TIBTerminologyServiceIntegration::convert).toList().get(0));
+      return searchByOboIdExact(curie).map(TIBTerminologyServiceIntegration::convert);
     } catch (IOException e) {
       throw wrapIO(e);
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw wrapInterrupted(e);
     } catch (Exception e) {
       throw wrapUnknown(e);
@@ -221,9 +217,12 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return List.of();
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
-            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(searchTerm,
-                StandardCharsets.UTF_8) + "&rows="
-                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()))
+            searchEndpointAbsoluteUrl.toString() + "?q="
+                + URLEncoder.encode(
+                searchTerm,
+                StandardCharsets.UTF_8)
+                + "&rows=" + limit + "&start=" + offset
+                + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
@@ -278,13 +277,45 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return List.of();
     }
     HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
-            searchEndpointAbsoluteUrl.toString() + "?q=" + URLEncoder.encode(oboId,
-                StandardCharsets.UTF_8) + "&rows="
-                + limit + "&start=" + offset + "&ontology=" + createOntologyFilterQueryParameter()
-                + "&queryFields=obo_id"))
+            searchEndpointAbsoluteUrl.toString() + "?q="
+                + URLEncoder.encode(
+                //obo_id query field requires `:` separator instead of `_`
+                oboId.replace("_", ":"), StandardCharsets.UTF_8)
+                + "&queryFields=obo_id"
+                + "&rows=" + limit + "&start=" + offset
+                + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
     return parseResponse(response);
+  }
+
+  /**
+   * Queries the /search endpoint of the TIB terminology service, but filters any results by the
+   * terms `obo_id` property.
+   * <p>
+   *
+   * @param oboId the obo id to match exactly
+   * @return a list of matching terms.
+   * @throws IOException          if e.g. the service cannot be reached
+   * @throws InterruptedException the query is interrupted before succeeding
+   * @since 1.4.0
+   */
+  private Optional<TibTerm> searchByOboIdExact(String oboId)
+      throws IOException, InterruptedException {
+    if (oboId.isBlank()) { // avoid unnecessary API calls
+      return Optional.empty();
+    }
+    HttpRequest termSelectQuery = HttpRequest.newBuilder().uri(URI.create(
+            searchEndpointAbsoluteUrl.toString() + "?q="
+                + URLEncoder.encode(
+                //obo_id query field requires `:` separator instead of `_`
+                oboId.replace("_", ":"), StandardCharsets.UTF_8)
+                + "&queryFields=obo_id"
+                + "&exact=true"
+                + "&ontology=" + createOntologyFilterQueryParameter()))
+        .header("Content-Type", "application/json").GET().build();
+    var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
+    return parseResponse(response).stream().findFirst();
   }
 
   /**
@@ -310,5 +341,3 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     }
   }
 }
-
-
