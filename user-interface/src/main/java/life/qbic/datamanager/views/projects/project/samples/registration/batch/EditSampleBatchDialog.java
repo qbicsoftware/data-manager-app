@@ -381,11 +381,13 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     if (batchNameField.isInvalid()) {
       // once the user focused the batch name field at least once, the setRequired(true) validation is applied.
+      batchNameField.focus();
       return;
     }
     if (batchNameField.isEmpty()) {
       // if the user never focused the name field, no validation took place. Thus, the need to double-check here.
       batchNameField.setInvalid(true);
+      batchNameField.focus();
       return;
     }
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), batchNameField.getValue(),
