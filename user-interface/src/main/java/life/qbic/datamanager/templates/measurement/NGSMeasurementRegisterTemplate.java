@@ -37,11 +37,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class NGSMeasurementRegisterTemplate extends Template implements DownloadContentProvider {
 
+  private static final String NGS_MEASUREMENT_TEMPLATE_FILENAME = "ngs_measurement_registration_sheet.xlsx";
   private static final String NGS_MEASUREMENT_TEMPLATE_DOMAIN_NAME = "Genomics Template";
-  private static final String FILE_NAME_SUFFIX = "ngs_measurements.xlsx";
   private static final Logger log = logger(NGSMeasurementRegisterTemplate.class);
-  private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
-  private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX;
   private static final int DEFAULT_GENERATED_ROW_COUNT = 200;
 
   private static void setAutoWidth(Sheet sheet) {
@@ -121,7 +119,7 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
 
   @Override
   public String getFileName() {
-    return String.join("_", fileNamePrefix, FILE_NAME_SUFFIX);
+    return NGS_MEASUREMENT_TEMPLATE_FILENAME;
   }
 
 }
