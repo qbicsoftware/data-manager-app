@@ -40,7 +40,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class NGSMeasurementEditTemplate implements DownloadContentProvider {
 
-  //TODO
   private static final String FILE_NAME_SUFFIX = "ngs_measurements.xlsx";
   private static final Logger log = logger(NGSMeasurementEditTemplate.class);
   private final List<NGSMeasurementEntry> measurements = new LinkedList<>();
@@ -157,6 +156,18 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
           NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           sequencingReadTypeArea);
+
+      for (NGSMeasurementEditColumn column : NGSMeasurementEditColumn.values()) {
+        column.getFillHelp().ifPresent(
+            helper -> XLSXTemplateHelper.addInputHelper(sheet,
+                column.columnIndex(),
+                startIndex,
+                column.columnIndex(),
+                DEFAULT_GENERATED_ROW_COUNT - 1,
+                helper.exampleValue(),
+                helper.description())
+        );
+      }
 
       setAutoWidth(sheet);
       workbook.setActiveSheet(0);

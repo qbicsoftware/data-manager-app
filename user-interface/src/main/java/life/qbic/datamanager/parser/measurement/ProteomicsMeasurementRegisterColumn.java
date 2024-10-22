@@ -1,5 +1,9 @@
 package life.qbic.datamanager.parser.measurement;
 
+import java.util.Optional;
+import life.qbic.datamanager.parser.Column;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
+
 /**
  * TODO!
  * <b>short description</b>
@@ -8,7 +12,7 @@ package life.qbic.datamanager.parser.measurement;
  *
  * @since <version tag>
  */
-public enum ProteomicsMeasurementRegisterColumn {
+public enum ProteomicsMeasurementRegisterColumn implements Column {
 
   SAMPLE_ID("QBiC Sample Id", 0, true, true),
   SAMPLE_NAME(
@@ -56,5 +60,10 @@ public enum ProteomicsMeasurementRegisterColumn {
 
   public boolean isMandatory() {
     return mandatory;
+  }
+
+  @Override
+  public Optional<Helper> getFillHelp() {
+    return Optional.empty();
   }
 }

@@ -1,6 +1,9 @@
 package life.qbic.datamanager.parser.sample;
 
 import java.util.Arrays;
+import java.util.Optional;
+import life.qbic.datamanager.parser.Column;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 
 /**
  * <b>Sample Register Columns</b>
@@ -10,7 +13,7 @@ import java.util.Arrays;
  * column index and if the column should be set to readOnly in the generated sheet
  * </p>
  */
-public enum RegisterColumn {
+public enum RegisterColumn implements Column {
 
   SAMPLE_NAME("Sample Name", 0, false, true),
   ANALYSIS("Analysis to be performed", 1, false, true),
@@ -59,5 +62,10 @@ public enum RegisterColumn {
 
   public boolean isMandatory() {
     return mandatory;
+  }
+
+  @Override
+  public Optional<Helper> getFillHelp() {
+    return Optional.empty();
   }
 }

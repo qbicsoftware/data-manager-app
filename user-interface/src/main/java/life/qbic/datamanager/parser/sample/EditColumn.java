@@ -1,6 +1,9 @@
 package life.qbic.datamanager.parser.sample;
 
 import java.util.Arrays;
+import java.util.Optional;
+import life.qbic.datamanager.parser.Column;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 
 /**
  * <b>Sample Edit Columns</b>
@@ -10,7 +13,7 @@ import java.util.Arrays;
  * column index and if the column should be set to readOnly in the generated sheet
  * </p>
  */
-public enum EditColumn {
+public enum EditColumn implements Column {
   SAMPLE_ID("QBiC Sample Id", 0, true, true),
   SAMPLE_NAME("Sample Name", 1, false, true),
   ANALYSIS("Analysis to be performed", 2, false, true),
@@ -61,4 +64,8 @@ public enum EditColumn {
     return mandatory;
   }
 
+  @Override
+  public Optional<Helper> getFillHelp() {
+    return Optional.empty();
+  }
 }

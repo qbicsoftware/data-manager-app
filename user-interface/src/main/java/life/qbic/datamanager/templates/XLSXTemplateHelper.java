@@ -287,6 +287,22 @@ public class XLSXTemplateHelper {
     sheet.addValidationData(validation);
   }
 
+  public static void addInputHelper(Sheet sheet, int startColIdx, int startRowIdx,
+      int stopColIdx, int stopRowIdx, String title, String content) {
+    CellRangeAddressList validatedCells = new CellRangeAddressList(startRowIdx,
+        stopRowIdx,
+        startColIdx,
+        stopColIdx);
+    DataValidationHelper dataValidationHelper = sheet.getDataValidationHelper();
+    DataValidationConstraint alwaysTrue = dataValidationHelper.createCustomConstraint("TRUE");
+    DataValidation validation = dataValidationHelper.createValidation(alwaysTrue,
+        validatedCells);
+    validation.setSuppressDropDownArrow(true); // shows dropdown if true
+    validation.setShowPromptBox(true);
+    validation.createPromptBox(title, content);
+    sheet.addValidationData(validation);
+  }
+
 
   public static void hideSheet(Workbook workbook, Sheet sheet) {
     workbook.setSheetVisibility(workbook.getSheetIndex(sheet), SheetVisibility.VERY_HIDDEN);

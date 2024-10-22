@@ -1,5 +1,9 @@
 package life.qbic.datamanager.parser.measurement;
 
+import java.util.Optional;
+import life.qbic.datamanager.parser.Column;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
+
 /**
  * <b>NGS Measurement Columns</b>
  *
@@ -8,7 +12,7 @@ package life.qbic.datamanager.parser.measurement;
  * column index and if the column should be set to readOnly in the generated sheet
  * </p>
  */
-public enum ProteomicsMeasurementEditColumn {
+public enum ProteomicsMeasurementEditColumn implements Column {
 
   MEASUREMENT_ID("Measurement ID", 0, true, true),
   SAMPLE_ID("QBiC Sample Id", 1, true, true),
@@ -59,5 +63,10 @@ public enum ProteomicsMeasurementEditColumn {
 
   public boolean isMandatory() {
     return mandatory;
+  }
+
+  @Override
+  public Optional<Helper> getFillHelp() {
+    return Optional.empty();
   }
 }
