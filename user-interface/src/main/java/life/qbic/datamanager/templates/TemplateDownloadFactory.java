@@ -1,7 +1,7 @@
 package life.qbic.datamanager.templates;
 
 import life.qbic.datamanager.download.DownloadContentProvider;
-import life.qbic.datamanager.templates.measurement.NGSMeasurementTemplate;
+import life.qbic.datamanager.templates.measurement.NGSMeasurementRegisterTemplate;
 import life.qbic.datamanager.templates.measurement.ProteomicsMeasurementTemplate;
 
 /**
@@ -18,7 +18,7 @@ public class TemplateDownloadFactory {
     return
         switch (templateType) {
           case MS_MEASUREMENT -> new ProteomicsMeasurementTemplate();
-          case NGS_MEASUREMENT -> new NGSMeasurementTemplate();
+          case NGS_MEASUREMENT -> new NGSMeasurementRegisterTemplate();
         };
   }
 

@@ -105,7 +105,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
     return columnIndex;
   }
 
-  public boolean readOnly() {
+  public boolean isReadOnly() {
     return readOnly;
   }
 
