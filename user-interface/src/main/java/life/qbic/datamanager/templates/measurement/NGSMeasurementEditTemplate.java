@@ -12,7 +12,6 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
@@ -46,20 +45,6 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
   private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
   private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX;
   private static final int DEFAULT_GENERATED_ROW_COUNT = 200;
-
-  private enum SequencingReadType {
-    SINGLE_END("single-end"),
-    PAIRED_END("paired-end");
-    private final String presentationString;
-
-    SequencingReadType(String presentationString) {
-      this.presentationString = presentationString;
-    }
-
-    static List<String> getOptions() {
-      return Arrays.stream(values()).map(it -> it.presentationString).toList();
-    }
-  }
 
   private static void setAutoWidth(Sheet sheet) {
     for (int col = 0; col <= NGSMeasurementEditColumn.values().length; col++) {
