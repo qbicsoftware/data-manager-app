@@ -44,7 +44,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
           case SAMPLE_ID -> new Helper("QBiC sample IDs, e.g. Q2001, Q2002",
               "The sample(s) that will be linked to the measurement.");
           case SAMPLE_NAME -> new Helper("Free text, e.g. RNA Sample 1, RNA Sample 2",
-              "A visual aid to simplify sample navigation for the person managing the metadata.");
+              "A visual aid to simplify sample navigation for the person managing the metadata. Is ignored after upload.");
           case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
               "In case of pooled sample get measured, indicate with a common sample group label for samples that are in the same measurement. Entries that share the same pool label will be combined as one measurement.");
           case ORGANISATION_ID -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48",
