@@ -17,7 +17,7 @@ import life.qbic.datamanager.parser.ExampleProvider.Helper;
 public enum NGSMeasurementRegisterColumn implements Column {
 
   SAMPLE_ID("QBiC Sample Id", 0, false, true),
-  SAMPLE_NAME("Sample Name", 1, false, false),
+  SAMPLE_NAME("Sample Name", 1, true, false),
   POOL_GROUP("Sample Pool Group", 2, false, false),
   ORGANISATION_ID("Organisation ID", 3, false, true),
   FACILITY("Facility", 4, false, true),
