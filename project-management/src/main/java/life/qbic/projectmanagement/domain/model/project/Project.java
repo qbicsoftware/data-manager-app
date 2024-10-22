@@ -278,6 +278,10 @@ public class Project {
     return experiments.stream().map(Experiment::experimentId).toList();
   }
 
+  public Instant getLastModified() {
+    return lastModified;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

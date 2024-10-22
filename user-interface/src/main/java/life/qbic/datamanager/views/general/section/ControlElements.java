@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.info;
+package life.qbic.datamanager.views.general.section;
 
 /**
  * <b>Control Elements Interface</b>
@@ -10,11 +10,11 @@ package life.qbic.datamanager.views.projects.project.info;
  */
 public interface ControlElements {
 
-  void enable();
+  void enableControls();
 
-  void disable();
+  void disableControls();
 
-  void isEnabled();
+  boolean controlsEnabled();
 
-  void isDisabled();
+  boolean controlsDisabled();
 }

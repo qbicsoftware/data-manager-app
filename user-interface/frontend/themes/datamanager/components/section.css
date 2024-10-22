@@ -1,0 +1,36 @@
+.section {
+  width: 100%;
+}
+
+.section-content {
+  width: 100%;
+}
+
+.header {
+  font-weight: bold;
+  color: var(--lumo-secondary-text-color);
+  margin-bottom: 0.5rem;
+}
+
+.header.small-size {
+  font-size: var(--lumo-font-size-l);
+}
+
+.header.medium-size {
+  font-size: var(--lumo-font-size-xl);
+}
+
+.header.large-size {
+  font-size: var(--lumo-font-size-xxl);
+}
+
+.sub-header {
+  font-size: var(--lumo-font-size-s);
+  color: #878787;
+  margin-bottom: 0.5rem;
+}
+
+.inline-elements {
+  display: inline-flex;
+  gap: var(--lumo-space-s);
+}
