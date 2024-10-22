@@ -25,10 +25,10 @@ public enum NGSMeasurementRegisterColumn implements Column {
   SEQUENCING_READ_TYPE("Sequencing Read Type", 6, false, true),
   LIBRARY_KIT("Library Kit", 7, false, false),
   FLOW_CELL("Flow Cell", 8, false, false),
-  SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 11, false, false),
-  INDEX_I7("Index i7", 9, false, false),
-  INDEX_I5("Index i5", 10, false, false),
-  COMMENT("Comment", 11, false, false),
+  SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 9, false, false),
+  INDEX_I7("Index i7", 10, false, false),
+  INDEX_I5("Index i5", 11, false, false),
+  COMMENT("Comment", 12, false, false),
   ;
 
   private final String headerName;
