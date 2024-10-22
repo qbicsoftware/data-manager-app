@@ -9,15 +9,15 @@ import com.vaadin.flow.component.html.Div;
  *
  * @since <version tag>
  */
-public class SubHeader extends Div {
+public class SectionNote extends Div {
 
   private String content;
 
-  public SubHeader() {
+  public SectionNote() {
     addClassName("sub-header");
   }
 
-  public SubHeader(String text) {
+  public SectionNote(String text) {
     this();
     this.content = text;
     add(content);

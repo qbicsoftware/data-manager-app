@@ -11,10 +11,10 @@ import java.util.List;
  *
  * @since <version tag>
  */
-public class Header extends Div {
+public class SectionTitle extends Div {
 
   private static final List<String> CLASS_NAMES_SIZES = new ArrayList<>();
-  private static final String CLASS_NAME = "header";
+  private static final String CLASS_NAME = "section-title";
 
   static {
     CLASS_NAMES_SIZES.add(Size.SMALL.value());
@@ -22,17 +22,17 @@ public class Header extends Div {
     CLASS_NAMES_SIZES.add(Size.LARGE.value());
   }
 
-  public Header() {
+  public SectionTitle() {
     addClassName(CLASS_NAME);
     setToMedium();
   }
 
-  public Header(String text) {
+  public SectionTitle(String text) {
     this();
     add(text);
   }
 
-  public Header(String text, Size size) {
+  public SectionTitle(String text, Size size) {
     this(text);
     setSize(size);
   }

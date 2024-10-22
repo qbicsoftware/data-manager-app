@@ -11,36 +11,38 @@ import com.vaadin.flow.component.html.Div;
  */
 public class Section extends Div implements ControlElements {
 
-  private Header header;
-
-  private SubHeader subHeader;
-
   private SectionContent content;
+
+  private SectionHeader sectionHeader;
+
+  private SectionNote sectionNote;
 
   private Section() {
     addClassName("section");
-    header = new Header();
+    sectionHeader = new SectionHeader();
     content = new SectionContent();
-    add(header);
-    add(content);
+    sectionNote = new SectionNote();
+    rebuild();
   }
 
-  public void setSubHeader(SubHeader subHeader) {
-    remove(subHeader);
-    this.subHeader = subHeader;
-    add(subHeader);
+  public void setHeader(SectionHeader sectionHeader) {
+    this.sectionHeader = sectionHeader;
+    rebuild();
   }
 
-  public void setHeader(Header header) {
-    remove(this.header);
-    this.header = header;
-    add(header);
+  public void setSectionNote(SectionNote sectionNote) {
+    this.sectionNote = sectionNote;
+    rebuild();
   }
 
   public void setContent(SectionContent content) {
-    remove(this.content);
     this.content = content;
-    add(content);
+    rebuild();
+  }
+
+  private void rebuild() {
+    removeAll();
+    add(sectionHeader, sectionNote, content);
   }
 
   @Override
@@ -76,8 +78,8 @@ public class Section extends Div implements ControlElements {
       section.disableControls();
     }
 
-    public SectionBuilder withSubHeader(SubHeader subHeader) {
-      section.setSubHeader(subHeader);
+    public SectionBuilder withHeader(SectionHeader sectionHeader) {
+      section.setHeader(sectionHeader);
       return this;
     }
 
@@ -88,11 +90,6 @@ public class Section extends Div implements ControlElements {
 
     public SectionBuilder enableControls() {
       section.enableControls();
-      return this;
-    }
-
-    public SectionBuilder withHeader(Header header) {
-      section.setHeader(header);
       return this;
     }
 
