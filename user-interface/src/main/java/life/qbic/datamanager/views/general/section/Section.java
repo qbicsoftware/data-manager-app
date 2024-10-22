@@ -15,23 +15,16 @@ public class Section extends Div implements ControlElements {
 
   private SectionHeader sectionHeader;
 
-  private SectionNote sectionNote;
 
   private Section() {
     addClassName("section");
     sectionHeader = new SectionHeader();
     content = new SectionContent();
-    sectionNote = new SectionNote();
     rebuild();
   }
 
   public void setHeader(SectionHeader sectionHeader) {
     this.sectionHeader = sectionHeader;
-    rebuild();
-  }
-
-  public void setSectionNote(SectionNote sectionNote) {
-    this.sectionNote = sectionNote;
     rebuild();
   }
 
@@ -42,7 +35,7 @@ public class Section extends Div implements ControlElements {
 
   private void rebuild() {
     removeAll();
-    add(sectionHeader, sectionNote, content);
+    add(sectionHeader, content);
   }
 
   @Override

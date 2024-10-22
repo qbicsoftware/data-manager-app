@@ -1,8 +1,44 @@
+.heading-with-icon {
+  color: #878787;
+  column-gap: var(--lumo-space-s);
+  display: flex;
+  flex-direction: row;
+  font-weight: bold;
+  line-height: 1;
+  font-size: var(--lumo-space-m);
+}
+
+.heading-with-icon vaadin-icon {
+  height: auto;
+}
+
 .section {
   width: 100%;
+  margin-bottom: var(--lumo-space-xl);
 }
 
 .section-header {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.section-header.normal-trailing-margin {
+  margin-bottom: var(--lumo-space-l);
+}
+
+.section-header.small-trailing-margin {
+  margin-bottom: var(--lumo-space-s);
+}
+
+.section-header.s {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: var(--lumo-space-l);
+}
+
+.section-header-row {
   display: flex;
   width: 100%;
 }

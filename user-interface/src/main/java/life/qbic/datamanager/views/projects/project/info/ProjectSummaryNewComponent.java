@@ -6,6 +6,7 @@ import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
@@ -32,13 +33,14 @@ import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.section.ActionBar;
-import life.qbic.datamanager.views.general.section.SectionHeader;
-import life.qbic.datamanager.views.general.section.SectionTitle;
-import life.qbic.datamanager.views.general.section.SectionTitle.Size;
+import life.qbic.datamanager.views.general.section.HeadingWithIcon;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
 import life.qbic.datamanager.views.general.section.SectionContent;
+import life.qbic.datamanager.views.general.section.SectionHeader;
 import life.qbic.datamanager.views.general.section.SectionNote;
+import life.qbic.datamanager.views.general.section.SectionTitle;
+import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -64,9 +66,13 @@ public class ProjectSummaryNewComponent extends PageArea {
 
   private final ProjectInformationService projectInformationService;
   private final ROCreateBuilder roCrateBuilder;
-  private Section headerSection;
-  private Context context;
   private final TempDirectory tempDirectory;
+  private Section headerSection;
+  private Section projectDesignSection;
+  private Section experimentInformationSection;
+  private Section fundingInformationSection;
+  private Section projectContactsSection;
+  private Context context;
   private DownloadProvider downloadProvider;
 
   @Autowired
@@ -78,11 +84,20 @@ public class ProjectSummaryNewComponent extends PageArea {
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
+    this.projectDesignSection = new SectionBuilder().build();
+    this.experimentInformationSection = new SectionBuilder().build();
+    this.fundingInformationSection = new SectionBuilder().build();
+    this.projectContactsSection = new SectionBuilder().build();
     this.tempDirectory = Objects.requireNonNull(tempDirectory);
     this.roCrateBuilder = Objects.requireNonNull(rOCreateBuilder);
+    addClassName("project-details-component");
     downloadProvider = new DownloadProvider(null);
     add(downloadProvider);
     add(headerSection);
+    add(projectDesignSection);
+    add(experimentInformationSection);
+    add(fundingInformationSection);
+    add(projectContactsSection);
   }
 
   private String formatDate(Instant date) {
@@ -94,21 +109,55 @@ public class ProjectSummaryNewComponent extends PageArea {
     this.context = Objects.requireNonNull(context);
     var projectId = context.projectId()
         .orElseThrow(() -> new ApplicationException("No project id provided"));
-    var project = projectInformationService.findOverview(projectId)
+    var projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow(() -> new ApplicationException("No project with given ID found"));
-    setContent(project);
+    var fullProject = projectInformationService.find(projectId)
+        .orElseThrow(() -> new ApplicationException("No project found"));
+    setContent(projectOverview, fullProject);
   }
 
-  private void setContent(ProjectOverview projectInformation) {
+  private void setContent(ProjectOverview projectInformation, Project fullProject) {
     Objects.requireNonNull(projectInformation);
-    buildHeader(projectInformation);
-
+    buildHeaderSection(projectInformation);
+    buildDesignSection(projectInformation, fullProject);
+    buildExperimentInformationSection(projectInformation);
+    buildFundingInformationSection(projectInformation);
+    buildProjectContactsInfoSection(projectInformation);
   }
 
-  private void buildHeader(ProjectOverview projectOverview) {
+  private void buildProjectContactsInfoSection(ProjectOverview projectInformation) {
+    fundingInformationSection.setHeader(
+        new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(new Button("Edit"))));
+  }
+
+  private void buildFundingInformationSection(ProjectOverview projectInformation) {
+    fundingInformationSection.setHeader(
+        new SectionHeader(new SectionTitle("Funding Information"), new ActionBar(new Button("Edit"))));
+  }
+
+  private void buildExperimentInformationSection(ProjectOverview projectInformation) {
+    experimentInformationSection.setHeader(
+        new SectionHeader(new SectionTitle("Experiment Information"), new ActionBar(new Button("Edit"))));
+  }
+
+  private void buildDesignSection(ProjectOverview projectInformation, Project project) {
+    projectDesignSection.setHeader(
+        new SectionHeader(new SectionTitle("Project Design"), new ActionBar(new Button("Edit"))));
+    var content = new SectionContent();
+    content.add(
+        HeadingWithIcon.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
+    content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
+        projectInformation.projectTitle())));
+    content.add(HeadingWithIcon.withIconAndText(VaadinIcon.WORKPLACE.create(), "Objective"));
+    content.add(new SimpleParagraph(project.getProjectIntent().objective().objective()));
+    projectDesignSection.setContent(content);
+  }
+
+  private void buildHeaderSection(ProjectOverview projectOverview) {
     Objects.requireNonNull(projectOverview);
-    var header = new SectionHeader(new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
-        projectOverview.projectTitle()), Size.LARGE));
+    var header = new SectionHeader(
+        new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
+            projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export as RO-Crate");
     crateExportBtn.addClickListener(event -> {
       try {
@@ -119,13 +168,15 @@ public class ProjectSummaryNewComponent extends PageArea {
     });
     ActionBar actionBar = new ActionBar(crateExportBtn);
     header.setActionBar(actionBar);
+    header.setSmallTrailingMargin();
 
     var sectionContent = new SectionContent();
     sectionContent.add(createAvatarGroup(projectOverview.collaboratorUserInfos()));
     sectionContent.add(createTags(projectOverview));
 
+    header.setSectionNote(new SectionNote(
+        "Last modified on %s".formatted(formatDate(projectOverview.lastModified()))));
     headerSection.setHeader(header);
-    headerSection.setSectionNote(new SectionNote("Last modified on %s".formatted(formatDate(projectOverview.lastModified()))));
     headerSection.setContent(sectionContent);
   }
 

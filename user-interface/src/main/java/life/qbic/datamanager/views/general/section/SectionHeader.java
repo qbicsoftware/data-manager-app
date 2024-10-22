@@ -15,6 +15,15 @@ public class SectionHeader extends Div {
 
   private ActionBar actionBar;
 
+  private SectionNote sectionNote;
+
+  private Div headerRow;
+
+  public SectionHeader(SectionTitle sectionTitle, ActionBar actionBar, SectionNote sectionNote) {
+    this(sectionTitle, actionBar);
+    this.sectionNote = sectionNote;
+    rebuild();
+  }
 
   public SectionHeader(SectionTitle sectionTitle, ActionBar actionBar) {
     this();
@@ -32,12 +41,22 @@ public class SectionHeader extends Div {
 
   private void rebuild() {
     removeAll();
-    this.add(sectionTitle);
-    this.add(actionBar);
+    this.headerRow.removeAll();
+    headerRow.add(sectionTitle);
+    headerRow.add(actionBar);
+    this.add(headerRow);
+    this.add(sectionNote);
   }
 
   public SectionHeader() {
     addClassName("section-header");
+    addClassName("normal-trailing-margin");
+    this.headerRow = new Div();
+    headerRow.addClassName("section-header-row");
+    this.sectionTitle = new SectionTitle();
+    this.actionBar = new ActionBar();
+    this.sectionNote = new SectionNote();
+    rebuild();
   }
 
   public void setTitle(SectionTitle title) {
@@ -48,6 +67,23 @@ public class SectionHeader extends Div {
   public void setActionBar(ActionBar actionBar) {
     this.actionBar = actionBar;
     rebuild();
+  }
+
+  public void setSectionNote(SectionNote sectionNote) {
+    this.sectionNote = sectionNote;
+    rebuild();
+  }
+
+  public void setSmallTrailingMargin() {
+    removeClassName("small-trailing-margin");
+    removeClassName("normal-trailing-margin");
+    addClassName("small-trailing-margin");
+  }
+
+  public void setNormalTrailingMargin() {
+    removeClassName("small-trailing-margin");
+    removeClassName("normal-trailing-margin");
+    addClassName("normal-trailing-margin");
   }
 
 }
