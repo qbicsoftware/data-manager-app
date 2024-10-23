@@ -24,8 +24,10 @@ public class OntologyTermDisplay extends Div {
   private OntologyTermDisplay() {};
 
   public OntologyTermDisplay(String label, String curie, String reference) {
-    Span ontology = new Span();
+    Div ontology = new Div();
+    ontology.addClassName("vertical-list");
     Span ontologyLabel = new Span(label);
+    ontologyLabel.addClassName("overflow-hidden-ellipsis");
     Span ontologyLink = new Span(OboIdRenderer.render(curie));
     ontologyLink.addClassName("ontology-link");
     Anchor ontologyClassIri = new Anchor(reference, ontologyLink);

@@ -145,32 +145,57 @@ public class ProjectSummaryNewComponent extends PageArea {
 
   private void buildExperimentInformationSection(ProjectOverview projectInformation, List<Experiment> experiments) {
     experimentInformationSection.setHeader(
-        new SectionHeader(new SectionTitle("Experiment Information"), new ActionBar(new Button("Edit"))));
+        new SectionHeader(new SectionTitle("Experiment Information")));
     var speciesBox = new DetailBox();
-    var speciesHeader = new DetailBox.Header(VaadinIcon.ARROW_CIRCLE_LEFT_O.create(), "Species");
-
+    var speciesHeader = new DetailBox.Header(VaadinIcon.MALE.create(), "Species");
     speciesBox.setHeader(speciesHeader);
     speciesBox.setContent(buildSpeciesInfo(experiments));
+    speciesBox.addClassNames("fixed-medium-width");
 
+    var specimenBox = new DetailBox();
+    var specimenHeader = new DetailBox.Header(VaadinIcon.DROP.create(), "Specimen");
+    specimenBox.setHeader(specimenHeader);
+    specimenBox.setContent(buildSpecimenInfo(experiments));
+    specimenBox.addClassName("fixed-medium-width");
+
+    var analyteBox = new DetailBox();
+    var analyteHeader = new DetailBox.Header(VaadinIcon.CLUSTER.create(), "Analytes");
+    analyteBox.setHeader(analyteHeader);
+    analyteBox.setContent(buildAnalyteInfo(experiments));
+    analyteBox.addClassName("fixed-medium-width");
 
     var sectionContent = new SectionContent();
     sectionContent.add(speciesBox);
+    sectionContent.add(specimenBox);
+    sectionContent.add(analyteBox);
+    sectionContent.addClassNames("horizontal-list", "gap-medium", "wrapping-flex-container");
     experimentInformationSection.setContent(sectionContent);
   }
 
   private Div buildSpeciesInfo(List<Experiment> experiments) {
     var ontologyTerms = extractSpecies(experiments);
+    return buildOntologyInfo(ontologyTerms);
+  }
+
+  private Div buildSpecimenInfo(List<Experiment> experiments) {
+    var ontologyTerms = extractSpecimen(experiments);
+    return buildOntologyInfo(ontologyTerms);
+  }
+
+  private Div buildAnalyteInfo(List<Experiment> experiments) {
+    var ontologyTerms = extractAnalyte(experiments);
+    return buildOntologyInfo(ontologyTerms);
+  }
+
+  private Div buildOntologyInfo(List<OntologyTerm> terms) {
     var container = new Div();
-    ontologyTerms.stream().map(this::convert).forEach(container::add);
+    terms.stream().map(this::convert).forEach(container::add);
+    container.addClassNames("vertical-list", "gap-small");
     return container;
   }
 
   private OntologyTermDisplay convert(OntologyTerm ontologyTerm) {
     return new OntologyTermDisplay(ontologyTerm.getLabel(), ontologyTerm.getOboId(), ontologyTerm.getClassIri());
-  }
-
-  private Div formatOntologyTerm(OntologyTerm ontologyTerm) {
-    return new Div();
   }
 
   private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
@@ -193,7 +218,7 @@ public class ProjectSummaryNewComponent extends PageArea {
         HeadingWithIcon.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
     content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
         projectInformation.projectTitle())));
-    content.add(HeadingWithIcon.withIconAndText(VaadinIcon.WORKPLACE.create(), "Objective"));
+    content.add(HeadingWithIcon.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective"));
     content.add(new SimpleParagraph(project.getProjectIntent().objective().objective()));
     projectDesignSection.setContent(content);
   }

@@ -95,6 +95,11 @@
   font-size: var(--lumo-font-size-m);
   font-weight: bold;
   color: #878787;
+  line-height: 1;
+}
+
+.detail-box-header vaadin-icon {
+  height: auto;
 }
 
 .detail-box-child {
@@ -102,6 +107,8 @@
   border-color: lightgray;
   padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-m);
 }
+
+
 
 .detail-box-child:first-child {
   border-width: 0 0 1px 0;
@@ -115,6 +122,26 @@
   width: 100%;
 }
 
+.horizontal-list {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+.dynamic-growing-flex-item {
+  flex-grow: 1;
+}
+
+.wrapping-flex-container {
+  flex-wrap: wrap;
+}
+
+.overflow-hidden-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .gap-medium {
   gap: var(--lumo-space-m);
 }
@@ -123,9 +150,19 @@
   gap: var(--lumo-space-s);
 }
 
+.allow-row-wrap {
+  flex-wrap: wrap;
+}
+
 .ontology-term {
   width: 100%;
   display: flex;
   flex-direction: row;
   gap: var(--lumo-space-s);
+  white-space: nowrap;
+  flex-wrap: wrap;
+}
+
+.fixed-medium-width {
+  width: 25rem;
 }

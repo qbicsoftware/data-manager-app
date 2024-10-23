@@ -70,6 +70,25 @@ public class DetailBox extends Div {
       this();
       this.icon = icon;
       heading.setText(text);
+      displayIcon();
+      rebuild();
+    }
+
+    private void displayIcon () {
+      this.iconVisible = true;
+    }
+
+    private void hideTheIcon () {
+      this.iconVisible = false;
+    }
+
+    public void showIcon() {
+      displayIcon();
+      rebuild();
+    }
+
+    public void hideIcon() {
+      hideTheIcon();
       rebuild();
     }
 
