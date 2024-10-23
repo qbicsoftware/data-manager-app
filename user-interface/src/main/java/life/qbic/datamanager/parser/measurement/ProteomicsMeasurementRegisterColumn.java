@@ -6,12 +6,13 @@ import life.qbic.datamanager.parser.ExampleProvider;
 import life.qbic.datamanager.parser.ExampleProvider.Helper;
 
 /**
- * TODO!
- * <b>short description</b>
+ * <b>Proteomics Measurement Columns</b>
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * <p>Enumeration of the columns shown in the file used for proteomics measurement registration
+ * in the context of measurement file based upload. Provides the name of the header column, the
+ * column index and if the column should be set to readOnly in the generated sheet. Also provides
+ * information on whether the column is mandatory and can offer some help for filling it.
+ * </p>
  */
 public enum ProteomicsMeasurementRegisterColumn implements Column {
 
