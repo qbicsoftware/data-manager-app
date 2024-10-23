@@ -16,10 +16,10 @@ import life.qbic.datamanager.parser.ExampleProvider.Helper;
  */
 public enum ProteomicsMeasurementRegisterColumn implements Column {
 
-  SAMPLE_ID("QBiC Sample Id", 0, true, true),
+  SAMPLE_ID("QBiC Sample Id", 0, false, true),
   SAMPLE_NAME(
       "Sample Name", 1, true, false),
-  POOL_GROUP("Sample Pool Group", 2, true, false),
+  POOL_GROUP("Sample Pool Group", 2, false, false),
   TECHNICAL_REPLICATE_NAME("Technical Replicate", 3, false, false),
   CYCLE_FRACTION_NAME("Cycle/Fraction Name", 4, false, false),
   ORGANISATION_ID("Organisation ID", 5, false, true),
