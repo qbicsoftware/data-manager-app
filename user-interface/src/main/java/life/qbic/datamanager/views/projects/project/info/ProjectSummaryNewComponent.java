@@ -33,7 +33,9 @@ import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.section.ActionBar;
+import life.qbic.datamanager.views.general.section.DetailBox;
 import life.qbic.datamanager.views.general.section.HeadingWithIcon;
+import life.qbic.datamanager.views.general.section.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
 import life.qbic.datamanager.views.general.section.SectionContent;
@@ -47,6 +49,8 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +71,7 @@ public class ProjectSummaryNewComponent extends PageArea {
   private final ProjectInformationService projectInformationService;
   private final ROCreateBuilder roCrateBuilder;
   private final TempDirectory tempDirectory;
+  private final ExperimentInformationService experimentInformationService;
   private Section headerSection;
   private Section projectDesignSection;
   private Section experimentInformationSection;
@@ -98,6 +103,7 @@ public class ProjectSummaryNewComponent extends PageArea {
     add(experimentInformationSection);
     add(fundingInformationSection);
     add(projectContactsSection);
+    this.experimentInformationService = experimentInformationService;
   }
 
   private String formatDate(Instant date) {
@@ -113,14 +119,16 @@ public class ProjectSummaryNewComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project with given ID found"));
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
-    setContent(projectOverview, fullProject);
+    var experiments = experimentInformationService.findAllForProject(projectId);
+    setContent(projectOverview, fullProject, experiments);
+
   }
 
-  private void setContent(ProjectOverview projectInformation, Project fullProject) {
+  private void setContent(ProjectOverview projectInformation, Project fullProject, List<Experiment> experiments) {
     Objects.requireNonNull(projectInformation);
     buildHeaderSection(projectInformation);
     buildDesignSection(projectInformation, fullProject);
-    buildExperimentInformationSection(projectInformation);
+    buildExperimentInformationSection(projectInformation, experiments);
     buildFundingInformationSection(projectInformation);
     buildProjectContactsInfoSection(projectInformation);
   }
@@ -135,9 +143,46 @@ public class ProjectSummaryNewComponent extends PageArea {
         new SectionHeader(new SectionTitle("Funding Information"), new ActionBar(new Button("Edit"))));
   }
 
-  private void buildExperimentInformationSection(ProjectOverview projectInformation) {
+  private void buildExperimentInformationSection(ProjectOverview projectInformation, List<Experiment> experiments) {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information"), new ActionBar(new Button("Edit"))));
+    var speciesBox = new DetailBox();
+    var speciesHeader = new DetailBox.Header(VaadinIcon.ARROW_CIRCLE_LEFT_O.create(), "Species");
+
+    speciesBox.setHeader(speciesHeader);
+    speciesBox.setContent(buildSpeciesInfo(experiments));
+
+
+    var sectionContent = new SectionContent();
+    sectionContent.add(speciesBox);
+    experimentInformationSection.setContent(sectionContent);
+  }
+
+  private Div buildSpeciesInfo(List<Experiment> experiments) {
+    var ontologyTerms = extractSpecies(experiments);
+    var container = new Div();
+    ontologyTerms.stream().map(this::convert).forEach(container::add);
+    return container;
+  }
+
+  private OntologyTermDisplay convert(OntologyTerm ontologyTerm) {
+    return new OntologyTermDisplay(ontologyTerm.getLabel(), ontologyTerm.getOboId(), ontologyTerm.getClassIri());
+  }
+
+  private Div formatOntologyTerm(OntologyTerm ontologyTerm) {
+    return new Div();
+  }
+
+  private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
+    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).toList();
+  }
+
+  private List<OntologyTerm> extractSpecimen(List<Experiment> experiments) {
+    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).toList();
+  }
+
+  private List<OntologyTerm> extractAnalyte(List<Experiment> experiments) {
+    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).toList();
   }
 
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {

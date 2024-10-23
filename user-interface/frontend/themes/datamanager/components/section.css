@@ -31,7 +31,7 @@
   margin-bottom: var(--lumo-space-s);
 }
 
-.section-header.s {
+.section-header {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -78,4 +78,54 @@
 .tag-list {
   width: 100%;
   display: flex;
+}
+
+.detail-box {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid lightgray;
+  border-radius: var(--lumo-space-s);
+}
+
+.detail-box-header {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  gap: var(--lumo-space-s);
+  font-size: var(--lumo-font-size-m);
+  font-weight: bold;
+  color: #878787;
+}
+
+.detail-box-child {
+  border-width: 1px 1px 1px 1px;
+  border-color: lightgray;
+  padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-m);
+}
+
+.detail-box-child:first-child {
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-color: lightgray;
+}
+
+.vertical-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.gap-medium {
+  gap: var(--lumo-space-m);
+}
+
+.gap-small {
+  gap: var(--lumo-space-s);
+}
+
+.ontology-term {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: var(--lumo-space-s);
 }
