@@ -85,7 +85,6 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       };
       var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
       cell.setCellValue(value);
-      cell.setCellValue(value);
       if (measurementColumn.isReadOnly()) {
         cell.setCellStyle(readOnlyStyle);
       }
