@@ -40,6 +40,7 @@ public class XLSXTemplateHelper {
   private static final Random RANDOM = new Random();
   private static final byte[] DARK_GREY = {(byte) 119, (byte) 119, (byte) 119};
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
+  private static final byte[] LINK_BLUE = {(byte) 9, (byte) 105, (byte) 218};
   private static final int COLUMN_MAX_WIDTH = 255;
 
   protected XLSXTemplateHelper() {
@@ -160,6 +161,16 @@ public class XLSXTemplateHelper {
     boldStyle.setFont(fontBold);
 
     return boldStyle;
+  }
+
+  public static CellStyle createLinkHeaderCellStyle(Workbook workbook) {
+    CellStyle linkHeaderStyle = workbook.createCellStyle();
+    XSSFFont linkFont = (XSSFFont) workbook.createFont();
+    linkFont.setColor(new XSSFColor(LINK_BLUE, new DefaultIndexedColorMap()));
+    linkFont.setBold(true);
+
+    linkHeaderStyle.setFont(linkFont);
+    return linkHeaderStyle;
   }
 
   public static CellStyle createReadOnlyCellStyle(Workbook workbook) {

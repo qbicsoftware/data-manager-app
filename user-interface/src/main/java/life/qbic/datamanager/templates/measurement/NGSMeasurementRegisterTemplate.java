@@ -1,8 +1,8 @@
 package life.qbic.datamanager.templates.measurement;
 
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
-import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateCell;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateRow;
@@ -21,7 +21,10 @@ import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -58,23 +61,35 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
 
     try (Workbook workbook = new XSSFWorkbook();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-      CellStyle readOnlyCellStyle = createReadOnlyCellStyle(workbook);
       CellStyle readOnlyHeaderStyle = createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
+      CellStyle linkHeaderStyle = createLinkHeaderCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
 
       Row header = getOrCreateRow(sheet, 0);
-      for (NGSMeasurementRegisterColumn value : NGSMeasurementRegisterColumn.values()) {
-        var cell = getOrCreateCell(header, value.columnIndex());
-        if (value.isMandatory()) {
-          cell.setCellValue(value.headerName() + "*");
+      for (NGSMeasurementRegisterColumn column : NGSMeasurementRegisterColumn.values()) {
+        var cell = getOrCreateCell(header, column.columnIndex());
+        if (column.isMandatory()) {
+          cell.setCellValue(column.headerName() + "*");
         } else {
-          cell.setCellValue(value.headerName());
+          cell.setCellValue(column.headerName());
         }
         cell.setCellStyle(boldStyle);
-        if (value.isReadOnly()) {
+        if (column.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
+        } else if (column.equals(NGSMeasurementRegisterColumn.ORGANISATION_ID)) {
+          CreationHelper creationHelper = workbook.getCreationHelper();
+          Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
+          hyperlink.setAddress("https://ror.org");
+          cell.setCellStyle(linkHeaderStyle);
+          cell.setHyperlink(hyperlink);
+        } else if (column.equals(NGSMeasurementRegisterColumn.INSTRUMENT)) {
+          CreationHelper creationHelper = workbook.getCreationHelper();
+          Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
+          hyperlink.setAddress("https://rdm.qbic.uni-tuebingen.de");
+          cell.setCellStyle(linkHeaderStyle);
+          cell.setHyperlink(hyperlink);
         }
       }
 

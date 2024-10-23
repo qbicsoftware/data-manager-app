@@ -2,6 +2,7 @@ package life.qbic.datamanager.templates.measurement;
 
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidation;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateCell;
@@ -24,7 +25,10 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.DigestionMethod;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -106,6 +110,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       CellStyle readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
       CellStyle readOnlyStyle = createReadOnlyCellStyle(workbook);
+      CellStyle linkHeaderStyle = createLinkHeaderCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("Proteomics Measurement Metadata");
       Row header = getOrCreateRow(sheet, 0);
@@ -116,10 +121,21 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
         } else {
           cell.setCellValue(measurementColumn.headerName());
         }
+        cell.setCellStyle(boldStyle);
         if (measurementColumn.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
-        } else {
-          cell.setCellStyle(boldStyle);
+        } else if (measurementColumn.equals(ProteomicsMeasurementEditColumn.ORGANISATION_ID)) {
+          CreationHelper creationHelper = workbook.getCreationHelper();
+          Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
+          hyperlink.setAddress("https://ror.org");
+          cell.setCellStyle(linkHeaderStyle);
+          cell.setHyperlink(hyperlink);
+        } else if (measurementColumn.equals(ProteomicsMeasurementEditColumn.MS_DEVICE)) {
+          CreationHelper creationHelper = workbook.getCreationHelper();
+          Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
+          hyperlink.setAddress("https://rdm.qbic.uni-tuebingen.de");
+          cell.setCellStyle(linkHeaderStyle);
+          cell.setHyperlink(hyperlink);
         }
       }
 
