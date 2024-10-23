@@ -3,6 +3,7 @@ package life.qbic.datamanager.templates;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.SheetVisibility;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
@@ -273,6 +275,8 @@ public class XLSXTemplateHelper {
    * Adds data validation to an area in the spreadsheet. Requires the valid options to be set
    * beforehand as a name. This can be done by using {@link #createOptionArea(Sheet, String, List)}
    *
+   * Please note: There must not exist any data validation for the cell area provided.
+   *
    * @param sheet         the sheet in which the validation should be added
    * @param startColIdx   the start column of the validated values >= 0
    * @param startRowIdx   the start row of the validated values >= 0
@@ -287,11 +291,19 @@ public class XLSXTemplateHelper {
         stopRowIdx,
         startColIdx,
         stopColIdx);
+
+    if (hasAnyDataValidation(sheet, startRowIdx, startColIdx, stopRowIdx, stopColIdx)) {
+      throw new IllegalStateException(
+          "Cannot add data validation as there is already a data validation present at "
+              + validatedCells.getCellRangeAddress(0).formatAsString(sheet.getSheetName(), true));
+    }
+
     DataValidationHelper dataValidationHelper = sheet.getDataValidationHelper();
     DataValidationConstraint formulaListConstraint = dataValidationHelper
         .createFormulaListConstraint(allowedValues.getNameName());
-    DataValidation validation = dataValidationHelper.createValidation(formulaListConstraint,
-        validatedCells);
+
+    var validation = dataValidationHelper.createValidation(formulaListConstraint, validatedCells);
+
     validation.setSuppressDropDownArrow(true); // shows dropdown if true
     validation.setShowErrorBox(true);
     validation.createErrorBox("Invalid choice", "Please select a value from the dropdown list.");
@@ -304,15 +316,54 @@ public class XLSXTemplateHelper {
         stopRowIdx,
         startColIdx,
         stopColIdx);
-    DataValidationHelper dataValidationHelper = sheet.getDataValidationHelper();
-    DataValidationConstraint alwaysTrue = dataValidationHelper.createCustomConstraint("TRUE");
-    DataValidation validation = dataValidationHelper.createValidation(alwaysTrue,
-        validatedCells);
-    validation.setSuppressDropDownArrow(true); // shows dropdown if true
+
+    var validation = getValidationsExactlyCovering(sheet, validatedCells.getCellRangeAddresses()[0])
+        .stream()
+        .findFirst() // the first is applied first
+        .orElse(createFakeValidation(sheet, validatedCells));
+
     validation.setShowPromptBox(true);
     validation.createPromptBox(title, content);
     sheet.addValidationData(validation);
   }
+
+  private static DataValidation createFakeValidation(Sheet sheet,
+      CellRangeAddressList validatedCells) {
+    DataValidationHelper dataValidationHelper = sheet.getDataValidationHelper();
+    DataValidationConstraint alwaysTrue = dataValidationHelper.createCustomConstraint("TRUE");
+    return dataValidationHelper.createValidation(alwaysTrue,
+        validatedCells);
+  }
+
+  private static List<DataValidation> getValidationsExactlyCovering(Sheet sheet,
+      CellRangeAddress cellRangeAddress) {
+    List<DataValidation> validations = new ArrayList<>();
+    for (DataValidation dataValidation : sheet.getDataValidations()) {
+      for (CellRangeAddress rangeAddress : dataValidation.getRegions().getCellRangeAddresses()) {
+        if (rangeAddress.equals(cellRangeAddress)) {
+          validations.add(dataValidation);
+        }
+      }
+    }
+    return validations;
+  }
+
+  private static boolean hasAnyDataValidation(Sheet sheet, int startRowIdx, int startColIdx,
+      int stopRowIdx, int stopColIdx) {
+    for (DataValidation dataValidation : sheet.getDataValidations()) {
+      CellRangeAddressList regions = dataValidation.getRegions();
+      for (int i = 0; i < regions.getCellRangeAddresses().length; i++) {
+        CellRangeAddress cellRangeAddress = regions.getCellRangeAddress(i);
+        if (cellRangeAddress.intersects(
+            new CellRangeAddress(startRowIdx, stopRowIdx, startColIdx, stopColIdx))) {
+          return true;
+        }
+      }
+    }
+    return false;
+
+  }
+
 
 
   public static void hideSheet(Workbook workbook, Sheet sheet) {
