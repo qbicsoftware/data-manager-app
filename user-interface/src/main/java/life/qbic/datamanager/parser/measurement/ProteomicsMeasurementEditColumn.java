@@ -53,13 +53,17 @@ public enum ProteomicsMeasurementEditColumn implements Column {
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
         case TECHNICAL_REPLICATE_NAME -> null;
-        case ORGANISATION_ID -> new Helper("ROR URL (e.g. https://ror.org/03a1kwz48)",
-            "A unique identifier of the organisation where the measurement has been conducted.");
+        case ORGANISATION_ID -> new Helper("ROR URL (e.g. https://ror.org/03a1kwz48)", """
+            A unique identifier of the organisation where the measurement has been conducted.
+            Tip: You can click on the column header (Organisation ID) to go to the ROR website, search for your organisation and get the Organisation URL.
+            """);
         case ORGANISATION_NAME -> null;
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Center",
             "The facility's name within the organisation.");
-        case MS_DEVICE -> new Helper("CURIE (ontology), e.g. NCIT:C12434",
-            "The MS device model that has been used for the measurement.  To avoid ambiguities, we expect an ontology term CURIE. You can use our ontology look up search online to query available terms and CURIEs we currently support.");
+        case MS_DEVICE -> new Helper("CURIE (ontology), e.g. NCIT:C12434", """
+            The instrument that has been used for the measurement. To avoid ambiguities, we expect an ontology term CURIE (e.g. NCIT:C12434)
+            Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your Instrument.
+            """.formatted(MS_DEVICE.headerName()));
         case MS_DEVICE_NAME -> null;
         case CYCLE_FRACTION_NAME -> new Helper("Free text, e.g. Fraction01, AB",
             "Sometimes a sample is fractionated and all fractions are measured. With this property you can indicate which fraction it is.");

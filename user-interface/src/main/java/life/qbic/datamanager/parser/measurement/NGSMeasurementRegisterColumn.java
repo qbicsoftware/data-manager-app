@@ -45,12 +45,16 @@ public enum NGSMeasurementRegisterColumn implements Column {
             "A visual aid to simplify sample navigation for the person managing the metadata. Is ignored after upload.");
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
-        case ORGANISATION_ID -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48",
-            "A unique identifier of the organisation where the measurement has been conducted.");
+        case ORGANISATION_ID -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
+            A unique identifier of the organisation where the measurement has been conducted.
+            Tip: You can click on the column header (Organisation ID) to go to the ROR website, search for your organisation and get the Organisation URL.
+            """);
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Centre",
             "The facilities name within the organisation (group name, etc.)");
-        case INSTRUMENT -> new Helper("CURIE (ontology), e.g. EFO:0008637",
-            "The instrument used for the measurement. To avoid ambiguities, we expect an ontology term CURIE. You can use our ontology look up search online to query available terms and CURIEs we currently support.");
+        case INSTRUMENT -> new Helper("CURIE (ontology), e.g. EFO:0008637", """
+            The instrument that has been used for the measurement. To avoid ambiguities, we expect an ontology term CURIE (e.g. EFO:0008637)
+            Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your Instrument.
+            """.formatted(INSTRUMENT.headerName()));
         case SEQUENCING_READ_TYPE -> new Helper("Free text, e.g. paired-end",
             "The sequencing read type used to generate the sequence data.");
         case LIBRARY_KIT -> new Helper("Free text, e.g. NEBNext Ultra II Directional RNA mRNA UMI",
