@@ -33,6 +33,10 @@ public class Section extends Div implements ControlElements {
     rebuild();
   }
 
+  public SectionContent content() {
+    return content;
+  }
+
   private void rebuild() {
     removeAll();
     add(sectionHeader, content);

@@ -5,7 +5,10 @@ import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -35,6 +38,7 @@ import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.DetailBox;
 import life.qbic.datamanager.views.general.section.HeadingWithIcon;
+import life.qbic.datamanager.views.general.section.IconLabel;
 import life.qbic.datamanager.views.general.section.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
@@ -51,6 +55,7 @@ import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
+import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,18 +134,60 @@ public class ProjectSummaryNewComponent extends PageArea {
     buildHeaderSection(projectInformation);
     buildDesignSection(projectInformation, fullProject);
     buildExperimentInformationSection(projectInformation, experiments);
-    buildFundingInformationSection(projectInformation);
-    buildProjectContactsInfoSection(projectInformation);
+    buildFundingInformationSection(fullProject);
+    buildProjectContactsInfoSection(fullProject);
   }
 
-  private void buildProjectContactsInfoSection(ProjectOverview projectInformation) {
-    fundingInformationSection.setHeader(
+  private void buildProjectContactsInfoSection(Project project) {
+    projectContactsSection.setHeader(
         new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(new Button("Edit"))));
+    var piBox = new DetailBox();
+    var piBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Principal Investigator");
+    piBox.setHeader(piBoxHeader);
+    var principalInvestigator = project.getPrincipalInvestigator();
+    piBox.setContent(renderContactInfo(principalInvestigator));
+
+    var pmBox = new DetailBox();
+    var pmBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Manager");
+    pmBox.setHeader(pmBoxHeader);
+    var projectManager = project.getProjectManager();
+    pmBox.setContent(renderContactInfo(projectManager));
+
+    projectContactsSection.setContent(new SectionContent(piBox, pmBox));
+
+    if (project.getResponsiblePerson().isPresent()) {
+      var prBox = new DetailBox();
+      var prBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Responsible");
+      prBox.setHeader(prBoxHeader);
+      var responsible = project.getResponsiblePerson().get();
+      prBox.setContent(renderContactInfo(responsible));
+      projectContactsSection.content().add(prBox);
+    }
   }
 
-  private void buildFundingInformationSection(ProjectOverview projectInformation) {
+  private Div renderContactInfo(Contact contact) {
+    var contactInfo = new Div();
+    contactInfo.addClassName("vertical-list");
+    var name = new Span(contact.fullName());
+    var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
+    contactInfo.add(name, email);
+    return contactInfo;
+  }
+
+  private void buildFundingInformationSection(Project fullProject) {
     fundingInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Funding Information"), new ActionBar(new Button("Edit"))));
+
+    if (fullProject.funding().isEmpty()) {
+      fundingInformationSection.setContent(new SectionContent(new Span("No funding information provided.")));
+    } else {
+      var grantIconLabel = new IconLabel(VaadinIcon.MONEY.create(), "Grant");
+      var funding = fullProject.funding().get();
+      grantIconLabel.setInformation("%s (%s)".formatted(funding.grant(), funding.grantId()));
+      grantIconLabel.setTooltipText("Information about what grant served as funding for the project.");
+      fundingInformationSection.setContent(new SectionContent(grantIconLabel));
+    }
+
   }
 
   private void buildExperimentInformationSection(ProjectOverview projectInformation, List<Experiment> experiments) {

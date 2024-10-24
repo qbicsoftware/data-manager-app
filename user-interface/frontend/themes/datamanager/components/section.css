@@ -109,12 +109,31 @@
   padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-m);
 }
 
-
-
 .detail-box-child:first-child {
   border-width: 0 0 1px 0;
   border-style: solid;
   border-color: lightgray;
+}
+
+.icon-label {
+  font-size: var(--lumo-font-size-m);
+  line-height: 1;
+  display: flex;
+  flex-direction: row;
+  gap: var(--lumo-space-l);
+}
+
+.icon-label-container {
+  display: flex;
+  flex-direction: row;
+  font-size: var(--lumo-font-size-m);
+  color: #878787;
+  font-weight: bold;
+  gap: var(--lumo-space-xs);
+}
+
+.icon-label-container vaadin-icon {
+  height: auto;
 }
 
 .vertical-list {

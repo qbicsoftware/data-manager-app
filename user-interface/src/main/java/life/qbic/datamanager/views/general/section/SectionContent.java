@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.general.section;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 
 /**
@@ -13,6 +14,11 @@ public class SectionContent extends Div {
 
   public SectionContent() {
     addClassName("section-content");
+  }
+
+  public SectionContent(Component... components) {
+    this();
+    add(components);
   }
 
 }
