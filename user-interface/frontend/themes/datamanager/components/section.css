@@ -129,7 +129,7 @@
   font-size: var(--lumo-font-size-m);
   color: #878787;
   font-weight: bold;
-  gap: var(--lumo-space-xs);
+  gap: var(--lumo-space-s);
 }
 
 .icon-label-container vaadin-icon {
@@ -189,4 +189,10 @@
 
 .fixed-medium-width {
   width: 25rem;
+}
+
+.simple-paragraph {
+  font-size: var(--lumo-font-size-m);
+  margin-bottom: var(--lumo-space-m);
+  max-width: 30em;
 }

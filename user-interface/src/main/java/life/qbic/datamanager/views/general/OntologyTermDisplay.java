@@ -1,10 +1,9 @@
-package life.qbic.datamanager.views.general.section;
+package life.qbic.datamanager.views.general;
 
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import life.qbic.datamanager.views.general.OboIdRenderer;
 
 /**
  * <b><class short description - 1 Line!></b>

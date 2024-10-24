@@ -6,7 +6,6 @@ import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -36,10 +35,10 @@ import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.section.ActionBar;
-import life.qbic.datamanager.views.general.section.DetailBox;
-import life.qbic.datamanager.views.general.section.HeadingWithIcon;
-import life.qbic.datamanager.views.general.section.IconLabel;
-import life.qbic.datamanager.views.general.section.OntologyTermDisplay;
+import life.qbic.datamanager.views.general.DetailBox;
+import life.qbic.datamanager.views.general.HeadingWithIcon;
+import life.qbic.datamanager.views.general.IconLabel;
+import life.qbic.datamanager.views.general.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
 import life.qbic.datamanager.views.general.section.SectionContent;
@@ -48,6 +47,8 @@ import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
+import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -77,6 +78,7 @@ public class ProjectSummaryNewComponent extends PageArea {
   private final ROCreateBuilder roCrateBuilder;
   private final TempDirectory tempDirectory;
   private final ExperimentInformationService experimentInformationService;
+  private final UserPermissions userPermissions;
   private Section headerSection;
   private Section projectDesignSection;
   private Section experimentInformationSection;
@@ -84,6 +86,8 @@ public class ProjectSummaryNewComponent extends PageArea {
   private Section projectContactsSection;
   private Context context;
   private DownloadProvider downloadProvider;
+  private boolean showControls;
+  private EditProjectDesignDialog editProjectDesignDialog;
 
   @Autowired
   public ProjectSummaryNewComponent(ProjectInformationService projectInformationService,
@@ -100,6 +104,7 @@ public class ProjectSummaryNewComponent extends PageArea {
     this.projectContactsSection = new SectionBuilder().build();
     this.tempDirectory = Objects.requireNonNull(tempDirectory);
     this.roCrateBuilder = Objects.requireNonNull(rOCreateBuilder);
+    this.userPermissions = Objects.requireNonNull(userPermissions);
     addClassName("project-details-component");
     downloadProvider = new DownloadProvider(null);
     add(downloadProvider);
@@ -126,7 +131,7 @@ public class ProjectSummaryNewComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project found"));
     var experiments = experimentInformationService.findAllForProject(projectId);
     setContent(projectOverview, fullProject, experiments);
-
+    showControls = userPermissions.editProject(projectId);
   }
 
   private void setContent(ProjectOverview projectInformation, Project fullProject, List<Experiment> experiments) {
@@ -258,8 +263,13 @@ public class ProjectSummaryNewComponent extends PageArea {
   }
 
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {
+    var editButton = new Button("Edit");
+    editButton.addClickListener(listener -> {
+      editProjectDesignDialog = buildAndWireEditProjectDesign(project);
+      editProjectDesignDialog.open();
+    });
     projectDesignSection.setHeader(
-        new SectionHeader(new SectionTitle("Project Design"), new ActionBar(new Button("Edit"))));
+        new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
     var content = new SectionContent();
     content.add(
         HeadingWithIcon.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
@@ -268,6 +278,17 @@ public class ProjectSummaryNewComponent extends PageArea {
     content.add(HeadingWithIcon.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective"));
     content.add(new SimpleParagraph(project.getProjectIntent().objective().objective()));
     projectDesignSection.setContent(content);
+  }
+
+  private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
+    var projectInfo = convertToInfo(project);
+    return new EditProjectDesignDialog(projectInfo);
+  }
+
+  private static ProjectInformation convertToInfo(Project project) {
+    var info = new ProjectInformation();
+    info.setProjectTitle(project.getProjectIntent().projectTitle().title());
+    return info;
   }
 
   private void buildHeaderSection(ProjectOverview projectOverview) {
@@ -348,7 +369,7 @@ public class ProjectSummaryNewComponent extends PageArea {
     AvatarGroup avatarGroup = new AvatarGroup();
     userInfo.forEach(user -> avatarGroup.add(new UserAvatarGroupItem(user.userName(),
         user.userId())));
-    avatarGroup.setMaxItemsVisible(3);
+    avatarGroup.setMaxItemsVisible(Integer.valueOf(3));
     return avatarGroup;
   }
 
