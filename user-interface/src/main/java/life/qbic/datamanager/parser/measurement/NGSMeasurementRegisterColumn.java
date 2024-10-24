@@ -47,8 +47,8 @@ public enum NGSMeasurementRegisterColumn implements Column {
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
         case ORGANISATION_ID -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
-            Tip: You can click on the column header (Organisation ID) to go to the ROR website, search for your organisation and get the Organisation URL.
-            """);
+            Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
+            """.formatted(ORGANISATION_ID.headerName()));
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Centre",
             "The facilities name within the organisation (group name, etc.)");
         case INSTRUMENT -> new Helper("CURIE (ontology), e.g. EFO:0008637", """
