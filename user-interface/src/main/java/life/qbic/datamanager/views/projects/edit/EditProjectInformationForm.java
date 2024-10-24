@@ -187,4 +187,5 @@ public class EditProjectInformationForm extends FormLayout {
     responsiblePersonField.hideContactBox();
     projectManagerField.hideContactBox();
   }
+
 }
