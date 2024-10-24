@@ -91,6 +91,17 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
           cell.setCellStyle(linkHeaderStyle);
           cell.setHyperlink(hyperlink);
         }
+
+        //add helper to header
+        column.getFillHelp().ifPresent(
+            helper -> XLSXTemplateHelper.addInputHelper(sheet,
+                column.columnIndex(),
+                0,
+                column.columnIndex(),
+                0,
+                helper.exampleValue(),
+                helper.description())
+        );
       }
 
       var startIndex = 1; // start in row number 2 with index 1 as the header row has number 1 index 0

@@ -39,13 +39,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * and {@link ProteomicsMeasurementMetadata}
  * </p>
  */
-public class ProteomicsMeasurementTemplate extends Template {
+public class ProteomicsMeasurementRegisterTemplate extends Template {
 
   private static final String MS_MEASUREMENT_TEMPLATE_FILENAME = "proteomics_measurement_registration_sheet.xlsx";
   private static final String MS_MEASUREMENT_TEMPLATE_DOMAIN_NAME = "Proteomics Template";
 
 
-  private static final Logger log = logger(ProteomicsMeasurementTemplate.class);
+  private static final Logger log = logger(ProteomicsMeasurementRegisterTemplate.class);
   private static final int DEFAULT_GENERATED_ROW_COUNT = 200;
 
 
@@ -89,6 +89,16 @@ public class ProteomicsMeasurementTemplate extends Template {
           cell.setCellStyle(linkHeaderStyle);
           cell.setHyperlink(hyperlink);
         }
+        //add helper to header
+        measurementColumn.getFillHelp().ifPresent(
+            helper -> XLSXTemplateHelper.addInputHelper(sheet,
+                measurementColumn.columnIndex(),
+                0,
+                measurementColumn.columnIndex(),
+                0,
+                helper.exampleValue(),
+                helper.description())
+        );
       }
 
       var startIndex = 1; // start in row number 2 with index 1 skipping the header in the first row

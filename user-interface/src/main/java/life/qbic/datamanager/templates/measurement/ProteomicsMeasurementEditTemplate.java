@@ -136,6 +136,17 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
           cell.setCellStyle(linkHeaderStyle);
           cell.setHyperlink(hyperlink);
         }
+
+        //add helper to header
+        measurementColumn.getFillHelp().ifPresent(
+            helper -> XLSXTemplateHelper.addInputHelper(sheet,
+                measurementColumn.columnIndex(),
+                0,
+                measurementColumn.columnIndex(),
+                0,
+                helper.exampleValue(),
+                helper.description())
+        );
       }
 
       var startIndex = 1; // start in row number 2 with index 1 skipping the header in the first row
