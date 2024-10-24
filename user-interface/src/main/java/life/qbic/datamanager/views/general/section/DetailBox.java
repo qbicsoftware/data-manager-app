@@ -27,6 +27,7 @@ public class DetailBox extends Div {
     headerSection.addClassName("detail-box-child");
     contentSection = new Div();
     contentSection.addClassName("detail-box-child");
+    contentSection.addClassName("overflow-scroll-height");
     add(headerSection, contentSection);
   }
 

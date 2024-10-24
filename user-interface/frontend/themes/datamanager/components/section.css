@@ -85,6 +85,7 @@
   flex-direction: column;
   border: 1px solid lightgray;
   border-radius: var(--lumo-space-s);
+  max-height: 10rem;
 }
 
 .detail-box-header {
@@ -152,6 +153,10 @@
 
 .allow-row-wrap {
   flex-wrap: wrap;
+}
+
+.overflow-scroll-height {
+  overflow: auto;
 }
 
 .ontology-term {
