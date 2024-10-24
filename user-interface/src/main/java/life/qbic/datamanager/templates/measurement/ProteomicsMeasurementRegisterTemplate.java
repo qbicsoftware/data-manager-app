@@ -4,7 +4,6 @@ import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidati
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
-import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateCell;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateRow;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.hideSheet;
@@ -13,14 +12,12 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
-import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementEditColumn;
+import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementRegisterColumn;
+import life.qbic.datamanager.templates.Template;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
-import life.qbic.datamanager.views.projects.project.measurements.ProteomicsMeasurementEntry;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator.DigestionMethod;
@@ -42,13 +39,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * and {@link ProteomicsMeasurementMetadata}
  * </p>
  */
-public class ProteomicsMeasurementEditTemplate implements DownloadContentProvider {
+public class ProteomicsMeasurementRegisterTemplate extends Template {
 
-  private static final String FILE_NAME_SUFFIX = "proteomics_measurements.xlsx";
-  private static final Logger log = logger(ProteomicsMeasurementEditTemplate.class);
-  private final List<ProteomicsMeasurementEntry> measurements = new LinkedList<>();
-  private static final String DEFAULT_FILE_NAME_PREFIX = "QBiC";
-  private String fileNamePrefix = DEFAULT_FILE_NAME_PREFIX;
+  private static final String MS_MEASUREMENT_TEMPLATE_FILENAME = "proteomics_measurement_registration_sheet.xlsx";
+  private static final String MS_MEASUREMENT_TEMPLATE_DOMAIN_NAME = "Proteomics Template";
+
+
+  private static final Logger log = logger(ProteomicsMeasurementRegisterTemplate.class);
   private static final int DEFAULT_GENERATED_ROW_COUNT = 200;
 
 
@@ -58,62 +55,18 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
     }
   }
 
-  private static void createMeasurementEntry(ProteomicsMeasurementEntry pxpEntry, Row entryRow,
-      CellStyle readOnlyStyle) {
-    for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
-      var value = switch (measurementColumn) {
-        case MEASUREMENT_ID -> pxpEntry.measurementCode();
-        case SAMPLE_ID -> pxpEntry.sampleInformation().sampleId();
-        case SAMPLE_NAME -> pxpEntry.sampleInformation().sampleName();
-        case POOL_GROUP -> pxpEntry.samplePoolGroup();
-        case TECHNICAL_REPLICATE_NAME -> pxpEntry.technicalReplicateName();
-        case ORGANISATION_ID -> pxpEntry.organisationId();
-        case ORGANISATION_NAME -> pxpEntry.organisationName();
-        case FACILITY -> pxpEntry.facility();
-        case MS_DEVICE -> pxpEntry.msDeviceCURIE();
-        case MS_DEVICE_NAME -> pxpEntry.msDeviceName();
-        case CYCLE_FRACTION_NAME -> pxpEntry.fractionName();
-        case DIGESTION_METHOD -> pxpEntry.digestionMethod();
-        case DIGESTION_ENZYME -> pxpEntry.digestionEnzyme();
-        case ENRICHMENT_METHOD -> pxpEntry.enrichmentMethod();
-        case INJECTION_VOLUME -> pxpEntry.injectionVolume();
-        case LC_COLUMN -> pxpEntry.lcColumn();
-        case LCMS_METHOD -> pxpEntry.lcmsMethod();
-        case LABELING_TYPE -> pxpEntry.labelingType();
-        case LABEL -> pxpEntry.label();
-        case COMMENT -> pxpEntry.comment();
-      };
-      var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
-      cell.setCellValue(value);
-      if (measurementColumn.isReadOnly()) {
-        cell.setCellStyle(readOnlyStyle);
-      }
-    }
-  }
-
-  public void setMeasurements(List<ProteomicsMeasurementEntry> measurements, String fileNamePrefix) {
-    this.measurements.clear();
-    this.measurements.addAll(measurements);
-    this.fileNamePrefix = fileNamePrefix;
-  }
-
   @Override
   public byte[] getContent() {
-    if (measurements.isEmpty()) {
-      return new byte[0];
-    }
-
     try (Workbook workbook = new XSSFWorkbook();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();) {
 
       CellStyle readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
-      CellStyle readOnlyStyle = createReadOnlyCellStyle(workbook);
       CellStyle linkHeaderStyle = createLinkHeaderCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("Proteomics Measurement Metadata");
       Row header = getOrCreateRow(sheet, 0);
-      for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
+      for (ProteomicsMeasurementRegisterColumn measurementColumn : ProteomicsMeasurementRegisterColumn.values()) {
         var cell = getOrCreateCell(header, measurementColumn.columnIndex());
         if (measurementColumn.isMandatory()) {
           cell.setCellValue(measurementColumn.headerName() + "*");
@@ -123,20 +76,19 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
         cell.setCellStyle(boldStyle);
         if (measurementColumn.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
-        } else if (measurementColumn.equals(ProteomicsMeasurementEditColumn.ORGANISATION_ID)) {
+        } else if (measurementColumn.equals(ProteomicsMeasurementRegisterColumn.ORGANISATION_ID)) {
           CreationHelper creationHelper = workbook.getCreationHelper();
           Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
           hyperlink.setAddress("https://ror.org");
           cell.setCellStyle(linkHeaderStyle);
           cell.setHyperlink(hyperlink);
-        } else if (measurementColumn.equals(ProteomicsMeasurementEditColumn.MS_DEVICE)) {
+        } else if (measurementColumn.equals(ProteomicsMeasurementRegisterColumn.MS_DEVICE)) {
           CreationHelper creationHelper = workbook.getCreationHelper();
           Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
           hyperlink.setAddress("https://rdm.qbic.uni-tuebingen.de");
           cell.setCellStyle(linkHeaderStyle);
           cell.setHyperlink(hyperlink);
         }
-
         //add helper to header
         measurementColumn.getFillHelp().ifPresent(
             helper -> XLSXTemplateHelper.addInputHelper(sheet,
@@ -150,15 +102,6 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       }
 
       var startIndex = 1; // start in row number 2 with index 1 skipping the header in the first row
-      var rowIndex = startIndex;
-
-      for (ProteomicsMeasurementEntry pxpEntry : measurements) {
-        Row entry = getOrCreateRow(sheet, rowIndex);
-        createMeasurementEntry(pxpEntry, entry, readOnlyStyle);
-        rowIndex++;
-      }
-      var generatedRowCount = rowIndex - startIndex;
-      assert generatedRowCount == measurements.size() : "all measurements have a corresponding row";
 
       // make sure to create the visible sheet first
       Sheet hiddenSheet = workbook.createSheet("hidden");
@@ -166,12 +109,12 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
           DigestionMethod.getOptions());
 
       addDataValidation(sheet,
-          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(), startIndex,
-          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(),
+          ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.columnIndex(), startIndex,
+          ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           digestionMethodArea);
 
-      for (ProteomicsMeasurementEditColumn column : ProteomicsMeasurementEditColumn.values()) {
+      for (ProteomicsMeasurementRegisterColumn column : ProteomicsMeasurementRegisterColumn.values()) {
         column.getFillHelp().ifPresent(
             helper -> XLSXTemplateHelper.addInputHelper(sheet,
                 column.columnIndex(),
@@ -197,9 +140,13 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
     }
   }
 
-
   @Override
   public String getFileName() {
-    return String.join("_", fileNamePrefix, FILE_NAME_SUFFIX);
+    return MS_MEASUREMENT_TEMPLATE_FILENAME;
+  }
+
+  @Override
+  public String getDomainName() {
+    return MS_MEASUREMENT_TEMPLATE_DOMAIN_NAME;
   }
 }
