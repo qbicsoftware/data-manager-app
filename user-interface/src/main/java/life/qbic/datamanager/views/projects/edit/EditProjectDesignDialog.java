@@ -31,7 +31,7 @@ public class EditProjectDesignDialog extends DialogWindow {
     content.add(new Span(project.getProjectTitle()));
     var editForm = new EditProjectDesignForm();
     editForm.setContent(project);
-    content.add(new EditProjectDesignForm());
+    content.add(editForm);
     add(content);
   }
 
