@@ -1,15 +1,22 @@
 package life.qbic.datamanager.templates.sample;
 
-import static life.qbic.datamanager.templates.XLSXTemplateHelper.*;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidation;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyHeaderCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateCell;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateRow;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.hideSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.lockSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.setColumnAutoWidth;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.setColumnWidth;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.parser.sample.RegisterColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import org.apache.poi.ss.usermodel.Name;
@@ -66,6 +73,7 @@ public class SampleBatchRegistrationTemplate {
     XSSFWorkbook workbook = new XSSFWorkbook();
     var readOnlyHeaderStyle = createReadOnlyHeaderCellStyle(workbook);
     var boldCellStyle = createBoldCellStyle(workbook);
+    var defaultStyle = createDefaultCellStyle(workbook);
 
     var sheet = workbook.createSheet("Sample Metadata");
 
@@ -82,7 +90,34 @@ public class SampleBatchRegistrationTemplate {
       if (column.isReadOnly()) {
         cell.setCellStyle(readOnlyHeaderStyle);
       }
+
+      //add helper to header
+      column.getFillHelp().ifPresent(
+          helper -> XLSXTemplateHelper.addInputHelper(sheet,
+              column.columnIndex(),
+              0,
+              column.columnIndex(),
+              0,
+              helper.exampleValue(),
+              helper.description()));
     }
+
+    // add property information order of columns matters!!
+    for (RegisterColumn column : Arrays.stream(
+            RegisterColumn.values())
+        .sorted(Comparator.comparing(RegisterColumn::columnIndex)).toList()) {
+      // add property information
+      var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
+      var description = column.getFillHelp().map(Helper::description).orElse("");
+      XLSXTemplateHelper.addPropertyInformation(workbook,
+          column.headerName(),
+          column.isMandatory(),
+          exampleValue,
+          description,
+          defaultStyle,
+          boldCellStyle);
+    }
+
     var startIndex = 1; //start in the second row with index 1.
 
     var hiddenSheet = workbook.createSheet("hidden");
