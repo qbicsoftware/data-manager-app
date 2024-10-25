@@ -59,7 +59,8 @@ public enum NGSMeasurementEditColumn implements Column {
             We expect an ontology term CURIE.
             Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your instrument.
             """.formatted(INSTRUMENT.headerName()));
-        case INSTRUMENT_NAME -> null;
+        case INSTRUMENT_NAME -> new Helper("Free text, e.g. Illumina HiSeq",
+            "The name of the instrument model that has been used for the measurement.");
         case SEQUENCING_READ_TYPE -> new Helper("Free text, e.g. paired-end",
             "The sequencing read type used to generate the sequence data.");
         case LIBRARY_KIT -> new Helper("Free text, e.g. NEBNext Ultra II Directional RNA mRNA UMI",
