@@ -145,8 +145,14 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
                 measurementColumn.columnIndex(),
                 0,
                 helper.exampleValue(),
-                helper.description())
-        );
+                helper.description()));
+        measurementColumn.getFillHelp().ifPresent(
+            helper -> XLSXTemplateHelper.addPropertyInformation(workbook,
+                measurementColumn.headerName(),
+                measurementColumn.isMandatory(),
+                helper.exampleValue(),
+                helper.description(),
+                boldStyle));
       }
 
       var startIndex = 1; // start in row number 2 with index 1 skipping the header in the first row

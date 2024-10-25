@@ -142,8 +142,14 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
                 column.columnIndex(),
                 0,
                 helper.exampleValue(),
-                helper.description())
-        );
+                helper.description()));
+        column.getFillHelp().ifPresent(
+            helper -> XLSXTemplateHelper.addPropertyInformation(workbook,
+                column.headerName(),
+                column.isMandatory(),
+                helper.exampleValue(),
+                helper.description(),
+                boldStyle));
       }
 
       var startIndex = 1; // start in row number 2 with index 1 as the header row has number 1 index 0

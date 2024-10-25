@@ -125,8 +125,14 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
                 column.columnIndex(),
                 DEFAULT_GENERATED_ROW_COUNT - 1,
                 helper.exampleValue(),
-                helper.description())
-        );
+                helper.description()));
+        column.getFillHelp().ifPresent(
+            helper -> XLSXTemplateHelper.addPropertyInformation(workbook,
+                column.headerName(),
+                column.isMandatory(),
+                helper.exampleValue(),
+                helper.description(),
+                boldStyle));
       }
 
       setAutoWidth(sheet);

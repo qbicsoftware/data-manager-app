@@ -44,6 +44,7 @@ public class XLSXTemplateHelper {
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
   private static final byte[] LINK_BLUE = {(byte) 9, (byte) 105, (byte) 218};
   private static final int COLUMN_MAX_WIDTH = 255;
+  private static final String PROPERTY_INFORMATION_SHEET_NAME = "Property Information";
 
   protected XLSXTemplateHelper() {
     //hide constructor as static methods only are used
@@ -310,6 +311,78 @@ public class XLSXTemplateHelper {
     sheet.addValidationData(validation);
   }
 
+  /**
+   * Adds a property information description to the workbook. Creates a sheet called
+   * {@link #PROPERTY_INFORMATION_SHEET_NAME} if it does not exist yet.
+   *
+   * @param workbook         the workbook to take
+   * @param columnName       the column name / property name to add information to
+   * @param isMandatory      is filling the column mandatory?
+   * @param descriptionTitle allowed value type and example
+   * @param description      the description of the input
+   * @param headerStyle      the style used for headers in the property information sheet
+   */
+  public static void addPropertyInformation(Workbook workbook,
+      String columnName,
+      boolean isMandatory,
+      String descriptionTitle,
+      String description,
+      CellStyle headerStyle) {
+    // add row with information
+    Sheet propertyInformationSheet = Optional
+        .ofNullable(workbook.getSheet(PROPERTY_INFORMATION_SHEET_NAME))
+        .orElseGet(() -> workbook.createSheet(PROPERTY_INFORMATION_SHEET_NAME));
+    int lastRowIdx = Math.max(propertyInformationSheet.getLastRowNum(), 0);
+    if (lastRowIdx == 0) {
+      //we do not have a header yet
+      Row row = getOrCreateRow(propertyInformationSheet, 0);
+      Cell propertyNameCell = getOrCreateCell(row, 0);
+      propertyNameCell.setCellStyle(headerStyle);
+      propertyNameCell.setCellValue("Property Name");
+
+      Cell provisionCell = getOrCreateCell(row, 1);
+      provisionCell.setCellStyle(headerStyle);
+      provisionCell.setCellValue("Provision");
+
+      Cell allowedValuesCell = getOrCreateCell(row, 2);
+      allowedValuesCell.setCellStyle(headerStyle);
+      allowedValuesCell.setCellValue("Allowed Values");
+
+      Cell descriptionCell = getOrCreateCell(row, 3);
+      descriptionCell.setCellStyle(headerStyle);
+      descriptionCell.setCellValue("Description");
+
+    }
+    lastRowIdx++;
+    Row row = getOrCreateRow(propertyInformationSheet, lastRowIdx);
+    Cell propertyNameCell = getOrCreateCell(row, 0);
+    propertyNameCell.setCellValue(columnName);
+
+    Cell provisionCell = getOrCreateCell(row, 1);
+    provisionCell.setCellValue(isMandatory ? "mandatory" : "optional");
+
+    Cell allowedValuesCell = getOrCreateCell(row, 2);
+    allowedValuesCell.setCellValue(descriptionTitle);
+
+    Cell descriptionCell = getOrCreateCell(row, 3);
+    descriptionCell.setCellValue(description);
+
+    setColumnAutoWidth(propertyInformationSheet, 0, 3);
+  }
+
+
+  /**
+   * Adds an input prompt box to cells within the selected range. If there is already a validation
+   * for exactly those cells, the prompt box of the existing validation is overwritten.
+   *
+   * @param sheet       the sheet in which the cells are
+   * @param startColIdx the index of the first column
+   * @param startRowIdx the index of the first row
+   * @param stopColIdx  the index of the last column
+   * @param stopRowIdx  the index of the last row
+   * @param title       the title of the message in the prompt box
+   * @param content     the content of the prompt box
+   */
   public static void addInputHelper(Sheet sheet, int startColIdx, int startRowIdx,
       int stopColIdx, int stopRowIdx, String title, String content) {
     CellRangeAddressList validatedCells = new CellRangeAddressList(startRowIdx,
