@@ -12,6 +12,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
@@ -99,11 +101,19 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
                 0,
                 helper.exampleValue(),
                 helper.description()));
-        var exampleValue = measurementColumn.getFillHelp().map(Helper::exampleValue).orElse("");
-        var description = measurementColumn.getFillHelp().map(Helper::description).orElse("");
+      }
+
+      // add property information order of columns matters!!
+      for (ProteomicsMeasurementRegisterColumn column : Arrays.stream(
+              ProteomicsMeasurementRegisterColumn.values())
+          .sorted(Comparator.comparing(ProteomicsMeasurementRegisterColumn::columnIndex))
+          .toList()) {
+        // add property information
+        var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
+        var description = column.getFillHelp().map(Helper::description).orElse("");
         XLSXTemplateHelper.addPropertyInformation(workbook,
-            measurementColumn.headerName(),
-            measurementColumn.isMandatory(),
+            column.headerName(),
+            column.isMandatory(),
             exampleValue,
             description,
             boldStyle);

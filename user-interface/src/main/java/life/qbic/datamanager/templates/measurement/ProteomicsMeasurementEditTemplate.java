@@ -13,6 +13,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
@@ -137,7 +139,6 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
           cell.setCellStyle(linkHeaderStyle);
           cell.setHyperlink(hyperlink);
         }
-
         //add helper to header
         measurementColumn.getFillHelp().ifPresent(
             helper -> XLSXTemplateHelper.addInputHelper(sheet,
@@ -147,11 +148,18 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
                 0,
                 helper.exampleValue(),
                 helper.description()));
-        var exampleValue = measurementColumn.getFillHelp().map(Helper::exampleValue).orElse("");
-        var description = measurementColumn.getFillHelp().map(Helper::description).orElse("");
+      }
+
+      // add property information order of columns matters!!
+      for (ProteomicsMeasurementEditColumn column : Arrays.stream(
+              ProteomicsMeasurementEditColumn.values())
+          .sorted(Comparator.comparing(ProteomicsMeasurementEditColumn::columnIndex)).toList()) {
+        // add property information
+        var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
+        var description = column.getFillHelp().map(Helper::description).orElse("");
         XLSXTemplateHelper.addPropertyInformation(workbook,
-            measurementColumn.headerName(),
-            measurementColumn.isMandatory(),
+            column.headerName(),
+            column.isMandatory(),
             exampleValue,
             description,
             boldStyle);

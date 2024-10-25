@@ -13,6 +13,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
@@ -144,6 +146,13 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
                 0,
                 helper.exampleValue(),
                 helper.description()));
+      }
+
+      // add property information order of columns matters!!
+      for (NGSMeasurementEditColumn column : Arrays.stream(
+              NGSMeasurementEditColumn.values())
+          .sorted(Comparator.comparing(NGSMeasurementEditColumn::columnIndex)).toList()) {
+        // add property information
         var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
         var description = column.getFillHelp().map(Helper::description).orElse("");
         XLSXTemplateHelper.addPropertyInformation(workbook,
