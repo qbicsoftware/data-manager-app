@@ -1,6 +1,7 @@
 package life.qbic.datamanager.templates.measurement;
 
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
@@ -60,8 +61,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
   }
 
   private static void writeMeasurementIntoRow(NGSMeasurementEntry ngsMeasurementEntry,
-      Row entryRow, CellStyle readOnlyCellStyle) {
-
+      Row entryRow, CellStyle defaultStyle, CellStyle readOnlyCellStyle) {
     for (NGSMeasurementEditColumn measurementColumn : NGSMeasurementEditColumn.values()) {
       var value = switch (measurementColumn) {
         case MEASUREMENT_ID -> ngsMeasurementEntry.measurementCode();
@@ -83,12 +83,13 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       };
       var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
       cell.setCellValue(value);
+      cell.setCellStyle(defaultStyle);
       if (measurementColumn.isReadOnly()) {
         cell.setCellStyle(readOnlyCellStyle);
       }
     }
-    
-    
+
+
   }
 
   public void setMeasurements(List<NGSMeasurementEntry> measurements, String fileNamePrefix) {
@@ -110,6 +111,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       CellStyle readOnlyHeaderStyle = createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
       CellStyle linkHeaderStyle = createLinkHeaderCellStyle(workbook);
+      CellStyle defaultStyle = createDefaultCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
 
@@ -160,6 +162,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
             column.isMandatory(),
             exampleValue,
             description,
+            defaultStyle,
             boldStyle);
       }
 
@@ -167,7 +170,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       int rowIndex = startIndex;
       for (NGSMeasurementEntry measurement : measurements) {
         Row row = getOrCreateRow(sheet, rowIndex);
-        writeMeasurementIntoRow(measurement, row, readOnlyCellStyle);
+        writeMeasurementIntoRow(measurement, row, defaultStyle, readOnlyCellStyle);
         rowIndex++;
       }
 

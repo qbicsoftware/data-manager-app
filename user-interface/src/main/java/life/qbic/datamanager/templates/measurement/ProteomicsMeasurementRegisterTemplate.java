@@ -2,6 +2,7 @@ package life.qbic.datamanager.templates.measurement;
 
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidation;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateCell;
@@ -66,6 +67,7 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
       CellStyle readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
       CellStyle linkHeaderStyle = createLinkHeaderCellStyle(workbook);
+      CellStyle defaultStyle = createDefaultCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("Proteomics Measurement Metadata");
       Row header = getOrCreateRow(sheet, 0);
@@ -116,6 +118,7 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
             column.isMandatory(),
             exampleValue,
             description,
+            defaultStyle,
             boldStyle);
       }
 

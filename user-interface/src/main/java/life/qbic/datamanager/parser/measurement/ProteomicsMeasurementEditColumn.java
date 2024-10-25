@@ -45,7 +45,8 @@ public enum ProteomicsMeasurementEditColumn implements Column {
   {
     if (column instanceof ProteomicsMeasurementEditColumn proteomicsMeasurementEditColumn) {
       return switch (proteomicsMeasurementEditColumn) {
-        case MEASUREMENT_ID -> null;
+        case MEASUREMENT_ID -> new Helper("QBiC Measurement ID",
+            "A unique identifier of the measurement that will be linked to each sample.");
         case SAMPLE_ID -> new Helper("QBiC sample IDs, e.g. Q29866",
             "The sample(s) that will be linked to the measurement.");
         case SAMPLE_NAME -> new Helper("Free text, e.g. MySample 01",

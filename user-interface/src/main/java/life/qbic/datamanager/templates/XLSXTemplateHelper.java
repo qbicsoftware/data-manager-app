@@ -161,8 +161,20 @@ public class XLSXTemplateHelper {
     CellStyle boldStyle = workbook.createCellStyle();
     Font fontBold = workbook.createFont();
     fontBold.setBold(true);
-    boldStyle.setFont(fontBold);
+    fontBold.setFontName("Open Sans");
+    fontBold.setFontHeightInPoints((short) 12);
 
+    boldStyle.setFont(fontBold);
+    return boldStyle;
+  }
+
+  public static CellStyle createDefaultCellStyle(Workbook workbook) {
+    CellStyle boldStyle = workbook.createCellStyle();
+    Font fontBold = workbook.createFont();
+    fontBold.setFontName("Open Sans");
+    fontBold.setFontHeightInPoints((short) 12);
+
+    boldStyle.setFont(fontBold);
     return boldStyle;
   }
 
@@ -171,6 +183,8 @@ public class XLSXTemplateHelper {
     XSSFFont linkFont = (XSSFFont) workbook.createFont();
     linkFont.setColor(new XSSFColor(LINK_BLUE, new DefaultIndexedColorMap()));
     linkFont.setBold(true);
+    linkFont.setFontName("Open Sans");
+    linkFont.setFontHeightInPoints((short) 12);
 
     linkHeaderStyle.setFont(linkFont);
     return linkHeaderStyle;
@@ -182,6 +196,8 @@ public class XLSXTemplateHelper {
     readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
     XSSFFont font = (XSSFFont) workbook.createFont();
     font.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
+    font.setFontName("Open Sans");
+    font.setFontHeightInPoints((short) 12);
     readOnlyStyle.setFont(font);
     return readOnlyStyle;
   }
@@ -194,6 +210,8 @@ public class XLSXTemplateHelper {
     XSSFFont fontHeader = (XSSFFont) workbook.createFont();
     fontHeader.setBold(true);
     fontHeader.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
+    fontHeader.setFontName("Open Sans");
+    fontHeader.setFontHeightInPoints((short) 12);
     readOnlyHeaderStyle.setFont(fontHeader);
     return readOnlyHeaderStyle;
   }
@@ -327,6 +345,7 @@ public class XLSXTemplateHelper {
       boolean isMandatory,
       String descriptionTitle,
       String description,
+      CellStyle defaultStyle,
       CellStyle headerStyle) {
     // add row with information
     Sheet propertyInformationSheet = Optional
@@ -356,15 +375,19 @@ public class XLSXTemplateHelper {
     lastRowIdx++;
     Row row = getOrCreateRow(propertyInformationSheet, lastRowIdx);
     Cell propertyNameCell = getOrCreateCell(row, 0);
+    propertyNameCell.setCellStyle(defaultStyle);
     propertyNameCell.setCellValue(columnName);
 
     Cell provisionCell = getOrCreateCell(row, 1);
+    provisionCell.setCellStyle(defaultStyle);
     provisionCell.setCellValue(isMandatory ? "mandatory" : "optional");
 
     Cell allowedValuesCell = getOrCreateCell(row, 2);
+    allowedValuesCell.setCellStyle(defaultStyle);
     allowedValuesCell.setCellValue(descriptionTitle);
 
     Cell descriptionCell = getOrCreateCell(row, 3);
+    descriptionCell.setCellStyle(defaultStyle);
     descriptionCell.setCellValue(description);
 
     setColumnAutoWidth(propertyInformationSheet, 0, 3);

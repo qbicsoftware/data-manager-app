@@ -2,6 +2,7 @@ package life.qbic.datamanager.templates.measurement;
 
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidation;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
@@ -62,7 +63,9 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
   }
 
   private static void createMeasurementEntry(ProteomicsMeasurementEntry pxpEntry, Row entryRow,
+      CellStyle defaultStyle,
       CellStyle readOnlyStyle) {
+
     for (ProteomicsMeasurementEditColumn measurementColumn : ProteomicsMeasurementEditColumn.values()) {
       var value = switch (measurementColumn) {
         case MEASUREMENT_ID -> pxpEntry.measurementCode();
@@ -88,6 +91,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       };
       var cell = getOrCreateCell(entryRow, measurementColumn.columnIndex());
       cell.setCellValue(value);
+      cell.setCellStyle(defaultStyle);
       if (measurementColumn.isReadOnly()) {
         cell.setCellStyle(readOnlyStyle);
       }
@@ -113,6 +117,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       CellStyle boldStyle = createBoldCellStyle(workbook);
       CellStyle readOnlyStyle = createReadOnlyCellStyle(workbook);
       CellStyle linkHeaderStyle = createLinkHeaderCellStyle(workbook);
+      CellStyle defaultStyle = createDefaultCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("Proteomics Measurement Metadata");
       Row header = getOrCreateRow(sheet, 0);
@@ -162,6 +167,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
             column.isMandatory(),
             exampleValue,
             description,
+            defaultStyle,
             boldStyle);
       }
 
@@ -170,7 +176,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
 
       for (ProteomicsMeasurementEntry pxpEntry : measurements) {
         Row entry = getOrCreateRow(sheet, rowIndex);
-        createMeasurementEntry(pxpEntry, entry, readOnlyStyle);
+        createMeasurementEntry(pxpEntry, entry, defaultStyle, readOnlyStyle);
         rowIndex++;
       }
       var generatedRowCount = rowIndex - startIndex;

@@ -1,6 +1,7 @@
 package life.qbic.datamanager.templates.measurement;
 
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyHeaderCellStyle;
@@ -67,6 +68,7 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
       CellStyle readOnlyHeaderStyle = createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
       CellStyle linkHeaderStyle = createLinkHeaderCellStyle(workbook);
+      CellStyle defaultCellStyle = createDefaultCellStyle(workbook);
 
       Sheet sheet = workbook.createSheet("NGS Measurement Metadata");
 
@@ -143,6 +145,7 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
             column.isMandatory(),
             exampleValue,
             description,
+            defaultCellStyle,
             boldStyle);
       }
 

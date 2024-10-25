@@ -39,7 +39,8 @@ public enum NGSMeasurementEditColumn implements Column {
 
     if (column instanceof NGSMeasurementEditColumn ngsMeasurementEditColumn) {
       return switch (ngsMeasurementEditColumn) {
-        case MEASUREMENT_ID -> null;
+        case MEASUREMENT_ID -> new Helper("QBiC Measurement ID",
+            "A unique identifier of the measurement that will be linked to each sample.");
         case SAMPLE_ID -> new Helper("QBiC sample IDs, e.g. Q2001, Q2002",
             "The sample(s) that will be linked to the measurement.");
         case SAMPLE_NAME -> new Helper("Free text, e.g. RNA Sample 1, RNA Sample 2",
