@@ -56,8 +56,9 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Center",
             "The facility's name within the organisation.");
         case MS_DEVICE -> new Helper("CURIE (ontology), e.g. NCIT:C12434", """
-            The instrument that has been used for the measurement. To avoid ambiguities, we expect an ontology term CURIE (e.g. NCIT:C12434)
-            Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your Instrument.
+            The instrument that has been used for the measurement.
+            We expect an ontology term CURIE.
+            Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your instrument.
             """.formatted(MS_DEVICE.headerName()));
         case CYCLE_FRACTION_NAME -> new Helper("Free text, e.g. Fraction01, AB",
             "Sometimes a sample is fractionated and all fractions are measured. With this property you can indicate which fraction it is.");

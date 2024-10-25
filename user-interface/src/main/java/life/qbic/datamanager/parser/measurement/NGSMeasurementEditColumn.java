@@ -54,8 +54,9 @@ public enum NGSMeasurementEditColumn implements Column {
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Centre",
             "The facilities name within the organisation (group name, etc.)");
         case INSTRUMENT -> new Helper("CURIE (ontology), e.g. EFO:0008637", """
-            The instrument that has been used for the measurement. To avoid ambiguities, we expect an ontology term CURIE (e.g. EFO:0008637)
-            Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your Instrument.
+            The instrument that has been used for the measurement.
+            We expect an ontology term CURIE.
+            Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your instrument.
             """.formatted(INSTRUMENT.headerName()));
         case INSTRUMENT_NAME -> null;
         case SEQUENCING_READ_TYPE -> new Helper("Free text, e.g. paired-end",
