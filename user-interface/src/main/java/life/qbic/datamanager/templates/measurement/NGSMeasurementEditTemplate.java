@@ -65,7 +65,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
         case SAMPLE_ID -> ngsMeasurementEntry.sampleInformation().sampleId();
         case SAMPLE_NAME -> ngsMeasurementEntry.sampleInformation().sampleName();
         case POOL_GROUP -> ngsMeasurementEntry.samplePoolGroup();
-        case ORGANISATION_ID -> ngsMeasurementEntry.organisationId();
+        case ORGANISATION_URL -> ngsMeasurementEntry.organisationId();
         case ORGANISATION_NAME -> ngsMeasurementEntry.organisationName();
         case FACILITY -> ngsMeasurementEntry.facility();
         case INSTRUMENT -> ngsMeasurementEntry.instrumentCURI();
@@ -121,7 +121,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
         cell.setCellStyle(boldStyle);
         if (column.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
-        } else if (column.equals(NGSMeasurementEditColumn.ORGANISATION_ID)) {
+        } else if (column.equals(NGSMeasurementEditColumn.ORGANISATION_URL)) {
           CreationHelper creationHelper = workbook.getCreationHelper();
           Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
           hyperlink.setAddress("https://ror.org");

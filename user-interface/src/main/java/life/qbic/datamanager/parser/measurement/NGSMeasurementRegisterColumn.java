@@ -19,7 +19,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
   SAMPLE_ID("QBiC Sample Id", 0, false, true),
   SAMPLE_NAME("Sample Name", 1, true, false),
   POOL_GROUP("Sample Pool Group", 2, false, false),
-  ORGANISATION_ID("Organisation ID", 3, false, true),
+  ORGANISATION_URL("Organisation URL", 3, false, true),
   FACILITY("Facility", 4, false, true),
   INSTRUMENT("Instrument", 5, false, true),
   SEQUENCING_READ_TYPE("Sequencing Read Type", 6, false, true),
@@ -45,10 +45,10 @@ public enum NGSMeasurementRegisterColumn implements Column {
             "A visual aid to simplify sample navigation for the person managing the metadata. Is ignored after upload.");
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
-        case ORGANISATION_ID -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
+        case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
-            """.formatted(ORGANISATION_ID.headerName()));
+            """.formatted(ORGANISATION_URL.headerName()));
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Centre",
             "The facilities name within the organisation (group name, etc.)");
         case INSTRUMENT -> new Helper("CURIE (ontology), e.g. EFO:0008637", """

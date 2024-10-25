@@ -76,7 +76,7 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
         cell.setCellStyle(boldStyle);
         if (measurementColumn.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
-        } else if (measurementColumn.equals(ProteomicsMeasurementRegisterColumn.ORGANISATION_ID)) {
+        } else if (measurementColumn.equals(ProteomicsMeasurementRegisterColumn.ORGANISATION_URL)) {
           CreationHelper creationHelper = workbook.getCreationHelper();
           Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
           hyperlink.setAddress("https://ror.org");

@@ -78,7 +78,7 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
         cell.setCellStyle(boldStyle);
         if (column.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
-        } else if (column.equals(NGSMeasurementRegisterColumn.ORGANISATION_ID)) {
+        } else if (column.equals(NGSMeasurementRegisterColumn.ORGANISATION_URL)) {
           CreationHelper creationHelper = workbook.getCreationHelper();
           Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
           hyperlink.setAddress("https://ror.org");

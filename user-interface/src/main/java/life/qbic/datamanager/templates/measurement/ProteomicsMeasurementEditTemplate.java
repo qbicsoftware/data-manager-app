@@ -67,7 +67,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
         case SAMPLE_NAME -> pxpEntry.sampleInformation().sampleName();
         case POOL_GROUP -> pxpEntry.samplePoolGroup();
         case TECHNICAL_REPLICATE_NAME -> pxpEntry.technicalReplicateName();
-        case ORGANISATION_ID -> pxpEntry.organisationId();
+        case ORGANISATION_URL -> pxpEntry.organisationId();
         case ORGANISATION_NAME -> pxpEntry.organisationName();
         case FACILITY -> pxpEntry.facility();
         case MS_DEVICE -> pxpEntry.msDeviceCURIE();
@@ -123,7 +123,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
         cell.setCellStyle(boldStyle);
         if (measurementColumn.isReadOnly()) {
           cell.setCellStyle(readOnlyHeaderStyle);
-        } else if (measurementColumn.equals(ProteomicsMeasurementEditColumn.ORGANISATION_ID)) {
+        } else if (measurementColumn.equals(ProteomicsMeasurementEditColumn.ORGANISATION_URL)) {
           CreationHelper creationHelper = workbook.getCreationHelper();
           Hyperlink hyperlink = creationHelper.createHyperlink(HyperlinkType.URL);
           hyperlink.setAddress("https://ror.org");

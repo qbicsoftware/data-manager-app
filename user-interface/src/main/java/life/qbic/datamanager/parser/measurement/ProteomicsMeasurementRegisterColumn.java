@@ -22,7 +22,7 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
   POOL_GROUP("Sample Pool Group", 2, false, false),
   TECHNICAL_REPLICATE_NAME("Technical Replicate", 3, false, false),
   CYCLE_FRACTION_NAME("Cycle/Fraction Name", 4, false, false),
-  ORGANISATION_ID("Organisation ID", 5, false, true),
+  ORGANISATION_URL("Organisation URL", 5, false, true),
   FACILITY("Facility", 6, false, true),
   LC_COLUMN("LC Column", 7, false, true),
   MS_DEVICE("MS Device", 8, false, true),
@@ -50,10 +50,10 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
         case TECHNICAL_REPLICATE_NAME -> new Helper("Free text, e.g. Sample 1A, Sample 1B",
             "Repeated measurements of the same sample that represent independent measures of the random noise associated with protocols or equipment.");
-        case ORGANISATION_ID -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
+        case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
-            """.formatted(ORGANISATION_ID.headerName()));
+            """.formatted(ORGANISATION_URL.headerName()));
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Center",
             "The facility's name within the organisation.");
         case MS_DEVICE -> new Helper("CURIE (ontology), e.g. NCIT:C12434", """
