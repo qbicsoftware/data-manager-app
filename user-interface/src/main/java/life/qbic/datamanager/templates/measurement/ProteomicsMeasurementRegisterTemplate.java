@@ -127,7 +127,7 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
       // make sure to create the visible sheet first
       Sheet hiddenSheet = workbook.createSheet("hidden");
       Name digestionMethodArea = createOptionArea(hiddenSheet, "Digestion Method",
-          DigestionMethod.getOptions(), defaultStyle);
+          DigestionMethod.getOptions());
 
       addDataValidation(sheet,
           ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.columnIndex(), startIndex,

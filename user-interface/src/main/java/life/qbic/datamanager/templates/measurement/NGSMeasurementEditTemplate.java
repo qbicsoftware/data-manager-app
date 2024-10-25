@@ -180,7 +180,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       // make sure to create the visible sheet first
       Sheet hiddenSheet = workbook.createSheet("hidden");
       Name sequencingReadTypeArea = createOptionArea(hiddenSheet,
-          "Sequencing read type", SequencingReadType.getOptions(), defaultStyle);
+          "Sequencing read type", SequencingReadType.getOptions());
 
       XLSXTemplateHelper.addDataValidation(sheet,
           NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.columnIndex(),

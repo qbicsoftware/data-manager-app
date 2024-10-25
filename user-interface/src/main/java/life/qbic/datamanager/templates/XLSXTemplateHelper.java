@@ -227,7 +227,7 @@ public class XLSXTemplateHelper {
    * @since 1.5.0
    */
   public static Name createOptionArea(Sheet sheet, String propertyName,
-      List<String> options, CellStyle cellStyle) {
+      List<String> options) {
     Row headerRow = getOrCreateRow(sheet, 0);
     var columnNumber = Math.max(1,
         headerRow.getLastCellNum() + 1); // the column to use for the property. Starts with 1
@@ -244,9 +244,8 @@ public class XLSXTemplateHelper {
     var rowIndex = startIndex;
     for (String option : options) {
       Row valueRow = getOrCreateRow(sheet, rowIndex);
-      Cell cell = getOrCreateCell(valueRow, columnIndex);
-      cell.setCellValue(option);
-      cell.setCellStyle(cellStyle);
+      getOrCreateCell(valueRow, columnIndex)
+          .setCellValue(option);
       rowIndex++;
     }
     var reference = "'%s'!$%s$%s:$%s$%s".formatted( //e.g. 'My Sheet'!$A$2:$E$23

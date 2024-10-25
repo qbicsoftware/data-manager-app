@@ -113,7 +113,7 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
       // make sure to create the visible sheet first
       Sheet hiddenSheet = workbook.createSheet("hidden");
       Name sequencingReadTypeArea = createOptionArea(hiddenSheet,
-          "Sequencing read type", SequencingReadType.getOptions(), defaultCellStyle);
+          "Sequencing read type", SequencingReadType.getOptions());
 
       XLSXTemplateHelper.addDataValidation(sheet,
           NGSMeasurementRegisterColumn.SEQUENCING_READ_TYPE.columnIndex(),
