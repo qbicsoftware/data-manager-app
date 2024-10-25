@@ -1,11 +1,13 @@
 package life.qbic.datamanager.views.projects.edit;
 
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.spring.annotation.UIScope;
+import life.qbic.datamanager.views.general.utils.Constants;
+import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 
 /**
@@ -25,6 +27,8 @@ public class EditProjectDesignForm extends FormLayout {
 
   private TextField titleField;
 
+  private TextArea objectiveField;
+
   public EditProjectDesignForm() {
     super();
     addClassName("form-content");
@@ -34,25 +38,41 @@ public class EditProjectDesignForm extends FormLayout {
     titleField.setRequiredIndicatorVisible(true);
     titleField.setId("project-title-field");
     titleField.setValueChangeMode(ValueChangeMode.EAGER);
+    titleField.setMaxLength(Constants.PROJECT_TITLE_MAX_LENGTH);
+    Utility.addConsumedLengthHelper(titleField);
+    titleField.addValueChangeListener(event -> Utility.addConsumedLengthHelper(event.getSource()));
+
+    objectiveField = new TextArea("Objective");
+    objectiveField.setRequiredIndicatorVisible(true);
+    objectiveField.addClassName("medium-text-area");
+    objectiveField.setMaxLength(Constants.PROJECT_OBJECTIVE_MAX_LENGTH);
+    objectiveField.setValueChangeMode(ValueChangeMode.EAGER);
+    Utility.addConsumedLengthHelper(objectiveField);
+    objectiveField.addValueChangeListener(event -> Utility.addConsumedLengthHelper(event.getSource()));
 
     binder.forField(titleField).withValidator(it -> !it.isBlank(), "Please provide a project title" )
         .bind(ProjectInformation::getProjectTitle, ProjectInformation::setProjectTitle);
 
-    add(titleField);
+    binder.forField(objectiveField).withValidator(it -> !it.isBlank(), "Please provide a project objective" )
+        .bind(ProjectInformation::getProjectObjective, ProjectInformation::setProjectObjective);
+
+    add(titleField, objectiveField);
 
   }
 
   public void setContent(ProjectInformation project) {
+    oldValue = project;
     binder.setBean(project);
-    binder.readBean(project);
-    binder.refreshFields();
-//    try {
-//      oldValue = new ProjectInformation();
-//      binder.writeBean(oldValue);
-//    } catch (ValidationException e) {
-//      oldValue = null;
-//      throw new IllegalArgumentException(
-//          "Project information should be valid but was not. " + project, e);
-//    }
   }
+
+  public ProjectInformation fromUserInput() throws ValidationException {
+    var projectInfo = new ProjectInformation();
+    binder.writeBean(projectInfo);
+    return projectInfo;
+  }
+
+  public boolean isValid() {
+    return binder.isValid();
+  }
+
 }

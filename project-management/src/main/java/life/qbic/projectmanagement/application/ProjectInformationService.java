@@ -153,7 +153,7 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public void stateObjective(ProjectId projectId, String objective) {
+  public void updateObjective(ProjectId projectId, String objective) {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
     project.stateObjective(projectObjective);

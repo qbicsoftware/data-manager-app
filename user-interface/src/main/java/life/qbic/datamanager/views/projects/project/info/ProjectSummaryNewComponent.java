@@ -16,12 +16,14 @@ import edu.kit.datamanager.ro_crate.writer.ZipWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider;
@@ -32,13 +34,13 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
-import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.HeadingWithIcon;
 import life.qbic.datamanager.views.general.IconLabel;
 import life.qbic.datamanager.views.general.OntologyTermDisplay;
+import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
 import life.qbic.datamanager.views.general.section.SectionContent;
@@ -47,6 +49,7 @@ import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.projectmanagement.application.ContactRepository;
@@ -79,6 +82,7 @@ public class ProjectSummaryNewComponent extends PageArea {
   private final TempDirectory tempDirectory;
   private final ExperimentInformationService experimentInformationService;
   private final UserPermissions userPermissions;
+  private final MessageSourceNotificationFactory notificationFactory;
   private Section headerSection;
   private Section projectDesignSection;
   private Section experimentInformationSection;
@@ -95,7 +99,8 @@ public class ProjectSummaryNewComponent extends PageArea {
       ContactRepository contactRepository,
       UserPermissions userPermissions,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory) {
+      ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
+      MessageSourceNotificationFactory notificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -105,6 +110,7 @@ public class ProjectSummaryNewComponent extends PageArea {
     this.tempDirectory = Objects.requireNonNull(tempDirectory);
     this.roCrateBuilder = Objects.requireNonNull(rOCreateBuilder);
     this.userPermissions = Objects.requireNonNull(userPermissions);
+    this.notificationFactory = Objects.requireNonNull(notificationFactory);
     addClassName("project-details-component");
     downloadProvider = new DownloadProvider(null);
     add(downloadProvider);
@@ -114,6 +120,13 @@ public class ProjectSummaryNewComponent extends PageArea {
     add(fundingInformationSection);
     add(projectContactsSection);
     this.experimentInformationService = experimentInformationService;
+  }
+
+  private static ProjectInformation convertToInfo(Project project) {
+    var info = new ProjectInformation();
+    info.setProjectTitle(project.getProjectIntent().projectTitle().title());
+    info.setProjectObjective(project.getProjectIntent().objective().objective());
+    return info;
   }
 
   private String formatDate(Instant date) {
@@ -134,7 +147,24 @@ public class ProjectSummaryNewComponent extends PageArea {
     showControls = userPermissions.editProject(projectId);
   }
 
-  private void setContent(ProjectOverview projectInformation, Project fullProject, List<Experiment> experiments) {
+  private void reloadInformation(Context context) {
+    var projectId = context.projectId()
+        .orElseThrow(() -> new ApplicationException("No project id provided"));
+    var projectOverview = projectInformationService.findOverview(projectId)
+        .orElseThrow(() -> new ApplicationException("No project with given ID found"));
+    var fullProject = projectInformationService.find(projectId)
+        .orElseThrow(() -> new ApplicationException("No project found"));
+    var experiments = experimentInformationService.findAllForProject(projectId);
+    reloadProjectDesign(projectOverview, fullProject, experiments);
+  }
+
+  private void reloadProjectDesign(ProjectOverview projectOverview, Project project,
+      List<Experiment> experiments) {
+    buildDesignSection(projectOverview, project);
+  }
+
+  private void setContent(ProjectOverview projectInformation, Project fullProject,
+      List<Experiment> experiments) {
     Objects.requireNonNull(projectInformation);
     buildHeaderSection(projectInformation);
     buildDesignSection(projectInformation, fullProject);
@@ -181,21 +211,25 @@ public class ProjectSummaryNewComponent extends PageArea {
 
   private void buildFundingInformationSection(Project fullProject) {
     fundingInformationSection.setHeader(
-        new SectionHeader(new SectionTitle("Funding Information"), new ActionBar(new Button("Edit"))));
+        new SectionHeader(new SectionTitle("Funding Information"),
+            new ActionBar(new Button("Edit"))));
 
     if (fullProject.funding().isEmpty()) {
-      fundingInformationSection.setContent(new SectionContent(new Span("No funding information provided.")));
+      fundingInformationSection.setContent(
+          new SectionContent(new Span("No funding information provided.")));
     } else {
       var grantIconLabel = new IconLabel(VaadinIcon.MONEY.create(), "Grant");
       var funding = fullProject.funding().get();
       grantIconLabel.setInformation("%s (%s)".formatted(funding.grant(), funding.grantId()));
-      grantIconLabel.setTooltipText("Information about what grant served as funding for the project.");
+      grantIconLabel.setTooltipText(
+          "Information about what grant served as funding for the project.");
       fundingInformationSection.setContent(new SectionContent(grantIconLabel));
     }
 
   }
 
-  private void buildExperimentInformationSection(ProjectOverview projectInformation, List<Experiment> experiments) {
+  private void buildExperimentInformationSection(ProjectOverview projectInformation,
+      List<Experiment> experiments) {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information")));
     var speciesBox = new DetailBox();
@@ -247,7 +281,8 @@ public class ProjectSummaryNewComponent extends PageArea {
   }
 
   private OntologyTermDisplay convert(OntologyTerm ontologyTerm) {
-    return new OntologyTermDisplay(ontologyTerm.getLabel(), ontologyTerm.getOboId(), ontologyTerm.getClassIri());
+    return new OntologyTermDisplay(ontologyTerm.getLabel(), ontologyTerm.getOboId(),
+        ontologyTerm.getClassIri());
   }
 
   private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
@@ -267,6 +302,15 @@ public class ProjectSummaryNewComponent extends PageArea {
     editButton.addClickListener(listener -> {
       editProjectDesignDialog = buildAndWireEditProjectDesign(project);
       editProjectDesignDialog.open();
+      editProjectDesignDialog.addUpdateEventListener(event -> {
+        updateProjectDesign(context.projectId().orElseThrow(), event.content().orElseThrow());
+        reloadInformation(context);
+        editProjectDesignDialog.close();
+        var toast = notificationFactory.toast("project.updated.success", new String[]{ project.getProjectCode().value() }, getLocale());
+        toast.setDuration(Duration.ofSeconds(5));
+        toast.open();
+      });
+
     });
     projectDesignSection.setHeader(
         new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
@@ -280,15 +324,14 @@ public class ProjectSummaryNewComponent extends PageArea {
     projectDesignSection.setContent(content);
   }
 
+  private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
+    projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
+    projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
+  }
+
   private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
     var projectInfo = convertToInfo(project);
     return new EditProjectDesignDialog(projectInfo);
-  }
-
-  private static ProjectInformation convertToInfo(Project project) {
-    var info = new ProjectInformation();
-    info.setProjectTitle(project.getProjectIntent().projectTitle().title());
-    return info;
   }
 
   private void buildHeaderSection(ProjectOverview projectOverview) {

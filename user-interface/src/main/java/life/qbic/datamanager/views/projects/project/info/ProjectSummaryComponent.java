@@ -373,7 +373,7 @@ public class ProjectSummaryComponent extends PageArea {
   private void updateProjectInformation(ProjectInformation projectInformationContent) {
     ProjectId projectId = this.context.projectId().orElseThrow();
     projectInformationService.updateTitle(projectId, projectInformationContent.getProjectTitle());
-    projectInformationService.stateObjective(projectId,
+    projectInformationService.updateObjective(projectId,
         projectInformationContent.getProjectObjective());
     projectInformationService.investigateProject(projectId,
         projectInformationContent.getPrincipalInvestigator().toDomainContact());

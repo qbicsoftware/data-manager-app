@@ -194,5 +194,5 @@
 .simple-paragraph {
   font-size: var(--lumo-font-size-m);
   margin-bottom: var(--lumo-space-m);
-  max-width: 30em;
+  max-width: 40em;
 }

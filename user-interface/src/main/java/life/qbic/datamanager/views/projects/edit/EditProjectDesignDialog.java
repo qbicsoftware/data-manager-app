@@ -1,10 +1,13 @@
 package life.qbic.datamanager.views.projects.edit;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.spring.annotation.UIScope;
+import life.qbic.datamanager.views.events.ProjectUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 
@@ -19,7 +22,8 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
 @UIScope
 public class EditProjectDesignDialog extends DialogWindow {
 
-  private ProjectInformation initialInformation = new ProjectInformation();
+  private final EditProjectDesignForm form;
+
 
   public EditProjectDesignDialog(ProjectInformation project) {
     super();
@@ -29,19 +33,28 @@ public class EditProjectDesignDialog extends DialogWindow {
     setCancelButtonLabel("Cancel");
     setHeaderTitle("Project Design");
     content.add(new Span(project.getProjectTitle()));
-    var editForm = new EditProjectDesignForm();
-    editForm.setContent(project);
-    content.add(editForm);
+    form = new EditProjectDesignForm();
+    form.setContent(project);
+    content.add(form);
     add(content);
   }
 
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-
+    try {
+      var projectInfo = form.fromUserInput();
+      fireEvent(new ProjectUpdateEvent(this, true, projectInfo));
+    } catch (ValidationException e) {
+      // Do nothing, the user needs to correct the input
+    }
   }
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    close();
+  }
 
+  public void addUpdateEventListener(ComponentEventListener<ProjectUpdateEvent> listener) {
+    addListener(ProjectUpdateEvent.class, listener);
   }
 }

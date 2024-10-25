@@ -14,6 +14,7 @@ import java.util.List;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingField;
+import life.qbic.datamanager.views.general.utils.Constants;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
@@ -40,7 +41,7 @@ public class EditProjectInformationForm extends FormLayout {
     titleField.addClassName("title");
     titleField.setId("project-title-field");
     titleField.setRequired(true);
-    titleField.setMaxLength((int) ProjectTitle.maxLength());
+    titleField.setMaxLength(Constants.PROJECT_TITLE_MAX_LENGTH);
     titleField.setValueChangeMode(ValueChangeMode.EAGER);
     addConsumedLengthHelper(titleField, titleField.getValue());
     titleField.addValueChangeListener(e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
@@ -52,7 +53,7 @@ public class EditProjectInformationForm extends FormLayout {
     TextArea projectObjective = new TextArea("Objective");
     projectObjective.setRequired(true);
     projectObjective.setValueChangeMode(ValueChangeMode.EAGER);
-    projectObjective.setMaxLength((int) ProjectObjective.maxLength());
+    projectObjective.setMaxLength(Constants.PROJECT_OBJECTIVE_MAX_LENGTH);
     addConsumedLengthHelper(projectObjective, projectObjective.getValue());
     projectObjective.addValueChangeListener(
         e -> addConsumedLengthHelper(e.getSource(), e.getValue()));
