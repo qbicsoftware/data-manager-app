@@ -15,6 +15,7 @@ import java.io.IOException;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.parser.measurement.NGSMeasurementRegisterColumn;
 import life.qbic.datamanager.templates.Template;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
@@ -126,13 +127,14 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
                 DEFAULT_GENERATED_ROW_COUNT - 1,
                 helper.exampleValue(),
                 helper.description()));
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addPropertyInformation(workbook,
-                column.headerName(),
-                column.isMandatory(),
-                helper.exampleValue(),
-                helper.description(),
-                boldStyle));
+        var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
+        var description = column.getFillHelp().map(Helper::description).orElse("");
+        XLSXTemplateHelper.addPropertyInformation(workbook,
+            column.headerName(),
+            column.isMandatory(),
+            exampleValue,
+            description,
+            boldStyle);
       }
 
       setAutoWidth(sheet);

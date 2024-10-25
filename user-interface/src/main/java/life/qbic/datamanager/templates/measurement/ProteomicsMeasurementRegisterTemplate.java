@@ -15,6 +15,7 @@ import java.io.IOException;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.parser.measurement.ProteomicsMeasurementRegisterColumn;
 import life.qbic.datamanager.templates.Template;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
@@ -98,13 +99,14 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
                 0,
                 helper.exampleValue(),
                 helper.description()));
-        measurementColumn.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addPropertyInformation(workbook,
-                measurementColumn.headerName(),
-                measurementColumn.isMandatory(),
-                helper.exampleValue(),
-                helper.description(),
-                boldStyle));
+        var exampleValue = measurementColumn.getFillHelp().map(Helper::exampleValue).orElse("");
+        var description = measurementColumn.getFillHelp().map(Helper::description).orElse("");
+        XLSXTemplateHelper.addPropertyInformation(workbook,
+            measurementColumn.headerName(),
+            measurementColumn.isMandatory(),
+            exampleValue,
+            description,
+            boldStyle);
       }
 
       var startIndex = 1; // start in row number 2 with index 1 skipping the header in the first row

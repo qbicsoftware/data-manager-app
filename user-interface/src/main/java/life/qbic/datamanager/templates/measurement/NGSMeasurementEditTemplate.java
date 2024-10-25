@@ -18,6 +18,7 @@ import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.parser.measurement.NGSMeasurementEditColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import life.qbic.datamanager.views.projects.project.measurements.NGSMeasurementEntry;
@@ -143,13 +144,14 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
                 0,
                 helper.exampleValue(),
                 helper.description()));
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addPropertyInformation(workbook,
-                column.headerName(),
-                column.isMandatory(),
-                helper.exampleValue(),
-                helper.description(),
-                boldStyle));
+        var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
+        var description = column.getFillHelp().map(Helper::description).orElse("");
+        XLSXTemplateHelper.addPropertyInformation(workbook,
+            column.headerName(),
+            column.isMandatory(),
+            exampleValue,
+            description,
+            boldStyle);
       }
 
       var startIndex = 1; // start in row number 2 with index 1 as the header row has number 1 index 0
