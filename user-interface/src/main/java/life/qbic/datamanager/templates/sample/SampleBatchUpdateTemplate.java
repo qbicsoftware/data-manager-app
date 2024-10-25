@@ -118,11 +118,11 @@ public class SampleBatchUpdateTemplate {
 
     var hiddenSheet = workbook.createSheet("hidden");
     Name analysisToBePerformedOptions = createOptionArea(hiddenSheet, "Analysis to be performed",
-        analysisToPerform);
-    Name conditionOptions = createOptionArea(hiddenSheet, "Condition", conditions);
-    Name analyteOptions = createOptionArea(hiddenSheet, "Analyte", analytes);
-    Name speciesOptions = createOptionArea(hiddenSheet, "Species", species);
-    Name specimenOptions = createOptionArea(hiddenSheet, "Specimen", specimen);
+        analysisToPerform, defaultStyle);
+    Name conditionOptions = createOptionArea(hiddenSheet, "Condition", conditions, defaultStyle);
+    Name analyteOptions = createOptionArea(hiddenSheet, "Analyte", analytes, defaultStyle);
+    Name speciesOptions = createOptionArea(hiddenSheet, "Species", species, defaultStyle);
+    Name specimenOptions = createOptionArea(hiddenSheet, "Specimen", specimen, defaultStyle);
 
     addDataValidation(sheet,
         EditColumn.ANALYSIS.columnIndex(),

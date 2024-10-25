@@ -185,7 +185,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       // make sure to create the visible sheet first
       Sheet hiddenSheet = workbook.createSheet("hidden");
       Name digestionMethodArea = createOptionArea(hiddenSheet, "Digestion Method",
-          DigestionMethod.getOptions());
+          DigestionMethod.getOptions(), defaultStyle);
 
       addDataValidation(sheet,
           ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(), startIndex,
