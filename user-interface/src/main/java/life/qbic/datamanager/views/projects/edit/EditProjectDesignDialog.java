@@ -4,12 +4,13 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.datamanager.views.events.ProjectUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
+import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
 
 
 /**
@@ -27,12 +28,14 @@ public class EditProjectDesignDialog extends DialogWindow {
 
   public EditProjectDesignDialog(ProjectInformation project) {
     super();
+    addClassName("large-dialog");
     var content = new Div();
     content.addClassName("vertical-list");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     setHeaderTitle("Project Design");
-    content.add(new Span(project.getProjectTitle()));
+    content.add(Heading.withText("Project ID"));
+    content.add(new SimpleParagraph(project.getProjectId()));
     form = new EditProjectDesignForm();
     form.setContent(project);
     content.add(form);

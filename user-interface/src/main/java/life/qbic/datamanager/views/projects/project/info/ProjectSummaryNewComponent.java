@@ -23,7 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider;
@@ -35,7 +34,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.DetailBox;
-import life.qbic.datamanager.views.general.HeadingWithIcon;
+import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.general.IconLabel;
 import life.qbic.datamanager.views.general.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.PageArea;
@@ -126,6 +125,7 @@ public class ProjectSummaryNewComponent extends PageArea {
     var info = new ProjectInformation();
     info.setProjectTitle(project.getProjectIntent().projectTitle().title());
     info.setProjectObjective(project.getProjectIntent().objective().objective());
+    info.setProjectId(project.getProjectCode().value());
     return info;
   }
 
@@ -316,10 +316,10 @@ public class ProjectSummaryNewComponent extends PageArea {
         new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
     var content = new SectionContent();
     content.add(
-        HeadingWithIcon.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
+        Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
     content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
         projectInformation.projectTitle())));
-    content.add(HeadingWithIcon.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective"));
+    content.add(Heading.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective"));
     content.add(new SimpleParagraph(project.getProjectIntent().objective().objective()));
     projectDesignSection.setContent(content);
   }
@@ -339,7 +339,7 @@ public class ProjectSummaryNewComponent extends PageArea {
     var header = new SectionHeader(
         new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
             projectOverview.projectTitle()), Size.LARGE));
-    var crateExportBtn = new Button("Export as RO-Crate");
+    var crateExportBtn = new Button("Export Project Summary");
     crateExportBtn.addClickListener(event -> {
       try {
         triggerRoCrateDownload();

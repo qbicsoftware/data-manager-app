@@ -29,6 +29,7 @@ public class EditProjectDesignForm extends FormLayout {
 
   private TextArea objectiveField;
 
+
   public EditProjectDesignForm() {
     super();
     addClassName("form-content");
@@ -56,7 +57,9 @@ public class EditProjectDesignForm extends FormLayout {
     binder.forField(objectiveField).withValidator(it -> !it.isBlank(), "Please provide a project objective" )
         .bind(ProjectInformation::getProjectObjective, ProjectInformation::setProjectObjective);
 
-    add(titleField, objectiveField);
+    add( titleField, objectiveField);
+    setColspan(titleField, 2);
+    setColspan(objectiveField, 2);
 
   }
 

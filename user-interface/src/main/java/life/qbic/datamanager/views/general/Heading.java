@@ -12,37 +12,37 @@ import com.vaadin.flow.component.icon.VaadinIcon;
  *
  * @since <version tag>
  */
-public class HeadingWithIcon extends Div {
+public class Heading extends Div {
 
   private Icon icon;
 
   private Span text;
 
-  private HeadingWithIcon() {
+  private Heading() {
     addClassName("heading-with-icon");
     this.icon = VaadinIcon.VAADIN_H.create();
     this.text = new Span();
     rebuild();
   }
 
-  public static HeadingWithIcon createEmpty() {
-    return new HeadingWithIcon();
+  public static Heading createEmpty() {
+    return new Heading();
   }
 
-  public static HeadingWithIcon withIcon(Icon icon) {
-    var headerWithIcon = new HeadingWithIcon();
+  public static Heading withIcon(Icon icon) {
+    var headerWithIcon = new Heading();
     headerWithIcon.setIcon(icon);
     return headerWithIcon;
   }
 
-  public static HeadingWithIcon withText(String text) {
-    var headerWithText = new HeadingWithIcon();
+  public static Heading withText(String text) {
+    var headerWithText = new Heading();
     headerWithText.setText(text);
     return headerWithText;
   }
 
-  public static HeadingWithIcon withIconAndText(Icon icon, String text) {
-    var headerWithIconAndText = new HeadingWithIcon();
+  public static Heading withIconAndText(Icon icon, String text) {
+    var headerWithIconAndText = new Heading();
     headerWithIconAndText.setIcon(icon);
     headerWithIconAndText.setCustomText(text);
     return headerWithIconAndText;

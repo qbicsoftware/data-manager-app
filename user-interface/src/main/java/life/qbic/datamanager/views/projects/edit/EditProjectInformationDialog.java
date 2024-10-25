@@ -157,6 +157,8 @@ public class EditProjectInformationDialog extends DialogWindow {
 
   public static final class ProjectInformation implements Serializable {
 
+    private String projectId = "";
+
     @Serial
     private static final long serialVersionUID = -7260109309939021850L;
     @NotEmpty
@@ -221,6 +223,14 @@ public class EditProjectInformationDialog extends DialogWindow {
 
     public String getProjectObjective() {
       return projectObjective;
+    }
+
+    public void setProjectId(String projectId) {
+      this.projectId = projectId;
+    }
+
+    public String getProjectId() {
+      return projectId;
     }
 
     @Override
