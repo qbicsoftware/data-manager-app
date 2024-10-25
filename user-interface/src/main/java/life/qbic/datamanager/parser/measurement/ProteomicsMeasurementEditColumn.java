@@ -52,12 +52,14 @@ public enum ProteomicsMeasurementEditColumn implements Column {
             "A visual aid to simplify sample navigation for the person managing the metadata. Will be ignored after upload.");
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
-        case TECHNICAL_REPLICATE_NAME -> null;
+        case TECHNICAL_REPLICATE_NAME -> new Helper("Free text, e.g. Sample 1A, Sample 1B",
+            "Repeated measurements of the same sample that represent independent measures of the random noise associated with protocols or equipment.");
         case ORGANISATION_ID -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
             """.formatted(ORGANISATION_ID.headerName()));
-        case ORGANISATION_NAME -> null;
+        case ORGANISATION_NAME -> new Helper("Free text, e.g. University of Tübingen",
+            "The name of the organisation where the measurement has been conducted.");
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Center",
             "The facility's name within the organisation.");
         case MS_DEVICE -> new Helper("CURIE (ontology), e.g. NCIT:C12434", """
@@ -65,14 +67,15 @@ public enum ProteomicsMeasurementEditColumn implements Column {
             We expect an ontology term CURIE.
             Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your instrument.
             """.formatted(MS_DEVICE.headerName()));
-        case MS_DEVICE_NAME -> null;
+        case MS_DEVICE_NAME -> new Helper("Free text, e.g. Illumina HiSeq",
+            "The name of the MS device model that has been used for the measurement.");
         case CYCLE_FRACTION_NAME -> new Helper("Free text, e.g. Fraction01, AB",
             "Sometimes a sample is fractionated and all fractions are measured. With this property you can indicate which fraction it is.");
         case DIGESTION_METHOD -> new Helper("Enumeration, Select a value from the dropdown",
             "Method that has been used to break proteins into peptides. Please use the dropdown menu to select one of the values.");
-        case DIGESTION_ENZYME ->
-            new Helper("Free text", "Information about the enzymes used for the proteolytic.");
-        case ENRICHMENT_METHOD -> new Helper("Free text",
+        case DIGESTION_ENZYME -> new Helper("Free text, e.g. Trypsin, Chymotrypsin",
+            "Information about the enzymes used for the proteolytic.");
+        case ENRICHMENT_METHOD -> new Helper("Free text, e.g. Phosphopeptide Enrichment",
             "Enrichment of proteins or peptides of different characteristics.");
         case INJECTION_VOLUME -> new Helper("Whole number, e.g. 1, 6, 8",
             "The sample volume injected into the LC column in microliter.");
@@ -80,10 +83,10 @@ public enum ProteomicsMeasurementEditColumn implements Column {
             "The type of column that has been used.");
         case LCMS_METHOD -> new Helper("Free text",
             "Laboratory specific methods that have been used for LCMS measurement.");
-        case LABELING_TYPE -> new Helper("Free text",
+        case LABELING_TYPE -> new Helper("Free text, e.g. Dimethyl, SILAC",
             "The label type that has been used to label the sample for measurement.");
-        case LABEL ->
-            new Helper("Free text", "The label value for the label type that has been used.");
+        case LABEL -> new Helper("Free text, e.g. Light, Medium, Heavy",
+            "The label value for the label type that has been used.");
         case COMMENT ->
             new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
       };

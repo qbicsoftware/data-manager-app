@@ -50,7 +50,8 @@ public enum NGSMeasurementEditColumn implements Column {
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
             """.formatted(ORGANISATION_ID.headerName()));
-        case ORGANISATION_NAME -> null;
+        case ORGANISATION_NAME -> new Helper("Free text, e.g. University of Tübingen",
+            "The name of the organisation where the measurement has been conducted.");
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Centre",
             "The facilities name within the organisation (group name, etc.)");
         case INSTRUMENT -> new Helper("CURIE (ontology), e.g. EFO:0008637", """
