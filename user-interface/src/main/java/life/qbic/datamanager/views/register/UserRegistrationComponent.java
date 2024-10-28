@@ -55,7 +55,8 @@ public class UserRegistrationComponent extends Div {
 
   private final H2 titleSpan = new H2("Register");
 
-  private final Binder<UserRegistrationInformation> registrationInformationBinder = new Binder<>();
+  private final Binder<UserRegistrationInformation> registrationInformationBinder = new Binder<>(
+      UserRegistrationInformation.class);
 
   private final transient UserInformationService userInformationService;
 

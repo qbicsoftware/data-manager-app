@@ -34,7 +34,7 @@ public class SetNewPasswordComponent extends Div {
 
   private final Div notificationLayout = new Div();
 
-  private final Binder<String> passwordResetBinder = new Binder<>();
+  private final Binder<String> passwordResetBinder = new Binder<>(String.class);
 
   public SetNewPasswordComponent() {
     addClassName("set-new-password-component");
