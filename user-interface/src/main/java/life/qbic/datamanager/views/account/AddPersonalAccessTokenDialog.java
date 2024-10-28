@@ -51,7 +51,7 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
     });
     expirationDate.addClassName("expiration-date");
     expirationDate.setValue(selectableExpirationDates.get(0));
-    personalAccessTokenDTOBinder = new Binder<>(PersonalAccessTokenFrontendBean.class);
+    personalAccessTokenDTOBinder = new Binder<>();
     personalAccessTokenDTOBinder.forField(tokenDescription)
         .asRequired("Please provide a token description")
         .bind((PersonalAccessTokenFrontendBean::tokenDescription),
