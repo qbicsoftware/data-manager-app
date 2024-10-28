@@ -51,7 +51,8 @@ public class UserRegistrationOrcIdComponent extends Div {
 
   private final Div description = new Div();
 
-  private final Binder<UserRegistrationOrcIdInformation> registrationInformationBinder = new Binder<>();
+  private final Binder<UserRegistrationOrcIdInformation> registrationInformationBinder = new Binder<>(
+      UserRegistrationOrcIdInformation.class);
 
   private final transient UserInformationService userInformationService;
 

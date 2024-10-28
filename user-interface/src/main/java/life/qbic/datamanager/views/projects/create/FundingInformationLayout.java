@@ -22,7 +22,8 @@ public class FundingInformationLayout extends Div implements
     HasBinderValidation<FundingInformationContainer> {
 
   private final FundingField fundingField = new FundingField("");
-  private final Binder<FundingInformationContainer> fundingEntryBinder = new Binder<>();
+  private final Binder<FundingInformationContainer> fundingEntryBinder = new Binder<>(
+      FundingInformationContainer.class);
   private static final String TITLE = "Funding Information";
 
   /**
