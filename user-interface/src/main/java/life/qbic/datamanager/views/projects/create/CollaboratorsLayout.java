@@ -32,7 +32,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
 
   public CollaboratorsLayout() {
 
-    collaboratorsBinder = new Binder<>(ProjectCollaborators.class);
+    collaboratorsBinder = new Binder<>();
     collaboratorsBinder.setValidatorsDisabled(true);
     collaboratorsBinder.setBean(new ProjectCollaborators());
     collaboratorsBinder.setFieldsValidationStatusChangeListenerEnabled(true);

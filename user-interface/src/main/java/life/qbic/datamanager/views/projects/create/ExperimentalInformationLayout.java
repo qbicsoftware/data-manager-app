@@ -52,7 +52,7 @@ public class ExperimentalInformationLayout extends Div implements
     MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
     TextField nameField = nameField();
 
-    experimentalInformationBinder = new Binder<>(ExperimentalInformation.class);
+    experimentalInformationBinder = new Binder<>();
 
     ComboBox<BioIcon> speciesIconBox = bioIconComboboxFactory.iconBox(SampleSourceType.SPECIES,
         "Species icon");

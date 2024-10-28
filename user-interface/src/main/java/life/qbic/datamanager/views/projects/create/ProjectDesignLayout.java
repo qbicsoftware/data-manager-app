@@ -52,7 +52,7 @@ public class ProjectDesignLayout extends Div implements HasBinderValidation<Proj
   private final TextField titleField = new TextField("Title");
   private final TextArea projectDescription = new TextArea("Description");
   private final Button generateCodeButton = new Button(new Icon(VaadinIcon.REFRESH));
-  private final Binder<ProjectDesign> projectDesignBinder = new Binder<>(ProjectDesign.class);
+  private final Binder<ProjectDesign> projectDesignBinder = new Binder<>();
   private final transient ProjectInformationService projectInformationService;
   private final transient FinanceService financeService;
   private final Span projectDesignDescription = new Span(
