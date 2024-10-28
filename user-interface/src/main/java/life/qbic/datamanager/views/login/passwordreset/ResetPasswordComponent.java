@@ -41,7 +41,7 @@ public class ResetPasswordComponent extends Div {
   private final TextField emailField = new TextField("Email");
   private final Button confirmButton = new Button("Send");
   private final Div notificationLayout = new Div();
-  private final Binder<String> emailBinder = new Binder<>();
+  private final Binder<String> emailBinder = new Binder<>(String.class);
   private final transient UserInformationService userInformationService;
 
   public ResetPasswordComponent(UserInformationService userInformationService) {
