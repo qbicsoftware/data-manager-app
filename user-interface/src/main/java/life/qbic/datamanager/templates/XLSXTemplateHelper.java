@@ -3,6 +3,7 @@ package life.qbic.datamanager.templates;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.SheetVisibility;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
@@ -40,7 +42,9 @@ public class XLSXTemplateHelper {
   private static final Random RANDOM = new Random();
   private static final byte[] DARK_GREY = {(byte) 119, (byte) 119, (byte) 119};
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
+  private static final byte[] LINK_BLUE = {(byte) 9, (byte) 105, (byte) 218};
   private static final int COLUMN_MAX_WIDTH = 255;
+  private static final String PROPERTY_INFORMATION_SHEET_NAME = "Property Information";
 
   protected XLSXTemplateHelper() {
     //hide constructor as static methods only are used
@@ -157,9 +161,33 @@ public class XLSXTemplateHelper {
     CellStyle boldStyle = workbook.createCellStyle();
     Font fontBold = workbook.createFont();
     fontBold.setBold(true);
-    boldStyle.setFont(fontBold);
+    fontBold.setFontName("Open Sans");
+    fontBold.setFontHeightInPoints((short) 12);
 
+    boldStyle.setFont(fontBold);
     return boldStyle;
+  }
+
+  public static CellStyle createDefaultCellStyle(Workbook workbook) {
+    CellStyle boldStyle = workbook.createCellStyle();
+    Font fontBold = workbook.createFont();
+    fontBold.setFontName("Open Sans");
+    fontBold.setFontHeightInPoints((short) 12);
+
+    boldStyle.setFont(fontBold);
+    return boldStyle;
+  }
+
+  public static CellStyle createLinkHeaderCellStyle(Workbook workbook) {
+    CellStyle linkHeaderStyle = workbook.createCellStyle();
+    XSSFFont linkFont = (XSSFFont) workbook.createFont();
+    linkFont.setColor(new XSSFColor(LINK_BLUE, new DefaultIndexedColorMap()));
+    linkFont.setBold(true);
+    linkFont.setFontName("Open Sans");
+    linkFont.setFontHeightInPoints((short) 12);
+
+    linkHeaderStyle.setFont(linkFont);
+    return linkHeaderStyle;
   }
 
   public static CellStyle createReadOnlyCellStyle(Workbook workbook) {
@@ -168,6 +196,8 @@ public class XLSXTemplateHelper {
     readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
     XSSFFont font = (XSSFFont) workbook.createFont();
     font.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
+    font.setFontName("Open Sans");
+    font.setFontHeightInPoints((short) 12);
     readOnlyStyle.setFont(font);
     return readOnlyStyle;
   }
@@ -180,6 +210,8 @@ public class XLSXTemplateHelper {
     XSSFFont fontHeader = (XSSFFont) workbook.createFont();
     fontHeader.setBold(true);
     fontHeader.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
+    fontHeader.setFontName("Open Sans");
+    fontHeader.setFontHeightInPoints((short) 12);
     readOnlyHeaderStyle.setFont(fontHeader);
     return readOnlyHeaderStyle;
   }
@@ -262,6 +294,8 @@ public class XLSXTemplateHelper {
    * Adds data validation to an area in the spreadsheet. Requires the valid options to be set
    * beforehand as a name. This can be done by using {@link #createOptionArea(Sheet, String, List)}
    *
+   * Please note: There must not exist any data validation for the cell area provided.
+   *
    * @param sheet         the sheet in which the validation should be added
    * @param startColIdx   the start column of the validated values >= 0
    * @param startRowIdx   the start row of the validated values >= 0
@@ -276,16 +310,156 @@ public class XLSXTemplateHelper {
         stopRowIdx,
         startColIdx,
         stopColIdx);
+
+    if (hasAnyDataValidation(sheet, startRowIdx, startColIdx, stopRowIdx, stopColIdx)) {
+      throw new IllegalStateException(
+          "Cannot add data validation as there is already a data validation present at "
+              + validatedCells.getCellRangeAddress(0).formatAsString(sheet.getSheetName(), true));
+    }
+
     DataValidationHelper dataValidationHelper = sheet.getDataValidationHelper();
     DataValidationConstraint formulaListConstraint = dataValidationHelper
         .createFormulaListConstraint(allowedValues.getNameName());
-    DataValidation validation = dataValidationHelper.createValidation(formulaListConstraint,
-        validatedCells);
+
+    var validation = dataValidationHelper.createValidation(formulaListConstraint, validatedCells);
+
     validation.setSuppressDropDownArrow(true); // shows dropdown if true
     validation.setShowErrorBox(true);
     validation.createErrorBox("Invalid choice", "Please select a value from the dropdown list.");
     sheet.addValidationData(validation);
   }
+
+  /**
+   * Adds a property information description to the workbook. Creates a sheet called
+   * {@link #PROPERTY_INFORMATION_SHEET_NAME} if it does not exist yet.
+   *
+   * @param workbook         the workbook to take
+   * @param columnName       the column name / property name to add information to
+   * @param isMandatory      is filling the column mandatory?
+   * @param descriptionTitle allowed value type and example
+   * @param description      the description of the input
+   * @param headerStyle      the style used for headers in the property information sheet
+   */
+  public static void addPropertyInformation(Workbook workbook,
+      String columnName,
+      boolean isMandatory,
+      String descriptionTitle,
+      String description,
+      CellStyle defaultStyle,
+      CellStyle headerStyle) {
+    // add row with information
+    Sheet propertyInformationSheet = Optional
+        .ofNullable(workbook.getSheet(PROPERTY_INFORMATION_SHEET_NAME))
+        .orElseGet(() -> workbook.createSheet(PROPERTY_INFORMATION_SHEET_NAME));
+    int lastRowIdx = Math.max(propertyInformationSheet.getLastRowNum(), 0);
+    if (lastRowIdx == 0) {
+      //we do not have a header yet
+      Row row = getOrCreateRow(propertyInformationSheet, 0);
+      Cell propertyNameCell = getOrCreateCell(row, 0);
+      propertyNameCell.setCellStyle(headerStyle);
+      propertyNameCell.setCellValue("Property Name");
+
+      Cell provisionCell = getOrCreateCell(row, 1);
+      provisionCell.setCellStyle(headerStyle);
+      provisionCell.setCellValue("Provision");
+
+      Cell allowedValuesCell = getOrCreateCell(row, 2);
+      allowedValuesCell.setCellStyle(headerStyle);
+      allowedValuesCell.setCellValue("Allowed Values");
+
+      Cell descriptionCell = getOrCreateCell(row, 3);
+      descriptionCell.setCellStyle(headerStyle);
+      descriptionCell.setCellValue("Description");
+
+    }
+    lastRowIdx++;
+    Row row = getOrCreateRow(propertyInformationSheet, lastRowIdx);
+    Cell propertyNameCell = getOrCreateCell(row, 0);
+    propertyNameCell.setCellStyle(defaultStyle);
+    propertyNameCell.setCellValue(columnName);
+
+    Cell provisionCell = getOrCreateCell(row, 1);
+    provisionCell.setCellStyle(defaultStyle);
+    provisionCell.setCellValue(isMandatory ? "mandatory" : "optional");
+
+    Cell allowedValuesCell = getOrCreateCell(row, 2);
+    allowedValuesCell.setCellStyle(defaultStyle);
+    allowedValuesCell.setCellValue(descriptionTitle);
+
+    Cell descriptionCell = getOrCreateCell(row, 3);
+    descriptionCell.setCellStyle(defaultStyle);
+    descriptionCell.setCellValue(description);
+
+    setColumnAutoWidth(propertyInformationSheet, 0, 3);
+  }
+
+
+  /**
+   * Adds an input prompt box to cells within the selected range. If there is already a validation
+   * for exactly those cells, the prompt box of the existing validation is overwritten.
+   *
+   * @param sheet       the sheet in which the cells are
+   * @param startColIdx the index of the first column
+   * @param startRowIdx the index of the first row
+   * @param stopColIdx  the index of the last column
+   * @param stopRowIdx  the index of the last row
+   * @param title       the title of the message in the prompt box
+   * @param content     the content of the prompt box
+   */
+  public static void addInputHelper(Sheet sheet, int startColIdx, int startRowIdx,
+      int stopColIdx, int stopRowIdx, String title, String content) {
+    CellRangeAddressList validatedCells = new CellRangeAddressList(startRowIdx,
+        stopRowIdx,
+        startColIdx,
+        stopColIdx);
+
+    var validation = getValidationsExactlyCovering(sheet, validatedCells.getCellRangeAddresses()[0])
+        .stream()
+        .findFirst() // the first is applied first
+        .orElse(createFakeValidation(sheet, validatedCells));
+
+    validation.setShowPromptBox(true);
+    validation.createPromptBox(title, content);
+    sheet.addValidationData(validation);
+  }
+
+  private static DataValidation createFakeValidation(Sheet sheet,
+      CellRangeAddressList validatedCells) {
+    DataValidationHelper dataValidationHelper = sheet.getDataValidationHelper();
+    DataValidationConstraint alwaysTrue = dataValidationHelper.createCustomConstraint("TRUE");
+    return dataValidationHelper.createValidation(alwaysTrue,
+        validatedCells);
+  }
+
+  private static List<DataValidation> getValidationsExactlyCovering(Sheet sheet,
+      CellRangeAddress cellRangeAddress) {
+    List<DataValidation> validations = new ArrayList<>();
+    for (DataValidation dataValidation : sheet.getDataValidations()) {
+      for (CellRangeAddress rangeAddress : dataValidation.getRegions().getCellRangeAddresses()) {
+        if (rangeAddress.equals(cellRangeAddress)) {
+          validations.add(dataValidation);
+        }
+      }
+    }
+    return validations;
+  }
+
+  private static boolean hasAnyDataValidation(Sheet sheet, int startRowIdx, int startColIdx,
+      int stopRowIdx, int stopColIdx) {
+    for (DataValidation dataValidation : sheet.getDataValidations()) {
+      CellRangeAddressList regions = dataValidation.getRegions();
+      for (int i = 0; i < regions.getCellRangeAddresses().length; i++) {
+        CellRangeAddress cellRangeAddress = regions.getCellRangeAddress(i);
+        if (cellRangeAddress.intersects(
+            new CellRangeAddress(startRowIdx, stopRowIdx, startColIdx, stopColIdx))) {
+          return true;
+        }
+      }
+    }
+    return false;
+
+  }
+
 
 
   public static void hideSheet(Workbook workbook, Sheet sheet) {

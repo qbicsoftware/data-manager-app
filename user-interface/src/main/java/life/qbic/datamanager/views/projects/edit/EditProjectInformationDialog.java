@@ -66,6 +66,7 @@ public class EditProjectInformationDialog extends DialogWindow {
   }
 
   public void setProjectInformation(ProjectInformation projectInformation) {
+    // projectInformation("my project")
     binder.setBean(projectInformation);
     try {
       oldValue = new ProjectInformation();
