@@ -21,8 +21,8 @@ public enum RegisterColumn implements Column {
   BIOLOGICAL_REPLICATE("Biological Replicate", 2, false, false),
   CONDITION("Condition", 3, false, true),
   SPECIES("Species", 4, false, true),
-  ANALYTE("Analyte", 5, false, true),
-  SPECIMEN("Specimen", 6, false, true),
+  SPECIMEN("Specimen", 5, false, true),
+  ANALYTE("Analyte", 6, false, true),
   COMMENT("Comment", 7, false, false);
 
   private static final ExampleProvider exampleProvider = column -> {

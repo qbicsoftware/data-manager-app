@@ -21,8 +21,8 @@ public enum EditColumn implements Column {
   BIOLOGICAL_REPLICATE("Biological Replicate", 3, false, false),
   CONDITION("Condition", 4, false, true),
   SPECIES("Species", 5, false, true),
-  ANALYTE("Analyte", 6, false, true),
-  SPECIMEN("Specimen", 7, false, true),
+  SPECIMEN("Specimen", 6, false, true),
+  ANALYTE("Analyte", 7, false, true),
   COMMENT("Comment", 8, false, false);
 
   private static final ExampleProvider exampleProvider = column -> {
