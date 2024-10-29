@@ -159,6 +159,18 @@ public class SampleBatchRegistrationTemplate {
         MAX_ROW_INDEX_TO,
         specimenOptions);
 
+    for (var column : RegisterColumn.values()) {
+      column.getFillHelp().ifPresent(
+          helper -> XLSXTemplateHelper.addInputHelper(sheet,
+              column.columnIndex(),
+              startIndex,
+              column.columnIndex(),
+              MAX_ROW_INDEX_TO,
+              helper.exampleValue(),
+              helper.description())
+      );
+    }
+
     setColumnAutoWidth(sheet, 0, RegisterColumn.maxColumnIndex());
     // Auto width ignores cell validation values (e.g. a list of valid entries). So we need
     // to set them explicit
