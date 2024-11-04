@@ -1,0 +1,23 @@
+---
+Confounding Variables
+---
+erDiagram
+    CVar["Confounding Variable"] {
+        Reference variableId
+        String name
+    }
+    CVarLevel["Confounding Variable Level"] {
+        Reference sampleId
+        Reference variableId
+        String value
+    }
+    SAMPLE["Sample"] {
+        Reference sampleId
+        String sampleName
+    }
+    EXPERIMENT["Experiment"] {
+    }
+    EXPERIMENT one--zero or more SAMPLE : contains
+EXPERIMENT one--zero or more CVar: contains
+CVarLevel 1+--1 CVar: describes
+CVarLevel zero or more--one SAMPLE: describes
