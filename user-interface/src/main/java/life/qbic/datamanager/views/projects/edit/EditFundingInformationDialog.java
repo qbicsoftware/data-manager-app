@@ -5,9 +5,14 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.binder.Validator;
+import java.util.Objects;
 import life.qbic.datamanager.views.events.FundingInformationUpdateEvent;
-import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.funding.BoundFundingField;
+import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.funding.FundingField;
+import life.qbic.datamanager.views.general.funding.FundingInputForm;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.strategy.DialogClosingStrategy;
 
@@ -23,18 +28,23 @@ public class EditFundingInformationDialog extends DialogWindow {
   private DialogClosingStrategy noChangesClosingStrategy;
   private DialogClosingStrategy warningClosingStrategy;
 
-  private FundingInformationForm form;
+  private FundingInputForm form;
+
+  private ProjectInformation projectInformation;
 
   public EditFundingInformationDialog(ProjectInformation project) {
     super();
+    this.projectInformation = Objects.requireNonNull(project);
     addClassName("large-dialog");
     var content = new Div();
     content.addClassName("horizontal-list");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     setHeaderTitle("Funding Information");
-    form = new FundingInformationForm();
-    form.setContent(project);
+    var fundingField = FundingField.createHorizontal("Funding");
+    form = FundingInputForm.create(new BoundFundingField(fundingField,
+        Validator.from((FundingEntry value) -> !value.getLabel().isBlank(), "")));
+    form.setContent(project.getFundingEntry().orElse(new FundingEntry("", "")));
     content.add(form);
     add(content);
   }
@@ -50,8 +60,9 @@ public class EditFundingInformationDialog extends DialogWindow {
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     try {
-      var projectInfo = form.fromUserInput();
-      fireEvent(new FundingInformationUpdateEvent(this, true, projectInfo));
+      var fundingEntry = form.fromUserInput();
+      projectInformation.setFundingEntry(fundingEntry);
+      fireEvent(new FundingInformationUpdateEvent(this, true, projectInformation));
     } catch (ValidationException e) {
       // Do nothing, the user needs to correct the input
     }
@@ -66,8 +77,8 @@ public class EditFundingInformationDialog extends DialogWindow {
     }
   }
 
-  public void addUpdateEventListener(ComponentEventListener<ProjectDesignUpdateEvent> listener) {
-    addListener(ProjectDesignUpdateEvent.class, listener);
+  public void addUpdateEventListener(ComponentEventListener<FundingInformationUpdateEvent> listener) {
+    addListener(FundingInformationUpdateEvent.class, listener);
   }
 
 }

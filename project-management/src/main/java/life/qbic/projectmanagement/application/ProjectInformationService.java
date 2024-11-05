@@ -161,7 +161,7 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public void addFunding(ProjectId projectId, String label, String referenceId) {
+  public void setFunding(ProjectId projectId, String label, String referenceId) {
     Funding funding = Funding.of(label, referenceId);
     var project = loadProject(projectId);
     project.setFunding(funding);

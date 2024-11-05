@@ -174,11 +174,16 @@ public class ProjectSummaryNewComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project found"));
     var experiments = experimentInformationService.findAllForProject(projectId);
     reloadProjectDesign(projectOverview, fullProject, experiments);
+    reloadFundingInfoSection(fullProject);
   }
 
   private void reloadProjectDesign(ProjectOverview projectOverview, Project project,
       List<Experiment> experiments) {
     buildDesignSection(projectOverview, project);
+  }
+
+  private void reloadFundingInfoSection(Project project) {
+    buildFundingInformationSection(project, convertToInfo(project));
   }
 
   private void setContent(ProjectOverview projectOverview, Project fullProject,
@@ -233,7 +238,7 @@ public class ProjectSummaryNewComponent extends PageArea {
       editFundingInfoDialog = buildAndWireEditFinanceInfo(projectInformation);
       editFundingInfoDialog.open();
       editFundingInfoDialog.addUpdateEventListener(event -> {
-        updateProjectDesign(context.projectId().orElseThrow(), event.content().orElseThrow());
+        updateFundingInfo(context.projectId().orElseThrow(), event.content().orElseThrow().getFundingEntry().orElseThrow());
         reloadInformation(context);
         editFundingInfoDialog.close();
         var toast = notificationFactory.toast("project.updated.success",
@@ -263,7 +268,14 @@ public class ProjectSummaryNewComponent extends PageArea {
 
   private EditFundingInformationDialog buildAndWireEditFinanceInfo(
       ProjectInformation projectInformation) {
-    return new EditFundingInformationDialog(projectInformation);
+    var dialog =  new EditFundingInformationDialog(projectInformation);
+    var defaultStrategy = new ImmediateClosingStrategy(dialog);
+    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        "project.edit.cancel-confirmation.message", getLocale());
+    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
+    dialog.setDefaultStrategy(defaultStrategy);
+    dialog.setWarningStrategy(withWarning);
+    return dialog;
   }
 
   private void buildExperimentInformationSection(ProjectOverview projectInformation,
@@ -366,6 +378,10 @@ public class ProjectSummaryNewComponent extends PageArea {
   private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
     projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
     projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
+  }
+
+  private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
+    projectInformationService.setFunding(projectId, fundingEntry.getLabel(), fundingEntry.getReferenceId());
   }
 
   private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {

@@ -20,6 +20,7 @@ public class FundingField extends CustomField<FundingEntry> implements HasClient
   private static final long serialVersionUID = 839203706554301417L;
   private final TextField label;
   private final TextField referenceId;
+  private final Div layoutFundingInput;
 
   public FundingField(String fieldLabel) {
     super();
@@ -34,7 +35,18 @@ public class FundingField extends CustomField<FundingEntry> implements HasClient
     setLabel(fieldLabel);
     label.addValidationStatusChangeListener(e -> validate());
     referenceId.addValidationStatusChangeListener(e -> validate());
-    layoutComponent();
+    layoutFundingInput = layoutFundingInput(label, referenceId);
+    add(layoutFundingInput);
+  }
+
+  public static FundingField createVertical(String fieldLabel) {
+    return new FundingField(fieldLabel);
+  }
+
+  public static FundingField createHorizontal(String fieldLabel) {
+    var field = new FundingField(fieldLabel);
+    field.layoutFundingInput.addClassNames("flex-horizontal", "gap-m");
+    return field;
   }
 
   protected void validate() {

@@ -21,7 +21,7 @@ public class FundingInformationUpdateEvent extends ComponentEvent<EditFundingInf
     this.projectInformation = projectInformation;
   }
 
-  public Optional<ProjectInformation> projectInformation() {
+  public Optional<ProjectInformation> content() {
     return Optional.ofNullable(projectInformation);
   }
 }

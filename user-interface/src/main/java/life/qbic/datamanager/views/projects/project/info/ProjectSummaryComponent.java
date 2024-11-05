@@ -381,7 +381,7 @@ public class ProjectSummaryComponent extends PageArea {
         projectInformationContent.getProjectManager().toDomainContact());
 
     projectInformationContent.getFundingEntry().ifPresentOrElse(
-        funding -> projectInformationService.addFunding(projectId, funding.getLabel(),
+        funding -> projectInformationService.setFunding(projectId, funding.getLabel(),
             funding.getReferenceId()), () -> projectInformationService.removeFunding(projectId));
 
     projectInformationContent.getResponsiblePerson().ifPresentOrElse(contact ->

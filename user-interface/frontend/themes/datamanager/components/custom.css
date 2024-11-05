@@ -1,6 +1,7 @@
 /* This file defines the styling and layout for all custom components. The components are sorted alphabetically */
 
 /*Make sure to import the css classes for each custom component to avoid cluttering the master-style-sheet */
+@import "all.css";
 @import "button.css";
 @import "card.css";
 @import "combobox.css";
