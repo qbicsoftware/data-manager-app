@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
   <modules>
     <module>user-interface</module>
     <module>identity</module>
@@ -35,7 +35,7 @@
     <maven.compiler.target>17</maven.compiler.target>
     <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jackson.version>2.17.2</jackson.version>
+    <jackson.version>2.18.0</jackson.version>
   </properties>
 
   <parent>
@@ -150,7 +150,7 @@
       <dependency>
         <groupId>org.jobrunr</groupId>
         <artifactId>jobrunr-spring-boot-3-starter</artifactId>
-        <version>7.2.2</version>
+        <version>7.3.1</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -182,7 +182,7 @@
       <plugin>
         <groupId>org.codehaus.gmavenplus</groupId>
         <artifactId>gmavenplus-plugin</artifactId>
-        <version>3.0.2</version>
+        <version>4.0.1</version>
         <executions>
           <execution>
             <id>default</id>
@@ -217,7 +217,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.5.1</version>
         <configuration>
           <useModulePath>false</useModulePath>
           <includes>
