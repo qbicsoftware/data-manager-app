@@ -20,17 +20,48 @@ public class CancelConfirmationDialogFactory {
   private static final String DEFAULT_CONTENT = "By aborting the editing process and closing the dialog, you will loose all information entered.";
   private static final String DEFAULT_CONFIRM_TEXT = "Discard Changes";
   private static final Object[] EMPTY_PARAMETERS = new Object[]{};
-  private final MessageSource messageSource;
-
   private static final Logger log = LoggerFactory.logger(CancelConfirmationDialogFactory.class);
+  private final MessageSource messageSource;
 
 
   public CancelConfirmationDialogFactory(MessageSource messageSource) {
     this.messageSource = messageSource;
   }
 
+  private static com.vaadin.flow.component.Component createContentComponent(MessageType contentType,
+      String contentText) {
+    return switch (contentType) {
+      case HTML -> new Html("<div style=\"display:contents\">%s</div>".formatted(contentText));
+      case TEXT -> new Span(contentText);
+    };
+  }
+
+  /**
+   * Creates an instance of an {@link NotificationDialog} with title and message based on the
+   * provided key.
+   *
+   * @param key The message key to determine the content and title of the {@link NotificationDialog}.
+   * @param locale
+   * @return the notification dialog
+   * @since
+   */
+  public NotificationDialog cancelConfirmationDialog(String key, Locale locale) {
+    return buildDialog(key, locale);
+  }
+
   public NotificationDialog cancelConfirmationDialog(Consumer<ConfirmEvent> onCancelConfirmed,
       String key, Locale locale) {
+    var confirmCancelDialog = buildDialog(key, locale);
+    confirmCancelDialog.addCancelListener(event -> event.getSource().close());
+
+    confirmCancelDialog.addConfirmListener(event -> {
+      event.getSource().close();
+      onCancelConfirmed.accept(event);
+    });
+    return confirmCancelDialog;
+  }
+
+  private NotificationDialog buildDialog(String key, Locale locale) {
     String title = parseTitle(key, locale);
     MessageType contentType = parseMessageType(key, locale);
     String contentText = parseMessageText(key, locale);
@@ -45,23 +76,7 @@ public class CancelConfirmationDialogFactory {
     Button redButton = new Button(confirmText);
     redButton.addClassName("danger");
     confirmCancelDialog.setConfirmButton(redButton);
-
-    confirmCancelDialog.addCancelListener(event -> event.getSource().close());
-
-    confirmCancelDialog.addConfirmListener(event -> {
-      event.getSource().close();
-      onCancelConfirmed.accept(event);
-    });
     return confirmCancelDialog;
-
-  }
-
-  private static com.vaadin.flow.component.Component createContentComponent(MessageType contentType,
-      String contentText) {
-    return switch (contentType) {
-      case HTML -> new Html("<div style=\"display:contents\">%s</div>".formatted(contentText));
-      case TEXT -> new Span(contentText);
-    };
   }
 
   private String parseConfirmText(String key, Locale locale) {

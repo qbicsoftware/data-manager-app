@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.info;
+package life.qbic.datamanager.views.strategy;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -7,6 +7,8 @@ package life.qbic.datamanager.views.projects.project.info;
  *
  * @since <version tag>
  */
-public class FundingInformation {
+public interface DialogClosingStrategy {
+
+  void execute();
 
 }

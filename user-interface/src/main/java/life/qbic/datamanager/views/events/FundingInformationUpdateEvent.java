@@ -1,11 +1,9 @@
 package life.qbic.datamanager.views.events;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import java.util.Optional;
-import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
+import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import org.apache.poi.ss.formula.functions.T;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -14,16 +12,16 @@ import org.apache.poi.ss.formula.functions.T;
  *
  * @since <version tag>
  */
-public class ProjectUpdateEvent extends ComponentEvent<EditProjectDesignDialog> {
+public class FundingInformationUpdateEvent extends ComponentEvent<EditFundingInformationDialog> {
 
   private final ProjectInformation projectInformation;
 
-  public ProjectUpdateEvent(EditProjectDesignDialog source, boolean fromClient, ProjectInformation projectInformation) {
+  public FundingInformationUpdateEvent(EditFundingInformationDialog source, boolean fromClient, ProjectInformation projectInformation) {
     super(source, fromClient);
     this.projectInformation = projectInformation;
   }
 
-  public Optional<ProjectInformation> content() {
+  public Optional<ProjectInformation> projectInformation() {
     return Optional.ofNullable(projectInformation);
   }
 }

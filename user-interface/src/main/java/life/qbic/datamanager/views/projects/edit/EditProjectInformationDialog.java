@@ -180,6 +180,18 @@ public class EditProjectInformationDialog extends DialogWindow {
       return Optional.ofNullable(fundingEntry);
     }
 
+    public static ProjectInformation copy(ProjectInformation projectInformation) {
+      ProjectInformation copy = new ProjectInformation();
+      copy.projectId = projectInformation.projectId;
+      copy.projectTitle = projectInformation.projectTitle;
+      copy.projectObjective = projectInformation.projectObjective;
+      copy.fundingEntry = projectInformation.fundingEntry;
+      copy.principalInvestigator = projectInformation.principalInvestigator;
+      copy.responsiblePerson = projectInformation.responsiblePerson;
+      copy.projectManager = projectInformation.projectManager;
+      return copy;
+    }
+
     public void setFundingEntry(FundingEntry fundingEntry) {
       this.fundingEntry = fundingEntry;
     }

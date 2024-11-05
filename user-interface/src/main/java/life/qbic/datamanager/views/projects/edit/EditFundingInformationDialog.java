@@ -5,14 +5,11 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.spring.annotation.UIScope;
+import life.qbic.datamanager.views.events.FundingInformationUpdateEvent;
 import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
-import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
 import life.qbic.datamanager.views.strategy.DialogClosingStrategy;
-
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -21,26 +18,22 @@ import life.qbic.datamanager.views.strategy.DialogClosingStrategy;
  *
  * @since <version tag>
  */
-@UIScope
-public class EditProjectDesignDialog extends DialogWindow {
-
-  private final ProjectDesignForm form;
+public class EditFundingInformationDialog extends DialogWindow {
 
   private DialogClosingStrategy noChangesClosingStrategy;
-
   private DialogClosingStrategy warningClosingStrategy;
 
-  public EditProjectDesignDialog(ProjectInformation project) {
+  private FundingInformationForm form;
+
+  public EditFundingInformationDialog(ProjectInformation project) {
     super();
     addClassName("large-dialog");
     var content = new Div();
-    content.addClassName("vertical-list");
+    content.addClassName("horizontal-list");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
-    setHeaderTitle("Project Design");
-    content.add(Heading.withText("Project ID"));
-    content.add(new SimpleParagraph(project.getProjectId()));
-    form = new ProjectDesignForm();
+    setHeaderTitle("Funding Information");
+    form = new FundingInformationForm();
     form.setContent(project);
     content.add(form);
     add(content);
@@ -58,7 +51,7 @@ public class EditProjectDesignDialog extends DialogWindow {
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     try {
       var projectInfo = form.fromUserInput();
-      fireEvent(new ProjectDesignUpdateEvent(this, true, projectInfo));
+      fireEvent(new FundingInformationUpdateEvent(this, true, projectInfo));
     } catch (ValidationException e) {
       // Do nothing, the user needs to correct the input
     }
@@ -76,4 +69,5 @@ public class EditProjectDesignDialog extends DialogWindow {
   public void addUpdateEventListener(ComponentEventListener<ProjectDesignUpdateEvent> listener) {
     addListener(ProjectDesignUpdateEvent.class, listener);
   }
+
 }

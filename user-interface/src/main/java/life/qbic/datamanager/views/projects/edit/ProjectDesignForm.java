@@ -17,7 +17,7 @@ import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.Pr
  *
  * @since <version tag>
  */
-public class EditProjectDesignForm extends FormLayout {
+public class ProjectDesignForm extends FormLayout {
 
   private final Binder<ProjectInformation> binder;
 
@@ -29,8 +29,7 @@ public class EditProjectDesignForm extends FormLayout {
 
   private TextArea objectiveField;
 
-
-  public EditProjectDesignForm() {
+  public ProjectDesignForm() {
     super();
     addClassName("form-content");
     binder = new Binder<>(ProjectInformation.class);
@@ -64,7 +63,7 @@ public class EditProjectDesignForm extends FormLayout {
   }
 
   public void setContent(ProjectInformation project) {
-    oldValue = project;
+    oldValue = ProjectInformation.copy(project);
     binder.setBean(project);
   }
 
@@ -76,6 +75,14 @@ public class EditProjectDesignForm extends FormLayout {
 
   public boolean isValid() {
     return binder.isValid();
+  }
+
+  public boolean hasChanges() {
+    return binder.hasChanges() || hasChanged(oldValue, binder.getBean());
+  }
+
+  private boolean hasChanged(ProjectInformation oldValue, ProjectInformation newValue) {
+    return !oldValue.equals(newValue);
   }
 
 }

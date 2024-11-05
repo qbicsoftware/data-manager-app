@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.create;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
 import java.io.Serial;
 import java.io.Serializable;
 import life.qbic.datamanager.views.general.HasBinderValidation;
@@ -11,13 +12,7 @@ import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.create.FundingInformationLayout.FundingInformationContainer;
 import org.springframework.stereotype.Component;
 
-/**
- * <b>Funding Information Layout</b>
- *
- * <p>Layout which enables the user to input the information associated with the funding information
- * during project creation and validates the provided information</p>
- */
-@Component
+
 public class FundingInformationLayout extends Div implements
     HasBinderValidation<FundingInformationContainer> {
 
@@ -32,6 +27,17 @@ public class FundingInformationLayout extends Div implements
   public FundingInformationLayout() {
     initLayout();
     initFieldValidators();
+  }
+
+  public FundingInformationLayout(FundingEntry fundingEntry) {
+    this();
+    fundingField.setLabel(fundingEntry.getLabel());
+    fundingField.setReferenceId(fundingEntry.getReferenceId());
+  }
+
+  public void setFundingInformation(FundingEntry fundingEntry) {
+    fundingField.setLabel(fundingEntry.getLabel());
+    fundingField.setReferenceId(fundingEntry.getReferenceId());
   }
 
   private void initLayout() {
@@ -64,6 +70,12 @@ public class FundingInformationLayout extends Div implements
   public FundingEntry getFundingInformation() {
     FundingInformationContainer fundingInformationContainer = new FundingInformationContainer();
     fundingEntryBinder.writeBeanIfValid(fundingInformationContainer);
+    return fundingInformationContainer.getFundingEntry();
+  }
+
+  public FundingEntry getFundingInformationWithException() throws ValidationException {
+    FundingInformationContainer fundingInformationContainer = new FundingInformationContainer();
+    fundingEntryBinder.writeBean(fundingInformationContainer);
     return fundingInformationContainer.getFundingEntry();
   }
 
