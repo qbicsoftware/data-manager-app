@@ -552,9 +552,9 @@ CREATE TABLE `users`
 
 
 CREATE view data_management.project_measurements as
-SELECT `projects`.`projectId`               AS `projectId`,
-       `proteomics`.`amountPxpMeasurements` AS `amountPxpMeasurements`,
-       `ngs`.`amountNgsMeasurements`        AS `amountNgsMeasurements`
+SELECT `projects`.`projectId`                            AS `projectId`,
+       COALESCE(`proteomics`.`amountPxpMeasurements`, 0) AS `amountPxpMeasurements`, /*do not allow null values*/
+       COALESCE(`ngs`.`amountNgsMeasurements`, 0)        AS `amountNgsMeasurements` /*do not allow null values*/
 FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`              AS `projectId`,
                                                       count(ngs.`measurementCode`) AS `amountNgsMeasurements`
                                                FROM ngs_measurements ngs
