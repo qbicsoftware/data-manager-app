@@ -8,18 +8,16 @@ import java.util.List;
  * <b>Section Title</b>
  * <p>
  * Is e.g. used in {@link SectionHeader} and formats a section title.
+ * <p>
  *
- *  *<p></p>
- *  * <b>Relevant CSS</b>
- *  * <p>
- *  * The relevant CSS classes for this component are:
- *  *
- *  * <ul>
- *  *   <li><code>section-title</code></li>
- *  * </ul>
- *  *
+ * <b>Relevant CSS</b>
+ * <p>
+ * The relevant CSS classes for this component are:
+ * <ul>
+ * <li><code>section-title</code></li>
+ * </ul>
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class SectionTitle extends Div {
 
@@ -74,9 +72,9 @@ public class SectionTitle extends Div {
   }
 
   public enum Size {
-    SMALL("small-size"),
-    MEDIUM("medium-size"),
-    LARGE("large-size");
+    SMALL("font-size-small"),
+    MEDIUM("font-size-medium"),
+    LARGE("font-size-large");
 
     private final String value;
 

@@ -62,7 +62,6 @@ import life.qbic.datamanager.views.strategy.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
-import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
@@ -94,21 +93,19 @@ public class ProjectSummaryNewComponent extends PageArea {
   private final UserPermissions userPermissions;
   private final MessageSourceNotificationFactory notificationFactory;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private Section headerSection;
-  private Section projectDesignSection;
-  private Section experimentInformationSection;
-  private Section fundingInformationSection;
-  private Section projectContactsSection;
+  private final Section headerSection;
+  private final Section projectDesignSection;
+  private final Section experimentInformationSection;
+  private final Section fundingInformationSection;
+  private final Section projectContactsSection;
   private Context context;
   private DownloadProvider downloadProvider;
-  private boolean showControls;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
 
   @Autowired
   public ProjectSummaryNewComponent(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
-      ContactRepository contactRepository,
       UserPermissions userPermissions,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
@@ -124,15 +121,17 @@ public class ProjectSummaryNewComponent extends PageArea {
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
+    this.experimentInformationService = experimentInformationService;
+    this.downloadProvider = new DownloadProvider(null);
+
     addClassName("project-details-component");
-    downloadProvider = new DownloadProvider(null);
+
     add(downloadProvider);
     add(headerSection);
     add(projectDesignSection);
     add(experimentInformationSection);
     add(fundingInformationSection);
     add(projectContactsSection);
-    this.experimentInformationService = experimentInformationService;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -167,7 +166,6 @@ public class ProjectSummaryNewComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project found"));
     var experiments = experimentInformationService.findAllForProject(projectId);
     setContent(projectOverview, fullProject, experiments);
-    showControls = userPermissions.editProject(projectId);
     loadScope(userPermissions::editProject, projectId, projectDesignSection, fundingInformationSection);
     // The header section only contains the RO-Crate action, which we want to enable always
     loadScope(id -> true, projectId, headerSection);
@@ -197,12 +195,11 @@ public class ProjectSummaryNewComponent extends PageArea {
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
     var experiments = experimentInformationService.findAllForProject(projectId);
-    reloadProjectDesign(projectOverview, fullProject, experiments);
+    reloadProjectDesign(projectOverview, fullProject);
     reloadFundingInfoSection(fullProject);
   }
 
-  private void reloadProjectDesign(ProjectOverview projectOverview, Project project,
-      List<Experiment> experiments) {
+  private void reloadProjectDesign(ProjectOverview projectOverview, Project project) {
     buildDesignSection(projectOverview, project);
   }
 
