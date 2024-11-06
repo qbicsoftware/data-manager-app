@@ -1,4 +1,4 @@
-CREATE TABLE `acl_class`
+CREATE TABLE IF NOT EXISTS `acl_class`
 (
     `id`            bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `class`         varchar(100)        NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE `acl_class`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `acl_sid`
+CREATE TABLE IF NOT EXISTS `acl_sid`
 (
     `id`        bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `principal` tinyint(1)          NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE `acl_sid`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `acl_object_identity`
+CREATE TABLE IF NOT EXISTS `acl_object_identity`
 (
     `id`                 bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `object_id_class`    bigint(20) unsigned NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE `acl_object_identity`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `acl_entry`
+CREATE TABLE IF NOT EXISTS `acl_entry`
 (
     `id`                  bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `acl_object_identity` bigint(20) unsigned NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE `acl_entry`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `projects_datamanager`
+CREATE TABLE IF NOT EXISTS `projects_datamanager`
 (
     `projectId`                         varchar(255) NOT NULL,
     `grantLabel`                        varchar(255)  DEFAULT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE `projects_datamanager`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experiments_datamanager`
+CREATE TABLE IF NOT EXISTS `experiments_datamanager`
 (
     `id`               varchar(255) NOT NULL,
     `analyteIconName`  varchar(31)  NOT NULL DEFAULT 'default',
@@ -97,7 +97,7 @@ CREATE TABLE `experiments_datamanager`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experimental_group`
+CREATE TABLE IF NOT EXISTS `experimental_group`
 (
     `experimentalGroupId` bigint(20) NOT NULL AUTO_INCREMENT,
     `name`                varchar(255) DEFAULT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE `experimental_group`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experimental_group_variableLevels`
+CREATE TABLE IF NOT EXISTS `experimental_group_variableLevels`
 (
     `experimental_group_experimentalGroupId` bigint(20) NOT NULL,
     `unit`                                   varchar(255) DEFAULT NULL,
@@ -123,7 +123,7 @@ CREATE TABLE `experimental_group_variableLevels`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experimental_variables`
+CREATE TABLE IF NOT EXISTS `experimental_variables`
 (
     `variableId`   bigint(20) NOT NULL AUTO_INCREMENT,
     `name`         varchar(255) DEFAULT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE `experimental_variables`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experimental_variables_levels`
+CREATE TABLE IF NOT EXISTS `experimental_variables_levels`
 (
     `experimental_variables_variableId` bigint(20) NOT NULL,
     `unit`                              varchar(255) DEFAULT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE `experimental_variables_levels`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experiments_datamanager_analytes`
+CREATE TABLE IF NOT EXISTS `experiments_datamanager_analytes`
 (
     `experiments_datamanager_id` varchar(255) NOT NULL,
     `analytes`                   longtext DEFAULT NULL CHECK (json_valid(`analytes`)),
@@ -157,7 +157,7 @@ CREATE TABLE `experiments_datamanager_analytes`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experiments_datamanager_species`
+CREATE TABLE IF NOT EXISTS `experiments_datamanager_species`
 (
     `experiments_datamanager_id` varchar(255) NOT NULL,
     `species`                    longtext DEFAULT NULL CHECK (json_valid(`species`)),
@@ -167,7 +167,7 @@ CREATE TABLE `experiments_datamanager_species`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `experiments_datamanager_specimens`
+CREATE TABLE IF NOT EXISTS `experiments_datamanager_specimens`
 (
     `experiments_datamanager_id` varchar(255) NOT NULL,
     `specimens`                  longtext DEFAULT NULL CHECK (json_valid(`specimens`)),
@@ -177,7 +177,7 @@ CREATE TABLE `experiments_datamanager_specimens`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `jobrunr_backgroundjobservers`
+CREATE TABLE IF NOT EXISTS `jobrunr_backgroundjobservers`
 (
     `id`                         char(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
     `workerPoolSize`             int(11)                                                   NOT NULL,
@@ -202,7 +202,7 @@ CREATE TABLE `jobrunr_backgroundjobservers`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `jobrunr_jobs`
+CREATE TABLE IF NOT EXISTS `jobrunr_jobs`
 (
     `id`             char(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
     `version`        int(11)                                                   NOT NULL,
@@ -224,7 +224,7 @@ CREATE TABLE `jobrunr_jobs`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `jobrunr_metadata`
+CREATE TABLE IF NOT EXISTS `jobrunr_metadata`
 (
     `id`        varchar(156) NOT NULL,
     `name`      varchar(92)  NOT NULL,
@@ -237,7 +237,7 @@ CREATE TABLE `jobrunr_metadata`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `jobrunr_migrations`
+CREATE TABLE IF NOT EXISTS `jobrunr_migrations`
 (
     `id`          char(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
     `script`      varchar(64)                                               NOT NULL,
@@ -247,7 +247,7 @@ CREATE TABLE `jobrunr_migrations`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `jobrunr_recurring_jobs`
+CREATE TABLE IF NOT EXISTS `jobrunr_recurring_jobs`
 (
     `id`        char(128) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
     `version`   int(11)                                                    NOT NULL,
@@ -259,7 +259,7 @@ CREATE TABLE `jobrunr_recurring_jobs`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `ngs_measurements`
+CREATE TABLE IF NOT EXISTS `ngs_measurements`
 (
     `measurement_id`   varchar(255) NOT NULL,
     `facility`         varchar(255) DEFAULT NULL,
@@ -279,7 +279,7 @@ CREATE TABLE `ngs_measurements`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `ontology_classes`
+CREATE TABLE IF NOT EXISTS `ontology_classes`
 (
     `id`              bigint(20) NOT NULL,
     `classIri`        varchar(255)  DEFAULT NULL,
@@ -296,14 +296,14 @@ CREATE TABLE `ontology_classes`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `ontology_classes_SEQ`
+CREATE TABLE IF NOT EXISTS `ontology_classes_SEQ`
 (
     `next_val` bigint(20) DEFAULT NULL
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `permissions`
+CREATE TABLE IF NOT EXISTS `permissions`
 (
     `id`          bigint(20) NOT NULL AUTO_INCREMENT,
     `description` varchar(255) DEFAULT NULL,
@@ -314,7 +314,7 @@ CREATE TABLE `permissions`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `personal_access_tokens`
+CREATE TABLE IF NOT EXISTS `personal_access_tokens`
 (
     `id`                  int(11) NOT NULL AUTO_INCREMENT,
     `creationDate`        datetime(6)    DEFAULT NULL,
@@ -330,7 +330,7 @@ CREATE TABLE `personal_access_tokens`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `projects_offers`
+CREATE TABLE IF NOT EXISTS `projects_offers`
 (
     `projectIdentifier` varchar(255) NOT NULL,
     `offerIdentifier`   varchar(255) DEFAULT NULL,
@@ -340,7 +340,7 @@ CREATE TABLE `projects_offers`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `proteomics_measurement`
+CREATE TABLE IF NOT EXISTS `proteomics_measurement`
 (
     `measurement_id`         varchar(255) NOT NULL,
     `digestionEnzyme`        varchar(255) DEFAULT NULL,
@@ -364,7 +364,7 @@ CREATE TABLE `proteomics_measurement`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `purchase_offer`
+CREATE TABLE IF NOT EXISTS `purchase_offer`
 (
     `id`           bigint(20) NOT NULL AUTO_INCREMENT,
     `file_content` longblob     DEFAULT NULL,
@@ -376,7 +376,7 @@ CREATE TABLE `purchase_offer`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `quality_control_upload`
+CREATE TABLE IF NOT EXISTS `quality_control_upload`
 (
     `id`            bigint(20) NOT NULL AUTO_INCREMENT,
     `experiment_id` varchar(255) DEFAULT NULL,
@@ -388,7 +388,7 @@ CREATE TABLE `quality_control_upload`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `quality_control`
+CREATE TABLE IF NOT EXISTS `quality_control`
 (
     `id`                      bigint(20) NOT NULL AUTO_INCREMENT,
     `projectId`               varchar(255) DEFAULT NULL,
@@ -402,7 +402,7 @@ CREATE TABLE `quality_control`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `roles`
+CREATE TABLE IF NOT EXISTS `roles`
 (
     `id`          bigint(20) NOT NULL AUTO_INCREMENT,
     `description` varchar(255) DEFAULT NULL,
@@ -413,7 +413,7 @@ CREATE TABLE `roles`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `role_permission`
+CREATE TABLE IF NOT EXISTS `role_permission`
 (
     `userRoleId`   bigint(20) NOT NULL,
     `permissionId` bigint(20) NOT NULL,
@@ -425,7 +425,7 @@ CREATE TABLE `role_permission`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `sample`
+CREATE TABLE IF NOT EXISTS `sample`
 (
     `sample_id`           varchar(255) NOT NULL,
     `analysis_method`     varchar(255) DEFAULT NULL,
@@ -446,7 +446,7 @@ CREATE TABLE `sample`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `sample_batches`
+CREATE TABLE IF NOT EXISTS `sample_batches`
 (
     `id`           varchar(255) NOT NULL,
     `createdOn`    datetime(6)  DEFAULT NULL,
@@ -459,7 +459,7 @@ CREATE TABLE `sample_batches`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `sample_batches_sampleid`
+CREATE TABLE IF NOT EXISTS `sample_batches_sampleid`
 (
     `batch_id`  varchar(255) NOT NULL,
     `sample_id` varchar(255) DEFAULT NULL,
@@ -469,7 +469,7 @@ CREATE TABLE `sample_batches_sampleid`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `sample_statistics_entry`
+CREATE TABLE IF NOT EXISTS `sample_statistics_entry`
 (
     `id`            bigint(20) NOT NULL AUTO_INCREMENT,
     `projectCode`   varchar(255) DEFAULT NULL,
@@ -481,7 +481,7 @@ CREATE TABLE `sample_statistics_entry`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `service_purchase`
+CREATE TABLE IF NOT EXISTS `service_purchase`
 (
     `id`             bigint(20) NOT NULL AUTO_INCREMENT,
     `projectId`      varchar(255) DEFAULT NULL,
@@ -495,7 +495,7 @@ CREATE TABLE `service_purchase`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `specific_measurement_metadata_ngs`
+CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_ngs`
 (
     `measurement_id` varchar(255) NOT NULL,
     `comment`        varchar(255) DEFAULT NULL,
@@ -508,7 +508,7 @@ CREATE TABLE `specific_measurement_metadata_ngs`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `specific_measurement_metadata_pxp`
+CREATE TABLE IF NOT EXISTS `specific_measurement_metadata_pxp`
 (
     `measurement_id` varchar(255) NOT NULL,
     `comment`        varchar(255) DEFAULT NULL,
@@ -521,7 +521,7 @@ CREATE TABLE `specific_measurement_metadata_pxp`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `user_role`
+CREATE TABLE IF NOT EXISTS `user_role`
 (
     `id`     bigint(20) NOT NULL AUTO_INCREMENT,
     `userId` varchar(255) DEFAULT NULL,
@@ -534,7 +534,7 @@ CREATE TABLE `user_role`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `users`
+CREATE TABLE IF NOT EXISTS `users`
 (
     `id`                varchar(255) NOT NULL,
     `active`            bit(1)       NOT NULL,
@@ -550,6 +550,36 @@ CREATE TABLE `users`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `experiments_datamanager_confounding_variables`
+(
+    `id`           bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `experimentId` VARCHAR(255) NOT NULL,
+    `name`         VARCHAR(255) NOT NULL,
+    KEY `FK_experiment_id` (`experimentId`),
+    CONSTRAINT `FK_experiment_id` FOREIGN KEY (`experimentId`) REFERENCES `experiments_datamanager` (`id`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `confounding_variable_levels`
+(
+    `id`         bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `sampleId`   VARCHAR(255) NOT NULL,
+    `variableId` bigint(20)   NOT NULL,
+    `value`      VARCHAR(255) NOT NULL,
+    KEY `FK_sample_id` (`sampleId`),
+    CONSTRAINT `FK_sample_id` FOREIGN KEY (`sampleId`) REFERENCES `sample` (`sample_id`),
+    KEY `FK_variable_id` (`variableId`),
+    CONSTRAINT `FK_variable_id` FOREIGN KEY (`variableId`) REFERENCES `experiments_datamanager_confounding_variables` (`id`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+
+
+DROP VIEW IF EXISTS data_management.project_measurements;
 
 CREATE view data_management.project_measurements as
 SELECT `projects`.`projectId`                            AS `projectId`,
@@ -569,6 +599,7 @@ FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`           
                           on (`projects`.`projectId` = `pxp`.`pID`))) `proteomics`
                    on (`projects`.`projectId` = `proteomics`.`projectId`);
 
+DROP VIEW IF EXISTS data_management.project_userinfo;
 
 CREATE VIEW data_management.project_userinfo as
 SELECT `o_identity`.`object_id_identity` AS `projectId`,
@@ -584,6 +615,7 @@ FROM (((`data_management`.`acl_entry` LEFT JOIN (SELECT `sid`.`id`        AS `id
       on (`data_management`.`acl_entry`.`acl_object_identity` = `o_identity`.`id`))
 WHERE `sid`.`sid` IS NOT NULL;
 
+DROP VIEW IF EXISTS data_management.project_overview;
 
 CREATE VIEW project_overview AS
 SELECT `pd`.`projectId`                     AS `projectId`,
