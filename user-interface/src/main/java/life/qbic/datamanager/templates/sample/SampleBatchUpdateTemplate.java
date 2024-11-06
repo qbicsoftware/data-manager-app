@@ -1,6 +1,7 @@
 package life.qbic.datamanager.templates.sample;
 
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.addDataValidation;
+import static life.qbic.datamanager.templates.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createOptionArea;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.getOrCreateCell;
@@ -9,7 +10,10 @@ import static life.qbic.datamanager.templates.XLSXTemplateHelper.hideSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.lockSheet;
 import static life.qbic.datamanager.templates.XLSXTemplateHelper.setColumnAutoWidth;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.parser.sample.EditColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
@@ -57,6 +61,7 @@ public class SampleBatchUpdateTemplate {
     var readOnlyCellStyle = createReadOnlyCellStyle(workbook);
     var readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
     var boldCellStyle = XLSXTemplateHelper.createBoldCellStyle(workbook);
+    var defaultStyle = createDefaultCellStyle(workbook);
 
     var sheet = workbook.createSheet("Sample Metadata");
 
@@ -72,16 +77,44 @@ public class SampleBatchUpdateTemplate {
       if (column.isReadOnly()) {
         cell.setCellStyle(readOnlyHeaderStyle);
       }
+      //add helper to header
+      column.getFillHelp().ifPresent(
+          helper -> XLSXTemplateHelper.addInputHelper(sheet,
+              column.columnIndex(),
+              0,
+              column.columnIndex(),
+              0,
+              helper.exampleValue(),
+              helper.description()));
     }
+
+    // add property information order of columns matters!!
+    for (EditColumn column : Arrays.stream(
+            EditColumn.values())
+        .sorted(Comparator.comparing(EditColumn::columnIndex)).toList()) {
+      // add property information
+      var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
+      var description = column.getFillHelp().map(Helper::description).orElse("");
+      XLSXTemplateHelper.addPropertyInformation(workbook,
+          column.headerName(),
+          column.isMandatory(),
+          exampleValue,
+          description,
+          defaultStyle,
+          boldCellStyle);
+    }
+
     var startIndex = 1; //start in the second row with index 1.
     int rowIndex = startIndex;
     for (Sample sample : samples) {
       Row row = getOrCreateRow(sheet, rowIndex);
       var experimentalGroup = experimentalGroups.stream()
           .filter(group -> group.id() == sample.experimentalGroupId()).findFirst().orElseThrow();
-      fillRowWithSampleMetadata(row, sample, experimentalGroup.condition(), readOnlyCellStyle);
+      fillRowWithSampleMetadata(row, sample, experimentalGroup.condition(), defaultStyle,
+          readOnlyCellStyle);
       rowIndex++;
     }
+
 
     var hiddenSheet = workbook.createSheet("hidden");
     Name analysisToBePerformedOptions = createOptionArea(hiddenSheet, "Analysis to be performed",
@@ -122,6 +155,18 @@ public class SampleBatchUpdateTemplate {
         MAX_ROW_INDEX_TO,
         specimenOptions);
 
+    for (var column : EditColumn.values()) {
+      column.getFillHelp().ifPresent(
+          helper -> XLSXTemplateHelper.addInputHelper(sheet,
+              column.columnIndex(),
+              startIndex,
+              column.columnIndex(),
+              MAX_ROW_INDEX_TO,
+              helper.exampleValue(),
+              helper.description())
+      );
+    }
+
     setColumnAutoWidth(sheet, 0, EditColumn.maxColumnIndex());
     workbook.setActiveSheet(0);
     lockSheet(hiddenSheet);
@@ -131,7 +176,7 @@ public class SampleBatchUpdateTemplate {
   }
 
   private static void fillRowWithSampleMetadata(Row row, Sample sample,
-      Condition condition, CellStyle readOnlyCellStyle) {
+      Condition condition, CellStyle defaultStyle, CellStyle readOnlyCellStyle) {
     for (EditColumn column : EditColumn.values()) {
       var value = switch (column) {
         case SAMPLE_ID -> sample.sampleCode().code();
@@ -146,6 +191,7 @@ public class SampleBatchUpdateTemplate {
       };
       var cell = getOrCreateCell(row, column.columnIndex());
       cell.setCellValue(value);
+      cell.setCellStyle(defaultStyle);
       if (column.isReadOnly()) {
         cell.setCellStyle(readOnlyCellStyle);
       }
