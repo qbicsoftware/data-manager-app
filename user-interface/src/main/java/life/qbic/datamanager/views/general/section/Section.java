@@ -3,11 +3,32 @@ package life.qbic.datamanager.views.general.section;
 import com.vaadin.flow.component.html.Div;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Section</b> (layout component)
+ * <p>
+ * A section is divided into two main parts:
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <ul>
+ *   <li>{@link SectionHeader}</li>
+ *   <li>{@link SectionContent}</li>
+ * </ul>
+ * <p>
+ * The section header can be used to describe the section's content with a short title. The content
+ * itself can be greatly customized, there is no restriction in what clients want to add there.
+ * <p>
+ * The section merely offers a structured and reusable component to layout header and content
+ * in a user-friendly way, based on UI/UX requirements.
  *
- * @since <version tag>
+ *
+ *<p></p>
+ * <b>Relevant CSS</b>
+ * <p>
+ * The only relevant CSS class for this component is:
+ *
+ * <ul>
+ *   <li><code>section</code></li>
+ * </ul>
+ *
+ * @since 1.6.0
  */
 public class Section extends Div implements ControlElements {
 
@@ -44,22 +65,12 @@ public class Section extends Div implements ControlElements {
 
   @Override
   public void enableControls() {
-
+    sectionHeader.enableControls();
   }
 
   @Override
   public void disableControls() {
-
-  }
-
-  @Override
-  public boolean controlsEnabled() {
-    return false;
-  }
-
-  @Override
-  public boolean controlsDisabled() {
-    return false;
+    sectionHeader.disableControls();
   }
 
   public static class SectionBuilder {

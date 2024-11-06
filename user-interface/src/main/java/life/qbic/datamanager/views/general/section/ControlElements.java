@@ -14,7 +14,4 @@ public interface ControlElements {
 
   void disableControls();
 
-  boolean controlsEnabled();
-
-  boolean controlsDisabled();
 }

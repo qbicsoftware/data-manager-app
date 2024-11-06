@@ -9,7 +9,7 @@ import com.vaadin.flow.component.html.Div;
  *
  * @since <version tag>
  */
-public class SectionHeader extends Div {
+public class SectionHeader extends Div implements ControlElements{
 
   private SectionTitle sectionTitle;
 
@@ -86,4 +86,13 @@ public class SectionHeader extends Div {
     addClassName("normal-trailing-margin");
   }
 
+  @Override
+  public void enableControls() {
+    actionBar.activateAllControls();
+  }
+
+  @Override
+  public void disableControls() {
+    actionBar.deactivateAllControls();
+  }
 }
