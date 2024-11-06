@@ -22,7 +22,7 @@ import com.vaadin.flow.component.html.Div;
  *<p></p>
  * <b>Relevant CSS</b>
  * <p>
- * The only relevant CSS class for this component is:
+ * The relevant CSS classes for this component are:
  *
  * <ul>
  *   <li><code>section</code></li>
@@ -30,7 +30,7 @@ import com.vaadin.flow.component.html.Div;
  *
  * @since 1.6.0
  */
-public class Section extends Div implements ControlElements {
+public class Section extends Div implements Controllable {
 
   private SectionContent content;
 
@@ -39,6 +39,7 @@ public class Section extends Div implements ControlElements {
 
   private Section() {
     addClassName("section");
+    addClassName("trailing-margin-large");
     sectionHeader = new SectionHeader();
     content = new SectionContent();
     rebuild();

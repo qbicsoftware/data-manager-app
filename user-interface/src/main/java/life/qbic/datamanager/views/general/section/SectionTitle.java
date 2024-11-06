@@ -5,9 +5,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Section Title</b>
+ * <p>
+ * Is e.g. used in {@link SectionHeader} and formats a section title.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ *  *<p></p>
+ *  * <b>Relevant CSS</b>
+ *  * <p>
+ *  * The relevant CSS classes for this component are:
+ *  *
+ *  * <ul>
+ *  *   <li><code>section-title</code></li>
+ *  * </ul>
+ *  *
  *
  * @since <version tag>
  */
@@ -54,9 +64,12 @@ public class SectionTitle extends Div {
 
   public void setSize(Size size) {
     switch (size) {
-      case SMALL: setToSmall();
-      case MEDIUM: setToMedium();
-      case LARGE: setToLarge();
+      case SMALL:
+        setToSmall();
+      case MEDIUM:
+        setToMedium();
+      case LARGE:
+        setToLarge();
     }
   }
 

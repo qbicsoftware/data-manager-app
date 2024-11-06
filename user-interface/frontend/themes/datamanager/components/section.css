@@ -14,7 +14,6 @@
 
 .section {
   width: 100%;
-  margin-bottom: var(--lumo-space-xl);
 }
 
 .section-header {
@@ -23,20 +22,35 @@
   width: 100%;
 }
 
+
+.trailing-margin-large {
+  margin-bottom: var(--lumo-space-xl);
+}
+
+.trailing-margin-normal {
+  margin-bottom: var(--lumo-space-l);
+}
+
+.trailing-margin-small {
+  margin-bottom: var(--lumo-space-s);
+}
+
+/*
 .section-header.normal-trailing-margin {
   margin-bottom: var(--lumo-space-l);
 }
 
 .section-header.small-trailing-margin {
   margin-bottom: var(--lumo-space-s);
-}
+} */
 
+/*
 .section-header {
   display: flex;
   flex-direction: column;
   width: 100%;
   margin-bottom: var(--lumo-space-l);
-}
+}*/
 
 .section-header-row {
   display: flex;

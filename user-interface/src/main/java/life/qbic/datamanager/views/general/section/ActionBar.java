@@ -7,11 +7,24 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Action Bar</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>An actionbar offers the user the possibility to perform some action
+ * that is related to its placed context in the application.</p>
+ * <p>
+ * Action items can be activated or deactivated. Inactive control elements are disabled and hidden
+ * (default), active control elements are enabled and shown.
  *
- * @since <version tag>
+ * <p></p>
+ * <b>Relevant CSS</b>
+ * <p>
+ * The relevant CSS classes for this component are:
+ *
+ * <ul>
+ *   <li><code>actionbar</code></li>
+ * </ul>
+ *
+ * @since 1.6.0
  */
 public class ActionBar extends Div {
 
@@ -29,18 +42,18 @@ public class ActionBar extends Div {
     addButtons(buttons);
   }
 
-  public void addButtons(Button... buttons) {
-    for (Button button : buttons) {
-      addButton(button);
-    }
-  }
-
   private static void applyStrategy(ControlStrategy strategy, Button... buttons) {
     Arrays.stream(buttons).forEach(strategy::execute);
   }
 
   private static void setEnabled(Button button, boolean enabled) {
     button.setEnabled(enabled);
+  }
+
+  public void addButtons(Button... buttons) {
+    for (Button button : buttons) {
+      addButton(button);
+    }
   }
 
   public void addButton(Button button) {
@@ -77,7 +90,8 @@ public class ActionBar extends Div {
 
     @Override
     public void execute(Button button) {
-        button.setEnabled(true);
+      button.setEnabled(true);
+      button.setVisible(true);
     }
   }
 
@@ -86,6 +100,7 @@ public class ActionBar extends Div {
     @Override
     public void execute(Button button) {
       button.setEnabled(false);
+      button.setVisible(false);
     }
   }
 }

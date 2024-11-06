@@ -23,9 +23,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
@@ -57,6 +59,9 @@ import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.strategy.ClosingWithWarningStrategy;
 import life.qbic.datamanager.views.strategy.ImmediateClosingStrategy;
+import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
+import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
+import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
@@ -163,6 +168,25 @@ public class ProjectSummaryNewComponent extends PageArea {
     var experiments = experimentInformationService.findAllForProject(projectId);
     setContent(projectOverview, fullProject, experiments);
     showControls = userPermissions.editProject(projectId);
+    loadScope(userPermissions::editProject, projectId, projectDesignSection, fundingInformationSection);
+    // The header section only contains the RO-Crate action, which we want to enable always
+    loadScope(id -> true, projectId, headerSection);
+  }
+
+  private static void loadScope(Predicate<ProjectId> hasWriteScope, ProjectId id, Section... sections) {
+    if (hasWriteScope.test(id)) {
+      loadWriteScope(sections).forEach(UserScopeStrategy::execute);
+    } else {
+      loadReadScope(sections).forEach(UserScopeStrategy::execute);
+    }
+  }
+
+  private static List<? extends UserScopeStrategy> loadReadScope(Section[] sections) {
+    return Arrays.stream(sections).map(ReadScopeStrategy::new).toList();
+  }
+
+  private static List<? extends UserScopeStrategy> loadWriteScope(Section[] sections) {
+    return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
   }
 
   private void reloadInformation(Context context) {

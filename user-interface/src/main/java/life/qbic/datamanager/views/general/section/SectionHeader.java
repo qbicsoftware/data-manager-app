@@ -18,11 +18,21 @@ import com.vaadin.flow.component.html.Div;
  * of the user related to the content referenced in the section.
  * <p>
  * Since the action bar might need to be enabled or disabled by the client, the section header
- * implements the {@link ControlElements} interface to show this behaviour.
+ * implements the {@link Controllable} interface to show this behaviour.
+ *
+ * <p></p>
+ * <b>Relevant CSS</b>
+ * <p>
+ * The relevant CSS classes for this component are:
+ *  <ul>
+ *  <li><code>section-header</code></li>
+ *  <li><code>trailing-margin-normal</code></li>
+ *  <li><code>section-header-row</code></li>
+ * </ul>
  *
  * @since 1.6.0
  */
-public class SectionHeader extends Div implements ControlElements {
+public class SectionHeader extends Div implements Controllable {
 
   private SectionTitle sectionTitle;
 
@@ -54,7 +64,7 @@ public class SectionHeader extends Div implements ControlElements {
 
   public SectionHeader() {
     addClassName("section-header");
-    addClassName("normal-trailing-margin");
+    addClassName("trailing-margin-normal");
     this.headerRow = new Div();
     headerRow.addClassName("section-header-row");
     this.sectionTitle = new SectionTitle();
@@ -88,15 +98,15 @@ public class SectionHeader extends Div implements ControlElements {
   }
 
   public void setSmallTrailingMargin() {
-    removeClassName("small-trailing-margin");
-    removeClassName("normal-trailing-margin");
-    addClassName("small-trailing-margin");
+    removeClassName("trailing-margin-normal");
+    removeClassName("trailing-margin-normal");
+    addClassName("trailing-margin-small");
   }
 
   public void setNormalTrailingMargin() {
-    removeClassName("small-trailing-margin");
-    removeClassName("normal-trailing-margin");
-    addClassName("normal-trailing-margin");
+    removeClassName("trailing-margin-small");
+    removeClassName("trailing-margin-normal");
+    addClassName("trailing-margin-normal");
   }
 
   @Override
