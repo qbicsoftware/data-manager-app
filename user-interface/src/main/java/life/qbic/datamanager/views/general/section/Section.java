@@ -3,7 +3,7 @@ package life.qbic.datamanager.views.general.section;
 import com.vaadin.flow.component.html.Div;
 
 /**
- * <b>Section</b> (layout component)
+ * <b>Section</b> (div component)
  * <p>
  * A section is divided into two main parts:
  *
