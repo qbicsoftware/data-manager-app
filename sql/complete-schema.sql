@@ -10,21 +10,13 @@ CREATE TABLE `acl_class`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `acl_entry`
+CREATE TABLE `acl_sid`
 (
-    `id`                  bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `acl_object_identity` bigint(20) unsigned NOT NULL,
-    `ace_order`           int(11)             NOT NULL,
-    `sid`                 bigint(20) unsigned NOT NULL,
-    `mask`                int(10) unsigned    NOT NULL,
-    `granting`            tinyint(1)          NOT NULL,
-    `audit_success`       tinyint(1)          NOT NULL DEFAULT 1,
-    `audit_failure`       tinyint(1)          NOT NULL,
+    `id`        bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `principal` tinyint(1)          NOT NULL,
+    `sid`       varchar(100)        NOT NULL,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_acl_entry` (`acl_object_identity`, `ace_order`),
-    KEY `fk_acl_entry_acl` (`sid`),
-    CONSTRAINT `fk_acl_entry_acl` FOREIGN KEY (`sid`) REFERENCES `acl_sid` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_acl_entry_object` FOREIGN KEY (`acl_object_identity`) REFERENCES `acl_object_identity` (`id`)
+    UNIQUE KEY `unique_acl_sid` (`sid`, `principal`)
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 1
   DEFAULT CHARSET = utf8mb4
@@ -50,15 +42,58 @@ CREATE TABLE `acl_object_identity`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `acl_sid`
+CREATE TABLE `acl_entry`
 (
-    `id`        bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `principal` tinyint(1)          NOT NULL,
-    `sid`       varchar(100)        NOT NULL,
+    `id`                  bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `acl_object_identity` bigint(20) unsigned NOT NULL,
+    `ace_order`           int(11)             NOT NULL,
+    `sid`                 bigint(20) unsigned NOT NULL,
+    `mask`                int(10) unsigned    NOT NULL,
+    `granting`            tinyint(1)          NOT NULL,
+    `audit_success`       tinyint(1)          NOT NULL DEFAULT 1,
+    `audit_failure`       tinyint(1)          NOT NULL,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_acl_sid` (`sid`, `principal`)
+    UNIQUE KEY `unique_acl_entry` (`acl_object_identity`, `ace_order`),
+    KEY `fk_acl_entry_acl` (`sid`),
+    CONSTRAINT `fk_acl_entry_acl` FOREIGN KEY (`sid`) REFERENCES `acl_sid` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_acl_entry_object` FOREIGN KEY (`acl_object_identity`) REFERENCES `acl_object_identity` (`id`)
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE `projects_datamanager`
+(
+    `projectId`                         varchar(255) NOT NULL,
+    `grantLabel`                        varchar(255)  DEFAULT NULL,
+    `grantId`                           varchar(255)  DEFAULT NULL,
+    `lastModified`                      datetime(6)  NOT NULL,
+    `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
+    `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
+    `projectCode`                       varchar(255)  DEFAULT NULL,
+    `objective`                         varchar(2000) DEFAULT NULL,
+    `projectTitle`                      varchar(255)  DEFAULT NULL,
+    `projectManagerEmailAddress`        varchar(255)  DEFAULT NULL,
+    `projectManagerFullName`            varchar(255)  DEFAULT NULL,
+    `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
+    `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
+    PRIMARY KEY (`projectId`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE `experiments_datamanager`
+(
+    `id`               varchar(255) NOT NULL,
+    `analyteIconName`  varchar(31)  NOT NULL DEFAULT 'default',
+    `experimentName`   varchar(255)          DEFAULT NULL,
+    `speciesIconName`  varchar(31)  NOT NULL DEFAULT 'default',
+    `specimenIconName` varchar(31)  NOT NULL DEFAULT 'default',
+    `project`          varchar(255)          DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `FKgfrw5hlq3iy6ntf32wy0e8hr` (`project`),
+    CONSTRAINT `FKgfrw5hlq3iy6ntf32wy0e8hr` FOREIGN KEY (`project`) REFERENCES `projects_datamanager` (`projectId`)
+) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
@@ -108,21 +143,6 @@ CREATE TABLE `experimental_variables_levels`
     `value`                             varchar(255) DEFAULT NULL,
     KEY `FKfljdny9mdnh19bbm3ii3j4bic` (`experimental_variables_variableId`),
     CONSTRAINT `FKfljdny9mdnh19bbm3ii3j4bic` FOREIGN KEY (`experimental_variables_variableId`) REFERENCES `experimental_variables` (`variableId`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
-CREATE TABLE `experiments_datamanager`
-(
-    `id`               varchar(255) NOT NULL,
-    `analyteIconName`  varchar(31)  NOT NULL DEFAULT 'default',
-    `experimentName`   varchar(255)          DEFAULT NULL,
-    `speciesIconName`  varchar(31)  NOT NULL DEFAULT 'default',
-    `specimenIconName` varchar(31)  NOT NULL DEFAULT 'default',
-    `project`          varchar(255)          DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY `FKgfrw5hlq3iy6ntf32wy0e8hr` (`project`),
-    CONSTRAINT `FKgfrw5hlq3iy6ntf32wy0e8hr` FOREIGN KEY (`project`) REFERENCES `projects_datamanager` (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -310,26 +330,6 @@ CREATE TABLE `personal_access_tokens`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `projects_datamanager`
-(
-    `projectId`                         varchar(255) NOT NULL,
-    `grantLabel`                        varchar(255)  DEFAULT NULL,
-    `grantId`                           varchar(255)  DEFAULT NULL,
-    `lastModified`                      datetime(6)  NOT NULL,
-    `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
-    `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
-    `projectCode`                       varchar(255)  DEFAULT NULL,
-    `objective`                         varchar(2000) DEFAULT NULL,
-    `projectTitle`                      varchar(255)  DEFAULT NULL,
-    `projectManagerEmailAddress`        varchar(255)  DEFAULT NULL,
-    `projectManagerFullName`            varchar(255)  DEFAULT NULL,
-    `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
-    `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
-    PRIMARY KEY (`projectId`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
 CREATE TABLE `projects_offers`
 (
     `projectIdentifier` varchar(255) NOT NULL,
@@ -376,6 +376,18 @@ CREATE TABLE `purchase_offer`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE `quality_control_upload`
+(
+    `id`            bigint(20) NOT NULL AUTO_INCREMENT,
+    `experiment_id` varchar(255) DEFAULT NULL,
+    `file_content`  longblob     DEFAULT NULL,
+    `fileName`      varchar(255) DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE `quality_control`
 (
     `id`                      bigint(20) NOT NULL AUTO_INCREMENT,
@@ -390,12 +402,11 @@ CREATE TABLE `quality_control`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE `quality_control_upload`
+CREATE TABLE `roles`
 (
-    `id`            bigint(20) NOT NULL AUTO_INCREMENT,
-    `experiment_id` varchar(255) DEFAULT NULL,
-    `file_content`  longblob     DEFAULT NULL,
-    `fileName`      varchar(255) DEFAULT NULL,
+    `id`          bigint(20) NOT NULL AUTO_INCREMENT,
+    `description` varchar(255) DEFAULT NULL,
+    `name`        varchar(255) DEFAULT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 1
@@ -411,17 +422,6 @@ CREATE TABLE `role_permission`
     CONSTRAINT `FKe3r4gqu0shl2iox9v427uvwdw` FOREIGN KEY (`userRoleId`) REFERENCES `roles` (`id`),
     CONSTRAINT `FKqrvf0677p2qt9ymasidbqi8sf` FOREIGN KEY (`permissionId`) REFERENCES `permissions` (`id`)
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
-CREATE TABLE `roles`
-(
-    `id`          bigint(20) NOT NULL AUTO_INCREMENT,
-    `description` varchar(255) DEFAULT NULL,
-    `name`        varchar(255) DEFAULT NULL,
-    PRIMARY KEY (`id`)
-) ENGINE = InnoDB
-  AUTO_INCREMENT = 1
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
@@ -551,7 +551,7 @@ CREATE TABLE `users`
   COLLATE = utf8mb4_unicode_ci;
 
 
-CREATE DEFINER = qbicuser@`%` view data_management.project_measurements as
+CREATE view data_management.project_measurements as
 SELECT `projects`.`projectId`               AS `projectId`,
        `proteomics`.`amountPxpMeasurements` AS `amountPxpMeasurements`,
        `ngs`.`amountNgsMeasurements`        AS `amountNgsMeasurements`
@@ -570,7 +570,22 @@ FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`           
                    on (`projects`.`projectId` = `proteomics`.`projectId`);
 
 
-CREATE DEFINER = qbicuser@`%` VIEW project_overview AS
+CREATE VIEW data_management.project_userinfo as
+SELECT `o_identity`.`object_id_identity` AS `projectId`,
+       `u`.`userName`                    AS `userName`,
+       `u`.`id`                          AS `userId`
+FROM (((`data_management`.`acl_entry` LEFT JOIN (SELECT `sid`.`id`        AS `id`,
+                                                        `sid`.`principal` AS `principal`,
+                                                        `sid`.`sid`       AS `sid`
+                                                 FROM `data_management`.`acl_sid` `sid`
+                                                 WHERE `sid`.`principal` = 1) `sid`
+        on (`data_management`.`acl_entry`.`sid` = `sid`.`id`)) LEFT JOIN `data_management`.`users` `u`
+       on (`sid`.`sid` = `u`.`id`)) LEFT JOIN `data_management`.`acl_object_identity` `o_identity`
+      on (`data_management`.`acl_entry`.`acl_object_identity` = `o_identity`.`id`))
+WHERE `sid`.`sid` IS NOT NULL;
+
+
+CREATE VIEW project_overview AS
 SELECT `pd`.`projectId`                     AS `projectId`,
        `pd`.`projectCode`                   AS `projectCode`,
        `pd`.`projectTitle`                  AS `projectTitle`,
@@ -593,18 +608,3 @@ FROM projects_datamanager pd
                                    ))                                             AS `userInfos`
                     FROM project_userinfo
                     GROUP BY projectId) AS users ON users.projectId = pd.projectId;
-
-
-CREATE DEFINER = qbicuser@`%` VIEW data_management.project_userinfo as
-SELECT `o_identity`.`object_id_identity` AS `projectId`,
-       `u`.`userName`                    AS `userName`,
-       `u`.`id`                          AS `userId`
-FROM (((`data_management`.`acl_entry` LEFT JOIN (SELECT `sid`.`id`        AS `id`,
-                                                        `sid`.`principal` AS `principal`,
-                                                        `sid`.`sid`       AS `sid`
-                                                 FROM `data_management`.`acl_sid` `sid`
-                                                 WHERE `sid`.`principal` = 1) `sid`
-        on (`data_management`.`acl_entry`.`sid` = `sid`.`id`)) LEFT JOIN `data_management`.`users` `u`
-       on (`sid`.`sid` = `u`.`id`)) LEFT JOIN `data_management`.`acl_object_identity` `o_identity`
-      on (`data_management`.`acl_entry`.`acl_object_identity` = `o_identity`.`id`))
-WHERE `sid`.`sid` IS NOT NULL;
