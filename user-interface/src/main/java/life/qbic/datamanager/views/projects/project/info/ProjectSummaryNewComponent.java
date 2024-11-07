@@ -139,12 +139,27 @@ public class ProjectSummaryNewComponent extends PageArea {
 
   private static ProjectInformation convertToInfo(Project project) {
     var info = new ProjectInformation();
+
+    // General Info
     info.setProjectTitle(project.getProjectIntent().projectTitle().title());
     info.setProjectObjective(project.getProjectIntent().objective().objective());
     info.setProjectId(project.getProjectCode().value());
+
+    // Funding
     project.funding().ifPresent(
         funding -> info.setFundingEntry(new FundingEntry(funding.grant(), funding.grantId())));
+
+    // Contacts
+    project.getResponsiblePerson().ifPresent(contact -> info.setResponsiblePerson(
+        convert(contact)));
+    info.setPrincipalInvestigator(convert(project.getPrincipalInvestigator()));
+    info.setProjectManager(convert(project.getProjectManager()));
+
     return info;
+  }
+
+  private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
+    return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(), contact.emailAddress());
   }
 
   private static Button createButtonWithListener(String label,
@@ -154,7 +169,8 @@ public class ProjectSummaryNewComponent extends PageArea {
     return button;
   }
 
-  private static List<? extends UserScopeStrategy> loadScope(Predicate<ProjectId> hasWriteScope, ProjectId id,
+  private static List<? extends UserScopeStrategy> loadScope(Predicate<ProjectId> hasWriteScope,
+      ProjectId id,
       Section... sections) {
     if (hasWriteScope.test(id)) {
       return loadWriteScope(sections);
@@ -230,6 +246,16 @@ public class ProjectSummaryNewComponent extends PageArea {
     var editButton = createButtonWithListener("Edit", listener -> {
       editContactsDialog = buildAndWireEditContacts(convertToInfo(project));
       editContactsDialog.open();
+      editContactsDialog.addUpdateEventListener(event -> {
+        updateContactInfo(context.projectId().orElseThrow(),
+            event.content().orElseThrow());
+        reloadInformation(context);
+        editContactsDialog.close();
+        var toast = notificationFactory.toast("project.updated.success",
+            new String[]{project.getProjectCode().value()}, getLocale());
+        toast.setDuration(Duration.ofSeconds(5));
+        toast.open();
+      });
     });
     projectContactsSection.setHeader(
         new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(editButton)));
@@ -255,6 +281,20 @@ public class ProjectSummaryNewComponent extends PageArea {
       prBox.setContent(renderContactInfo(responsible));
       projectContactsSection.content().add(prBox);
     }
+  }
+
+  private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
+    projectInformation.getResponsiblePerson().ifPresent(
+        contact -> projectInformationService.setResponsibility(projectId,
+            new Contact(contact.getFullName(), contact.getEmail())));
+
+    projectInformationService.investigateProject(projectId,
+        new Contact(projectInformation.getPrincipalInvestigator().getFullName(),
+            projectInformation.getPrincipalInvestigator().getEmail()));
+
+    projectInformationService.manageProject(projectId,
+        new Contact(projectInformation.getProjectManager().getFullName(),
+            projectInformation.getProjectManager().getEmail()));
   }
 
   private Div renderContactInfo(Contact contact) {

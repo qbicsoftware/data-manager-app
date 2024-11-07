@@ -219,6 +219,10 @@ public class EditProjectInformationDialog extends DialogWindow {
     }
 
     public void setResponsiblePerson(Contact responsiblePerson) {
+      if (responsiblePerson.getFullName().isBlank() || responsiblePerson.getEmail().isBlank()) {
+        this.responsiblePerson = null;
+        return;
+      }
       this.responsiblePerson = responsiblePerson;
     }
 

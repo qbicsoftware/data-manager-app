@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.edit;
+package life.qbic.datamanager.views.general.contact;
 
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;

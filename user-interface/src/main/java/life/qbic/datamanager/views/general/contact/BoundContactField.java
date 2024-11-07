@@ -1,11 +1,11 @@
-package life.qbic.datamanager.views.projects.edit;
+package life.qbic.datamanager.views.general.contact;
 
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.BoundField;
-import life.qbic.datamanager.views.general.contact.Contact;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -88,6 +88,8 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
     binder.setBean(new ContactContainer());
     binder.forField(contactField).withValidator(predicate, "There is still information missing")
         .bind(ContactContainer::getContact, ContactContainer::setContact);
+    binder.forField(contactField.getEmailTextField()).withValidator(new EmailValidator("Please provide a valid email address, e.g. my.name@example.com"))
+        .bind(ContactContainer::getEmail, ContactContainer::setEmail);
     return binder;
   }
 
@@ -112,7 +114,7 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
 
   @Override
   public boolean isValid() {
-   return binder.validate().isOk();
+    return binder.validate().isOk();
   }
 
   @Override
@@ -134,6 +136,16 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
 
     public void setContact(Contact contact) {
       this.contact = Objects.requireNonNull(contact);
+    }
+
+    public String getEmail() {
+      return contact == null ? "" : contact.getEmail();
+    }
+
+    public void setEmail(String email) {
+      if (contact != null) {
+        contact.setEmail(email);
+      }
     }
 
   }

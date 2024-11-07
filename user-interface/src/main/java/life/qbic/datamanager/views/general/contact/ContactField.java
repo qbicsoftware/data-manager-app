@@ -1,10 +1,11 @@
-package life.qbic.datamanager.views.projects.edit;
+package life.qbic.datamanager.views.general.contact;
 
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.shared.HasClientValidation;
 import com.vaadin.flow.component.textfield.TextField;
-import life.qbic.datamanager.views.general.contact.Contact;
+import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.Validator;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -25,6 +26,12 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
         "Email is missing");
     setLabel(label);
     add(layoutFields(fullName, email));
+  }
+
+  private Binder<TextField> createBinder(TextField email, Validator<? super String> validator){
+    Binder<TextField> binder = new Binder<>(TextField.class);
+    binder.forField(email).withValidator(validator).bind(TextField::getValue, TextField::setValue);
+    return binder;
   }
 
   private static TextField withPlaceHolder(TextField textField, String placeHolder) {
@@ -65,6 +72,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     }
   }
 
+  public TextField getEmailTextField() {
+    return email;
+  }
+
   private void removeErrors() {
     email.setInvalid(false);
     fullName.setInvalid(false);
@@ -78,4 +89,5 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       fullName.setInvalid(true);
     }
   }
+
 }

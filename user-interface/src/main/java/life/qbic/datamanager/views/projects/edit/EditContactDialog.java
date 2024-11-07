@@ -6,8 +6,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.data.binder.ValidationException;
 import java.util.Objects;
-import life.qbic.datamanager.views.events.FundingInformationUpdateEvent;
+import life.qbic.datamanager.views.events.ContactUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
+import life.qbic.datamanager.views.general.contact.BoundContactField;
+import life.qbic.datamanager.views.general.contact.ContactField;
+import life.qbic.datamanager.views.general.contact.ContactsForm;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 import life.qbic.datamanager.views.strategy.DialogClosingStrategy;
 
@@ -30,9 +33,8 @@ public class EditContactDialog extends DialogWindow {
 
   public EditContactDialog(ProjectInformation projectInformation) {
     super();
-    this.projectInformation = Objects.requireNonNull(projectInformation);
-
     addClassName("large-dialog");
+
     var content = new Div();
     content.addClassNames("vertical-list");
     setConfirmButtonLabel("Save");
@@ -43,13 +45,17 @@ public class EditContactDialog extends DialogWindow {
         "Project Responsible / Co-Investigator (optional)");
     var fieldProjectManager = createRequired("Project Manager");
 
+    this.projectInformation = Objects.requireNonNull(projectInformation);
     this.investigatorBinding = BoundContactField.createMandatory(fieldPrincipalInvestigator);
     this.managerBinding = BoundContactField.createMandatory(fieldProjectManager);
     this.projectResponsibleBinding = BoundContactField.createOptional(fieldProjectResponsible);
 
+    investigatorBinding.setValue(projectInformation.getPrincipalInvestigator());
+    managerBinding.setValue(projectInformation.getProjectManager());
+    projectInformation.getResponsiblePerson().ifPresent(contact -> projectResponsibleBinding.setValue(contact));
+
     content.add(
-        new ContactsForm(fieldPrincipalInvestigator, fieldProjectResponsible, fieldProjectManager)
-    );
+        new ContactsForm(fieldPrincipalInvestigator, fieldProjectResponsible, fieldProjectManager));
 
     add(content);
   }
@@ -76,9 +82,10 @@ public class EditContactDialog extends DialogWindow {
   @Override
   protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
     try {
-      investigatorBinding.isValid();
-      projectResponsibleBinding.isValid();
-      managerBinding.getValue();
+      projectInformation.setPrincipalInvestigator(investigatorBinding.getValue());
+      projectInformation.setResponsiblePerson(projectResponsibleBinding.getValue());
+      projectInformation.setProjectManager(managerBinding.getValue());
+      fireEvent(new ContactUpdateEvent(this, true, projectInformation));
     } catch (ValidationException e) {
       // user needs to intervene
     }
@@ -90,7 +97,7 @@ public class EditContactDialog extends DialogWindow {
   }
 
   public void addUpdateEventListener(
-      ComponentEventListener<FundingInformationUpdateEvent> listener) {
-    throw new RuntimeException("Needs to be implemented");
+      ComponentEventListener<ContactUpdateEvent> listener) {
+    addListener(ContactUpdateEvent.class, listener);
   }
 }
