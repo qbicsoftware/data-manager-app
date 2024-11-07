@@ -49,11 +49,11 @@ public class EditFundingInformationDialog extends DialogWindow {
     add(content);
   }
 
-  public void setDefaultStrategy(DialogClosingStrategy strategy) {
+  public void setDefaultCancelStrategy(DialogClosingStrategy strategy) {
     this.noChangesClosingStrategy = strategy;
   }
 
-  public void setWarningStrategy(DialogClosingStrategy strategy) {
+  public void setCancelWithoutSaveStrategy(DialogClosingStrategy strategy) {
     this.warningClosingStrategy = strategy;
   }
 

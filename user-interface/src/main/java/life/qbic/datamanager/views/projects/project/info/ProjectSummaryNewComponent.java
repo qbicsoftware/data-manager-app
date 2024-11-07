@@ -54,6 +54,7 @@ import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
@@ -102,6 +103,8 @@ public class ProjectSummaryNewComponent extends PageArea {
   private DownloadProvider downloadProvider;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
+  private EditContactDialog editContactsDialog;
+  private List<? extends UserScopeStrategy> scopes;
 
   @Autowired
   public ProjectSummaryNewComponent(ProjectInformationService projectInformationService,
@@ -151,6 +154,23 @@ public class ProjectSummaryNewComponent extends PageArea {
     return button;
   }
 
+  private static List<? extends UserScopeStrategy> loadScope(Predicate<ProjectId> hasWriteScope, ProjectId id,
+      Section... sections) {
+    if (hasWriteScope.test(id)) {
+      return loadWriteScope(sections);
+    } else {
+      return loadReadScope(sections);
+    }
+  }
+
+  private static List<? extends UserScopeStrategy> loadReadScope(Section[] sections) {
+    return Arrays.stream(sections).map(ReadScopeStrategy::new).toList();
+  }
+
+  private static List<? extends UserScopeStrategy> loadWriteScope(Section[] sections) {
+    return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
+  }
+
   private String formatDate(Instant date) {
     var formatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN).withZone(ZoneId.systemDefault());
     return formatter.format(date);
@@ -166,26 +186,13 @@ public class ProjectSummaryNewComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project found"));
     var experiments = experimentInformationService.findAllForProject(projectId);
     setContent(projectOverview, fullProject, experiments);
-    loadScope(userPermissions::editProject, projectId, projectDesignSection, fundingInformationSection);
+    this.scopes = loadScope(userPermissions::editProject, projectId, projectDesignSection,
+        fundingInformationSection, projectContactsSection);
+    this.scopes.forEach(UserScopeStrategy::execute);
     // The header section only contains the RO-Crate action, which we want to enable always
-    loadScope(id -> true, projectId, headerSection);
+    loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
   }
 
-  private static void loadScope(Predicate<ProjectId> hasWriteScope, ProjectId id, Section... sections) {
-    if (hasWriteScope.test(id)) {
-      loadWriteScope(sections).forEach(UserScopeStrategy::execute);
-    } else {
-      loadReadScope(sections).forEach(UserScopeStrategy::execute);
-    }
-  }
-
-  private static List<? extends UserScopeStrategy> loadReadScope(Section[] sections) {
-    return Arrays.stream(sections).map(ReadScopeStrategy::new).toList();
-  }
-
-  private static List<? extends UserScopeStrategy> loadWriteScope(Section[] sections) {
-    return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
-  }
 
   private void reloadInformation(Context context) {
     var projectId = context.projectId()
@@ -197,6 +204,8 @@ public class ProjectSummaryNewComponent extends PageArea {
     var experiments = experimentInformationService.findAllForProject(projectId);
     reloadProjectDesign(projectOverview, fullProject);
     reloadFundingInfoSection(fullProject);
+    // apply scope strategy again
+    this.scopes.forEach(UserScopeStrategy::execute);
   }
 
   private void reloadProjectDesign(ProjectOverview projectOverview, Project project) {
@@ -218,8 +227,12 @@ public class ProjectSummaryNewComponent extends PageArea {
   }
 
   private void buildProjectContactsInfoSection(Project project) {
+    var editButton = createButtonWithListener("Edit", listener -> {
+      editContactsDialog = buildAndWireEditContacts(convertToInfo(project));
+      editContactsDialog.open();
+    });
     projectContactsSection.setHeader(
-        new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(new Button("Edit"))));
+        new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(editButton)));
     var piBox = new DetailBox();
     var piBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Principal Investigator");
     piBox.setHeader(piBoxHeader);
@@ -259,7 +272,8 @@ public class ProjectSummaryNewComponent extends PageArea {
       editFundingInfoDialog = buildAndWireEditFinanceInfo(projectInformation);
       editFundingInfoDialog.open();
       editFundingInfoDialog.addUpdateEventListener(event -> {
-        updateFundingInfo(context.projectId().orElseThrow(), event.content().orElseThrow().getFundingEntry().orElseThrow());
+        updateFundingInfo(context.projectId().orElseThrow(),
+            event.content().orElseThrow().getFundingEntry().orElseThrow());
         reloadInformation(context);
         editFundingInfoDialog.close();
         var toast = notificationFactory.toast("project.updated.success",
@@ -287,15 +301,26 @@ public class ProjectSummaryNewComponent extends PageArea {
 
   }
 
-  private EditFundingInformationDialog buildAndWireEditFinanceInfo(
-      ProjectInformation projectInformation) {
-    var dialog =  new EditFundingInformationDialog(projectInformation);
+  private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
+    var dialog = new EditContactDialog(projectInformation);
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
         "project.edit.cancel-confirmation.message", getLocale());
     var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
-    dialog.setDefaultStrategy(defaultStrategy);
-    dialog.setWarningStrategy(withWarning);
+    dialog.setDefaultCancelStrategy(defaultStrategy);
+    dialog.setCancelWithoutSaveStrategy(withWarning);
+    return dialog;
+  }
+
+  private EditFundingInformationDialog buildAndWireEditFinanceInfo(
+      ProjectInformation projectInformation) {
+    var dialog = new EditFundingInformationDialog(projectInformation);
+    var defaultStrategy = new ImmediateClosingStrategy(dialog);
+    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        "project.edit.cancel-confirmation.message", getLocale());
+    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
+    dialog.setDefaultCancelStrategy(defaultStrategy);
+    dialog.setCancelWithoutSaveStrategy(withWarning);
     return dialog;
   }
 
@@ -402,7 +427,8 @@ public class ProjectSummaryNewComponent extends PageArea {
   }
 
   private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
-    projectInformationService.setFunding(projectId, fundingEntry.getLabel(), fundingEntry.getReferenceId());
+    projectInformationService.setFunding(projectId, fundingEntry.getLabel(),
+        fundingEntry.getReferenceId());
   }
 
   private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
