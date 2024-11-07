@@ -4,8 +4,6 @@ import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.shared.HasClientValidation;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.Validator;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -26,12 +24,6 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
         "Email is missing");
     setLabel(label);
     add(layoutFields(fullName, email));
-  }
-
-  private Binder<TextField> createBinder(TextField email, Validator<? super String> validator){
-    Binder<TextField> binder = new Binder<>(TextField.class);
-    binder.forField(email).withValidator(validator).bind(TextField::getValue, TextField::setValue);
-    return binder;
   }
 
   private static TextField withPlaceHolder(TextField textField, String placeHolder) {

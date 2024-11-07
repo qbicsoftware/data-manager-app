@@ -75,9 +75,17 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Summary Component</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Gives the user an overview about general project information, such as:</p>
+ *
+ * <ul>
+ *   <li>title</li>
+ *   <li>objective</li>
+ *   <li>shared with other users</li>
+ *   <li>funding</li>
+ *   <li>contacts</li>
+ * </ul>
  *
  * @since <version tag>
  */
@@ -243,6 +251,7 @@ public class ProjectSummaryNewComponent extends PageArea {
   }
 
   private void buildProjectContactsInfoSection(Project project) {
+    // set up the edit button, that opens the dialog for editing contacts
     var editButton = createButtonWithListener("Edit", listener -> {
       editContactsDialog = buildAndWireEditContacts(convertToInfo(project));
       editContactsDialog.open();
@@ -257,6 +266,7 @@ public class ProjectSummaryNewComponent extends PageArea {
         toast.open();
       });
     });
+    // create the section with header and content
     projectContactsSection.setHeader(
         new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(editButton)));
     var piBox = new DetailBox();
@@ -273,6 +283,7 @@ public class ProjectSummaryNewComponent extends PageArea {
 
     projectContactsSection.setContent(new SectionContent(piBox, pmBox));
 
+    // If no responsible person has been defined, we do not want to show empty sections.
     if (project.getResponsiblePerson().isPresent()) {
       var prBox = new DetailBox();
       var prBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Responsible");
