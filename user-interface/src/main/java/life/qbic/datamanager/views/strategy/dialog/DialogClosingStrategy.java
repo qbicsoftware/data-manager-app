@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.strategy;
+package life.qbic.datamanager.views.strategy.dialog;
 
 /**
  * <b><class short description - 1 Line!></b>

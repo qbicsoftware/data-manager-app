@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.strategy;
+package life.qbic.datamanager.views.strategy.dialog;
 
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import java.util.Objects;

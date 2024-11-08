@@ -11,8 +11,8 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.BoundContactField;
 import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.contact.ContactsForm;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import life.qbic.datamanager.views.strategy.DialogClosingStrategy;
+import life.qbic.datamanager.views.projects.ProjectInformation;
+import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -49,6 +49,9 @@ public class EditContactDialog extends DialogWindow {
     this.investigatorBinding = BoundContactField.createMandatory(fieldPrincipalInvestigator);
     this.managerBinding = BoundContactField.createMandatory(fieldProjectManager);
     this.projectResponsibleBinding = BoundContactField.createOptional(fieldProjectResponsible);
+    this.noChangesClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
+    this.warningClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
+
 
     investigatorBinding.setValue(projectInformation.getPrincipalInvestigator());
     managerBinding.setValue(projectInformation.getProjectManager());
@@ -93,11 +96,33 @@ public class EditContactDialog extends DialogWindow {
 
   @Override
   protected void onCancelClicked(ClickEvent<Button> clickEvent) {
+    if (anyChanges()) {
+      warningClosingStrategy.execute();
+    } else {
+      noChangesClosingStrategy.execute();
+    }
+  }
 
+  private boolean anyChanges() {
+    return investigatorBinding.hasChanged() || projectResponsibleBinding.hasChanged() || managerBinding.hasChanged();
   }
 
   public void addUpdateEventListener(
       ComponentEventListener<ContactUpdateEvent> listener) {
     addListener(ContactUpdateEvent.class, listener);
+  }
+
+  private static class ImmediateClosingStrategy implements DialogClosingStrategy {
+
+    private final DialogWindow window;
+
+    public ImmediateClosingStrategy(DialogWindow window) {
+      this.window = window;
+    }
+
+    @Override
+    public void execute() {
+      window.close();
+    }
   }
 }

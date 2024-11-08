@@ -8,7 +8,7 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import life.qbic.datamanager.views.general.utils.Constants;
 import life.qbic.datamanager.views.general.utils.Utility;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
+import life.qbic.datamanager.views.projects.ProjectInformation;
 
 /**
  * <b><class short description - 1 Line!></b>

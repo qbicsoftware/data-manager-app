@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.strategy;
+package life.qbic.datamanager.views.strategy.dialog;
 
 import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;

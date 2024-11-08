@@ -68,6 +68,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     return email;
   }
 
+  public TextField getFullNameTextField() {
+    return fullName;
+  }
+
   private void removeErrors() {
     email.setInvalid(false);
     fullName.setInvalid(false);

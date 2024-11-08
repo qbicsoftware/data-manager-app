@@ -84,7 +84,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final transient ProjectPurchaseService projectPurchaseService;
   private final transient QualityControlService qualityControlService;
   private final transient UserPermissions userPermissions;
-  private final ProjectSummaryNewComponent projectSummaryComponent;
+  private final ProjectSummaryComponent projectSummaryComponent;
   private final ExperimentListComponent experimentListComponent;
   private final OfferDownload offerDownload;
   private final QualityControlDownload qualityControlDownload;
@@ -95,7 +95,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final TerminologyService terminologyService;
   private Context context;
 
-  public ProjectInformationMain(@Autowired ProjectSummaryNewComponent projectSummaryNewComponent,
+  public ProjectInformationMain(@Autowired ProjectSummaryComponent projectSummaryComponent,
       @Autowired ExperimentListComponent experimentListComponent,
       @Autowired UserPermissions userPermissions,
       @Autowired AddExperimentToProjectService addExperimentToProjectService,
@@ -106,7 +106,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    this.projectSummaryComponent = requireNonNull(projectSummaryNewComponent);
+    this.projectSummaryComponent = requireNonNull(projectSummaryComponent);
     this.experimentListComponent = requireNonNull(experimentListComponent,
         "experimentListComponent must not be null");
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
@@ -139,7 +139,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
     this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
     addClassName("project");
-    add(projectSummaryComponent, offerListComponent, offerDownload, experimentListComponent,
+    add(this.projectSummaryComponent, offerListComponent, offerDownload, experimentListComponent,
         qualityControlListComponent, qualityControlDownload);
     this.terminologyService = terminologyService;
   }

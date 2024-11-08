@@ -27,6 +27,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @since 1.0.0
  */
+@Deprecated(since = "1.6.0")
 public class AutocompleteContactField extends CustomField<Contact> implements
     HasBinderValidation<Contact> {
 

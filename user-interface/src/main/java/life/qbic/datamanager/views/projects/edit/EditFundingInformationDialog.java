@@ -13,8 +13,8 @@ import life.qbic.datamanager.views.general.funding.BoundFundingField;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.general.funding.FundingInputForm;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import life.qbic.datamanager.views.strategy.DialogClosingStrategy;
+import life.qbic.datamanager.views.projects.ProjectInformation;
+import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -35,6 +35,9 @@ public class EditFundingInformationDialog extends DialogWindow {
   public EditFundingInformationDialog(ProjectInformation project) {
     super();
     this.projectInformation = Objects.requireNonNull(project);
+    this.noChangesClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
+    this.warningClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
+
     addClassName("large-dialog");
     var content = new Div();
     content.addClassName("horizontal-list");

@@ -9,9 +9,9 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.Heading;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
+import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
-import life.qbic.datamanager.views.strategy.DialogClosingStrategy;
+import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
 
 
 /**

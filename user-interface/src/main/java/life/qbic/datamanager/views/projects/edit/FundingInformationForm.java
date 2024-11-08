@@ -3,8 +3,8 @@ package life.qbic.datamanager.views.projects.edit;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.data.binder.ValidationException;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.create.FundingInformationLayout;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
 
 /**
  * <b><class short description - 1 Line!></b>

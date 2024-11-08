@@ -4,8 +4,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
+import life.qbic.datamanager.views.projects.ProjectInformation;
 
 /**
  * <b><class short description - 1 Line!></b>

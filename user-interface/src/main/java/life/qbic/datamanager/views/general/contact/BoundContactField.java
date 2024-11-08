@@ -20,10 +20,13 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
 
   private final Binder<ContactContainer> binder;
 
+  private Contact originalValue;
+
   private BoundContactField(ContactField contactField,
       SerializablePredicate<Contact> predicate) {
     this.contactField = contactField;
     this.binder = createBinder(predicate);
+    this.originalValue = new Contact("", "");
   }
 
   /**
@@ -90,6 +93,7 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
         .bind(ContactContainer::getContact, ContactContainer::setContact);
     binder.forField(contactField.getEmailTextField()).withValidator(new EmailValidator("Please provide a valid email address, e.g. my.name@example.com"))
         .bind(ContactContainer::getEmail, ContactContainer::setEmail);
+    binder.forField(contactField.getFullNameTextField()).bind(ContactContainer::getFullName, ContactContainer::setFullName);
     return binder;
   }
 
@@ -110,6 +114,7 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
     var container = new ContactContainer();
     container.setContact(value);
     binder.readBean(container);
+    originalValue = value;
   }
 
   @Override
@@ -119,8 +124,14 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
 
   @Override
   public boolean hasChanged() {
-    return binder.hasChanges();
+    return binder.hasChanges() || isDifferent(originalValue, binder.getBean());
   }
+
+  private boolean isDifferent(Contact originalValue, ContactContainer bean) {
+    var newValue = bean.getContact();
+    return !Objects.equals(originalValue, newValue);
+  }
+
 
   private static class ContactContainer {
 
@@ -145,6 +156,16 @@ public class BoundContactField implements BoundField<ContactField, Contact> {
     public void setEmail(String email) {
       if (contact != null) {
         contact.setEmail(email);
+      }
+    }
+
+    public String getFullName() {
+      return contact == null ? "" : contact.getFullName();
+    }
+
+    public void setFullName(String fullName) {
+      if (contact != null) {
+        contact.setFullName(fullName);
       }
     }
 
