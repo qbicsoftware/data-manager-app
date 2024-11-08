@@ -277,12 +277,14 @@ public class ProjectSummaryComponent extends PageArea {
     var piBox = new DetailBox();
     var piBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Principal Investigator");
     piBox.setHeader(piBoxHeader);
+    piBox.addClassName("fixed-medium-width");
     var principalInvestigator = project.getPrincipalInvestigator();
     piBox.setContent(renderContactInfo(principalInvestigator));
 
     var pmBox = new DetailBox();
     var pmBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Manager");
     pmBox.setHeader(pmBoxHeader);
+    pmBox.addClassName("fixed-medium-width");
     var projectManager = project.getProjectManager();
     pmBox.setContent(renderContactInfo(projectManager));
 
@@ -293,6 +295,7 @@ public class ProjectSummaryComponent extends PageArea {
       var prBox = new DetailBox();
       var prBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Responsible");
       prBox.setHeader(prBoxHeader);
+      prBox.addClassName("fixed-medium-width");
       var responsible = project.getResponsiblePerson().get();
       prBox.setContent(renderContactInfo(responsible));
       projectContactsSection.content().add(prBox);
@@ -583,7 +586,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private Div createTags(ProjectOverview projectOverview) {
     var tags = new Div();
-    tags.addClassNames("tag-list", "gap-m");
+    tags.addClassNames("tag-list", "gap-large");
     buildTags(projectOverview).forEach(tags::add);
     return tags;
   }

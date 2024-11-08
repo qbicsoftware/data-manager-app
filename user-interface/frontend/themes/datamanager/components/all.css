@@ -168,6 +168,10 @@
   text-overflow: ellipsis;
 }
 
+.gap-large {
+  gap: var(--lumo-space-l);
+}
+
 .gap-medium {
   gap: var(--lumo-space-m);
 }
