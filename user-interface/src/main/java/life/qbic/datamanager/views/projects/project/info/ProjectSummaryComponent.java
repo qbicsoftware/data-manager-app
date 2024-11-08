@@ -55,10 +55,10 @@ import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
-import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
 import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
@@ -168,7 +168,8 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
-    return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(), contact.emailAddress());
+    return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
+        contact.emailAddress());
   }
 
   private static Button createButtonWithListener(String label,
@@ -300,6 +301,9 @@ public class ProjectSummaryComponent extends PageArea {
       prBox.setContent(renderContactInfo(responsible));
       projectContactsSection.content().add(prBox);
     }
+
+    projectContactsSection.content().addClassNames("horizontal-list", "gap-medium",
+        "wrapping-flex-container");
   }
 
   private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
@@ -361,7 +365,8 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
-    var dialog = new EditContactDialog(projectInformation, Utility.tryToLoadFromPrincipal().orElse(null));
+    var dialog = new EditContactDialog(projectInformation,
+        Utility.tryToLoadFromPrincipal().orElse(null));
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
         "project.edit.cancel-confirmation.message", getLocale());
