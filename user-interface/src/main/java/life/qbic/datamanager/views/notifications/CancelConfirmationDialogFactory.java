@@ -101,7 +101,7 @@ public class CancelConfirmationDialogFactory {
           EMPTY_PARAMETERS, locale).strip().toUpperCase();
       return MessageType.valueOf(messageType);
     } catch (NoSuchMessageException e) {
-      log.warn("No message type specified for %s." + key);
+      log.warn("No message type specified for %s.".formatted(key));
       return DEFAULT_MESSAGE_TYPE;
     }
   }

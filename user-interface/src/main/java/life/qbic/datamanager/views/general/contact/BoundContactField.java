@@ -5,7 +5,7 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.BoundField;
+import life.qbic.datamanager.views.general.HasBoundField;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -14,7 +14,7 @@ import life.qbic.datamanager.views.general.BoundField;
  *
  * @since <version tag>
  */
-public class BoundContactField implements BoundField<ContactField, Contact> {
+public class BoundContactField implements HasBoundField<ContactField, Contact> {
 
   private final ContactField contactField;
 

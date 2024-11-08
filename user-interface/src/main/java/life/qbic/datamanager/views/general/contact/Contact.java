@@ -54,6 +54,8 @@ public final class Contact implements Serializable {
     }
     return new life.qbic.projectmanagement.domain.model.project.Contact(getFullName(), getEmail());
   }
+
+
   @Override
   public boolean equals(Object obj) {
     if (obj == this) {

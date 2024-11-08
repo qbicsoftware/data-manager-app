@@ -2,6 +2,12 @@ package life.qbic.datamanager.views.general.utils;
 
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import java.util.Optional;
+import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -22,5 +28,21 @@ public class Utility {
     int maxLength = textArea.getMaxLength();
     int consumedLength = textArea.getValue().length();
     textArea.setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  public static Optional<Contact> tryToLoadFromPrincipal() {
+    var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    String fullName;
+    String emailAddress;
+    if (principal instanceof QbicUserDetails qbicUserDetails) {
+      fullName = qbicUserDetails.fullName();
+      emailAddress = qbicUserDetails.getEmailAddress();
+    } else if (principal instanceof QbicOidcUser qbicOidcUser) {
+      fullName = qbicOidcUser.getFullName();
+      emailAddress = qbicOidcUser.getEmail();
+    } else {
+      return Optional.empty();
+    }
+    return Optional.of(new Contact(fullName, emailAddress));
   }
 }

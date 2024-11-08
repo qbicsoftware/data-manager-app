@@ -6,7 +6,7 @@ import com.vaadin.flow.data.binder.Validator;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.BoundField;
+import life.qbic.datamanager.views.general.HasBoundField;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -15,7 +15,7 @@ import life.qbic.datamanager.views.general.BoundField;
  *
  * @since <version tag>
  */
-public class BoundFundingField implements BoundField<FundingField, FundingEntry> {
+public class BoundFundingField implements HasBoundField<FundingField, FundingEntry> {
 
   private final FundingField fundingField;
 
@@ -42,6 +42,7 @@ public class BoundFundingField implements BoundField<FundingField, FundingEntry>
         .bind(FundingInformationContainer::get, FundingInformationContainer::set);
   }
 
+  @SafeVarargs
   private static void bindWithValidators(Binder<FundingInformationContainer> binder,
       FundingField fundingField, Validator<FundingEntry>... validators) {
     var binding = binder.forField(fundingField);

@@ -9,6 +9,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.events.ContactUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.contact.BoundContactField;
+import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.contact.ContactsForm;
 import life.qbic.datamanager.views.projects.ProjectInformation;
@@ -31,7 +32,7 @@ public class EditContactDialog extends DialogWindow {
   private BoundContactField investigatorBinding;
   private BoundContactField projectResponsibleBinding;
 
-  public EditContactDialog(ProjectInformation projectInformation) {
+  public EditContactDialog(ProjectInformation projectInformation, Contact currentUser) {
     super();
     addClassName("large-dialog");
 
@@ -39,7 +40,7 @@ public class EditContactDialog extends DialogWindow {
     content.addClassNames("vertical-list");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
-    setHeaderTitle("Project Contacts");
+    setHeaderTitle("Edit Project Contacts");
     var fieldPrincipalInvestigator = createRequired("Principal Investigator");
     var fieldProjectResponsible = createOptional(
         "Project Responsible / Co-Investigator (optional)");
@@ -52,10 +53,13 @@ public class EditContactDialog extends DialogWindow {
     this.noChangesClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
     this.warningClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
 
-
     investigatorBinding.setValue(projectInformation.getPrincipalInvestigator());
     managerBinding.setValue(projectInformation.getProjectManager());
     projectInformation.getResponsiblePerson().ifPresent(contact -> projectResponsibleBinding.setValue(contact));
+
+    fieldProjectManager.setMyself(currentUser, "Set myself as project manager");
+    fieldProjectResponsible.setMyself(currentUser , "Set myself as project responsible");
+    fieldPrincipalInvestigator.setMyself(currentUser, "Set myself as principal investigator");
 
     content.add(
         new ContactsForm(fieldPrincipalInvestigator, fieldProjectResponsible, fieldProjectManager));
@@ -64,13 +68,13 @@ public class EditContactDialog extends DialogWindow {
   }
 
   private static ContactField createRequired(String label) {
-    var contact = new ContactField(label);
+    var contact = ContactField.createSimple(label);
     contact.setRequiredIndicatorVisible(true);
     return contact;
   }
 
   private static ContactField createOptional(String label) {
-    return new ContactField(label);
+    return ContactField.createSimple(label);
   }
 
   public void setDefaultCancelStrategy(DialogClosingStrategy strategy) {
@@ -110,19 +114,5 @@ public class EditContactDialog extends DialogWindow {
   public void addUpdateEventListener(
       ComponentEventListener<ContactUpdateEvent> listener) {
     addListener(ContactUpdateEvent.class, listener);
-  }
-
-  private static class ImmediateClosingStrategy implements DialogClosingStrategy {
-
-    private final DialogWindow window;
-
-    public ImmediateClosingStrategy(DialogWindow window) {
-      this.window = window;
-    }
-
-    @Override
-    public void execute() {
-      window.close();
-    }
   }
 }

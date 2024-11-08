@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.Validator;
+import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.events.FundingInformationUpdateEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -43,13 +44,19 @@ public class EditFundingInformationDialog extends DialogWindow {
     content.addClassName("horizontal-list");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
-    setHeaderTitle("Funding Information");
+    setHeaderTitle("Edit Funding Information");
     var fundingField = FundingField.createHorizontal("Funding");
     form = FundingInputForm.create(new BoundFundingField(fundingField,
-        Validator.from((FundingEntry value) -> !value.getLabel().isBlank(), "")));
+        Validator.from(incompletePredicate(), "Please provide complete information for both, grant and grand ID.")));
     form.setContent(project.getFundingEntry().orElse(new FundingEntry("", "")));
     content.add(form);
     add(content);
+  }
+
+  private static SerializablePredicate<FundingEntry> incompletePredicate() {
+    return (FundingEntry entry) ->
+      !((entry.getLabel().isBlank() && !entry.getReferenceId().isBlank()) ||
+          (!entry.getLabel().isBlank() && entry.getReferenceId().isBlank()));
   }
 
   public void setDefaultCancelStrategy(DialogClosingStrategy strategy) {

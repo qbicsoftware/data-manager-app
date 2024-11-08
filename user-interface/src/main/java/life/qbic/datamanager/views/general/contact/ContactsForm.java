@@ -13,17 +13,13 @@ import java.util.Objects;
  */
 public class ContactsForm extends Div {
 
-  private final ContactField principleInvestigator;
-  private final ContactField personResponsible;
-  private final ContactField projectManager;
-
   public ContactsForm(
       ContactField principalInvestigator,
       ContactField personResponsible,
       ContactField projectManager) {
-    this.principleInvestigator =  Objects.requireNonNull(principalInvestigator);
-    this.personResponsible = Objects.requireNonNull(personResponsible);
-    this.projectManager = Objects.requireNonNull(projectManager);
+    Objects.requireNonNull(principalInvestigator);
+    Objects.requireNonNull(personResponsible);
+    Objects.requireNonNull(projectManager);
 
     addClassNames("vertical-list", "gap-m");
 

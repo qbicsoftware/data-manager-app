@@ -3,7 +3,7 @@ package life.qbic.datamanager.views.general.funding;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.data.binder.ValidationException;
 import java.util.Objects;
-import life.qbic.datamanager.views.general.BoundField;
+import life.qbic.datamanager.views.general.HasBoundField;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -14,14 +14,14 @@ import life.qbic.datamanager.views.general.BoundField;
  */
 public class FundingInputForm extends FormLayout  {
 
-  private final BoundField<FundingField, FundingEntry> fundingField;
+  private final HasBoundField<FundingField, FundingEntry> fundingField;
 
-  public static FundingInputForm create(BoundField<FundingField, FundingEntry> fundingField) {
+  public static FundingInputForm create(HasBoundField<FundingField, FundingEntry> fundingField) {
     Objects.requireNonNull(fundingField);
     return new FundingInputForm(fundingField);
   }
 
-  private FundingInputForm(BoundField<FundingField, FundingEntry> fundingField) {
+  private FundingInputForm(HasBoundField<FundingField, FundingEntry> fundingField) {
     this.fundingField = fundingField;
     add(fundingField.getField());
   }

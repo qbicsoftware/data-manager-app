@@ -52,6 +52,7 @@ import life.qbic.datamanager.views.general.section.SectionHeader;
 import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
+import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
@@ -225,9 +226,9 @@ public class ProjectSummaryComponent extends PageArea {
         .orElseThrow(() -> new ApplicationException("No project with given ID found"));
     var fullProject = projectInformationService.find(projectId)
         .orElseThrow(() -> new ApplicationException("No project found"));
-    var experiments = experimentInformationService.findAllForProject(projectId);
     reloadProjectDesign(projectOverview, fullProject);
     reloadFundingInfoSection(fullProject);
+    reloadProjectContactsSection(fullProject);
     // apply scope strategy again
     this.scopes.forEach(UserScopeStrategy::execute);
   }
@@ -238,6 +239,10 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void reloadFundingInfoSection(Project project) {
     buildFundingInformationSection(project, convertToInfo(project));
+  }
+
+  private void reloadProjectContactsSection(Project project) {
+    buildProjectContactsInfoSection(project);
   }
 
   private void setContent(ProjectOverview projectOverview, Project fullProject,
@@ -353,7 +358,7 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
-    var dialog = new EditContactDialog(projectInformation);
+    var dialog = new EditContactDialog(projectInformation, Utility.tryToLoadFromPrincipal().orElse(null));
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
         "project.edit.cancel-confirmation.message", getLocale());
@@ -578,7 +583,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private Div createTags(ProjectOverview projectOverview) {
     var tags = new Div();
-    tags.addClassName("tag-list");
+    tags.addClassNames("tag-list", "gap-m");
     buildTags(projectOverview).forEach(tags::add);
     return tags;
   }

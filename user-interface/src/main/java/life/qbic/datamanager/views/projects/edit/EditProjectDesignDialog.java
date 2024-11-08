@@ -37,7 +37,7 @@ public class EditProjectDesignDialog extends DialogWindow {
     content.addClassName("vertical-list");
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
-    setHeaderTitle("Project Design");
+    setHeaderTitle("Edit Project Design");
     content.add(Heading.withText("Project ID"));
     content.add(new SimpleParagraph(project.getProjectId()));
     form = new ProjectDesignForm();
