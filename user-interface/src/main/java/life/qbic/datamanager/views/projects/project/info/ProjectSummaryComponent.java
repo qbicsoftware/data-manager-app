@@ -335,8 +335,12 @@ public class ProjectSummaryComponent extends PageArea {
       editFundingInfoDialog = buildAndWireEditFinanceInfo(projectInformation);
       editFundingInfoDialog.open();
       editFundingInfoDialog.addUpdateEventListener(event -> {
-        updateFundingInfo(context.projectId().orElseThrow(),
-            event.content().orElseThrow().getFundingEntry().orElseThrow());
+        var projectId = context.projectId().orElseThrow();
+        // If the funding entry is "null", we need to remove the funding from the project
+        // Otherwise we update it
+        event.content().orElseThrow().getFundingEntry()
+            .ifPresentOrElse(fundingEntry -> updateFundingInfo(projectId, fundingEntry),
+                () -> removeFunding(projectId));
         reloadInformation(context);
         editFundingInfoDialog.close();
         var toast = notificationFactory.toast("project.updated.success",
@@ -493,6 +497,10 @@ public class ProjectSummaryComponent extends PageArea {
   private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
     projectInformationService.setFunding(projectId, fundingEntry.getLabel(),
         fundingEntry.getReferenceId());
+  }
+
+  private void removeFunding(ProjectId projectId) {
+    projectInformationService.removeFunding(projectId);
   }
 
   private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
