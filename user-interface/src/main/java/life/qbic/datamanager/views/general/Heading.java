@@ -6,11 +6,9 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Heading (with icon support)</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class Heading extends Div {
 

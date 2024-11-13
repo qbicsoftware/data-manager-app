@@ -4,19 +4,23 @@ import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Tag Factory</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Create display tags for all thinkable use cases.</p>
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class TagFactory {
 
   public static Tag forMeasurement(MeasurementType measurementType) {
     return switch (measurementType) {
-      case GENOMICS -> violetTag("Genomics");
-      case PROTEOMICS -> pinkTag("Proteomics");
+      case GENOMICS -> pinkTag("Genomics");
+      case PROTEOMICS -> violetTag("Proteomics");
     };
+  }
+
+  public static Tag forCustom(String label, TagColor tagColor) {
+    return tagWithColor(label, tagColor);
   }
 
   private static Tag tagWithColor(String label, TagColor color) {

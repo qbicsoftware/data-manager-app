@@ -10,18 +10,17 @@ import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Information</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Down to earth project info data container.</p>
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public final class ProjectInformation implements Serializable {
 
-  private String projectId = "";
-
   @Serial
   private static final long serialVersionUID = -7260109309939021850L;
+  private String projectId = "";
   @NotEmpty
   private String projectTitle = "";
   @NotEmpty
@@ -33,13 +32,6 @@ public final class ProjectInformation implements Serializable {
   private Contact responsiblePerson;
   @NotEmpty
   private Contact projectManager;
-
-  public Optional<FundingEntry> getFundingEntry() {
-    if (fundingEntry == null || fundingEntry.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(fundingEntry);
-  }
 
   public static ProjectInformation copy(ProjectInformation projectInformation) {
     ProjectInformation copy = new ProjectInformation();
@@ -53,16 +45,15 @@ public final class ProjectInformation implements Serializable {
     return copy;
   }
 
+  public Optional<FundingEntry> getFundingEntry() {
+    if (fundingEntry == null || fundingEntry.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(fundingEntry);
+  }
+
   public void setFundingEntry(FundingEntry fundingEntry) {
     this.fundingEntry = fundingEntry;
-  }
-
-  public void setProjectTitle(String projectTitle) {
-    this.projectTitle = projectTitle;
-  }
-
-  public void setProjectObjective(String projectObjective) {
-    this.projectObjective = projectObjective;
   }
 
   public Contact getPrincipalInvestigator() {
@@ -98,16 +89,24 @@ public final class ProjectInformation implements Serializable {
     return projectTitle;
   }
 
+  public void setProjectTitle(String projectTitle) {
+    this.projectTitle = projectTitle;
+  }
+
   public String getProjectObjective() {
     return projectObjective;
   }
 
-  public void setProjectId(String projectId) {
-    this.projectId = projectId;
+  public void setProjectObjective(String projectObjective) {
+    this.projectObjective = projectObjective;
   }
 
   public String getProjectId() {
     return projectId;
+  }
+
+  public void setProjectId(String projectId) {
+    this.projectId = projectId;
   }
 
   @Override

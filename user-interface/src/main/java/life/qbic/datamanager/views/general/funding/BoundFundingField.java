@@ -7,13 +7,15 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
+import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.datamanager.views.general.contact.ContactField;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Bound Funding Field</b>
+ * <p>
+ * Binds a {@link FundingField} to a {@link FundingEntry}-
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class BoundFundingField implements HasBoundField<FundingField, FundingEntry> {
 
@@ -86,10 +88,8 @@ public class BoundFundingField implements HasBoundField<FundingField, FundingEnt
     return !oldValue.equals(newValue);
   }
 
-  public static final class FundingInformationContainer implements Serializable {
+  public static final class FundingInformationContainer {
 
-    @Serial
-    private static final long serialVersionUID = -2344442429490382769L;
     private FundingEntry fundingEntry;
 
     public FundingEntry get() {

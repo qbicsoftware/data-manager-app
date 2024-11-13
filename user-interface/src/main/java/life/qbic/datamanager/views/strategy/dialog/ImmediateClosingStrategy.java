@@ -4,11 +4,12 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Dialog Closing Strategy</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>The simplest strategy implementation: it just closes the referenced {@link DialogWindow} on
+ * execution.</p>
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class ImmediateClosingStrategy implements DialogClosingStrategy {
 

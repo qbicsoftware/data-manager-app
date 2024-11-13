@@ -6,15 +6,14 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Utility - Tools for the app</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Some tools that can be reused in the frontend.</p>
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class Utility {
 

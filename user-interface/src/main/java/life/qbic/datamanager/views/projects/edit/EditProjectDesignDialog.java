@@ -15,11 +15,11 @@ import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
 
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Edit Project Design Dialog</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Dialog that is displayed to the user, when they want to enter project design information.</p>
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 @UIScope
 public class EditProjectDesignDialog extends DialogWindow {

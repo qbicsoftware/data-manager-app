@@ -6,13 +6,7 @@ import java.util.Optional;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 
-/**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
- */
+
 public class ContactUpdateEvent extends ComponentEvent<EditContactDialog> {
 
   private final ProjectInformation projectInfo;

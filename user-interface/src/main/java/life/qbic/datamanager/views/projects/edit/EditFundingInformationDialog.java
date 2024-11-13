@@ -18,11 +18,11 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Funding Information Dialog</b>
+ * <p>
+ * Dialog that is displayed to the user, when they want to edit funding information.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class EditFundingInformationDialog extends DialogWindow {
 
@@ -47,7 +47,8 @@ public class EditFundingInformationDialog extends DialogWindow {
     setHeaderTitle("Edit Funding Information");
     var fundingField = FundingField.createHorizontal("Funding");
     form = FundingInputForm.create(new BoundFundingField(fundingField,
-        Validator.from(incompletePredicate(), "Please provide complete information for both, grant and grand ID.")));
+        Validator.from(incompletePredicate(),
+            "Please provide complete information for both, grant and grand ID.")));
     form.setContent(project.getFundingEntry().orElse(new FundingEntry("", "")));
     content.add(form);
     add(content);
@@ -55,8 +56,8 @@ public class EditFundingInformationDialog extends DialogWindow {
 
   private static SerializablePredicate<FundingEntry> incompletePredicate() {
     return (FundingEntry entry) ->
-      !((entry.getLabel().isBlank() && !entry.getReferenceId().isBlank()) ||
-          (!entry.getLabel().isBlank() && entry.getReferenceId().isBlank()));
+        !((entry.getLabel().isBlank() && !entry.getReferenceId().isBlank()) ||
+            (!entry.getLabel().isBlank() && entry.getReferenceId().isBlank()));
   }
 
   public void setDefaultCancelStrategy(DialogClosingStrategy strategy) {
@@ -87,7 +88,8 @@ public class EditFundingInformationDialog extends DialogWindow {
     }
   }
 
-  public void addUpdateEventListener(ComponentEventListener<FundingInformationUpdateEvent> listener) {
+  public void addUpdateEventListener(
+      ComponentEventListener<FundingInformationUpdateEvent> listener) {
     addListener(FundingInformationUpdateEvent.class, listener);
   }
 

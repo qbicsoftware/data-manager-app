@@ -268,7 +268,6 @@ public class ProjectSummaryComponent extends PageArea {
         editContactsDialog.close();
         var toast = notificationFactory.toast("project.updated.success",
             new String[]{project.getProjectCode().value()}, getLocale());
-        toast.setDuration(Duration.ofSeconds(5));
         toast.open();
       });
     });
@@ -345,7 +344,6 @@ public class ProjectSummaryComponent extends PageArea {
         editFundingInfoDialog.close();
         var toast = notificationFactory.toast("project.updated.success",
             new String[]{fullProject.getProjectCode().value()}, getLocale());
-        toast.setDuration(Duration.ofSeconds(5));
         toast.open();
       });
     });
@@ -472,7 +470,6 @@ public class ProjectSummaryComponent extends PageArea {
         editProjectDesignDialog.close();
         var toast = notificationFactory.toast("project.updated.success",
             new String[]{project.getProjectCode().value()}, getLocale());
-        toast.setDuration(Duration.ofSeconds(5));
         toast.open();
       });
 

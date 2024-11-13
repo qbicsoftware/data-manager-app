@@ -3,11 +3,12 @@ package life.qbic.datamanager.views.projects.project.info;
 import com.vaadin.flow.component.html.Div;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b><Simple Paragraph</b>
+ * <p>
+ * Truly is what the name suggests: a simple paragraph, which is a div element with a annotated CSS
+ * class "simple-paragraph".
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class SimpleParagraph extends Div {
 

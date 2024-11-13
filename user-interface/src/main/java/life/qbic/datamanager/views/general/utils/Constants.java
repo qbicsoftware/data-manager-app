@@ -1,11 +1,11 @@
 package life.qbic.datamanager.views.general.utils;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Constants</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Some effort to bundle frontend constants in one class
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class Constants {
 

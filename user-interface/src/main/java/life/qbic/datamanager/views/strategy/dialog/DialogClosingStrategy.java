@@ -1,11 +1,12 @@
 package life.qbic.datamanager.views.strategy.dialog;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Dialog Closing Strategy</b>
+ * <p>
+ * Indicates support of a dialog closing strategy and should be used whenever a dialog that expects
+ * user confirmation is used in the application.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public interface DialogClosingStrategy {
 

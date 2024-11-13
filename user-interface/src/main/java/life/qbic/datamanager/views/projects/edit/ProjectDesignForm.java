@@ -11,11 +11,11 @@ import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Project Design Form</b>
+ * <p>
+ * Can be used request input related to the project design.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class ProjectDesignForm extends FormLayout {
 
@@ -48,15 +48,17 @@ public class ProjectDesignForm extends FormLayout {
     objectiveField.setMaxLength(Constants.PROJECT_OBJECTIVE_MAX_LENGTH);
     objectiveField.setValueChangeMode(ValueChangeMode.EAGER);
     Utility.addConsumedLengthHelper(objectiveField);
-    objectiveField.addValueChangeListener(event -> Utility.addConsumedLengthHelper(event.getSource()));
+    objectiveField.addValueChangeListener(
+        event -> Utility.addConsumedLengthHelper(event.getSource()));
 
-    binder.forField(titleField).withValidator(it -> !it.isBlank(), "Please provide a project title" )
+    binder.forField(titleField).withValidator(it -> !it.isBlank(), "Please provide a project title")
         .bind(ProjectInformation::getProjectTitle, ProjectInformation::setProjectTitle);
 
-    binder.forField(objectiveField).withValidator(it -> !it.isBlank(), "Please provide a project objective" )
+    binder.forField(objectiveField)
+        .withValidator(it -> !it.isBlank(), "Please provide a project objective")
         .bind(ProjectInformation::getProjectObjective, ProjectInformation::setProjectObjective);
 
-    add( titleField, objectiveField);
+    add(titleField, objectiveField);
     setColspan(titleField, 2);
     setColspan(objectiveField, 2);
 

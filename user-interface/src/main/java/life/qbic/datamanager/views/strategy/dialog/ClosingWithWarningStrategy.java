@@ -5,13 +5,14 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Closing With Warning Strategy</b>
+ * <p>
+ * A {@link DialogClosingStrategy} implementation, that will open a {@link ConfirmDialog} when
+ * executed.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
-public class ClosingWithWarningStrategy implements DialogClosingStrategy{
+public class ClosingWithWarningStrategy implements DialogClosingStrategy {
 
   private final DialogWindow window;
 

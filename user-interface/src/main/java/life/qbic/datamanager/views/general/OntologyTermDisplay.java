@@ -6,28 +6,21 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Ontology Term Display</b>
+ * <p>
+ * Renders an ontology term nicely as a badge with href.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class OntologyTermDisplay extends Div {
 
-  private Span link;
-
-  private Span label;
-
-  private String curie;
-
-  private OntologyTermDisplay() {};
 
   public OntologyTermDisplay(String label, String curie, String reference) {
     Div ontology = new Div();
     ontology.addClassName("vertical-list");
     Span ontologyLabel = new Span(label);
     ontologyLabel.addClassName("overflow-hidden-ellipsis");
-    Span ontologyLink = new Span(OboIdRenderer.render(curie));
+    Span ontologyLink = new Span(OboIdFormatter.render(curie));
     ontologyLink.addClassName("ontology-link");
     Anchor ontologyClassIri = new Anchor(reference, ontologyLink);
     ontologyClassIri.setTarget(AnchorTarget.BLANK);

@@ -6,24 +6,24 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Funding Input Form</b>
+ * <p>
+ * Form that can be used to request funding information about a project from a user.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
-public class FundingInputForm extends FormLayout  {
+public class FundingInputForm extends FormLayout {
 
   private final HasBoundField<FundingField, FundingEntry> fundingField;
-
-  public static FundingInputForm create(HasBoundField<FundingField, FundingEntry> fundingField) {
-    Objects.requireNonNull(fundingField);
-    return new FundingInputForm(fundingField);
-  }
 
   private FundingInputForm(HasBoundField<FundingField, FundingEntry> fundingField) {
     this.fundingField = fundingField;
     add(fundingField.getField());
+  }
+
+  public static FundingInputForm create(HasBoundField<FundingField, FundingEntry> fundingField) {
+    Objects.requireNonNull(fundingField);
+    return new FundingInputForm(fundingField);
   }
 
   public void setContent(FundingEntry fundingEntry) {

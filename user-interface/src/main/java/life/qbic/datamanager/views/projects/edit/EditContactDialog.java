@@ -16,11 +16,11 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Edit Contact Dialog</b>
+ * <p>
+ * Dialog that is displayed to the user, when they want to edit contact information.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class EditContactDialog extends DialogWindow {
 
@@ -55,10 +55,11 @@ public class EditContactDialog extends DialogWindow {
 
     investigatorBinding.setValue(projectInformation.getPrincipalInvestigator());
     managerBinding.setValue(projectInformation.getProjectManager());
-    projectInformation.getResponsiblePerson().ifPresent(contact -> projectResponsibleBinding.setValue(contact));
+    projectInformation.getResponsiblePerson()
+        .ifPresent(contact -> projectResponsibleBinding.setValue(contact));
 
     fieldProjectManager.setMyself(currentUser, "Set myself as project manager");
-    fieldProjectResponsible.setMyself(currentUser , "Set myself as project responsible");
+    fieldProjectResponsible.setMyself(currentUser, "Set myself as project responsible");
     fieldPrincipalInvestigator.setMyself(currentUser, "Set myself as principal investigator");
 
     content.add(
@@ -108,7 +109,8 @@ public class EditContactDialog extends DialogWindow {
   }
 
   private boolean anyChanges() {
-    return investigatorBinding.hasChanged() || projectResponsibleBinding.hasChanged() || managerBinding.hasChanged();
+    return investigatorBinding.hasChanged() || projectResponsibleBinding.hasChanged()
+        || managerBinding.hasChanged();
   }
 
   public void addUpdateEventListener(

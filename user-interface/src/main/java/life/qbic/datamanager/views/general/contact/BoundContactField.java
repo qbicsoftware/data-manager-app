@@ -4,17 +4,16 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.EmailValidator;
-import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Bound Contact Field</b>
+ * <p>
+ * Binds a {@link ContactField} to a {@link Contact}-
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class BoundContactField implements HasBoundField<ContactField, Contact> {
 
@@ -28,7 +27,8 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
       SerializablePredicate<Contact> predicate) {
     this.contactField = contactField;
     this.binder = createBinder(predicate);
-    binder.addStatusChangeListener(event -> updateStatus(contactField, event.hasValidationErrors()));
+    binder.addStatusChangeListener(
+        event -> updateStatus(contactField, event.hasValidationErrors()));
     this.originalValue = new Contact("", "");
   }
 
@@ -88,9 +88,6 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    * This predicate will return <code>true</code>, if all fields are empty or both are filled.
    * <p>
    * If either is filled alone, the predicate will return <code>false</code>
-   *
-   * @return
-   * @since
    */
   private static SerializablePredicate<Contact> isOptional() {
     return contact -> {
@@ -105,9 +102,11 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     binder.setBean(new ContactContainer());
     binder.forField(contactField).withValidator(predicate, "There is still information missing")
         .bind(ContactContainer::getContact, ContactContainer::setContact);
-    binder.forField(contactField.getEmailTextField()).withValidator(new EmailValidator("Please provide a valid email address, e.g. my.name@example.com", true))
+    binder.forField(contactField.getEmailTextField()).withValidator(
+            new EmailValidator("Please provide a valid email address, e.g. my.name@example.com", true))
         .bind(ContactContainer::getEmail, ContactContainer::setEmail);
-    binder.forField(contactField.getFullNameTextField()).bind(ContactContainer::getFullName, ContactContainer::setFullName);
+    binder.forField(contactField.getFullNameTextField())
+        .bind(ContactContainer::getFullName, ContactContainer::setFullName);
 
     return binder;
   }

@@ -5,11 +5,22 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Detail Box</b>
+ * <p>
+ * A data manager detail box contains of the two main layout sections:
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <ul>
+ *   <li>Header Section</li>
+ *   <li>Content Section</li>
+ * </ul>
+ * <p>
+ * Detail boxes are used to visually highlight some contextual information to the user,
+ * with a descriptive heading, icons and some border to separate it from the surrounding elements.
+ * <p>
+ * Developer hint: the content section can be filled with any content, but the height is currently
+ * restricted to 10rem (css: detail-box). Then the overflow will trigger a scrollbar in the content section.
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class DetailBox extends Div {
 
@@ -71,31 +82,27 @@ public class DetailBox extends Div {
       this();
       this.icon = icon;
       heading.setText(text);
-      displayIcon();
-      rebuild();
-    }
-
-    private void displayIcon () {
-      this.iconVisible = true;
-    }
-
-    private void hideTheIcon () {
-      this.iconVisible = false;
-    }
-
-    public void showIcon() {
-      displayIcon();
-      rebuild();
-    }
-
-    public void hideIcon() {
-      hideTheIcon();
+      showIcon();
       rebuild();
     }
 
     public Header(String text) {
       this();
       heading.setText(text);
+      rebuild();
+    }
+
+    private void setIconVisibility(boolean visible) {
+      iconVisible = visible;
+    }
+
+    public void showIcon() {
+      setIconVisibility(true);
+      rebuild();
+    }
+
+    public void hideIcon() {
+      setIconVisibility(false);
       rebuild();
     }
 

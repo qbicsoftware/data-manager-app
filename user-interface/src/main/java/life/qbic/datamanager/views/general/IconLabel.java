@@ -6,11 +6,11 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Icon label</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Provides an icon and a label next to it.</p>
  *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class IconLabel extends Div {
 

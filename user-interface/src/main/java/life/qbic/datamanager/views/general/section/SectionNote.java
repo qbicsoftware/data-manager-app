@@ -3,11 +3,11 @@ package life.qbic.datamanager.views.general.section;
 import com.vaadin.flow.component.html.Div;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Section Note</b>
+ * <p>
+ * Section note as part of a subheader in the context of a {@link Section}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public class SectionNote extends Div {
 

@@ -3,13 +3,13 @@ package life.qbic.datamanager.views.general;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Enforce harmonised CURIE formatting</b>
+ * <p>
+ * Enforced format: <code>ontology-name:id</code>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
-public class OboIdRenderer {
+public class OboIdFormatter {
 
   public static String render(OntologyTerm term) {
     return enforceColonSeparator(term.getOboId());
@@ -20,6 +20,6 @@ public class OboIdRenderer {
   }
 
   private static String enforceColonSeparator(String term) {
-    return  term.replace("_", ":");
+    return term.replace("_", ":");
   }
 }
