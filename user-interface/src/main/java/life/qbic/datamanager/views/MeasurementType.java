@@ -1,23 +1,24 @@
 package life.qbic.datamanager.views;
 
 /**
- * <b><enum short description - 1 Line!></b>
+ * <b>Measurement Type</b>
+ * <p>
+ * Some controlled enum vocabulary for different measurement types to use in the frontend part of
+ * the application.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.6.0
  */
 public enum MeasurementType {
-    PROTEOMICS("Proteomics"),
-    GENOMICS("Genomics");
+  PROTEOMICS("Proteomics"),
+  GENOMICS("Genomics");
 
-    private final String type;
+  private final String type;
 
-    MeasurementType(String type) {
-      this.type = type;
-    }
+  MeasurementType(String type) {
+    this.type = type;
+  }
 
-    public String getType() {
-      return type;
-    }
+  public String getType() {
+    return type;
+  }
 }
