@@ -144,9 +144,8 @@ public class ConfoundingView extends FormLayout implements HasUrlParameter<Strin
         textArea.clear();
         return;
       }
-      ExperimentReference experimentReference = new ExperimentReference(this.experimentId.value());
       List<ConfoundingVariableLevel> confoundingVariableLevels = confoundingVariableService.listLevelsForVariable(
-          projectId, experimentReference, it.getValue()
+          projectId, it.getValue()
               .id());
       List<String> values = confoundingVariableLevels.stream()
           .map(confoundingVariableLevel -> "%s has %s of %s".formatted(

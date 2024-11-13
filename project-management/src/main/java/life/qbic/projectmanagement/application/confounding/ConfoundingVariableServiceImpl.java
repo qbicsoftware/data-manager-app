@@ -93,7 +93,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
 
   @Override
   public List<ConfoundingVariableLevel> listLevelsForVariable(ProjectId projectId,
-      ExperimentReference experiment, VariableReference variableReference) {
+      VariableReference variableReference) {
     return levelRepository.findAllForVariable(projectId, variableReference.id()).stream()
         .map(data -> new ConfoundingVariableLevel(
             new VariableReference(data.getVariableId()),
@@ -103,16 +103,14 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
-  public VariableReference deleteConfoundingVariable(ProjectId projectId,
+  public void deleteConfoundingVariable(ProjectId projectId,
       ExperimentReference experiment,
       VariableReference variableReference) {
     Optional<ConfoundingVariableData> optionalVariable = variableRepository.findById(projectId,
         variableReference.id());
-    if (optionalVariable.isEmpty()) {
-      return null; //todo or throw exception?
-    }
-    levelRepository.deleteAllForVariable(projectId, variableReference.id());
-    variableRepository.deleteById(projectId, variableReference.id());
-    return variableReference;
+    optionalVariable.ifPresent(variable -> {
+      levelRepository.deleteAllForVariable(projectId, variableReference.id());
+      variableRepository.deleteById(projectId, variableReference.id());
+    });
   }
 }

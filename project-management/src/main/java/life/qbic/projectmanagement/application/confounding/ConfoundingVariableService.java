@@ -10,12 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
  * This is the aggregate for confounding variables. You can
  * {@link #listConfoundingVariablesForExperiment(ProjectId, ExperimentReference)} and for each
  * variable list the existing levels with
- * {@link #listLevelsForVariable(ProjectId, ExperimentReference, VariableReference)}.
- * <br>
+ * {@link #listLevelsForVariable(ProjectId, VariableReference)}.
+ * <p>
  * Further you can get the level of a specific variable for a specific sample with
- * {@link #getVariableLevelForSample(ProjectId, ExperimentReference, SampleReference,
+ * {@link #getVariableLevelForSample(ProjectId, SampleReference, VariableReference)} (ProjectId, ExperimentReference, SampleReference,
  * VariableReference)}
- * <br>
+ * <p>
  * Apart from listing available information this service is the single point in the application
  * where confounding variables may be modified. Please note: variable levels do not have an
  * identifier as they are purely value objects and may be overwritten if changes occur. The service
@@ -96,24 +96,59 @@ public interface ConfoundingVariableService {
       SampleReference sampleReference,
       VariableReference variableReference);
 
+  /**
+   * Lists the levels of a confounding variable
+   *
+   * @param projectId         the identifier of the project
+   * @param variableReference the reference of the variable
+   * @return a list of levels for the confounding variable. The list is empty if no levels exist.
+   */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   @Transactional(readOnly = true)
   List<ConfoundingVariableLevel> listLevelsForVariable(ProjectId projectId,
-      ExperimentReference experiment,
       VariableReference variableReference);
 
+  /**
+   * Creates a confounding variable in an experiment. Information about the created confounding
+   * variable is returned.
+   *
+   * @param projectId    the identifier of the project
+   * @param experiment   a reference to the experiment in which to create the confounding variable.
+   * @param variableName the name of the confounding variable.
+   * @return information about the created confounding variable
+   */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   ConfoundingVariableInformation createConfoundingVariable(ProjectId projectId,
       ExperimentReference experiment,
       String variableName);
 
+  /**
+   * Set the level a sample has for a confounding variable.
+   * <p>
+   * Overwrites an existing level of set sample in the variable, if present.
+   *
+   * @param projectId         the identifier of the project
+   * @param experiment        the experiment containing the variable
+   * @param sampleReference   the sample for which to set the level
+   * @param variableReference the variable for which to set the level
+   * @param level             the value of the level
+   * @return the created confounding variable level
+   */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   ConfoundingVariableLevel setVariableLevelForSample(ProjectId projectId,
       ExperimentReference experiment, SampleReference sampleReference,
       VariableReference variableReference, String level);
 
+  /**
+   * Deletes a confounding variable and all information about the variable.
+   * <p>
+   * <i><b>Please note:</b> This will permanently delete all levels of the variable for all samples.</i>
+   * @param projectId the identifier of the project
+   * @param experiment the experiment containing the confounding variable
+   * @param variableReference the confounding variable to delete.
+   */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  VariableReference deleteConfoundingVariable(ProjectId projectId, ExperimentReference experiment,
+  void deleteConfoundingVariable(ProjectId projectId, ExperimentReference experiment,
       VariableReference variableReference);
 
 }
