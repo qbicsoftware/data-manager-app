@@ -20,9 +20,9 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private ContactField(String label) {
     this.fullName = withErrorMessage(withPlaceHolder(new TextField(), "Please provide a name"),
-        "Name is missing");
+        "");
     this.email = withErrorMessage(withPlaceHolder(new TextField(), "Please enter an email address"),
-        "Email is missing");
+        "");
     this.setMyselfCheckBox = new Checkbox();
     setLabel(label);
     add(layoutFields(setMyselfCheckBox, layoutFields(fullName, email)));

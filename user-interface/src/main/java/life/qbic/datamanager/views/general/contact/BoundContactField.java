@@ -1,8 +1,10 @@
 package life.qbic.datamanager.views.general.contact;
 
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.EmailValidator;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
@@ -26,13 +28,18 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
       SerializablePredicate<Contact> predicate) {
     this.contactField = contactField;
     this.binder = createBinder(predicate);
-    //addBlurListener(binder, contactField);
+    binder.addStatusChangeListener(event -> updateStatus(contactField, event.hasValidationErrors()));
     this.originalValue = new Contact("", "");
   }
 
-  private static void addBlurListener(Binder<ContactContainer> binder, ContactField field) {
-    field.getFullNameTextField().addBlurListener(event -> binder.validate());
-    field.getEmailTextField().addBlurListener(event -> binder.validate());
+  private static void updateStatus(ContactField contactField, boolean isInvalid) {
+    contactField.getElement().setProperty("invalid", isInvalid);
+    updateStatus(contactField.getEmailTextField(), isInvalid);
+    updateStatus(contactField.getFullNameTextField(), isInvalid);
+  }
+
+  private static void updateStatus(TextField textField, boolean isInvalid) {
+    textField.setInvalid(isInvalid);
   }
 
   /**
