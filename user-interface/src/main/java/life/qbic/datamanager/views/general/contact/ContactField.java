@@ -16,6 +16,8 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private Contact myself;
 
+  private boolean isOptional = true;
+
   private ContactField(String label) {
     this.fullName = withErrorMessage(withPlaceHolder(new TextField(), "Please provide a name"),
         "Name is missing");
@@ -29,6 +31,12 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       if (isChecked(listener.getSource())) {
         loadContact(this, myself);
       }
+    });
+    fullName.addValueChangeListener(listener -> {
+      updateValue();
+    });
+    email.addValueChangeListener(listener -> {
+      updateValue();
     });
   }
 
@@ -44,10 +52,15 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     return new ContactField(label);
   }
 
-  public static ContactField createWithMyselfOption(String label, Contact myself, String hint) {
+  public static ContactField createWithMyselfOption(String label, Contact myself, String hint, boolean setOptional) {
     var contactField = createSimple(label);
     contactField.setMyself(myself, hint);
+    contactField.setOptional(setOptional);
     return contactField;
+  }
+
+  public void setOptional(boolean optional) {
+    isOptional = optional;
   }
 
   private static TextField withPlaceHolder(TextField textField, String placeHolder) {
@@ -124,6 +137,9 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
   }
 
   private void invalidate() {
+    if (email.getValue().isEmpty() && fullName.getValue().isEmpty() && isOptional) {
+      return;
+    }
     if (email.getValue().isBlank()) {
       email.setInvalid(true);
     }

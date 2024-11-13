@@ -166,6 +166,10 @@ public class Project {
     lastModified = Instant.now();
   }
 
+  public void removeResponsiblePerson() {
+    responsiblePerson = null;
+  }
+
   public void stateObjective(ProjectObjective projectObjective) {
     Objects.requireNonNull(projectObjective);
     if (projectObjective.equals(projectIntent.objective())) {

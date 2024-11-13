@@ -26,7 +26,13 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
       SerializablePredicate<Contact> predicate) {
     this.contactField = contactField;
     this.binder = createBinder(predicate);
+    //addBlurListener(binder, contactField);
     this.originalValue = new Contact("", "");
+  }
+
+  private static void addBlurListener(Binder<ContactContainer> binder, ContactField field) {
+    field.getFullNameTextField().addBlurListener(event -> binder.validate());
+    field.getEmailTextField().addBlurListener(event -> binder.validate());
   }
 
   /**
@@ -38,6 +44,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    * @since
    */
   public static BoundContactField createOptional(ContactField contactField) {
+    contactField.setOptional(true);
     return new BoundContactField(contactField, isOptional());
   }
 
@@ -80,9 +87,9 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    */
   private static SerializablePredicate<Contact> isOptional() {
     return contact -> {
-      var onlyEmailEmpty = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
-      var onlyNameEmpty = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      return !(onlyEmailEmpty || onlyNameEmpty);
+      var onlyEmailProvided = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
+      var onlyNameProvided = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
+      return !(onlyEmailProvided || onlyNameProvided);
     };
   }
 
@@ -91,9 +98,10 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     binder.setBean(new ContactContainer());
     binder.forField(contactField).withValidator(predicate, "There is still information missing")
         .bind(ContactContainer::getContact, ContactContainer::setContact);
-    binder.forField(contactField.getEmailTextField()).withValidator(new EmailValidator("Please provide a valid email address, e.g. my.name@example.com"))
+    binder.forField(contactField.getEmailTextField()).withValidator(new EmailValidator("Please provide a valid email address, e.g. my.name@example.com", true))
         .bind(ContactContainer::getEmail, ContactContainer::setEmail);
     binder.forField(contactField.getFullNameTextField()).bind(ContactContainer::getFullName, ContactContainer::setFullName);
+
     return binder;
   }
 

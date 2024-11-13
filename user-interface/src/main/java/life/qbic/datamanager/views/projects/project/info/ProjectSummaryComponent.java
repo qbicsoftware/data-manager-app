@@ -307,9 +307,9 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
-    projectInformation.getResponsiblePerson().ifPresent(
+    projectInformation.getResponsiblePerson().ifPresentOrElse(
         contact -> projectInformationService.setResponsibility(projectId,
-            new Contact(contact.getFullName(), contact.getEmail())));
+            new Contact(contact.getFullName(), contact.getEmail())), () -> projectInformationService.removeResponsibility(projectId));
 
     projectInformationService.investigateProject(projectId,
         new Contact(projectInformation.getPrincipalInvestigator().getFullName(),

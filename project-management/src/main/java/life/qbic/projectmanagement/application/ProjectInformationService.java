@@ -153,6 +153,13 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void removeResponsibility(ProjectId projectId) {
+    Project project = loadProject(projectId);
+    project.removeResponsiblePerson();
+    projectRepository.update(project);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void updateObjective(ProjectId projectId, String objective) {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
