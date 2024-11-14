@@ -18,6 +18,10 @@ vaadin-dialog-overlay::part(title) {
   margin-inline-start: 0;
 }
 
+.large-dialog::part(overlay) {
+  width: 66vw;
+}
+
 /* set the width of the notification */
 .notification-dialog::part(overlay) {
   width: 36.75rem;

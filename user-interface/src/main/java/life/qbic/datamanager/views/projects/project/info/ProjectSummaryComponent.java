@@ -1,22 +1,32 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static java.util.Objects.requireNonNull;
+import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
 import edu.kit.datamanager.ro_crate.writer.ZipWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serial;
 import java.nio.file.Files;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
+import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
@@ -24,230 +34,512 @@ import life.qbic.datamanager.export.TempDirectory;
 import life.qbic.datamanager.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.TagFactory;
+import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
+import life.qbic.datamanager.views.general.DetailBox;
+import life.qbic.datamanager.views.general.Heading;
+import life.qbic.datamanager.views.general.IconLabel;
+import life.qbic.datamanager.views.general.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.section.ActionBar;
+import life.qbic.datamanager.views.general.section.Section;
+import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
+import life.qbic.datamanager.views.general.section.SectionContent;
+import life.qbic.datamanager.views.general.section.SectionHeader;
+import life.qbic.datamanager.views.general.section.SectionNote;
+import life.qbic.datamanager.views.general.section.SectionTitle;
+import life.qbic.datamanager.views.general.section.SectionTitle.Size;
+import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectInformation;
-import life.qbic.datamanager.views.projects.edit.EditProjectInformationDialog.ProjectUpdateEvent;
-import life.qbic.datamanager.views.projects.project.info.InformationComponent.Entry;
-import life.qbic.projectmanagement.application.ContactRepository;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.ProjectInformation;
+import life.qbic.datamanager.views.projects.edit.EditContactDialog;
+import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
+import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
+import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
+import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
+import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
+import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
+import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ProjectOverview;
+import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
-import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Project Details Component
- * <p>
- * Shows project details to the user.
+ * <b>Project Summary Component</b>
  *
- * @since 1.0.0
+ * <p>Gives the user an overview about general project information, such as:</p>
+ *
+ * <ul>
+ *   <li>title</li>
+ *   <li>objective</li>
+ *   <li>shared with other users</li>
+ *   <li>funding</li>
+ *   <li>contacts</li>
+ * </ul>
+ *
+ * @since <version tag>
  */
 @UIScope
 @SpringComponent
 public class ProjectSummaryComponent extends PageArea {
 
-  @Serial
-  private static final long serialVersionUID = -5781313306040217724L;
-  private final Div header = new Div();
-  private final Span titleField = new Span();
-  private final Span buttonBar = new Span();
-  private final Div content = new Div();
-  private final Span projectTitleField = new Span();
-  private final Span projectObjectiveField = new Span();
-  private final Div projectManagerField = new Div();
-  private final Div principalInvestigatorField = new Div();
-  private final Div responsiblePersonField = new Div();
-  private final InformationComponent projectInformationSection = InformationComponent.create("",
-      "");
-  private final InformationComponent fundingInformationSection = InformationComponent.create(
-      "Funding Information", "Information about project funding");
-  private final InformationComponent collaboratorSection = InformationComponent.create(
-      "Project Collaborators", "Important contacts for this project");
+  private static final String DATE_TIME_PATTERN = "dd.MM.yyyy HH:mm";
+  public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
+  public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
+  public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
+
   private final transient ProjectInformationService projectInformationService;
+  private final transient ROCreateBuilder roCrateBuilder;
+  private final transient TempDirectory tempDirectory;
   private final transient ExperimentInformationService experimentInformationService;
-  private final transient ContactRepository contactRepository;
-  private final UserPermissions userPermissions;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final ROCreateBuilder roCrateBuilder;
-  private final TempDirectory tempDirectory;
-  private DownloadProvider downloadProvider;
+  private final transient UserPermissions userPermissions;
+  private final transient MessageSourceNotificationFactory notificationFactory;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final Section headerSection;
+  private final Section projectDesignSection;
+  private final Section experimentInformationSection;
+  private final Section fundingInformationSection;
+  private final Section projectContactsSection;
   private Context context;
+  private DownloadProvider downloadProvider;
+  private EditProjectDesignDialog editProjectDesignDialog;
+  private EditFundingInformationDialog editFundingInfoDialog;
+  private EditContactDialog editContactsDialog;
+  private transient List<? extends UserScopeStrategy> scopes;
 
-  public ProjectSummaryComponent(@Autowired ProjectInformationService projectInformationService,
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired ContactRepository contactRepository,
-      @Autowired UserPermissions userPermissions,
+  @Autowired
+  public ProjectSummaryComponent(ProjectInformationService projectInformationService,
+      ExperimentInformationService experimentInformationService,
+      UserPermissions userPermissions,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      @Autowired ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory) {
-    this.projectInformationService = requireNonNull(projectInformationService,
-        "projectInformationService must not be null");
-    this.experimentInformationService = requireNonNull(experimentInformationService,
-        "experimentInformationService must not be null");
-    this.contactRepository = requireNonNull(contactRepository,
-        "contactRepository must not be null");
-    this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
-    this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
-        "cancelConfirmationDialogFactory must not be null");
-    layoutComponent();
-    addListenerForNewEditEvent();
+      ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
+      MessageSourceNotificationFactory notificationFactory) {
+    this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.headerSection = new SectionBuilder().build();
+    this.projectDesignSection = new SectionBuilder().build();
+    this.experimentInformationSection = new SectionBuilder().build();
+    this.fundingInformationSection = new SectionBuilder().build();
+    this.projectContactsSection = new SectionBuilder().build();
+    this.tempDirectory = Objects.requireNonNull(tempDirectory);
+    this.roCrateBuilder = Objects.requireNonNull(rOCreateBuilder);
+    this.userPermissions = Objects.requireNonNull(userPermissions);
+    this.notificationFactory = Objects.requireNonNull(notificationFactory);
+    this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
+    this.experimentInformationService = experimentInformationService;
+    this.downloadProvider = new DownloadProvider(null);
+
     addClassName("project-details-component");
-    this.roCrateBuilder = rOCreateBuilder;
-    this.tempDirectory = tempDirectory;
-    downloadProvider = new DownloadProvider(null);
+
     add(downloadProvider);
+    add(headerSection);
+    add(projectDesignSection);
+    add(experimentInformationSection);
+    add(fundingInformationSection);
+    add(projectContactsSection);
   }
 
-  private static List<Entry> extractProjectInfo(Project project, List<Experiment> experiments) {
-    List<Entry> entries = new ArrayList<>();
+  private static ProjectInformation convertToInfo(Project project) {
+    var info = new ProjectInformation();
 
-    var projectCode = new Div();
-    projectCode.setText(project.getProjectCode().value());
-    entries.add(new Entry("Project ID", "The unique identifier of the project", projectCode));
+    // General Info
+    info.setProjectTitle(project.getProjectIntent().projectTitle().title());
+    info.setProjectObjective(project.getProjectIntent().objective().objective());
+    info.setProjectId(project.getProjectCode().value());
 
-    var projectTitle = new Div();
-    projectTitle.setText(project.getProjectIntent().projectTitle().title());
-    entries.add(new Entry("Title", "", projectTitle));
+    // Funding
+    project.funding().ifPresent(
+        funding -> info.setFundingEntry(new FundingEntry(funding.grant(), funding.grantId())));
 
-    var objective = new Div();
-    objective.setText(project.getProjectIntent().objective().objective());
-    entries.add(new Entry("Objective", "The objective of the project", objective));
+    // Contacts
+    project.getResponsiblePerson().ifPresent(contact -> info.setResponsiblePerson(
+        convert(contact)));
+    info.setPrincipalInvestigator(convert(project.getPrincipalInvestigator()));
+    info.setProjectManager(convert(project.getProjectManager()));
 
-    var species = new Div();
-    species.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct()
-        .forEach(ontologyClassDTO -> species.add(createOntologyEntryFrom(ontologyClassDTO)));
-    entries.add(new Entry("Species", "", species));
-    var specimen = new Div();
-    specimen.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct()
-        .forEach(ontologyClassDTO -> specimen.add(createOntologyEntryFrom(ontologyClassDTO)));
-    entries.add(new Entry("Specimen", "Tissue, cells or other matrix extracted from the "
-        + "species", specimen));
-    var analyte = new Div();
-    analyte.addClassName("ontology-entry-collection");
-    experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct()
-        .forEach(ontologyClassDTO -> analyte.add(createOntologyEntryFrom(ontologyClassDTO)));
-    entries.add(new Entry("Analyte", "", analyte));
-    return entries;
+    return info;
   }
 
-  private static Span createOntologyEntryFrom(OntologyTerm ontologyTerm) {
-    String ontologyLinkName = ontologyTerm.getOboId().replace("_", ":");
-    Span ontologyEntryLink = new Span(new Anchor(ontologyTerm.getClassIri(), ontologyLinkName));
-    ontologyEntryLink.addClassName("ontology-link");
-    Span ontologyEntry = new Span(new Span(ontologyTerm.getLabel()), ontologyEntryLink);
-    ontologyEntry.addClassName("ontology-entry");
-    return ontologyEntry;
+  private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
+    return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
+        contact.emailAddress());
   }
 
-  private static List<Entry> extractFundingInfo(Project project) {
-    List<Entry> entries = new ArrayList<>();
-
-    project.funding().ifPresentOrElse(funding -> entries.addAll(fromFunding(funding)), () -> {
-      var disclaimer = new Div();
-      disclaimer.setText("No funding information provided.");
-      entries.add(new Entry("Grant", "", disclaimer));
-    });
-
-    return entries;
+  private static Button createButtonWithListener(String label,
+      ComponentEventListener<ClickEvent<Button>> listener) {
+    var button = new Button(label);
+    button.addClickListener(listener);
+    return button;
   }
 
-  private static List<Entry> fromFunding(Funding funding) {
-    List<Entry> entries = new ArrayList<>();
-    var grantLabel = "Grant";
-    var info = new Div();
-    info.setText(funding.grant());
-    entries.add(new Entry(grantLabel, "", info));
-
-    var grantIdLabel = "Grant ID";
-    var grantId = new Div();
-    grantId.setText(funding.grantId());
-    entries.add(new Entry(grantIdLabel, "", grantId));
-
-    return entries;
+  private static List<? extends UserScopeStrategy> loadScope(Predicate<ProjectId> hasWriteScope,
+      ProjectId id,
+      Section... sections) {
+    if (hasWriteScope.test(id)) {
+      return loadWriteScope(sections);
+    } else {
+      return loadReadScope(sections);
+    }
   }
 
-  private static List<Entry> extractContactInfo(Project project) {
-    List<Entry> entries = new ArrayList<>();
-
-    var principalInvestigator = new Div();
-    principalInvestigator.add(generateContactContainer(project.getPrincipalInvestigator()));
-    entries.add(new Entry("Principal Investigator", "", principalInvestigator));
-
-    var projectResponsible = new Div();
-    project.getResponsiblePerson()
-        .ifPresentOrElse(person -> projectResponsible.add(generateContactContainer(person)),
-            () -> {
-              Span noProjectResponsibleSelected = new Span("No Project Responsible Selected");
-              noProjectResponsibleSelected.addClassName("tertiary");
-              projectResponsible.add(noProjectResponsibleSelected);
-            });
-    entries.add(new Entry("Project Responsible", "", projectResponsible));
-
-    var projectManager = new Div();
-    projectManager.add(generateContactContainer(project.getProjectManager()));
-    entries.add(new Entry("Project Manager", "", projectManager));
-
-    return entries;
+  private static List<? extends UserScopeStrategy> loadReadScope(Section[] sections) {
+    return Arrays.stream(sections).map(ReadScopeStrategy::new).toList();
   }
 
-  private static Div generateContactContainer(Contact contact) {
-    Span nameSpan = new Span(contact.fullName());
-    Span emailSpan = new Span(contact.emailAddress());
-    Div personContainer = new Div(nameSpan, emailSpan);
-    personContainer.addClassName("person-contact-display");
-    emailSpan.addClassNames("email");
-    nameSpan.addClassName("name");
-    return personContainer;
+  private static List<? extends UserScopeStrategy> loadWriteScope(Section[] sections) {
+    return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
+  }
+
+  private String formatDate(Instant date) {
+    var formatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN).withZone(ZoneId.systemDefault());
+    return formatter.format(date);
   }
 
   public void setContext(Context context) {
-    if (context.projectId().isEmpty()) {
-      throw new ApplicationException("no project id in context " + context);
+    this.context = Objects.requireNonNull(context);
+    var projectId = context.projectId()
+        .orElseThrow(() -> new ApplicationException("No project id provided"));
+    var projectOverview = projectInformationService.findOverview(projectId)
+        .orElseThrow(() -> new ApplicationException("No project with given ID found"));
+    var fullProject = projectInformationService.find(projectId)
+        .orElseThrow(() -> new ApplicationException("No project found"));
+    var experiments = experimentInformationService.findAllForProject(projectId);
+    setContent(projectOverview, fullProject, experiments);
+    this.scopes = loadScope(userPermissions::editProject, projectId, projectDesignSection,
+        fundingInformationSection, projectContactsSection);
+    this.scopes.forEach(UserScopeStrategy::execute);
+    // The header section only contains the RO-Crate action, which we want to enable always
+    loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
+  }
+
+
+  private void reloadInformation(Context context) {
+    var projectId = context.projectId()
+        .orElseThrow(() -> new ApplicationException("No project id provided"));
+    var projectOverview = projectInformationService.findOverview(projectId)
+        .orElseThrow(() -> new ApplicationException("No project with given ID found"));
+    var fullProject = projectInformationService.find(projectId)
+        .orElseThrow(() -> new ApplicationException("No project found"));
+    reloadProjectDesign(projectOverview, fullProject);
+    reloadFundingInfoSection(fullProject);
+    reloadProjectContactsSection(fullProject);
+    // apply scope strategy again
+    this.scopes.forEach(UserScopeStrategy::execute);
+  }
+
+  private void reloadProjectDesign(ProjectOverview projectOverview, Project project) {
+    buildDesignSection(projectOverview, project);
+  }
+
+  private void reloadFundingInfoSection(Project project) {
+    buildFundingInformationSection(project, convertToInfo(project));
+  }
+
+  private void reloadProjectContactsSection(Project project) {
+    buildProjectContactsInfoSection(project);
+  }
+
+  private void setContent(ProjectOverview projectOverview, Project fullProject,
+      List<Experiment> experiments) {
+    Objects.requireNonNull(projectOverview);
+    buildHeaderSection(projectOverview);
+    buildDesignSection(projectOverview, fullProject);
+    buildExperimentInformationSection(experiments);
+    buildFundingInformationSection(fullProject, convertToInfo(fullProject));
+    buildProjectContactsInfoSection(fullProject);
+  }
+
+  private void buildProjectContactsInfoSection(Project project) {
+    // set up the edit button, that opens the dialog for editing contacts
+    var editButton = createButtonWithListener("Edit", listener -> {
+      editContactsDialog = buildAndWireEditContacts(convertToInfo(project));
+      editContactsDialog.open();
+      editContactsDialog.addUpdateEventListener(event -> {
+        updateContactInfo(context.projectId().orElseThrow(),
+            event.content().orElseThrow());
+        reloadInformation(context);
+        editContactsDialog.close();
+        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+            new String[]{project.getProjectCode().value()}, getLocale());
+        toast.open();
+      });
+    });
+    // create the section with header and content
+    projectContactsSection.setHeader(
+        new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(editButton)));
+    var piBox = new DetailBox();
+    var piBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Principal Investigator");
+    piBox.setHeader(piBoxHeader);
+    piBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+    var principalInvestigator = project.getPrincipalInvestigator();
+    piBox.setContent(renderContactInfo(principalInvestigator));
+
+    var pmBox = new DetailBox();
+    var pmBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Manager");
+    pmBox.setHeader(pmBoxHeader);
+    pmBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+    var projectManager = project.getProjectManager();
+    pmBox.setContent(renderContactInfo(projectManager));
+
+    projectContactsSection.setContent(new SectionContent(piBox, pmBox));
+
+    // If no responsible person has been defined, we do not want to show empty sections.
+    if (project.getResponsiblePerson().isPresent()) {
+      var prBox = new DetailBox();
+      var prBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Responsible");
+      prBox.setHeader(prBoxHeader);
+      prBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+      var responsible = project.getResponsiblePerson().orElseThrow();
+      prBox.setContent(renderContactInfo(responsible));
+      projectContactsSection.content().add(prBox);
     }
-    this.context = context;
-    loadProjectData(context.projectId().orElseThrow());
-    showControls(userPermissions.editProject(context.projectId().orElseThrow()));
+
+    projectContactsSection.content().addClassNames("horizontal-list", "gap-medium",
+        "wrapping-flex-container");
+  }
+
+  private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
+    projectInformation.getResponsiblePerson().ifPresentOrElse(
+        contact -> projectInformationService.setResponsibility(projectId,
+            new Contact(contact.getFullName(), contact.getEmail())),
+        () -> projectInformationService.removeResponsibility(projectId));
+
+    projectInformationService.investigateProject(projectId,
+        new Contact(projectInformation.getPrincipalInvestigator().getFullName(),
+            projectInformation.getPrincipalInvestigator().getEmail()));
+
+    projectInformationService.manageProject(projectId,
+        new Contact(projectInformation.getProjectManager().getFullName(),
+            projectInformation.getProjectManager().getEmail()));
+  }
+
+  private Div renderContactInfo(Contact contact) {
+    var contactInfo = new Div();
+    contactInfo.addClassName("vertical-list");
+    var name = new Span(contact.fullName());
+    var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
+    contactInfo.add(name, email);
+    return contactInfo;
+  }
+
+  private void buildFundingInformationSection(Project fullProject,
+      ProjectInformation projectInformation) {
+    var editButton = createButtonWithListener("Edit", listener -> {
+      editFundingInfoDialog = buildAndWireEditFinanceInfo(projectInformation);
+      editFundingInfoDialog.open();
+      editFundingInfoDialog.addUpdateEventListener(event -> {
+        var projectId = context.projectId().orElseThrow();
+        // If the funding entry is "null", we need to remove the funding from the project
+        // Otherwise we update it
+        event.content().orElseThrow().getFundingEntry()
+            .ifPresentOrElse(fundingEntry -> updateFundingInfo(projectId, fundingEntry),
+                () -> removeFunding(projectId));
+        reloadInformation(context);
+        editFundingInfoDialog.close();
+        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+            new String[]{fullProject.getProjectCode().value()}, getLocale());
+        toast.open();
+      });
+    });
+
+    fundingInformationSection.setHeader(
+        new SectionHeader(new SectionTitle("Funding Information"),
+            new ActionBar(editButton)));
+
+    if (fullProject.funding().isEmpty()) {
+      fundingInformationSection.setContent(
+          new SectionContent(new Span("No funding information provided.")));
+    } else {
+      var grantIconLabel = new IconLabel(VaadinIcon.MONEY.create(), "Grant");
+      var funding = fullProject.funding().orElseThrow();
+      grantIconLabel.setInformation("%s (%s)".formatted(funding.grant(), funding.grantId()));
+      grantIconLabel.setTooltipText(
+          "Information about what grant served as funding for the project.");
+      fundingInformationSection.setContent(new SectionContent(grantIconLabel));
+    }
 
   }
 
-  private void layoutComponent() {
-    this.add(header);
-    this.add(content);
-    content.add(projectInformationSection, fundingInformationSection, collaboratorSection);
-    content.addClassName("project-information-content");
-
-    buttonBar.addClassName("button-bar");
-
-    titleField.setText("Project Summary");
-    header.addClassName("header");
-    header.add(titleField, buttonBar);
-    titleField.addClassName("title");
+  private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
+    var dialog = new EditContactDialog(projectInformation,
+        Utility.tryToLoadFromPrincipal().orElse(null));
+    var defaultStrategy = new ImmediateClosingStrategy(dialog);
+    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
+    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
+    dialog.setDefaultCancelStrategy(defaultStrategy);
+    dialog.setCancelWithoutSaveStrategy(withWarning);
+    return dialog;
   }
 
-  private Button editButton() {
-    Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openProjectInformationDialog());
-    return editButton;
+  private EditFundingInformationDialog buildAndWireEditFinanceInfo(
+      ProjectInformation projectInformation) {
+    var dialog = new EditFundingInformationDialog(projectInformation);
+    var defaultStrategy = new ImmediateClosingStrategy(dialog);
+    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
+    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
+    dialog.setDefaultCancelStrategy(defaultStrategy);
+    dialog.setCancelWithoutSaveStrategy(withWarning);
+    return dialog;
   }
 
-  private Button exportButton() {
-    Button exortButton = new Button("Export as RO-Crate");
-    exortButton.addClickListener(event -> {
+  private void buildExperimentInformationSection(
+      List<Experiment> experiments) {
+    experimentInformationSection.setHeader(
+        new SectionHeader(new SectionTitle("Experiment Information")));
+    var speciesBox = new DetailBox();
+    var speciesHeader = new DetailBox.Header(VaadinIcon.MALE.create(), "Species");
+    speciesBox.setHeader(speciesHeader);
+    speciesBox.setContent(buildSpeciesInfo(experiments));
+    speciesBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
+
+    var specimenBox = new DetailBox();
+    var specimenHeader = new DetailBox.Header(VaadinIcon.DROP.create(), "Specimen");
+    specimenBox.setHeader(specimenHeader);
+    specimenBox.setContent(buildSpecimenInfo(experiments));
+    specimenBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+
+    var analyteBox = new DetailBox();
+    var analyteHeader = new DetailBox.Header(VaadinIcon.CLUSTER.create(), "Analytes");
+    analyteBox.setHeader(analyteHeader);
+    analyteBox.setContent(buildAnalyteInfo(experiments));
+    analyteBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+
+    var sectionContent = new SectionContent();
+    sectionContent.add(speciesBox);
+    sectionContent.add(specimenBox);
+    sectionContent.add(analyteBox);
+    sectionContent.addClassNames("horizontal-list", "gap-medium", "wrapping-flex-container");
+    experimentInformationSection.setContent(sectionContent);
+  }
+
+  private Div buildSpeciesInfo(List<Experiment> experiments) {
+    var ontologyTerms = extractSpecies(experiments);
+    return buildOntologyInfo(ontologyTerms);
+  }
+
+  private Div buildSpecimenInfo(List<Experiment> experiments) {
+    var ontologyTerms = extractSpecimen(experiments);
+    return buildOntologyInfo(ontologyTerms);
+  }
+
+  private Div buildAnalyteInfo(List<Experiment> experiments) {
+    var ontologyTerms = extractAnalyte(experiments);
+    return buildOntologyInfo(ontologyTerms);
+  }
+
+  private Div buildOntologyInfo(List<OntologyTerm> terms) {
+    var container = new Div();
+    terms.stream().map(this::convert).forEach(container::add);
+    container.addClassNames("vertical-list", "gap-small");
+    return container;
+  }
+
+  private OntologyTermDisplay convert(OntologyTerm ontologyTerm) {
+    return new OntologyTermDisplay(ontologyTerm.getLabel(), ontologyTerm.getOboId(),
+        ontologyTerm.getClassIri());
+  }
+
+  private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
+    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).toList();
+  }
+
+  private List<OntologyTerm> extractSpecimen(List<Experiment> experiments) {
+    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).toList();
+  }
+
+  private List<OntologyTerm> extractAnalyte(List<Experiment> experiments) {
+    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).toList();
+  }
+
+  private void buildDesignSection(ProjectOverview projectInformation, Project project) {
+    var editButton = new Button("Edit");
+    editButton.addClickListener(listener -> {
+      editProjectDesignDialog = buildAndWireEditProjectDesign(project);
+      editProjectDesignDialog.open();
+      editProjectDesignDialog.addUpdateEventListener(event -> {
+        updateProjectDesign(context.projectId().orElseThrow(), event.content().orElseThrow());
+        reloadInformation(context);
+        editProjectDesignDialog.close();
+        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+            new String[]{project.getProjectCode().value()}, getLocale());
+        toast.open();
+      });
+
+    });
+    projectDesignSection.setHeader(
+        new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
+    var content = new SectionContent();
+    content.add(
+        Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
+    content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
+        projectInformation.projectTitle())));
+    content.add(Heading.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective"));
+    content.add(new SimpleParagraph(project.getProjectIntent().objective().objective()));
+    projectDesignSection.setContent(content);
+  }
+
+  private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
+    projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
+    projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
+  }
+
+  private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
+    projectInformationService.setFunding(projectId, fundingEntry.getLabel(),
+        fundingEntry.getReferenceId());
+  }
+
+  private void removeFunding(ProjectId projectId) {
+    projectInformationService.removeFunding(projectId);
+  }
+
+  private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
+    var projectInfo = convertToInfo(project);
+    var dialog = new EditProjectDesignDialog(projectInfo);
+    var defaultStrategy = new ImmediateClosingStrategy(dialog);
+    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
+        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
+    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
+    dialog.setDefaultStrategy(defaultStrategy);
+    dialog.setWarningStrategy(withWarning);
+    return dialog;
+  }
+
+  private void buildHeaderSection(ProjectOverview projectOverview) {
+    Objects.requireNonNull(projectOverview);
+    var header = new SectionHeader(
+        new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
+            projectOverview.projectTitle()), Size.LARGE));
+    var crateExportBtn = new Button("Export Project Summary");
+    crateExportBtn.addClickListener(event -> {
       try {
         triggerRoCrateDownload();
       } catch (IOException e) {
         throw new ApplicationException("An error occurred while exporting RO-Crate", e);
       }
     });
-    return exortButton;
+    ActionBar actionBar = new ActionBar(crateExportBtn);
+    header.setActionBar(actionBar);
+    header.setSmallTrailingMargin();
+
+    var sectionContent = new SectionContent();
+    sectionContent.add(createAvatarGroup(projectOverview.collaboratorUserInfos()));
+    sectionContent.add(createTags(projectOverview));
+
+    header.setSectionNote(new SectionNote(
+        "Last modified on %s".formatted(formatDate(projectOverview.lastModified()))));
+    headerSection.setHeader(header);
+    headerSection.setContent(sectionContent);
   }
 
   private void triggerRoCrateDownload() throws IOException {
@@ -282,7 +574,6 @@ public class ProjectSummaryComponent extends PageArea {
       deleteTempDir(tempBuildDir.toFile());
       deleteTempDir(zippedRoCrateDir.toFile());
     }
-
   }
 
   private boolean deleteTempDir(File dir) throws IOException {
@@ -298,137 +589,29 @@ public class ProjectSummaryComponent extends PageArea {
     return dir.delete();
   }
 
-  private void showControls(boolean enabled) {
-    buttonBar.removeAll();
-    buttonBar.add(exportButton());
-    if (enabled) {
-      buttonBar.add(editButton());
+  public AvatarGroup createAvatarGroup(Collection<UserInfo> userInfo) {
+    AvatarGroup avatarGroup = new AvatarGroup();
+    userInfo.forEach(user -> avatarGroup.add(new UserAvatarGroupItem(user.userName(),
+        user.userId())));
+    avatarGroup.setMaxItemsVisible(Integer.valueOf(3));
+    return avatarGroup;
+  }
+
+  private Div createTags(ProjectOverview projectOverview) {
+    var tags = new Div();
+    tags.addClassNames("tag-list", "gap-large");
+    buildTags(projectOverview).forEach(tags::add);
+    return tags;
+  }
+
+  private List<Tag> buildTags(ProjectOverview projectInformation) {
+    var tags = new ArrayList<Tag>();
+    if (projectInformation.ngsMeasurementCount() != null) {
+      tags.add(TagFactory.forMeasurement(GENOMICS));
     }
-
-  }
-
-  private void openProjectInformationDialog() {
-    ProjectId projectId = context.projectId().orElseThrow();
-    Optional<Project> project = projectInformationService.find(projectId);
-    project.ifPresentOrElse(proj -> {
-          EditProjectInformationDialog editProjectInformationDialog = generateEditProjectInformationDialog(
-              proj);
-          editProjectInformationDialog.addProjectUpdateEventListener(this::onProjectUpdateEvent);
-          editProjectInformationDialog.addCancelListener(
-              cancelEvent -> showCancelConfirmation(editProjectInformationDialog));
-          editProjectInformationDialog.setEscAction(
-              it -> showCancelConfirmation(editProjectInformationDialog));
-          editProjectInformationDialog.open();
-        }
-        , () -> {
-          throw new ApplicationException(
-              "Project information could not be retrieved from service");
-        });
-  }
-
-  private void showCancelConfirmation(EditProjectInformationDialog editProjectInformationDialog) {
-    cancelConfirmationDialogFactory.cancelConfirmationDialog(
-            it -> editProjectInformationDialog.close(), "project.edit", getLocale())
-        .open();
-  }
-
-  private EditProjectInformationDialog generateEditProjectInformationDialog(Project project) {
-    EditProjectInformationDialog dialog = new EditProjectInformationDialog(contactRepository);
-    ProjectInformation projectInformation = new ProjectInformation();
-    projectInformation.setProjectTitle(project.getProjectIntent().projectTitle().title());
-    projectInformation.setProjectObjective(project.getProjectIntent().objective().value());
-    projectInformation.setPrincipalInvestigator(
-        new life.qbic.datamanager.views.general.contact.Contact(
-            project.getPrincipalInvestigator().fullName(),
-            project.getPrincipalInvestigator().emailAddress()));
-    project.getResponsiblePerson().ifPresent(
-        it -> projectInformation.setResponsiblePerson(
-            new life.qbic.datamanager.views.general.contact.Contact(it.fullName(),
-                it.emailAddress()))
-    );
-    project.funding().ifPresent(funding -> projectInformation.setFundingEntry(
-        new FundingEntry(funding.grant(), funding.grantId())));
-
-    projectInformation.setProjectManager(
-        new life.qbic.datamanager.views.general.contact.Contact(
-            project.getProjectManager().fullName(),
-            project.getProjectManager().emailAddress()));
-
-    dialog.setProjectInformation(projectInformation);
-    return dialog;
-  }
-
-  private void onProjectUpdateEvent(ProjectUpdateEvent projectUpdateEvent) {
-    if (projectUpdateEvent.getOldValue().isEmpty() || !projectUpdateEvent.getOldValue()
-        .orElseThrow()
-        .equals(projectUpdateEvent.getValue())) {
-      ProjectInformation projectInformation = projectUpdateEvent.getValue();
-      updateProjectInformation(projectInformation);
-      ProjectId projectId = context.projectId().orElseThrow();
-      fireEvent(new ProjectEditEvent(this, projectId, projectUpdateEvent.isFromClient()));
+    if (projectInformation.pxpMeasurementCount() != null) {
+      tags.add(TagFactory.forMeasurement(PROTEOMICS));
     }
-    projectUpdateEvent.getSource().close();
-  }
-
-  private void updateProjectInformation(ProjectInformation projectInformationContent) {
-    ProjectId projectId = this.context.projectId().orElseThrow();
-    projectInformationService.updateTitle(projectId, projectInformationContent.getProjectTitle());
-    projectInformationService.stateObjective(projectId,
-        projectInformationContent.getProjectObjective());
-    projectInformationService.investigateProject(projectId,
-        projectInformationContent.getPrincipalInvestigator().toDomainContact());
-    projectInformationService.manageProject(projectId,
-        projectInformationContent.getProjectManager().toDomainContact());
-
-    projectInformationContent.getFundingEntry().ifPresentOrElse(
-        funding -> projectInformationService.addFunding(projectId, funding.getLabel(),
-            funding.getReferenceId()), () -> projectInformationService.removeFunding(projectId));
-
-    projectInformationContent.getResponsiblePerson().ifPresentOrElse(contact ->
-            projectInformationService.setResponsibility(projectId, contact.toDomainContact()),
-        () -> projectInformationService.setResponsibility(projectId, null));
-  }
-
-  private void addListenerForNewEditEvent() {
-    addListener(ProjectEditEvent.class, event -> loadProjectData(event.projectId()));
-  }
-
-  private void loadProjectData(ProjectId projectId) {
-    projectInformationService.find(projectId)
-        .ifPresentOrElse(this::loadProjectWithExperiments, () -> {
-          throw new ApplicationException("Project information could not be retrieved from service");
-        });
-  }
-
-  private void loadProjectWithExperiments(Project project) {
-    var experiments = experimentInformationService.findAllForProject(project.getId());
-    setProjectInformation(project, experiments);
-  }
-
-  private void setProjectInformation(Project project, List<Experiment> experiments) {
-    resetProjectInformation();
-
-    fillInformationSection(projectInformationSection,
-        extractProjectInfo(project, experiments));
-    fillInformationSection(fundingInformationSection,
-        extractFundingInfo(project));
-    fillInformationSection(collaboratorSection,
-        extractContactInfo(project));
-  }
-
-  private void fillInformationSection(InformationComponent section,
-      List<Entry> entries) {
-    entries.forEach(section::add);
-  }
-
-  private void resetProjectInformation() {
-    projectInformationSection.clearContent();
-    fundingInformationSection.clearContent();
-    collaboratorSection.clearContent();
-    projectTitleField.removeAll();
-    projectObjectiveField.removeAll();
-    projectManagerField.removeAll();
-    principalInvestigatorField.removeAll();
-    responsiblePersonField.removeAll();
+    return tags;
   }
 }
