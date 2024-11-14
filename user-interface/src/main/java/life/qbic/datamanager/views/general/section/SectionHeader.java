@@ -34,6 +34,8 @@ import com.vaadin.flow.component.html.Div;
  */
 public class SectionHeader extends Div implements Controllable {
 
+  public static final String TRAILING_MARGIN_NORMAL_CSS = "trailing-margin-normal";
+  public static final String TRAILING_MARGIN_SMALL_CSS = "trailing-margin-small";
   private SectionTitle sectionTitle;
 
   private ActionBar actionBar;
@@ -64,7 +66,7 @@ public class SectionHeader extends Div implements Controllable {
 
   public SectionHeader() {
     addClassName("section-header");
-    addClassName("trailing-margin-normal");
+    addClassName(TRAILING_MARGIN_NORMAL_CSS);
     this.headerRow = new Div();
     headerRow.addClassName("section-header-row");
     this.sectionTitle = new SectionTitle();
@@ -98,15 +100,15 @@ public class SectionHeader extends Div implements Controllable {
   }
 
   public void setSmallTrailingMargin() {
-    removeClassName("trailing-margin-normal");
-    removeClassName("trailing-margin-normal");
-    addClassName("trailing-margin-small");
+    removeClassName(TRAILING_MARGIN_NORMAL_CSS);
+    removeClassName(TRAILING_MARGIN_NORMAL_CSS);
+    addClassName(TRAILING_MARGIN_SMALL_CSS);
   }
 
   public void setNormalTrailingMargin() {
-    removeClassName("trailing-margin-small");
-    removeClassName("trailing-margin-normal");
-    addClassName("trailing-margin-normal");
+    removeClassName(TRAILING_MARGIN_SMALL_CSS);
+    removeClassName(TRAILING_MARGIN_NORMAL_CSS);
+    addClassName(TRAILING_MARGIN_NORMAL_CSS);
   }
 
   @Override

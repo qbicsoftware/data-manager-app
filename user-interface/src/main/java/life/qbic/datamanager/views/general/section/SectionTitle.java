@@ -64,10 +64,13 @@ public class SectionTitle extends Div {
     switch (size) {
       case SMALL:
         setToSmall();
+        break;
       case MEDIUM:
         setToMedium();
+        break;
       case LARGE:
         setToLarge();
+        break;
     }
   }
 

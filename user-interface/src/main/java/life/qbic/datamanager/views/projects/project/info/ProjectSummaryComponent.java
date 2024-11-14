@@ -94,6 +94,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ProjectSummaryComponent extends PageArea {
 
   private static final String DATE_TIME_PATTERN = "dd.MM.yyyy HH:mm";
+  public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
+  public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
 
   private final transient ProjectInformationService projectInformationService;
   private final transient ROCreateBuilder roCrateBuilder;
@@ -112,7 +114,7 @@ public class ProjectSummaryComponent extends PageArea {
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
   private EditContactDialog editContactsDialog;
-  private List<? extends UserScopeStrategy> scopes;
+  private transient List<? extends UserScopeStrategy> scopes;
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
@@ -276,14 +278,14 @@ public class ProjectSummaryComponent extends PageArea {
     var piBox = new DetailBox();
     var piBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Principal Investigator");
     piBox.setHeader(piBoxHeader);
-    piBox.addClassName("fixed-medium-width");
+    piBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
     var principalInvestigator = project.getPrincipalInvestigator();
     piBox.setContent(renderContactInfo(principalInvestigator));
 
     var pmBox = new DetailBox();
     var pmBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Manager");
     pmBox.setHeader(pmBoxHeader);
-    pmBox.addClassName("fixed-medium-width");
+    pmBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
     var projectManager = project.getProjectManager();
     pmBox.setContent(renderContactInfo(projectManager));
 
@@ -294,7 +296,7 @@ public class ProjectSummaryComponent extends PageArea {
       var prBox = new DetailBox();
       var prBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Responsible");
       prBox.setHeader(prBoxHeader);
-      prBox.addClassName("fixed-medium-width");
+      prBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
       var responsible = project.getResponsiblePerson().get();
       prBox.setContent(renderContactInfo(responsible));
       projectContactsSection.content().add(prBox);
@@ -307,7 +309,8 @@ public class ProjectSummaryComponent extends PageArea {
   private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
     projectInformation.getResponsiblePerson().ifPresentOrElse(
         contact -> projectInformationService.setResponsibility(projectId,
-            new Contact(contact.getFullName(), contact.getEmail())), () -> projectInformationService.removeResponsibility(projectId));
+            new Contact(contact.getFullName(), contact.getEmail())),
+        () -> projectInformationService.removeResponsibility(projectId));
 
     projectInformationService.investigateProject(projectId,
         new Contact(projectInformation.getPrincipalInvestigator().getFullName(),
@@ -370,7 +373,7 @@ public class ProjectSummaryComponent extends PageArea {
         Utility.tryToLoadFromPrincipal().orElse(null));
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        "project.edit.cancel-confirmation.message", getLocale());
+        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
     var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
     dialog.setDefaultCancelStrategy(defaultStrategy);
     dialog.setCancelWithoutSaveStrategy(withWarning);
@@ -382,7 +385,7 @@ public class ProjectSummaryComponent extends PageArea {
     var dialog = new EditFundingInformationDialog(projectInformation);
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        "project.edit.cancel-confirmation.message", getLocale());
+        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
     var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
     dialog.setDefaultCancelStrategy(defaultStrategy);
     dialog.setCancelWithoutSaveStrategy(withWarning);
@@ -397,19 +400,19 @@ public class ProjectSummaryComponent extends PageArea {
     var speciesHeader = new DetailBox.Header(VaadinIcon.MALE.create(), "Species");
     speciesBox.setHeader(speciesHeader);
     speciesBox.setContent(buildSpeciesInfo(experiments));
-    speciesBox.addClassNames("fixed-medium-width");
+    speciesBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
 
     var specimenBox = new DetailBox();
     var specimenHeader = new DetailBox.Header(VaadinIcon.DROP.create(), "Specimen");
     specimenBox.setHeader(specimenHeader);
     specimenBox.setContent(buildSpecimenInfo(experiments));
-    specimenBox.addClassName("fixed-medium-width");
+    specimenBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
     var analyteBox = new DetailBox();
     var analyteHeader = new DetailBox.Header(VaadinIcon.CLUSTER.create(), "Analytes");
     analyteBox.setHeader(analyteHeader);
     analyteBox.setContent(buildAnalyteInfo(experiments));
-    analyteBox.addClassName("fixed-medium-width");
+    analyteBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
     var sectionContent = new SectionContent();
     sectionContent.add(speciesBox);
@@ -504,7 +507,7 @@ public class ProjectSummaryComponent extends PageArea {
     var dialog = new EditProjectDesignDialog(projectInfo);
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        "project.edit.cancel-confirmation.message", getLocale());
+        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
     var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
     dialog.setDefaultStrategy(defaultStrategy);
     dialog.setWarningStrategy(withWarning);
