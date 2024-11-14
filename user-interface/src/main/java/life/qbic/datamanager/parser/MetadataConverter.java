@@ -132,7 +132,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       var technicalReplicateName = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementRegisterColumn.TECHNICAL_REPLICATE_NAME.headerName(), "");
       var organisationId = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.ORGANISATION_ID.headerName(), "");
+          ProteomicsMeasurementRegisterColumn.ORGANISATION_URL.headerName(), "");
       var msDevice = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementRegisterColumn.MS_DEVICE.headerName(), "");
       var samplePoolGroup = parsingResult.getValueOrDefault(i,
@@ -192,7 +192,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       var technicalReplicateName = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementEditColumn.TECHNICAL_REPLICATE_NAME.headerName(), "");
       var organisationId = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.ORGANISATION_ID.headerName(), "");
+          ProteomicsMeasurementEditColumn.ORGANISATION_URL.headerName(), "");
       var msDevice = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementEditColumn.MS_DEVICE.headerName(), "");
       var samplePoolGroup = parsingResult.getValueOrDefault(i,
@@ -252,7 +252,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
                   ""))
       );
       var organisationId = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.ORGANISATION_ID.headerName(), "");
+          NGSMeasurementEditColumn.ORGANISATION_URL.headerName(), "");
       var instrument = parsingResult.getValueOrDefault(i,
           NGSMeasurementEditColumn.INSTRUMENT.headerName(), "");
       var facility = parsingResult.getValueOrDefault(i,
@@ -304,7 +304,7 @@ public class MetadataConverter implements MeasurementMetadataConverter {
                   ""))
       );
       var organisationId = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.ORGANISATION_ID.headerName(), "");
+          NGSMeasurementRegisterColumn.ORGANISATION_URL.headerName(), "");
       var instrument = parsingResult.getValueOrDefault(i,
           NGSMeasurementRegisterColumn.INSTRUMENT.headerName(), "");
       var facility = parsingResult.getValueOrDefault(i,

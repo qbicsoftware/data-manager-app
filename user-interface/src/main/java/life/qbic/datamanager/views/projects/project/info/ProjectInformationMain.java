@@ -106,8 +106,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       @Autowired TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    this.projectSummaryComponent = requireNonNull(projectSummaryComponent,
-        "projectDetailsComponent must not be null");
+    this.projectSummaryComponent = requireNonNull(projectSummaryComponent);
     this.experimentListComponent = requireNonNull(experimentListComponent,
         "experimentListComponent must not be null");
     this.userPermissions = requireNonNull(userPermissions, "userPermissions must not be null");
@@ -140,7 +139,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
     this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
     addClassName("project");
-    add(projectSummaryComponent, offerListComponent, offerDownload, experimentListComponent,
+    add(this.projectSummaryComponent, offerListComponent, offerDownload, experimentListComponent,
         qualityControlListComponent, qualityControlDownload);
     this.terminologyService = terminologyService;
   }

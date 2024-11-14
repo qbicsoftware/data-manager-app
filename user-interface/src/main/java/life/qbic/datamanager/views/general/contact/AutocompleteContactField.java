@@ -14,10 +14,7 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.HasBinderValidation;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.core.context.SecurityContextHolder;
+import life.qbic.datamanager.views.general.utils.Utility;
 
 /**
  * <b>A component for contact person input</b>
@@ -27,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @since 1.0.0
  */
+@Deprecated(since = "1.6.0")
 public class AutocompleteContactField extends CustomField<Contact> implements
     HasBinderValidation<Contact> {
 
@@ -101,20 +99,8 @@ public class AutocompleteContactField extends CustomField<Contact> implements
   private void onSelfSelected(
       ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
     if (Boolean.TRUE.equals(checkboxvalueChangeEvent.getValue())) {
-      var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-      String fullName;
-      String emailAddress;
-      if (principal instanceof QbicUserDetails qbicUserDetails) {
-        fullName = qbicUserDetails.fullName();
-        emailAddress = qbicUserDetails.getEmailAddress();
-      } else if (principal instanceof QbicOidcUser qbicOidcUser) {
-        fullName = qbicOidcUser.getFullName();
-        emailAddress = qbicOidcUser.getEmail();
-      } else {
-        throw new AuthenticationCredentialsNotFoundException("Unknown authentication principal");
-      }
-      Contact userAsContact = new Contact(fullName, emailAddress);
-      setContact(userAsContact);
+      var userAsContact = Utility.tryToLoadFromPrincipal();
+      userAsContact.ifPresent(this::setContact);
     }
   }
 
