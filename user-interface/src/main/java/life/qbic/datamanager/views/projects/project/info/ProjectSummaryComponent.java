@@ -96,6 +96,7 @@ public class ProjectSummaryComponent extends PageArea {
   private static final String DATE_TIME_PATTERN = "dd.MM.yyyy HH:mm";
   public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
   public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
+  public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
 
   private final transient ProjectInformationService projectInformationService;
   private final transient ROCreateBuilder roCrateBuilder;
@@ -252,7 +253,7 @@ public class ProjectSummaryComponent extends PageArea {
     Objects.requireNonNull(projectOverview);
     buildHeaderSection(projectOverview);
     buildDesignSection(projectOverview, fullProject);
-    buildExperimentInformationSection(projectOverview, experiments);
+    buildExperimentInformationSection(experiments);
     buildFundingInformationSection(fullProject, convertToInfo(fullProject));
     buildProjectContactsInfoSection(fullProject);
   }
@@ -267,7 +268,7 @@ public class ProjectSummaryComponent extends PageArea {
             event.content().orElseThrow());
         reloadInformation(context);
         editContactsDialog.close();
-        var toast = notificationFactory.toast("project.updated.success",
+        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
             new String[]{project.getProjectCode().value()}, getLocale());
         toast.open();
       });
@@ -297,7 +298,7 @@ public class ProjectSummaryComponent extends PageArea {
       var prBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Responsible");
       prBox.setHeader(prBoxHeader);
       prBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
-      var responsible = project.getResponsiblePerson().get();
+      var responsible = project.getResponsiblePerson().orElseThrow();
       prBox.setContent(renderContactInfo(responsible));
       projectContactsSection.content().add(prBox);
     }
@@ -344,7 +345,7 @@ public class ProjectSummaryComponent extends PageArea {
                 () -> removeFunding(projectId));
         reloadInformation(context);
         editFundingInfoDialog.close();
-        var toast = notificationFactory.toast("project.updated.success",
+        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
             new String[]{fullProject.getProjectCode().value()}, getLocale());
         toast.open();
       });
@@ -359,7 +360,7 @@ public class ProjectSummaryComponent extends PageArea {
           new SectionContent(new Span("No funding information provided.")));
     } else {
       var grantIconLabel = new IconLabel(VaadinIcon.MONEY.create(), "Grant");
-      var funding = fullProject.funding().get();
+      var funding = fullProject.funding().orElseThrow();
       grantIconLabel.setInformation("%s (%s)".formatted(funding.grant(), funding.grantId()));
       grantIconLabel.setTooltipText(
           "Information about what grant served as funding for the project.");
@@ -392,7 +393,7 @@ public class ProjectSummaryComponent extends PageArea {
     return dialog;
   }
 
-  private void buildExperimentInformationSection(ProjectOverview projectInformation,
+  private void buildExperimentInformationSection(
       List<Experiment> experiments) {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information")));
@@ -470,7 +471,7 @@ public class ProjectSummaryComponent extends PageArea {
         updateProjectDesign(context.projectId().orElseThrow(), event.content().orElseThrow());
         reloadInformation(context);
         editProjectDesignDialog.close();
-        var toast = notificationFactory.toast("project.updated.success",
+        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
             new String[]{project.getProjectCode().value()}, getLocale());
         toast.open();
       });
