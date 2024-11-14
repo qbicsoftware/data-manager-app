@@ -15,10 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.utils.Utility;
-import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
-import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>A component for contact person input</b>

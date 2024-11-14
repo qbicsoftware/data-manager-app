@@ -2,8 +2,8 @@ package life.qbic.datamanager.views.events;
 
 import com.vaadin.flow.component.ComponentEvent;
 import java.util.Optional;
-import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.ProjectInformation;
+import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 
 public class FundingInformationUpdateEvent extends ComponentEvent<EditFundingInformationDialog> {
 

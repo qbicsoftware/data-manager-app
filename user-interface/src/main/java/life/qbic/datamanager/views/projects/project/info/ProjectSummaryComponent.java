@@ -18,7 +18,6 @@ import edu.kit.datamanager.ro_crate.writer.ZipWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;

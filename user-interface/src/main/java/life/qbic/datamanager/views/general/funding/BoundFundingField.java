@@ -3,12 +3,8 @@ package life.qbic.datamanager.views.general.funding;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.Validator;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
-import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.contact.ContactField;
 
 /**
  * <b>Bound Funding Field</b>

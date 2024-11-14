@@ -10,7 +10,6 @@ import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.projects.create.FundingInformationLayout.FundingInformationContainer;
-import org.springframework.stereotype.Component;
 
 
 public class FundingInformationLayout extends Div implements

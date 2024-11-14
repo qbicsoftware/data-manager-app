@@ -3,8 +3,8 @@ package life.qbic.datamanager.views.events;
 import com.vaadin.flow.component.ComponentEvent;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.ProjectInformation;
+import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 
 
 public class ContactUpdateEvent extends ComponentEvent<EditContactDialog> {
