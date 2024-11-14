@@ -95,13 +95,13 @@ public class ProjectSummaryComponent extends PageArea {
 
   private static final String DATE_TIME_PATTERN = "dd.MM.yyyy HH:mm";
 
-  private final ProjectInformationService projectInformationService;
-  private final ROCreateBuilder roCrateBuilder;
-  private final TempDirectory tempDirectory;
-  private final ExperimentInformationService experimentInformationService;
-  private final UserPermissions userPermissions;
-  private final MessageSourceNotificationFactory notificationFactory;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient ProjectInformationService projectInformationService;
+  private final transient ROCreateBuilder roCrateBuilder;
+  private final transient TempDirectory tempDirectory;
+  private final transient ExperimentInformationService experimentInformationService;
+  private final transient UserPermissions userPermissions;
+  private final transient MessageSourceNotificationFactory notificationFactory;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final Section headerSection;
   private final Section projectDesignSection;
   private final Section experimentInformationSection;

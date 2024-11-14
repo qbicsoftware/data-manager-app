@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class ActionBar extends Div {
 
-  private ControlStrategy controlStrategy;
+  private transient ControlStrategy controlStrategy;
 
   private List<Button> buttons = new ArrayList<>();
 

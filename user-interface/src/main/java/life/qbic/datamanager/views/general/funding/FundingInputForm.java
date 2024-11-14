@@ -14,7 +14,7 @@ import life.qbic.datamanager.views.general.HasBoundField;
  */
 public class FundingInputForm extends FormLayout {
 
-  private final HasBoundField<FundingField, FundingEntry> fundingField;
+  private transient final HasBoundField<FundingField, FundingEntry> fundingField;
 
   private FundingInputForm(HasBoundField<FundingField, FundingEntry> fundingField) {
     this.fundingField = fundingField;
