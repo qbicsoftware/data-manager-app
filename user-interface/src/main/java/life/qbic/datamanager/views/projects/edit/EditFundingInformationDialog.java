@@ -26,8 +26,8 @@ import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
  */
 public class EditFundingInformationDialog extends DialogWindow {
 
-  private DialogClosingStrategy noChangesClosingStrategy;
-  private DialogClosingStrategy warningClosingStrategy;
+  private transient DialogClosingStrategy noChangesClosingStrategy;
+  private transient DialogClosingStrategy warningClosingStrategy;
 
   private FundingInputForm form;
 

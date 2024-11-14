@@ -26,9 +26,9 @@ public class EditProjectDesignDialog extends DialogWindow {
 
   private final ProjectDesignForm form;
 
-  private DialogClosingStrategy noChangesClosingStrategy;
+  private transient DialogClosingStrategy noChangesClosingStrategy;
 
-  private DialogClosingStrategy warningClosingStrategy;
+  private transient DialogClosingStrategy warningClosingStrategy;
 
   public EditProjectDesignDialog(ProjectInformation project) {
     super();

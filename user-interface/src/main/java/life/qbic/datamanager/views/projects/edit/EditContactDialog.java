@@ -25,12 +25,12 @@ import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
 public class EditContactDialog extends DialogWindow {
 
   private final ProjectInformation projectInformation;
-  private DialogClosingStrategy noChangesClosingStrategy;
-  private DialogClosingStrategy warningClosingStrategy;
+  private transient DialogClosingStrategy noChangesClosingStrategy;
+  private transient DialogClosingStrategy warningClosingStrategy;
 
-  private BoundContactField managerBinding;
-  private BoundContactField investigatorBinding;
-  private BoundContactField projectResponsibleBinding;
+  private transient BoundContactField managerBinding;
+  private transient BoundContactField investigatorBinding;
+  private transient BoundContactField projectResponsibleBinding;
 
   public EditContactDialog(ProjectInformation projectInformation, Contact currentUser) {
     super();

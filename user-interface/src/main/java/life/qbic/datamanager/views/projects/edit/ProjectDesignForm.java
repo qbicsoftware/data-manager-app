@@ -19,7 +19,7 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
  */
 public class ProjectDesignForm extends FormLayout {
 
-  private final Binder<ProjectInformation> binder;
+  private transient final Binder<ProjectInformation> binder;
 
   private ProjectInformation oldValue;
 

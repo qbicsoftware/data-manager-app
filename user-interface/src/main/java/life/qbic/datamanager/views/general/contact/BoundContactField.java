@@ -107,7 +107,6 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
         .bind(ContactContainer::getEmail, ContactContainer::setEmail);
     binder.forField(contactField.getFullNameTextField())
         .bind(ContactContainer::getFullName, ContactContainer::setFullName);
-
     return binder;
   }
 
