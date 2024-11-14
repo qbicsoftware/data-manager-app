@@ -191,8 +191,6 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private final UserInfo userInfo;
 
-    private final Div userDetails = new Div();
-
     public UserDetailsCard(UserInfo userInfo) {
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
@@ -209,6 +207,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
           changePlatformUserName);
       Span userEmail = new Span();
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
+      Div userDetails = new Div();
       userDetails.add(userNameDetail, userEmailDetail);
       userDetails.addClassName("details");
       add(avatarWithName, userDetails);
@@ -218,7 +217,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
       userEmail.setText(this.userInfo.emailAddress());
       userAvatar.setName(this.userInfo.platformUserName());
       userAvatar.setUserId(this.userInfo.id());
-      setLinkedAccounts();
+      setLinkedAccounts(userDetails);
     }
 
     private void onChangePlatformUserNameClicked(ClickEvent<Span> event) {
@@ -255,7 +254,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
       throw ApplicationException.wrapping("Unexpected exception in username change.", e);
     }
 
-    private void setLinkedAccounts() {
+    private void setLinkedAccounts(Div userDetails) {
       if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null) {
         return;
       }
@@ -266,11 +265,11 @@ public class UserProfileComponent extends PageArea implements Serializable {
           .filter(ot -> ot.getIssuer().equals(userInfo.oidcIssuer()))
           .findFirst()
           .ifPresentOrElse(oidcType -> userDetails.add(
-                  new UserDetail("Linked Accounts", generateLinkedAccountCard())),
+                  new UserDetail("Linked Accounts", generateLinkedAccountCard(userInfo))),
               () -> log.warn("Unknown oidc Issuer %s".formatted(userInfo.oidcIssuer())));
     }
 
-    private Div generateLinkedAccountCard() {
+    private Div generateLinkedAccountCard(UserInfo userInfo) {
       //Should be extended once more than orcid is possible with a check which oidc is relevant
       OidcLogo oidcLogo = new OidcLogo(OidcType.ORCID);
       Span orcIdAccount = new Span(oidcLogo, new Span(userInfo.oidcId()));
