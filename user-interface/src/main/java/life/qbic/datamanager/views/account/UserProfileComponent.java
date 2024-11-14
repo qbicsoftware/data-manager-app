@@ -256,14 +256,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
     }
 
     private void setLinkedAccounts() {
-      //Todo handle Orcid login
-      Anchor linkOidcAccount = new Anchor("", "Link ORCID Account");
       if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null) {
-        userDetails.add(new UserDetail("Linked Accounts", linkOidcAccount));
         return;
       }
       if (userInfo.oidcIssuer().isEmpty() || userInfo.oidcId().isEmpty()) {
-        userDetails.add(new UserDetail("Linked Accounts", linkOidcAccount));
         return;
       }
       Arrays.stream(OidcType.values())
