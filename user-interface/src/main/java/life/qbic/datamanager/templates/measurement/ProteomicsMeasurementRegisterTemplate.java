@@ -148,6 +148,8 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
       }
 
       setAutoWidth(sheet);
+      setAutoWidth(hiddenSheet);
+
       workbook.setActiveSheet(0);
 
       lockSheet(hiddenSheet);

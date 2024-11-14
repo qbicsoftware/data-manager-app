@@ -485,8 +485,14 @@ public class ProjectSummaryComponent extends PageArea {
     content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
         projectInformation.projectTitle())));
     content.add(Heading.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective"));
-    content.add(new SimpleParagraph(project.getProjectIntent().objective().objective()));
+    content.add(buildObjectiveParagraph(project.getProjectIntent().objective().objective()));
     projectDesignSection.setContent(content);
+  }
+
+  private static SimpleParagraph buildObjectiveParagraph(String objective) {
+    var paragraph = new SimpleParagraph(objective);
+    paragraph.addClassNames("max-height-10rem", "overflow-auto");
+    return paragraph;
   }
 
   private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
@@ -599,7 +605,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private Div createTags(ProjectOverview projectOverview) {
     var tags = new Div();
-    tags.addClassNames("tag-list", "gap-large");
+    tags.addClassNames("tag-list", "gap-small");
     buildTags(projectOverview).forEach(tags::add);
     return tags;
   }
