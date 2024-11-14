@@ -26,7 +26,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
   private BoundContactField(ContactField contactField,
       SerializablePredicate<Contact> predicate) {
     this.contactField = contactField;
-    this.binder = createBinder(predicate);
+    this.binder = createBinder(predicate, contactField);
     binder.addStatusChangeListener(
         event -> updateStatus(contactField, event.hasValidationErrors()));
     this.originalValue = new Contact("", "");
@@ -97,7 +97,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     };
   }
 
-  private Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate) {
+  private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate, ContactField contactField) {
     Binder<ContactContainer> binder = new Binder<>(ContactContainer.class);
     binder.setBean(new ContactContainer());
     binder.forField(contactField).withValidator(predicate, "There is still information missing")
