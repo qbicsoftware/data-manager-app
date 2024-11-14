@@ -12,6 +12,8 @@ import life.qbic.datamanager.views.general.Tag.TagColor;
  */
 public class TagFactory {
 
+  private TagFactory() {}
+
   public static Tag forMeasurement(MeasurementType measurementType) {
     return switch (measurementType) {
       case GENOMICS -> pinkTag("Genomics");
