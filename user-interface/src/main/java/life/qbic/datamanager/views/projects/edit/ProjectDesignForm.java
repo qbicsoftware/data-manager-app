@@ -23,8 +23,6 @@ public class ProjectDesignForm extends FormLayout {
 
   private ProjectInformation oldValue;
 
-  private ProjectInformation newValue;
-
   private TextField titleField;
 
   private TextArea objectiveField;

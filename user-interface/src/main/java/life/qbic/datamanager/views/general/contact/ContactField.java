@@ -10,12 +10,12 @@ import java.util.Objects;
 
 public class ContactField extends CustomField<Contact> implements HasClientValidation {
 
+  public static final String GAP_M_CSS = "gap-m";
+  private static final String FULL_WIDTH_CSS = "full-width";
   private final TextField fullName;
   private final TextField email;
   private final Checkbox setMyselfCheckBox;
-
   private Contact myself;
-
   private boolean isOptional = true;
 
   private ContactField(String label) {
@@ -52,15 +52,12 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     return new ContactField(label);
   }
 
-  public static ContactField createWithMyselfOption(String label, Contact myself, String hint, boolean setOptional) {
+  public static ContactField createWithMyselfOption(String label, Contact myself, String hint,
+      boolean setOptional) {
     var contactField = createSimple(label);
     contactField.setMyself(myself, hint);
     contactField.setOptional(setOptional);
     return contactField;
-  }
-
-  public void setOptional(boolean optional) {
-    isOptional = optional;
   }
 
   private static TextField withPlaceHolder(TextField textField, String placeHolder) {
@@ -75,7 +72,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private static Div layoutFields(Checkbox box, Div fields) {
     var layout = new Div();
-    layout.addClassNames("flex-vertical", "gap-m");
+    layout.addClassNames("flex-vertical", GAP_M_CSS);
     layout.add(box);
     layout.add(fields);
     return layout;
@@ -83,10 +80,14 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private static Div layoutFields(TextField fullName, TextField email) {
     var layout = new Div(fullName, email);
-    layout.addClassNames("flex-horizontal", "gap-m", "full-width");
-    fullName.addClassName("full-width");
-    email.addClassName("full-width");
+    layout.addClassNames("flex-horizontal", GAP_M_CSS, FULL_WIDTH_CSS);
+    fullName.addClassName(FULL_WIDTH_CSS);
+    email.addClassName(FULL_WIDTH_CSS);
     return layout;
+  }
+
+  public void setOptional(boolean optional) {
+    isOptional = optional;
   }
 
   public void setMyself(Contact myself, String hint) {
