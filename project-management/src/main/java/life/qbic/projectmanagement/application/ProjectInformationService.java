@@ -102,6 +102,13 @@ public class ProjectInformationService {
     return find(ProjectId.parse(projectId));
   }
 
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public Optional<ProjectOverview> findOverview(ProjectId projectId) {
+    Objects.requireNonNull(projectId);
+    return projectOverviewLookup.query("", 0, 1, List.of(), List.of(projectId)).stream()
+        .findFirst();
+  }
+
   public boolean isProjectCodeUnique(String projectCode) throws IllegalArgumentException {
     return !projectRepository.existsProjectByProjectCode(ProjectCode.parse(projectCode));
   }
@@ -146,7 +153,14 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public void stateObjective(ProjectId projectId, String objective) {
+  public void removeResponsibility(ProjectId projectId) {
+    Project project = loadProject(projectId);
+    project.removeResponsiblePerson();
+    projectRepository.update(project);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void updateObjective(ProjectId projectId, String objective) {
     ProjectObjective projectObjective = ProjectObjective.create(objective);
     Project project = loadProject(projectId);
     project.stateObjective(projectObjective);
@@ -154,7 +168,7 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public void addFunding(ProjectId projectId, String label, String referenceId) {
+  public void setFunding(ProjectId projectId, String label, String referenceId) {
     Funding funding = Funding.of(label, referenceId);
     var project = loadProject(projectId);
     project.setFunding(funding);

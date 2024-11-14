@@ -6,7 +6,7 @@
 
 .page-area {
   background-color: var(--lumo-base-color);
-  padding: var(--lumo-space-m);
+  padding: var(--lumo-space-l);
   flex-direction: column;
   display: flex;
   gap: var(--lumo-space-s);

@@ -9,27 +9,29 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
+import com.vaadin.flow.component.html.OrderedList.NumberingType;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.upload.FailedEvent;
 import com.vaadin.flow.component.upload.FileRejectedEvent;
+import com.vaadin.flow.component.upload.FileRemovedEvent;
 import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.dom.DomEvent;
 import com.vaadin.flow.shared.Registration;
-import elemental.json.JsonObject;
 import java.io.InputStream;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.parser.MeasurementMetadataConverter.MissingSampleIdException;
 import life.qbic.datamanager.parser.MeasurementMetadataConverter.UnknownMetadataTypeException;
 import life.qbic.datamanager.parser.MetadataConverter;
@@ -38,15 +40,15 @@ import life.qbic.datamanager.parser.tsv.TSVParser;
 import life.qbic.datamanager.parser.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
+import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.projects.EditableMultiFileMemoryBuffer;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
-import life.qbic.projectmanagement.application.measurement.validation.ValidationResult;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.util.StringUtils;
@@ -66,7 +68,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
-  private static final String VAADIN_FILENAME_EVENT = "event.detail.file.name";
   private final MeasurementValidationService measurementValidationService;
   private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
 
@@ -77,6 +78,27 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private final ProjectId projectId;
   private final UploadProgressDisplay uploadProgressDisplay;
   private final UploadItemsDisplay uploadItemsDisplay;
+
+  private enum AcceptedFileType {
+    EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    TSV("text/tab-separated-values", "text/plain");
+    private final List<String> mimeTypes;
+
+    AcceptedFileType(String... mimeTypes) {
+      this.mimeTypes = List.of(mimeTypes);
+    }
+
+    static Optional<AcceptedFileType> forMimeType(String mimeType) {
+      return Arrays.stream(values())
+          .filter(it -> it.mimeTypes.contains(mimeType))
+          .findFirst();
+    }
+
+    static Set<String> allMimeTypes() {
+      return Arrays.stream(values()).flatMap(it -> it.mimeTypes.stream())
+          .collect(Collectors.toUnmodifiableSet());
+    }
+  }
 
   public MeasurementMetadataUploadDialog(MeasurementValidationService measurementValidationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
@@ -92,8 +114,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
     Upload upload = new Upload(uploadBuffer);
-    upload.setAcceptedFileTypes("text/tab-separated-values", "text/plain",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
     setModeBasedLabels();
     uploadItemsDisplay = new UploadItemsDisplay(upload);
@@ -105,12 +126,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     upload.addSucceededListener(this::onUploadSucceeded);
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
+    upload.addFileRemovedListener(this::onFileRemoved);
     setEscAction(this::onCanceled);
-    // Synchronise the Vaadin upload component with the purchase list display
-    // When a file is removed from the upload component, we also want to remove it properly from memory
-    // and from any additional display
-    upload.getElement().addEventListener("file-remove", this::onFileRemoved)
-        .addEventData(VAADIN_FILENAME_EVENT);
     addClassName("measurement-upload-dialog");
 
   }
@@ -135,11 +152,8 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
     return mode;
   }
 
-  private void onFileRemoved(DomEvent domEvent) {
-    JsonObject jsonObject = domEvent.getEventData();
-    var fileName = jsonObject.getString(VAADIN_FILENAME_EVENT);
-    removeFile(fileName);
-
+  private void onFileRemoved(FileRemovedEvent fileRemovedEvent) {
+    removeFile(fileRemovedEvent.getFileName());
   }
 
   private void showFile(MeasurementFileItem measurementFileItem) {
@@ -166,7 +180,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private MeasurementValidationReport validate(List<? extends MeasurementMetadata> metadata) {
     if (metadata == null || metadata.isEmpty()) {
       return new MeasurementValidationReport(0,
-          ValidationResult.withFailures(0, List.of("The metadata sheet seems to be empty")));
+          ValidationResult.withFailures(List.of("The metadata sheet seems to be empty")));
     }
     if (metadata.get(0) instanceof NGSMeasurementMetadata) {
       return validateNGS((List<NGSMeasurementMetadata>) metadata);
@@ -184,20 +198,25 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
     var fileName = succeededEvent.getFileName();
-    ParsingResult parsingResult;
-    if (fileName.endsWith(".xlsx")) {
-      parsingResult = parseXLSX(uploadBuffer.inputStream(fileName).orElseThrow());
-    } else if (fileName.endsWith(".tsv") || fileName.endsWith(".txt")) {
-      parsingResult = parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
-    } else {
+    Optional<AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
+        succeededEvent.getMIMEType());
+    if (knownFileType.isEmpty()) {
       displayError(succeededEvent.getFileName(),
           "Unsupported file type. Please make sure to upload a TSV or XLSX file.");
       return;
     }
+    var parsingResult = switch (knownFileType.get()) {
+      case EXCEL -> parseXLSX(uploadBuffer.inputStream(fileName).orElseThrow());
+      case TSV -> parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
+    };
     List<MeasurementMetadata> result;
     try {
-      result = MetadataConverter.measurementConverter()
-          .convert(parsingResult, mode.equals(MODE.ADD));
+      result = switch (mode) {
+        case ADD -> MetadataConverter.measurementConverter()
+            .convertRegister(parsingResult);
+        case EDIT -> MetadataConverter.measurementConverter()
+            .convertEdit(parsingResult);
+      };
     } catch (
         UnknownMetadataTypeException e) { // we want to display this in the dialog, not via the notification system
       displayError(succeededEvent.getFileName(),
@@ -229,7 +248,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
         fileName, Collections.emptyList());
     MeasurementFileItem measurementFileItem = new MeasurementFileItem(
         fileName,
-        new MeasurementValidationReport(1, ValidationResult.withFailures(1, List.of(
+        new MeasurementValidationReport(1, ValidationResult.withFailures(List.of(
             reason))));
     addFile(measurementFileItem, metadataUpload);
   }
@@ -242,7 +261,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private MeasurementValidationReport validateNGS(List<NGSMeasurementMetadata> content) {
-    var validationResult = ValidationResult.successful(0);
+    var validationResult = ValidationResult.successful();
     ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
     List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (NGSMeasurementMetadata metaDatum : content) {
@@ -257,7 +276,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
 
   private MeasurementValidationReport validatePxP(List<ProteomicsMeasurementMetadata> content) {
-    var validationResult = ValidationResult.successful(0);
+    var validationResult = ValidationResult.successful();
     ConcurrentLinkedDeque<ValidationResult> concurrentLinkedDeque = new ConcurrentLinkedDeque<>();
     List<CompletableFuture<Void>> tasks = new ArrayList<>();
     for (ProteomicsMeasurementMetadata metaDatum : content) {
@@ -463,7 +482,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       OrderedList invalidMeasurementsList = new OrderedList(
           invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
       invalidMeasurementsList.addClassName("invalid-measurement-list");
-      invalidMeasurementsList.setType(OrderedList.NumberingType.NUMBER);
+      invalidMeasurementsList.setType(NumberingType.NUMBER);
       validationDetails.add(invalidMeasurementsList);
       box.add(header, validationDetails, instruction);
       return box;
@@ -579,7 +598,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
     public UploadProgressDisplay(MODE mode) {
 
-      Objects.requireNonNull(mode, "Mode cannot be null");
+      requireNonNull(mode, "Mode cannot be null");
       String modeBasedTask = (mode == MODE.ADD ? "register" : "update");
       Span title = new Span(
           String.format("%s" + " the measurement data", StringUtils.capitalize(modeBasedTask)));

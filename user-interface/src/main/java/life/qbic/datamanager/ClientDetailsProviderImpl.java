@@ -4,13 +4,11 @@ import com.vaadin.flow.component.page.ExtendedClientDetails;
 import com.vaadin.flow.component.page.Page.ExtendedClientDetailsReceiver;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.SessionScope;
 
 /**
  * Receives client details from vaadin and provides them internally.
  */
 @Component
-@SessionScope
 public class ClientDetailsProviderImpl implements ExtendedClientDetailsReceiver,
     ClientDetailsProvider {
 

@@ -91,7 +91,7 @@ class ProjectInformationServiceSpec extends Specification {
 
         when: "the project objective is updated for a project"
         String projectObjective = "All your objectives are belong to us"
-        projectInformationService.stateObjective(project.getId(), projectObjective)
+        projectInformationService.updateObjective(project.getId(), projectObjective)
 
         then: "the project intent contains the new project objective"
         project.projectIntent.objective().objective() == projectObjective

@@ -6,6 +6,11 @@
   flex: 1 1;
 }
 
+.button-bar {
+  display: inline-flex;
+  column-gap: var(--lumo-space-s);
+}
+
 .navigation-button .button {
   box-shadow: var(--lumo-box-shadow-xs);
 }

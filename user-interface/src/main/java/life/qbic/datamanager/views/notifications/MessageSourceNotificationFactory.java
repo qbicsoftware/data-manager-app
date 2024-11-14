@@ -36,6 +36,8 @@ public class MessageSourceNotificationFactory {
   private static final Logger log = logger(MessageSourceNotificationFactory.class);
   public static final Object[] EMPTY_PARAMETERS = new Object[]{};
   private static final String DEFAULT_CONFIRM_TEXT = "Okay";
+  private static final NotificationLevel DEFAULT_LEVEL = NotificationLevel.INFO;
+  private static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.HTML;
   private final MessageSource messageSource;
 
   public MessageSourceNotificationFactory(MessageSource messageSource) {
@@ -153,7 +155,10 @@ public class MessageSourceNotificationFactory {
       levelProperty = messageSource.getMessage("%s.level".formatted(key),
           EMPTY_PARAMETERS, locale);
     } catch (NoSuchMessageException e) {
-      throw new RuntimeException("Missing level info for %s.".formatted(key));
+      log.warn(
+          "Missing message level for `%s.level` falling back to the default of `%s`".formatted(key,
+              DEFAULT_LEVEL));
+      return DEFAULT_LEVEL;
     }
 
     try {
@@ -169,7 +174,7 @@ public class MessageSourceNotificationFactory {
       return messageSource.getMessage("%s.message.text".formatted(key),
           parameters, locale).strip();
     } catch (NoSuchMessageException e) {
-      throw new RuntimeException("No message specified for " + key, e);
+      throw new RuntimeException("No message specified for `%s.message.text`".formatted(key), e);
     }
   }
 
@@ -179,8 +184,13 @@ public class MessageSourceNotificationFactory {
           EMPTY_PARAMETERS, locale).strip().toUpperCase();
       return MessageType.valueOf(messageType);
     } catch (NoSuchMessageException e) {
-      throw new RuntimeException("No message type specified for %s.message.type".formatted(key), e);
+      log.warn("No message type specified for `%s.message.type`. Falling back to %s".formatted(key,
+          DEFAULT_MESSAGE_TYPE));
+      log.debug("No message type specified for `%s.message.type`. Falling back to %s".formatted(key,
+          DEFAULT_MESSAGE_TYPE), e);
+      return DEFAULT_MESSAGE_TYPE;
     }
+
   }
 
   private Optional<String> parseTitle(String key, Locale locale) {

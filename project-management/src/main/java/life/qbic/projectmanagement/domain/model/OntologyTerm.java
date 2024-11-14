@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.StringJoiner;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.OntologyClassAttributeConverter;
 
@@ -177,5 +178,15 @@ public class OntologyTerm implements Serializable {
     result = 31 * result + (description != null ? description.hashCode() : 0);
     result = 31 * result + (classIri != null ? classIri.hashCode() : 0);
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", OntologyTerm.class.getSimpleName() + "[", "]")
+        .add("ontologyAbbreviation='" + ontologyAbbreviation + "'")
+        .add("classLabel='" + classLabel + "'")
+        .add("oboId='" + oboId + "'")
+        .add("classIri='" + classIri + "'")
+        .toString();
   }
 }

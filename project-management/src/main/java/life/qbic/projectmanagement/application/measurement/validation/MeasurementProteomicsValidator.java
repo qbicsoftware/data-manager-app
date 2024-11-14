@@ -9,6 +9,8 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ValidationException;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -213,153 +215,153 @@ public class MeasurementProteomicsValidator implements
           sampleIdCodeEntry -> sampleInformationService.findSample(sampleIdCodeEntry.sampleId()));
       if (sampleQuery.isEmpty()) {
         log.error("No sample information found for sample id: " + sampleCode);
-        return ValidationResult.withFailures(1,
+        return ValidationResult.withFailures(
             List.of("No sample information found for sample id: %s".formatted(sampleCode.code())));
       }
       if (experimentIds.contains(sampleQuery.get().experimentId())) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
     }
 
     ValidationResult validateSampleId(SampleCode sampleCode) {
       var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
       if (queriedSampleEntry.isPresent()) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCode.code())));
     }
 
     ValidationResult validateOrganisation(String organisationId) {
       if (Pattern.compile(ROR_ID_REGEX).matcher(organisationId).find()) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of(UNKNOWN_ORGANISATION_ID_MESSAGE.formatted(organisationId)));
     }
 
     ValidationResult validateMeasurementCode(String measurementCode) {
       var queryMeasurement = measurementService.findProteomicsMeasurement(measurementCode);
-      return queryMeasurement.map(measurement -> ValidationResult.successful(1)).orElse(
-          ValidationResult.withFailures(1,
+      return queryMeasurement.map(measurement -> ValidationResult.successful()).orElse(
+          ValidationResult.withFailures(
               List.of("Measurement Code: Unknown measurement for id '%s'".formatted(measurementCode))));
     }
 
     ValidationResult validateMsDevice(String msDevice) {
       var result = terminologyService.findByCurie(msDevice);
       if (result.isPresent()) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of(UNKNOWN_MS_DEVICE_ID.formatted(msDevice)));
     }
 
     ValidationResult validateDigestionMethod(String digestionMethod) {
       if (DigestionMethod.isDigestionMethod(digestionMethod)) {
-        return ValidationResult.successful(1);
+        return ValidationResult.successful();
       }
-      return ValidationResult.withFailures(1,
+      return ValidationResult.withFailures(
           List.of(UNKNOWN_DIGESTION_METHOD.formatted(digestionMethod)));
     }
 
     ValidationResult validateMandatoryDataForUpdate(ProteomicsMeasurementMetadata metadata) {
-      var validation = ValidationResult.successful(1);
+      var validation = ValidationResult.successful();
       if (metadata.measurementIdentifier().isEmpty()) {
-        validation.combine(ValidationResult.withFailures(1,
+        validation.combine(ValidationResult.withFailures(
             List.of("Measurement id: missing measurement id for update")));
       } else {
-        validation.combine(ValidationResult.successful(1));
+        validation.combine(ValidationResult.successful());
       }
       if (metadata.organisationId().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Organisation: missing mandatory metadata")));
+            ValidationResult.withFailures(List.of("Organisation: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.msDeviceCURIE().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("MS Device: missing mandatory metadata")));
+            ValidationResult.withFailures(List.of("MS Device: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("Facility: missing mandatory metadata")));
+            ValidationResult.withFailures(List.of("Facility: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.digestionEnzyme().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(ValidationResult.withFailures(
             List.of("Digestion Enzyme: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.digestionMethod().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(ValidationResult.withFailures(
             List.of("Digestion Method: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.lcColumn().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1, List.of("LC Column: missing mandatory metadata")));
+            ValidationResult.withFailures(List.of("LC Column: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       return validation;
     }
 
     ValidationResult validateMandatoryDataProvided(
         ProteomicsMeasurementMetadata metadata) {
-      var validation = ValidationResult.successful(0);
+      var validation = ValidationResult.successful();
       if (metadata.sampleCode() == null) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Sample id: missing sample id reference")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.organisationId().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Organisation: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.msDeviceCURIE().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("MS Device: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("Facility: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.digestionEnzyme().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(ValidationResult.withFailures(
             List.of("Digestion Enzyme: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.digestionMethod().isBlank()) {
-        validation = validation.combine(ValidationResult.withFailures(1,
+        validation = validation.combine(ValidationResult.withFailures(
             List.of("Digestion Method: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.lcColumn().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(1,
+            ValidationResult.withFailures(
                 List.of("LC Column: missing mandatory metadata")));
       } else {
-        validation = validation.combine(ValidationResult.successful(1));
+        validation = validation.combine(ValidationResult.successful());
       }
       return validation;
     }

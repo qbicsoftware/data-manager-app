@@ -25,7 +25,9 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
  * A dialog used for editing sample and batch information within an experiment
+ * @Deprecated replaced by {@link EditSampleBatchDialog}
  */
+@Deprecated(forRemoval = true, since = "1.4.0")
 public class EditBatchDialog extends DialogWindow {
 
   private final SampleBatchInformationSpreadsheet spreadsheet;
