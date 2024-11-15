@@ -2,6 +2,7 @@ package life.qbic.identity.application.user.policy;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import life.qbic.application.commons.ApplicationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -46,7 +47,7 @@ public class EmailConfirmationLinkSupplier {
             URL url = new URL(protocol, host, port, pathWithQuery);
             return url.toExternalForm();
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Link creation failed.", e);
+            throw new ApplicationException("Link creation failed.", e);
         }
 
     }

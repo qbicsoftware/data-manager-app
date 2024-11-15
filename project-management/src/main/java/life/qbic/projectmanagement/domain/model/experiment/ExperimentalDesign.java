@@ -136,7 +136,7 @@ public class ExperimentalDesign {
     return experimentalVariable.addLevel(level);
   }
 
-  List<ExperimentalVariable> variables() {
+  List<ExperimentalVariable> experimentalVariables() {
     return Collections.unmodifiableList(variables);
   }
 

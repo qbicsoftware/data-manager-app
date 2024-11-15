@@ -61,7 +61,7 @@ public class Experiment {
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
   //FIXME should be `specimen`in the database and here
   private List<OntologyTerm> specimens = new ArrayList<>();
-  private static final String defaultIconName = "default";
+  private static final String DEFAULT_ICON_NAME = "default";
 
   /**
    * Please use {@link Experiment#create(String)} instead
@@ -83,9 +83,9 @@ public class Experiment {
     Experiment experiment = new Experiment(name);
     experiment.experimentalDesign = ExperimentalDesign.create();
 
-    experiment.speciesIconName = defaultIconName;
-    experiment.specimenIconName = defaultIconName;
-    experiment.analyteIconName = defaultIconName;
+    experiment.speciesIconName = DEFAULT_ICON_NAME;
+    experiment.specimenIconName = DEFAULT_ICON_NAME;
+    experiment.analyteIconName = DEFAULT_ICON_NAME;
 
     return experiment;
   }
@@ -141,7 +141,7 @@ public class Experiment {
    */
 
   public List<ExperimentalVariable> variables() {
-    return experimentalDesign.variables();
+    return experimentalDesign.experimentalVariables();
   }
 
   /**
