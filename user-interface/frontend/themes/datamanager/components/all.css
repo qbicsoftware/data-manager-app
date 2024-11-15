@@ -204,6 +204,29 @@
 .simple-paragraph {
   font-size: var(--lumo-font-size-m);
   margin-bottom: var(--lumo-space-m);
-  max-width: 40em;
+}
+
+.background-color-grey {
+  background-color: #F9F9F9;
+}
+
+.text-justify {
+  text-align: justify;
+}
+
+.padding-left-01 {
+  padding-left: 1rem
+}
+
+.padding-right-01 {
+  padding-right: 1rem
+}
+
+.line-height-01 {
+  line-height: 1.7rem;
+}
+
+.max-width-60rem {
+  max-width: 60rem;
 }
 

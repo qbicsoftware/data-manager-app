@@ -7,6 +7,7 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -36,6 +37,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
+import life.qbic.datamanager.views.general.CollapsableDetails;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.general.IconLabel;
@@ -480,12 +482,23 @@ public class ProjectSummaryComponent extends PageArea {
     projectDesignSection.setHeader(
         new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
     var content = new SectionContent();
+
+    // Set up the objective details
+    var details = new Details();
+    details.removeAll();
+    var objectiveTitle = Heading.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective");
+    var objective = new SimpleParagraph(project.getProjectIntent().objective().objective());
+    details.setSummary(objectiveTitle);
+    details.add(objective);
+    var collapsableDetails = new CollapsableDetails(details);
+    collapsableDetails.collapse();
+    collapsableDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01", "line-height-01", "max-width-60rem", "text-justify");
+
     content.add(
         Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
     content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
         projectInformation.projectTitle())));
-    content.add(Heading.withIconAndText(VaadinIcon.MODAL_LIST.create(), "Objective"));
-    content.add(new SimpleParagraph(project.getProjectIntent().objective().objective()));
+    content.add(collapsableDetails);
     projectDesignSection.setContent(content);
   }
 
