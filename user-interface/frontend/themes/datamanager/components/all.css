@@ -204,6 +204,13 @@
 .simple-paragraph {
   font-size: var(--lumo-font-size-m);
   margin-bottom: var(--lumo-space-m);
-  max-width: 40em;
+  max-width: 50em;
 }
 
+.max-height-10rem {
+  max-height: 10rem;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
