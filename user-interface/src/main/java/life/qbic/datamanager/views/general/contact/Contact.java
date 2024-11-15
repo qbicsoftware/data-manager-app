@@ -4,7 +4,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
-import org.checkerframework.checker.units.qual.A;
 
 /**
  *

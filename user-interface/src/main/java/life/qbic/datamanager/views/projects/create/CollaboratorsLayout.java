@@ -15,7 +15,6 @@ import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Component;
 
 /**

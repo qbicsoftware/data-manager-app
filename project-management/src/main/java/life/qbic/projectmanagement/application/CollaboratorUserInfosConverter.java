@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.isNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 
 /**

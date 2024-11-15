@@ -1,12 +1,10 @@
 package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;

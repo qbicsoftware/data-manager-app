@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.model.sample.event;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import java.io.Serial;
-import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
