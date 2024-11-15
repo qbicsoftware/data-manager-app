@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.batch;
 
 
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
@@ -46,7 +47,7 @@ public class BatchRegistrationService {
   private final SampleInformationService sampleInformationService;
   private final SampleRegistrationService sampleRegistrationService;
   private final DeletionService deletionService;
-  private static final Random RANDOM = new Random();
+  private static final Random RANDOM = new SecureRandom();
 
   @Autowired
   public BatchRegistrationService(BatchRepository batchRepository,

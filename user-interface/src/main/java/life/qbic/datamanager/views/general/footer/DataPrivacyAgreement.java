@@ -33,7 +33,7 @@ public class DataPrivacyAgreement extends Main {
   public DataPrivacyAgreement() {
     String dataPrivacyAgreementHtmlContent = getDataPrivacyAgreementHtmlContent();
     // Replace href="#" with href="currentPath#id"
-    String dataPrivacyAgreementWithAnchors = dataPrivacyAgreementHtmlContent.replaceAll(
+    String dataPrivacyAgreementWithAnchors = dataPrivacyAgreementHtmlContent.replace(
         "href=\"#", replaceWithCurrentUrl());
     Html html = new Html(dataPrivacyAgreementWithAnchors);
     add(html);

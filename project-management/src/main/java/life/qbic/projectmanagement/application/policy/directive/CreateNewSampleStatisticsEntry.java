@@ -27,8 +27,6 @@ import org.springframework.stereotype.Component;
 public class CreateNewSampleStatisticsEntry implements
     DomainEventSubscriber<ProjectRegisteredEvent> {
 
-  private static final Logger log = logger(CreateNewSampleStatisticsEntry.class);
-
   private final SampleCodeService sampleCodeService;
 
   private final ProjectRepository projectRepository;
@@ -52,13 +50,13 @@ public class CreateNewSampleStatisticsEntry implements
   }
 
   @Job(name = "Create sample statistics entry for project %0")
-  public void createSampleStatisticsEntry(String projectId) throws RuntimeException {
+  public void createSampleStatisticsEntry(String projectId) throws DirectiveExecutionException {
     var id = ProjectId.parse(projectId);
     if (sampleStatisticsEntryMissing(id)) {
       Optional<Project> searchResult = projectRepository.find(id).stream()
           .findFirst();
       if (searchResult.isEmpty()) {
-        throw new RuntimeException("Project with id " + projectId
+        throw new DirectiveExecutionException("Project with id " + projectId
             + " not found. Domain event processing failed for directive "
             + getClass().getSimpleName());
       }
