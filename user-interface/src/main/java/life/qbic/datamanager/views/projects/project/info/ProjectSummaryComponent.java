@@ -492,7 +492,7 @@ public class ProjectSummaryComponent extends PageArea {
     details.add(objective);
     var collapsableDetails = new CollapsableDetails(details);
     collapsableDetails.collapse();
-    collapsableDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01", "line-height-01", "max-width-60rem", "text-justify");
+    collapsableDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01", "line-height-01", "max-width-55rem", "text-justify");
 
     content.add(
         Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
