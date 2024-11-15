@@ -1,7 +1,11 @@
 package life.qbic.datamanager.download;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import life.qbic.application.commons.ApplicationException;
+import life.qbic.logging.api.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
 
 /**
@@ -9,13 +13,14 @@ import org.apache.poi.ss.usermodel.Workbook;
  */
 public interface DownloadContentProvider {
 
-  public byte[] getContent();
-  public String getFileName();
+  byte[] getContent();
+  String getFileName();
 
   class XLSXDownloadContentProvider implements DownloadContentProvider {
 
     private final String fileName;
     private final Workbook workbook;
+    private static final Logger log = logger(XLSXDownloadContentProvider.class);
 
     public XLSXDownloadContentProvider(String fileName, Workbook workbook) {
       this.fileName = fileName;
@@ -28,7 +33,8 @@ public interface DownloadContentProvider {
         workbook.write(arrayOutputStream);
         return arrayOutputStream.toByteArray();
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        log.error(e.getMessage(), e.getCause());
+        throw new ApplicationException("Retrieving content from the download provider failed");
       }
     }
 

@@ -17,6 +17,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DeletionService {
 
-  private static final Logger log = logger(DeletionService.class);
+  private ApplicationContext context;
+
   private final ProjectInformationService projectInformationService;
   private final ExperimentInformationService experimentInformationService;
   private final SampleInformationService sampleInformationService;
@@ -41,7 +43,7 @@ public class DeletionService {
   public DeletionService(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
       SampleInformationService sampleInformationService, BatchDomainService batchDomainService,
-      SampleDomainService sampleDomainService) {
+      SampleDomainService sampleDomainService, ApplicationContext context) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "experimentInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -86,7 +88,9 @@ public class DeletionService {
     deletedBatchId.onError(error -> {
       throw new ApplicationException("Could not delete batch " + batchId);
     });
-    deleteSamples(projectId, batchId, samples);
+    // We need to get the proxy Spring has wrapped around the service, otherwise calling
+    // the @transaction annotated method has no effect
+    context.getBean(DeletionService.class).deleteSamples(projectId, batchId, samples);
     return deletedBatchId.getValue();
   }
 

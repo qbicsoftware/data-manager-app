@@ -47,13 +47,13 @@ public class DeleteSampleFromBatch implements DomainEventSubscriber<SampleDelete
   }
 
   @Job(name = "Delete sample %0 from batch %1")
-  public void deleteSampleFromBatch(SampleId sample, BatchId batch) throws RuntimeException {
+  public void deleteSampleFromBatch(SampleId sample, BatchId batch) throws DirectiveExecutionException {
     batchRegistrationService.deleteSampleFromBatch(sample, batch).onError(responseCode -> {
       if (Objects.requireNonNull(responseCode) == ResponseCode.UNKNOWN_BATCH) {
         // This accounts for a batch that might have already been deleted, so nothing is to be done
         log.warn("Cannot delete sample from unknown batch: %s".formatted(batch.value()));
       } else {
-        throw new RuntimeException(
+        throw new DirectiveExecutionException(
             String.format("Deletion of sample %s from batch %s failed, response code was %s ",
                 sample,
                 batch,
