@@ -33,8 +33,7 @@ public interface DownloadContentProvider {
         workbook.write(arrayOutputStream);
         return arrayOutputStream.toByteArray();
       } catch (IOException e) {
-        log.error(e.getMessage(), e.getCause());
-        throw new ApplicationException("Retrieving content from the download provider failed");
+        throw new ApplicationException("Retrieving content from the download provider failed",e);
       }
     }
 
