@@ -14,6 +14,14 @@ that enables FAIR-compliant data access.
 ![language](https://img.shields.io/badge/language-groovy,%20java-blue.svg)
 [![DOI](https://zenodo.org/badge/468238683.svg)](https://zenodo.org/doi/10.5281/zenodo.10371779)
 
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=bugs)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=qbicsoftware_data-manager-app&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=qbicsoftware_data-manager-app)
+
 </div>
 
 ## Overview:
