@@ -59,9 +59,9 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
 
   private final Div notificationLayout = new Div();
 
-  private final EmailService emailService;
+  private final transient EmailService emailService;
 
-  private final EmailConfirmationLinkSupplier emailConfirmationLinkSupplier;
+  private final transient EmailConfirmationLinkSupplier emailConfirmationLinkSupplier;
 
   private int lockoutTimer = 0;
 
@@ -138,8 +138,8 @@ public class EmailConfirmationMain extends Main implements HasUrlParameter<Strin
   }
 
   private boolean isAlreadyActiveUser(String userId) {
-    Optional<UserInfo> userInfo = userInformationService.findById(userId);
-    return userInfo.map(UserInfo::isActive).orElse(false);
+    Optional<UserInfo> request = userInformationService.findById(userId);
+    return request.map(UserInfo::isActive).orElse(false);
   }
 
   private void sendConfirmationEmail(String userId, String email, String fullName) {

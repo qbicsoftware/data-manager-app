@@ -33,11 +33,11 @@ public class IdentityEmailServiceProvider implements EmailService {
   @Override
   public void send(Subject subject, Recipient recipient, Content content)
       throws CommunicationException {
-    Optional.ofNullable(subject)
+    subject = Optional.ofNullable(subject)
         .orElseThrow(() -> new CommunicationException("No subject provided."));
-    Optional.ofNullable(recipient)
+    recipient = Optional.ofNullable(recipient)
         .orElseThrow(() -> new CommunicationException("No recipient provided."));
-    Optional.ofNullable(content)
+    content = Optional.ofNullable(content)
         .orElseThrow(() -> new CommunicationException("No content provided."));
 
     try {

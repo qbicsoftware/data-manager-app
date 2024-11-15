@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.projects.project.access;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -26,7 +25,6 @@ import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.project.access.ProjectAccessComponent.UserInfoComponent;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRoleRecommendationRenderer;
@@ -46,7 +44,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 6582904858073255011L;
-  private static final Logger log = logger(AddCollaboratorToProjectDialog.class);
   private final Div projectRoleSelectionSection = new Div();
   private final Div personSelectionSection = new Div();
   private final RadioButtonGroup<ProjectRole> projectRoleSelection = new RadioButtonGroup<>();
@@ -192,7 +189,7 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
 
-    private final ProjectCollaborator projectCollaborator;
+    private final transient ProjectCollaborator projectCollaborator;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from

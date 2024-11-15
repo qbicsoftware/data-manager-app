@@ -23,6 +23,7 @@ import life.qbic.datamanager.views.general.utils.Utility;
  * Includes methods for basic input validation.</p>
  *
  * @since 1.0.0
+ * @deprecated please use {@link ContactField} and {@link BoundContactField}.
  */
 @Deprecated(since = "1.6.0")
 public class AutocompleteContactField extends CustomField<Contact> implements
@@ -96,6 +97,17 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     clear();
   }
 
+  private static Div renderContact(Contact contact) {
+    var contactName = new Span(contact.getFullName());
+    contactName.addClassName("contact-name");
+    var contactEmail = new Span(contact.getEmail());
+    contactEmail.addClassName("contact-email");
+    var container = new Div();
+    container.addClassName("contact-item");
+    container.add(contactName, contactEmail);
+    return container;
+  }
+
   private void onSelfSelected(
       ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
     if (Boolean.TRUE.equals(checkboxvalueChangeEvent.getValue())) {
@@ -106,17 +118,6 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
   private void updateValidationProperty() {
     this.getElement().setProperty("invalid", !binder.isValid());
-  }
-
-  private static Div renderContact(Contact contact) {
-    var contactName = new Span(contact.getFullName());
-    contactName.addClassName("contact-name");
-    var contactEmail = new Span(contact.getEmail());
-    contactEmail.addClassName("contact-email");
-    var container = new Div();
-    container.addClassName("contact-item");
-    container.add(contactName, contactEmail);
-    return container;
   }
 
   private void onContactSelectionChanged(
@@ -155,6 +156,9 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     emailField.setValue(contact.getEmail());
   }
 
+  public boolean isRequired() {
+    return isRequiredIndicatorVisible();
+  }
 
   /**
    * Sets the component to required
@@ -165,10 +169,6 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     nameField.setRequired(required);
     emailField.setRequired(required);
     setRequiredIndicatorVisible(required);
-  }
-
-  public boolean isRequired() {
-    return isRequiredIndicatorVisible();
   }
 
   @Override
