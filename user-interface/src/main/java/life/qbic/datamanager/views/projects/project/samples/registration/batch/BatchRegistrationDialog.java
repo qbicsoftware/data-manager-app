@@ -26,7 +26,7 @@ public class BatchRegistrationDialog extends DialogWindow {
 
   private final TextField batchNameField;
 
-  private final List<ExperimentalGroup> experimentalGroups;
+  private final transient List<ExperimentalGroup> experimentalGroups;
   private final List<OntologyTerm> species;
   private final List<OntologyTerm> specimen;
   private final List<OntologyTerm> analytes;
@@ -222,7 +222,7 @@ public class BatchRegistrationDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<BatchRegistrationDialog> {
 
-    private final Data data;
+    private final transient Data data;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from

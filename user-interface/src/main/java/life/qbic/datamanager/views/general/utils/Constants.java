@@ -9,6 +9,8 @@ package life.qbic.datamanager.views.general.utils;
  */
 public class Constants {
 
+  private Constants() {}
+
   public static final int PROJECT_TITLE_MAX_LENGTH = 180;
 
   public static final int PROJECT_OBJECTIVE_MAX_LENGTH = 2000;

@@ -61,7 +61,6 @@ public class AddExperimentToProjectService {
       String specimenIconLabel) {
       requireNonNull(projectId, "project id must not be null during experiment creation");
       if (experimentName.isBlank()) {
-        //ToDo Add Iterator for multiple experiments?
         experimentName = "Unnamed Experiment";
       }
       if (CollectionUtils.isEmpty(species)) {

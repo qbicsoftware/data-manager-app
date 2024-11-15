@@ -64,7 +64,7 @@ public final class IdentityService {
 
     var userDomainService = DomainRegistry.instance().userDomainService();
     if (userDomainService.isEmpty()) {
-      throw new RuntimeException("User registration failed.");
+      throw new ApplicationException("User registration failed.");
     }
 
     var userEmail = EmailAddress.from(email);
@@ -98,7 +98,7 @@ public final class IdentityService {
 
     var userDomainService = DomainRegistry.instance().userDomainService();
     if (userDomainService.isEmpty()) {
-      throw new RuntimeException("User registration failed.");
+      throw new ApplicationException("User registration failed.");
     }
 
     var userEmail = EmailAddress.from(email);
@@ -301,6 +301,7 @@ public final class IdentityService {
     private static final long serialVersionUID = 4409722243047442583L;
 
     public UserNameNotAvailableException() {
+      super();
     }
   }
 

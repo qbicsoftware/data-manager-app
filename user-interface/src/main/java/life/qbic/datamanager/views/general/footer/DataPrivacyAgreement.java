@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serial;
 import java.nio.charset.StandardCharsets;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.logging.api.Logger;
@@ -22,7 +23,7 @@ import life.qbic.logging.service.LoggerFactory;
  */
 @Route(value = "data-privacy-agreement", layout = DataManagerLayout.class)
 @AnonymousAllowed
-@PageTitle("Impressum / Data Privacy Agreement")
+@PageTitle("Data privacy policy of QBiC's online services")
 public class DataPrivacyAgreement extends Main {
 
   @Serial
@@ -33,7 +34,7 @@ public class DataPrivacyAgreement extends Main {
   public DataPrivacyAgreement() {
     String dataPrivacyAgreementHtmlContent = getDataPrivacyAgreementHtmlContent();
     // Replace href="#" with href="currentPath#id"
-    String dataPrivacyAgreementWithAnchors = dataPrivacyAgreementHtmlContent.replaceAll(
+    String dataPrivacyAgreementWithAnchors = dataPrivacyAgreementHtmlContent.replace(
         "href=\"#", replaceWithCurrentUrl());
     Html html = new Html(dataPrivacyAgreementWithAnchors);
     add(html);
@@ -52,7 +53,7 @@ public class DataPrivacyAgreement extends Main {
       }
       htmlContent = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     } catch (IOException e) {
-      throw new RuntimeException("Cannot get html content for the data privacy agreement: "
+      throw new ApplicationException("Cannot get html content for the data privacy agreement: "
           + DATA_PRIVACY_AGREEMENT_HTML,
           e);
     }

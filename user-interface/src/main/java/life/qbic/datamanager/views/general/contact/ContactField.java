@@ -32,12 +32,8 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
         loadContact(this, myself);
       }
     });
-    fullName.addValueChangeListener(listener -> {
-      updateValue();
-    });
-    email.addValueChangeListener(listener -> {
-      updateValue();
-    });
+    fullName.addValueChangeListener(listener -> updateValue());
+    email.addValueChangeListener(listener -> updateValue());
   }
 
   private static void loadContact(ContactField field, Contact contact) {

@@ -9,6 +9,7 @@ package life.qbic.logging.subscription.provider.mail.property;
  */
 public class EnvironmentVariableResolver {
 
+  private EnvironmentVariableResolver() {}
   /**
    * Resolves an environment variable by its provided name
    *

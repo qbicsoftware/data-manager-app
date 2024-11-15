@@ -97,6 +97,7 @@ public class InformationComponent extends Div {
    *
    * @param title the new title
    */
+  @Override
   public void setTitle(String title) {
     this.title.setText(title);
   }

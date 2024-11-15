@@ -26,7 +26,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.views.AppRoutes;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
@@ -195,7 +195,7 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
   private void onLoginSucceeded() {
     clearNotifications();
     getUI().ifPresentOrElse(
-        ui -> ui.navigate(Projects.PROJECTS),
+        ui -> ui.navigate(ProjectRoutes.PROJECTS),
         () -> log.error("No UI found!"));
   }
 

@@ -20,7 +20,7 @@ import life.qbic.logging.service.LoggerFactory;
  * Legal Notice Main Component showing the relevant legal information for the data-manager application
  */
 @Route(value = "legal-notice", layout = DataManagerLayout.class)
-@PageTitle("Impressum / Legal Notice")
+@PageTitle("Legal notice of QBiC's online representation")
 @AnonymousAllowed
 public class LegalNotice extends Main {
 

@@ -32,12 +32,12 @@ public class EditBatchDialog extends DialogWindow {
 
   private final SampleBatchInformationSpreadsheet spreadsheet;
   private final BatchId batchId;
-  private final List<SampleInfo> existingSamples;
+  private final transient List<SampleInfo> existingSamples;
   private final TextField batchNameField;
   private final Span batchNameText;
 
   private final Span errorText = new Span("Unspecific Error message");
-  private final SampleDeletionChecker deletionChecker;
+  private final transient SampleDeletionChecker deletionChecker;
 
   public EditBatchDialog(String experimentName,
       List<OntologyTerm> species,
@@ -276,7 +276,7 @@ public class EditBatchDialog extends DialogWindow {
 
     }
 
-    private final Data data;
+    private transient final Data data;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
