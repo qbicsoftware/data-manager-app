@@ -230,3 +230,7 @@
   max-width: 55rem;
 }
 
+.box-corner-radius-small {
+  border-radius: var(--lumo-space-s);
+}
+
