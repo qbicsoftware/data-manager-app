@@ -474,10 +474,6 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   private static class InProgressDisplay extends Div {
 
-    public static final String UPLOADED_ITEM_CSS = "uploaded-item";
-    public static final String FILE_ICON_CSS = "file-icon";
-    public static final String FILE_NAME_CSS = "file-name";
-
     private InProgressDisplay(String fileName) {
       addClassName(UPLOADED_ITEM_CSS);
       var fileIcon = VaadinIcon.FILE.create();
