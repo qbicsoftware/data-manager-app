@@ -22,7 +22,7 @@ import life.qbic.logging.service.LoggerFactory;
  */
 @Route(value = "data-privacy-agreement", layout = DataManagerLayout.class)
 @AnonymousAllowed
-@PageTitle("Impressum / Data Privacy Agreement")
+@PageTitle("Data privacy policy of QBiC's online services")
 public class DataPrivacyAgreement extends Main {
 
   @Serial
