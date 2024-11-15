@@ -1,10 +1,7 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -23,7 +20,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered> {
 
-  private static final Logger log = logger(AddSampleToBatch.class);
   private final BatchRegistrationService batchRegistrationService;
 
   private final JobScheduler jobScheduler;
@@ -45,9 +41,9 @@ public class AddSampleToBatch implements DomainEventSubscriber<SampleRegistered>
   }
 
   @Job(name = "Add sample %0 to batch %1")
-  public void addSampleToBatch(SampleId sample, BatchId batch) throws RuntimeException {
+  public void addSampleToBatch(SampleId sample, BatchId batch) throws DirectiveExecutionException {
     batchRegistrationService.addSampleToBatch(sample, batch).onError(responseCode -> {
-      throw new RuntimeException(
+      throw new DirectiveExecutionException(
           String.format("Adding sample %s to batch %s failed, response code was %s ", sample, batch,
               responseCode));
     });

@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ContactPoint {
 
   @JsonProperty(value = "@type")
-  private final String type = "ContactPoint";
+  private static final String type = "ContactPoint";
 
   @JsonProperty(value = "name")
   private String name;

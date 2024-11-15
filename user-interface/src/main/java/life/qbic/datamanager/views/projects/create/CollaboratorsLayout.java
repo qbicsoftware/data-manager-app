@@ -10,10 +10,12 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Component;
 
 /**
@@ -113,7 +115,7 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     try {
       collaboratorsBinder.writeBean(projectCollaborators);
     } catch (ValidationException e) {
-      throw new RuntimeException("Tried to access invalid project collaborator information.", e);
+      throw new ApplicationException("Tried to access invalid project collaborator information.", e);
     }
     return projectCollaborators;
   }

@@ -46,7 +46,6 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   @Serial
   private static final long serialVersionUID = 6582904858073255011L;
-  private static final Logger log = logger(AddCollaboratorToProjectDialog.class);
   private final Div projectRoleSelectionSection = new Div();
   private final Div personSelectionSection = new Div();
   private final RadioButtonGroup<ProjectRole> projectRoleSelection = new RadioButtonGroup<>();
@@ -192,7 +191,7 @@ public class AddCollaboratorToProjectDialog extends DialogWindow {
 
   public static class ConfirmEvent extends ComponentEvent<AddCollaboratorToProjectDialog> {
 
-    private final ProjectCollaborator projectCollaborator;
+    private final transient ProjectCollaborator projectCollaborator;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
