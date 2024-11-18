@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.repository;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableLevelData;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
@@ -17,27 +16,27 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public interface ConfoundingVariableLevelRepository {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  List<ConfoundingVariableLevelData> findAllForSample(ProjectId projectId, String sampleId);
+  List<ConfoundingVariableLevelData> findAllForSample(String projectId, String sampleId);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  List<ConfoundingVariableLevelData> findAllForVariable(ProjectId projectId, long variableId);
+  List<ConfoundingVariableLevelData> findAllForVariable(String projectId, long variableId);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  Optional<ConfoundingVariableLevelData> findVariableLevelOfSample(ProjectId projectId,
+  Optional<ConfoundingVariableLevelData> findVariableLevelOfSample(String projectId,
       String sampleId, long variableId);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  <S extends ConfoundingVariableLevelData> S save(ProjectId projectId, S entity);
+  <S extends ConfoundingVariableLevelData> S save(String projectId, S entity);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  Optional<ConfoundingVariableLevelData> findById(ProjectId projectId, Long aLong);
+  Optional<ConfoundingVariableLevelData> findById(String projectId, Long aLong);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  long countLevelsOfVariable(ProjectId projectId, long variableId);
+  long countLevelsOfVariable(String projectId, long variableId);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  void deleteById(ProjectId projectId, Long aLong);
+  void deleteById(String projectId, Long aLong);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  void deleteAllForVariable(ProjectId projectId, long variableId);
+  void deleteAllForVariable(String projectId, long variableId);
 }

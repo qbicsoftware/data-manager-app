@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.infrastructure.confounding;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableData;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableRepository;
 import org.springframework.stereotype.Repository;
 
@@ -22,43 +21,43 @@ public class ConfoundingVariableRepositoryImpl implements ConfoundingVariableRep
   }
 
   @Override
-  public <S extends ConfoundingVariableData> List<S> saveAll(ProjectId projectId,
+  public <S extends ConfoundingVariableData> List<S> saveAll(String projectId,
       Iterable<S> entities) {
     return jpaRepository.saveAll(entities);
   }
 
   @Override
-  public List<ConfoundingVariableData> findAll(ProjectId projectId, String experimentId) {
+  public List<ConfoundingVariableData> findAll(String projectId, String experimentId) {
     return jpaRepository.findAllByExperimentIdEquals(experimentId);
   }
 
   @Override
-  public List<ConfoundingVariableData> findAllById(ProjectId projectId, Iterable<Long> longs) {
+  public List<ConfoundingVariableData> findAllById(String projectId, Iterable<Long> longs) {
     return jpaRepository.findAllById(longs);
   }
 
   @Override
-  public <S extends ConfoundingVariableData> S save(ProjectId projectId, S entity) {
+  public <S extends ConfoundingVariableData> S save(String projectId, S entity) {
     return jpaRepository.save(entity);
   }
 
   @Override
-  public Optional<ConfoundingVariableData> findById(ProjectId projectId, Long aLong) {
+  public Optional<ConfoundingVariableData> findById(String projectId, Long aLong) {
     return jpaRepository.findById(aLong);
   }
 
   @Override
-  public long countVariablesOfExperiment(ProjectId projectId, String experimentId) {
+  public long countVariablesOfExperiment(String projectId, String experimentId) {
     return jpaRepository.countByExperimentIdEquals(experimentId);
   }
 
   @Override
-  public void deleteById(ProjectId projectId, Long aLong) {
+  public void deleteById(String projectId, Long aLong) {
     jpaRepository.deleteById(aLong);
   }
 
   @Override
-  public void deleteAllById(ProjectId projectId, Iterable<Long> longs) {
+  public void deleteAllById(String projectId, Iterable<Long> longs) {
     jpaRepository.deleteAllById(longs);
   }
 }

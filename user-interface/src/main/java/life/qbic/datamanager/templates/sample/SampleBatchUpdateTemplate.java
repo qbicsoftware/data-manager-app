@@ -16,6 +16,7 @@ import java.util.List;
 import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.parser.sample.EditColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
@@ -36,8 +37,6 @@ public class SampleBatchUpdateTemplate {
 
   public static final int MAX_ROW_INDEX_TO = 2000;
 
-
-
   /**
    * Creates a {@link XSSFWorkbook} that contains a prefilled sheet of sample metadata based on the
    * provided list of {@link Sample}.
@@ -55,8 +54,8 @@ public class SampleBatchUpdateTemplate {
    */
   public static XSSFWorkbook createUpdateTemplate(List<Sample> samples, List<String> conditions,
       List<String> species, List<String> specimen, List<String> analytes,
-      List<String> analysisToPerform, List<ExperimentalGroup> experimentalGroups) {
-
+      List<String> analysisToPerform, List<ExperimentalGroup> experimentalGroups,
+      List<ConfoundingVariableInformation> confoundingVariables) {
     XSSFWorkbook workbook = new XSSFWorkbook();
     var readOnlyCellStyle = createReadOnlyCellStyle(workbook);
     var readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
@@ -86,6 +85,17 @@ public class SampleBatchUpdateTemplate {
               0,
               helper.exampleValue(),
               helper.description()));
+    }
+
+    Map<ConfoundingVariableInformation>
+    var columnOffset = EditColumn.maxColumnIndex();
+    for (int confoundingVariableIndex = 0; confoundingVariableIndex < confoundingVariables.size();
+        confoundingVariableIndex++) {
+      String variableName = confoundingVariables.get(confoundingVariableIndex).variableName();
+      var cell = XLSXTemplateHelper.getOrCreateCell(header,
+          confoundingVariableIndex + columnOffset + 1);
+      cell.setCellValue(variableName);
+      cell.setCellStyle(boldCellStyle);
     }
 
     // add property information order of columns matters!!

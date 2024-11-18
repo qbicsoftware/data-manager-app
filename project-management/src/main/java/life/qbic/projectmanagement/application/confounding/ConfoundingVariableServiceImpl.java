@@ -6,7 +6,6 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableData;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableLevelData;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableLevelRepository;
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableRepository;
 import org.springframework.stereotype.Component;
@@ -34,7 +33,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
 
   @Override
   public List<ConfoundingVariableInformation> listConfoundingVariablesForExperiment(
-      ProjectId projectId, ExperimentReference experiment) {
+      String projectId, ExperimentReference experiment) {
     return variableRepository.findAll(projectId, experiment.id())
         .stream()
         .map(it -> new ConfoundingVariableInformation(new VariableReference(it.getId()),
@@ -43,7 +42,17 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
-  public ConfoundingVariableInformation createConfoundingVariable(ProjectId projectId,
+  public List<ConfoundingVariableInformation> loadInformationForVariables(String projectId,
+      List<VariableReference> variables) {
+    return variableRepository.findAllById(projectId,
+            variables.stream().map(VariableReference::id).toList()).stream()
+        .map(data -> new ConfoundingVariableInformation(new VariableReference(data.getId()),
+            data.getName()))
+        .toList();
+  }
+
+  @Override
+  public ConfoundingVariableInformation createConfoundingVariable(String projectId,
       ExperimentReference experiment, String variableName) {
     ConfoundingVariableData confoundingVariableData = new ConfoundingVariableData(null,
         experiment.id(), variableName);
@@ -54,7 +63,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
-  public ConfoundingVariableLevel setVariableLevelForSample(ProjectId projectId,
+  public ConfoundingVariableLevel setVariableLevelForSample(String projectId,
       ExperimentReference experiment, SampleReference sampleReference,
       VariableReference variableReference,
       String level) {
@@ -81,7 +90,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
-  public Optional<ConfoundingVariableLevel> getVariableLevelForSample(ProjectId projectId,
+  public Optional<ConfoundingVariableLevel> getVariableLevelForSample(String projectId,
       SampleReference sampleReference,
       VariableReference variableReference) {
     return levelRepository.findVariableLevelOfSample(projectId, sampleReference.id(),
@@ -92,7 +101,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
-  public List<ConfoundingVariableLevel> listLevelsForVariable(ProjectId projectId,
+  public List<ConfoundingVariableLevel> listLevelsForVariable(String projectId,
       VariableReference variableReference) {
     return levelRepository.findAllForVariable(projectId, variableReference.id()).stream()
         .map(data -> new ConfoundingVariableLevel(
@@ -103,7 +112,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
-  public void deleteConfoundingVariable(ProjectId projectId,
+  public void deleteConfoundingVariable(String projectId,
       ExperimentReference experiment,
       VariableReference variableReference) {
     Optional<ConfoundingVariableData> optionalVariable = variableRepository.findById(projectId,

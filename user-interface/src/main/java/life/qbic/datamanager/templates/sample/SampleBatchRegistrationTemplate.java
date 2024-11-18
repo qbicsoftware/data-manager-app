@@ -69,7 +69,7 @@ public class SampleBatchRegistrationTemplate {
    */
   public static XSSFWorkbook createRegistrationTemplate(List<String> conditions,
       List<String> species, List<String> specimen, List<String> analytes,
-      List<String> analysisToPerform) {
+      List<String> analysisToPerform, List<String> confoundingVariables) {
     XSSFWorkbook workbook = new XSSFWorkbook();
     var readOnlyHeaderStyle = createReadOnlyHeaderCellStyle(workbook);
     var boldCellStyle = createBoldCellStyle(workbook);
@@ -100,6 +100,16 @@ public class SampleBatchRegistrationTemplate {
               0,
               helper.exampleValue(),
               helper.description()));
+    }
+
+    var columnOffset = RegisterColumn.maxColumnIndex();
+    for (int confoundingVariableIndex = 0; confoundingVariableIndex < confoundingVariables.size();
+        confoundingVariableIndex++) {
+      String variableName = confoundingVariables.get(confoundingVariableIndex);
+      var cell = XLSXTemplateHelper.getOrCreateCell(header,
+          confoundingVariableIndex + columnOffset);
+      cell.setCellValue(variableName);
+      cell.setCellStyle(boldCellStyle);
     }
 
     // add property information order of columns matters!!

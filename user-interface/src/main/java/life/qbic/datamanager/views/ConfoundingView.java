@@ -17,7 +17,9 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
@@ -25,8 +27,8 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.SampleReference;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
  * TODO! REMOVE!!!
@@ -42,7 +44,7 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 @UIScope
 public class ConfoundingView extends FormLayout implements HasUrlParameter<String> {
 
-  private ProjectId projectId;
+  private String projectId;
   private ExperimentId experimentId;
   private final TextArea textArea;
   private final TextField variableAdding;
@@ -59,7 +61,7 @@ public class ConfoundingView extends FormLayout implements HasUrlParameter<Strin
     Location location = event.getLocation();
     QueryParameters queryParameters = location.getQueryParameters();
     this.projectId = queryParameters.getSingleParameter("project")
-        .map(ProjectId::parse).orElseThrow();
+        .orElseThrow();
     this.experimentId = queryParameters.getSingleParameter("experiment")
         .map(ExperimentId::parse).orElseThrow();
     contextSet();
@@ -96,6 +98,7 @@ public class ConfoundingView extends FormLayout implements HasUrlParameter<Strin
     Button addLevelButton = new Button("Add Level");
     textArea = new TextArea();
     textArea.setReadOnly(true);
+    textArea.setWidthFull();
     variableAdding = new TextField();
     Button addVariableButton = new Button("Add Variable");
     variableSelect = new ComboBox<>();
@@ -147,11 +150,21 @@ public class ConfoundingView extends FormLayout implements HasUrlParameter<Strin
       List<ConfoundingVariableLevel> confoundingVariableLevels = confoundingVariableService.listLevelsForVariable(
           projectId, it.getValue()
               .id());
+      List<SampleId> sampleIds = confoundingVariableLevels.stream()
+          .map(ConfoundingVariableLevel::sample)
+          .distinct()
+          .map(SampleReference::id)
+          .map(SampleId::parse)
+          .toList();
+      Map<String, Sample> samples = sampleInformationService.retrieveSamplesByIds(sampleIds)
+          .stream()
+          .collect(
+              Collectors.toMap(o -> o.sampleId().value(), o -> o));
       List<String> values = confoundingVariableLevels.stream()
           .map(confoundingVariableLevel -> "%s has %s of %s".formatted(
-              confoundingVariableLevel.sample().id(),
-              confoundingVariableLevel.variable().id(), confoundingVariableLevel.level())).toList();
-      textArea.setValue(String.join("", values));
+              samples.get(confoundingVariableLevel.sample().id()).label(),
+              it.getValue().variableName(), confoundingVariableLevel.level())).toList();
+      textArea.setValue(String.join("\n", values));
     });
   }
 }

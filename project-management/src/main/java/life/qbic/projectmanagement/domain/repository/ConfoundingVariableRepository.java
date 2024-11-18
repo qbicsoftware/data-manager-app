@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.domain.repository;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableData;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
@@ -18,27 +17,27 @@ public interface ConfoundingVariableRepository {
 
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  <S extends ConfoundingVariableData> List<S> saveAll(ProjectId projectId, Iterable<S> entities);
+  <S extends ConfoundingVariableData> List<S> saveAll(String projectId, Iterable<S> entities);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  List<ConfoundingVariableData> findAll(ProjectId projectId, String experimentId);
+  List<ConfoundingVariableData> findAll(String projectId, String experimentId);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  List<ConfoundingVariableData> findAllById(ProjectId projectId, Iterable<Long> longs);
+  List<ConfoundingVariableData> findAllById(String projectId, Iterable<Long> longs);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  <S extends ConfoundingVariableData> S save(ProjectId projectId, S entity);
+  <S extends ConfoundingVariableData> S save(String projectId, S entity);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  Optional<ConfoundingVariableData> findById(ProjectId projectId, Long aLong);
+  Optional<ConfoundingVariableData> findById(String projectId, Long aLong);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  long countVariablesOfExperiment(ProjectId projectId, String experimentId);
+  long countVariablesOfExperiment(String projectId, String experimentId);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  void deleteById(ProjectId projectId, Long aLong);
+  void deleteById(String projectId, Long aLong);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  void deleteAllById(ProjectId projectId, Iterable<Long> longs);
+  void deleteAllById(String projectId, Iterable<Long> longs);
 
 }

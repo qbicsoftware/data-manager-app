@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.infrastructure.confounding;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableLevelData;
-import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableLevelRepository;
 import org.springframework.stereotype.Repository;
 
@@ -23,44 +22,44 @@ public class ConfoundingVariableLevelRepositoryImpl implements ConfoundingVariab
   }
 
   @Override
-  public List<ConfoundingVariableLevelData> findAllForSample(ProjectId projectId, String sampleId) {
+  public List<ConfoundingVariableLevelData> findAllForSample(String projectId, String sampleId) {
     return jpaRepository.findAllBySampleIdEquals(sampleId);
   }
 
   @Override
-  public List<ConfoundingVariableLevelData> findAllForVariable(ProjectId projectId,
+  public List<ConfoundingVariableLevelData> findAllForVariable(String projectId,
       long variableId) {
     return jpaRepository.findAllByVariableIdEquals(variableId);
   }
 
   @Override
-  public Optional<ConfoundingVariableLevelData> findVariableLevelOfSample(ProjectId projectId,
+  public Optional<ConfoundingVariableLevelData> findVariableLevelOfSample(String projectId,
       String sampleId, long variableId) {
     return jpaRepository.findBySampleIdEqualsAndVariableIdEquals(sampleId, variableId);
   }
 
   @Override
-  public <S extends ConfoundingVariableLevelData> S save(ProjectId projectId, S entity) {
+  public <S extends ConfoundingVariableLevelData> S save(String projectId, S entity) {
     return jpaRepository.save(entity);
   }
 
   @Override
-  public Optional<ConfoundingVariableLevelData> findById(ProjectId projectId, Long aLong) {
+  public Optional<ConfoundingVariableLevelData> findById(String projectId, Long aLong) {
     return jpaRepository.findById(aLong);
   }
 
   @Override
-  public long countLevelsOfVariable(ProjectId projectId, long variableId) {
+  public long countLevelsOfVariable(String projectId, long variableId) {
     return jpaRepository.countByVariableIdEquals(variableId);
   }
 
   @Override
-  public void deleteById(ProjectId projectId, Long aLong) {
+  public void deleteById(String projectId, Long aLong) {
     jpaRepository.deleteById(aLong);
   }
 
   @Override
-  public void deleteAllForVariable(ProjectId projectId, long variableId) {
+  public void deleteAllForVariable(String projectId, long variableId) {
     jpaRepository.deleteAllByVariableIdEquals(variableId);
   }
 }
