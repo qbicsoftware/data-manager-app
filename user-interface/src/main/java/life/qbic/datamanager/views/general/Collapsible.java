@@ -8,7 +8,7 @@ package life.qbic.datamanager.views.general;
  *
  * @since 1.7.0
  */
-public interface Collapsable {
+public interface Collapsible {
 
   /**
    * Collapse the element into its concise view format

@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * <b>Collapsable Details</b>
  *
- * <p>Implementation of the {@link Collapsable} interface for the Vaadin component
+ * <p>Implementation of the {@link Collapsible} interface for the Vaadin component
  * {@link Details}.</p>
  * <p>
  * For the Vaadin {@link Details} component, it would not be necessary to provide a wrapper object. However
@@ -23,7 +23,7 @@ public class CollapsibleDetails extends Div implements Collapsible  {
 
   private final Details details;
 
-  public CollapsableDetails(Details details) {
+  public CollapsibleDetails(Details details) {
     this.details = Objects.requireNonNull(details);
     add(details);
   }

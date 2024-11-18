@@ -37,7 +37,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
-import life.qbic.datamanager.views.general.CollapsableDetails;
+import life.qbic.datamanager.views.general.CollapsibleDetails;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.general.IconLabel;
@@ -489,7 +489,7 @@ public class ProjectSummaryComponent extends PageArea {
     var objective = new SimpleParagraph(project.getProjectIntent().objective().objective());
     details.setSummary(objectiveTitle);
     details.add(objective);
-    var collapsableDetails = new CollapsableDetails(details);
+    var collapsableDetails = new CollapsibleDetails(details);
     collapsableDetails.collapse();
     collapsableDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01",
         "line-height-01", "max-width-55rem", "text-justify", "box-corner-radius-small");
