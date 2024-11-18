@@ -95,10 +95,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ProjectSummaryComponent extends PageArea {
 
+  private static final String DATE_TIME_PATTERN = "dd.MM.yyyy HH:mm";
   public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
   public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
   public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
-  private static final String DATE_TIME_PATTERN = "dd.MM.yyyy HH:mm";
   private final transient ProjectInformationService projectInformationService;
   private final transient ROCreateBuilder roCrateBuilder;
   private final transient TempDirectory tempDirectory;
@@ -502,6 +502,12 @@ public class ProjectSummaryComponent extends PageArea {
     projectDesignSection.setContent(content);
   }
 
+  private static SimpleParagraph buildObjectiveParagraph(String objective) {
+    var paragraph = new SimpleParagraph(objective);
+    paragraph.addClassNames("max-height-10rem", "overflow-auto");
+    return paragraph;
+  }
+
   private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
     projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
     projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
@@ -612,7 +618,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private Div createTags(ProjectOverview projectOverview) {
     var tags = new Div();
-    tags.addClassNames("tag-list", "gap-large");
+    tags.addClassNames("tag-list", "gap-small");
     buildTags(projectOverview).forEach(tags::add);
     return tags;
   }

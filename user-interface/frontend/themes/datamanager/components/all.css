@@ -234,3 +234,6 @@
   border-radius: var(--lumo-space-s);
 }
 
+.overflow-auto {
+  overflow: auto;
+}
