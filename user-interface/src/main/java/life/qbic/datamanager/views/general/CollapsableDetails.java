@@ -19,7 +19,7 @@ import java.util.Objects;
  *
  * @since 1.7.0
  */
-public class CollapsableDetails extends Div implements Collapsable  {
+public class CollapsibleDetails extends Div implements Collapsible  {
 
   private final Details details;
 
