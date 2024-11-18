@@ -15,24 +15,27 @@ import java.util.Collection;
  */
 public class GridDetailsItem extends Div {
 
+  public static final String ENTRY_LABEL_CSS = "entry-label";
+  public static final String ENTRY_CSS = "entry";
+
   public GridDetailsItem() {
     addClassName("grid-details-item");
   }
 
   public void addEntry(String propertyLabel, String propertyValue) {
     Span propertyLabelSpan = new Span(propertyLabel + ":");
-    propertyLabelSpan.addClassName("entry-label");
+    propertyLabelSpan.addClassName(ENTRY_LABEL_CSS);
     Span propertyValueSpan = new Span(propertyValue);
     propertyValueSpan.addClassName("entry-value");
     Span entry = new Span();
-    entry.addClassName("entry");
+    entry.addClassName(ENTRY_CSS);
     entry.add(propertyLabelSpan, propertyValueSpan);
     add(entry);
   }
 
   public void addListEntry(String propertyLabel, Collection<String> propertyValues) {
     Span propertyLabelSpan = new Span(propertyLabel + ":");
-    propertyLabelSpan.addClassName("entry-label");
+    propertyLabelSpan.addClassName(ENTRY_LABEL_CSS);
     Div propertyValuesDiv = new Div();
     propertyValuesDiv.addClassName("entry-value-list");
     propertyValues.forEach(propertyValue -> {
@@ -42,15 +45,15 @@ public class GridDetailsItem extends Div {
     });
     Span entry = new Span();
     entry.add(propertyLabelSpan, propertyValuesDiv);
-    entry.addClassName("entry");
+    entry.addClassName(ENTRY_CSS);
     add(entry);
   }
 
   public void addComponentEntry(String propertyLabel, Component propertyValueComponent) {
     Span propertyLabelSpan = new Span(propertyLabel + ":");
-    propertyLabelSpan.addClassName("entry-label");
+    propertyLabelSpan.addClassName(ENTRY_LABEL_CSS);
     Span entry = new Span();
-    entry.addClassName("entry");
+    entry.addClassName(ENTRY_CSS);
     entry.add(propertyLabelSpan, propertyValueComponent);
     add(entry);
   }

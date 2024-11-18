@@ -30,7 +30,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.security.UserPermissions;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
@@ -193,21 +193,21 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static SideNavItem createProjectSummaryLink(String projectId) {
-    String projectSummaryPath = String.format(Projects.PROJECT_INFO,
+    String projectSummaryPath = String.format(ProjectRoutes.PROJECT_INFO,
         projectId);
     return new SideNavItem("SUMMARY",
         projectSummaryPath, VaadinIcon.DEINDENT.create());
   }
 
   private static SideNavItem createProjectUsers(String projectId) {
-    String projectUsersPath = String.format(Projects.ACCESS, projectId);
+    String projectUsersPath = String.format(ProjectRoutes.ACCESS, projectId);
     return new SideNavItem("USERS", projectUsersPath,
         VaadinIcon.USERS.create());
   }
 
   private static SideNavItem createItemFromExperiment(String projectId, String experimentId,
       String experimentLabel) {
-    String experimentPath = String.format(Projects.EXPERIMENT, projectId,
+    String experimentPath = String.format(ProjectRoutes.EXPERIMENT, projectId,
         experimentId);
     SideNavItem sideNavItem = new SideNavItem(experimentLabel, experimentPath);
     sideNavItem.addClassName("hoverable");
@@ -215,7 +215,7 @@ public class ProjectSideNavigationComponent extends Div implements
   }
 
   private static SideNavItem createOntologyLookupSideNavItem(String projectId) {
-    String projectOntologyPath = String.format(Projects.ONTOLOGY, projectId);
+    String projectOntologyPath = String.format(ProjectRoutes.ONTOLOGY, projectId);
     SideNavItem ontologySearch = new SideNavItem("Ontology Search", projectOntologyPath,
         LumoIcon.SEARCH.create());
     ontologySearch.addClassName("hoverable");

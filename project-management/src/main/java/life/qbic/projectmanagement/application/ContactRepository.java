@@ -11,7 +11,6 @@ public class ContactRepository {
 
   @PostFilter("hasAnyAuthority('ROLE_ADMIN')")
   public List<Contact> findAll() {
-      //TODO implement
       return dummyContacts();
   }
 

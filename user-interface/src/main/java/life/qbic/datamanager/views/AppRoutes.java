@@ -10,6 +10,8 @@ package life.qbic.datamanager.views;
  */
 public class AppRoutes {
 
+  private AppRoutes() {}
+
   /**
    * The login page that displays the credential fields to authenticate a user in the data manager
    * app.
@@ -41,7 +43,9 @@ public class AppRoutes {
    */
   public static final String EMAIL_CONFIRMATION = "register/pending-email-confirmation";
 
-  public static class Projects {
+  public static class ProjectRoutes {
+
+    private ProjectRoutes() {}
 
     /**
      * The "Main" page of the data manager app. Location, where you want the user to be directed to,

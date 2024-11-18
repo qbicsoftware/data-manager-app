@@ -117,7 +117,7 @@ public class AddPersonalAccessTokenDialog extends DialogWindow {
       return personalAccessTokenFrontendBean;
     }
 
-    private final PersonalAccessTokenFrontendBean personalAccessTokenFrontendBean;
+    private final transient PersonalAccessTokenFrontendBean personalAccessTokenFrontendBean;
 
 
     /**

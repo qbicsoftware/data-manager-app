@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadProvider;
 import life.qbic.datamanager.templates.TemplateService;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
@@ -328,7 +328,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private void routeToExperimentalGroupCreation(ComponentEvent<?> componentEvent,
       String experimentId) {
     if (componentEvent.isFromClient()) {
-      String routeToExperimentPage = String.format(Projects.EXPERIMENT,
+      String routeToExperimentPage = String.format(ProjectRoutes.EXPERIMENT,
           context.projectId().orElseThrow().value(),
           experimentId);
       log.debug(String.format(

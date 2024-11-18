@@ -4,6 +4,7 @@ package life.qbic.datamanager.configuration;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
+import java.util.Objects;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +21,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
- * Configures the datasource handling entities in package {@link life.qbic.projectmanagement} and {@link life.qbic.identity}.
+ * Configures the datasource handling entities in package {@link life.qbic.projectmanagement} and
+ * {@link life.qbic.identity}.
  * <p>
  * The DataSource configured by this class is called {@code datasource} and is injectable through
  * {@code @Qualifier("dataManagementDataSource")}.
@@ -81,6 +83,8 @@ public class DataManagementDatasourceConfig {
   @Bean(name = "dataManagementTransactionManager")
   public PlatformTransactionManager transactionManager(
       @Qualifier("dataManagementEntityManagerFactory") LocalContainerEntityManagerFactoryBean factoryBean) {
-    return new JpaTransactionManager(factoryBean.getObject());
+    Objects.requireNonNull(factoryBean);
+    var factory = Objects.requireNonNull(factoryBean.getObject());
+    return new JpaTransactionManager(factory);
   }
 }
