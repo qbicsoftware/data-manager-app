@@ -112,10 +112,64 @@ Body text
 
 
 /***************************
-Dialogs
+Padding & gaps
 ***************************/
 
+.padding-left-right-04 {
+  padding-left: var(--spacing-04);
+  padding-right: var(--spacing-04);
+}
 
+.padding-left-right-05 {
+  padding-left: var(--spacing-05);
+  padding-right: var(--spacing-05);
+}
+
+.padding-left-right-06 {
+  padding-left: var(--spacing-06);
+  padding-right: var(--spacing-06);
+}
+
+.padding-left-right-07 {
+  padding-left: var(--spacing-07);
+  padding-right: var(--spacing-07);
+}
+
+.padding-top-bottom-04 {
+  padding-top: var(--spacing-04);
+  padding-bottom: var(--spacing-04);
+}
+
+.padding-top-bottom-05 {
+  padding-top: var(--spacing-05);
+  padding-bottom: var(--spacing-05);
+}
+
+.padding-top-bottom-06 {
+  padding-top: var(--spacing-06);
+  padding-bottom: var(--spacing-06);
+}
+
+.padding-top-bottom-07 {
+  padding-top: var(--spacing-07);
+  padding-bottom: var(--spacing-07);
+}
+
+.gap-04 {
+  gap: var(--spacing-04);
+}
+
+.gap-05 {
+  gap: var(--spacing-05);
+}
+
+.gap-06 {
+  gap: var(--spacing-06);
+}
+
+.gap-07 {
+  gap: var(--spacing-07);
+}
 
 
 
