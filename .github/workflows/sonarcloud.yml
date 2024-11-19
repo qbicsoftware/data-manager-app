@@ -34,7 +34,4 @@ jobs:
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Use the token stored in GitHub secrets
-        run: mvn sonar:sonar \
-          -Dsonar.projectKey=qbicsoftware_data-manager-app \
-          -Dsonar.organization=qbicsoftware \
-          -Dsonar.host.url=https://sonarcloud.io
+        run: mvn sonar:sonar
