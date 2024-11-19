@@ -5,13 +5,13 @@ import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
 
 /**
- * <b>Collapsable Details</b>
+ * <b>Collapsible Details</b>
  *
  * <p>Implementation of the {@link Collapsible} interface for the Vaadin component
  * {@link Details}.</p>
  * <p>
  * For the Vaadin {@link Details} component, it would not be necessary to provide a wrapper object. However
- * the interface gives a lot of flexibility to add collapsable elements wrapping other custom
+ * the interface gives a lot of flexibility to add collapsible elements wrapping other custom
  * components while exposing a unified behaviour.
  * <p>
  * Also we favor a more declarative and readable object API, like {@link #collapse()} or {@link #expand() } over

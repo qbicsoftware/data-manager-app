@@ -489,16 +489,16 @@ public class ProjectSummaryComponent extends PageArea {
     var objective = new SimpleParagraph(project.getProjectIntent().objective().objective());
     details.setSummary(objectiveTitle);
     details.add(objective);
-    var collapsableDetails = new CollapsibleDetails(details);
-    collapsableDetails.collapse();
-    collapsableDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01",
+    var collapsibleDetails = new CollapsibleDetails(details);
+    collapsibleDetails.collapse();
+    collapsibleDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01",
         "line-height-01", "max-width-55rem", "text-justify", "box-corner-radius-small");
 
     content.add(
         Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
     content.add(new SimpleParagraph("%s - %s".formatted(projectInformation.projectCode(),
         projectInformation.projectTitle())));
-    content.add(collapsableDetails);
+    content.add(collapsibleDetails);
     projectDesignSection.setContent(content);
   }
 
