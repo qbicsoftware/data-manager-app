@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Component Demo</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Showcases of various pre-defined styles used in the application.</p>
  *
- * @since <version tag>
+ * @since 1.7.0
  */
 @Profile("test-ui") // This view will only be available when the "test-ui" profile is active
 @Route("test-view")
@@ -74,7 +74,6 @@ public class ComponentDemo extends Div {
     });
 
     return container;
-
   }
 
   private static class BodyFontStyles {

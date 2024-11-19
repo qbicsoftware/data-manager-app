@@ -8,6 +8,18 @@ Data Manager custom CSS layout definition
 First some general property definitions
 */
 :root {
+  --dialog-height-small: clamp(min-content, 50vh, 75vh);
+  --dialog-height-medium: clamp(min-content, 75vh, 100vh);
+  --dialog-height-large: 100vh;
+  --dialog-height-max-small: 500px;
+  --dialog-height-max-medium: 800px;
+  --dialog-height-max-large: 90vh;
+  --dialog-width-small: 50vw;
+  --dialog-width-medium: 75vw;
+  --dialog-width-large: 75vw;
+  --dialog-width-max-small: 600px;
+  --dialog-width-max-medium: 1000px;
+  --dialog-width-max-large: 1200px;
   --spacing-01: 0.125rem;
   --spacing-02: 0.25rem;
   --spacing-03: 0.5rem;
@@ -20,7 +32,6 @@ First some general property definitions
   --spacing-10: 4rem;
   --spacing-11: 5rem;
   --spacing-12: 6rem;
-  --line-heigth-l: 2.25rem
 }
 
 /************************
@@ -86,7 +97,7 @@ Body text
 
 .list-item-text {
   font-size: var(--lumo-font-size-m);
-  line-height: var(--line-heigth-l);
+  line-height: var(--spacing-07);
 }
 
 .button-text {
@@ -98,6 +109,11 @@ Body text
   font-size: var(--lumo-font-size-m);
   line-height: var(--lumo-line-height-xs);
 }
+
+
+/***************************
+Dialogs
+***************************/
 
 
 
