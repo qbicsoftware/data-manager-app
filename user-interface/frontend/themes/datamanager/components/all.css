@@ -1,3 +1,114 @@
+/****************************************
+
+Data Manager custom CSS layout definition
+
+*****************************************/
+
+/*
+First some general property definitions
+*/
+:root {
+  --spacing-01: 0.125rem;
+  --spacing-02: 0.25rem;
+  --spacing-03: 0.5rem;
+  --spacing-04: 1rem;
+  --spacing-05: 1.5rem;
+  --spacing-06: 2rem;
+  --spacing-07: 2.5rem;
+  --spacing-08: 3rem;
+  --spacing-09: 3.5rem;
+  --spacing-10: 4rem;
+  --spacing-11: 5rem;
+  --spacing-12: 6rem;
+  --line-heigth-l: 2.25rem
+}
+
+/************************
+Fonts
+ ***********************/
+
+/*
+Heading
+ */
+.heading-1 {
+  font-size: var(--lumo-font-size-xxxl);
+}
+
+.heading-2 {
+  font-size: var(--lumo-font-size-xxl);
+}
+
+.heading-3 {
+  font-size: var(--lumo-font-size-xl);
+}
+
+.heading-4 {
+  font-size: var(--lumo-font-size-l);
+}
+
+.heading-5 {
+  font-size: var(--lumo-font-size-m);
+}
+
+.heading-6 {
+  font-size: var(--lumo-font-size-xs);
+}
+
+
+/*
+Body text
+ */
+
+.normal-body-text {
+  font-size: var(--lumo-font-size-m);
+  line-height: var(--lumo-line-height-m);
+}
+
+.small-body-text {
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-s);
+}
+
+.extra-small-body-text {
+  font-size: var(--lumo-font-size-xs);
+  line-height: var(--lumo-line-height-xs);
+}
+
+.field-label-text {
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-xs);
+}
+
+.input-field-text {
+  font-size: var(--lumo-font-size-m);
+  line-height: var(--lumo-line-height-s);
+}
+
+.list-item-text {
+  font-size: var(--lumo-font-size-m);
+  line-height: var(--line-heigth-l);
+}
+
+.button-text {
+  font-size: var(--lumo-font-size-m);
+  line-height: var(--lumo-line-height-xs);
+}
+
+.button-primary-text {
+  font-size: var(--lumo-font-size-m);
+  line-height: var(--lumo-line-height-xs);
+}
+
+
+
+
+
+
+/****************************
+Older stuff -
+****************************/
+
+
 .flex-horizontal {
   display: flex;
   flex-direction: row;
