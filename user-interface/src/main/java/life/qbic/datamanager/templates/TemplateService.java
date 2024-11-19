@@ -7,6 +7,7 @@ import life.qbic.datamanager.templates.sample.SampleBatchRegistrationTemplate;
 import life.qbic.datamanager.templates.sample.SampleBatchUpdateTemplate;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
@@ -96,21 +97,25 @@ public class TemplateService {
             NoSuchExperimentException::new);
     var samples = sampleInformationService.retrieveSamplesForExperiment(
         ExperimentId.parse(experimentId));
-    List<String> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
-            projectId, new ExperimentReference(experimentId)).stream()
-        .map(ConfoundingVariableInformation::variableName)
-        .toList();
+    List<ConfoundingVariableInformation> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
+        projectId, new ExperimentReference(experimentId));
+    List<ConfoundingVariableLevel> confoundingVariableLevels = confoundingVariableService.listLevelsForVariables(
+        projectId,
+        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
     samples.onError(responseCode -> {
       throw new SampleSearchException();
     });
     var samplesInBatch = samples.getValue().stream()
         .filter(sample -> sample.assignedBatch().equals(batchId))
         .toList();
-    return createPrefilledWorkbookFromExperiment(experiment, samplesInBatch, confoundingVariables);
+    return createPrefilledWorkbookFromExperiment(experiment, samplesInBatch, confoundingVariables,
+        confoundingVariableLevels);
   }
 
   private XSSFWorkbook createPrefilledWorkbookFromExperiment(Experiment experiment,
-      List<Sample> samples, List<String> confoundingVariables) {
+      List<Sample> samples, List<ConfoundingVariableInformation> confoundingVariables,
+      List<ConfoundingVariableLevel> confoundingVariableLevels) {
+
     var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
         .map(
             PropertyConversion::toString).toList();
@@ -126,7 +131,8 @@ public class TemplateService {
         specimen, analytes,
         analysisMethods,
         experimentalGroups,
-        confoundingVariables);
+        confoundingVariables,
+        confoundingVariableLevels);
   }
 
   private XSSFWorkbook createWorkbookFromExperiment(Experiment experiment,

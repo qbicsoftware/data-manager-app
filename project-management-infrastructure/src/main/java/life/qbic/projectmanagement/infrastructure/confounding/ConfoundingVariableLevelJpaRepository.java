@@ -12,6 +12,8 @@ public interface ConfoundingVariableLevelJpaRepository extends
 
   List<ConfoundingVariableLevelData> findAllByVariableIdEquals(long variableId);
 
+  List<ConfoundingVariableLevelData> findAllByVariableIdIn(List<Long> variableIds);
+
   Optional<ConfoundingVariableLevelData> findBySampleIdEqualsAndVariableIdEquals(String sampleId,
       long variableId);
 

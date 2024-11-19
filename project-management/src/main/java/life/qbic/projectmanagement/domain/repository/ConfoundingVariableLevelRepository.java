@@ -25,6 +25,10 @@ public interface ConfoundingVariableLevelRepository {
   Optional<ConfoundingVariableLevelData> findVariableLevelOfSample(String projectId,
       String sampleId, long variableId);
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  List<ConfoundingVariableLevelData> findAllForVariables(String projectId, List<Long> variableIds);
+
+
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   <S extends ConfoundingVariableLevelData> S save(String projectId, S entity);
 
@@ -39,4 +43,5 @@ public interface ConfoundingVariableLevelRepository {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   void deleteAllForVariable(String projectId, long variableId);
+
 }

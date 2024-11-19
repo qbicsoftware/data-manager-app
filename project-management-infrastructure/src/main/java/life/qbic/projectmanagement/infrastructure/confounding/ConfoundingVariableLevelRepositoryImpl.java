@@ -32,11 +32,19 @@ public class ConfoundingVariableLevelRepositoryImpl implements ConfoundingVariab
     return jpaRepository.findAllByVariableIdEquals(variableId);
   }
 
+
+  @Override
+  public List<ConfoundingVariableLevelData> findAllForVariables(String projectId,
+      List<Long> variableIds) {
+    return jpaRepository.findAllByVariableIdIn(variableIds);
+  }
+
   @Override
   public Optional<ConfoundingVariableLevelData> findVariableLevelOfSample(String projectId,
       String sampleId, long variableId) {
     return jpaRepository.findBySampleIdEqualsAndVariableIdEquals(sampleId, variableId);
   }
+
 
   @Override
   public <S extends ConfoundingVariableLevelData> S save(String projectId, S entity) {

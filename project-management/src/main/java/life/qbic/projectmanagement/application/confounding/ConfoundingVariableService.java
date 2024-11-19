@@ -122,6 +122,18 @@ public interface ConfoundingVariableService {
       VariableReference variableReference);
 
   /**
+   * Lists the levels of a confounding variable
+   *
+   * @param projectId          the identifier of the project
+   * @param variableReferences references of the variables
+   * @return a list of levels for the confounding variable. The list is empty if no levels exist.
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  @Transactional(readOnly = true)
+  List<ConfoundingVariableLevel> listLevelsForVariables(String projectId,
+      List<VariableReference> variableReferences);
+
+  /**
    * Creates a confounding variable in an experiment. Information about the created confounding
    * variable is returned.
    *
