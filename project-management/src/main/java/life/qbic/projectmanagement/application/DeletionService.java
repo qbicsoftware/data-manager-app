@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DeletionService {
 
-  private ApplicationContext context;
+  private final ApplicationContext context;
 
   private final ProjectInformationService projectInformationService;
   private final ExperimentInformationService experimentInformationService;
@@ -52,6 +52,7 @@ public class DeletionService {
         BatchDomainService.class.getSimpleName() + " must not be null");
     this.sampleDomainService = requireNonNull(sampleDomainService,
         SampleDomainService.class.getSimpleName() + " must not be null");
+    this.context = requireNonNull(context);
   }
 
   /**
