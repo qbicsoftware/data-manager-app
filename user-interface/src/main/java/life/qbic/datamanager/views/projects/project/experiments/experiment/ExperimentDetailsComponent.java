@@ -603,11 +603,12 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   public void setContext(Context context) {
+    this.context = requireNonNull(context);
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
     ExperimentId experimentId = context.experimentId()
         .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
-    context.projectId()
-        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
-    this.context = context;
     reloadExperimentInfo(experimentId);
   }
 

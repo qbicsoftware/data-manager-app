@@ -44,6 +44,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.repository.MeasurementRepository;
 import life.qbic.projectmanagement.domain.service.MeasurementDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -60,6 +61,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MeasurementService {
 
   private static final Logger log = logger(MeasurementService.class);
+  private final ApplicationContext context;
   private final MeasurementDomainService measurementDomainService;
   private final MeasurementLookupService measurementLookupService;
   private final SampleInformationService sampleInformationService;
@@ -75,7 +77,8 @@ public class MeasurementService {
       OrganisationLookupService organisationLookupService,
       MeasurementLookupService measurementLookupService,
       ProjectInformationService projectInformationService,
-      MeasurementRepository measurementRepository) {
+      MeasurementRepository measurementRepository,
+      ApplicationContext context) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.speciesLookupService = Objects.requireNonNull(speciesLookupService);
@@ -83,6 +86,7 @@ public class MeasurementService {
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.measurementRepository = Objects.requireNonNull(measurementRepository);
+    this.context = Objects.requireNonNull(context);
   }
 
   /**
@@ -113,7 +117,8 @@ public class MeasurementService {
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Collection<ProteomicsMeasurement> findProteomicsMeasurements(String filter,
-      ExperimentId experimentId, int offset, int limit, List<SortOrder> sortOrder, ProjectId projectId) {
+      ExperimentId experimentId, int offset, int limit, List<SortOrder> sortOrder,
+      ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryProteomicsMeasurementsBySampleIds(filter,
@@ -145,7 +150,8 @@ public class MeasurementService {
 
   @PostAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId, ProjectId projectId) {
+  public Collection<NGSMeasurement> findNGSMeasurements(ExperimentId experimentId,
+      ProjectId projectId) {
     var result = sampleInformationService.retrieveSamplesForExperiment(experimentId);
     var samplesInExperiment = result.getValue().stream().map(Sample::sampleId).toList();
     return measurementLookupService.queryAllNGSMeasurement(samplesInExperiment);
@@ -192,7 +198,7 @@ public class MeasurementService {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     }
     try {
-      results = performRegistration(measurementMetadataList, projectId).stream()
+      results = context.getBean(MeasurementService.class).performRegistration(measurementMetadataList, projectId).stream()
           .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
     } catch (MeasurementRegistrationException e) {
       log.error("Failed to register measurement", e);
@@ -202,7 +208,7 @@ public class MeasurementService {
       return CompletableFuture.completedFuture(List.of(Result.fromError(ErrorCode.FAILED)));
     }
     // if the creation worked, we forward the events, otherwise it will be rolled back
-    if(results.stream().allMatch(Result::isValue)) {
+    if (results.stream().allMatch(Result::isValue)) {
       domainEventsCache.forEach(
           domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
     }
@@ -529,21 +535,21 @@ public class MeasurementService {
 
   private void handleUpdateEvents(List<DomainEvent> domainEventsCache,
       List<Result<MeasurementId, ErrorCode>> results) {
-    if(results.stream().anyMatch(Result::isError)) {
+    if (results.stream().anyMatch(Result::isError)) {
       return;
     }
     Set<MeasurementId> dispatchedIDs = new HashSet<>();
-    for(DomainEvent event : domainEventsCache) {
-      if(event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
+    for (DomainEvent event : domainEventsCache) {
+      if (event instanceof MeasurementUpdatedEvent measurementUpdatedEvent) {
         MeasurementId id = measurementUpdatedEvent.measurementId();
-        if(dispatchedIDs.contains(id)) {
+        if (dispatchedIDs.contains(id)) {
           continue;
         }
         DomainEventDispatcher.instance().dispatch(event);
         dispatchedIDs.add(id);
       }
     }
-   
+
   }
 
   /**
@@ -803,7 +809,7 @@ public class MeasurementService {
       Set<ProteomicsMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deletePxP(selectedMeasurements);
-      if(!selectedMeasurements.isEmpty()) {
+      if (!selectedMeasurements.isEmpty()) {
         dispatchProjectChangedOnMeasurementDeleted(projectId);
       }
       return Result.fromValue(null);
@@ -817,7 +823,7 @@ public class MeasurementService {
       Set<NGSMeasurement> selectedMeasurements) {
     try {
       measurementDomainService.deleteNGS(selectedMeasurements);
-      if(!selectedMeasurements.isEmpty()) {
+      if (!selectedMeasurements.isEmpty()) {
         dispatchProjectChangedOnMeasurementDeleted(projectId);
       }
       return Result.fromValue(null);
@@ -829,7 +835,8 @@ public class MeasurementService {
   private void dispatchProjectChangedOnMeasurementDeleted(ProjectId projectId) {
     ProjectChanged projectChanged = ProjectChanged.create(projectId);
     DomainEventDispatcher.instance().dispatch(projectChanged);
-}
+  }
+
   public enum DeletionErrorCode {
     FAILED, DATA_ATTACHED
   }
