@@ -1,13 +1,15 @@
 package life.qbic.datamanager.views.general.dialog;
 
 import java.util.Objects;
+import java.util.function.Consumer;
+import org.springframework.lang.NonNull;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Input Validation</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Simple validation result indication for {@link UserInput} validations.</p>
  *
- * @since <version tag>
+ * @since 1.7.0
  */
 public class InputValidation {
 
@@ -17,16 +19,24 @@ public class InputValidation {
     this.status = Objects.requireNonNull(status);
   }
 
+  /**
+   * Creates a {@link InputValidation} that represents a successful validation.
+   *
+   * @return the {link InputValidation}
+   * @since 1.7.0
+   */
   public static InputValidation passed() {
     return new InputValidation(ValidationStatus.PASSED);
   }
 
+  /**
+   * Creates a {@link InputValidation} that represents a failing validation.
+   *
+   * @return the {link InputValidation}
+   * @since 1.7.0
+   */
   public static InputValidation failed() {
     return new InputValidation(ValidationStatus.FAILED);
-  }
-
-  enum ValidationStatus {
-    PASSED, FAILED
   }
 
   public boolean hasPassed() {
@@ -37,4 +47,13 @@ public class InputValidation {
     return status == ValidationStatus.FAILED;
   }
 
+  enum ValidationStatus {
+    PASSED, FAILED
+  }
+
+  public void onPassed(@NonNull Action action) {
+    if (hasPassed()) {
+      action.execute();
+    }
+  }
 }

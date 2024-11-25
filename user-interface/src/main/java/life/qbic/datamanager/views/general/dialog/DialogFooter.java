@@ -5,11 +5,11 @@ import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Dialog Footer</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>A pre-formatted dialog footer that shall be used as footer for dialogs.</p>
  *
- * @since <version tag>
+ * @since 1.7.0
  */
 public class DialogFooter extends Div {
 

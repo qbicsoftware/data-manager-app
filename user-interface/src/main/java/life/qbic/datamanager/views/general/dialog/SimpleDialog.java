@@ -70,13 +70,7 @@ public class SimpleDialog extends Dialog {
   public void confirm() {
     if (userInput != null) {
       var validation = Objects.requireNonNull(userInput.validate());
-      actOnValidation(validation);
-    }
-  }
-
-  private void actOnValidation(@NonNull InputValidation validation) {
-    if (validation.hasPassed()) {
-      confirmAction.execute();
+      validation.onPassed(confirmAction);
     }
   }
 

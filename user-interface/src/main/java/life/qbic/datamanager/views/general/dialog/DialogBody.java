@@ -4,11 +4,11 @@ import com.vaadin.flow.component.Component;
 import java.util.Objects;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Dialog Body</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>A pre-formatted dialog body that shall be used as header for body.</p>
  *
- * @since <version tag>
+ * @since 1.7.0
  */
 public class DialogBody {
 

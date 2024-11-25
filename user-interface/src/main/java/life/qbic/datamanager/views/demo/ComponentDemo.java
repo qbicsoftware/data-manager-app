@@ -162,7 +162,7 @@ public class ComponentDemo extends Div {
   private static class ExampleUserInput extends Div implements UserInput {
 
     private final String originalValue;
-    private final StringBean valueContainer;
+    private final transient StringBean valueContainer;
     Binder<StringBean> binder;
 
     ExampleUserInput(String prefill) {
