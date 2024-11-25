@@ -9,15 +9,8 @@ import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVaria
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableLevelRepository;
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-/**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
- */
 @Component
 public class ConfoundingVariableServiceImpl implements ConfoundingVariableService {
 
@@ -32,6 +25,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<ConfoundingVariableInformation> listConfoundingVariablesForExperiment(
       String projectId, ExperimentReference experiment) {
     return variableRepository.findAll(projectId, experiment.id())
@@ -42,6 +36,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<ConfoundingVariableInformation> loadInformationForVariables(String projectId,
       List<VariableReference> variables) {
     return variableRepository.findAllById(projectId,
@@ -52,6 +47,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional
   public ConfoundingVariableInformation createConfoundingVariable(String projectId,
       ExperimentReference experiment, String variableName) {
     ConfoundingVariableData confoundingVariableData = new ConfoundingVariableData(null,
@@ -63,6 +59,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional
   public ConfoundingVariableLevel setVariableLevelForSample(String projectId,
       ExperimentReference experiment, SampleReference sampleReference,
       VariableReference variableReference,
@@ -90,6 +87,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Optional<ConfoundingVariableLevel> getVariableLevelForSample(String projectId,
       SampleReference sampleReference,
       VariableReference variableReference) {
@@ -101,6 +99,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<ConfoundingVariableLevel> listLevelsForVariable(String projectId,
       VariableReference variableReference) {
     return levelRepository.findAllForVariable(projectId, variableReference.id()).stream()
@@ -112,6 +111,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<ConfoundingVariableLevel> listLevelsForVariables(String projectId,
       List<VariableReference> variableReferences) {
     return levelRepository.findAllForVariables(projectId,
@@ -124,6 +124,7 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   }
 
   @Override
+  @Transactional
   public void deleteConfoundingVariable(String projectId,
       ExperimentReference experiment,
       VariableReference variableReference) {

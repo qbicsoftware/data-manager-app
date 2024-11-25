@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.application.confounding;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * This is the aggregate for confounding variables. You can
@@ -76,7 +75,6 @@ public interface ConfoundingVariableService {
    * @return a list of confounding variable information describing all confounding variables in the experiment.
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  @Transactional(readOnly = true)
   List<ConfoundingVariableInformation> listConfoundingVariablesForExperiment(String projectId,
       ExperimentReference experiment);
 
@@ -89,7 +87,6 @@ public interface ConfoundingVariableService {
    * experiment.
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  @Transactional(readOnly = true)
   List<ConfoundingVariableInformation> loadInformationForVariables(String projectId,
           List<VariableReference> variables);
 
@@ -104,7 +101,6 @@ public interface ConfoundingVariableService {
    * @return the {@link ConfoundingVariableLevel} of the sample, {@link Optional#empty()} otherwise.
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  @Transactional(readOnly = true)
   Optional<ConfoundingVariableLevel> getVariableLevelForSample(String projectId,
       SampleReference sampleReference,
       VariableReference variableReference);
@@ -117,7 +113,6 @@ public interface ConfoundingVariableService {
    * @return a list of levels for the confounding variable. The list is empty if no levels exist.
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  @Transactional(readOnly = true)
   List<ConfoundingVariableLevel> listLevelsForVariable(String projectId,
       VariableReference variableReference);
 
@@ -129,7 +124,6 @@ public interface ConfoundingVariableService {
    * @return a list of levels for the confounding variable. The list is empty if no levels exist.
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  @Transactional(readOnly = true)
   List<ConfoundingVariableLevel> listLevelsForVariables(String projectId,
       List<VariableReference> variableReferences);
 
