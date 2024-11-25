@@ -195,6 +195,17 @@ Padding & gaps
 Dialogs
 ***************************/
 
+/*
+Sections
+ */
+.dialog-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+Dialog flavours
+ */
 .simple-dialog {}
 
 .simple-dialog, .button-text, .button-text-primary {

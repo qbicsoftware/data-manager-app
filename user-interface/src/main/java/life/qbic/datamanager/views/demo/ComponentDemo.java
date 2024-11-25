@@ -14,6 +14,7 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.SimpleDialog;
 import life.qbic.datamanager.views.general.dialog.UserInput;
@@ -47,6 +48,18 @@ public class ComponentDemo extends Div {
     add(dialogShowCase(SimpleDialog.small(), "Small Dialog Type"));
     add(dialogShowCase(SimpleDialog.medium(), "Medium Dialog Type"));
     add(dialogShowCase(SimpleDialog.large(), "Large Dialog Type"));
+    add(dialogSectionShowCase());
+  }
+
+  private static Div dialogSectionShowCase() {
+    Div container = new Div();
+    var title = new Div("Dialog section example");
+    title.addClassName(HEADING_2);
+    container.add(title);
+    container.add(DialogSection.with("Dialog section title...",
+        "...Followed by some descriptive text about the content or instructions.",
+        new TextField("Some component, like a text field")));
+    return container;
   }
 
   private static Div headingShowcase() {
@@ -148,13 +161,12 @@ public class ComponentDemo extends Div {
 
   private static class ExampleUserInput extends Div implements UserInput {
 
+    private final String originalValue;
+    private final StringBean valueContainer;
     Binder<StringBean> binder;
 
-    private final String originalValue;
-
-    private final StringBean valueContainer;
-
     ExampleUserInput(String prefill) {
+      var dialogSection = DialogSection.with("User Input Validation", "Try correct and incorrect input values in the following field.");
       originalValue = prefill;
       var textField = new TextField();
       textField.setLabel("Correct input is 'Ridiculus'");
@@ -164,10 +176,12 @@ public class ComponentDemo extends Div {
 
       valueContainer = new StringBean(prefill);
       binder = new Binder<>(StringBean.class);
-      binder.forField(textField).withValidator((String value) -> value.equals("Ridiculus"), "Wrong input text.")
+      binder.forField(textField)
+          .withValidator((String value) -> value.equals("Ridiculus"), "Wrong input text.")
           .bind(StringBean::getValue, StringBean::setValue);
       binder.setBean(valueContainer);
-      add(textField);
+      dialogSection.content(textField);
+      add(dialogSection);
     }
 
     @Override
