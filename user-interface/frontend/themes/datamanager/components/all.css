@@ -20,6 +20,11 @@ First some general property definitions
   --dialog-width-max-small: 600px;
   --dialog-width-max-medium: 1000px;
   --dialog-width-max-large: 1200px;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semi-bold: 600;
+  --font-weight-bold: 700;
   --spacing-01: 0.125rem;
   --spacing-02: 0.25rem;
   --spacing-03: 0.5rem;
@@ -43,26 +48,32 @@ Heading
  */
 .heading-1 {
   font-size: var(--lumo-font-size-xxxl);
+  font-weight: var(--font-weight-semi-bold);
 }
 
 .heading-2 {
   font-size: var(--lumo-font-size-xxl);
+  font-weight: var(--font-weight-semi-bold);
 }
 
 .heading-3 {
   font-size: var(--lumo-font-size-xl);
+  font-weight: var(--font-weight-semi-bold);
 }
 
 .heading-4 {
   font-size: var(--lumo-font-size-l);
+  font-weight: var(--font-weight-semi-bold);
 }
 
 .heading-5 {
   font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-semi-bold);
 }
 
 .heading-6 {
   font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-semi-bold);
 }
 
 
@@ -73,41 +84,49 @@ Body text
 .normal-body-text {
   font-size: var(--lumo-font-size-m);
   line-height: var(--lumo-line-height-m);
+  font-weight: var(--font-weight-regular);
 }
 
 .small-body-text {
   font-size: var(--lumo-font-size-s);
   line-height: var(--lumo-line-height-s);
+  font-weight: var(--font-weight-regular);
 }
 
 .extra-small-body-text {
   font-size: var(--lumo-font-size-xs);
   line-height: var(--lumo-line-height-xs);
+  font-weight: var(--font-weight-regular);
 }
 
 .field-label-text {
   font-size: var(--lumo-font-size-s);
   line-height: var(--lumo-line-height-xs);
+  font-weight: var(--font-weight-medium);
 }
 
 .input-field-text {
   font-size: var(--lumo-font-size-m);
   line-height: var(--lumo-line-height-s);
+  font-weight: var(--font-weight-medium);
 }
 
 .list-item-text {
   font-size: var(--lumo-font-size-m);
   line-height: var(--spacing-07);
+  font-weight: var(--font-weight-regular);
 }
 
 .button-text {
   font-size: var(--lumo-font-size-m);
   line-height: var(--lumo-line-height-xs);
+  font-weight: var(--font-weight-medium);
 }
 
-.button-primary-text {
+.button-text-primary {
   font-size: var(--lumo-font-size-m);
   line-height: var(--lumo-line-height-xs);
+  font-weight: var(--font-weight-semi-bold);
 }
 
 
@@ -172,6 +191,82 @@ Padding & gaps
 }
 
 
+/***************************
+Dialogs
+***************************/
+
+.simple-dialog {}
+
+.simple-dialog, .button-text, .button-text-primary {
+  margin: 0;
+}
+
+.small-dialog {}
+
+.medium-dialog {}
+
+.large-dialog {}
+
+.small-dialog::part(overlay) {
+  width: var(--dialog-width-small);
+  max-width: var(--dialog-width-max-small);
+  height: var(--dialog-height-small);
+  max-height: var(--dialog-height-max-small);
+}
+
+.medium-dialog::part(overlay) {
+  width: var(--dialog-width-medium);
+  max-width: var(--dialog-width-max-medium);
+  height: var(--dialog-height-medium);
+  max-height: var(--dialog-height-max-medium);
+}
+
+.large-dialog::part(overlay) {
+  width: var(--dialog-width-large);
+  max-width: var(--dialog-width-max-large);
+  height: var(--dialog-height-large);
+  max-height: var(--dialog-height-max-large);
+}
+
+.simple-dialog::part(header)  {
+  padding: 0;
+  border-bottom-style: solid;
+  border-bottom-color: rgba(26, 56, 96, 0.1);
+  border-bottom-width: 1px;
+}
+
+.simple-dialog::part(content)  {
+  padding: 0;
+}
+
+.simple-dialog::part(footer)  {
+  padding: 0;
+  background-color: white;
+  border-top-style: solid;
+  border-top-color: rgba(26, 56, 96, 0.1);
+  border-top-width: 1px;
+}
+
+.dialog-header-text-color {
+  color: var(--lumo-header-text-color);
+}
+
+/***************************
+Buttons
+ **************************/
+
+.button-color-primary {
+  color: var(--lumo-primary-contrast-color);
+  background-color: var(--lumo-primary-color);
+}
+
+.button-size-medium-dialog {
+  height: var(--lumo-size-m);
+}
+
+.button-size-large-dialog {
+  height: var(--lumo-size-l);
+}
 
 
 /****************************

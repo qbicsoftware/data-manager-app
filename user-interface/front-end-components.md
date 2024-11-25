@@ -9,49 +9,60 @@ title: Dialog window
 ---
 
 classDiagram
-    note "Simple dialog window"
-    note for Div "Vaadin native HTML element"
-    SimpleDialog *-- DialogHeader
-    SimpleDialog *--DialogBody
-    SimpleDialog *-- DialogFooter
-    DialogBody *-- DialogBodyComponent
-    UserInput --> ValidationResult
-    DialogBodyComponent ..|> UserInput
-    DialogBodyComponent --> Div
+    note for Component "Vaadin Component"
+    note for Dialog "Vaadin Component"
+    SimpleDialog <-- DialogHeader
+    SimpleDialog <-- DialogBody
+    SimpleDialog <-- DialogFooter
+    DialogBody ..|> UserInput
+    UserInput --> InputValidation
+    SimpleDialog --> Component
+    SimpleDialog --> Action
+    SimpleDialog --|> Dialog
+    SimpleDialog --> UserInput
     
-    class Div {
-       
+    class Dialog {
+        
     }
-    
+
+    class Component {
+    }
+
     class SimpleDialog {
+        +setHeader(Component component)
+        +setBody(Component component)
+        +setFooter(Component component)
+        +registerConfirmAction(Action action)
+        +registerCancelAction(Action action)
+        +registerUserInput(UserInput input)
         
+        +confirm()
+        +cancel()
     }
-    
+
     class DialogHeader {
-        
     }
-     
+
     class DialogBody {
-        
     }
-    
+
+    class Action {
+        <<interface>>
+        +execute()
+    }
+
     class DialogFooter {
-        
     }
-    
-    class DialogBodyComponent {
-        <<abstract>>
-        +content() Div*
-    }
-    
-    class ValidationResult {
+
+    class InputValidation {
         + passed() boolean
         + failed() boolean
     }
-    
+
     class UserInput {
         <<interface>>
-        + validate() ValidationResult
+        + validate() InputValidation
+        + hasChanges() boolean
     }
 
 ```
