@@ -13,9 +13,9 @@ import java.util.Objects;
  */
 public class DialogFooter extends Div {
 
-  private final SimpleDialog dialog;
+  private final AppDialog dialog;
 
-  private DialogFooter(SimpleDialog dialog, String abortText, String confirmText) {
+  private DialogFooter(AppDialog dialog, String abortText, String confirmText) {
     this.dialog = Objects.requireNonNull(dialog);
     addClassNames("flex-horizontal", "gap-04");
     var confirmButton = createConfirmButton(confirmText);
@@ -30,7 +30,7 @@ public class DialogFooter extends Div {
     });
   }
 
-  public static DialogFooter with(SimpleDialog dialog, String abortText, String confirmText) {
+  public static DialogFooter with(AppDialog dialog, String abortText, String confirmText) {
     return new DialogFooter(dialog, abortText, confirmText);
   }
 
@@ -52,7 +52,7 @@ public class DialogFooter extends Div {
     return createButton(label, new String[]{"button-text"});
   }
 
-  public SimpleDialog getDialog() {
+  public AppDialog getDialog() {
     return dialog;
   }
 }

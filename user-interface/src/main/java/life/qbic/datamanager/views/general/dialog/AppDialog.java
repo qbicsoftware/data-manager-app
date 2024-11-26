@@ -1,15 +1,13 @@
 package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog.ConfirmEvent;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 
 /**
- * <b>Simple Dialog</b>
+ * <b>App Dialog</b>
  *
  * <p>A reusable dialog component can be configured to execute an {@link DialogAction} for
  * confirmation or an cancel operation.</p>
@@ -21,7 +19,7 @@ import life.qbic.datamanager.views.general.icon.IconFactory;
  *
  * @since 1.7.0
  */
-public class SimpleDialog extends Dialog {
+public class AppDialog extends Dialog {
 
   private final Div header;
   private final Div body;
@@ -31,7 +29,7 @@ public class SimpleDialog extends Dialog {
   private transient DialogAction cancelDialogAction;
   private transient UserInput userInput;
 
-  private SimpleDialog(Style style) {
+  private AppDialog(Style style) {
     addClassName("simple-dialog");
     addClassNames(style.sizes());
     header = style.header();
@@ -49,8 +47,8 @@ public class SimpleDialog extends Dialog {
    * @return a simple dialog in its small layout variant
    * @since 1.7.0
    */
-  public static SimpleDialog small() {
-    return new SimpleDialog(new LayoutSmall());
+  public static AppDialog small() {
+    return new AppDialog(new LayoutSmall());
   }
 
   /**
@@ -60,8 +58,8 @@ public class SimpleDialog extends Dialog {
    * @return a simple dialog in its medium layout variant
    * @since 1.7.0
    */
-  public static SimpleDialog medium() {
-    return new SimpleDialog(new LayoutMedium());
+  public static AppDialog medium() {
+    return new AppDialog(new LayoutMedium());
   }
 
   /**
@@ -71,8 +69,8 @@ public class SimpleDialog extends Dialog {
    * @return a simple dialog in its large layout variant
    * @since 1.7.0
    */
-  public static SimpleDialog large() {
-    return new SimpleDialog(new LayoutLarge());
+  public static AppDialog large() {
+    return new AppDialog(new LayoutLarge());
   }
 
   public void setHeader(Component header) {
@@ -124,8 +122,8 @@ public class SimpleDialog extends Dialog {
     }
   }
 
-  private static SimpleDialog createConfirmDialog(DialogAction onConfirmAction) {
-    var confirmDialog = SimpleDialog.small();
+  private static AppDialog createConfirmDialog(DialogAction onConfirmAction) {
+    var confirmDialog = AppDialog.small();
     life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog, "Discard changes?",
         IconFactory.smallWarningIcon());
     DialogBody.withoutUserInput(confirmDialog, new Div("By aborting the editing process and closing the dialog, you will loose all information entered."));

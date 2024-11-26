@@ -13,7 +13,7 @@ import java.util.Objects;
  */
 public class DialogHeader extends Div {
 
-  private final SimpleDialog dialog;
+  private final AppDialog dialog;
 
   private final Div iconContainer;
 
@@ -22,7 +22,7 @@ public class DialogHeader extends Div {
     iconContainer = null;
   }
 
-  private DialogHeader(SimpleDialog dialog, String title) {
+  private DialogHeader(AppDialog dialog, String title) {
     addClassNames("flex-horizontal", "gap-04", "flex-align-items-center");
     this.dialog = Objects.requireNonNull(dialog);
     this.iconContainer = new Div();
@@ -34,11 +34,11 @@ public class DialogHeader extends Div {
     dialog.setHeader(this);
   }
 
-  public static DialogHeader with(SimpleDialog dialog, String title) {
+  public static DialogHeader with(AppDialog dialog, String title) {
     return new DialogHeader(dialog, title);
   }
 
-  public static DialogHeader withIcon(SimpleDialog dialog, String title, Icon icon) {
+  public static DialogHeader withIcon(AppDialog dialog, String title, Icon icon) {
     var header = new DialogHeader(dialog, title);
     header.setIcon(icon);
     header.displayIcon();

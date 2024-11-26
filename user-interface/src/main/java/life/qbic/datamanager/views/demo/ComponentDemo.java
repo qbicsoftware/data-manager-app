@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.demo;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -12,12 +11,12 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.Arrays;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
-import life.qbic.datamanager.views.general.dialog.SimpleDialog;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import org.springframework.context.annotation.Profile;
@@ -47,9 +46,9 @@ public class ComponentDemo extends Div {
     add(title);
     add(headingShowcase());
     add(fontsShowCase());
-    add(dialogShowCase(SimpleDialog.small(), "Small Dialog Type"));
-    add(dialogShowCase(SimpleDialog.medium(), "Medium Dialog Type"));
-    add(dialogShowCase(SimpleDialog.large(), "Large Dialog Type"));
+    add(dialogShowCase(AppDialog.small(), "Small Dialog Type"));
+    add(dialogShowCase(AppDialog.medium(), "Medium Dialog Type"));
+    add(dialogShowCase(AppDialog.large(), "Large Dialog Type"));
     add(dialogSectionShowCase());
   }
 
@@ -110,7 +109,7 @@ public class ComponentDemo extends Div {
     return container;
   }
 
-  private static Div dialogShowCase(SimpleDialog dialog, String dialogType) {
+  private static Div dialogShowCase(AppDialog dialog, String dialogType) {
     Div content = new Div();
     Div title = new Div();
     title.addClassName(HEADING_2);

@@ -14,7 +14,7 @@ public class DialogBody {
 
   private final UserInput userInput;
   private final Component component;
-  private final SimpleDialog dialog;
+  private final AppDialog dialog;
 
   private DialogBody() {
     this.dialog = null;
@@ -22,7 +22,7 @@ public class DialogBody {
     this.component = null;
   }
 
-  private DialogBody(SimpleDialog dialog, Component component, UserInput userInput) {
+  private DialogBody(AppDialog dialog, Component component, UserInput userInput) {
     this.dialog = Objects.requireNonNull(dialog);
     this.component = Objects.requireNonNull(component);
     this.userInput = Objects.requireNonNull(userInput);
@@ -30,18 +30,18 @@ public class DialogBody {
     dialog.registerUserInput(userInput);
   }
 
-  public DialogBody(SimpleDialog dialog, Component component) {
+  public DialogBody(AppDialog dialog, Component component) {
     this.dialog = Objects.requireNonNull(dialog);
     this.component = Objects.requireNonNull(component);
     this.userInput = null;
     dialog.setBody(component);
   }
 
-  public static DialogBody with(SimpleDialog simpleDialog, Component component, UserInput userInput) {
+  public static DialogBody with(AppDialog simpleDialog, Component component, UserInput userInput) {
     return new DialogBody(simpleDialog, component, userInput);
   }
 
-  public static DialogBody withoutUserInput(SimpleDialog simpleDialog, Component component) {
+  public static DialogBody withoutUserInput(AppDialog simpleDialog, Component component) {
     return new DialogBody(simpleDialog, component);
   }
 
