@@ -8,8 +8,8 @@ import java.util.Objects;
 /**
  * <b>Simple Dialog</b>
  *
- * <p>A reusable dialog component can be configured to execute an {@link DialogAction} for confirmation
- * or an cancel operation.</p>
+ * <p>A reusable dialog component can be configured to execute an {@link DialogAction} for
+ * confirmation or an cancel operation.</p>
  * <p>
  * A simple dialog always checks its main component, which is of type {@link UserInput} and gets
  * validated first.
@@ -39,14 +39,35 @@ public class SimpleDialog extends Dialog {
     super.add(body);
   }
 
+  /**
+   * Creates a small dialog, that will not consume much of the available display. Ideal for simple
+   * notifications or very sparse user input.
+   *
+   * @return a simple dialog in its small layout variant
+   * @since 1.7.0
+   */
   public static SimpleDialog small() {
     return new SimpleDialog(new LayoutSmall());
   }
 
+  /**
+   * Creates a medium dialog, that will consume more of the available display than the small dialog.
+   * Ideal for moderate user input scenarios or file uploads.
+   *
+   * @return a simple dialog in its medium layout variant
+   * @since 1.7.0
+   */
   public static SimpleDialog medium() {
     return new SimpleDialog(new LayoutMedium());
   }
 
+  /**
+   * Creates a large dialog, that will consume more of the available display than the medium dialog.
+   * Ideal for complex user input scenarios.
+   *
+   * @return a simple dialog in its large layout variant
+   * @since 1.7.0
+   */
   public static SimpleDialog large() {
     return new SimpleDialog(new LayoutLarge());
   }
@@ -66,31 +87,80 @@ public class SimpleDialog extends Dialog {
     this.footer.add(footer);
   }
 
+  /**
+   * The user intends to confirm the current dialog context.
+   * <p>
+   * In case to user input has been defined (e.g. for a notification dialog), no validation will be
+   * performed and the confirmation action directly executed
+   * {@link #registerConfirmAction(DialogAction)}.
+   *
+   * @since 1.7.0
+   */
   public void confirm() {
     if (userInput != null) {
       var validation = Objects.requireNonNull(userInput.validate());
       validation.onPassed(confirmDialogAction);
+    } else {
+      // no user input was defined, so nothing to validate
+      confirmDialogAction.execute();
     }
   }
 
+  /**
+   * Calls the {@link DialogAction} if one has been registered with
+   * {@link #registerCancelAction(DialogAction)}.
+   *
+   * @since 1.7.0
+   */
   public void cancel() {
     if (cancelDialogAction != null) {
       cancelDialogAction.execute();
     }
   }
 
+  /**
+   * Indicates if any changes have been made in the presence of a {@link UserInput} context by the
+   * user.
+   * <p>
+   * Will always return <code>false</code>, if no {@link UserInput} has been registered via
+   * {@link #registerUserInput(UserInput)},
+   *
+   * @return true if changes were made since the initial state of the {@link UserInput}, else false
+   * @since 1.7.0
+   */
   public boolean hasChanges() {
     return userInput != null && userInput.hasChanges();
   }
 
-  public void registerConfirmAction(DialogAction confirmDialogAction) {
-    this.confirmDialogAction = Objects.requireNonNull(confirmDialogAction);
+  /**
+   * Registers a {@link DialogAction} that will be executed after the dialog receives a confirmation
+   * signal via its public method {@link #confirm()}.
+   *
+   * @param uponConfirmation the action to be executed after confirmation
+   * @since 1.7.0
+   */
+  public void registerConfirmAction(DialogAction uponConfirmation) {
+    this.confirmDialogAction = Objects.requireNonNull(uponConfirmation);
   }
 
-  public void registerCancelAction(DialogAction cancelDialogAction) {
-    this.cancelDialogAction = Objects.requireNonNull(cancelDialogAction);
+  /**
+   * Registers a {@link DialogAction} that will be executed after the dialog receives a cancellation
+   * signal via its public method {@link #cancel()} }.
+   *
+   * @param uponCancel the action to be executed after cancellation
+   * @since 1.7.0
+   */
+  public void registerCancelAction(DialogAction uponCancel) {
+    this.cancelDialogAction = Objects.requireNonNull(uponCancel);
   }
 
+  /**
+   * Registers a {@link UserInput}, that will be validated after the user indicates to confirm the
+   * current contextual task in the dialog.
+   *
+   * @param userInput a user input component, that presents some input data that shall be validated
+   * @since 1.7.0
+   */
   public void registerUserInput(UserInput userInput) {
     this.userInput = Objects.requireNonNull(userInput);
   }
@@ -139,7 +209,7 @@ public class SimpleDialog extends Dialog {
     }
 
     public String[] sizes() {
-      return new String[] {"small-dialog"};
+      return new String[]{"small-dialog"};
     }
   }
 
@@ -211,7 +281,7 @@ public class SimpleDialog extends Dialog {
     }
 
     public String[] sizes() {
-      return new String[] {"large-dialog"};
+      return new String[]{"large-dialog"};
     }
   }
 
