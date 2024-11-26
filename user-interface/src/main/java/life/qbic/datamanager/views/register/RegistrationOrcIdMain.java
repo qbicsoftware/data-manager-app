@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.datamanager.views.AppRoutes;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.MainPage;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
@@ -90,7 +90,7 @@ public class RegistrationOrcIdMain extends Main implements BeforeEnterObserver,
       return;
     }
     UI.getCurrent().navigate(
-        Projects.PROJECTS); // no user id loaded as authentication principal is not overwritten.
+        ProjectRoutes.PROJECTS); // no user id loaded as authentication principal is not overwritten.
   }
 
   private void handleRegistrationFailure(List<RuntimeException> exceptionList) {

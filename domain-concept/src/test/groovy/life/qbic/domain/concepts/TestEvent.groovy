@@ -1,8 +1,4 @@
 package life.qbic.domain.concepts
-
-
-import java.time.Instant
-
 /**
  * <b><class short description - 1 Line!></b>
  *

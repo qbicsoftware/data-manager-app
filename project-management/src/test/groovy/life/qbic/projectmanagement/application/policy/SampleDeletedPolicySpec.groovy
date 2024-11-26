@@ -2,9 +2,7 @@ package life.qbic.projectmanagement.application.policy
 
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.projectmanagement.application.policy.directive.DeleteSampleFromBatch
-import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponDeletionEvent
 import life.qbic.projectmanagement.domain.model.batch.BatchId
-import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged
 import life.qbic.projectmanagement.domain.model.sample.SampleId
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted
 import spock.lang.Specification

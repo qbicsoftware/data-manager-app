@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.domain.service.event;
 
 import java.io.Serial;
-import java.time.Instant;
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 

@@ -14,12 +14,10 @@ import life.qbic.datamanager.views.general.DialogWindow;
  */
 public class ClosingWithWarningStrategy implements DialogClosingStrategy {
 
-  private final DialogWindow window;
-
   private final ConfirmDialog confirmDialog;
 
   public ClosingWithWarningStrategy(DialogWindow window, ConfirmDialog warningDialog) {
-    this.window = Objects.requireNonNull(window);
+    Objects.requireNonNull(window);
     this.confirmDialog = Objects.requireNonNull(warningDialog);
     confirmDialog.addConfirmListener(listener -> window.close());
     confirmDialog.addCancelListener(listener -> confirmDialog.close());

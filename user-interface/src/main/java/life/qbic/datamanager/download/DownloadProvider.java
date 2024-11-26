@@ -12,7 +12,7 @@ import life.qbic.application.commons.ApplicationException;
  */
 public class DownloadProvider extends Anchor {
 
-  private final DownloadContentProvider downloadContentProvider;
+  private final transient DownloadContentProvider downloadContentProvider;
 
   public DownloadProvider(DownloadContentProvider downloadContentProvider) {
     super("_blank", "Download");

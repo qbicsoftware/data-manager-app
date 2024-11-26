@@ -2,6 +2,7 @@ package life.qbic.datamanager.configuration;
 
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
+import java.util.Objects;
 import javax.sql.DataSource;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -74,6 +75,8 @@ public class FinancingDatasourceConfig {
   @Bean(name = "financeTransactionManager")
   public PlatformTransactionManager transactionManager(
       @Qualifier("financeEntityManagerFactory") LocalContainerEntityManagerFactoryBean factoryBean) {
-    return new JpaTransactionManager(factoryBean.getObject());
+    Objects.requireNonNull(factoryBean);
+    var factory = Objects.requireNonNull(factoryBean.getObject());
+    return new JpaTransactionManager(factory);
   }
 }

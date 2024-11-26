@@ -1,12 +1,10 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Optional;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -26,8 +24,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class CreateNewSampleStatisticsEntry implements
     DomainEventSubscriber<ProjectRegisteredEvent> {
-
-  private static final Logger log = logger(CreateNewSampleStatisticsEntry.class);
 
   private final SampleCodeService sampleCodeService;
 
@@ -52,13 +48,13 @@ public class CreateNewSampleStatisticsEntry implements
   }
 
   @Job(name = "Create sample statistics entry for project %0")
-  public void createSampleStatisticsEntry(String projectId) throws RuntimeException {
+  public void createSampleStatisticsEntry(String projectId) throws DirectiveExecutionException {
     var id = ProjectId.parse(projectId);
     if (sampleStatisticsEntryMissing(id)) {
       Optional<Project> searchResult = projectRepository.find(id).stream()
           .findFirst();
       if (searchResult.isEmpty()) {
-        throw new RuntimeException("Project with id " + projectId
+        throw new DirectiveExecutionException("Project with id " + projectId
             + " not found. Domain event processing failed for directive "
             + getClass().getSimpleName());
       }

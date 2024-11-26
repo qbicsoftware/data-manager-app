@@ -66,7 +66,7 @@ public class InformUserAboutGrantedAccess implements DomainEventSubscriber<Proje
 
   @Job(name = "Notify user %0 about granted access to project %1")
   public void notifyUser(String userId, String projectId, String projectTitle)
-      throws RuntimeException {
+      throws DirectiveExecutionException {
     var recipient = userInformationService.findById(userId).orElseThrow();
     var projectUrl = appContextProvider.urlToProject(projectId);
     var message = Messages.projectAccessToUser(recipient.fullName(), projectTitle, projectUrl);

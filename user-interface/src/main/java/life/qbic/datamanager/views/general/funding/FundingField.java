@@ -59,10 +59,6 @@ public class FundingField extends CustomField<FundingEntry> implements HasClient
     return layout;
   }
 
-  private void layoutComponent() {
-    add(layoutFundingInput(label, referenceId));
-  }
-
   @Override
   protected FundingEntry generateModelValue() {
     return new FundingEntry(label.getValue(), referenceId.getValue());
@@ -91,6 +87,7 @@ public class FundingField extends CustomField<FundingEntry> implements HasClient
     referenceId.setInvalid(invalid);
   }
 
+  @Override
   public void setLabel(String label) {
     this.label.setValue(label);
   }
