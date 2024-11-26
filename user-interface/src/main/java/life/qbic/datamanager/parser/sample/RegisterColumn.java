@@ -2,6 +2,8 @@ package life.qbic.datamanager.parser.sample;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.parser.Column;
 import life.qbic.datamanager.parser.ExampleProvider;
 import life.qbic.datamanager.parser.ExampleProvider.Helper;
@@ -64,6 +66,10 @@ public enum RegisterColumn implements Column {
     return Arrays.stream(values())
         .mapToInt(RegisterColumn::columnIndex)
         .max().orElse(0);
+  }
+
+  public static Set<String> headerNames() {
+    return Arrays.stream(values()).map(RegisterColumn::headerName).collect(Collectors.toSet());
   }
 
   /**

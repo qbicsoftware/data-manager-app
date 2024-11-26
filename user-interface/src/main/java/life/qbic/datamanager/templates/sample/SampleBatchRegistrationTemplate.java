@@ -106,8 +106,8 @@ public class SampleBatchRegistrationTemplate {
     for (int confoundingVariableIndex = 0; confoundingVariableIndex < confoundingVariables.size();
         confoundingVariableIndex++) {
       String variableName = confoundingVariables.get(confoundingVariableIndex);
-      var cell = XLSXTemplateHelper.getOrCreateCell(header,
-          confoundingVariableIndex + columnOffset);
+      int columnIndex = confoundingVariableIndex + columnOffset + 1;
+      var cell = XLSXTemplateHelper.getOrCreateCell(header, columnIndex);
       cell.setCellValue(variableName);
       cell.setCellStyle(boldCellStyle);
     }

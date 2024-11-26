@@ -133,8 +133,8 @@ public class SampleRegistrationServiceV2 {
       samplesToRegister.add(buildSample(sample, batchId, sampleCodes.next()));
     }
     return sampleRepository.addAll(projectId, samplesToRegister)
-        .valueOrElseThrow(e -> new RegistrationException("Could not register samples: " + e.name()))
-        .stream().map(Sample::sampleId)
+        .stream()
+        .map(Sample::sampleId)
         .toList();
   }
 

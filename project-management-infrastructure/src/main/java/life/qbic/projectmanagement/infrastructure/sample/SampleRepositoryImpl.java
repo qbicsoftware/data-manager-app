@@ -10,9 +10,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
-import life.qbic.application.commons.Result;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -22,11 +20,13 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
-import life.qbic.projectmanagement.domain.service.SampleDomainService.ResponseCode;
 import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisConnector.SampleNotDeletedException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 
 /**
@@ -37,10 +37,10 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>This class serves as an adapter and proxies requests to an JPA implementation to interact
  * with persistent {@link Sample} data in the storage layer.
  *
- * <p>The actual JPA implementation is done by {@link QbicSampleRepository}, which is injected as
+ * <p>The actual JPA implementation is done by {@link SampleJpaRepository}, which is injected as
  * dependency upon creation.
  * <p>
- * Also handles project storage in openBIS through {@link QbicSampleDataRepo}
+ * Also handles project storage in openBIS through {@link SampleDataRepository}
  *
  * @since 1.0.0
  */
@@ -48,48 +48,48 @@ import org.springframework.transaction.annotation.Transactional;
 public class SampleRepositoryImpl implements SampleRepository {
 
   private static final Logger log = logger(SampleRepositoryImpl.class);
-  private final QbicSampleRepository qbicSampleRepository;
-  private final QbicSampleDataRepo sampleDataRepo;
+  private final SampleJpaRepository sampleJpaRepository;
+  private final SampleDataRepository sampleDataRepository;
   private final ProjectRepository projectRepository;
 
+  private SampleRepository selfProxy;
+
   @Autowired
-  public SampleRepositoryImpl(QbicSampleRepository qbicSampleRepository,
-      QbicSampleDataRepo sampleDataRepo, ProjectRepository projectRepository) {
-    this.qbicSampleRepository = Objects.requireNonNull(qbicSampleRepository);
-    this.sampleDataRepo = Objects.requireNonNull(sampleDataRepo);
+  public SampleRepositoryImpl(SampleJpaRepository sampleJpaRepository,
+      SampleDataRepository sampleDataRepository, ProjectRepository projectRepository,
+      @Lazy SampleRepository selfProxy) {
+    this.selfProxy = selfProxy;
+    this.sampleJpaRepository = Objects.requireNonNull(sampleJpaRepository);
+    this.sampleDataRepository = Objects.requireNonNull(sampleDataRepository);
     this.projectRepository = Objects.requireNonNull(projectRepository);
   }
 
+  @Transactional(propagation = Propagation.REQUIRED)
   @Override
-  public Result<Collection<Sample>, ResponseCode> addAll(Project project,
+  public Collection<Sample> addAll(Project project,
       Collection<Sample> samples) {
     String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(
         samples.stream().map(Sample::sampleId).toList());
-    List<Sample> savedSamples;
+    Object savepoint = TransactionAspectSupport.currentTransactionStatus().createSavepoint();
+    List<Sample> savedSamples = this.sampleJpaRepository.saveAll(samples);
     try {
-      savedSamples = this.qbicSampleRepository.saveAll(samples);
+      sampleDataRepository.addSamplesToProject(project, savedSamples);
     } catch (Exception e) {
-      log.error("The samples:" + commaSeperatedSampleIds + "could not be saved", e);
-      return Result.fromError(ResponseCode.REGISTRATION_FAILED);
+      TransactionAspectSupport.currentTransactionStatus().rollbackToSavepoint(savepoint);
+      throw new ApplicationException(
+          "The samples:" + commaSeperatedSampleIds + "could not be stored in openBIS", e);
     }
-    try {
-      sampleDataRepo.addSamplesToProject(project, savedSamples);
-    } catch (Exception e) {
-      log.error("The samples:" + commaSeperatedSampleIds + "could not be stored in openBIS", e);
-      log.error("Removing samples from repository, as well.");
-      qbicSampleRepository.deleteAll(savedSamples);
-      return Result.fromError(ResponseCode.REGISTRATION_FAILED);
-    }
-    return Result.fromValue(savedSamples);
+    return savedSamples;
   }
 
+  @Transactional
   @Override
-  public Result<Collection<Sample>, ResponseCode> addAll(ProjectId projectId, Collection<Sample> samples) {
+  public Collection<Sample> addAll(ProjectId projectId, Collection<Sample> samples) {
     var projectQuery = projectRepository.find(projectId);
-    if (projectQuery.isPresent()) {
-      return addAll(projectQuery.get(), samples);
+    if (projectQuery.isEmpty()) {
+      throw new IllegalArgumentException("Project not found: " + projectId);
     }
-    return Result.fromError(ResponseCode.REGISTRATION_FAILED);
+    return selfProxy.addAll(projectQuery.get(), samples);
   }
 
   private String buildCommaSeparatedSampleIds(Collection<SampleId> sampleIds) {
@@ -100,52 +100,51 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public void deleteAll(Project project,
       Collection<SampleId> samples) {
-    List<SampleCode> sampleCodes = qbicSampleRepository.findAllById(samples)
+    Object savepoint = TransactionAspectSupport.currentTransactionStatus().createSavepoint();
+    List<SampleCode> sampleCodes = sampleJpaRepository.findAllById(samples)
         .stream().map(Sample::sampleCode).toList();
-    this.qbicSampleRepository.deleteAllById(samples);
+    this.sampleJpaRepository.deleteAllById(samples);
     try {
-      sampleDataRepo.deleteAll(project.getProjectCode(), sampleCodes);
+      sampleDataRepository.deleteAll(project.getProjectCode(), sampleCodes);
     } catch (SampleNotDeletedException sampleNotDeletedException) {
+      TransactionAspectSupport.currentTransactionStatus().rollbackToSavepoint(savepoint);
       throw new ApplicationException("Could not delete " + buildCommaSeparatedSampleIds(samples),
-          sampleNotDeletedException,
-          ErrorCode.DATA_ATTACHED_TO_SAMPLES, ErrorParameters.empty());
+          sampleNotDeletedException, ErrorCode.DATA_ATTACHED_TO_SAMPLES, ErrorParameters.empty());
+    } catch (Exception e) {
+      TransactionAspectSupport.currentTransactionStatus().rollbackToSavepoint(savepoint);
+      throw new ApplicationException("Could not delete " + buildCommaSeparatedSampleIds(samples),
+          e);
     }
   }
 
+  @Transactional(readOnly = true)
   @Override
   public boolean isSampleRemovable(SampleId sampleId) {
-    SampleCode sampleCode = qbicSampleRepository.findById(sampleId).orElseThrow().sampleCode();
-    return sampleDataRepo.canDeleteSample(sampleCode);
+    SampleCode sampleCode = sampleJpaRepository.findById(sampleId).orElseThrow().sampleCode();
+    return sampleDataRepository.canDeleteSample(sampleCode);
   }
 
+  @Transactional(readOnly = true)
   @Override
-  public Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
-      ExperimentId experimentId) {
+  public Collection<Sample> findSamplesByExperimentId(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     Collection<Sample> samples;
-    try {
-      samples = qbicSampleRepository.findAllByExperimentId(experimentId);
-    } catch (Exception e) {
-      log.error(
-          "Retrieving Samples for experiment with id " + experimentId.value() + " failed: " + e, e);
-      return Result.fromError(SampleInformationService.ResponseCode.QUERY_FAILED);
-    }
-    return Result.fromValue(samples);
+    return sampleJpaRepository.findAllByExperimentId(experimentId);
   }
 
   @Override
   public List<Sample> findSamplesByBatchId(
       BatchId batchId) {
     Objects.requireNonNull(batchId, "batchId must not be null");
-    return qbicSampleRepository.findAllByAssignedBatch(batchId);
+    return sampleJpaRepository.findAllByAssignedBatch(batchId);
   }
 
   @Transactional
   @Override
   public void updateAll(Project project,
       Collection<Sample> updatedSamples) {
-    qbicSampleRepository.saveAll(updatedSamples);
-    sampleDataRepo.updateAll(project, updatedSamples);
+    sampleJpaRepository.saveAll(updatedSamples);
+    sampleDataRepository.updateAll(project, updatedSamples);
   }
 
   @Transactional
@@ -161,22 +160,22 @@ public class SampleRepositoryImpl implements SampleRepository {
 
   @Override
   public List<Sample> findSamplesBySampleId(List<SampleId> sampleId) {
-    return qbicSampleRepository.findAllById(sampleId);
+    return sampleJpaRepository.findAllById(sampleId);
   }
 
   @Override
   public Optional<Sample> findSample(SampleCode sampleCode) {
-    return Optional.ofNullable(qbicSampleRepository.findBySampleCode(sampleCode));
+    return Optional.ofNullable(sampleJpaRepository.findBySampleCode(sampleCode));
   }
 
   @Override
   public Optional<Sample> findSample(SampleId sampleId) {
-    return qbicSampleRepository.findById(sampleId);
+    return sampleJpaRepository.findById(sampleId);
   }
 
   @Override
   public long countSamplesWithExperimentId(ExperimentId experimentId) {
-    return qbicSampleRepository.countAllByExperimentId(experimentId);
+    return sampleJpaRepository.countAllByExperimentId(experimentId);
   }
 
 
