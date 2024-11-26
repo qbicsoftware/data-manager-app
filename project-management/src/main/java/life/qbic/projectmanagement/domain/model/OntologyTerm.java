@@ -137,14 +137,14 @@ public class OntologyTerm implements Serializable {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    OntologyTerm that = (OntologyTerm) o;
+    OntologyTerm that = (OntologyTerm) other;
     return Objects.equals(classIri, that.classIri);
   }
 
