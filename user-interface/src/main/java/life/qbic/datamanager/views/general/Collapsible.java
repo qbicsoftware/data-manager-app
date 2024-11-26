@@ -1,9 +1,9 @@
 package life.qbic.datamanager.views.general;
 
 /**
- * <b>Collapsable Element Interface</b>
+ * <b>Collapsible Element Interface</b>
  *
- * <p>Collapsable elements can be collapsed into a concise view representation of an element,
+ * <p>Collapsible elements can be collapsed into a concise view representation of an element,
  * such as e.g. a large text box with information.</p>
  *
  * @since 1.7.0

@@ -38,6 +38,7 @@ public class RejectedExecutionHandlerImplementation implements RejectedExecution
           "Thread " + Thread.currentThread().getId() + " rejected, because the queue was full.");
       executor.getQueue().put(r);
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw new RejectedExecutionException("Unexpected InterruptedException", e);
     }
   }
