@@ -30,8 +30,19 @@ public class DialogBody {
     dialog.registerUserInput(userInput);
   }
 
+  public DialogBody(SimpleDialog dialog, Component component) {
+    this.dialog = Objects.requireNonNull(dialog);
+    this.component = Objects.requireNonNull(component);
+    this.userInput = null;
+    dialog.setBody(component);
+  }
+
   public static DialogBody with(SimpleDialog simpleDialog, Component component, UserInput userInput) {
     return new DialogBody(simpleDialog, component, userInput);
+  }
+
+  public static DialogBody withoutUserInput(SimpleDialog simpleDialog, Component component) {
+    return new DialogBody(simpleDialog, component);
   }
 
 }

@@ -28,7 +28,7 @@ public class DialogFooter extends Div {
     cancelButton.addClickListener(e -> {
       dialog.cancel();
     });
-  };
+  }
 
   public static DialogFooter with(SimpleDialog dialog, String abortText, String confirmText) {
     return new DialogFooter(dialog, abortText, confirmText);

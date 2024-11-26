@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.demo;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -18,6 +19,7 @@ import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.SimpleDialog;
 import life.qbic.datamanager.views.general.dialog.UserInput;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -115,9 +117,8 @@ public class ComponentDemo extends Div {
     title.setText(dialogType);
     content.add(title);
     Button showDialog = new Button("Show Dialog");
-
     // Dialog set-up
-    DialogHeader.with(dialog, dialogType);
+    DialogHeader.withIcon(dialog, dialogType, IconFactory.smallWarningIcon());
     DialogFooter.with(dialog, "Cancel", "Save");
     ExampleUserInput userInput = new ExampleUserInput("Expeliamus");
     DialogBody.with(dialog, userInput, userInput);

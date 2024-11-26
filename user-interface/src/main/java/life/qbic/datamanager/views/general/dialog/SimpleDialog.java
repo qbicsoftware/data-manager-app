@@ -6,6 +6,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog.ConfirmEvent;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 
 /**
  * <b>Simple Dialog</b>
@@ -118,15 +119,19 @@ public class SimpleDialog extends Dialog {
     if (hasChanges()) {
       var confirmDialog = createConfirmDialog(cancelDialogAction);
       confirmDialog.open();
-    } else if (confirmDialogAction != null) {
-      confirmDialogAction.execute();
+    } else if (cancelDialogAction != null) {
+      cancelDialogAction.execute();
     }
   }
 
-  private static ConfirmDialog createConfirmDialog(DialogAction onConfirmAction) {
-    var confirmDialog = new ConfirmDialog();
-    confirmDialog.setConfirmButton("Discard Changes", (ConfirmEvent event) -> onConfirmAction.execute());
-    confirmDialog.setConfirmButton("Continue", (ConfirmEvent event) -> confirmDialog.close());
+  private static SimpleDialog createConfirmDialog(DialogAction onConfirmAction) {
+    var confirmDialog = SimpleDialog.small();
+    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog, "Discard changes?",
+        IconFactory.smallWarningIcon());
+    DialogBody.withoutUserInput(confirmDialog, new Div("By aborting the editing process and closing the dialog, you will loose all information entered."));
+    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing", "Discard changes" );
+    confirmDialog.registerConfirmAction(onConfirmAction);
+    confirmDialog.registerCancelAction(confirmDialog::close);
     return confirmDialog;
   }
 
