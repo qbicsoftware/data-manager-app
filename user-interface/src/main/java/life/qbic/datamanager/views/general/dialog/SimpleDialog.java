@@ -4,12 +4,11 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
-import org.springframework.lang.NonNull;
 
 /**
  * <b>Simple Dialog</b>
  *
- * <p>A reusable dialog component can be configured to execute an {@link Action} for confirmation
+ * <p>A reusable dialog component can be configured to execute an {@link DialogAction} for confirmation
  * or an cancel operation.</p>
  * <p>
  * A simple dialog always checks its main component, which is of type {@link UserInput} and gets
@@ -25,8 +24,8 @@ public class SimpleDialog extends Dialog {
   private final Div body;
   private final Div footer;
 
-  private transient Action confirmAction;
-  private transient Action cancelAction;
+  private transient DialogAction confirmDialogAction;
+  private transient DialogAction cancelDialogAction;
   private transient UserInput userInput;
 
   private SimpleDialog(Style style) {
@@ -70,13 +69,13 @@ public class SimpleDialog extends Dialog {
   public void confirm() {
     if (userInput != null) {
       var validation = Objects.requireNonNull(userInput.validate());
-      validation.onPassed(confirmAction);
+      validation.onPassed(confirmDialogAction);
     }
   }
 
   public void cancel() {
-    if (cancelAction != null) {
-      cancelAction.execute();
+    if (cancelDialogAction != null) {
+      cancelDialogAction.execute();
     }
   }
 
@@ -84,12 +83,12 @@ public class SimpleDialog extends Dialog {
     return userInput != null && userInput.hasChanges();
   }
 
-  public void registerConfirmAction(Action confirmAction) {
-    this.confirmAction = Objects.requireNonNull(confirmAction);
+  public void registerConfirmAction(DialogAction confirmDialogAction) {
+    this.confirmDialogAction = Objects.requireNonNull(confirmDialogAction);
   }
 
-  public void registerCancelAction(Action cancelAction) {
-    this.cancelAction = Objects.requireNonNull(cancelAction);
+  public void registerCancelAction(DialogAction cancelDialogAction) {
+    this.cancelDialogAction = Objects.requireNonNull(cancelDialogAction);
   }
 
   public void registerUserInput(UserInput userInput) {

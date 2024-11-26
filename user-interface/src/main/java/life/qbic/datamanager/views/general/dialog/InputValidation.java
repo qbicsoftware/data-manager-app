@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.general.dialog;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 import org.springframework.lang.NonNull;
 
 /**
@@ -51,9 +50,9 @@ public class InputValidation {
     PASSED, FAILED
   }
 
-  public void onPassed(@NonNull Action action) {
+  public void onPassed(@NonNull DialogAction dialogAction) {
     if (hasPassed()) {
-      action.execute();
+      dialogAction.execute();
     }
   }
 }
