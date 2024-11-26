@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route("error")
 public class ExceptionErrorPage extends Div implements ErrorPage<Exception> {
 
-  private final ErrorMessageTranslationService errorMessageTranslationService;
+  private final transient ErrorMessageTranslationService errorMessageTranslationService;
   private final H1 title;
   private final H2 errorCode;
   private final Span message;

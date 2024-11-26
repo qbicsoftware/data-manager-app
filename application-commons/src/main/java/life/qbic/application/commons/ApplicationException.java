@@ -17,7 +17,7 @@ import java.util.StringJoiner;
 public class ApplicationException extends RuntimeException {
 
   private final ErrorCode errorCode;
-  private final ErrorParameters errorParameters;
+  private final transient ErrorParameters errorParameters;
 
   public ApplicationException() {
     this(ErrorCode.GENERAL, ErrorParameters.empty());

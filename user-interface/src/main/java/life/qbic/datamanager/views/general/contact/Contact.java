@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.general.contact;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
+import life.qbic.application.commons.ApplicationException;
 
 /**
  *
@@ -50,10 +51,12 @@ public final class Contact implements Serializable {
 
   public life.qbic.projectmanagement.domain.model.project.Contact toDomainContact() {
     if (!isComplete()) {
-      throw new RuntimeException("Contact is not complete and cannot be converted: " + this);
+      throw new ApplicationException("Contact is not complete and cannot be converted: " + this);
     }
     return new life.qbic.projectmanagement.domain.model.project.Contact(getFullName(), getEmail());
   }
+
+
   @Override
   public boolean equals(Object obj) {
     if (obj == this) {

@@ -63,7 +63,7 @@ public class AddProjectDialog extends QbicDialog {
   private final Button nextButton;
 
   private final Map<String, Component> stepContent;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
 
 
   private StepIndicator addStep(Stepper stepper, String label, Component layout) {

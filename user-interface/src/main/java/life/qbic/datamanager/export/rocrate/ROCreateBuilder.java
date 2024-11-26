@@ -5,8 +5,6 @@ import static life.qbic.datamanager.export.rocrate.ROCreateBuilder.ResearchProje
 
 import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
-import edu.kit.datamanager.ro_crate.context.CrateMetadataContext;
-import edu.kit.datamanager.ro_crate.context.RoCrateMetadataContext;
 import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity;
 import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity.ContextualEntityBuilder;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;

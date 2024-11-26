@@ -85,7 +85,7 @@ public class ExperimentDetailsComponent extends PageArea {
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
-  private final SampleInformationService sampleInformationService;
+  private final transient SampleInformationService sampleInformationService;
   private final transient SpeciesLookupService ontologyTermInformationService;
   private final Div content = new Div();
   private final Div header = new Div();
@@ -101,9 +101,9 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
   private final DeletionService deletionService;
-  private final TerminologyService terminologyService;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient TerminologyService terminologyService;
+  private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private Context context;
   private int experimentalGroupCount;
 
@@ -603,11 +603,12 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   public void setContext(Context context) {
+    this.context = requireNonNull(context);
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
     ExperimentId experimentId = context.experimentId()
         .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
-    context.projectId()
-        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
-    this.context = context;
     reloadExperimentInfo(experimentId);
   }
 
@@ -666,7 +667,7 @@ public class ExperimentDetailsComponent extends PageArea {
    * at runtime.
    */
   public enum BioIcon {
-    DEFAULT_SPECIES("default", SampleSourceType.SPECIES, VaadinIcon.BUG),
+    DEFAULT_SPECIES(Constants.DEFAULT_LABEL, SampleSourceType.SPECIES, VaadinIcon.BUG),
     HUMAN("Human", SampleSourceType.SPECIES, VaadinIcon.MALE),
     //Mouse by Graphic Mall
     MOUSE("Mouse", SampleSourceType.SPECIES, new StreamResource("mouse.svg",
@@ -678,7 +679,7 @@ public class ExperimentDetailsComponent extends PageArea {
         () -> BioIcon.class.getResourceAsStream("/icons/mushroom.svg"))),
     BACTERIA("Bacteria", SampleSourceType.SPECIES, new StreamResource("bacteria.svg",
         () -> BioIcon.class.getResourceAsStream("/icons/bacteria.svg"))),
-    DEFAULT_SPECIMEN("default", SampleSourceType.SPECIMEN, VaadinIcon.DROP),
+    DEFAULT_SPECIMEN(Constants.DEFAULT_LABEL, SampleSourceType.SPECIMEN, VaadinIcon.DROP),
     //Kidneys by Daniel Burka on IconScout
     KIDNEY("Kidney", SampleSourceType.SPECIMEN, new StreamResource("kidneys.svg",
         () -> BioIcon.class.getResourceAsStream("/icons/kidneys.svg"))),
@@ -692,7 +693,7 @@ public class ExperimentDetailsComponent extends PageArea {
     LEAF("Leaf", SampleSourceType.SPECIMEN, new StreamResource("leaf.svg",
         () -> BioIcon.class.getResourceAsStream("/icons/leaf.svg"))),
     EYE("Eye", SampleSourceType.SPECIMEN, VaadinIcon.EYE),
-    DEFAULT_ANALYTE("default", SampleSourceType.ANALYTE, VaadinIcon.CLUSTER);
+    DEFAULT_ANALYTE(Constants.DEFAULT_LABEL, SampleSourceType.ANALYTE, VaadinIcon.CLUSTER);
     private final String label;
     private final SampleSourceType type;
     private final IconResource iconResource;
@@ -741,6 +742,10 @@ public class ExperimentDetailsComponent extends PageArea {
           o.getType().equals(type)).toList();
     }
 
+    private static class Constants {
+
+      public static final String DEFAULT_LABEL = "default";
+    }
   }
 
   /**

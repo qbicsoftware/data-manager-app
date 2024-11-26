@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
@@ -48,7 +48,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * @since 1.0.0
  */
 @PageTitle("Project Overview")
-@Route(value = Projects.PROJECTS, layout = UserMainLayout.class)
+@Route(value = ProjectRoutes.PROJECTS, layout = UserMainLayout.class)
 @PermitAll
 public class ProjectOverviewMain extends Main {
 

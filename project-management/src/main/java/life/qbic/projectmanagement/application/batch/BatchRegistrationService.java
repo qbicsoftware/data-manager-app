@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.batch;
 
 
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
@@ -45,6 +46,7 @@ public class BatchRegistrationService {
   private final SampleInformationService sampleInformationService;
   private final SampleRegistrationService sampleRegistrationService;
   private final DeletionService deletionService;
+  private static final Random RANDOM = new SecureRandom();
 
   @Autowired
   public BatchRegistrationService(BatchRepository batchRepository,
@@ -105,7 +107,6 @@ public class BatchRegistrationService {
   }
 
   public Result<BatchId, ResponseCode> addSampleToBatch(SampleId sampleId, BatchId batchId) {
-    var random = new Random();
     while (true) {
       try {
         return tryToUpdateBatch(sampleId, batchId);
@@ -115,9 +116,14 @@ public class BatchRegistrationService {
                 batchId.value()));
       }
       try {
-        Thread.sleep(random.nextInt(500));
+        Thread.sleep(RANDOM.nextInt(500));
       } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        log.error("Batch update interrupted", e);
+        // Try to update one last time
+        var result = tryToUpdateBatch(sampleId, batchId);
+        result.onValue(id -> log.info("Updating batch %s was successful.".formatted(batchId.value())));
+        result.onError(responseCode -> log.error("Updating batch failed. Response code was: %s".formatted(responseCode)));
+        Thread.currentThread().interrupt();
       }
     }
   }

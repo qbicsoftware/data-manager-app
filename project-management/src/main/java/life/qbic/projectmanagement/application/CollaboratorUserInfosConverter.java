@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.isNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import life.qbic.logging.api.Logger;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 
 /**
@@ -23,8 +22,6 @@ import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 @Converter(autoApply = false)
 public class CollaboratorUserInfosConverter implements
     AttributeConverter<List<UserInfo>, String> {
-
-  private static final Logger log = logger(CollaboratorUserInfosConverter.class);
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -41,7 +38,7 @@ public class CollaboratorUserInfosConverter implements
       return outputStream.toString();
     } catch (IOException e) {
       // we need to throw to prevent data loss
-      throw new RuntimeException(
+      throw new ApplicationException(
           "Unexpected problems writing project collaborators to the database", e);
     }
   }
@@ -58,7 +55,7 @@ public class CollaboratorUserInfosConverter implements
       );
     } catch (JsonProcessingException e) {
       // we need to throw to prevent data loss
-      throw new RuntimeException("Unexpected failure parsing project collaborators from database",
+      throw new ApplicationException("Unexpected failure parsing project collaborators from database",
           e);
     }
 
