@@ -17,7 +17,6 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.BatchRegistrationDialog;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
@@ -33,7 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
  * information associated for all {@link Batch} and {@link Sample} of each
  * {@link Experiment within a {@link Project} Additionally it enables the user to register new
- * {@link Batch} and {@link Sample} via the contained {@link BatchRegistrationDialog}.
+ * {@link Batch} and {@link Sample} via the contained {@link life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
  */
 
 @SpringComponent
