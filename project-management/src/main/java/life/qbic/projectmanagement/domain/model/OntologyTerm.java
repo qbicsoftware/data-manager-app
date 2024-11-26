@@ -137,47 +137,20 @@ public class OntologyTerm implements Serializable {
   }
 
   @Override
-  public boolean equals(Object object) {
-    if (this == object) {
+  public boolean equals(Object other) {
+    if (this == other) {
       return true;
     }
-    if (object == null || getClass() != object.getClass()) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
-
-    OntologyTerm that = (OntologyTerm) object;
-
-    if (!Objects.equals(ontologyAbbreviation, that.ontologyAbbreviation)) {
-      return false;
-    }
-    if (!Objects.equals(ontologyVersion, that.ontologyVersion)) {
-      return false;
-    }
-    if (!Objects.equals(ontologyIri, that.ontologyIri)) {
-      return false;
-    }
-    if (!Objects.equals(classLabel, that.classLabel)) {
-      return false;
-    }
-    if (!Objects.equals(oboId, that.oboId)) {
-      return false;
-    }
-    if (!Objects.equals(description, that.description)) {
-      return false;
-    }
+    OntologyTerm that = (OntologyTerm) other;
     return Objects.equals(classIri, that.classIri);
   }
 
   @Override
   public int hashCode() {
-    int result = ontologyAbbreviation != null ? ontologyAbbreviation.hashCode() : 0;
-    result = 31 * result + (ontologyVersion != null ? ontologyVersion.hashCode() : 0);
-    result = 31 * result + (ontologyIri != null ? ontologyIri.hashCode() : 0);
-    result = 31 * result + (classLabel != null ? classLabel.hashCode() : 0);
-    result = 31 * result + (oboId != null ? oboId.hashCode() : 0);
-    result = 31 * result + (description != null ? description.hashCode() : 0);
-    result = 31 * result + (classIri != null ? classIri.hashCode() : 0);
-    return result;
+    return Objects.hashCode(classIri);
   }
 
   @Override
