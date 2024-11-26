@@ -1,6 +1,8 @@
 package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog.ConfirmEvent;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
@@ -113,9 +115,19 @@ public class SimpleDialog extends Dialog {
    * @since 1.7.0
    */
   public void cancel() {
-    if (cancelDialogAction != null) {
-      cancelDialogAction.execute();
+    if (hasChanges()) {
+      var confirmDialog = createConfirmDialog(cancelDialogAction);
+      confirmDialog.open();
+    } else if (confirmDialogAction != null) {
+      confirmDialogAction.execute();
     }
+  }
+
+  private static ConfirmDialog createConfirmDialog(DialogAction onConfirmAction) {
+    var confirmDialog = new ConfirmDialog();
+    confirmDialog.setConfirmButton("Discard Changes", (ConfirmEvent event) -> onConfirmAction.execute());
+    confirmDialog.setConfirmButton("Continue", (ConfirmEvent event) -> confirmDialog.close());
+    return confirmDialog;
   }
 
   /**
