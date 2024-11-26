@@ -451,15 +451,15 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).toList();
+    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct().toList();
   }
 
   private List<OntologyTerm> extractSpecimen(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).toList();
+    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct().toList();
   }
 
   private List<OntologyTerm> extractAnalyte(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).toList();
+    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct().toList();
   }
 
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {
