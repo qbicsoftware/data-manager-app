@@ -36,6 +36,9 @@
     <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jackson.version>2.18.1</jackson.version>
+    <sonar.projectKey>qbicsoftware_data-manager-app</sonar.projectKey>
+    <sonar.organization>qbicsoftware</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
 
   <parent>
