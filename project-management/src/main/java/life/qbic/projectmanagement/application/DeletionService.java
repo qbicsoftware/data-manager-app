@@ -15,7 +15,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DeletionService {
 
-  private final ApplicationContext context;
+  private DeletionService selfProxy;
 
   private final ProjectInformationService projectInformationService;
   private final ExperimentInformationService experimentInformationService;
@@ -41,7 +41,8 @@ public class DeletionService {
   public DeletionService(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
       SampleInformationService sampleInformationService, BatchDomainService batchDomainService,
-      SampleDomainService sampleDomainService, ApplicationContext context) {
+      SampleDomainService sampleDomainService,
+      @Lazy DeletionService selfProxy) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "experimentInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -52,7 +53,7 @@ public class DeletionService {
         BatchDomainService.class.getSimpleName() + " must not be null");
     this.sampleDomainService = requireNonNull(sampleDomainService,
         SampleDomainService.class.getSimpleName() + " must not be null");
-    this.context = requireNonNull(context);
+    this.selfProxy = selfProxy;
   }
 
   /**
@@ -89,7 +90,7 @@ public class DeletionService {
     });
     // We need to get the proxy Spring has wrapped around the service, otherwise calling
     // the @transaction annotated method has no effect
-    context.getBean(DeletionService.class).deleteSamples(projectId, batchId, samples);
+    selfProxy.deleteSamples(projectId, batchId, samples);
     return deletedBatchId.getValue();
   }
 
