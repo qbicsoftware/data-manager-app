@@ -5,7 +5,10 @@ on:
   push:
     branches:
       - development
-
+  pull_request:
+    branches:
+      - development
+      - main
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
