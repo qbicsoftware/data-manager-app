@@ -20,8 +20,6 @@ import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.domain.Organisation;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * <b>Cached Organisation Repository</b>

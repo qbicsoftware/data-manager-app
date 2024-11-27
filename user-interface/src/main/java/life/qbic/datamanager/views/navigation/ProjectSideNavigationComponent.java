@@ -55,7 +55,6 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Project Side Navigation Component
