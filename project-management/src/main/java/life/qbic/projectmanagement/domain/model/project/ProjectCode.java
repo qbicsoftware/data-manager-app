@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.domain.model.project;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
@@ -18,7 +19,7 @@ import java.util.function.Supplier;
 @Embeddable
 public class ProjectCode {
 
-  public static final String[] BLACKLIST = new String[]{"FUCK", "SHIT"};
+  private static final String[] BLACKLIST = new String[]{"FUCK", "SHIT"};
 
   @Column(name = "projectCode")
   private String value;
@@ -27,9 +28,11 @@ public class ProjectCode {
 
   private static final String PREFIX = "Q2";
 
-  public static final char[] ALLOWED_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWX".toCharArray();
+  private static final char[] ALLOWED_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWX".toCharArray();
 
-  public static final char[] ALLOWED_NUMBERS = "0123456789".toCharArray();
+  private static final char[] ALLOWED_NUMBERS = "0123456789".toCharArray();
+
+  private static final Random RANDOM = new SecureRandom();
 
   protected ProjectCode() {
     // Needed for JPA
@@ -213,11 +216,11 @@ public class ProjectCode {
     }
 
     private char randomLetter() {
-      return letters[new Random().nextInt(letters.length)];
+      return letters[RANDOM.nextInt(letters.length)];
     }
 
     private char randomNumber() {
-      return numbers[new Random().nextInt(numbers.length)];
+      return numbers[RANDOM.nextInt(numbers.length)];
     }
 
   }
@@ -229,7 +232,7 @@ public class ProjectCode {
     }
 
     SIDE flip() {
-      double randomValue = new Random().nextDouble(1);
+      double randomValue = RANDOM.nextDouble(1);
       if (randomValue < 0.5) {
         return SIDE.HEAD;
       } else {
