@@ -151,7 +151,7 @@ public class QualityControlListComponent extends PageArea {
 
   private static class QualityControlItem extends Span {
 
-    private final QualityControl qualityControl;
+    private final transient QualityControl qualityControl;
     private final Span controls = new Span();
     private final Button downloadButton = new Button(LumoIcon.DOWNLOAD.create());
     private final Button deleteButton = new Button(LumoIcon.CROSS.create());

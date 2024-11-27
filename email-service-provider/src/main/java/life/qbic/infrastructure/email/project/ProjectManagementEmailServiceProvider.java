@@ -24,6 +24,7 @@ import life.qbic.projectmanagement.application.communication.Subject;
 public class ProjectManagementEmailServiceProvider implements EmailService {
 
   private static final Logger log = logger(ProjectManagementEmailServiceProvider.class);
+  public static final String EMAIL_SUBMISSION_FAILED = "Email submission failed";
 
   private final EmailServiceProvider emailServiceProvider;
 
@@ -39,7 +40,7 @@ public class ProjectManagementEmailServiceProvider implements EmailService {
           MessageTranslator.translate(content));
     } catch (EmailSubmissionException e) {
       log.error("Email submission failed!", e);
-      throw new CommunicationException("Email submission failed");
+      throw new CommunicationException(EMAIL_SUBMISSION_FAILED);
     }
   }
 
@@ -50,8 +51,8 @@ public class ProjectManagementEmailServiceProvider implements EmailService {
       emailServiceProvider.send(MessageTranslator.translate(subject), MessageTranslator.translate(recipient),
           MessageTranslator.translate(content), MessageTranslator.translate(attachment));
     } catch (EmailSubmissionException e) {
-      log.error("Email submission failed", e);
-      throw new CommunicationException("Email submission failed");
+      log.error(EMAIL_SUBMISSION_FAILED, e);
+      throw new CommunicationException(EMAIL_SUBMISSION_FAILED);
     }
   }
 

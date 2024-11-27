@@ -70,7 +70,7 @@ public class MeasurementTemplateListComponent extends PageArea {
   public static class DownloadMeasurementTemplateEvent extends
       ComponentEvent<MeasurementTemplateListComponent> {
 
-    private final Template measurementTemplate;
+    private final transient Template measurementTemplate;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -95,7 +95,7 @@ public class MeasurementTemplateListComponent extends PageArea {
 
   private static class MeasurementTemplateItem extends Span {
 
-    private final Template measurementTemplate;
+    private final transient Template measurementTemplate;
     private final Span controls = new Span();
     private final Button downloadButton = new Button(LumoIcon.DOWNLOAD.create());
 

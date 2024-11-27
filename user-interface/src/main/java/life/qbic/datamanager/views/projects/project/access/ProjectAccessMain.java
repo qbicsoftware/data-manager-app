@@ -31,7 +31,7 @@ public class ProjectAccessMain extends Main implements BeforeEnterObserver {
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   private static final Logger log = logger(ProjectAccessMain.class);
   private final ProjectAccessComponent projectAccessComponent;
-  private final UserPermissions userPermissions;
+  private final transient UserPermissions userPermissions;
   private transient Context context;
 
   protected ProjectAccessMain(@Autowired ProjectAccessComponent projectAccessComponent,

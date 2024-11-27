@@ -55,6 +55,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Project Side Navigation Component
@@ -73,15 +74,16 @@ public class ProjectSideNavigationComponent extends Div implements
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   private static final Logger log = LoggerFactory.logger(ProjectSideNavigationComponent.class);
+  public static final String PRIMARY = "primary";
   private final Div content;
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
-  private final AddExperimentToProjectService addExperimentToProjectService;
+  private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserPermissions userPermissions;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final TerminologyService terminologyService;
-  private final SpeciesLookupService speciesLookupService;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final transient TerminologyService terminologyService;
+  private final transient SpeciesLookupService speciesLookupService;
   private Context context = new Context();
 
   public ProjectSideNavigationComponent(
@@ -132,7 +134,7 @@ public class ProjectSideNavigationComponent extends Div implements
     SideNavItem projectHeader = new SideNavItem("PROJECT");
     projectHeader.setLabel("PROJECT");
     projectHeader.setPrefixComponent(VaadinIcon.NOTEBOOK.create());
-    projectHeader.addClassName("primary");
+    projectHeader.addClassName(PRIMARY);
     return projectHeader;
   }
 
@@ -219,7 +221,7 @@ public class ProjectSideNavigationComponent extends Div implements
     SideNavItem ontologySearch = new SideNavItem("Ontology Search", projectOntologyPath,
         LumoIcon.SEARCH.create());
     ontologySearch.addClassName("hoverable");
-    ontologySearch.addClassName("primary");
+    ontologySearch.addClassName(PRIMARY);
     return ontologySearch;
   }
 
@@ -302,7 +304,7 @@ private static void routeToProject(ProjectId projectId) {
     Icon flask = VaadinIcon.FLASK.create();
 
     if (context.experimentId().isPresent()) {
-      expHeader.addClassName("primary");
+      expHeader.addClassName(PRIMARY);
     }
 
     expHeader.setPrefixComponent(flask);

@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectAccessServiceImpl implements ProjectAccessService {
 
   private static final Logger log = logger(ProjectAccessServiceImpl.class);
+  public static final String SELECT_IDENTITY = "SELECT @@IDENTITY";
   private final MutableAclService aclService;
   private final JdbcTemplate jdbcTemplate;
 
@@ -59,8 +60,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     JdbcMutableAclService serviceImpl = (JdbcMutableAclService) mutableAclService;
     // these settings are necessary for MySQL to correctly throw several types of exceptions
     // instead of an unrelated exception related to the identity function
-    serviceImpl.setClassIdentityQuery("SELECT @@IDENTITY");
-    serviceImpl.setSidIdentityQuery("SELECT @@IDENTITY");
+    serviceImpl.setClassIdentityQuery(SELECT_IDENTITY);
+    serviceImpl.setSidIdentityQuery(SELECT_IDENTITY);
     try {
       acl = (MutableAcl) serviceImpl.readAclById(objectIdentity, sids);
     } catch (NotFoundException e) {
@@ -75,8 +76,8 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     JdbcMutableAclService serviceImpl = (JdbcMutableAclService) mutableAclService;
     // these settings are necessary for MySQL to correctly throw several types of exceptions
     // instead of an unrelated exception related to the identity function
-    serviceImpl.setClassIdentityQuery("SELECT @@IDENTITY");
-    serviceImpl.setSidIdentityQuery("SELECT @@IDENTITY");
+    serviceImpl.setClassIdentityQuery(SELECT_IDENTITY);
+    serviceImpl.setSidIdentityQuery(SELECT_IDENTITY);
     return serviceImpl.createAcl(objectIdentity);
   }
 
