@@ -40,9 +40,8 @@ public class OntologyComboboxFactory {
     return box;
   }
 
-  private FetchCallback<OntologyTerm, String> speciesFetchCallback(
-      List<Ontology> ontologies) {
-    return query -> OntologyFilterConnector.loadOntologyTerms(ontologies, query,
+  private FetchCallback<OntologyTerm, String> speciesFetchCallback() {
+    return query -> OntologyFilterConnector.loadOntologyTerms(query,
         speciesLookupService);
   }
 
@@ -51,10 +50,9 @@ public class OntologyComboboxFactory {
   }
 
   public MultiSelectComboBox<OntologyTerm> speciesBox() {
-    List<Ontology> speciesOntologies = List.of(Ontology.NCBI_TAXONOMY);
 
     MultiSelectComboBox<OntologyTerm> box = newBox();
-    box.setItems(speciesFetchCallback(speciesOntologies));
+    box.setItems(speciesFetchCallback());
 
     box.setPlaceholder("Search and select one or more species for your samples");
     box.setLabel("Species");
