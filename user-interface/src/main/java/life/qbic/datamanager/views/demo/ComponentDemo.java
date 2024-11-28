@@ -169,7 +169,7 @@ public class ComponentDemo extends Div {
       var dialogSection = DialogSection.with("User Input Validation", "Try correct and incorrect input values in the following field.");
       originalValue = prefill;
       var textField = new TextField();
-      textField.setLabel("Correct input is 'Ridiculus'");
+      textField.setLabel("Correct input is 'Riddikulus'");
       textField.setPlaceholder("Type your answer here");
       textField.setWidth(20.f, Unit.REM);
       textField.setValueChangeMode(ValueChangeMode.EAGER);
@@ -177,7 +177,7 @@ public class ComponentDemo extends Div {
       valueContainer = new StringBean(prefill);
       binder = new Binder<>(StringBean.class);
       binder.forField(textField)
-          .withValidator((String value) -> value.equals("Ridiculus"), "Wrong input text.")
+          .withValidator((String value) -> value.equals("Riddikulus"), "Wrong input text.")
           .bind(StringBean::getValue, StringBean::setValue);
       binder.setBean(valueContainer);
       dialogSection.content(textField);
