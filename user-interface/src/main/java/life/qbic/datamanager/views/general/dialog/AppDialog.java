@@ -105,7 +105,7 @@ public class AppDialog extends Dialog {
   public void confirm() {
     if (userInput != null) {
       var validation = Objects.requireNonNull(userInput.validate());
-      validation.onPassed(confirmDialogAction);
+      validation.ifPassed(confirmDialogAction);
     } else {
       // no user input was defined, so nothing to validate
       confirmDialogAction.execute();

@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.Component;
 import java.util.Objects;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * <b>Dialog Body</b>

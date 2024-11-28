@@ -42,15 +42,11 @@ public class InputValidation {
     return status == ValidationStatus.PASSED;
   }
 
-  public boolean hasFailed() {
-    return status == ValidationStatus.FAILED;
-  }
-
   enum ValidationStatus {
     PASSED, FAILED
   }
 
-  public void onPassed(@NonNull DialogAction dialogAction) {
+  public void ifPassed(@NonNull DialogAction dialogAction) {
     if (hasPassed()) {
       dialogAction.execute();
     }
