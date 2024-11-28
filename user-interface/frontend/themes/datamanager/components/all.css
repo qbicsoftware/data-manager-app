@@ -134,6 +134,14 @@ Body text
   font-weight: var(--font-weight-semi-bold);
 }
 
+.text-margin-bottom-03 {
+  margin-bottom: var(--spacing-03);
+}
+
+.text-margin-bottom-04 {
+  margin-bottom: var(--spacing-04);
+}
+
 
 /***************************
 Padding & gaps
