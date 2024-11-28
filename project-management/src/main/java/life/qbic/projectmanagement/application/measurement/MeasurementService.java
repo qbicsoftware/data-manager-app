@@ -219,7 +219,7 @@ public class MeasurementService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Transactional
-  protected List<MeasurementId> performRegistration(
+  public List<MeasurementId> performRegistration(
       List<? extends MeasurementMetadata> measurementMetadataList, ProjectId projectId) {
     if (measurementMetadataList.isEmpty()) {
       return new ArrayList<>(); // Nothing to do
@@ -243,7 +243,6 @@ public class MeasurementService {
         ngsMeasurementMetadata.add(ngsMetadata);
       }
     }
-    Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping = new HashMap<>();
 
     // Start with the pooled measurements first and group the metadata entries by pool
     Map<String, List<NGSMeasurementMetadata>> measurementsByPool = ngsMeasurementMetadata.stream()
@@ -255,7 +254,8 @@ public class MeasurementService {
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
 
     // Then merge and prepare the domain objects by pool
-    ngsMeasurementsMapping.putAll(mergeByPoolNGS(measurementsByPool, projectId));
+    Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping = new HashMap<>(
+        mergeByPoolNGS(measurementsByPool, projectId));
     // and last but not least also the single sample measurements
     singleMeasurements.stream()
         .map(singleMeasurement -> buildNGS(List.of(singleMeasurement), projectId))
@@ -273,7 +273,6 @@ public class MeasurementService {
         proteomicsMeasurements.add(proteomicsMetadata);
       }
     }
-    Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping = new HashMap<>();
 
     // Start with the pooled measurements first and group the metadata entries by pool
     Map<String, List<ProteomicsMeasurementMetadata>> measurementsByPool = proteomicsMeasurements.stream()
@@ -285,7 +284,8 @@ public class MeasurementService {
         .filter(metadata -> metadata.assignedSamplePoolGroup().isEmpty()).toList();
 
     // Then merge and prepare the domain objects by pool
-    proteomicsMeasurementsMapping.putAll(mergeByPoolPxP(measurementsByPool, projectId));
+    Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping = new HashMap<>(
+        mergeByPoolPxP(measurementsByPool, projectId));
     // and last but not least also the single sample measurements
     singleMeasurements.stream()
         .map(singleMeasurement -> buildPxP(List.of(singleMeasurement), projectId))
@@ -346,7 +346,7 @@ public class MeasurementService {
     NGSMeasurement measurement;
     if (firstMetadataEntry.assignedSamplePoolGroup().isPresent()) {
       measurement = NGSMeasurement.createWithPool(projectId,
-          firstMetadataEntry.assignedSamplePoolGroup().get(), assignedMeasurementCode,
+          firstMetadataEntry.assignedSamplePoolGroup().orElseThrow(), assignedMeasurementCode,
           organisationQuery.get(), method, specificMetadata);
     } else {
       measurement = NGSMeasurement.createSingleMeasurement(projectId, assignedMeasurementCode,
