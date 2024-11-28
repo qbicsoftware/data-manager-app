@@ -11,24 +11,29 @@ title: Dialog window
 classDiagram
     note for Component "Vaadin Component"
     note for Dialog "Vaadin Component"
-    SimpleDialog <-- DialogHeader
-    SimpleDialog <-- DialogBody
-    SimpleDialog <-- DialogFooter
+    AppDialog <-- DialogHeader
+    AppDialog <-- DialogBody
+    AppDialog <-- DialogFooter
     DialogBody ..|> UserInput
     UserInput --> InputValidation
-    SimpleDialog --> Component
-    SimpleDialog --> Action
-    SimpleDialog --|> Dialog
-    SimpleDialog --> UserInput
+    AppDialog --> Component
+    AppDialog --> Action
+    AppDialog --|> Dialog
+    AppDialog --> UserInput
+    DialogBody *-- DialogSection
     
     class Dialog {
+        
+    }
+    
+    class DialogSection {
         
     }
 
     class Component {
     }
 
-    class SimpleDialog {
+    class AppDialog {
         +setHeader(Component component)
         +setBody(Component component)
         +setFooter(Component component)
