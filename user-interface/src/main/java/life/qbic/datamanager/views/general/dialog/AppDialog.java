@@ -125,7 +125,7 @@ public class AppDialog extends Dialog {
   private static AppDialog createConfirmDialog(DialogAction onConfirmAction) {
     var confirmDialog = AppDialog.small();
     life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog, "Discard changes?",
-        IconFactory.smallWarningIcon());
+        IconFactory.warningIcon());
     DialogBody.withoutUserInput(confirmDialog, new Div("By aborting the editing process and closing the dialog, you will loose all information entered."));
     life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing", "Discard changes" );
     confirmDialog.registerConfirmAction(onConfirmAction);
@@ -205,7 +205,7 @@ public class AppDialog extends Dialog {
     }
 
     private static String[] paddings() {
-      return new String[]{"padding-left-right-05", "padding-top-bottom-05"};
+      return new String[]{"padding-left-right-07", "padding-top-bottom-05"};
     }
 
     @Override
@@ -241,7 +241,7 @@ public class AppDialog extends Dialog {
     }
 
     private static String[] paddings() {
-      return new String[]{"padding-left-right-05", "padding-top-bottom-05"};
+      return new String[]{"padding-left-right-07", "padding-top-bottom-05"};
     }
 
     public String[] sizes() {
@@ -277,7 +277,7 @@ public class AppDialog extends Dialog {
     }
 
     private static String[] paddings() {
-      return new String[]{"padding-left-right-07", "padding-top-bottom-07"};
+      return new String[]{"padding-left-right-07", "padding-top-bottom-05"};
     }
 
     @Override

@@ -117,9 +117,9 @@ public class ComponentDemo extends Div {
     content.add(title);
     Button showDialog = new Button("Show Dialog");
     // Dialog set-up
-    DialogHeader.withIcon(dialog, dialogType, IconFactory.smallWarningIcon());
+    DialogHeader.withIcon(dialog, dialogType, IconFactory.warningIcon());
     DialogFooter.with(dialog, "Cancel", "Save");
-    ExampleUserInput userInput = new ExampleUserInput("Expeliamus");
+    ExampleUserInput userInput = new ExampleUserInput("Expelliarmus");
     DialogBody.with(dialog, userInput, userInput);
 
     Div confirmBox = new Div("Click the button and press 'Cancel' or 'Save'");

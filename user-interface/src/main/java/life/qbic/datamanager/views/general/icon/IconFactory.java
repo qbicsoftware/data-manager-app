@@ -15,9 +15,9 @@ public class IconFactory {
 
   private IconFactory() {}
 
-  public static Icon smallWarningIcon() {
+  public static Icon warningIcon() {
     var icon = VaadinIcon.EXCLAMATION_CIRCLE.create();
-    icon.addClassNames("icon-color-warning", "icon-size-s");
+    icon.addClassNames("icon-color-warning", "icon-size-m");
     return icon;
   }
 

@@ -13,10 +13,10 @@ First some general property definitions
   --dialog-height-large: 100vh;
   --dialog-height-max-small: 500px;
   --dialog-height-max-medium: 800px;
-  --dialog-height-max-large: 90vh;
+  --dialog-height-max-large: 100vh;
   --dialog-width-small: 50vw;
   --dialog-width-medium: 75vw;
-  --dialog-width-large: 75vw;
+  --dialog-width-large: 80vw;
   --dialog-width-max-small: 600px;
   --dialog-width-max-medium: 1000px;
   --dialog-width-max-large: 1200px;
@@ -29,9 +29,7 @@ First some general property definitions
   --icon-color-error: rgba(255, 66, 56, 1);
   --icon-color-success: rgba(21, 193, 93, 1);
   --icon-color-warning: rgba(254, 201, 1, 1);
-  --icon-size-s: 20px;
-  --icon-size-m: 24px;
-  --icon-size-l: 32px;
+  --icon-size-m: var(--lumo-icon-size-m);
   --spacing-01: 0.125rem;
   --spacing-02: 0.25rem;
   --spacing-03: 0.5rem;
@@ -295,17 +293,10 @@ Icons
   color: var(--icon-color-warning)
 }
 
-.icon-size-s {
-  height: var(--icon-size-s);
-}
-
 .icon-size-m {
   height: var(--icon-size-m);
 }
 
-.icon-size-l {
-  height: var(--icon-size-l);
-}
 
 
 /****************************
