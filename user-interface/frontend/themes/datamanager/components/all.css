@@ -219,51 +219,51 @@ Sections
 /*
 Dialog flavours
  */
-.simple-dialog {}
+.dialog-app {}
 
-.simple-dialog, .button-text, .button-text-primary {
+.dialog-app, .button-text, .button-text-primary {
   margin: 0;
 }
 
-.small-dialog {}
+.dialog-small {}
 
-.medium-dialog {}
+.dialog-medium {}
 
-.large-dialog {}
+.dialog-large {}
 
-.small-dialog::part(overlay) {
+.dialog-small::part(overlay) {
   width: var(--dialog-width-small);
   max-width: var(--dialog-width-max-small);
   height: var(--dialog-height-small);
   max-height: var(--dialog-height-max-small);
 }
 
-.medium-dialog::part(overlay) {
+.dialog-medium::part(overlay) {
   width: var(--dialog-width-medium);
   max-width: var(--dialog-width-max-medium);
   height: var(--dialog-height-medium);
   max-height: var(--dialog-height-max-medium);
 }
 
-.large-dialog::part(overlay) {
+.dialog-large::part(overlay) {
   width: var(--dialog-width-large);
   max-width: var(--dialog-width-max-large);
   height: var(--dialog-height-large);
   max-height: var(--dialog-height-max-large);
 }
 
-.simple-dialog::part(header)  {
+.dialog-app::part(header)  {
   padding: 0;
   border-bottom-style: solid;
   border-bottom-color: rgba(26, 56, 96, 0.1);
   border-bottom-width: 1px;
 }
 
-.simple-dialog::part(content)  {
+.dialog-app::part(content)  {
   padding: 0;
 }
 
-.simple-dialog::part(footer)  {
+.dialog-app::part(footer)  {
   padding: 0;
   background-color: white;
   border-top-style: solid;

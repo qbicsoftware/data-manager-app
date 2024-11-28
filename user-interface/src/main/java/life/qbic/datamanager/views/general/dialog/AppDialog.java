@@ -32,7 +32,7 @@ public class AppDialog extends Dialog {
   private transient UserInput userInput;
 
   private AppDialog(Style style) {
-    addClassName("simple-dialog");
+    addClassName("dialog-app");
     addClassNames(style.sizes());
     header = style.header();
     body = style.body();
@@ -229,7 +229,7 @@ public class AppDialog extends Dialog {
     }
 
     public String[] sizes() {
-      return new String[]{"small-dialog"};
+      return new String[]{"dialog-small"};
     }
   }
 
@@ -250,7 +250,7 @@ public class AppDialog extends Dialog {
     }
 
     public String[] sizes() {
-      return new String[]{"medium-dialog"};
+      return new String[]{"dialog-medium"};
     }
 
     @Override
@@ -301,7 +301,7 @@ public class AppDialog extends Dialog {
     }
 
     public String[] sizes() {
-      return new String[]{"large-dialog"};
+      return new String[]{"dialog-large"};
     }
   }
 
