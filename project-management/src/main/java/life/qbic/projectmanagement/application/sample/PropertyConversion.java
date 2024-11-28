@@ -20,6 +20,8 @@ import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
  */
 public class PropertyConversion {
 
+  private PropertyConversion(){}
+
   private static final String CONDITION_VARIABLE_LEVEL_UNIT_TEMPLATE = "%s: %s %s"; // <variable name>: <value> [unit]
 
   private static final String CONDITION_VARIABLE_LEVEL_NO_UNIT_TEMPLATE = "%s: %s"; // <variable name>: <value>
@@ -72,7 +74,7 @@ public class PropertyConversion {
     if (variableLevel.experimentalValue().unit().isPresent()) {
       return CONDITION_VARIABLE_LEVEL_UNIT_TEMPLATE.formatted(variableLevel.variableName().value(),
           variableLevel.experimentalValue().value(),
-          variableLevel.experimentalValue().unit().get());
+          variableLevel.experimentalValue().unit().orElseThrow());
     } else {
       return CONDITION_VARIABLE_LEVEL_NO_UNIT_TEMPLATE.formatted(
           variableLevel.variableName().value(), variableLevel.experimentalValue().value());
