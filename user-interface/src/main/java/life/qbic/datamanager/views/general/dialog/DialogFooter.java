@@ -22,12 +22,8 @@ public class DialogFooter extends Div {
     var cancelButton = createCancelButton(abortText);
     add(cancelButton, confirmButton);
     dialog.setFooter(this);
-    confirmButton.addClickListener(e -> {
-      dialog.confirm();
-    });
-    cancelButton.addClickListener(e -> {
-      dialog.cancel();
-    });
+    confirmButton.addClickListener(e -> dialog.confirm());
+    cancelButton.addClickListener(e -> dialog.cancel());
   }
 
   public static DialogFooter with(AppDialog dialog, String abortText, String confirmText) {

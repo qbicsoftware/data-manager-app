@@ -13,25 +13,21 @@ import java.util.Objects;
  */
 public class DialogHeader extends Div {
 
-  private final AppDialog dialog;
-
   private final Div iconContainer;
 
   private DialogHeader() {
-    dialog = null;
     iconContainer = null;
   }
 
   private DialogHeader(AppDialog dialog, String title) {
     addClassNames("flex-horizontal", "gap-04", "flex-align-items-center");
-    this.dialog = Objects.requireNonNull(dialog);
     this.iconContainer = new Div();
     iconContainer.setVisible(false);
     var textContainer = new Div();
     textContainer.setText(title);
     textContainer.addClassNames("heading-3", "dialog-header-text-color");
     add(iconContainer, textContainer);
-    dialog.setHeader(this);
+    Objects.requireNonNull(dialog).setHeader(this);
   }
 
   public static DialogHeader with(AppDialog dialog, String title) {

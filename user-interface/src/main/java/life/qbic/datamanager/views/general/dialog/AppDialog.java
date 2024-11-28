@@ -21,6 +21,8 @@ import life.qbic.datamanager.views.general.icon.IconFactory;
  */
 public class AppDialog extends Dialog {
 
+  public static final String PADDING_LEFT_RIGHT_07 = "padding-left-right-07";
+  public static final String PADDING_TOP_BOTTOM_05 = "padding-top-bottom-05";
   private final Div header;
   private final Div body;
   private final Div footer;
@@ -208,7 +210,7 @@ public class AppDialog extends Dialog {
     }
 
     private static String[] paddings() {
-      return new String[]{"padding-left-right-07", "padding-top-bottom-05"};
+      return new String[]{PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_05};
     }
 
     @Override
@@ -244,7 +246,7 @@ public class AppDialog extends Dialog {
     }
 
     private static String[] paddings() {
-      return new String[]{"padding-left-right-07", "padding-top-bottom-05"};
+      return new String[]{PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_05};
     }
 
     public String[] sizes() {
@@ -280,7 +282,7 @@ public class AppDialog extends Dialog {
     }
 
     private static String[] paddings() {
-      return new String[]{"padding-left-right-07", "padding-top-bottom-05"};
+      return new String[]{PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_05};
     }
 
     @Override
