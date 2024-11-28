@@ -38,6 +38,9 @@ public class AppDialog extends Dialog {
     super.getFooter().add(footer);
     super.getHeader().add(header);
     super.add(body);
+    setModal(true);
+    setCloseOnOutsideClick(false);
+    setCloseOnEsc(false);
   }
 
   /**
