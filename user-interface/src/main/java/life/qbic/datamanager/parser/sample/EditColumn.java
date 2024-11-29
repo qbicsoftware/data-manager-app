@@ -2,6 +2,8 @@ package life.qbic.datamanager.parser.sample;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.parser.Column;
 import life.qbic.datamanager.parser.ExampleProvider;
 import life.qbic.datamanager.parser.ExampleProvider.Helper;
@@ -78,6 +80,10 @@ public enum EditColumn implements Column {
     this.columnIndex = columnIndex;
     this.readOnly = readOnly;
     this.mandatory = mandatory;
+  }
+
+  public static Set<String> headerNames() {
+    return Arrays.stream(values()).map(EditColumn::headerName).collect(Collectors.toSet());
   }
 
   public String headerName() {

@@ -9,7 +9,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface QbicSampleRepository extends JpaRepository<Sample, SampleId> {
+public interface SampleJpaRepository extends JpaRepository<Sample, SampleId> {
 
   Collection<Sample> findAllByExperimentId(ExperimentId experimentId);
 
