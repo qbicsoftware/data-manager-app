@@ -1,7 +1,7 @@
 # Frontend components 
 Some visual aid of our custom view components structure.
 
-## Dialog window
+## App dialog
 
 ```mermaid
 ---
@@ -71,3 +71,63 @@ classDiagram
     }
 
 ```
+
+## Stepper dialog
+
+```mermaid
+
+classDiagram
+    
+    StepperDialogFooter ..|> StepperNavigation
+    StepperDialogFooter --> StepperDialog
+    StepperDialog --> StepperNavigation
+    DialogStep --|> Step
+    StepperDialog --> AppDialog
+    StepperDialog --> Step
+    
+    class Step {
+        <<interface>>
+        + name() String
+        + content() Component
+        + userInput() UserInput
+    }
+    
+    class AppDialog {
+        
+    }
+    
+    class DialogStep {
+        
+    }
+    
+    class StepperDialog {
+        AppDialog dialog
+        Step[] steps
+        + registerCancelAction(Action action)
+        + registerConfirmAction(Action action)
+        + setFooter(Component component)
+        + setHeader(Component component)
+        + cancel()
+        + confirm()
+        + next()
+        + previous()
+        
+    }
+    
+    class StepperNavigation {
+        <<interface>>
+        + first()
+        + intermediate()
+        + last()
+    }
+    
+    class StepperDialogFooter {
+        DialogFooter currentState
+        StepperDialog dialog
+        
+    }
+
+```
+
+
+
