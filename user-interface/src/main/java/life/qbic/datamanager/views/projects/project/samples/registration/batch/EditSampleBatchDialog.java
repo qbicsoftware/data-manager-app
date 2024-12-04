@@ -161,6 +161,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
           sampleInformationForExistingSample.analyte(),
           sampleInformationForExistingSample.analysisMethod(),
           sampleInformationForExistingSample.comment(),
+          sampleInformationForExistingSample.confoundingVariables(),
           experimentId,
           projectId
       ).orTimeout(1, TimeUnit.MINUTES);

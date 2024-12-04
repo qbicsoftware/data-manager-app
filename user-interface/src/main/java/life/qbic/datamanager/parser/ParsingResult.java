@@ -72,7 +72,7 @@ public record ParsingResult(Map<String, Integer> columnMap, List<Row> rows) {
   }
 
   public String getValueOrDefault(int rowIndex, String columnHeader, String defaultValue) {
-    var key = Sanitizer.headerEncoder(columnHeader);
+    var key = columnHeader;
     if (!columnMap().containsKey(key)) {
       return defaultValue;
     }
@@ -81,7 +81,7 @@ public record ParsingResult(Map<String, Integer> columnMap, List<Row> rows) {
   }
 
   public Optional<String> getValue(int rowIndex, String columnHeader) {
-    var key = Sanitizer.headerEncoder(columnHeader);
+    var key = columnHeader;
     if (!columnMap().containsKey(key)) {
       return Optional.empty();
     }

@@ -1,6 +1,9 @@
 package life.qbic.projectmanagement.application.confounding;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -84,6 +87,35 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
     ConfoundingVariableLevelData savedLevelData = levelRepository.save(projectId, constructedLevel);
     return new ConfoundingVariableLevel(new VariableReference(savedLevelData.getVariableId()),
         new SampleReference(savedLevelData.getSampleId()), savedLevelData.getValue());
+  }
+
+  @Override
+  public List<ConfoundingVariableLevel> setVariableLevelsForSample(String projectId,
+      ExperimentReference experiment, SampleReference sampleReference,
+      Map<VariableReference, String> levels) {
+    List<Long> variableIds = levels.keySet().stream().map(VariableReference::id).toList();
+    List<ConfoundingVariableLevel> savedLevels = new ArrayList<>();
+    if (!variableRepository.existsAllById(projectId, variableIds)) {
+      throw new IllegalArgumentException(
+          "Not all variables exist in the database. Provided variables: " + levels.keySet());
+    }
+    for (Entry<VariableReference, String> levelEntry : levels.entrySet()) {
+      log.debug("Adding level %s for variable %s to sample %s".formatted(levelEntry.getValue(),
+          levelEntry.getKey(), sampleReference.id()));
+      Optional<ConfoundingVariableLevelData> existingLevel = levelRepository.findVariableLevelOfSample(
+          projectId, sampleReference.id(), levelEntry.getKey().id());
+      var constructedLevel = existingLevel.map(
+          it -> new ConfoundingVariableLevelData(it.getId(), it.getVariableId(), it.getSampleId(),
+              levelEntry.getValue())).orElse(
+          new ConfoundingVariableLevelData(null, levelEntry.getKey().id(), sampleReference.id(),
+              levelEntry.getValue()));
+      ConfoundingVariableLevelData savedLevelData = levelRepository.save(projectId,
+          constructedLevel);
+      savedLevels.add(
+          new ConfoundingVariableLevel(new VariableReference(savedLevelData.getVariableId()),
+              new SampleReference(savedLevelData.getSampleId()), savedLevelData.getValue()));
+    }
+    return savedLevels;
   }
 
   @Override

@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.infrastructure.confounding;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableData;
@@ -34,6 +35,11 @@ public class ConfoundingVariableRepositoryImpl implements ConfoundingVariableRep
   @Override
   public List<ConfoundingVariableData> findAllById(String projectId, Iterable<Long> longs) {
     return jpaRepository.findAllById(longs);
+  }
+
+  @Override
+  public boolean existsAllById(String projectId, Collection<Long> longs) {
+    return jpaRepository.existsDistinctByIdIsIn(longs);
   }
 
   @Override

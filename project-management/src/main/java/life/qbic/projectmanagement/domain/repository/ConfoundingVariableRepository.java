@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.domain.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableData;
@@ -24,6 +25,9 @@ public interface ConfoundingVariableRepository {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   List<ConfoundingVariableData> findAllById(String projectId, Iterable<Long> longs);
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  boolean existsAllById(String projectId, Collection<Long> longs);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   <S extends ConfoundingVariableData> S save(String projectId, S entity);

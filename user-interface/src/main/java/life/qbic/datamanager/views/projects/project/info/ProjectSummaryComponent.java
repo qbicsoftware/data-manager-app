@@ -625,10 +625,10 @@ public class ProjectSummaryComponent extends PageArea {
 
   private List<Tag> buildTags(ProjectOverview projectInformation) {
     var tags = new ArrayList<Tag>();
-    if (projectInformation.ngsMeasurementCount() != null) {
+    if (projectInformation.ngsMeasurementCount() > 0) {
       tags.add(TagFactory.forMeasurement(GENOMICS));
     }
-    if (projectInformation.pxpMeasurementCount() != null) {
+    if (projectInformation.pxpMeasurementCount() > 0) {
       tags.add(TagFactory.forMeasurement(PROTEOMICS));
     }
     return tags;

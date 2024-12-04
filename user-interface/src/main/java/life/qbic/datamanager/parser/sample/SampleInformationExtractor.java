@@ -17,8 +17,6 @@ import life.qbic.datamanager.parser.Sanitizer;
  * @since 1.5.0
  */
 public class SampleInformationExtractor {
-  //TODO extract confounding variables too
-
   /**
    * Extract information for new samples from a parsing result.
    *

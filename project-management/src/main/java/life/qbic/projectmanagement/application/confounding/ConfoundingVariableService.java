@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.confounding;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -157,6 +158,22 @@ public interface ConfoundingVariableService {
   ConfoundingVariableLevel setVariableLevelForSample(String projectId,
       ExperimentReference experiment, SampleReference sampleReference,
       VariableReference variableReference, String level);
+
+  /**
+   * Set the level a sample has for a confounding variable.
+   * <p>
+   * Overwrites an existing level of set sample in the variable, if present.
+   *
+   * @param projectId       the identifier of the project
+   * @param experiment      the experiment containing the variable
+   * @param sampleReference the sample for which to set the level
+   * @param levels          the variable levels to set
+   * @return the created confounding variable level
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  List<ConfoundingVariableLevel> setVariableLevelsForSample(String projectId,
+      ExperimentReference experiment, SampleReference sampleReference,
+      Map<VariableReference, String> levels);
 
   /**
    * Deletes a confounding variable and all information about the variable.

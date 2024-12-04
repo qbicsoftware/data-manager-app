@@ -26,7 +26,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 
 /**
@@ -70,12 +69,10 @@ public class SampleRepositoryImpl implements SampleRepository {
       Collection<Sample> samples) {
     String commaSeperatedSampleIds = buildCommaSeparatedSampleIds(
         samples.stream().map(Sample::sampleId).toList());
-    Object savepoint = TransactionAspectSupport.currentTransactionStatus().createSavepoint();
     List<Sample> savedSamples = this.sampleJpaRepository.saveAll(samples);
     try {
       sampleDataRepository.addSamplesToProject(project, savedSamples);
-    } catch (Exception e) {
-      TransactionAspectSupport.currentTransactionStatus().rollbackToSavepoint(savepoint);
+    } catch (RuntimeException e) {
       throw new ApplicationException(
           "The samples:" + commaSeperatedSampleIds + "could not be stored in openBIS", e);
     }
@@ -100,18 +97,15 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public void deleteAll(Project project,
       Collection<SampleId> samples) {
-    Object savepoint = TransactionAspectSupport.currentTransactionStatus().createSavepoint();
     List<SampleCode> sampleCodes = sampleJpaRepository.findAllById(samples)
         .stream().map(Sample::sampleCode).toList();
     this.sampleJpaRepository.deleteAllById(samples);
     try {
       sampleDataRepository.deleteAll(project.getProjectCode(), sampleCodes);
     } catch (SampleNotDeletedException sampleNotDeletedException) {
-      TransactionAspectSupport.currentTransactionStatus().rollbackToSavepoint(savepoint);
       throw new ApplicationException("Could not delete " + buildCommaSeparatedSampleIds(samples),
           sampleNotDeletedException, ErrorCode.DATA_ATTACHED_TO_SAMPLES, ErrorParameters.empty());
     } catch (Exception e) {
-      TransactionAspectSupport.currentTransactionStatus().rollbackToSavepoint(savepoint);
       throw new ApplicationException("Could not delete " + buildCommaSeparatedSampleIds(samples),
           e);
     }
