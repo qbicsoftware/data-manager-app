@@ -9,7 +9,9 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
@@ -18,6 +20,9 @@ import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
+import life.qbic.datamanager.views.general.dialog.stepper.Step;
+import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
+import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
@@ -50,6 +55,7 @@ public class ComponentDemo extends Div {
     add(dialogShowCase(AppDialog.medium(), "Medium Dialog Type"));
     add(dialogShowCase(AppDialog.large(), "Large Dialog Type"));
     add(dialogSectionShowCase());
+    add(stepperDialogShowCase(threeSteps(), "Three steps example"));
   }
 
   private static Div dialogSectionShowCase() {
@@ -107,6 +113,53 @@ public class ComponentDemo extends Div {
     });
 
     return container;
+  }
+
+  private static Div stepperDialogShowCase(List<Step> steps, String dialogTitle) {
+    Div content = new Div();
+    Div title = new Div("Stepper Dialog");
+    title.addClassName(HEADING_2);
+    Button showDialog = new Button("Show Stepper");
+    AppDialog dialog = AppDialog.medium();
+
+    DialogHeader.with(dialog, dialogTitle);
+    StepperDialog stepperDialog = StepperDialog.create(dialog, steps);
+    StepperDialogFooter.with(stepperDialog);
+
+    showDialog.addClickListener(listener -> stepperDialog.open());
+
+    content.add(title);
+    content.add(showDialog);
+    content.addClassNames("flex-vertical", "gap-04");
+    return content;
+  }
+
+  private static List<Step> threeSteps() {
+    List<Step> steps = new ArrayList<>();
+    for (int step= 0; step < 3; step++) {
+      int stepNumber = step;
+      steps.add(new Step() {
+
+        final ExampleUserInput userInput = new ExampleUserInput("example step " + stepNumber );
+
+
+        @Override
+        public String name() {
+          return "Step " + stepNumber;
+        }
+
+        @Override
+        public com.vaadin.flow.component.Component component() {
+          return userInput;
+        }
+
+        @Override
+        public UserInput userInput() {
+          return userInput;
+        }
+      });
+    }
+    return steps;
   }
 
   private static Div dialogShowCase(AppDialog dialog, String dialogType) {

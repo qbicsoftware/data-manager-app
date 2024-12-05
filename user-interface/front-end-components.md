@@ -107,6 +107,7 @@ classDiagram
         + registerConfirmAction(Action action)
         + setFooter(Component component)
         + setHeader(Component component)
+        + setNavigation(StepperNavigation navigation)
         + cancel()
         + confirm()
         + next()
