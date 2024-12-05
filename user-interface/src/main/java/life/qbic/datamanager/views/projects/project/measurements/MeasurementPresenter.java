@@ -51,7 +51,7 @@ public class MeasurementPresenter {
         measurement.lcmsMethod(),
         measurement.labelType(),
         specificMeasurementMetadata.label(),
-        "");
+        specificMeasurementMetadata.comment());
   }
 
   private static NGSMeasurementEntry convertNGSMeasurement(NGSMeasurement measurement,
