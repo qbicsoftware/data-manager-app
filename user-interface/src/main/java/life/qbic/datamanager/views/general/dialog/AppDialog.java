@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 
 /**
@@ -127,7 +128,7 @@ public class AppDialog extends Dialog {
       validation.ifPassed(confirmDialogAction);
     } else {
       // no user input was defined, so nothing to validate
-      confirmDialogAction.execute();
+      Optional.ofNullable(confirmDialogAction).ifPresent(DialogAction::execute);
     }
   }
 

@@ -7,12 +7,8 @@ package life.qbic.datamanager.views.general.dialog.stepper;
  *
  * @since <version tag>
  */
-public interface StepperNavigation {
+public interface NavigationListener {
 
-  void first();
-
-  void intermediate();
-
-  void last();
+  void onNavigationChange(NavigationInformation navigationInformation);
 
 }

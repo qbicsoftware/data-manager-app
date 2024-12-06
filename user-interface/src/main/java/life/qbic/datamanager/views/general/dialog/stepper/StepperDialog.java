@@ -17,13 +17,14 @@ public class StepperDialog {
 
   private final AppDialog dialog;
   private final List<Step> steps;
-  private StepperNavigation navigation;
+  private List<NavigationListener> navigationListeners;
   private final int numberOfSteps;
   private int currentStep;
 
   private StepperDialog(AppDialog dialog, List<Step> steps) {
     this.dialog = Objects.requireNonNull(dialog);
     this.steps = new ArrayList<>(Objects.requireNonNull(steps));
+    this.navigationListeners = new ArrayList<>();
     if (steps.isEmpty()) {
       throw new IllegalArgumentException("Steps cannot be empty");
     }
@@ -36,21 +37,20 @@ public class StepperDialog {
     return new StepperDialog(dialog, steps);
   }
 
-  public void setNavigation(StepperNavigation navigation) {
-    this.navigation = Objects.requireNonNull(navigation);
-    updateNavigation(navigation, currentStep, numberOfSteps);
+  public void registerNavigationListener(NavigationListener listener) {
+    navigationListeners.add(listener);
   }
 
-  private static void updateNavigation(StepperNavigation navigation, int currentStep, int numberOfSteps) {
-    if (isIntermediateStep(currentStep, numberOfSteps)) {
-      navigation.intermediate();
-      return;
-    }
-    if (currentStep == numberOfSteps) {
-      navigation.last();
-    } else {
-      navigation.first();
-    }
+  public NavigationInformation currentNavigation() {
+    return navigationInformation();
+  }
+
+  private NavigationInformation navigationInformation() {
+    return new NavigationInformation(currentStep, numberOfSteps);
+  }
+
+  private static void informNavigationListeners(List<NavigationListener> listeners, NavigationInformation information) {
+    listeners.forEach(listener -> listener.onNavigationChange(information));
   }
 
   private static boolean hasNextStep(int currentStep, int numberOfSteps) {
@@ -61,15 +61,11 @@ public class StepperDialog {
     return currentStep > 1;
   }
 
-  private static boolean isIntermediateStep(int currentStep, int numberOfSteps) {
-    return hasNextStep(currentStep, numberOfSteps) && hasPreviousStep(currentStep);
-  }
-
   public void next() {
     if (hasNextStep(currentStep, numberOfSteps)) {
       currentStep++;
       setCurrentStep(steps.get(currentStep - 1), dialog);
-      updateNavigation(navigation, currentStep, numberOfSteps);
+      informNavigationListeners(navigationListeners, currentNavigation());
     }
   }
 
@@ -77,7 +73,7 @@ public class StepperDialog {
     if (hasPreviousStep(currentStep)) {
       currentStep--;
       setCurrentStep(steps.get(currentStep - 1), dialog);
-      updateNavigation(navigation, currentStep, numberOfSteps);
+      informNavigationListeners(navigationListeners, currentNavigation());
     }
   }
 

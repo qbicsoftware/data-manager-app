@@ -11,44 +11,51 @@ import life.qbic.datamanager.views.general.dialog.ButtonFactory;
  *
  * @since <version tag>
  */
-public class StepperDialogFooter implements StepperNavigation {
+public class StepperDialogFooter implements NavigationListener {
 
   private final StepperDialog dialog;
 
-  private Div currentFooter;
-
-  private FooterFactory footerFactory = new FooterFactory();
+  private final FooterFactory footerFactory = new FooterFactory();
 
   private StepperDialogFooter(StepperDialog dialog) {
     this.dialog = dialog;
-    dialog.setNavigation(this);
+    dialog.registerNavigationListener(this);
+    onNavigationChange(dialog.currentNavigation()); // we want to init the footer properly.
   }
 
   public static StepperDialogFooter with(StepperDialog dialog) {
     return new StepperDialogFooter(Objects.requireNonNull(dialog));
   }
 
-
-  @Override
-  public void first() {
-    System.out.println("Footer was notified to be first");
-    updateFooter(dialog, footerFactory.createFirst(dialog));
-  }
-
-  @Override
-  public void intermediate() {
-    System.out.println("Footer was notified to be intermediate");
-    updateFooter(dialog, footerFactory.createIntermediate(dialog));
-  }
-
-  @Override
-  public void last() {
-    System.out.println("Footer was notified to be last");
-    updateFooter(dialog, footerFactory.createLast(dialog));
-  }
-
   private static void updateFooter(StepperDialog dialog, Div footer) {
     dialog.setFooter(footer);
+  }
+
+  @Override
+  public void onNavigationChange(NavigationInformation navigationInformation) {
+    int currentStep = navigationInformation.currentStep();
+    int totalSteps = navigationInformation.totalSteps();
+    if (isIntermediateStep(currentStep, totalSteps)) {
+      updateFooter(dialog,footerFactory.createIntermediate(dialog));
+      return;
+    }
+    if (currentStep == totalSteps) {
+      updateFooter(dialog,footerFactory.createLast(dialog));
+    } else {
+      updateFooter(dialog, footerFactory.createFirst(dialog));
+    }
+  }
+
+  private static boolean hasNextStep(int currentStep, int numberOfSteps) {
+    return currentStep < numberOfSteps;
+  }
+
+  private static boolean hasPreviousStep(int currentStep) {
+    return currentStep > 1;
+  }
+
+  private static boolean isIntermediateStep(int currentStep, int numberOfSteps) {
+    return hasNextStep(currentStep, numberOfSteps) && hasPreviousStep(currentStep);
   }
 
   private static class FooterFactory {
