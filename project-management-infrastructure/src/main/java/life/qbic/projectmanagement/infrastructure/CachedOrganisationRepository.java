@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.domain.Organisation;
-import org.springframework.stereotype.Component;
 
 /**
  * <b>Cached Organisation Repository</b>
@@ -35,7 +34,6 @@ import org.springframework.stereotype.Component;
  *
  * @since 1.0.0s
  */
-@Component
 public class CachedOrganisationRepository implements OrganisationRepository {
 
   private static final Logger log = logger(CachedOrganisationRepository.class);
@@ -52,7 +50,6 @@ public class CachedOrganisationRepository implements OrganisationRepository {
   public CachedOrganisationRepository(int cacheSize) {
     this.configuredCacheSize = cacheSize;
   }
-
 
   public CachedOrganisationRepository() {
     this.configuredCacheSize = DEFAULT_CACHE_SIZE;

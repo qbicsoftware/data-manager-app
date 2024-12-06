@@ -46,9 +46,9 @@ public class PersonalAccessTokenMain extends Main implements BeforeEnterObserver
   private static final long serialVersionUID = -7876265792987169498L;
   private static final Logger log = LoggerFactory.logger(PersonalAccessTokenMain.class);
   private final PersonalAccessTokenComponent personalAccessTokenComponent;
-  private final PersonalAccessTokenService personalAccessTokenService;
-  private final AuthenticationToUserIdTranslationService userIdTranslator;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final transient PersonalAccessTokenService personalAccessTokenService;
+  private final transient AuthenticationToUserIdTranslationService userIdTranslator;
+  private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
 
   public PersonalAccessTokenMain(PersonalAccessTokenService personalAccessTokenService,
       PersonalAccessTokenComponent personalAccessTokenComponent,

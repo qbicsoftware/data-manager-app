@@ -23,7 +23,7 @@ import life.qbic.datamanager.views.general.PageArea;
 public class OfferListComponent extends PageArea {
 
   private final VirtualList<OfferInfo> delegateList;
-  private final List<OfferInfo> offers;
+  private final transient List<OfferInfo> offers;
 
   public OfferListComponent() {
     offers = new ArrayList<>();

@@ -62,14 +62,16 @@ public class ProjectAccessComponent extends PageArea {
   private static final Logger log = logger(ProjectAccessMain.class);
   @Serial
   private static final long serialVersionUID = 6832688939965353201L;
+  public static final String INVALID_USER_REMOVAL = "Invalid user removal";
+  public static final String INVALID_ROLE_EDIT = "Invalid role edit";
 
   private final transient ProjectAccessService projectAccessService;
   private final transient UserInformationService userInformationService;
-  private final UserPermissions userPermissions;
+  private final transient UserPermissions userPermissions;
   private final Grid<ProjectUser> projectUserGrid;
   private final Div header;
   private final Span buttonBar;
-  private final AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
+  private final transient AuthenticationToUserIdTranslator authenticationToUserIdTranslator;
   private Context context;
 
   protected ProjectAccessComponent(
@@ -204,15 +206,15 @@ public class ProjectAccessComponent extends PageArea {
     // if the user doesn't have the correct role or tries to remove himself/the project owner
     Button removeButton = new Button("Remove", clickEvent -> {
       if (isCurrentUser(projectUser)) {
-        displayError("Invalid user removal", "You can't remove yourself from a project");
+        displayError(INVALID_USER_REMOVAL, "You can't remove yourself from a project");
         return;
       }
       if (projectUser.projectRole() == ProjectRole.OWNER) {
-        displayError("Invalid user removal", "You can't remove the owner of a project");
+        displayError(INVALID_USER_REMOVAL, "You can't remove the owner of a project");
         return;
       }
       if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-        displayError("Invalid user removal",
+        displayError(INVALID_USER_REMOVAL,
             "You don't have permission to remove the user from this project");
         return;
       }
@@ -228,15 +230,15 @@ public class ProjectAccessComponent extends PageArea {
     // if the user doesn't have the correct role or tries to edit himself/the project owner
     Button editButton = new Button("Edit", clickEvent -> {
       if (isCurrentUser(projectUser)) {
-        displayError("Invalid role edit", "You can't change your own project role");
+        displayError(INVALID_ROLE_EDIT, "You can't change your own project role");
         return;
       }
       if (projectUser.projectRole() == ProjectRole.OWNER) {
-        displayError("Invalid role edit", "You can't change the owner of this project");
+        displayError(INVALID_ROLE_EDIT, "You can't change the owner of this project");
         return;
       }
       if (!userPermissions.changeProjectAccess(context.projectId().orElseThrow())) {
-        displayError("Invalid role edit",
+        displayError(INVALID_ROLE_EDIT,
             "You don't have permission to change the role of this collaborator");
         return;
       }

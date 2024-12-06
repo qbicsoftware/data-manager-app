@@ -33,6 +33,8 @@ import java.util.Properties;
  */
 public class PropertyFileParser {
 
+  private PropertyFileParser() {}
+
   /**
    * Parses a file for defined properties and resolves present placeholder against visible
    * environment variables.
@@ -46,7 +48,10 @@ public class PropertyFileParser {
     requireNonNull(file, "File must not be null");
 
     var properties = new Properties();
-    properties.load(new FileInputStream(file));
+
+    try (var fileInputStream = new FileInputStream(file)) {
+      properties.load(fileInputStream);
+    }
 
     properties = resolvePlaceholders(properties);
 
