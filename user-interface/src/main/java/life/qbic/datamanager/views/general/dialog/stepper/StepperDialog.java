@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
+import org.springframework.lang.NonNull;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -33,7 +34,7 @@ public class StepperDialog {
     setCurrentStep(steps.get(0), dialog);
   }
 
-  public static StepperDialog create(AppDialog dialog, List<Step> steps) {
+  public static StepperDialog create(@NonNull AppDialog dialog, @NonNull List<Step> steps) {
     return new StepperDialog(dialog, steps);
   }
 
@@ -47,6 +48,11 @@ public class StepperDialog {
 
   private NavigationInformation navigationInformation() {
     return new NavigationInformation(currentStep, numberOfSteps);
+  }
+
+  public void setStepper(@NonNull Component component) {
+    dialog.setNavigation(Objects.requireNonNull(component));
+    dialog.displayNavigation();
   }
 
   private static void informNavigationListeners(List<NavigationListener> listeners, NavigationInformation information) {
