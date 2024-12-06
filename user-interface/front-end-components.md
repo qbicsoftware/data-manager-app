@@ -78,12 +78,15 @@ classDiagram
 
 classDiagram
     
-    StepperDialogFooter ..|> StepperNavigation
+    StepperDialogFooter ..|> NavigationListener
     StepperDialogFooter --> StepperDialog
-    StepperDialog --> StepperNavigation
-    DialogStep --|> Step
+    StepperDialog --> NavigationListener
+    DialogStep ..|> Step
     StepperDialog --> AppDialog
     StepperDialog --> Step
+    StepDisplay ..|> NavigationListener
+    StepDisplay --> StepperDialog
+    
     
     class Step {
         <<interface>>
@@ -105,9 +108,10 @@ classDiagram
         Step[] steps
         + registerCancelAction(Action action)
         + registerConfirmAction(Action action)
+        + registerNavigationListener(NavigationListener listener)
         + setFooter(Component component)
         + setHeader(Component component)
-        + setNavigation(StepperNavigation navigation)
+        + setStepDisplay(Component component)
         + cancel()
         + confirm()
         + next()
@@ -115,11 +119,13 @@ classDiagram
         
     }
     
-    class StepperNavigation {
+    class NavigationListener {
         <<interface>>
-        + first()
-        + intermediate()
-        + last()
+        + onNavigationUpdate(NavigationInfo info)
+    }
+    
+    class StepDisplay {
+        StepperDialog dialog
     }
     
     class StepperDialogFooter {
