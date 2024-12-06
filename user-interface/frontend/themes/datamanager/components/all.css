@@ -275,6 +275,19 @@ Dialog flavours
   color: var(--lumo-header-text-color);
 }
 
+.footer {
+  justify-content: flex-end;
+}
+
+.footer-intermediate {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.full-width {
+  width: 100%;
+}
+
 /***************************
 Buttons
  **************************/
