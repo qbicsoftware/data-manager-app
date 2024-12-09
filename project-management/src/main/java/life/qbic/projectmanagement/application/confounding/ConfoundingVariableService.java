@@ -164,10 +164,11 @@ public interface ConfoundingVariableService {
    * <p>
    * Overwrites an existing level of set sample in the variable, if present.
    *
-   * @param projectId       the identifier of the project
-   * @param experiment      the experiment containing the variable
-   * @param sampleReference the sample for which to set the level
-   * @param levels          the variable levels to set
+   * @param projectId         the identifier of the project
+   * @param experiment        the experiment containing the variable
+   * @param sampleReference   the sample for which to set the level
+   * @param variableReference the variable for which to set the level
+   * @param level             the value of the level
    * @return the created confounding variable level
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")

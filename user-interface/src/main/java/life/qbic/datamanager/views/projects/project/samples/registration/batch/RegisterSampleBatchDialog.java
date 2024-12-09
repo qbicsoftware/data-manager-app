@@ -146,6 +146,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     var validationTasks = CompletableFuture
         //allOf makes sure exceptional state is transferred to outer completable future.
         .allOf(validations.toArray(new CompletableFuture[0]))
+        .orTimeout(5, TimeUnit.MINUTES)
         .thenApply(v -> validations.stream()
             .map(CompletableFuture::join)
             .toList())
