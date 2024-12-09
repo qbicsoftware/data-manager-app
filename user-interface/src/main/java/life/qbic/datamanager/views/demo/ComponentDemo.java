@@ -154,7 +154,7 @@ public class ComponentDemo extends Div {
   private static List<Step> threeSteps() {
     List<Step> steps = new ArrayList<>();
     for (int step= 0; step < 3; step++) {
-      int stepNumber = step;
+      int stepNumber = step + 1;
       steps.add(new Step() {
 
         final ExampleUserInput userInput = new ExampleUserInput("example step " + stepNumber );
