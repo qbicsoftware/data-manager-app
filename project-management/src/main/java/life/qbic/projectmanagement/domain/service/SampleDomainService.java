@@ -10,6 +10,8 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -39,6 +41,7 @@ import org.springframework.stereotype.Service;
 public class SampleDomainService {
 
   private final SampleRepository sampleRepository;
+  private final Logger log = LoggerFactory.logger(SampleDomainService.class);
 
   @Autowired
   public SampleDomainService(SampleRepository sampleRepository) {
@@ -60,14 +63,18 @@ public class SampleDomainService {
       var sample = Sample.create(sampleCode, sampleRegistrationRequest);
       samplesToRegister.add(sample);
     });
-    Result<Collection<Sample>, ResponseCode> result = this.sampleRepository.addAll(project,
-        samplesToRegister);
-    if(result.isValue()) {
+    Collection<Sample> registeredSamples;
+    try {
+      registeredSamples = this.sampleRepository.addAll(project,
+          samplesToRegister);
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.fromError(ResponseCode.REGISTRATION_FAILED);
+    }
+
       domainEventsCache.forEach(
           domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
-    }
-    result.onError(Result::fromError);
-    return result;
+    return Result.fromValue(registeredSamples);
   }
 
   public void updateSamples(Project project, Collection<SampleUpdateRequest> updatedSamples) {
