@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 
 /**
@@ -22,8 +23,12 @@ import life.qbic.datamanager.views.general.icon.IconFactory;
 public class AppDialog extends Dialog {
 
   public static final String PADDING_LEFT_RIGHT_07 = "padding-left-right-07";
+  public static final String PADDING_TOP_BOTTOM_04 = "padding-top-bottom-04";
   public static final String PADDING_TOP_BOTTOM_05 = "padding-top-bottom-05";
+  public static final String BORDER_BOTTOM_SOLID = "border-bottom-solid";
+  public static final String FULL_WIDTH = "full-width";
   private final Div header;
+  private final Div navigation;
   private final Div body;
   private final Div footer;
 
@@ -37,12 +42,16 @@ public class AppDialog extends Dialog {
     header = style.header();
     body = style.body();
     footer = style.footer();
+    navigation = style.navigation();
     super.getFooter().add(footer);
     super.getHeader().add(header);
+    super.add(navigation);
     super.add(body);
     setModal(true);
     setCloseOnOutsideClick(false);
     setCloseOnEsc(false);
+    // by default, the navigation is not visible.
+    navigation.setVisible(false);
   }
 
   /**
@@ -78,6 +87,20 @@ public class AppDialog extends Dialog {
     return new AppDialog(new LayoutLarge());
   }
 
+  private static AppDialog createConfirmDialog(DialogAction onConfirmAction) {
+    var confirmDialog = AppDialog.small();
+    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog,
+        "Discard changes?",
+        IconFactory.warningIcon());
+    DialogBody.withoutUserInput(confirmDialog, new Div(
+        "By aborting the editing process and closing the dialog, you will loose all information entered."));
+    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
+        "Discard changes");
+    confirmDialog.registerConfirmAction(onConfirmAction);
+    confirmDialog.registerCancelAction(confirmDialog::close);
+    return confirmDialog;
+  }
+
   public void setHeader(Component header) {
     this.header.removeAll();
     this.header.add(header);
@@ -108,7 +131,7 @@ public class AppDialog extends Dialog {
       validation.ifPassed(confirmDialogAction);
     } else {
       // no user input was defined, so nothing to validate
-      confirmDialogAction.execute();
+      Optional.ofNullable(confirmDialogAction).ifPresent(DialogAction::execute);
     }
   }
 
@@ -127,15 +150,34 @@ public class AppDialog extends Dialog {
     }
   }
 
-  private static AppDialog createConfirmDialog(DialogAction onConfirmAction) {
-    var confirmDialog = AppDialog.small();
-    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog, "Discard changes?",
-        IconFactory.warningIcon());
-    DialogBody.withoutUserInput(confirmDialog, new Div("By aborting the editing process and closing the dialog, you will loose all information entered."));
-    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing", "Discard changes" );
-    confirmDialog.registerConfirmAction(onConfirmAction);
-    confirmDialog.registerCancelAction(confirmDialog::close);
-    return confirmDialog;
+  /**
+   * Sets a navigation component that provides the user with contextual information in a more
+   * complex user input scenario.
+   *
+   * @param navigation a navigation component that will be placed between dialog header and body
+   * @since 1.7.0
+   */
+  public void setNavigation(Component navigation) {
+    this.navigation.removeAll();
+    this.navigation.add(navigation);
+  }
+
+  /**
+   * Displays the navigation element between dialog header and body.
+   *
+   * @since 1.7.0
+   */
+  public void displayNavigation() {
+    navigation.setVisible(true);
+  }
+
+  /**
+   * Hides the navigation element between dialog header and body.
+   *
+   * @since 1.7.0
+   */
+  public void hideNavigation() {
+    navigation.setVisible(false);
   }
 
   /**
@@ -190,6 +232,8 @@ public class AppDialog extends Dialog {
 
     Div header();
 
+    Div navigation();
+
     Div body();
 
     Div footer();
@@ -200,13 +244,16 @@ public class AppDialog extends Dialog {
   private static class LayoutSmall implements Style {
 
     Div header = new Div();
+    Div navigation = new Div();
     Div body = new Div();
     Div footer = new Div();
 
     LayoutSmall() {
       header.addClassNames(paddings());
+      navigation.addClassNames(PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_04, BORDER_BOTTOM_SOLID);
       body.addClassNames(paddings());
       footer.addClassNames(paddings());
+      footer.addClassName(FULL_WIDTH);
     }
 
     private static String[] paddings() {
@@ -216,6 +263,11 @@ public class AppDialog extends Dialog {
     @Override
     public Div header() {
       return header;
+    }
+
+    @Override
+    public Div navigation() {
+      return navigation;
     }
 
     @Override
@@ -236,13 +288,16 @@ public class AppDialog extends Dialog {
   private static class LayoutMedium implements Style {
 
     Div header = new Div();
+    Div navigation = new Div();
     Div body = new Div();
     Div footer = new Div();
 
     LayoutMedium() {
       header.addClassNames(paddings());
       body.addClassNames(paddings());
+      navigation.addClassNames(PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_04, BORDER_BOTTOM_SOLID);
       footer.addClassNames(paddings());
+      footer.addClassName(FULL_WIDTH);
     }
 
     private static String[] paddings() {
@@ -259,6 +314,11 @@ public class AppDialog extends Dialog {
     }
 
     @Override
+    public Div navigation() {
+      return navigation;
+    }
+
+    @Override
     public Div body() {
       return body;
     }
@@ -272,13 +332,16 @@ public class AppDialog extends Dialog {
   private static class LayoutLarge implements Style {
 
     Div header = new Div();
+    Div navigation = new Div();
     Div body = new Div();
     Div footer = new Div();
 
     LayoutLarge() {
       header.addClassNames(paddings());
+      navigation.addClassNames(PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_04, BORDER_BOTTOM_SOLID);
       body.addClassNames(paddings());
       footer.addClassNames(paddings());
+      footer.addClassName(FULL_WIDTH);
     }
 
     private static String[] paddings() {
@@ -288,6 +351,11 @@ public class AppDialog extends Dialog {
     @Override
     public Div header() {
       return header;
+    }
+
+    @Override
+    public Div navigation() {
+      return navigation;
     }
 
     @Override
