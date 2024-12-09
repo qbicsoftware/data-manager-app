@@ -21,7 +21,7 @@ import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.dialog.stepper.Step;
-import life.qbic.datamanager.views.general.dialog.stepper.StepDisplay;
+import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.icon.IconFactory;
@@ -127,7 +127,7 @@ public class ComponentDemo extends Div {
     StepperDialog stepperDialog = StepperDialog.create(dialog, steps);
     StepperDialogFooter.with(stepperDialog);
 
-    StepDisplay.with(stepperDialog, steps.stream().map(Step::name).toList());
+    StepperDisplay.with(stepperDialog, steps.stream().map(Step::name).toList());
 
     showDialog.addClickListener(listener -> stepperDialog.open());
 

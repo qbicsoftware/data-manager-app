@@ -23,6 +23,7 @@ import life.qbic.datamanager.views.general.icon.IconFactory;
 public class AppDialog extends Dialog {
 
   public static final String PADDING_LEFT_RIGHT_07 = "padding-left-right-07";
+  public static final String PADDING_TOP_BOTTOM_04 = "padding-top-bottom-04";
   public static final String PADDING_TOP_BOTTOM_05 = "padding-top-bottom-05";
   public static final String BORDER_BOTTOM_SOLID = "border-bottom-solid";
   public static final String FULL_WIDTH = "full-width";
@@ -249,8 +250,7 @@ public class AppDialog extends Dialog {
 
     LayoutSmall() {
       header.addClassNames(paddings());
-      navigation.addClassNames(paddings());
-      navigation.addClassName(BORDER_BOTTOM_SOLID);
+      navigation.addClassNames(PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_04, BORDER_BOTTOM_SOLID);
       body.addClassNames(paddings());
       footer.addClassNames(paddings());
       footer.addClassName(FULL_WIDTH);
@@ -295,8 +295,7 @@ public class AppDialog extends Dialog {
     LayoutMedium() {
       header.addClassNames(paddings());
       body.addClassNames(paddings());
-      navigation.addClassNames(paddings());
-      navigation.addClassName(BORDER_BOTTOM_SOLID);
+      navigation.addClassNames(PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_04, BORDER_BOTTOM_SOLID);
       footer.addClassNames(paddings());
       footer.addClassName(FULL_WIDTH);
     }
@@ -339,8 +338,7 @@ public class AppDialog extends Dialog {
 
     LayoutLarge() {
       header.addClassNames(paddings());
-      navigation.addClassNames(paddings());
-      navigation.addClassName(BORDER_BOTTOM_SOLID);
+      navigation.addClassNames(PADDING_LEFT_RIGHT_07, PADDING_TOP_BOTTOM_04, BORDER_BOTTOM_SOLID);
       body.addClassNames(paddings());
       footer.addClassNames(paddings());
       footer.addClassName(FULL_WIDTH);

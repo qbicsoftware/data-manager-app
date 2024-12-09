@@ -1,9 +1,6 @@
 package life.qbic.datamanager.views.general.dialog.stepper;
 
 import com.vaadin.flow.component.html.Div;
-import java.util.ArrayList;
-import java.util.List;
-import org.springframework.lang.NonNull;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -12,28 +9,42 @@ import org.springframework.lang.NonNull;
  *
  * @since <version tag>
  */
-public class StepDisplay extends Div implements NavigationListener  {
+public class StepDisplay extends Div {
 
-  private final StepperDialog dialog;
+  public static final String ICON_BACKGROUND_COLOR_DEFAULT = "icon-background-color-default";
+  public static final String ICON_BACKGROUND_COLOR_PRIMARY = "icon-background-color-primary";
+  public static final String ICON_LABEL_TEXT_COLOR_DEFAULT = "icon-label-text-color-default";
+  public static final String ICON_LABEL_TEXT_COLOR_PRIMARY = "icon-label-text-color-primary";
+  private final Div numberIcon;
+  private final Div stepLabel;
 
-  private final List<String> steps;
-
-  private StepDisplay(StepperDialog stepperDialog, List<String> stepNames) {
-    this.dialog = stepperDialog;
-    this.steps = new ArrayList<>(stepNames);
-    dialog.registerNavigationListener(this);
-    onNavigationChange(dialog.currentNavigation());
-    this.addClassNames("full-width", "flex-horizontal", "gap-04");
+  private StepDisplay(int number, String label) {
+    this.addClassNames("flex-vertical", "gap-02", "flex-align-items-center");
+    this.numberIcon = new Div(String.valueOf(number));
+    this.stepLabel = new Div(label);
+    numberIcon.addClassNames("round", "icon-size-m", ICON_BACKGROUND_COLOR_DEFAULT,
+        "icon-text-white", "icon-content-center", "icon-text-inner");
+    stepLabel.addClassNames("icon-label-text", ICON_LABEL_TEXT_COLOR_DEFAULT);
+    add(numberIcon, stepLabel);
   }
 
-  public static StepDisplay with(@NonNull StepperDialog stepperDialog, @NonNull List<String> stepNames) {
-    return new StepDisplay(stepperDialog, stepNames);
+  public static StepDisplay with(int number, String label) {
+    return new StepDisplay(number, label);
   }
 
-  @Override
-  public void onNavigationChange(NavigationInformation navigationInformation) {
-    this.removeAll();
-    steps.forEach(step -> add(new Div(step)));
-    dialog.setStepper(this);
+  public void activate() {
+    numberIcon.removeClassName(ICON_BACKGROUND_COLOR_DEFAULT);
+    numberIcon.addClassName(ICON_BACKGROUND_COLOR_PRIMARY);
+
+    stepLabel.removeClassName(ICON_LABEL_TEXT_COLOR_DEFAULT);
+    stepLabel.addClassName(ICON_LABEL_TEXT_COLOR_PRIMARY);
+  }
+
+  public void deactivate() {
+    numberIcon.removeClassName(ICON_BACKGROUND_COLOR_PRIMARY);
+    numberIcon.addClassName(ICON_BACKGROUND_COLOR_DEFAULT);
+
+    stepLabel.removeClassName(ICON_LABEL_TEXT_COLOR_PRIMARY);
+    stepLabel.addClassName(ICON_LABEL_TEXT_COLOR_DEFAULT);
   }
 }
