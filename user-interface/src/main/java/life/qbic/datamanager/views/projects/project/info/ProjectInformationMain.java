@@ -90,9 +90,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final QualityControlDownload qualityControlDownload;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final TerminologyService terminologyService;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final transient TerminologyService terminologyService;
   private Context context;
 
   public ProjectInformationMain(@Autowired ProjectSummaryComponent projectSummaryComponent,

@@ -17,7 +17,7 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
  */
 public class QbicOidcUser extends DefaultOidcUser {
 
-  private final QbicUserInfo qbicUserInfo;
+  private final transient QbicUserInfo qbicUserInfo;
   private final String originalAuthName;
 
   public record QbicUserInfo(String userId, String fullName, String email, boolean active) {

@@ -132,7 +132,7 @@ public class MultiSelectLazyLoadingGrid<T> extends Grid<T> {
 
   public class CheckBoxSelectedEvent extends ComponentEvent<Checkbox> {
 
-    private final T bean;
+    private final transient T bean;
 
     private final boolean isSelected;
 

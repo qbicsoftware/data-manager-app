@@ -130,7 +130,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     if (context.projectId().isEmpty()) {
       throw new ApplicationException("no project id in context " + context);
     }
-    updateBatchGridDataProvider(context.experimentId().get());
+    updateBatchGridDataProvider(context.experimentId().orElseThrow());
   }
 
   private Span generateEditorButtons(BatchPreview batchPreview) {

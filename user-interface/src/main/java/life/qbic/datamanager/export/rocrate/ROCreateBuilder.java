@@ -41,9 +41,6 @@ public class ROCreateBuilder {
 
   private static final String LICENSE_URL_CCBY_4 = "https://creativecommons.org/licenses/by/4.0/";
 
-  private static final String CONTACT_EMAIL_QBIC = "support@qbic.zendesk.com";
-
-
   @Autowired
   public ROCreateBuilder(TempDirectory tempDir) {
     this.tempDirectory = Objects.requireNonNull(tempDir);
@@ -114,7 +111,7 @@ public class ROCreateBuilder {
     contactPoints.add(toContactPoint(project.getPrincipalInvestigator(), "Principal Investigator"));
     contactPoints.add(toContactPoint(project.getProjectManager(), "Project Manager"));
     if (project.getResponsiblePerson().isPresent()) {
-      contactPoints.add(toContactPoint(project.getResponsiblePerson().get(), "Responsible Person"));
+      contactPoints.add(toContactPoint(project.getResponsiblePerson().orElseThrow(), "Responsible Person"));
     }
     return ResearchProject.from(project.getProjectIntent().projectTitle().title(),
         project.getProjectCode().value(), project.getProjectIntent().objective().objective(),

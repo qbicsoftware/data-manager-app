@@ -50,7 +50,7 @@ public class OntologyLookupComponent extends PageArea {
   private static final Boolean SPECIES_DISABLED = Boolean.TRUE;
   private final TextField searchField = new TextField();
   private final Div ontologyGridSection = new Div();
-  private final TerminologyService terminologyService;
+  private final transient TerminologyService terminologyService;
   private final Span numberOfHitsInfo = new Span();
   private final transient SpeciesLookupService speciesTermLookupService;
   private GridLazyDataView<OntologyTerm> ontologyGridLazyDataView;

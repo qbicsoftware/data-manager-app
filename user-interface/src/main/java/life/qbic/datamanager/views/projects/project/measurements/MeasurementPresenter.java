@@ -51,7 +51,7 @@ public class MeasurementPresenter {
         measurement.lcmsMethod(),
         measurement.labelType(),
         specificMeasurementMetadata.label(),
-        "");
+        specificMeasurementMetadata.comment());
   }
 
   private static NGSMeasurementEntry convertNGSMeasurement(NGSMeasurement measurement,
@@ -77,11 +77,39 @@ public class MeasurementPresenter {
           .map(sample -> new SampleInformation(sample.sampleCode().code(), sample.label()))
           .orElse(new SampleInformation("", ""));
       var specificMetadata = proteomicsMeasurement.specificMetadata().stream()
-          .filter(metadata -> metadata.measuredSample().equals(sampleId)).findFirst().orElse(null);
-      expandedEntries.add(
-          convertProteomicsMeasurement(proteomicsMeasurement, sampleInfo, specificMetadata));
+          .filter(metadata -> metadata.measuredSample().equals(sampleId)).findFirst();
+      if (specificMetadata.isPresent()) {
+        expandedEntries.add(
+            convertProteomicsMeasurement(proteomicsMeasurement, sampleInfo, specificMetadata.get()));
+      } else {
+        expandedEntries.add(convertProteomicsMeasurement(proteomicsMeasurement, sampleInfo));
+      }
+
     }
     return expandedEntries;
+  }
+
+  private ProteomicsMeasurementEntry convertProteomicsMeasurement(
+      ProteomicsMeasurement measurement, SampleInformation sampleInfo) {
+    return new ProteomicsMeasurementEntry(measurement.measurementCode().value(),
+        sampleInfo,
+        measurement.technicalReplicateName().orElse(""),
+        measurement.organisation().IRI(),
+        measurement.organisation().label(),
+        measurement.msDevice().getOboId().replace("_", ":"),
+        measurement.msDevice().getLabel(),
+        measurement.samplePoolGroup().orElse(""),
+        measurement.facility(),
+        "",
+        measurement.digestionEnzyme(),
+        measurement.digestionMethod(),
+        measurement.enrichmentMethod(),
+        String.valueOf(measurement.injectionVolume()),
+        measurement.lcColumn(),
+        measurement.lcmsMethod(),
+        measurement.labelType(),
+        "",
+        "");
   }
 
   public List<NGSMeasurementEntry> expandNGSPools(NGSMeasurement ngsMeasurement) {
