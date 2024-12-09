@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use or reference this software, please cite it as below"
+authors:
+  - family-names: Koch
+    given-names: Tobias
+    orcid: https://orcid.org/0000-0002-2141-8460
+  - family-names: Greiner
+    given-names: Steffen
+    orcid: https://orcid.org/0009-0006-0929-9338
+  - family-names: Friedrich
+    given-names: Andreas
+    orcid: https://orcid.org/0000-0001-6843-8680
+  - family-names: Pawar
+    given-names: Shraddha
+    orcid: https://orcid.org/0009-0008-2017-5488
+  - family-names: Bödker
+    given-names: Jennifer
+  - family-names: Barroso-Oquendo
+    given-names: Morgana
+    orcid: https://orcid.org/0000-0003-4221-5723
+  - family-names: Barletta Solari
+    given-names: Francesca
+    orcid: https://orcid.org/0009-0002-1396-2252
+  - family-names: Fillinger
+    given-names: Sven
+    orcid:  https://orcid.org/0000-0001-8835-2219
+  - family-names: Nahnsen
+    given-names: Sven
+    orcid: https://orcid.org/0000-0002-4375-0691
+title: "Data Manager - A data management solution for the life sciences"
+version: 1.0.0
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.10371779"
+date-released: 2024-06-10
+repository-code: "https://github.com/qbicsoftware/data-manager-app"
+license: MIT
+keywords:
+  - "research data management"
+  - "data management"
+  - "data manager"
+  - "omics"
+  - "life science"
+  - "genomics"
+  - "proteomics"
+  - "raw data"
