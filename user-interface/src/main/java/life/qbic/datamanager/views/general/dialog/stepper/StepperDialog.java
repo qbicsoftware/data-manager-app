@@ -1,10 +1,12 @@
 package life.qbic.datamanager.views.general.dialog.stepper;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.html.Input;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.UserInput;
 import org.springframework.lang.NonNull;
 
 /**
@@ -68,11 +70,15 @@ public class StepperDialog {
   }
 
   public void next() {
-    if (hasNextStep(currentStep, numberOfSteps)) {
+    if (hasNextStep(currentStep, numberOfSteps) && currentStepIsValid()) {
       currentStep++;
       setCurrentStep(steps.get(currentStep - 1), dialog);
       informNavigationListeners(navigationListeners, currentNavigation());
     }
+  }
+
+  private boolean currentStepIsValid() {
+    return stepIsValid(steps.get(currentStep - 1));
   }
 
   public void previous() {
@@ -83,12 +89,18 @@ public class StepperDialog {
     }
   }
 
+  private static boolean stepIsValid(Step step) {
+    var userInput = step.userInput();
+    return userInput.validate().hasPassed();
+  }
+
   public void setFooter(Component footer) {
     dialog.setFooter(footer);
   }
 
   private static void setCurrentStep(Step step, AppDialog dialog) {
     dialog.setBody(step.component());
+    dialog.registerUserInput(step.userInput());
   }
 
   public void open() {

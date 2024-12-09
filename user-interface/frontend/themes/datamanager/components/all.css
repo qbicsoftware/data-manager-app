@@ -288,6 +288,12 @@ Dialog flavours
   width: 100%;
 }
 
+.border-bottom-solid {
+  border-bottom-style: solid;
+  border-bottom-color: rgba(26, 56, 96, 0.1);
+  border-bottom-width: 1px;
+}
+
 /***************************
 Buttons
  **************************/
