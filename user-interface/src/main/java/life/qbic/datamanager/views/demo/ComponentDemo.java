@@ -134,6 +134,20 @@ public class ComponentDemo extends Div {
     content.add(title);
     content.add(showDialog);
     content.addClassNames("flex-vertical", "gap-04");
+
+    Div confirmBox = new Div("Click the button and press 'Cancel' or 'Save'");
+    dialog.registerConfirmAction(() -> {
+      confirmBox.setText("Stepper dialog has been confirmed");
+      dialog.close();
+    });
+
+    dialog.registerCancelAction(() -> {
+      confirmBox.setText("Stepper dialog has been cancelled");
+      dialog.close();
+    });
+
+    content.add(confirmBox);
+
     return content;
   }
 

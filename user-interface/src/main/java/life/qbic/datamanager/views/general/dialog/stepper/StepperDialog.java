@@ -20,7 +20,7 @@ public class StepperDialog {
 
   private final AppDialog dialog;
   private final List<Step> steps;
-  private List<NavigationListener> navigationListeners;
+  private final List<NavigationListener> navigationListeners;
   private final int numberOfSteps;
   private int currentStep;
 
