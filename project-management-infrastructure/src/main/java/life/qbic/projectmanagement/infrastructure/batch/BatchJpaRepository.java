@@ -14,7 +14,7 @@ import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
-import life.qbic.projectmanagement.infrastructure.sample.QbicSampleRepository;
+import life.qbic.projectmanagement.infrastructure.sample.SampleJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -31,11 +31,11 @@ public class BatchJpaRepository implements BatchRepository {
   private static final Logger log = logger(BatchJpaRepository.class);
 
   private final QbicBatchRepo qbicBatchRepo;
-  private final QbicSampleRepository qbicSampleRepository;
+  private final SampleJpaRepository qbicSampleRepository;
 
   @Autowired
   public BatchJpaRepository(QbicBatchRepo qbicBatchRepo,
-      QbicSampleRepository qbicSampleRepository) {
+      SampleJpaRepository qbicSampleRepository) {
     this.qbicBatchRepo = qbicBatchRepo;
     this.qbicSampleRepository = qbicSampleRepository;
   }

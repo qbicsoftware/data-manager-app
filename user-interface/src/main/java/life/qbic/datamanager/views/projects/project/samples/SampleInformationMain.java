@@ -44,6 +44,7 @@ import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
@@ -232,7 +233,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       UI ui = event.getSource().getUI().orElseThrow();
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
               event.validatedSampleMetadata(),
-              projectId, event.batchName(), false)
+              projectId, event.batchName(), false, new ExperimentReference(experimentId.value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         registrationTask
