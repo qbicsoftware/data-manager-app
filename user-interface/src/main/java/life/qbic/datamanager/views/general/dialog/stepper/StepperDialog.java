@@ -1,20 +1,19 @@
 package life.qbic.datamanager.views.general.dialog.stepper;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.html.Input;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
-import life.qbic.datamanager.views.general.dialog.UserInput;
 import org.springframework.lang.NonNull;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Stepper Dialog</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>A wizard-like dialog, that usually contains two or more steps a user needs
+ * to navigate through in order to perform a certain task.</p>
  *
- * @since <version tag>
+ * @since 1.7.0
  */
 public class StepperDialog {
 
@@ -40,6 +39,29 @@ public class StepperDialog {
     return new StepperDialog(dialog, steps);
   }
 
+  private static void informNavigationListeners(List<NavigationListener> listeners,
+      NavigationInformation information) {
+    listeners.forEach(listener -> listener.onNavigationChange(information));
+  }
+
+  private static boolean hasNextStep(int currentStep, int numberOfSteps) {
+    return currentStep < numberOfSteps;
+  }
+
+  private static boolean hasPreviousStep(int currentStep) {
+    return currentStep > 1;
+  }
+
+  private static boolean stepIsValid(Step step) {
+    var userInput = step.userInput();
+    return userInput.validate().hasPassed();
+  }
+
+  private static void setCurrentStep(Step step, AppDialog dialog) {
+    dialog.setBody(step.component());
+    dialog.registerUserInput(step.userInput());
+  }
+
   public void registerNavigationListener(NavigationListener listener) {
     navigationListeners.add(listener);
   }
@@ -55,18 +77,6 @@ public class StepperDialog {
   public void setStepper(@NonNull Component component) {
     dialog.setNavigation(Objects.requireNonNull(component));
     dialog.displayNavigation();
-  }
-
-  private static void informNavigationListeners(List<NavigationListener> listeners, NavigationInformation information) {
-    listeners.forEach(listener -> listener.onNavigationChange(information));
-  }
-
-  private static boolean hasNextStep(int currentStep, int numberOfSteps) {
-    return currentStep < numberOfSteps;
-  }
-
-  private static boolean hasPreviousStep(int currentStep) {
-    return currentStep > 1;
   }
 
   public void next() {
@@ -89,18 +99,8 @@ public class StepperDialog {
     }
   }
 
-  private static boolean stepIsValid(Step step) {
-    var userInput = step.userInput();
-    return userInput.validate().hasPassed();
-  }
-
   public void setFooter(Component footer) {
     dialog.setFooter(footer);
-  }
-
-  private static void setCurrentStep(Step step, AppDialog dialog) {
-    dialog.setBody(step.component());
-    dialog.registerUserInput(step.userInput());
   }
 
   public void open() {
