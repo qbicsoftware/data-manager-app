@@ -32,9 +32,9 @@ First some general property definitions
   --icon-color-warning: rgba(254, 201, 1, 1);
   --icon-color-default: rgba(28, 46, 69, 0.6);
   --icon-size-xs: 1rem;
-  --icon-size-s: var(--lumo-icon-size-s);
-  --icon-size-m: var(--lumo-icon-size-m);
-  --icon-size-l: var(--lumo-icon-size-l);
+  --icon-size-s: 1.25rem;
+  --icon-size-m: 1.5rem;
+  --icon-size-l: 2rem;
   --spacing-01: 0.125rem;
   --spacing-02: 0.25rem;
   --spacing-03: 0.5rem;
