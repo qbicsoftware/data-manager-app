@@ -21,7 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class QbicUserDetails implements UserDetails {
   @Serial
   private static final long serialVersionUID = 5812210012669790933L;
-  private final User user;
+  private final transient User user;
   private final List<GrantedAuthority> grantedAuthorities;
 
   /**

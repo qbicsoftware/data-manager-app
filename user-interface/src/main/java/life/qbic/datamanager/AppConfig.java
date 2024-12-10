@@ -26,6 +26,7 @@ import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.identity.IdentityEmailServiceProvider;
 import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvider;
 import life.qbic.projectmanagement.application.AppContextProvider;
+import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
@@ -67,6 +68,7 @@ import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import life.qbic.projectmanagement.infrastructure.CachedOrganisationRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -95,6 +97,11 @@ public class AppConfig {
       UserRepository userRepository
   ) {
     return new IdentityService(userRepository);
+  }
+
+  @Bean
+  public OrganisationRepository organisationRepository() {
+    return new CachedOrganisationRepository();
   }
 
 

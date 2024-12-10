@@ -502,12 +502,6 @@ public class ProjectSummaryComponent extends PageArea {
     projectDesignSection.setContent(content);
   }
 
-  private static SimpleParagraph buildObjectiveParagraph(String objective) {
-    var paragraph = new SimpleParagraph(objective);
-    paragraph.addClassNames("max-height-10rem", "overflow-auto");
-    return paragraph;
-  }
-
   private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
     projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
     projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
