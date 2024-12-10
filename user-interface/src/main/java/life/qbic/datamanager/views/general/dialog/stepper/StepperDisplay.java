@@ -54,7 +54,7 @@ public class StepperDisplay extends Div implements NavigationListener {
 
     StepPointer(@NonNull Icon icon) {
       this.add(icon);
-      addClassNames("icon-color-default", "padding-left-right-02", "icon-size-xs",
+      addClassNames("icon-color-default", "padding-left-right-03", "icon-size-xs",
           "flex-horizontal");
     }
 

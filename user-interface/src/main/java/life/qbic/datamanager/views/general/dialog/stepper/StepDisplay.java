@@ -19,12 +19,12 @@ public class StepDisplay extends Div {
   private final Div stepLabel;
 
   private StepDisplay(int number, String label) {
-    this.addClassNames("flex-vertical", "gap-02", "flex-align-items-center");
+    this.addClassNames("flex-vertical", "gap-03", "flex-align-items-center");
     this.numberIcon = new Div(String.valueOf(number));
     this.stepLabel = new Div(label);
     numberIcon.addClassNames("round", "icon-size-m", ICON_BACKGROUND_COLOR_DEFAULT,
         "icon-text-white", "icon-content-center", "icon-text-inner");
-    stepLabel.addClassNames("icon-label-text", ICON_LABEL_TEXT_COLOR_DEFAULT);
+    stepLabel.addClassNames("field-label-text", ICON_LABEL_TEXT_COLOR_DEFAULT);
     add(numberIcon, stepLabel);
   }
 
