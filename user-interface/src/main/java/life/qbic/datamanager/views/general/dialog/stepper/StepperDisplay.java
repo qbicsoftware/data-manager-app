@@ -9,15 +9,15 @@ import java.util.stream.IntStream;
 import org.springframework.lang.NonNull;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Stepper Display</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Shows all available steps in a {@link StepperDialog}. </p>
  *
- * @since <version tag>
+ * @since 1.7.0
  */
 public class StepperDisplay extends Div implements NavigationListener {
 
-  private final StepperDialog dialog;
+  private final transient StepperDialog dialog;
 
   private final List<String> steps;
 
@@ -25,10 +25,23 @@ public class StepperDisplay extends Div implements NavigationListener {
     this.dialog = stepperDialog;
     this.steps = new ArrayList<>(stepNames);
     dialog.registerNavigationListener(this);
+    // Init the stepper to the dialogs current navigation point
     onNavigationChange(dialog.currentNavigation());
     this.addClassNames("full-width", "flex-horizontal", "gap-04", "flex-align-items-center");
   }
 
+  /**
+   * Creates a {@link StepperDisplay} for the provided {@link StepperDialog}.
+   * <p>
+   * The client does not need to do anything manually, the wiring with the stepper dialog happens
+   * during instantiation. The stepper display will show the current step active in the stepper
+   * dialog.
+   *
+   * @param stepperDialog the stepper dialog to subscribe to navigation changes
+   * @param stepNames     the step names to display
+   * @return a stepper display
+   * @since 1.7.0
+   */
   public static StepperDisplay with(@NonNull StepperDialog stepperDialog,
       @NonNull List<String> stepNames) {
     return new StepperDisplay(stepperDialog, stepNames);
@@ -38,11 +51,14 @@ public class StepperDisplay extends Div implements NavigationListener {
   public void onNavigationChange(NavigationInformation navigationInformation) {
     this.removeAll();
     IntStream.range(0, steps.size()).forEach(index -> {
+      // The user should see a 1-based counting of the steps
       var step = StepDisplay.with(index + 1, steps.get(index));
+      // The current navigation point should be highlighted to the user
       if (index == navigationInformation.currentStep() - 1) {
         step.activate();
       }
       add(step);
+      // Between the steps there need to be an arrow icon pointing to the next step
       if (index < navigationInformation.totalSteps() - 1) {
         add(new StepPointer(VaadinIcon.ARROW_RIGHT.create()));
       }

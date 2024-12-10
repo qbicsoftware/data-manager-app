@@ -1,11 +1,11 @@
 package life.qbic.datamanager.views.general.dialog.stepper;
 
 /**
- * <b><record short description - 1 Line!></b>
+ * <b>Navigation Information</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Some basic navigation information in the context of {@link StepperDialog} navigation.</p>
  *
- * @since <version tag>
+ * @since 1.7.0
  */
 public record NavigationInformation(int currentStep, int totalSteps) {
 
