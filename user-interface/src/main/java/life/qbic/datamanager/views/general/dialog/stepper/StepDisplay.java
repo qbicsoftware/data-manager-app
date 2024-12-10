@@ -25,7 +25,7 @@ public class StepDisplay extends Div {
     this.stepLabel = new Div(label);
     numberIcon.addClassNames("round", "icon-size-m", ICON_BACKGROUND_COLOR_DEFAULT,
         "icon-text-white", "icon-content-center", "icon-text-inner");
-    stepLabel.addClassNames("field-label-text", ICON_LABEL_TEXT_COLOR_DEFAULT);
+    stepLabel.addClassNames("dialog-step-name-text", ICON_LABEL_TEXT_COLOR_DEFAULT);
     add(numberIcon, stepLabel);
   }
 

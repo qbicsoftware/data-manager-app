@@ -298,6 +298,16 @@ Dialog flavours
   color: var(--lumo-header-text-color);
 }
 
+.dialog-step-name-text {
+  font-size: var(--lumo-font-size-m);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--lumo-line-height-xs);
+}
+
+.dialog-step-icon-arrow {
+  font-size: 12px;
+}
+
 .footer {
   justify-content: flex-end;
 }
@@ -384,7 +394,7 @@ Icons
 }
 
 .icon-text-inner {
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
 }
 
 .icon-label-text {
@@ -413,6 +423,10 @@ Layout
 
 .flex-align-items-center {
   align-items: center;
+}
+
+.flex-align-items-bottom {
+  align-items: self-end;
 }
 
 .flex-horizontal {

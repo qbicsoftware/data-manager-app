@@ -27,7 +27,7 @@ public class StepperDisplay extends Div implements NavigationListener {
     dialog.registerNavigationListener(this);
     // Init the stepper to the dialogs current navigation point
     onNavigationChange(dialog.currentNavigation());
-    this.addClassNames("full-width", "flex-horizontal", "gap-04", "flex-align-items-center");
+    this.addClassNames("full-width", "flex-horizontal", "gap-04", "flex-align-items-bottom");
   }
 
   /**
@@ -70,8 +70,7 @@ public class StepperDisplay extends Div implements NavigationListener {
 
     StepPointer(@NonNull Icon icon) {
       this.add(icon);
-      addClassNames("icon-color-default", "padding-left-right-03", "icon-size-xs",
-          "flex-horizontal");
+      addClassNames("icon-color-default", "padding-left-right-04", "dialog-step-icon-arrow");
     }
 
   }
