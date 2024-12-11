@@ -703,7 +703,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   @Override
   public void testApplicationServer() {
     try (OpenBisSession session = sessionFactory.getSession()) {
-      applicationServer.isSessionActive(session.getToken());
+      if (!applicationServer.isSessionActive(session.getToken())) {
+        throw new ConnectionException("Could not connect to openBIS application server.");
+      }
       log.info("Successfully tested connection to openBIS application server.");
     }
   }
