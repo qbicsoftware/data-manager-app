@@ -31,7 +31,8 @@ title: "Data Manager - A data management solution for the life sciences"
 version: 1.0.0
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.10371779"
+    value: 10.5281/zenodo.10371779
+doi: 10.5281/zenodo.10371779
 date-released: 2024-06-10
 repository-code: "https://github.com/qbicsoftware/data-manager-app"
 license: MIT
