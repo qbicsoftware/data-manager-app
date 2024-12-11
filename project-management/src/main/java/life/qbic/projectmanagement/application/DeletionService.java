@@ -1,12 +1,10 @@
 package life.qbic.projectmanagement.application;
 
 import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Collection;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -17,6 +15,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.service.BatchDomainService;
 import life.qbic.projectmanagement.domain.service.SampleDomainService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DeletionService {
 
-  private static final Logger log = logger(DeletionService.class);
+  private DeletionService selfProxy;
+
   private final ProjectInformationService projectInformationService;
   private final ExperimentInformationService experimentInformationService;
   private final SampleInformationService sampleInformationService;
@@ -41,7 +41,8 @@ public class DeletionService {
   public DeletionService(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
       SampleInformationService sampleInformationService, BatchDomainService batchDomainService,
-      SampleDomainService sampleDomainService) {
+      SampleDomainService sampleDomainService,
+      @Lazy DeletionService selfProxy) {
     this.projectInformationService = requireNonNull(projectInformationService,
         "experimentInformationService must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -52,6 +53,7 @@ public class DeletionService {
         BatchDomainService.class.getSimpleName() + " must not be null");
     this.sampleDomainService = requireNonNull(sampleDomainService,
         SampleDomainService.class.getSimpleName() + " must not be null");
+    this.selfProxy = selfProxy;
   }
 
   /**
@@ -86,7 +88,9 @@ public class DeletionService {
     deletedBatchId.onError(error -> {
       throw new ApplicationException("Could not delete batch " + batchId);
     });
-    deleteSamples(projectId, batchId, samples);
+    // We need to get the proxy Spring has wrapped around the service, otherwise calling
+    // the @transaction annotated method has no effect
+    selfProxy.deleteSamples(projectId, batchId, samples);
     return deletedBatchId.getValue();
   }
 

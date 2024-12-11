@@ -155,18 +155,6 @@ public class Column<T, C> {
   }
 
   /**
-   * adds a validator
-   * @param predicate the predicate to test on the cell value and all cell values in this column
-   * @param errorMessage the error message to display in case validation fails
-   * @return the modified column
-   */
-  private Column<T, C> withColumnValidator(BiPredicate<List<String>, String> predicate,
-      String errorMessage) {
-    columnValidators.add(new SpreadsheetObjectValidator<>(predicate, errorMessage));
-    return this;
-  }
-
-  /**
    * requires distinct/unique values in the column
    *
    * @return the modified column

@@ -5,7 +5,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 
 /**
  * <b>Main Page</b>
@@ -26,7 +26,7 @@ public class MainPage extends Div implements BeforeEnterObserver {
     if (event.getLocation().getPath().isBlank()) { // Just to be sure there are no params
       // Forward to the default entry page we want to show after login and not specifying any
       // specific navigation target
-      event.forwardTo(Projects.PROJECTS);
+      event.forwardTo(ProjectRoutes.PROJECTS);
     }
   }
 }

@@ -60,8 +60,7 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private final Div content = new Div();
   private final Grid<BatchPreview> batchGrid = new Grid<>();
   private final transient BatchInformationService batchInformationService;
-  private final ClientDetailsProvider clientDetailsProvider;
-  private Context context;
+  private final transient ClientDetailsProvider clientDetailsProvider;
 
   public BatchDetailsComponent(@Autowired BatchInformationService batchInformationService,
       ClientDetailsProvider clientDetailsProvider) {
@@ -131,7 +130,6 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
     if (context.projectId().isEmpty()) {
       throw new ApplicationException("no project id in context " + context);
     }
-    this.context = context;
     updateBatchGridDataProvider(context.experimentId().get());
   }
 

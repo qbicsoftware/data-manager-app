@@ -611,3 +611,22 @@
   height: 5rem;
   width: 5rem;
 }
+
+.user-profile-component .user-details-card .linked-account {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px dotted black;
+  border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+  padding: var(--lumo-space-m);
+  column-gap: var(--lumo-space-xl);
+}
+
+.user-profile-component .user-details-card .linked-account .logo-with-text {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: var(--lumo-space-s);
+}

@@ -24,15 +24,12 @@ public class OntologyFilterConnector {
   public static Stream<OntologyTerm> loadOntologyTerms(Query<OntologyTerm, String> query,
       TerminologyService terminologyService) {
     return terminologyService.query(query.getFilter().orElse(""), query.getOffset(),
-        query.getLimit()).stream();
+        query.getLimit()).stream().distinct();
   }
 
-  public static Stream<OntologyTerm> loadOntologyTerms(List<Ontology> ontologies,
+  public static Stream<OntologyTerm> loadOntologyTerms(
       Query<OntologyTerm, String> query,
       SpeciesLookupService ontologyTermInformationService) {
-    List<String> ontologyAbbreviations = ontologies.stream()
-        .map(Ontology::getAbbreviation)
-        .toList();
     List<SortOrder> sortOrders = query.getSortOrders().stream()
         .map(querySortOrder -> new SortOrder(querySortOrder.getSorted(),
             querySortOrder.getDirection().equals(SortDirection.DESCENDING)))

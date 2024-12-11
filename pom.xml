@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.6.0</version>
+  <version>1.6.5</version>
   <modules>
     <module>user-interface</module>
     <module>identity</module>
@@ -41,7 +41,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.5</version>
+    <version>3.3.6</version>
   </parent>
 
   <repositories>

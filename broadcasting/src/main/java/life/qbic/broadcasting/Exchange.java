@@ -169,7 +169,7 @@ public class Exchange implements MessageBusSubmission, MessageSubscription {
    */
   static class Topic {
 
-    private final String topic;
+    private final String value;
 
     private final Set<MessageSubscriber> subscribers;
 
@@ -185,7 +185,7 @@ public class Exchange implements MessageBusSubmission, MessageSubscription {
 
     protected Topic(String topic) {
       super();
-      this.topic = topic;
+      this.value = topic;
       subscribers = new HashSet<>();
     }
 
@@ -198,11 +198,11 @@ public class Exchange implements MessageBusSubmission, MessageSubscription {
     }
 
     boolean matchesTopic(String topic) {
-      return this.topic.equalsIgnoreCase(topic);
+      return this.value.equalsIgnoreCase(topic);
     }
 
     synchronized void informAllSubscribers(String message, MessageParameters messageParameters) {
-      if (messageParameters.messageType.equalsIgnoreCase(topic)) {
+      if (messageParameters.messageType.equalsIgnoreCase(value)) {
         informSubscribers(message, messageParameters);
       }
     }

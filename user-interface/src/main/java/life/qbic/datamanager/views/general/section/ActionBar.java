@@ -46,10 +46,6 @@ public class ActionBar extends Div {
     Arrays.stream(buttons).forEach(strategy::execute);
   }
 
-  private static void setEnabled(Button button, boolean enabled) {
-    button.setEnabled(enabled);
-  }
-
   public void addButtons(Button... buttons) {
     for (Button button : buttons) {
       addButton(button);
@@ -60,11 +56,6 @@ public class ActionBar extends Div {
     buttons.add(button);
     add(button);
     applyStrategy(controlStrategy, button);
-  }
-
-  public void removeButton(Button button) {
-    buttons.remove(button);
-    remove(button);
   }
 
   public void deactivateAllControls() {

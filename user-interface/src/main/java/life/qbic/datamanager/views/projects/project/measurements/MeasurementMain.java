@@ -31,7 +31,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.download.DownloadProvider;
 import life.qbic.datamanager.templates.measurement.NGSMeasurementEditTemplate;
 import life.qbic.datamanager.templates.measurement.ProteomicsMeasurementEditTemplate;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
@@ -437,7 +437,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     if (componentEvent.isFromClient()) {
       String currentExperimentId = context.experimentId().orElseThrow().value();
       String currentProjectId = context.projectId().orElseThrow().value();
-      String routeToMeasurementPage = String.format(Projects.SAMPLES,
+      String routeToMeasurementPage = String.format(ProjectRoutes.SAMPLES,
           currentProjectId,
           currentExperimentId);
       log.debug(String.format(
@@ -545,7 +545,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     if (componentEvent.isFromClient()) {
       String currentExperimentId = context.experimentId().orElseThrow().value();
       String currentProjectId = context.projectId().orElseThrow().value();
-      String routeToRawDataPage = String.format(Projects.RAWDATA,
+      String routeToRawDataPage = String.format(ProjectRoutes.RAWDATA,
           currentProjectId,
           currentExperimentId);
       log.debug(String.format(

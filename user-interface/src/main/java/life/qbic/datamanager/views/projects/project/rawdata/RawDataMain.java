@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.views.AppRoutes.Projects;
+import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -272,7 +272,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     if (componentEvent.isFromClient()) {
       String currentExperimentId = context.experimentId().orElseThrow().value();
       String currentProjectId = context.projectId().orElseThrow().value();
-      String routeToMeasurementPage = String.format(Projects.MEASUREMENTS,
+      String routeToMeasurementPage = String.format(ProjectRoutes.MEASUREMENTS,
           currentProjectId,
           currentExperimentId);
       log.debug(String.format(

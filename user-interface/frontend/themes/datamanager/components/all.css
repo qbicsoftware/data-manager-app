@@ -204,11 +204,34 @@
 .simple-paragraph {
   font-size: var(--lumo-font-size-m);
   margin-bottom: var(--lumo-space-m);
-  max-width: 50em;
 }
 
-.max-height-10rem {
-  max-height: 10rem;
+.background-color-grey {
+  background-color: #F9F9F9;
+}
+
+.text-justify {
+  text-align: justify;
+}
+
+.padding-left-01 {
+  padding-left: 1.5rem
+}
+
+.padding-right-01 {
+  padding-right: 1.5rem
+}
+
+.line-height-01 {
+  line-height: 1.7rem;
+}
+
+.max-width-55rem {
+  max-width: 55rem;
+}
+
+.box-corner-radius-small {
+  border-radius: var(--lumo-space-s);
 }
 
 .overflow-auto {
