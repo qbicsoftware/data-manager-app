@@ -15,7 +15,6 @@ import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
-import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.SampleReference;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.VariableReference;
@@ -102,19 +101,6 @@ public class SampleRegistrationServiceV2 {
     return CompletableFuture.completedFuture(null);
   }
 
-  private void updateConfoundingVariables(
-      Map<SampleReference, List<ConfoundingVariableLevel>> confoundingVariableLevels,
-      String experimentId, String projectId) {
-    ExperimentReference experiment = new ExperimentReference(experimentId);
-    for (Entry<SampleReference, List<ConfoundingVariableLevel>> sampleReferenceListEntry : confoundingVariableLevels.entrySet()) {
-      var levels = sampleReferenceListEntry.getValue();
-      for (ConfoundingVariableLevel level : levels) {
-        confoundingVariableService.setVariableLevelForSample(projectId, experiment, level.sample(),
-            level.variable(), level.level());
-      }
-    }
-  }
-
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
   @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -123,7 +109,8 @@ public class SampleRegistrationServiceV2 {
       ProjectId projectId,
       BatchId batchId,
       String batchLabel,
-      boolean isPilot)
+      boolean isPilot,
+      ExperimentReference experiment)
       throws RegistrationException {
 
     Batch batch = batchRepository.find(batchId)
@@ -138,14 +125,25 @@ public class SampleRegistrationServiceV2 {
     var sampleBySampleCode = samples.stream()
         .collect(Collectors.toMap(sample -> sample.sampleCode().code(), Function.identity()));
     var updatedSamples = updateSamples(sampleBySampleCode, sampleMetadata);
-    sampleRepository.updateAll(projectId, updatedSamples);
+    sampleRepository.updateAll(projectId, updatedSamples.keySet());
+
+    for (Entry<Sample, SampleMetadata> updatedSample : updatedSamples.entrySet()) {
+      Map<VariableReference, String> levels = new HashMap<>();
+
+      updatedSample.getValue().confoundingVariables().forEach((k, v) -> levels.put(k.id(), v));
+      SampleReference sampleReference = new SampleReference(
+          updatedSample.getKey().sampleId().value());
+      confoundingVariableService.setVariableLevelsForSample(projectId.value(), experiment,
+          sampleReference, levels);
+    }
+    batchRegistrationService.addSamplesToBatch(sampleIds, batchId, projectId);
     batchRepository.update(batch);
     return CompletableFuture.completedFuture(null);
   }
 
-  private List<Sample> updateSamples(Map<String, Sample> samples,
+  private Map<Sample, SampleMetadata> updateSamples(Map<String, Sample> samples,
       Collection<SampleMetadata> sampleMetadataList) {
-    var updatedSamples = new ArrayList<Sample>();
+    var samplesToUpdate = new HashMap<Sample, SampleMetadata>();
     for (SampleMetadata sampleMetadata : sampleMetadataList) {
       var sampleForUpdate = samples.get(sampleMetadata.sampleCode());
       sampleForUpdate.setLabel(sampleMetadata.sampleName());
@@ -156,9 +154,22 @@ public class SampleRegistrationServiceV2 {
       sampleForUpdate.setBiologicalReplicate(sampleMetadata.biologicalReplicate());
       sampleForUpdate.setExperimentalGroupId(sampleMetadata.experimentalGroupId());
       sampleForUpdate.setComment(sampleMetadata.comment());
-      updatedSamples.add(sampleForUpdate);
+      samplesToUpdate.put(sampleForUpdate, SampleMetadata.createUpdate(
+          sampleMetadata.sampleId(),
+          sampleMetadata.sampleCode(),
+          sampleMetadata.sampleName(),
+          sampleMetadata.analysisToBePerformed(),
+          sampleMetadata.biologicalReplicate(),
+          sampleMetadata.experimentalGroupId(),
+          sampleMetadata.species(),
+          sampleMetadata.specimen(),
+          sampleMetadata.analyte(),
+          sampleMetadata.comment(),
+          sampleMetadata.confoundingVariables(),
+          sampleMetadata.experimentId()
+      ));
     }
-    return updatedSamples;
+    return samplesToUpdate;
   }
 
   private Map<Sample, SampleMetadata> registerSamples(Collection<SampleMetadata> sampleMetadata,
@@ -205,13 +216,6 @@ public class SampleRegistrationServiceV2 {
   public static class RegistrationException extends RuntimeException {
 
     public RegistrationException(String message) {
-      super(message);
-    }
-  }
-
-  public static class UnknownSampleException extends RuntimeException {
-
-    public UnknownSampleException(String message) {
       super(message);
     }
   }
