@@ -232,7 +232,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       UI ui = event.getSource().getUI().orElseThrow();
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
               event.validatedSampleMetadata(),
-              projectId, event.batchName(), false)
+              projectId, event.batchName(), false, experimentId)
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         registrationTask

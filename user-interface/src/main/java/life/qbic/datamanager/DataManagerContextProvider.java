@@ -51,10 +51,11 @@ public class DataManagerContextProvider implements AppContextProvider {
   }
 
   @Override
-  public String urlToSamplePage(String projectId) {
+  public String urlToSamplePage(String projectId, String experimentId) {
     try {
       return new URL(baseUrlApplication,
-          Paths.get(baseUrlApplication.getPath(), samplesEndpoint.formatted(projectId))
+          Paths.get(baseUrlApplication.getPath(),
+                  samplesEndpoint.formatted(projectId, experimentId))
               .toString()).toExternalForm();
     } catch (MalformedURLException e) {
       throw new ApplicationException("Data Manager context creation failed.", e);

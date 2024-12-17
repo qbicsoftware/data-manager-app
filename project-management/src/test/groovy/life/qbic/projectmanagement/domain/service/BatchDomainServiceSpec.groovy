@@ -6,6 +6,7 @@ import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
 import life.qbic.projectmanagement.domain.model.batch.Batch
 import life.qbic.projectmanagement.domain.model.batch.BatchId
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.model.sample.event.BatchDeleted
 import life.qbic.projectmanagement.domain.model.sample.event.BatchRegistered
@@ -49,7 +50,7 @@ class BatchDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(batchRegistered)
 
         when:
-        domainService.register("test", false, project.projectIntent.projectTitle().title(), project.getId())
+        domainService.register("test", false, project.projectIntent.projectTitle().title(), project.getId(), ExperimentId.create())
 
         then:
         batchRegistered.eventReceived
