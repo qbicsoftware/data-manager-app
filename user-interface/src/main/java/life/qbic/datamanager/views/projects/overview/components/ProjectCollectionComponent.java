@@ -194,7 +194,7 @@ public class ProjectCollectionComponent extends PageArea {
     private final Span tags = new Span();
     private final Div projectDetails = new Div();
     private final AvatarGroup usersWithAccess = new AvatarGroup();
-    private final ProjectOverview projectOverview;
+    private final transient ProjectOverview projectOverview;
 
     public ProjectOverviewItem(ProjectOverview projectOverview) {
       this.projectOverview = Objects.requireNonNull(projectOverview);

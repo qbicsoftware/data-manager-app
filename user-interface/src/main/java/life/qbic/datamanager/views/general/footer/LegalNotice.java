@@ -32,7 +32,7 @@ public class LegalNotice extends Main {
   public LegalNotice() {
     String legalNoticeHtmlContent = getLegalNoticeHtmlFromResource();
     // Replace href="#" with href="currentPath#id"
-    String legalNoticeWithAnchors = legalNoticeHtmlContent.replaceAll(
+    String legalNoticeWithAnchors = legalNoticeHtmlContent.replace(
         "href=\"#", replaceWithCurrentUrl());
     Html html = new Html(legalNoticeWithAnchors);
     add(html);

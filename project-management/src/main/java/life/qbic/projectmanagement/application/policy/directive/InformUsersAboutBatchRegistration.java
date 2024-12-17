@@ -60,7 +60,8 @@ public class InformUsersAboutBatchRegistration implements DomainEventSubscriber<
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void handleEvent(BatchRegistered event) {
     List<RecipientDTO> recipients = getRecipients(event.projectId());
-    String sampleUri = appContextProvider.urlToSamplePage(event.projectId().value());
+    String sampleUri = appContextProvider.urlToSamplePage(event.projectId().value(),
+        event.experimentId().value());
     notifyAllRecipients(recipients, event.projectTitle(), event.name(), sampleUri);
   }
 

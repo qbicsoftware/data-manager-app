@@ -73,6 +73,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
   private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
+  public static final String CLICKABLE = "clickable";
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
@@ -84,7 +85,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final List<MeasurementTechnologyTab> tabsInTabSheet = new ArrayList<>();
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
-  private final ClientDetailsProvider clientDetailsProvider;
+  private final transient ClientDetailsProvider clientDetailsProvider;
   private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
   private transient Context context;
   private String searchTerm = "";
@@ -194,7 +195,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
           expandIcon.addClassName("expand-icon");
           Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
-          expandSpan.addClassNames("sample-column-cell", "clickable");
+          expandSpan.addClassNames("sample-column-cell", CLICKABLE);
           expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
@@ -285,7 +286,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
           expandIcon.addClassName("expand-icon");
           Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
-          expandSpan.addClassNames("sample-column-cell", "clickable");
+          expandSpan.addClassNames("sample-column-cell", CLICKABLE);
           expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
           return expandSpan;
         })
@@ -594,7 +595,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     private void setDialogHeader() {
       setHeaderTitle("View Pooled Measurement");
       Icon closeIcon = VaadinIcon.CLOSE_SMALL.create();
-      closeIcon.addClassNames("small", "clickable");
+      closeIcon.addClassNames("small", CLICKABLE);
       closeIcon.addClickListener(event -> close());
       getHeader().add(closeIcon);
     }

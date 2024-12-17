@@ -100,7 +100,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
-  private final DeletionService deletionService;
+  private final transient DeletionService deletionService;
   private final transient TerminologyService terminologyService;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
@@ -211,7 +211,8 @@ public class ExperimentDetailsComponent extends PageArea {
           "Experiment information could not be retrieved from service");
     }
 
-    Map<SampleOriginType, Set<OntologyTerm>> usedTerms = getOntologyTermsUsedInSamples(experimentId);
+    Map<SampleOriginType, Set<OntologyTerm>> usedTerms = getOntologyTermsUsedInSamples(
+        experimentId);
 
     optionalExperiment.ifPresent(experiment -> {
       EditExperimentDialog editExperimentDialog = new EditExperimentDialog(
@@ -246,7 +247,8 @@ public class ExperimentDetailsComponent extends PageArea {
         .open();
   }
 
-  private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(ExperimentId experimentId) {
+  private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(
+      ExperimentId experimentId) {
     Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
     Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(experimentId)
         .valueOrElse(new ArrayList<>());
@@ -603,11 +605,12 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   public void setContext(Context context) {
+    this.context = requireNonNull(context);
+    if (context.projectId().isEmpty()) {
+      throw new ApplicationException("no project id in context " + context);
+    }
     ExperimentId experimentId = context.experimentId()
         .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
-    context.projectId()
-        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
-    this.context = context;
     reloadExperimentInfo(experimentId);
   }
 
@@ -724,6 +727,11 @@ public class ExperimentDetailsComponent extends PageArea {
       };
     }
 
+    public static List<BioIcon> getOptionsForType(SampleSourceType type) {
+      return Arrays.stream(BioIcon.values()).filter(o ->
+          o.getType().equals(type)).toList();
+    }
+
     public String getLabel() {
       return label;
     }
@@ -736,15 +744,17 @@ public class ExperimentDetailsComponent extends PageArea {
       return iconResource;
     }
 
-    public static List<BioIcon> getOptionsForType(SampleSourceType type) {
-      return Arrays.stream(BioIcon.values()).filter(o ->
-          o.getType().equals(type)).toList();
-    }
-
     private static class Constants {
 
       public static final String DEFAULT_LABEL = "default";
     }
+  }
+
+  /**
+   * Describes the source level of a sample: species, specimen or analyte
+   */
+  public enum SampleSourceType {
+    SPECIES, SPECIMEN, ANALYTE
   }
 
   /**
@@ -771,12 +781,5 @@ public class ExperimentDetailsComponent extends PageArea {
         return vaadinIconResource.create();
       }
     }
-  }
-
-  /**
-   * Describes the source level of a sample: species, specimen or analyte
-   */
-  public enum SampleSourceType {
-    SPECIES, SPECIMEN, ANALYTE
   }
 }

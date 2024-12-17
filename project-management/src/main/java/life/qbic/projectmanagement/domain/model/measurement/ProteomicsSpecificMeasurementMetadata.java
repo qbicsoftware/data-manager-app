@@ -80,4 +80,8 @@ public class ProteomicsSpecificMeasurementMetadata {
     return fractionName;
   }
 
+  public String comment() {
+    return comment;
+  }
+
 }

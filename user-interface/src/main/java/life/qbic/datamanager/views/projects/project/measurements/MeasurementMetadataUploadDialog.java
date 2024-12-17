@@ -68,8 +68,9 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   @Serial
   private static final long serialVersionUID = -8253078073427291947L;
-  private final MeasurementValidationService measurementValidationService;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  public static final String SECONDARY = "secondary";
+  private final transient MeasurementValidationService measurementValidationService;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
 
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final transient List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
@@ -458,7 +459,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       header.addClassName("header");
       box.add(header);
       Span instruction = new Span("Please click on Register to record the sample measurement data");
-      instruction.addClassName("secondary");
+      instruction.addClassName(SECONDARY);
       Div validationDetails = new Div();
       Span approvedMeasurements = new Span(String.format("%s measurements", validMeasurementCount));
       approvedMeasurements.addClassName("bold");
@@ -477,7 +478,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       header.addClassName("header");
       box.add(header);
       Span instruction = new Span("Please correct the entries and re-upload the excel sheet");
-      instruction.addClassName("secondary");
+      instruction.addClassName(SECONDARY);
       Div validationDetails = new Div();
       OrderedList invalidMeasurementsList = new OrderedList(
           invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
@@ -592,6 +593,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
 
   private static class UploadProgressDisplay extends Div {
 
+    public static final String DISPLAY_BOX = "display-box";
     private final Div processInProgressDisplay;
     private final Div processFailureDisplay;
     private final Div processSucceededDisplay;
@@ -602,18 +604,18 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       String modeBasedTask = (mode == MODE.ADD ? "register" : "update");
       Span title = new Span(
           String.format("%s" + " the measurement data", StringUtils.capitalize(modeBasedTask)));
-      title.addClassNames("bold", "secondary");
+      title.addClassNames("bold", SECONDARY);
       Span description = new Span(
           String.format("It may take about a minute for the %s process to complete",
               modeBasedTask));
-      description.addClassName("secondary");
+      description.addClassName(SECONDARY);
       add(title, description);
       this.processSucceededDisplay = new Div();
-      processSucceededDisplay.setClassName("display-box");
+      processSucceededDisplay.setClassName(DISPLAY_BOX);
       this.processInProgressDisplay = new Div();
-      processInProgressDisplay.setClassName("display-box");
+      processInProgressDisplay.setClassName(DISPLAY_BOX);
       this.processFailureDisplay = new Div();
-      this.processFailureDisplay.setClassName("display-box");
+      this.processFailureDisplay.setClassName(DISPLAY_BOX);
       add(processSucceededDisplay, processInProgressDisplay, processFailureDisplay);
       processInProgressDisplay.setVisible(false);
       processFailureDisplay.setVisible(false);
@@ -649,7 +651,7 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       Span processInProgressTitle = new Span(label);
       processInProgressTitle.addClassNames("bold");
       Span processInProgressDescription = new Span(description);
-      processInProgressDescription.addClassNames("secondary");
+      processInProgressDescription.addClassNames(SECONDARY);
       ProgressBar progressBar = new ProgressBar();
       progressBar.setIndeterminate(true);
       processInProgressDisplay.add(processInProgressTitle, progressBar,

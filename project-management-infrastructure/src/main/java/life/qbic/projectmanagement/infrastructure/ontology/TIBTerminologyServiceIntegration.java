@@ -164,6 +164,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     } catch (IOException e) {
       throw wrapIO(e);
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw wrapInterrupted(e);
     } catch (Exception e) {
       throw wrapUnknown(e);
@@ -193,6 +194,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     } catch (IOException e) {
       throw wrapIO(e);
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw wrapInterrupted(e);
     } catch (Exception e) {
       throw wrapUnknown(e);

@@ -35,7 +35,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
   private static final Logger log = logger(MyVaadinSessionInitListener.class);
   private final ExtendedClientDetailsReceiver clientDetailsReceiver;
 
-  private final UiExceptionHandler uiExceptionHandler;
+  private final transient UiExceptionHandler uiExceptionHandler;
   private final LogoutService logoutService;
 
   public MyVaadinSessionInitListener(

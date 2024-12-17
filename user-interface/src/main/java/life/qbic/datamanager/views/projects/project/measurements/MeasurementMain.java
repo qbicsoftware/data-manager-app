@@ -87,7 +87,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final Span measurementsSelectedInfoBox = new Span();
   private final MeasurementDetailsComponent measurementDetailsComponent;
-  private final MeasurementPresenter measurementPresenter;
+  private final transient MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
   private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
@@ -95,12 +95,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
-  private final ProteomicsMeasurementEditTemplate proteomicsMeasurementEditTemplate;
-  private final NGSMeasurementEditTemplate ngsMeasurementEditTemplate;
+  private final transient ProteomicsMeasurementEditTemplate proteomicsMeasurementEditTemplate;
+  private final transient NGSMeasurementEditTemplate ngsMeasurementEditTemplate;
   private final DownloadProvider ngsDownloadProvider;
   private final DownloadProvider proteomicsDownloadProvider;
-  private final ProjectInformationService projectInformationService;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient ProjectInformationService projectInformationService;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private transient Context context;
 
   public MeasurementMain(

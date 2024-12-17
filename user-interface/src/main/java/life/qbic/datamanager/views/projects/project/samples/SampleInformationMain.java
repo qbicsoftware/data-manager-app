@@ -38,15 +38,12 @@ import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponen
 import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditSampleBatchDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
-import life.qbic.datamanager.views.projects.project.samples.registration.batch.SampleBatchInformationSpreadsheet.SampleInfo;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
-import life.qbic.projectmanagement.application.batch.SampleUpdateRequest;
-import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
@@ -59,8 +56,6 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -237,7 +232,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       UI ui = event.getSource().getUI().orElseThrow();
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
               event.validatedSampleMetadata(),
-              projectId, event.batchName(), false)
+              projectId, event.batchName(), false, experimentId)
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         registrationTask
@@ -274,32 +269,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .open();
   }
 
-
-  private List<SampleRegistrationRequest> generateSampleRequestsFromSampleInfo(BatchId batchId,
-      List<SampleInfo> sampleInfos) {
-    List<SampleRegistrationRequest> sampleRegistrationRequests;
-    sampleRegistrationRequests = sampleInfos.stream()
-        .map(sample -> new SampleRegistrationRequest(
-            sample.getSampleName(), sample.getBiologicalReplicate(),
-            batchId,
-            context.experimentId().orElseThrow(),
-            sample.getExperimentalGroup().id(),
-            SampleOrigin.create(sample.getSpecies(), sample.getSpecimen(), sample.getAnalyte()),
-            sample.getAnalysisToBePerformed(),
-            sample.getCustomerComment()))
-        .toList();
-    return sampleRegistrationRequests;
-  }
-
-  private SampleUpdateRequest generateSampleUpdateRequestFromSampleInfo(
-      SampleInfo sampleInfo) {
-    return new SampleUpdateRequest(sampleInfo.getSampleId(), new SampleInformation(
-        sampleInfo.getSampleName(), sampleInfo.getBiologicalReplicate(),
-        sampleInfo.getAnalysisToBePerformed(),
-        sampleInfo.getExperimentalGroup(),
-        sampleInfo.getSpecies(), sampleInfo.getSpecimen(), sampleInfo.getAnalyte(),
-        sampleInfo.getCustomerComment()));
-  }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
     Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
