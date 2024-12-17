@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.6.6</version>
+  <version>1.7.0</version>
   <modules>
     <module>user-interface</module>
     <module>identity</module>
