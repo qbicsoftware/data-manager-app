@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.sample;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
@@ -35,6 +36,7 @@ public class SampleValidationService {
       String analyte,
       String analysisMethod,
       String comment,
+      Map<String, String> confoundingVariables,
       String experimentId,
       String projectId) {
     return sampleValidation.validateNewSample(sampleName,
@@ -45,6 +47,7 @@ public class SampleValidationService {
         analyte,
         analysisMethod,
         comment,
+        confoundingVariables,
         experimentId,
         projectId);
   }
@@ -60,6 +63,7 @@ public class SampleValidationService {
       String analyte,
       String analysisMethod,
       String comment,
+      Map<String, String> confoundingVariables,
       String experimentId,
       String projectId) {
     return sampleValidation.validateExistingSample(sampleCode,
@@ -71,6 +75,7 @@ public class SampleValidationService {
         analyte,
         analysisMethod,
         comment,
+        confoundingVariables,
         experimentId,
         projectId);
   }
@@ -86,6 +91,7 @@ public class SampleValidationService {
       String analyte,
       String analysisMethod,
       String comment,
+      Map<String, String> confoundingVariables,
       String experimentId,
       String projectId) {
     return CompletableFuture.completedFuture(
@@ -97,6 +103,7 @@ public class SampleValidationService {
             analyte,
             analysisMethod,
             comment,
+            confoundingVariables,
             experimentId,
             projectId));
   }
@@ -113,6 +120,7 @@ public class SampleValidationService {
       String analyte,
       String analysisMethod,
       String comment,
+      Map<String, String> confoundingVariables,
       String experimentId,
       String projectId) {
     return CompletableFuture.completedFuture(
@@ -125,6 +133,7 @@ public class SampleValidationService {
             analyte,
             analysisMethod,
             comment,
+            confoundingVariables,
             experimentId,
             projectId));
   }

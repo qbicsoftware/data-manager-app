@@ -24,7 +24,7 @@ public class Sanitizer {
    */
   public static String headerEncoder(String value) {
     Objects.requireNonNull(value);
-    return value.replaceAll(ASTERIX, "").trim().toLowerCase();
+    return value.replaceAll(ASTERIX, "").trim();
   }
 
   /**

@@ -2,6 +2,7 @@ package life.qbic.datamanager.parser;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * <b>Parsing Result</b>
@@ -71,12 +72,21 @@ public record ParsingResult(Map<String, Integer> columnMap, List<Row> rows) {
   }
 
   public String getValueOrDefault(int rowIndex, String columnHeader, String defaultValue) {
-    var key = Sanitizer.headerEncoder(columnHeader);
+    var key = columnHeader;
     if (!columnMap().containsKey(key)) {
       return defaultValue;
     }
     Row row = getRow(rowIndex);
     return row.values().get(columnMap().get(key));
+  }
+
+  public Optional<String> getValue(int rowIndex, String columnHeader) {
+    var key = columnHeader;
+    if (!columnMap().containsKey(key)) {
+      return Optional.empty();
+    }
+    Row row = getRow(rowIndex);
+    return Optional.ofNullable(row.values().get(columnMap().get(key)));
   }
 
   public record Row(List<String> values) {

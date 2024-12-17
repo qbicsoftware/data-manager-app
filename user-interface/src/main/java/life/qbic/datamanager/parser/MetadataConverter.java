@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -346,65 +345,57 @@ public class MetadataConverter implements MeasurementMetadataConverter {
   }
 
   private boolean looksLikeNgsMeasurement(Collection<String> properties, boolean ignoreID) {
-    var formattedProperties = properties.stream().map(String::toLowerCase)
-        .collect(Collectors.toList());
-    Map<String, Integer> hitMap;
+    var sanitizedColumnHeaders = properties.stream()
+        .map(Sanitizer::headerEncoder)
+        .collect(Collectors.toSet());
+    Set<String> requiredColumnHeaders;
     if (ignoreID) {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementRegisterColumn.values())
-              .map(NGSMeasurementRegisterColumn::headerName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()), NGSMeasurementEditColumn.MEASUREMENT_ID.headerName());
+      requiredColumnHeaders = Arrays.stream(NGSMeasurementRegisterColumn.values())
+          .map(NGSMeasurementRegisterColumn::headerName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
     } else {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementEditColumn.values())
-              .map(NGSMeasurementEditColumn::headerName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()));
+      requiredColumnHeaders = Arrays.stream(NGSMeasurementEditColumn.values())
+          .map(NGSMeasurementEditColumn::headerName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
     }
-    var missingProperties = new ArrayList<>();
-    for (Entry<String, Integer> entry : hitMap.entrySet()) {
-      if (entry.getValue() == 0) {
-        missingProperties.add(entry.getKey());
-      }
-    }
-    if (missingProperties.isEmpty()) {
-      return true;
-    } else {
-      log.debug("Missing properties for NGS measurement: %s".formatted(missingProperties));
-    }
-    return false;
+    return hasAllRequiredProperties(requiredColumnHeaders, sanitizedColumnHeaders,
+        "Missing properties for NGS measurement: %s");
   }
 
   private boolean looksLikeProteomicsMeasurement(Collection<String> properties, boolean ignoreID) {
-    var formattedProperties = properties.stream().map(String::toLowerCase)
-        .collect(Collectors.toList());
-    Map<String, Integer> hitMap;
+    var sanitizedColumnHeaders = properties.stream()
+        .map(Sanitizer::headerEncoder)
+        .collect(Collectors.toSet());
+    Set<String> requiredColumnHeaders;
     if (ignoreID) {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementRegisterColumn.values())
-              .map(ProteomicsMeasurementRegisterColumn::headerName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()),
-          ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName());
+      requiredColumnHeaders = Arrays.stream(ProteomicsMeasurementRegisterColumn.values())
+          .map(ProteomicsMeasurementRegisterColumn::headerName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
     } else {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementEditColumn.values())
-              .map(ProteomicsMeasurementEditColumn::headerName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()));
+      requiredColumnHeaders = Arrays.stream(ProteomicsMeasurementEditColumn.values())
+          .map(ProteomicsMeasurementEditColumn::headerName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
+    }
+    return hasAllRequiredProperties(requiredColumnHeaders, sanitizedColumnHeaders,
+        "Missing properties for proteomics measurement: %s");
+  }
+
+  private static boolean hasAllRequiredProperties(Set<String> requiredProperties,
+      Set<String> presentProperties, String missingErrorMessage) {
+    if (presentProperties.containsAll(requiredProperties)) {
+      return true;
     }
     var missingProperties = new ArrayList<>();
-    for (Entry<String, Integer> entry : hitMap.entrySet()) {
-      if (entry.getValue() == 0) {
-        missingProperties.add(entry.getKey());
+    for (String requiredProperty : requiredProperties) {
+      if (!presentProperties.contains(requiredProperty)) {
+        missingProperties.add(requiredProperty);
       }
     }
-    if (missingProperties.isEmpty()) {
-      return true;
-    } else {
-      log.debug("Missing properties for proteomics measurement: %s".formatted(missingProperties));
-    }
+    log.debug(missingErrorMessage.formatted(missingProperties));
     return false;
   }
 }

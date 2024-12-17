@@ -69,7 +69,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.MeasurementDataRepo;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
-import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
+import life.qbic.projectmanagement.infrastructure.sample.SampleDataRepository;
 import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSessionFactory.ApiV3;
 import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSessionFactory.OpenBisSession;
 import org.springframework.beans.factory.annotation.Value;
@@ -81,7 +81,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo,
+public class OpenbisConnector implements QbicProjectDataRepo, SampleDataRepository,
     MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester {
 
   private static final Logger log = logger(OpenbisConnector.class);
@@ -125,11 +125,11 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     float sizeTerra = sizeGb * sizeKb;
 
     if (size < sizeMb) {
-      return df.format(size / sizeKb) + " Kb";
+      return df.format(size / sizeKb) + " KB";
     } else if (size < sizeGb) {
-      return df.format(size / sizeMb) + " Mb";
+      return df.format(size / sizeMb) + " MB";
     } else if (size < sizeTerra) {
-      return df.format(size / sizeGb) + " Gb";
+      return df.format(size / sizeGb) + " GB";
     }
 
     return "";
@@ -703,7 +703,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   @Override
   public void testApplicationServer() {
     try (OpenBisSession session = sessionFactory.getSession()) {
-      applicationServer.isSessionActive(session.getToken());
+      if (!applicationServer.isSessionActive(session.getToken())) {
+        throw new ConnectionException("Could not connect to openBIS application server.");
+      }
       log.info("Successfully tested connection to openBIS application server.");
     }
   }

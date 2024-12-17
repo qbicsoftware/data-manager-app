@@ -22,3 +22,6 @@ VALUES (1, 1), # admin can change ownership on entities
        (3, 3), # project manager can create, modify and remove access control entries
        (3, 4) # project manager can create projects
 ;
+
+INSERT INTO acl_class(id, class, class_id_type)
+VALUES (1, 'life.qbic.projectmanagement.domain.model.project.Project', 'java.lang.String');
