@@ -25,6 +25,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest
 import life.qbic.projectmanagement.domain.model.sample.event.SampleDeleted;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleRegistered;
 import life.qbic.projectmanagement.domain.model.sample.event.SampleUpdated;
+import life.qbic.projectmanagement.domain.repository.ConfoundingVariableLevelRepository;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,10 +43,13 @@ public class SampleDomainService {
 
   private final SampleRepository sampleRepository;
   private final Logger log = LoggerFactory.logger(SampleDomainService.class);
+  private final ConfoundingVariableLevelRepository confoundingVariableLevelRepository;
 
   @Autowired
-  public SampleDomainService(SampleRepository sampleRepository) {
+  public SampleDomainService(SampleRepository sampleRepository,
+      ConfoundingVariableLevelRepository confoundingVariableLevelRepository) {
     this.sampleRepository = Objects.requireNonNull(sampleRepository);
+    this.confoundingVariableLevelRepository = confoundingVariableLevelRepository;
   }
 
   public Result<Collection<Sample>, ResponseCode> registerSamples(Project project,
@@ -108,6 +112,9 @@ public class SampleDomainService {
 
   public void deleteSamples(Project project, BatchId batchId, Collection<SampleId> samples) {
     Objects.requireNonNull(samples);
+    samples.forEach(
+        sampleId -> confoundingVariableLevelRepository.deleteAllForSample(project.getId().value(),
+            sampleId.value()));
     sampleRepository.deleteAll(project, samples);
     samples.forEach(sampleId -> dispatchSuccessfulSampleDeletion(sampleId, batchId));
     if(!samples.isEmpty()) {

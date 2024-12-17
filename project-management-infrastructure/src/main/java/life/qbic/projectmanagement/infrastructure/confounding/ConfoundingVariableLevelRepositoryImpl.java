@@ -2,6 +2,8 @@ package life.qbic.projectmanagement.infrastructure.confounding;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableLevelData;
 import life.qbic.projectmanagement.domain.repository.ConfoundingVariableLevelRepository;
 import org.springframework.stereotype.Repository;
@@ -64,6 +66,15 @@ public class ConfoundingVariableLevelRepositoryImpl implements ConfoundingVariab
   @Override
   public void deleteById(String projectId, Long aLong) {
     jpaRepository.deleteById(aLong);
+  }
+
+  @Override
+  public void deleteAllForSample(String projectId, String sampleId) {
+    List<ConfoundingVariableLevelData> allBySampleIdEquals = jpaRepository.findAllBySampleIdEquals(
+        sampleId);
+    Set<Long> levelIds = allBySampleIdEquals.stream().map(ConfoundingVariableLevelData::getId)
+        .collect(Collectors.toSet());
+    jpaRepository.deleteAllById(levelIds);
   }
 
   @Override

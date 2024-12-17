@@ -42,6 +42,9 @@ public interface ConfoundingVariableLevelRepository {
   void deleteById(String projectId, Long aLong);
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  void deleteAllForSample(String projectId, String sampleId);
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   void deleteAllForVariable(String projectId, long variableId);
 
 }
