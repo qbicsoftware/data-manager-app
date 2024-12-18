@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.general.dialog;
 
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
 
@@ -17,9 +16,10 @@ public class DialogFooter extends Div {
 
   private DialogFooter(AppDialog dialog, String abortText, String confirmText) {
     this.dialog = Objects.requireNonNull(dialog);
-    addClassNames("flex-horizontal", "gap-04");
-    var confirmButton = createConfirmButton(confirmText);
-    var cancelButton = createCancelButton(abortText);
+    addClassNames("flex-horizontal", "gap-04", "footer");
+    var buttonFactory = new ButtonFactory();
+    var confirmButton = buttonFactory.createConfirmButton(confirmText);
+    var cancelButton = buttonFactory.createCancelButton(abortText);
     add(cancelButton, confirmButton);
     dialog.setFooter(this);
     confirmButton.addClickListener(e -> dialog.confirm());
@@ -32,20 +32,6 @@ public class DialogFooter extends Div {
 
   private DialogFooter() {
     dialog = null;
-  }
-
-  private static Button createConfirmButton(String label) {
-    return createButton(label, new String[]{"button-text-primary", "button-color-primary", "button-size-medium-dialog"});
-  }
-
-  private static Button createButton(String label, String[] classNames) {
-    Button button = new Button(label);
-    button.addClassNames(classNames);
-    return button;
-  }
-
-  private static Button createCancelButton(String label) {
-    return createButton(label, new String[]{"button-text"});
   }
 
   public AppDialog getDialog() {
