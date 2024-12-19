@@ -87,17 +87,6 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     return HasBinderValidation.super.isInvalid();
   }
 
-  public void setProjectManagers(List<Contact> projectManagers) {
-    projectManagerField.setItems(projectManagers);
-  }
-
-  public void setResponsiblePersons(List<Contact> contactPersons) {
-    responsiblePersonField.setItems(contactPersons);
-  }
-  public void setPrincipalInvestigators(List<Contact> principalInvestigators) {
-    principalInvestigatorField.setItems(principalInvestigators);
-  }
-
   @Override
   public Binder<ProjectCollaborators> getBinder() {
     return collaboratorsBinder;
