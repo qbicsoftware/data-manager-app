@@ -17,6 +17,7 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,6 @@ import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCo
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
-import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -73,8 +73,7 @@ public class AddProjectDialog extends QbicDialog {
 
   public AddProjectDialog(ProjectInformationService projectInformationService,
       FinanceService financeService,
-      SpeciesLookupService speciesLookupService,
-      ContactRepository contactRepository, TerminologyService terminologyService,
+      SpeciesLookupService speciesLookupService, TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
 
@@ -91,13 +90,8 @@ public class AddProjectDialog extends QbicDialog {
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         speciesLookupService, terminologyService);
 
-    List<Contact> knownContacts = contactRepository.findAll().stream().map(contact ->
-        new Contact(contact.fullName(), contact.emailAddress())).toList();
-    if(knownContacts.isEmpty()) {
-      collaboratorsLayout.hideContactBox();
-    } else {
-      collaboratorsLayout.setKnownContacts(knownContacts);
-    }
+    List<Contact> knownContacts = new ArrayList<>();
+    collaboratorsLayout.setKnownContacts(knownContacts);
 
     stepContent = new HashMap<>();
 
