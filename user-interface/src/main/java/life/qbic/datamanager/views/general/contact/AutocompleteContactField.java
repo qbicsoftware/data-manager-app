@@ -3,10 +3,8 @@ package life.qbic.datamanager.views.general.contact;
 import static java.util.Objects.isNull;
 
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.validator.EmailValidator;
@@ -80,17 +78,6 @@ public class AutocompleteContactField extends CustomField<Contact> implements
     clear();
   }
 
-  private static Div renderContact(Contact contact) {
-    var contactName = new Span(contact.getFullName());
-    contactName.addClassName("contact-name");
-    var contactEmail = new Span(contact.getEmail());
-    contactEmail.addClassName("contact-email");
-    var container = new Div();
-    container.addClassName("contact-item");
-    container.add(contactName, contactEmail);
-    return container;
-  }
-
   private void onSelfSelected(
       ComponentValueChangeEvent<Checkbox, Boolean> checkboxvalueChangeEvent) {
     if (Boolean.TRUE.equals(checkboxvalueChangeEvent.getValue())) {
@@ -101,21 +88,6 @@ public class AutocompleteContactField extends CustomField<Contact> implements
 
   private void updateValidationProperty() {
     this.getElement().setProperty("invalid", !binder.isValid());
-  }
-
-  private void onContactSelectionChanged(
-      ComponentValueChangeEvent<ComboBox<Contact>, Contact> valueChanged) {
-    //ignore clearing the combobox or empty selection
-    if (valueChanged.getValue() == null) {
-      return;
-    }
-    if (valueChanged.getValue().isEmpty()) {
-      return;
-    }
-    // update the contact to the selected value
-    setContact(valueChanged.getValue());
-    // clear selection box
-    valueChanged.getHasValue().clear();
   }
 
   public void setContact(Contact contact) {
