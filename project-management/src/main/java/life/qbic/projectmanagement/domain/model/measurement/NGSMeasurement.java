@@ -201,6 +201,16 @@ public class NGSMeasurement {
     setMethod(methodMetadata);
   }
 
+  /**
+   * Convenience method to query if the measurement was derived from a pooled sample.
+   *
+   * @return true, if the measurement was performed on a pooled sample, else returns false
+   * @since 1.0.0
+   */
+  public boolean isPooledSampleMeasurement() {
+    return specificMetadata.size() > 1;
+  }
+
 
   public MeasurementCode measurementCode() {
     return this.measurementCode;
