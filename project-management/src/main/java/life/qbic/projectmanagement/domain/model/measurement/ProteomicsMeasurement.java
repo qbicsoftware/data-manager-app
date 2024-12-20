@@ -320,10 +320,6 @@ public class ProteomicsMeasurement {
     return measurementId != null ? measurementId.hashCode() : 0;
   }
 
-  public Optional<String> comment() {
-    return Optional.empty();
-  }
-
   public Optional<String> technicalReplicateName() {
     return Optional.ofNullable(technicalReplicateName);
   }

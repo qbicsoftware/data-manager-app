@@ -70,10 +70,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PermitAll
 public class MeasurementDetailsComponent extends PageArea implements Serializable {
 
+  public static final String CLICKABLE = "clickable";
   @Serial
   private static final long serialVersionUID = 5086686432247130622L;
   private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm";
-  public static final String CLICKABLE = "clickable";
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
@@ -156,7 +156,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   private void addMeasurementTab(GridLazyDataView<?> gridLazyDataView) {
-    if(gridLazyDataView.getItems().findAny().isEmpty()) {
+    if (gridLazyDataView.getItems().findAny().isEmpty()) {
       return;
     }
     if (gridLazyDataView.getItem(0) instanceof ProteomicsMeasurement) {
@@ -186,18 +186,18 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setAutoWidth(true)
         .setFlexGrow(0);
     ngsMeasurementGrid.addComponentColumn(measurement -> {
-          if (measurement.samplePoolGroup().isEmpty()) {
+          if (!measurement.isPooledSampleMeasurement()) {
             return new Span(
                 String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
           }
-          MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
-              measurement);
-          Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
-          expandIcon.addClassName("expand-icon");
-          Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
-          expandSpan.addClassNames("sample-column-cell", CLICKABLE);
-          expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
-          return expandSpan;
+          return createNGSPooledSampleComponent(measurement);
+        })
+        .setTooltipGenerator(measurement -> {
+          if (!measurement.isPooledSampleMeasurement()) {
+            return String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()));
+          } else {
+            return "";
+          }
         })
         .setHeader("Samples")
         .setAutoWidth(true);
@@ -242,6 +242,28 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             ngsMeasurement -> asClientLocalDateTime(ngsMeasurement.registrationDate())
                 .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setAutoWidth(true);
+    ngsMeasurementGrid.addComponentColumn(measurement -> {
+          if (!measurement.isPooledSampleMeasurement()) {
+            Span singularComment = new Span();
+            singularComment.setText(
+                measurement.specificMeasurementMetadata().stream().findFirst().orElseThrow().comment()
+                    .orElse(""));
+            return singularComment;
+          } else {
+            return createNGSPooledSampleComponent(measurement);
+          }
+        })
+        .setHeader("Comment")
+        .setTooltipGenerator(measurement -> {
+          if (!measurement.isPooledSampleMeasurement()) {
+            return measurement.specificMeasurementMetadata().stream().findFirst().orElseThrow()
+                .comment()
+                .orElse("");
+          } else {
+            return "";
+          }
+        })
+        .setAutoWidth(true);
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
@@ -281,16 +303,15 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             return new Span(
                 String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
           }
-          MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
-              measurement);
-          Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
-          expandIcon.addClassName("expand-icon");
-          Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
-          expandSpan.addClassNames("sample-column-cell", CLICKABLE);
-          expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
-          return expandSpan;
+          return createProteomicsPooledSampleComponent(measurement);
         })
         .setHeader("Samples")
+        .setTooltipGenerator(measurement -> {
+          if (!measurement.isPooledSampleMeasurement()) {
+            return String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()));
+          }
+          return "";
+        })
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderOrganisation(proteomicsMeasurement.organisation()))
@@ -339,9 +360,25 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setTooltipGenerator(measurement -> asClientLocalDateTime(measurement.registrationDate())
             .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setAutoWidth(true);
-    proteomicsMeasurementGrid.addColumn(measurement -> measurement.comment().orElse(""))
+    proteomicsMeasurementGrid.addComponentColumn(measurement -> {
+          if (!measurement.isPooledSampleMeasurement()) {
+            Span singularComment = new Span();
+            singularComment.setText(
+                measurement.specificMetadata().stream().findFirst().orElseThrow().comment().orElse(""));
+            return singularComment;
+          } else {
+            return createProteomicsPooledSampleComponent(measurement);
+          }
+        })
         .setHeader("Comment")
-        .setTooltipGenerator(measurement -> measurement.comment().orElse(""))
+        .setTooltipGenerator(measurement -> {
+          if (!measurement.isPooledSampleMeasurement()) {
+            return measurement.specificMetadata().stream().findFirst().orElseThrow().comment()
+                .orElse("");
+          } else {
+            return "";
+          }
+        })
         .setAutoWidth(true);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(
         query -> {
@@ -349,11 +386,11 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                   it -> new SortOrder(it.getSorted(),
                       it.getDirection().equals(SortDirection.ASCENDING)))
               .collect(Collectors.toList());
-            sortOrders.add(SortOrder.of("measurementCode").ascending());
-            return measurementService.findProteomicsMeasurements(searchTerm,
-                    context.experimentId().orElseThrow(),
-                    query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
-                .stream();
+          sortOrders.add(SortOrder.of("measurementCode").ascending());
+          return measurementService.findProteomicsMeasurements(searchTerm,
+                  context.experimentId().orElseThrow(),
+                  query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
+              .stream();
 
         });
     proteomicsGridDataView
@@ -363,6 +400,28 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     proteomicsMeasurementGrid.addSelectListener(
         event -> updateSelectedMeasurementsInfo(event.isFromClient()));
     measurementsGridDataViews.add(proteomicsGridDataView);
+  }
+
+  private Span createProteomicsPooledSampleComponent(ProteomicsMeasurement measurement) {
+    MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
+        measurement);
+    Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+    expandIcon.addClassName("expand-icon");
+    Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
+    expandSpan.addClassNames("sample-column-cell", CLICKABLE);
+    expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
+    return expandSpan;
+  }
+
+  private Span createNGSPooledSampleComponent(NGSMeasurement measurement) {
+    MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
+        measurement);
+    Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
+    expandIcon.addClassName("expand-icon");
+    Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
+    expandSpan.addClassNames("sample-column-cell", CLICKABLE);
+    expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
+    return expandSpan;
   }
 
   private void updateSelectedMeasurementsInfo(boolean isFromClient) {
@@ -473,6 +532,54 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
+  public static class MeasurementTechnologyTab extends Tab {
+
+    private final Span countBadge;
+    private final Span technologyNameComponent;
+    private final String technology;
+
+    public MeasurementTechnologyTab(String technology, int measurementCount) {
+      this.technology = technology;
+      technologyNameComponent = new Span();
+      this.countBadge = createBadge();
+      Span sampleCountComponent = new Span();
+      sampleCountComponent.add(countBadge);
+      this.add(technologyNameComponent, sampleCountComponent);
+      setTechnologyName(technology);
+      setMeasurementCount(measurementCount);
+      addClassName("tab-with-count");
+    }
+
+    /**
+     * Helper method for creating a badge.
+     */
+    private static Span createBadge() {
+      Tag tag = new Tag(String.valueOf(0));
+      tag.setTagColor(TagColor.CONTRAST);
+      return tag;
+    }
+
+    public String getTabLabel() {
+      return technology;
+    }
+
+    /**
+     * Setter method for specifying the number of measurements of the technology type shown in this
+     * component
+     *
+     * @param measurementCount number of samples associated with the experiment shown in this
+     *                         component
+     */
+    public void setMeasurementCount(int measurementCount) {
+      countBadge.setText(String.valueOf(measurementCount));
+    }
+
+    public void setTechnologyName(String technologyName) {
+      this.technologyNameComponent.setText(technologyName);
+    }
+
+  }
+
   public class MeasurementPooledSamplesDialog extends Dialog {
 
     /**
@@ -542,6 +649,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           .setHeader("Measurement Label")
           .setTooltipGenerator(ProteomicsSpecificMeasurementMetadata::label)
           .setAutoWidth(true);
+      sampleDetailsGrid.addColumn(metadata -> metadata.comment().orElse(""))
+          .setHeader("comment")
+          .setTooltipGenerator(metadata -> metadata.comment().orElse(""))
+          .setAutoWidth(true);
       sampleDetailsGrid.setItems(proteomicsSpecificMeasurementMetadata);
       add(sampleDetailsGrid);
     }
@@ -609,53 +720,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       pooledDetail.addClassName("pooled-detail");
       return pooledDetail;
     }
-  }
-
-  public static class MeasurementTechnologyTab extends Tab {
-
-    private final Span countBadge;
-    private final Span technologyNameComponent;
-    private final String technology;
-
-    public MeasurementTechnologyTab(String technology, int measurementCount) {
-      this.technology = technology;
-      technologyNameComponent = new Span();
-      this.countBadge = createBadge();
-      Span sampleCountComponent = new Span();
-      sampleCountComponent.add(countBadge);
-      this.add(technologyNameComponent, sampleCountComponent);
-      setTechnologyName(technology);
-      setMeasurementCount(measurementCount);
-      addClassName("tab-with-count");
-    }
-
-    public String getTabLabel() {
-      return technology;
-    }
-
-    /**
-     * Helper method for creating a badge.
-     */
-    private static Span createBadge() {
-      Tag tag = new Tag(String.valueOf(0));
-      tag.setTagColor(TagColor.CONTRAST);
-      return tag;
-    }
-
-    /**
-     * Setter method for specifying the number of measurements of the technology type shown in
-     * this component
-     *
-     * @param measurementCount number of samples associated with the experiment shown in this component
-     */
-    public void setMeasurementCount(int measurementCount) {
-      countBadge.setText(String.valueOf(measurementCount));
-    }
-
-    public void setTechnologyName(String technologyName) {
-      this.technologyNameComponent.setText(technologyName);
-    }
-
   }
 
 }
