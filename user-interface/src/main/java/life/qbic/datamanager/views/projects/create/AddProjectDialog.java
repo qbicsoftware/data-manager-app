@@ -17,15 +17,12 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
-import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
@@ -89,9 +86,6 @@ public class AddProjectDialog extends QbicDialog {
     this.collaboratorsLayout = new CollaboratorsLayout();
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         speciesLookupService, terminologyService);
-
-    List<Contact> knownContacts = new ArrayList<>();
-    collaboratorsLayout.setKnownContacts(knownContacts);
 
     stepContent = new HashMap<>();
 
