@@ -11,7 +11,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.6.6</version>
+    <version>1.7.0</version>
   </parent>
 
   <repositories>
@@ -239,31 +239,31 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity-infrastructure</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>broadcasting</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -273,24 +273,24 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>project-management</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.logging</groupId>
       <artifactId>subscription-provider</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>finances-infrastructure</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -300,13 +300,13 @@
     <dependency>
       <groupId>life.qbic.identity</groupId>
       <artifactId>project-management-infrastructure</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.infrastructure</groupId>
       <artifactId>email-service-provider</artifactId>
-      <version>1.6.6</version>
+      <version>1.7.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
