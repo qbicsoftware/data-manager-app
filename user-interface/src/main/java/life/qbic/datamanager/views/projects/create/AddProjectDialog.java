@@ -18,13 +18,11 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
-import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
@@ -32,7 +30,6 @@ import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCo
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
-import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -73,8 +70,7 @@ public class AddProjectDialog extends QbicDialog {
 
   public AddProjectDialog(ProjectInformationService projectInformationService,
       FinanceService financeService,
-      SpeciesLookupService speciesLookupService,
-      ContactRepository contactRepository, TerminologyService terminologyService,
+      SpeciesLookupService speciesLookupService, TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
 
@@ -90,14 +86,6 @@ public class AddProjectDialog extends QbicDialog {
     this.collaboratorsLayout = new CollaboratorsLayout();
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         speciesLookupService, terminologyService);
-
-    List<Contact> knownContacts = contactRepository.findAll().stream().map(contact ->
-        new Contact(contact.fullName(), contact.emailAddress())).toList();
-    if(knownContacts.isEmpty()) {
-      collaboratorsLayout.hideContactBox();
-    } else {
-      collaboratorsLayout.setKnownContacts(knownContacts);
-    }
 
     stepContent = new HashMap<>();
 
