@@ -3,22 +3,23 @@ package life.qbic.datamanager.views.general.dialog;
 import com.vaadin.flow.component.button.Button;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b><Button Factory</b>
+ * <p>
+ * Centralises the styling for buttons in the dialog context.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.7.0
  */
 public class ButtonFactory {
-
-  public Button createConfirmButton(String label) {
-    return createButton(label, new String[]{"button-text-primary", "button-color-primary", "button-size-medium-dialog"});
-  }
 
   private static Button createButton(String label, String[] classNames) {
     Button button = new Button(label);
     button.addClassNames(classNames);
     return button;
+  }
+
+  public Button createConfirmButton(String label) {
+    return createButton(label,
+        new String[]{"button-text-primary", "button-color-primary", "button-size-medium-dialog"});
   }
 
   public Button createCancelButton(String label) {
