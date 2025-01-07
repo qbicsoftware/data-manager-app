@@ -15,6 +15,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -70,13 +71,14 @@ public class BatchRegistrationService {
    *                  are usually followed by a complete batch that represents the measurements of
    *                  the complete experiment.
    * @param projectId id of the project this batch is added to
+   * @param experimentId id of the experiment this batch is added to
    * @return a result object with the response. If the registration failed, a response code will be
    * provided.
    * @since 1.0.0
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<BatchId, ResponseCode> registerBatch(String label, boolean isPilot,
-      ProjectId projectId) {
+      ProjectId projectId, ExperimentId experimentId) {
     var project = projectInformationService.find(projectId);
     if (project.isEmpty()) {
       log.error(
@@ -84,7 +86,8 @@ public class BatchRegistrationService {
       return Result.fromError(ResponseCode.BATCH_CREATION_FAILED);
     }
     String projectTitle = project.get().getProjectIntent().projectTitle().title();
-    var result = batchDomainService.register(label, isPilot, projectTitle, projectId);
+    var result = batchDomainService.register(label, isPilot, projectTitle, projectId,
+        experimentId);
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_REGISTRATION_FAILED);
     }

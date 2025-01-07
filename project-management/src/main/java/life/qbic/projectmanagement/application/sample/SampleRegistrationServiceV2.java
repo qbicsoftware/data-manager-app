@@ -58,9 +58,10 @@ public class SampleRegistrationServiceV2 {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
   public CompletableFuture<Void> registerSamples(Collection<SampleMetadata> sampleMetadata,
-      ProjectId projectId, String batchLabel, boolean batchIsPilot)
+      ProjectId projectId, String batchLabel, boolean batchIsPilot, ExperimentId experimentId)
       throws RegistrationException {
-    var result = batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId);
+    var result = batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId,
+        experimentId);
     if (result.isError()) {
       throw new RegistrationException("Batch registration failed");
     }

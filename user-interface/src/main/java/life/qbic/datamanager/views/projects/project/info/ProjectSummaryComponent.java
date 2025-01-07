@@ -37,6 +37,7 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
+import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.CollapsibleDetails;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.Heading;
@@ -198,11 +199,6 @@ public class ProjectSummaryComponent extends PageArea {
 
   private static List<? extends UserScopeStrategy> loadWriteScope(Section[] sections) {
     return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
-  }
-
-  private String formatDate(Instant date) {
-    var formatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN).withZone(ZoneId.systemDefault());
-    return formatter.format(date);
   }
 
   public void setContext(Context context) {
@@ -550,7 +546,7 @@ public class ProjectSummaryComponent extends PageArea {
     sectionContent.add(createTags(projectOverview));
 
     header.setSectionNote(new SectionNote(
-        "Last modified on %s".formatted(formatDate(projectOverview.lastModified()))));
+        "Last modified on %s".formatted(DateTimeRendering.simple(projectOverview.lastModified()))));
     headerSection.setHeader(header);
     headerSection.setContent(sectionContent);
   }
