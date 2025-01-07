@@ -146,14 +146,14 @@
       <dependency>
         <groupId>org.apache.groovy</groupId>
         <artifactId>groovy-all</artifactId>
-        <version>4.0.23</version>
+        <version>4.0.24</version>
         <type>pom</type>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.jobrunr</groupId>
         <artifactId>jobrunr-spring-boot-3-starter</artifactId>
-        <version>7.3.1</version>
+        <version>7.3.2</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -220,7 +220,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>3.5.2</version>
         <configuration>
           <useModulePath>false</useModulePath>
           <includes>
