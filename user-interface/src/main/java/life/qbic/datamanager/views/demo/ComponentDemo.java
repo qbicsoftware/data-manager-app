@@ -9,7 +9,9 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
@@ -18,6 +20,10 @@ import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
+import life.qbic.datamanager.views.general.dialog.stepper.Step;
+import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
+import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
+import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
@@ -38,6 +44,8 @@ import org.springframework.stereotype.Component;
 public class ComponentDemo extends Div {
 
   public static final String HEADING_2 = "heading-2";
+  public static final String GAP_04 = "gap-04";
+  public static final String FLEX_VERTICAL = "flex-vertical";
   Div title = new Div("Data Manager - Component Demo");
 
   public ComponentDemo() {
@@ -50,6 +58,7 @@ public class ComponentDemo extends Div {
     add(dialogShowCase(AppDialog.medium(), "Medium Dialog Type"));
     add(dialogShowCase(AppDialog.large(), "Large Dialog Type"));
     add(dialogSectionShowCase());
+    add(stepperDialogShowCase(threeSteps(), "Three steps example"));
   }
 
   private static Div dialogSectionShowCase() {
@@ -88,7 +97,7 @@ public class ComponentDemo extends Div {
     Div header = new Div("Body Font Styles");
     header.addClassName(HEADING_2);
     container.add(header);
-    container.addClassNames("flex-vertical", "gap-04");
+    container.addClassNames(FLEX_VERTICAL, GAP_04);
 
     Arrays.stream(BodyFontStyles.fontStyles).forEach(fontStyle -> {
       Div styleHeader = new Div();
@@ -107,6 +116,69 @@ public class ComponentDemo extends Div {
     });
 
     return container;
+  }
+
+  private static Div stepperDialogShowCase(List<Step> steps, String dialogTitle) {
+    Div content = new Div();
+    Div title = new Div("Stepper Dialog");
+    title.addClassName(HEADING_2);
+    Button showDialog = new Button("Show Stepper");
+    AppDialog dialog = AppDialog.medium();
+
+    DialogHeader.with(dialog, dialogTitle);
+    StepperDialog stepperDialog = StepperDialog.create(dialog, steps);
+    StepperDialogFooter.with(stepperDialog);
+
+    StepperDisplay.with(stepperDialog, steps.stream().map(Step::name).toList());
+
+    showDialog.addClickListener(listener -> stepperDialog.open());
+
+    content.add(title);
+    content.add(showDialog);
+    content.addClassNames(FLEX_VERTICAL, GAP_04);
+
+    Div confirmBox = new Div("Click the button and press 'Cancel' or 'Save'");
+    dialog.registerConfirmAction(() -> {
+      confirmBox.setText("Stepper dialog has been confirmed");
+      dialog.close();
+    });
+
+    dialog.registerCancelAction(() -> {
+      confirmBox.setText("Stepper dialog has been cancelled");
+      dialog.close();
+    });
+
+    content.add(confirmBox);
+
+    return content;
+  }
+
+  private static List<Step> threeSteps() {
+    List<Step> steps = new ArrayList<>();
+    for (int step = 0; step < 3; step++) {
+      int stepNumber = step + 1;
+      steps.add(new Step() {
+
+        final ExampleUserInput userInput = new ExampleUserInput("example step " + stepNumber);
+
+
+        @Override
+        public String name() {
+          return "Step " + stepNumber;
+        }
+
+        @Override
+        public com.vaadin.flow.component.Component component() {
+          return userInput;
+        }
+
+        @Override
+        public UserInput userInput() {
+          return userInput;
+        }
+      });
+    }
+    return steps;
   }
 
   private static Div dialogShowCase(AppDialog dialog, String dialogType) {
@@ -142,7 +214,7 @@ public class ComponentDemo extends Div {
     });
 
     content.add(showDialog, confirmBox);
-    content.addClassNames("flex-vertical", "gap-04");
+    content.addClassNames(FLEX_VERTICAL, GAP_04);
     return content;
   }
 

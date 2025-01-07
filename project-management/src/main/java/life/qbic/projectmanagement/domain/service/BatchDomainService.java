@@ -5,6 +5,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;
 import life.qbic.projectmanagement.domain.model.sample.event.BatchDeleted;
@@ -42,25 +43,28 @@ public class BatchDomainService {
    *                    measurements of the complete experiment.
    * @param projectName the title of the project the batch is added to
    * @param projectId   id of the project this batch is added to
+   * @param experimentId id of the experiment this batch is added to
    * @return a result object with the response. If the registration failed, a response code will be
    * provided.
    * @since 1.0.0
    */
   public Result<BatchId, ResponseCode> register(String label, boolean isPilot, String projectName,
-      ProjectId projectId) {
+      ProjectId projectId, ExperimentId experimentId) {
     Batch batch = Batch.create(label, isPilot);
     var result = batchRepository.add(batch);
     if (result.isError()) {
       return Result.fromError(ResponseCode.BATCH_REGISTRATION_FAILED);
     } else {
-      dispatchRegistration(label, batch.batchId(), projectName, projectId);
+      dispatchRegistration(label, batch.batchId(), projectName, projectId,
+          experimentId);
     }
     return Result.fromValue(result.getValue().batchId());
   }
 
   private void dispatchRegistration(String name, BatchId id, String projectName,
-      ProjectId projectId) {
-    BatchRegistered batchRegistered = BatchRegistered.create(name, id, projectName, projectId);
+      ProjectId projectId, ExperimentId experimentId) {
+    BatchRegistered batchRegistered = BatchRegistered.create(name, id, projectName, projectId,
+        experimentId);
     DomainEventDispatcher.instance().dispatch(batchRegistered);
   }
 

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.Card;
+import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
@@ -200,7 +201,8 @@ public class ProjectCollectionComponent extends PageArea {
       Span header = createHeader(projectOverview.projectCode(), projectOverview.projectTitle());
       add(header);
       Span lastModified = new Span(
-          String.format("Last modified on %s", projectOverview.lastModified()));
+          String.format("Last modified on %s",
+              DateTimeRendering.simple(projectOverview.lastModified())));
       lastModified.addClassName("tertiary");
       add(lastModified);
       projectDetails.addClassName("details");
