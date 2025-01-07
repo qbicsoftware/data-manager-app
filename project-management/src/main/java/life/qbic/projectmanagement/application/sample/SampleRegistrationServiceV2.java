@@ -72,7 +72,8 @@ public class SampleRegistrationServiceV2 {
   public CompletableFuture<Void> registerSamples(Collection<SampleMetadata> sampleMetadata,
       ProjectId projectId, String batchLabel, boolean batchIsPilot, ExperimentReference experiment)
       throws RegistrationException {
-    var result = batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId);
+    var result = batchRegistrationService.registerBatch(batchLabel, batchIsPilot, projectId,
+        ExperimentId.parse(experiment.id()));
     if (result.isError()) {
       throw new RegistrationException("Batch registration failed");
     }
