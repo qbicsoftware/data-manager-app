@@ -167,6 +167,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       }
 
       var startIndex = 1; // start in row number 2 with index 1 as the header row has number 1 index 0
+      var helperStopIndex = 1; //stop in row number 2 with index 1 as the header row has number 1 index 0
       int rowIndex = startIndex;
       for (NGSMeasurementEntry measurement : measurements) {
         Row row = getOrCreateRow(sheet, rowIndex);
@@ -195,7 +196,7 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
                 column.columnIndex(),
                 startIndex,
                 column.columnIndex(),
-                DEFAULT_GENERATED_ROW_COUNT - 1,
+                helperStopIndex,
                 helper.exampleValue(),
                 helper.description())
         );

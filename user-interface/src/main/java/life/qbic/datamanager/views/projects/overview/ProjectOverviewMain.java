@@ -31,7 +31,6 @@ import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
-import life.qbic.projectmanagement.application.ContactRepository;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -61,7 +60,6 @@ public class ProjectOverviewMain extends Main {
   private final transient FinanceService financeService;
   private final transient SpeciesLookupService ontologyTermInformationService;
   private final transient AddExperimentToProjectService addExperimentToProjectService;
-  private final transient ContactRepository contactRepository;
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
@@ -71,7 +69,6 @@ public class ProjectOverviewMain extends Main {
       SpeciesLookupService ontologyTermInformationService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
-      ContactRepository contactRepository,
       AuthenticationToUserIdTranslationService userIdTranslator,
       TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
@@ -86,8 +83,6 @@ public class ProjectOverviewMain extends Main {
         "ontology term information service can not be null");
     this.addExperimentToProjectService = requireNonNull(addExperimentToProjectService,
         "add experiment to project service cannot be null");
-    this.contactRepository = requireNonNull(contactRepository,
-        "contact repository can not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "user information service can not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator, "userIdTranslator must not be null");
@@ -100,7 +95,7 @@ public class ProjectOverviewMain extends Main {
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
           this.financeService,
-          this.ontologyTermInformationService, this.contactRepository, terminologyService,
+          this.ontologyTermInformationService, terminologyService,
           cancelConfirmationDialogFactory);
       if (isOfferSearchAllowed()) {
         addProjectDialog.enableOfferSearch();
