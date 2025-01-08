@@ -123,7 +123,7 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
       }
 
       var startIndex = 1; // start in row number 2 with index 1 skipping the header in the first row
-
+      var helperStopIndex = 1; //stop in row number 2 with index 1 as the header row has number 1 index 0
       // make sure to create the visible sheet first
       Sheet hiddenSheet = workbook.createSheet("hidden");
       Name digestionMethodArea = createOptionArea(hiddenSheet, "Digestion Method",
@@ -141,7 +141,7 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
                 column.columnIndex(),
                 startIndex,
                 column.columnIndex(),
-                DEFAULT_GENERATED_ROW_COUNT - 1,
+                helperStopIndex,
                 helper.exampleValue(),
                 helper.description())
         );
