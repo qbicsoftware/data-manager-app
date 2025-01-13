@@ -186,14 +186,14 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setAutoWidth(true)
         .setFlexGrow(0);
     ngsMeasurementGrid.addComponentColumn(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
+          if (measurement.isSingleSampleMeasurement()) {
             return new Span(
                 String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
           }
           return createNGSPooledSampleComponent(measurement);
         })
         .setTooltipGenerator(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
+          if (measurement.isSingleSampleMeasurement()) {
             return String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()));
           } else {
             return "";
@@ -243,11 +243,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
                 .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setAutoWidth(true);
     ngsMeasurementGrid.addComponentColumn(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
+          if (measurement.isSingleSampleMeasurement()) {
             Span singularComment = new Span();
-            singularComment.setText(
-                measurement.specificMeasurementMetadata().stream().findFirst().orElseThrow().comment()
-                    .orElse(""));
+            var optMetadata = measurement.specificMeasurementMetadata().stream().findFirst();
+            optMetadata.ifPresent(metadata -> singularComment.setText(metadata.comment().orElse("")));
             return singularComment;
           } else {
             return createNGSPooledSampleComponent(measurement);
@@ -255,13 +254,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         })
         .setHeader("Comment")
         .setTooltipGenerator(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
-            return measurement.specificMeasurementMetadata().stream().findFirst().orElseThrow()
-                .comment()
-                .orElse("");
-          } else {
-            return "";
+          if (measurement.isSingleSampleMeasurement()) {
+            var optMetadata = measurement.specificMeasurementMetadata().stream().findFirst();
+            if (optMetadata.isPresent()) {
+              return optMetadata.get().comment().orElse("");
+            }
           }
+          return "";
         })
         .setAutoWidth(true);
     GridLazyDataView<NGSMeasurement> ngsGridDataView = ngsMeasurementGrid.setItems(query -> {
@@ -299,7 +298,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         .setAutoWidth(true)
         .setFlexGrow(0);
     proteomicsMeasurementGrid.addComponentColumn(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
+          if (measurement.isSingleSampleMeasurement()) {
             return new Span(
                 String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
           }
@@ -307,7 +306,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         })
         .setHeader("Samples")
         .setTooltipGenerator(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
+          if (measurement.isSingleSampleMeasurement()) {
             return String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples()));
           }
           return "";
@@ -361,10 +360,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             .format(DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)))
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
+          if (measurement.isSingleSampleMeasurement()) {
             Span singularComment = new Span();
-            singularComment.setText(
-                measurement.specificMetadata().stream().findFirst().orElseThrow().comment().orElse(""));
+            var optMetadata = measurement.specificMetadata().stream().findFirst();
+            optMetadata.ifPresent(metadata -> singularComment.setText(metadata.comment().orElse("")));
             return singularComment;
           } else {
             return createProteomicsPooledSampleComponent(measurement);
@@ -372,12 +371,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         })
         .setHeader("Comment")
         .setTooltipGenerator(measurement -> {
-          if (!measurement.isPooledSampleMeasurement()) {
-            return measurement.specificMetadata().stream().findFirst().orElseThrow().comment()
-                .orElse("");
-          } else {
-            return "";
+          if (measurement.isSingleSampleMeasurement()) {
+            var optMetadata = measurement.specificMetadata().stream().findFirst();
+            if (optMetadata.isPresent()) {
+              return optMetadata.get().comment().orElse("");
+            }
           }
+          return "";
         })
         .setAutoWidth(true);
     GridLazyDataView<ProteomicsMeasurement> proteomicsGridDataView = proteomicsMeasurementGrid.setItems(

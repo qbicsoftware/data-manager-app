@@ -192,13 +192,14 @@ public class ProteomicsMeasurement {
   }
 
   /**
-   * Convenience method to query if the measurement was derived from a pooled sample.
+   * Convenience method to query if the measurement was derived from a single Sample.
    *
-   * @return true, if the measurement was performed on a pooled sample, else returns false
+   * @return true, if the measurement was performed on a single Sample, else returns false if the
+   * measurement was derived from pooled samples
    * @since 1.0.0
    */
-  public boolean isPooledSampleMeasurement() {
-    return specificMetadata.size() > 1;
+  public boolean isSingleSampleMeasurement() {
+    return specificMetadata.size() <= 1;
   }
 
   public MeasurementCode measurementCode() {
@@ -253,7 +254,7 @@ public class ProteomicsMeasurement {
   public Instant registrationDate() {
     return registration;
   }
-  
+
   public void updateMethod(ProteomicsMethodMetadata method) {
     setMethodMetadata(method);
     emitUpdatedEvent();

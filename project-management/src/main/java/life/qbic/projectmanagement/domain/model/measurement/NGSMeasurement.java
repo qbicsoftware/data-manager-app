@@ -118,8 +118,8 @@ public class NGSMeasurement {
   }
 
   /**
-   * Creates a new pooled {@link NGSMeasurement} object instance, that describes an NGS measurement entity
-   * with many describing properties about provenance and instrumentation.
+   * Creates a new pooled {@link NGSMeasurement} object instance, that describes an NGS measurement
+   * entity with many describing properties about provenance and instrumentation.
    *
    * @param projectId                   the project id the measurement belongs to
    * @param samplePool                  the sample pool label the measurement represents
@@ -202,13 +202,14 @@ public class NGSMeasurement {
   }
 
   /**
-   * Convenience method to query if the measurement was derived from a pooled sample.
+   * Convenience method to query if the measurement was derived from a single sample.
    *
-   * @return true, if the measurement was performed on a pooled sample, else returns false
+   * @return true, if the measurement was performed on a single sample, else returns false if the
+   * measurement was derived from pooled samples
    * @since 1.0.0
    */
-  public boolean isPooledSampleMeasurement() {
-    return specificMetadata.size() > 1;
+  public boolean isSingleSampleMeasurement() {
+    return specificMetadata.size() <= 1;
   }
 
 
@@ -219,6 +220,7 @@ public class NGSMeasurement {
   public MeasurementId measurementId() {
     return measurementId;
   }
+
   public ProjectId projectId() {
     return projectId;
   }
