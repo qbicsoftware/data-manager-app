@@ -4,14 +4,13 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +28,7 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.icon.IconFactory;
-import life.qbic.datamanager.views.notifications.ToastFactory;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
@@ -52,9 +51,13 @@ public class ComponentDemo extends Div {
   public static final String HEADING_2 = "heading-2";
   public static final String GAP_04 = "gap-04";
   public static final String FLEX_VERTICAL = "flex-vertical";
+  public static final String NORMAL_BODY_TEXT = "normal-body-text";
   Div title = new Div("Data Manager - Component Demo");
+  private final MessageSourceNotificationFactory messageFactory;
 
-  public ComponentDemo() {
+  @Autowired
+  public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory) {
+    this.messageFactory = Objects.requireNonNull(messageSourceNotificationFactory);
     title.addClassName("heading-1");
     addClassNames("padding-left-right-07", "padding-top-bottom-04");
     add(title);
@@ -91,7 +94,7 @@ public class ComponentDemo extends Div {
       heading.addClassName("heading-" + i);
       heading.setText("Heading " + i);
       Div description = new Div();
-      description.addClassName("normal-body-text");
+      description.addClassName(NORMAL_BODY_TEXT);
       description.setText("CSS class: %s".formatted(".heading-" + i));
       container.add(heading, description);
     }
@@ -228,18 +231,25 @@ public class ComponentDemo extends Div {
   private Div toastShowCase() {
     var title = new Div("Toast it!");
     title.addClassName(HEADING_2);
-    var description = new Div("Description");
-    description.addClassName(FLEX_VERTICAL);
+    var description = new Div(
+        "Let's see how toasts work and also how to use them when we want to indicate a background task to the user.");
+    description.addClassName(NORMAL_BODY_TEXT);
     var content = new Div();
+    content.addClassNames(FLEX_VERTICAL, GAP_04);
+
+    content.add(title);
+    content.add(description);
+
     var button = new Button("Show Toast");
 
-
+    content.add(button);
 
     button.addClickListener(e ->
     {
-      var butter = new Div("Some heavy work done ...");
-      var toast = ToastFactory.asInfo(butter, Duration.ZERO);
-      var succeededToast = ToastFactory.asSuccess("Task is finished", Duration.ofSeconds(5));
+      var progressBar = new ProgressBar();
+      progressBar.setIndeterminate(true);
+      var toast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{"Doing something really heavy here"}, getLocale());
+      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},  getLocale());
       toast.open();
       var ui = UI.getCurrent();
       CompletableFuture.runAsync(() -> {
@@ -249,7 +259,7 @@ public class ComponentDemo extends Div {
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
         }
-      }).thenRunAsync(() ->  {
+      }).thenRunAsync(() -> {
         ui.access(() -> {
               toast.close();
               succeededToast.open();
@@ -264,7 +274,7 @@ public class ComponentDemo extends Div {
   private static class BodyFontStyles {
 
     static String[] fontStyles = new String[]{
-        "normal-body-text",
+        NORMAL_BODY_TEXT,
         "small-body-text",
         "extra-small-body-text",
         "field-label-text",

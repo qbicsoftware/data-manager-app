@@ -11,6 +11,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.BeforeLeaveListener;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
@@ -19,6 +20,7 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import life.qbic.datamanager.views.general.ComponentFunctions;
 
 /**
@@ -177,5 +179,19 @@ public final class Toast extends Notification {
     button.addClickListener(routingClicked -> close());
     routerLink.add(button);
     return routerLink;
+  }
+
+  public Toast add(Component component) {
+    Objects.requireNonNull(component);
+    if (nonNull(this.content)) {
+      var copy = this.content;
+      var newContent = new Div();
+      newContent.add(copy, component);
+      this.content = newContent;
+    } else {
+      this.content = component;
+    }
+    refresh();
+    return this;
   }
 }
