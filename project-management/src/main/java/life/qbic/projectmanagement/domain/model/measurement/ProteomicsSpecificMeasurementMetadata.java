@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.domain.model.measurement;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
 /**
@@ -80,8 +81,8 @@ public class ProteomicsSpecificMeasurementMetadata {
     return fractionName;
   }
 
-  public String comment() {
-    return comment;
+  public Optional<String> comment() {
+    return comment.isBlank() ? Optional.empty() : Optional.of(comment);
   }
 
 }
