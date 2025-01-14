@@ -105,7 +105,6 @@ public class SampleBatchUpdateTemplate {
     }
 
     var startIndex = 1; //start in the second row with index 1.
-    var helperStopIndex = 1; //stop in the second row with index 1.
     int rowIndex = startIndex;
     for (Sample sample : samples) {
       Row row = getOrCreateRow(sheet, rowIndex);
@@ -155,18 +154,6 @@ public class SampleBatchUpdateTemplate {
         EditColumn.SPECIMEN.columnIndex(),
         MAX_ROW_INDEX_TO,
         specimenOptions);
-
-    for (var column : EditColumn.values()) {
-      column.getFillHelp().ifPresent(
-          helper -> XLSXTemplateHelper.addInputHelper(sheet,
-              column.columnIndex(),
-              startIndex,
-              column.columnIndex(),
-              helperStopIndex,
-              helper.exampleValue(),
-              helper.description())
-      );
-    }
 
     setColumnAutoWidth(sheet, 0, EditColumn.maxColumnIndex());
     workbook.setActiveSheet(0);
