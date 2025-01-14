@@ -1,18 +1,22 @@
 package life.qbic.datamanager.views.demo;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -21,10 +25,12 @@ import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.dialog.stepper.Step;
-import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
+import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.icon.IconFactory;
+import life.qbic.datamanager.views.notifications.ToastFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -59,6 +65,7 @@ public class ComponentDemo extends Div {
     add(dialogShowCase(AppDialog.large(), "Large Dialog Type"));
     add(dialogSectionShowCase());
     add(stepperDialogShowCase(threeSteps(), "Three steps example"));
+    add(toastShowCase());
   }
 
   private static Div dialogSectionShowCase() {
@@ -155,11 +162,11 @@ public class ComponentDemo extends Div {
 
   private static List<Step> threeSteps() {
     List<Step> steps = new ArrayList<>();
-    for (int step= 0; step < 3; step++) {
+    for (int step = 0; step < 3; step++) {
       int stepNumber = step + 1;
       steps.add(new Step() {
 
-        final ExampleUserInput userInput = new ExampleUserInput("example step " + stepNumber );
+        final ExampleUserInput userInput = new ExampleUserInput("example step " + stepNumber);
 
 
         @Override
@@ -218,6 +225,42 @@ public class ComponentDemo extends Div {
     return content;
   }
 
+  private Div toastShowCase() {
+    var title = new Div("Toast it!");
+    title.addClassName(HEADING_2);
+    var description = new Div("Description");
+    description.addClassName(FLEX_VERTICAL);
+    var content = new Div();
+    var button = new Button("Show Toast");
+
+
+
+    button.addClickListener(e ->
+    {
+      var butter = new Div("Some heavy work done ...");
+      var toast = ToastFactory.asInfo(butter, Duration.ZERO);
+      var succeededToast = ToastFactory.asSuccess("Task is finished", Duration.ofSeconds(5));
+      toast.open();
+      var ui = UI.getCurrent();
+      CompletableFuture.runAsync(() -> {
+        try {
+          Thread.sleep(5000);
+
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }).thenRunAsync(() ->  {
+        ui.access(() -> {
+              toast.close();
+              succeededToast.open();
+            }
+        );
+      });
+    });
+    content.add(button);
+    return content;
+  }
+
   private static class BodyFontStyles {
 
     static String[] fontStyles = new String[]{
@@ -238,7 +281,8 @@ public class ComponentDemo extends Div {
     Binder<StringBean> binder;
 
     ExampleUserInput(String prefill) {
-      var dialogSection = DialogSection.with("User Input Validation", "Try correct and incorrect input values in the following field.");
+      var dialogSection = DialogSection.with("User Input Validation",
+          "Try correct and incorrect input values in the following field.");
       originalValue = prefill;
       var textField = new TextField();
       textField.setLabel("Correct input is 'Riddikulus'");
