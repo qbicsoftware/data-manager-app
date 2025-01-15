@@ -111,7 +111,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
     }
 
     try (Workbook workbook = new XSSFWorkbook();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
       CellStyle readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
