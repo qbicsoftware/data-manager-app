@@ -48,7 +48,7 @@ public final class Toast extends Notification {
     addClassName(switch (level) {
       case SUCCESS -> "success-toast";
       case INFO -> "info-toast";
-      case WARNING, ERROR -> "";
+      case WARNING, ERROR -> "error-toast";
     });
 
     setPosition(DEFAULT_POSITION);
