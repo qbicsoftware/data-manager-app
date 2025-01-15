@@ -17,6 +17,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -46,6 +47,7 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
@@ -221,6 +223,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {
+      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
       event.getSource().close();
       var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
           new Object[]{"Sample registration for batch %s".formatted(event.batchName())},
@@ -228,7 +231,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       ui.access(pendingToast::open);
 
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
-              event.validatedSampleMetadata(),
+              sampleMetadata,
               projectId, event.batchName(), false, experimentId)
           .orTimeout(5, TimeUnit.MINUTES);
       try {
@@ -352,6 +355,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     editSampleBatchDialog.addConfirmListener(event -> {
+      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
       event.getSource().close();
       var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
           new Object[]{"Update for batch %s".formatted(event.batchName())},
@@ -359,7 +363,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       ui.access(pendingToast::open);
 
       CompletableFuture<Void> editTask = sampleRegistrationServiceV2.updateSamples(
-              event.validatedSampleMetadata(),
+              sampleMetadata,
               projectId,
               batchId,
               event.batchName(),
@@ -375,7 +379,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
                         new String[]{"Update of batch '%s'".formatted(event.batchName())}, getLocale())
                     .open();
               });
-              throw new SampleInformationMain.HandledException(e);
+              throw new HandledException(e);
             })
             .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
             .thenRun(() -> ui.access(() -> {
