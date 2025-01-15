@@ -11,7 +11,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.BeforeLeaveListener;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
@@ -34,10 +33,9 @@ import life.qbic.datamanager.views.general.ComponentFunctions;
  */
 public final class Toast extends Notification {
 
-  private static final Position DEFAULT_POSITION = Position.BOTTOM_START;
   static final boolean DEFAULT_CLOSE_ON_NAVIGATION = true;
   static final Duration DEFAULT_OPEN_DURATION = Duration.ofSeconds(5);
-
+  private static final Position DEFAULT_POSITION = Position.BOTTOM_START;
   private final List<Registration> closeOnNavigationListeners = new ArrayList<>();
   private final Button closeButton;
 
@@ -67,6 +65,22 @@ public final class Toast extends Notification {
     button.addClickListener(it -> toast.close());
     button.addClassName("close-button");
     return button;
+  }
+
+  /**
+   * Creates a matching toast content containing routing components with the correct css classes.
+   *
+   * @param content
+   * @param routingComponent
+   * @return
+   */
+  private static Component createRoutingContent(Component content, Component routingComponent) {
+    var container = new Div();
+    container.addClassName("routing-container");
+    content.addClassName("routing-content");
+    routingComponent.addClassName("routing-link");
+    container.add(content, routingComponent);
+    return container;
   }
 
   /**
@@ -106,7 +120,6 @@ public final class Toast extends Notification {
     super.setDuration((int) duration.toMillis());
   }
 
-
   /**
    * Expands the toast and includes a link to a specific route target.
    *
@@ -145,23 +158,6 @@ public final class Toast extends Notification {
     add(this.content, this.closeButton);
   }
 
-
-  /**
-   * Creates a matching toast content containing routing components with the correct css classes.
-   *
-   * @param content
-   * @param routingComponent
-   * @return
-   */
-  private static Component createRoutingContent(Component content, Component routingComponent) {
-    var container = new Div();
-    container.addClassName("routing-container");
-    content.addClassName("routing-content");
-    routingComponent.addClassName("routing-link");
-    container.add(content, routingComponent);
-    return container;
-  }
-
   /**
    * Creates a routing component with correct css classes and layout.
    *
@@ -181,6 +177,16 @@ public final class Toast extends Notification {
     return routerLink;
   }
 
+  /**
+   * Adds a component to the {@link Toast}. If content already exists, the existing component is
+   * taken and wrapped together with the new component in a {@link Div}, without extra formatting.
+   * <p>
+   * If no content yet exists, the passed component is taken.
+   *
+   * @param component the component to add to the toast
+   * @return the toast
+   * @since 1.8.0
+   */
   public Toast add(Component component) {
     Objects.requireNonNull(component);
     if (nonNull(this.content)) {
