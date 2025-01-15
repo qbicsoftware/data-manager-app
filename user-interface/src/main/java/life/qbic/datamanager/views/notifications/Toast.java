@@ -187,7 +187,7 @@ public final class Toast extends Notification {
    * @return the toast
    * @since 1.8.0
    */
-  public Toast add(Component component) {
+  Toast add(Component component) {
     Objects.requireNonNull(component);
     if (nonNull(this.content)) {
       var copy = this.content;
