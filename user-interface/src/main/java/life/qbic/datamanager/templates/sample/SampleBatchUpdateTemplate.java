@@ -155,18 +155,6 @@ public class SampleBatchUpdateTemplate {
         MAX_ROW_INDEX_TO,
         specimenOptions);
 
-    for (var column : EditColumn.values()) {
-      column.getFillHelp().ifPresent(
-          helper -> XLSXTemplateHelper.addInputHelper(sheet,
-              column.columnIndex(),
-              startIndex,
-              column.columnIndex(),
-              MAX_ROW_INDEX_TO,
-              helper.exampleValue(),
-              helper.description())
-      );
-    }
-
     setColumnAutoWidth(sheet, 0, EditColumn.maxColumnIndex());
     workbook.setActiveSheet(0);
     lockSheet(hiddenSheet);

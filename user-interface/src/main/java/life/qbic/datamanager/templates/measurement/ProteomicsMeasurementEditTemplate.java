@@ -193,18 +193,6 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
           DEFAULT_GENERATED_ROW_COUNT - 1,
           digestionMethodArea);
 
-      for (ProteomicsMeasurementEditColumn column : ProteomicsMeasurementEditColumn.values()) {
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addInputHelper(sheet,
-                column.columnIndex(),
-                startIndex,
-                column.columnIndex(),
-                DEFAULT_GENERATED_ROW_COUNT - 1,
-                helper.exampleValue(),
-                helper.description())
-        );
-      }
-
       setAutoWidth(sheet);
       workbook.setActiveSheet(0);
 

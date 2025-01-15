@@ -135,18 +135,6 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
           DEFAULT_GENERATED_ROW_COUNT - 1,
           digestionMethodArea);
 
-      for (ProteomicsMeasurementRegisterColumn column : ProteomicsMeasurementRegisterColumn.values()) {
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addInputHelper(sheet,
-                column.columnIndex(),
-                startIndex,
-                column.columnIndex(),
-                DEFAULT_GENERATED_ROW_COUNT - 1,
-                helper.exampleValue(),
-                helper.description())
-        );
-      }
-
       setAutoWidth(sheet);
 
       workbook.setActiveSheet(0);

@@ -189,18 +189,6 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
           DEFAULT_GENERATED_ROW_COUNT - 1,
           sequencingReadTypeArea);
 
-      for (NGSMeasurementEditColumn column : NGSMeasurementEditColumn.values()) {
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addInputHelper(sheet,
-                column.columnIndex(),
-                startIndex,
-                column.columnIndex(),
-                DEFAULT_GENERATED_ROW_COUNT - 1,
-                helper.exampleValue(),
-                helper.description())
-        );
-      }
-
       setAutoWidth(sheet);
       workbook.setActiveSheet(0);
 
