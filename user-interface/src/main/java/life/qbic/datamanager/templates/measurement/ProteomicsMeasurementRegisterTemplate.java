@@ -62,7 +62,7 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
   @Override
   public byte[] getContent() {
     try (Workbook workbook = new XSSFWorkbook();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
       CellStyle readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
@@ -134,18 +134,6 @@ public class ProteomicsMeasurementRegisterTemplate extends Template {
           ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           digestionMethodArea);
-
-      for (ProteomicsMeasurementRegisterColumn column : ProteomicsMeasurementRegisterColumn.values()) {
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addInputHelper(sheet,
-                column.columnIndex(),
-                startIndex,
-                column.columnIndex(),
-                DEFAULT_GENERATED_ROW_COUNT - 1,
-                helper.exampleValue(),
-                helper.description())
-        );
-      }
 
       setAutoWidth(sheet);
 

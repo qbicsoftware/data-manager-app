@@ -122,17 +122,6 @@ public class NGSMeasurementRegisterTemplate extends Template implements Download
           DEFAULT_GENERATED_ROW_COUNT - 1,
           sequencingReadTypeArea);
 
-      for (NGSMeasurementRegisterColumn column : NGSMeasurementRegisterColumn.values()) {
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addInputHelper(sheet,
-                column.columnIndex(),
-                startIndex,
-                column.columnIndex(),
-                DEFAULT_GENERATED_ROW_COUNT - 1,
-                helper.exampleValue(),
-                helper.description()));
-      }
-
       // add property information order of columns matters!!
       for (NGSMeasurementRegisterColumn column : Arrays.stream(
               NGSMeasurementRegisterColumn.values())
