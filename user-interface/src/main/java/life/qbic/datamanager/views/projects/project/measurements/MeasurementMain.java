@@ -314,16 +314,20 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         completableFuture = measurementService.updateAll(measurementData,
             context.projectId().orElseThrow());
         pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Update of #%d measurements".formatted(measurementData.size())},
+                "Update of #%d measurements".formatted(measurementData.stream()
+                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
+                    .distinct().toList().size())},
             getLocale());
       } else {
         completableFuture = measurementService.registerAll(upload.measurementMetadata(),
             context.projectId().orElseThrow());
         pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Registration of #%d measurements".formatted(upload.measurementMetadata().size())},
+                "Registration of #%d measurements".formatted(upload.measurementMetadata().stream()
+                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
+                    .distinct().toList().size())},
             getLocale());
       }
-      ui.access( pendingToast::open);
+      ui.access(pendingToast::open);
       try {
         completableFuture.exceptionally(e -> {
               log.error(e.getMessage(), e);
