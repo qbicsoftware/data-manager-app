@@ -285,10 +285,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent ->
-    {
-      triggerMeasurementRegistration(confirmEvent);
-    });
+    dialog.addConfirmListener(this::triggerMeasurementRegistration);
     return dialog;
   }
 
@@ -322,9 +319,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         completableFuture = measurementService.registerAll(upload.measurementMetadata(),
             context.projectId().orElseThrow());
         pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Registration of #%d measurements".formatted(upload.measurementMetadata().stream()
-                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
-                    .distinct().toList().size())},
+                "Registration of #%d measurements".formatted(upload.measurementMetadata().size())},
             getLocale());
       }
       ui.access(pendingToast::open);
