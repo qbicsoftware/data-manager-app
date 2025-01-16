@@ -301,7 +301,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     for (var upload : uploads) {
       var measurementData = upload.measurementMetadata();
 
-     // UI ui = UI.getCurrent();
       //Necessary so the dialog window switches to show the upload progress
       ui.push();
       CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
