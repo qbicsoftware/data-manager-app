@@ -3,15 +3,20 @@ package life.qbic.projectmanagement.infrastructure.contact;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +39,7 @@ import org.springframework.stereotype.Repository;
 public class OrcidRepository implements PersonRepository {
 
   private static final Logger log = logger(OrcidRepository.class);
-  private final String tokenEndpoint;
+  private static final String PAGINATED_QUERY = "https://pub.orcid.org/v3.0/expanded-search/?start=%s&rows=%s&q=%s";
   private String token;
   private String refreshToken;
   private HttpClient httpClient;
@@ -47,7 +52,6 @@ public class OrcidRepository implements PersonRepository {
     var authResponse = authenticate(httpClient, clientID, clientSecret, tokenEndpoint);
     this.refreshToken = authResponse.refresh_token();
     this.token = authResponse.access_token();
-    this.tokenEndpoint = tokenEndpoint;
   }
 
   private static HttpClient createHttpClient() {
@@ -56,7 +60,8 @@ public class OrcidRepository implements PersonRepository {
             Duration.ofSeconds(10)).build();
   }
 
-  private static AuthResponse authenticate(HttpClient client, String clientID, String clientSecret, String tokenEndpoint) {
+  private static AuthResponse authenticate(HttpClient client, String clientID, String clientSecret,
+      String tokenEndpoint) {
     var params = Map.of("client_id", clientID, "client_secret", clientSecret, "scope",
         "/read-public", "grant_type", "client_credentials");
 
@@ -83,24 +88,77 @@ public class OrcidRepository implements PersonRepository {
         Thread.currentThread().interrupt();
       }
       log.error("Error sending orcid request", e);
-      throw new QueryException("Authentication failed", e);
+      throw new OrcidRepository.QueryException("Authentication failed", e);
     }
 
   }
 
+  private static PersonEntry convert(OrcidRecord record) {
+    return new PersonEntry(record.givenName + record.familyName,
+        Arrays.stream(record.email()).findFirst().orElse(""), "https://orcid.org/" + record.orcidID,
+        record.orcidID);
+  }
+
   @Override
   public List<PersonEntry> findAll(String query, int limit, int offset) {
-    return List.of();
+    var queryUrl =String.format(PAGINATED_QUERY, offset, limit, query);
+    HttpRequest request = HttpRequest.newBuilder().uri(URI.create(queryUrl))
+        .headers("Authorization", "Bearer " + token, "Accept", "application/json").GET()
+        .build();
+
+    try {
+      var response = httpClient.send(request, BodyHandlers.ofString());
+      ObjectMapper mapper = new ObjectMapper();
+      var node = mapper.readTree(response.body());
+      var value = node.get("expanded-result");
+
+      return new ArrayList<>(
+          Arrays.stream(mapper.convertValue(value, OrcidRecord[].class))
+              .map(OrcidRepository::convert).toList());
+    } catch (IOException | InterruptedException e) {
+      if (e instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
+      log.error("Error sending orcid request", e);
+      throw new OrcidRepository.QueryException("Person repository seems not available", e);
+    }
   }
-}
 
-class QueryException extends RuntimeException {
-  public QueryException(String message, Throwable cause) {
-    super(message, cause);
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  record AuthResponse(String access_token, String token_type, String expires_in,
+                      String refresh_token, String scope, String orcid) {
+
   }
-}
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-record AuthResponse(String access_token, String token_type, String expires_in, String refresh_token, String scope, String orcid) {
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  record OrcidRecord(@JsonProperty("orcid-id") String orcidID,
+                     @JsonProperty("given-names") String givenName,
+                     @JsonProperty("family-names") String familyName,
+                     @JsonProperty("credit-name") String creditName,
+                     @JsonProperty("email") String[] email) {
 
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      OrcidRecord that = (OrcidRecord) o;
+      return Objects.equals(orcidID, that.orcidID) && Objects.deepEquals(email,
+          that.email) && Objects.equals(givenName, that.givenName)
+          && Objects.equals(familyName, that.familyName) && Objects.equals(
+          creditName, that.creditName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(orcidID, givenName, familyName, creditName, Arrays.hashCode(email));
+    }
+  }
+
+  static class QueryException extends RuntimeException {
+
+    public QueryException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
 }

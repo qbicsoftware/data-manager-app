@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.application.contact;
 
-import java.net.URL;
-
 /**
  * <b><record short description - 1 Line!></b>
  *
@@ -9,6 +7,6 @@ import java.net.URL;
  *
  * @since <version tag>
  */
-public record PersonEntry(String fullName, String email, URL orcidURL, String orcidID) {
+public record PersonEntry(String fullName, String email, String orcidURL, String orcidID) {
 
 }
