@@ -337,7 +337,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       return;
     }
     uploadItemsDisplay.setVisible(false);
-    uploadProgressDisplay.setVisible(true);
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), measurementMetadataUploads));
   }
 

@@ -18,6 +18,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -39,15 +40,16 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -60,7 +62,6 @@ import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasuremen
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 
 
 /**
@@ -101,6 +102,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final DownloadProvider proteomicsDownloadProvider;
   private final transient ProjectInformationService projectInformationService;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient MessageSourceNotificationFactory messageFactory;
   private transient Context context;
 
   public MeasurementMain(
@@ -111,11 +113,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService,
       ProjectInformationService projectInformationService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceNotificationFactory messageFactory) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
+    this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
@@ -281,52 +285,76 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent ->
-    {
-      triggerMeasurementRegistration(confirmEvent.uploads(),
-          confirmEvent.getSource());
-      setMeasurementInformation();
-    });
+    dialog.addConfirmListener(this::triggerMeasurementRegistration);
     return dialog;
   }
 
   private void triggerMeasurementRegistration(
-      List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads,
-      MeasurementMetadataUploadDialog measurementMetadataUploadDialog) {
-    String process =
-        measurementMetadataUploadDialog.getMode() == MODE.EDIT ? "update" : "registration";
-    for (var upload : measurementMetadataUploads) {
+      ConfirmEvent event) {
+    var uploads = new ArrayList<>(event.uploads());
+    var dialog = event.getSource();
+    var mode = dialog.getMode();
+    UI ui = event.getSource().getUI().orElseThrow();
+    for (var upload : uploads) {
       var measurementData = upload.measurementMetadata();
-      measurementMetadataUploadDialog.taskInProgress(
-          "%s of %s measurements ...".formatted(StringUtils.capitalize(process),
-              measurementData.size()),
-          "This might take a minute");
+
       //Necessary so the dialog window switches to show the upload progress
-      UI.getCurrent().push();
+      ui.push();
       CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
-      if (measurementMetadataUploadDialog.getMode().equals(MODE.EDIT)) {
-        completableFuture = measurementService.updateAll(upload.measurementMetadata(),
+      Toast pendingToast;
+
+      // we can close the dialog, everything that comes now is executed concurrently and there is
+      // no need the user is blocked
+      event.getSource().close();
+
+      if (mode.equals(MODE.EDIT)) {
+        completableFuture = measurementService.updateAll(measurementData,
             context.projectId().orElseThrow());
+        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
+                "Update of #%d measurements".formatted(measurementData.stream()
+                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
+                    .distinct().toList().size())},
+            getLocale());
       } else {
         completableFuture = measurementService.registerAll(upload.measurementMetadata(),
             context.projectId().orElseThrow());
+        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
+                "Registration of #%d measurements".formatted(upload.measurementMetadata().size())},
+            getLocale());
       }
-      completableFuture.thenAccept(results -> {
-        var errorResult = results.stream().filter(Result::isError).findAny();
-        if (errorResult.isPresent()) {
-          String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
-          measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
-              () -> measurementMetadataUploadDialog.taskFailed(
-                  "Measurement %s could not be completed".formatted(process),
-                  detailedMessage)));
-        } else {
-          measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
-              () -> measurementMetadataUploadDialog.taskSucceeded(
-                  "Measurement %s is complete".formatted(process),
-                  "Measurement %s for %s measurements was successful".formatted(process,
-                      measurementData.size()))));
-        }
-      }).join(); // we wait for the update to finish
+      ui.access(pendingToast::open);
+      try {
+        completableFuture.exceptionally(e -> {
+              log.error(e.getMessage(), e);
+              ui.access(() -> {
+                pendingToast.close();
+                messageFactory.toast("task.failed", new Object[]{"Registration failed"}, getLocale())
+                    .open();
+              });
+              throw new HandledException(e);
+            })
+            .thenAccept(results -> {
+              var errorResult = results.stream().filter(Result::isError).findAny();
+              if (errorResult.isPresent()) {
+                String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
+                ui.access(() -> {
+                  pendingToast.close();
+                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale());
+                });
+              } else {
+                ui.access(() -> {
+                  pendingToast.close();
+                  messageFactory.toast("task.finished", new Object[]{"Measurement update"},
+                      getLocale()).open();
+                  setMeasurementInformation();
+                });
+              }
+            }).exceptionally(e -> {
+              throw new HandledException(e);
+            });
+      } catch (HandledException e) {
+        log.error(e.getMessage(), e);
+      }
     }
   }
 
@@ -564,5 +592,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       measurementsSelectedInfoBox.getStyle().setVisibility(Visibility.HIDDEN);
     }
     measurementsSelectedInfoBox.setText(text);
+  }
+
+  static class HandledException extends RuntimeException {
+
+    HandledException(Throwable cause) {
+      super(cause);
+    }
+
   }
 }
