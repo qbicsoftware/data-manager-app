@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * Additionally, it provides the possibility to create new experiments with its
  * {@link AddExperimentDialog} and enables the user to select an experiment of interest via
+ * {@link AddExperimentDialog} and enables the user to select an experiment of interest via
  * clicking on the item within {@link ListBox} associated with the experiment.
  * <p>
  * Finally, it allows components to be informed about a new experiment creation or selection via the

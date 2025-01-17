@@ -12,6 +12,10 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveListener;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -28,6 +32,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import org.aspectj.lang.annotation.Before;
 
 /**
  * <b>AddExperimentDialog</b>

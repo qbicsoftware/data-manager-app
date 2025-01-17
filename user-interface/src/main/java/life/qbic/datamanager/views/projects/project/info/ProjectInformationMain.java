@@ -3,8 +3,11 @@ package life.qbic.datamanager.views.projects.project.info;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.NotFoundException;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParam;
@@ -13,7 +16,9 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.security.UserPermissions;
@@ -71,7 +76,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/info", layout = ProjectMainLayout.class)
 @PermitAll
-public class ProjectInformationMain extends Main implements BeforeEnterObserver {
+public class ProjectInformationMain extends Main implements BeforeEnterObserver,
+    BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -94,6 +100,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient TerminologyService terminologyService;
   private Context context;
+  private UploadPurchaseDialog uploadPurchaseDialog;
+  private UploadQualityControlDialog uploadQualityControlDialog;
+  private AddExperimentDialog addExperimentDialog;
 
   public ProjectInformationMain(@Autowired ProjectSummaryComponent projectSummaryComponent,
       @Autowired ExperimentListComponent experimentListComponent,
@@ -208,8 +217,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private void onUploadOfferClicked(UploadOfferClickEvent uploadOfferClickEvent,
       ProjectPurchaseService projectPurchaseService,
       String projectId) {
-    UploadPurchaseDialog dialog = new UploadPurchaseDialog();
-    dialog.addConfirmListener(confirmEvent -> {
+    this.uploadPurchaseDialog = new UploadPurchaseDialog();
+    uploadPurchaseDialog.addConfirmListener(confirmEvent -> {
       List<OfferDTO> offerDTOs = confirmEvent.getSource().purchaseItems().stream()
           .map(it -> new OfferDTO(it.signed(), it.fileName(), it.content()))
           .toList();
@@ -217,8 +226,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       refreshOffers(projectPurchaseService, projectId, uploadOfferClickEvent.getSource());
       confirmEvent.getSource().close();
     });
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.open();
+    uploadPurchaseDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    uploadPurchaseDialog.open();
   }
 
   private QualityControlListComponent getConfiguredQualityControlList() {
@@ -251,9 +260,9 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void onUploadQualityControlClicked() {
-    UploadQualityControlDialog dialog = new UploadQualityControlDialog(
+    this.uploadQualityControlDialog = new UploadQualityControlDialog(
         context.projectId().orElseThrow(), experimentInformationService);
-    dialog.addConfirmListener(confirmEvent -> {
+    uploadQualityControlDialog.addConfirmListener(confirmEvent -> {
       List<QualityControlReport> qualityControlReports = confirmEvent.getSource()
           .qualityControlItems()
           .stream()
@@ -264,8 +273,8 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       refreshQualityControls();
       confirmEvent.getSource().close();
     });
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.open();
+    uploadQualityControlDialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
+    uploadQualityControlDialog.open();
   }
 
   private void refreshQualityControls() {
@@ -324,11 +333,12 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new AddExperimentDialog(ontologyTermInformationService, terminologyService);
-    creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(creationDialog));
-    creationDialog.setEscAction(() -> showCancelConfirmationDialog(creationDialog));
-    creationDialog.open();
+    this.addExperimentDialog = new AddExperimentDialog(ontologyTermInformationService,
+        terminologyService);
+    addExperimentDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
+    addExperimentDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(addExperimentDialog));
+    addExperimentDialog.setEscAction(() -> showCancelConfirmationDialog(addExperimentDialog));
+    addExperimentDialog.open();
   }
 
   private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
@@ -359,5 +369,12 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     } else {
       throw new ApplicationException("Experiment Creation failed");
     }
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    Optional.ofNullable(this.addExperimentDialog).ifPresent(Dialog::close);
+    Optional.ofNullable(this.uploadQualityControlDialog).ifPresent(Dialog::close);
+    Optional.ofNullable(this.uploadPurchaseDialog).ifPresent(Dialog::close);
   }
 }

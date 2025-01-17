@@ -6,6 +6,7 @@ import static life.qbic.datamanager.views.projects.project.experiments.experimen
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -16,6 +17,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.server.StreamResource;
@@ -78,7 +81,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @UIScope
 @SpringComponent
-public class ExperimentDetailsComponent extends PageArea {
+public class ExperimentDetailsComponent extends PageArea implements BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -106,6 +109,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private Context context;
   private int experimentalGroupCount;
+  private Dialog dialog;
 
 
   public ExperimentDetailsComponent(
@@ -236,7 +240,9 @@ public class ExperimentDetailsComponent extends PageArea {
           cancelEvent -> showCancelConfirmationDialog(editExperimentDialog));
       editExperimentDialog.setEscAction(
           () -> showCancelConfirmationDialog(editExperimentDialog));
+      this.dialog = editExperimentDialog;
       editExperimentDialog.open();
+
     });
   }
 
@@ -316,6 +322,7 @@ public class ExperimentDetailsComponent extends PageArea {
     addDialog.addCancelEventListener(cancelEvent -> showCancelConfirmationDialog(addDialog, true));
     addDialog.setEscAction(() -> showCancelConfirmationDialog(addDialog, true));
     addDialog.addConfirmEventListener(this::onExperimentalVariablesAddConfirmed);
+    this.dialog = addDialog;
     addDialog.open();
   }
 
@@ -341,6 +348,7 @@ public class ExperimentDetailsComponent extends PageArea {
         cancelEvent -> showCancelConfirmationDialog(editDialog, false));
     editDialog.setEscAction(() -> showCancelConfirmationDialog(editDialog, false));
     editDialog.addConfirmEventListener(this::onExperimentalVariablesEditConfirmed);
+    this.dialog = editDialog;
     editDialog.open();
   }
 
@@ -493,6 +501,7 @@ public class ExperimentDetailsComponent extends PageArea {
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmEventListener(this::onExperimentalGroupAddConfirmed);
     dialog.open();
+    this.dialog = dialog;
   }
 
   private void onExperimentalGroupAddConfirmed(
@@ -523,6 +532,7 @@ public class ExperimentDetailsComponent extends PageArea {
     var dialog = ExperimentalGroupsDialog.editable(levels, groups);
     dialog.addCancelEventListener(cancelEvent -> cancelEvent.getSource().close());
     dialog.addConfirmEventListener(this::onExperimentalGroupEditConfirmed);
+    this.dialog = dialog;
     dialog.open();
   }
 
@@ -661,6 +671,11 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onGroupsDefined() {
     experimentalGroups.removeAll();
     experimentalGroups.add(experimentalGroupsCollection);
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
   }
 
   /**

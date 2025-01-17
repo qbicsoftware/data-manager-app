@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -12,6 +13,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -21,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
@@ -72,7 +76,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 @UIScope
 @PermitAll
-public class SampleInformationMain extends Main implements BeforeEnterObserver {
+public class SampleInformationMain extends Main implements BeforeEnterObserver,
+    BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -99,6 +104,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final TemplateService templateService;
   private final SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private transient Context context;
+  private Dialog dialog;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
       @Autowired BatchRegistrationService batchRegistrationService,
@@ -264,6 +270,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         event -> showCancelConfirmationDialog(event.getSource()));
     registerSampleBatchDialog.setEscAction(
         () -> showCancelConfirmationDialog(registerSampleBatchDialog));
+    this.dialog = registerSampleBatchDialog;
     registerSampleBatchDialog.open();
   }
 
@@ -399,6 +406,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         event -> showCancelConfirmationDialog(event.getSource()));
     editSampleBatchDialog.setEscAction(
         () -> showCancelConfirmationDialog(editSampleBatchDialog));
+    this.dialog = editSampleBatchDialog;
     editSampleBatchDialog.open();
   }
 
@@ -510,6 +518,11 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void reloadSampleInformation() {
     sampleDetailsComponent.setContext(context);
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
   }
 
   private static class HandledException extends RuntimeException {

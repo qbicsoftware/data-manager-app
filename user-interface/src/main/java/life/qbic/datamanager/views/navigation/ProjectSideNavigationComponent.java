@@ -7,6 +7,7 @@ import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -16,6 +17,9 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveListener;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -68,7 +72,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 @SpringComponent
 @UIScope
 public class ProjectSideNavigationComponent extends Div implements
-    BeforeEnterObserver {
+    BeforeEnterObserver, BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -84,6 +88,7 @@ public class ProjectSideNavigationComponent extends Div implements
   private final transient TerminologyService terminologyService;
   private final transient SpeciesLookupService speciesLookupService;
   private Context context = new Context();
+  private AddExperimentDialog addExperimentDialog;
 
   public ProjectSideNavigationComponent(
       ProjectInformationService projectInformationService,
@@ -325,12 +330,12 @@ private static void routeToProject(ProjectId projectId) {
   }
 
   private void showAddExperimentDialog() {
-    var creationDialog = new AddExperimentDialog(speciesLookupService,
+    this.addExperimentDialog = new AddExperimentDialog(speciesLookupService,
         terminologyService);
-    creationDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
-    creationDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(creationDialog));
-    creationDialog.setEscAction(it -> showCancelConfirmationDialog(creationDialog));
-    creationDialog.open();
+    this.addExperimentDialog.addExperimentAddEventListener(this::onExperimentAddEvent);
+    this.addExperimentDialog.addCancelListener(cancelEvent -> showCancelConfirmationDialog(this.addExperimentDialog));
+    this.addExperimentDialog.setEscAction(it -> showCancelConfirmationDialog(this.addExperimentDialog));
+    this.addExperimentDialog.open();
   }
 
   private void showCancelConfirmationDialog(AddExperimentDialog creationDialog) {
@@ -381,6 +386,11 @@ private static void routeToProject(ProjectId projectId) {
     Toast toast = messageSourceNotificationFactory.toast("experiment.created.success",
         new Object[]{experimentName}, getLocale());
     toast.open();
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    Optional.ofNullable(this.addExperimentDialog).ifPresent(Dialog::close);
   }
 
   private static class ProjectNavigationEvent extends ComponentEvent<Component> {
