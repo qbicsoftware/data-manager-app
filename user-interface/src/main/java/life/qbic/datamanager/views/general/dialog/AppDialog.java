@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.general.dialog;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
@@ -127,7 +129,7 @@ public class AppDialog extends Dialog {
    */
   public void confirm() {
     if (userInput != null) {
-      var validation = Objects.requireNonNull(userInput.validate());
+      var validation = requireNonNull(userInput.validate());
       validation.ifPassed(confirmDialogAction);
     } else {
       // no user input was defined, so nothing to validate
@@ -202,7 +204,7 @@ public class AppDialog extends Dialog {
    * @since 1.7.0
    */
   public void registerConfirmAction(DialogAction uponConfirmation) {
-    this.confirmDialogAction = Objects.requireNonNull(uponConfirmation);
+    this.confirmDialogAction = requireNonNull(uponConfirmation);
   }
 
   /**
@@ -213,7 +215,7 @@ public class AppDialog extends Dialog {
    * @since 1.7.0
    */
   public void registerCancelAction(DialogAction uponCancel) {
-    this.cancelDialogAction = Objects.requireNonNull(uponCancel);
+    this.cancelDialogAction = requireNonNull(uponCancel);
   }
 
   /**
