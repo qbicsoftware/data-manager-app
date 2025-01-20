@@ -448,6 +448,10 @@ Layout
   align-items: center;
 }
 
+.flex-align-items-baseline {
+  align-items: baseline;
+}
+
 .flex-align-items-bottom {
   align-items: self-end;
 }
