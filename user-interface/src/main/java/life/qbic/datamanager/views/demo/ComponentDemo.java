@@ -91,8 +91,8 @@ public class ComponentDemo extends Div {
     var handIcon = VaadinIcon.HAND.create();
     handIcon.addClassName("clickable");
     Div headingDefault = createHeading3("no class provided");
-    var randomIcon = VaadinIcon.RANDOM.create();
-    container.add(heading, headingClickable, handIcon, headingDefault, randomIcon);
+    var cursorIcon = VaadinIcon.CURSOR.create();
+    container.add(heading, headingClickable, handIcon, headingDefault, cursorIcon);
     return container;
   }
 
