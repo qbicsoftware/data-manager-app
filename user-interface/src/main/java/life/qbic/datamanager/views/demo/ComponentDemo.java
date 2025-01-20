@@ -61,6 +61,8 @@ public class ComponentDemo extends Div {
     addClassNames("padding-left-right-07", "padding-top-bottom-04");
     add(title);
     add(headingShowcase());
+    add(colorShowCase());
+    add(clickableShowCase());
     add(fontsShowCase());
     add(detailBoxShowCase());
     add(dialogShowCase());
@@ -79,6 +81,19 @@ public class ComponentDemo extends Div {
       addDialog.open();
     });
     add(b);
+  }
+
+  private static Div clickableShowCase() {
+    Div container = new Div();
+    Div heading = createHeading2("Cursor Classes");
+    Div headingClickable = createHeading3("clickable");
+    headingClickable.addClassName("clickable");
+    var handIcon = VaadinIcon.HAND.create();
+    handIcon.addClassName("clickable");
+    Div headingDefault = createHeading3("no class provided");
+    var randomIcon = VaadinIcon.RANDOM.create();
+    container.add(heading, headingClickable, handIcon, headingDefault, randomIcon);
+    return container;
   }
 
   private static Div dialogSectionShowCase() {
@@ -109,6 +124,18 @@ public class ComponentDemo extends Div {
     return container;
   }
 
+  private static Div colorShowCase() {
+    Div container = new Div();
+    Div heading = createHeading2("Color Classes");
+    Div headingPrimary = createHeading3("color-primary");
+    headingPrimary.addClassName("color-primary");
+    Div headingSecondary = createHeading3("color-secondary");
+    headingSecondary.addClassName("color-secondary");
+    Div headingTertiary = createHeading3("color-tertiary");
+    headingTertiary.addClassName("color-tertiary");
+    container.add(heading, headingPrimary, headingSecondary, headingTertiary);
+    return container;
+  }
   private static Div fontsShowCase() {
     Div container = new Div();
     Div header = new Div("Body Font Styles");

@@ -226,6 +226,29 @@ Padding & gaps
   gap: var(--spacing-07);
 }
 
+/***************************
+Colors
+***************************/
+.color-primary {
+  color: var(--lumo-primary-text-color)
+}
+
+.color-secondary {
+  color: var(--lumo-secondary-text-color)
+}
+
+.color-tertiary {
+  color: var(--lumo-tertiary-text-color)
+}
+
+/***************************
+Behaviour
+***************************/
+
+.clickable {
+  cursor: pointer;
+}
+
 
 /***************************
 Dialogs
