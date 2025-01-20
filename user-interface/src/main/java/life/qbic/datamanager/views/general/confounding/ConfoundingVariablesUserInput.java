@@ -32,9 +32,11 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
   private final Div addActionContainer;
 
   public ConfoundingVariablesUserInput() {
+    var infoText = new Div(
+        "Add confounding variables here. You'll be able to define their values while registering samples.");
     addActionContainer = createAddActionContainer();
-    add(addActionContainer);
-    addClassNames("vertical-list", "confounding-variables");
+    add(infoText, addActionContainer);
+    addClassNames("vertical-list", "confounding-variables", "gap-04");
   }
 
   private Div createAddActionContainer() {
@@ -45,7 +47,7 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
     addVariableIcon.addClassName(CSS_CLICKABLE);
     container = new Div();
     container.setId("add-action-container");
-    container.addClassNames("horizontal-list", "color-primary");
+    container.addClassNames("horizontal-list", "color-primary", "gap-02");
     container.add(addVariableIcon, addVariableText);
     addVariableIcon.addClickListener(e -> addVariable(new ConfoundingVariable(null, "")));
     addVariableText.addClickListener(e -> addVariable(new ConfoundingVariable(null, "")));
