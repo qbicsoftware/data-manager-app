@@ -6,9 +6,11 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
@@ -28,8 +30,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
  * @since <version tag>
  */
 @Profile("test-ui") // This view will only be available when the "test-ui" profile is active
-@Route("whoami")
-@PermitAll
+@Route("login2")
+@AnonymousAllowed
 @UIScope
 @Component
 public class AuthTest extends Div implements BeforeEnterObserver {
@@ -37,7 +39,7 @@ public class AuthTest extends Div implements BeforeEnterObserver {
   @Autowired
   private OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
 
-  public AuthTest() {
+  public AuthTest(@Autowired ApplicationContext app) {
     Button button = new Button("Authorize Zenodo");
     button.addClickListener(e -> {
       String authorizationUrl = ServletUriComponentsBuilder

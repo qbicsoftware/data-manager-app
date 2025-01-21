@@ -50,19 +50,33 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(v -> v.requestMatchers(
+    /*http.authorizeHttpRequests(v -> v.requestMatchers(
             new AntPathRequestMatcher("/oauth2/authorization/orcid"),
+            new AntPathRequestMatcher("/oauth2/authorization/zenodo"),
+            new AntPathRequestMatcher("/oauth2/callback/zenodo2"),
             new AntPathRequestMatcher("/oauth2/code/**"), new AntPathRequestMatcher("images/*.png"))
         .permitAll());
 
     http.oauth2Login(oAuth2Login -> {
       oAuth2Login.loginPage("/login").permitAll();
       oAuth2Login.defaultSuccessUrl("/");
+      oAuth2Login.failureHandler((request, response, e) -> {
+        System.out.println(e.getMessage());
+      });
       oAuth2Login.successHandler(
           authenticationSuccessHandler());
       oAuth2Login.failureUrl("/login?errorOauth2=true&error");
     });
     super.configure(http);
-    setLoginView(http, LoginLayout.class);
+    setLoginView(http, LoginLayout.class);*/
+    http.authorizeHttpRequests(v ->
+            v.requestMatchers("/", "/login", "/oauth2/authorization/zenodo2").permitAll() // Public paths
+            .requestMatchers("/oauth2/code/**").permitAll()
+        )
+        .oauth2Login(oauth2 -> oauth2
+            .defaultSuccessUrl("/login2", true) // Redirect after login
+        );
+
+    super.configure(http);
   }
 }
