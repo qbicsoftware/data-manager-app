@@ -18,7 +18,6 @@ import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
-import life.qbic.datamanager.views.general.confounding.ConfoundingVariablesUserInput;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -67,20 +66,6 @@ public class ComponentDemo extends Div {
     add(detailBoxShowCase());
     add(dialogShowCase());
     add(cardShowCase());
-
-    AppDialog addDialog = AppDialog.small();
-    DialogHeader.with(addDialog, "Some title for adding confounding variables");
-    ConfoundingVariablesUserInput confoundingVariablesUserInput = new ConfoundingVariablesUserInput();
-    addDialog.registerCancelAction(addDialog::close);
-    addDialog.registerConfirmAction(
-        () -> System.out.println(confoundingVariablesUserInput.values()));
-    DialogBody.with(addDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
-    DialogFooter.with(addDialog, "Cancel", "Confirm");
-
-    var b = new Button("Open dialog", event -> {
-      addDialog.open();
-    });
-    add(b);
   }
 
   private static Div clickableShowCase() {

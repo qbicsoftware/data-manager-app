@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.confounding;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +30,7 @@ public interface ConfoundingVariableService {
    *
    * @param id the identifier of the experiment
    */
-  record ExperimentReference(String id) {
+  record ExperimentReference(String id) implements Serializable {
 
   }
 
@@ -37,7 +38,7 @@ public interface ConfoundingVariableService {
    * A reference to a sample
    * @param id the identifier of the sample
    */
-  record SampleReference(String id) {
+  record SampleReference(String id) implements Serializable {
 
   }
 
@@ -45,7 +46,7 @@ public interface ConfoundingVariableService {
    * A reference to a variable
    * @param id the identifier of the variable
    */
-  record VariableReference(long id) {
+  record VariableReference(long id) implements Serializable {
 
   }
 
@@ -54,7 +55,8 @@ public interface ConfoundingVariableService {
    * @param id the identifier of the variable
    * @param variableName the name of the variable
    */
-  record ConfoundingVariableInformation(VariableReference id, String variableName) {
+  record ConfoundingVariableInformation(VariableReference id, String variableName) implements
+      Serializable {
 
   }
 
@@ -65,7 +67,7 @@ public interface ConfoundingVariableService {
    * @param level the value the variable has for the specific sample.
    */
   record ConfoundingVariableLevel(VariableReference variable, SampleReference sample,
-                                  String level) {
+                                  String level) implements Serializable {
 
   }
 

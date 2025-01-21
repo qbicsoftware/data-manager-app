@@ -37,6 +37,11 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.confounding.ConfoundingVariablesUserInput;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -97,6 +102,8 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Div experimentalVariables = new Div();
   private final CardCollection experimentalGroupsCollection = new CardCollection("GROUPS");
   private final CardCollection experimentalVariableCollection = new CardCollection("VARIABLES");
+  private final CardCollection confoundingVariableCollection = new CardCollection(
+      "CONFOUNDING VARIABLES");
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
   private final Disclaimer addExperimentalVariablesNote;
@@ -194,6 +201,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void configureComponent() {
     listenForExperimentCollectionComponentEvents();
     listenForExperimentalVariablesComponentEvents();
+    listenForConfoundingVariablesComponentEvents();
   }
 
   private void initButtonBar() {
@@ -292,6 +300,58 @@ public class ExperimentDetailsComponent extends PageArea {
     experimentalVariableCollection.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
     experimentalVariableCollection.addEditListener(
         editEvent -> openExperimentalVariablesEditDialog());
+  }
+
+  private void listenForConfoundingVariablesComponentEvents() {
+    confoundingVariableCollection.addAddListener(addEvent -> openConfoundingVariablesAddDialog());
+    confoundingVariableCollection.addEditListener(
+        editEvent -> openConfoundingVariablesEditDialog());
+  }
+
+  private void openConfoundingVariablesEditDialog() {
+    var editDialog = AppDialog.small();
+
+    ConfoundingVariablesUserInput confoundingVariablesUserInput = new ConfoundingVariablesUserInput();
+
+    DialogHeader.with(editDialog, "Edit Confounding Variables");
+    DialogBody.with(editDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
+    DialogFooter.with(editDialog, "Cancel", "Confirm");
+
+    editDialog.registerConfirmAction(
+        () -> onConfoundingVariablesEditConfirmed(editDialog, confoundingVariablesUserInput));
+    editDialog.registerCancelAction(editDialog::close);
+    editDialog.open();
+  }
+
+  private void onConfoundingVariablesEditConfirmed(AppDialog dialog,
+      ConfoundingVariablesUserInput userInput) {
+    System.out.println("userInput.values() = " + userInput.values());
+    //TODO
+    dialog.close();
+  }
+
+  private void openConfoundingVariablesAddDialog() {
+
+    var addDialog = AppDialog.small();
+
+    ConfoundingVariablesUserInput confoundingVariablesUserInput = new ConfoundingVariablesUserInput();
+
+    DialogHeader.with(addDialog, "Add Confounding Variables");
+    DialogBody.with(addDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
+    DialogFooter.with(addDialog, "Cancel", "Confirm");
+
+    addDialog.registerConfirmAction(
+        () -> onConfoundingVariablesAddConfirmed(addDialog, confoundingVariablesUserInput));
+    addDialog.registerCancelAction(addDialog::close);
+
+    addDialog.open();
+  }
+
+  private void onConfoundingVariablesAddConfirmed(AppDialog dialog,
+      ConfoundingVariablesUserInput userInput) {
+    System.out.println("userInput.values() = " + userInput.values());
+    //TODO
+    dialog.close();
   }
 
   private void deleteExistingExperimentalVariables() {
@@ -463,6 +523,7 @@ public class ExperimentDetailsComponent extends PageArea {
     experimentalVariables.addClassName("experimental-groups-container");
     experimentSheet.add("Experimental Groups", experimentalGroups);
     experimentalGroups.addClassName("experimental-groups-container");
+    experimentSheet.add("Confounding Variables", confoundingVariableCollection);
     content.add(experimentSheet);
   }
 
@@ -774,7 +835,7 @@ public class ExperimentDetailsComponent extends PageArea {
       this.streamResource = streamResource;
     }
 
-    public AbstractIcon createIcon() {
+    public AbstractIcon<? extends AbstractIcon<?>> createIcon() {
       if (streamResource != null) {
         return new SvgIcon(streamResource);
       } else {
