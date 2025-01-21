@@ -835,7 +835,7 @@ public class ExperimentDetailsComponent extends PageArea {
       this.streamResource = streamResource;
     }
 
-    public AbstractIcon<? extends AbstractIcon<?>> createIcon() {
+    public AbstractIcon createIcon() {
       if (streamResource != null) {
         return new SvgIcon(streamResource);
       } else {

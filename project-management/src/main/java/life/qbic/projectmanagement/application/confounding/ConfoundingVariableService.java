@@ -169,8 +169,7 @@ public interface ConfoundingVariableService {
    * @param projectId         the identifier of the project
    * @param experiment        the experiment containing the variable
    * @param sampleReference   the sample for which to set the level
-   * @param variableReference the variable for which to set the level
-   * @param level             the value of the level
+   * @param levels            a list of values as levels for the variable
    * @return the created confounding variable level
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")

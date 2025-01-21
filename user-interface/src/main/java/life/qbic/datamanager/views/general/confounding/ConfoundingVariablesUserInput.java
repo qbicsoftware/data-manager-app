@@ -212,13 +212,12 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
   private static class ConfoundingVariableField extends CustomField<ConfoundingVariable> implements
       HasClientValidation {
 
-    private final Div layout;
     private VariableReference variableReference;
     private final TextField variableName;
     private SerializableConsumer<ConfoundingVariableField> deleteAction;
 
     private ConfoundingVariableField() {
-      layout = new Div();
+      Div layout = new Div();
       variableName = new TextField();
       variableName.setLabel("Confounding Variable");
       variableName.addValueChangeListener(it -> updateValue());
