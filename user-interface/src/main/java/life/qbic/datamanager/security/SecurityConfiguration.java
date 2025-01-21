@@ -54,6 +54,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
             new AntPathRequestMatcher("/oauth2/authorization/orcid"),
             new AntPathRequestMatcher("/oauth2/code/**"), new AntPathRequestMatcher("images/*.png"))
         .permitAll());
+
     http.oauth2Login(oAuth2Login -> {
       oAuth2Login.loginPage("/login").permitAll();
       oAuth2Login.defaultSuccessUrl("/");
