@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.infrastructure.sample;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -10,7 +8,6 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
-import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -46,7 +43,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SampleRepositoryImpl implements SampleRepository {
 
-  private static final Logger log = logger(SampleRepositoryImpl.class);
   private final SampleJpaRepository sampleJpaRepository;
   private final SampleDataRepository sampleDataRepository;
   private final ProjectRepository projectRepository;
@@ -122,7 +118,6 @@ public class SampleRepositoryImpl implements SampleRepository {
   @Override
   public Collection<Sample> findSamplesByExperimentId(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
-    Collection<Sample> samples;
     return sampleJpaRepository.findAllByExperimentId(experimentId);
   }
 
@@ -146,7 +141,7 @@ public class SampleRepositoryImpl implements SampleRepository {
   public void updateAll(ProjectId projectId, Collection<Sample> updatedSamples) {
     var projectQuery = projectRepository.find(projectId);
     if (projectQuery.isPresent()) {
-      updateAll(projectQuery.get(), updatedSamples);
+      selfProxy.updateAll(projectQuery.get(), updatedSamples);
     } else {
       throw new SampleRepositoryException("Could not find project with id " + projectId.value());
     }
