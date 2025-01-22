@@ -723,7 +723,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void reloadExperimentalGroups() {
-    loadExperimentalGroups();
+    List<ExperimentalGroup> groups = loadExperimentalGroups();
+    fillExperimentalGroupCollection(groups);
     if (hasExperimentalGroups()) {
       onGroupsDefined();
       showSampleRegistrationPossibleNotification();
