@@ -96,9 +96,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     uploadWithDisplay.addSuccessListener(
         uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
             uploadSucceeded));
-    uploadWithDisplay.addRemovedListener(uploadRemoved -> {
-      setValidatedSampleMetadata(List.of());
-    });
+    uploadWithDisplay.addRemovedListener(uploadRemoved -> setValidatedSampleMetadata(List.of()));
 
     Span uploadTheSampleDataTitle = new Span("Upload the sample data");
     uploadTheSampleDataTitle.addClassName("section-title");
@@ -124,7 +122,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
     component.setDisplay(uploadProgressDisplay);
 
-    List<SampleInformationForNewSample> sampleInformationForNewSamples = null;
+    List<SampleInformationForNewSample> sampleInformationForNewSamples;
     try {
       sampleInformationForNewSamples = extractSampleInformationForNewSamples(
           uploadedData);
@@ -515,8 +513,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param batchName
-     * @param validatedSampleMetadata
+     * @param batchName               the name of the batch
+     * @param validatedSampleMetadata a list of validated sample metadata
      */
     public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient,
         String batchName,

@@ -147,7 +147,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
     component.setDisplay(uploadProgressDisplay);
 
-    List<SampleInformationForExistingSample> sampleInformationForExistingSamples = null;
+    List<SampleInformationForExistingSample> sampleInformationForExistingSamples;
     try {
       sampleInformationForExistingSamples = extractSampleInformationForExistingSamples(
           uploadedData);
@@ -512,8 +512,8 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param batchName
-     * @param validatedSampleMetadata
+     * @param batchName               the name of the batch
+     * @param validatedSampleMetadata a list of validated sample metadata
      */
     public ConfirmEvent(EditSampleBatchDialog source, boolean fromClient,
         String batchName,

@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general.confounding;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
@@ -15,8 +16,14 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.function.SerializableConsumer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.HasBoundField;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
@@ -29,9 +36,11 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
 
   private static final String CSS_CLICKABLE = "clickable";
   private final List<BoundConfoundingVariableField> fields = new ArrayList<>();
+  private Set<String> forbiddenNames;
   private final Div addActionContainer;
 
   public ConfoundingVariablesUserInput() {
+    this.forbiddenNames = Collections.emptySet();
     var infoText = new Div(
         "Add confounding variables here. You'll be able to define their values while registering samples.");
     addActionContainer = createAddActionContainer();
@@ -60,8 +69,20 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
     variables.forEach(this::addVariable);
   }
 
+  public void setForbiddenNames(Set<String> forbiddenNames) {
+    requireNonNull(forbiddenNames);
+    this.forbiddenNames = forbiddenNames;
+  }
+
+  private boolean isUniquelyNamed(ConfoundingVariable confoundingVariable) {
+    var counts = Stream.concat(forbiddenNames.stream(), fields.stream()
+            .map(it -> it.variableField.getValue().name()))
+        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    return counts.get(confoundingVariable.name()) <= 1;
+  }
+
   private void addVariable(ConfoundingVariable variable) {
-    BoundConfoundingVariableField field = new BoundConfoundingVariableField();
+    BoundConfoundingVariableField field = new BoundConfoundingVariableField(this::isUniquelyNamed);
     field.setValue(variable);
     fields.add(field);
     addComponentAtIndex(getElement().indexOfChild(addActionContainer.getElement()),
@@ -115,13 +136,16 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
     private final Binder<ConfoundingVariableContainer> binder;
     private final ConfoundingVariableField variableField;
 
-    private BoundConfoundingVariableField() {
+    private BoundConfoundingVariableField(
+        Predicate<ConfoundingVariable> isUniquelyNamed) {
       variableField = new ConfoundingVariableField();
       binder = new Binder<>(ConfoundingVariableContainer.class);
       binder.setBean(new ConfoundingVariableContainer());
       binder.forField(variableField)
           .withValidator(vari -> nonNull(vari) && !vari.name().isBlank(),
               "Please provide a name for the variable")
+          .withValidator(isUniquelyNamed::test,
+              "Please provide unique variable names")
           .asRequired()
           .bind(ConfoundingVariableContainer::getVariable,
               ConfoundingVariableContainer::setVariable);

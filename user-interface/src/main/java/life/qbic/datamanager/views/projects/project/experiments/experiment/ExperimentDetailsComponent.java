@@ -363,19 +363,28 @@ public class ExperimentDetailsComponent extends PageArea {
     var projectId = context.projectId().orElseThrow();
     var experimentId = context.experimentId().orElseThrow();
 
+    /*
+     * Please be aware that deleting and re-adding a confounding variable with the same name does not lead to deletion and re-creation of a confounding variable.
+     * For example if a user deletes a confounding variable "Test" in the UI and then re-adds a variable "Test" later on this is considered no change at all.
+     */
     var deletedVars = oldValue.stream()
-        .filter(it -> values.stream()
-            .noneMatch(it2 -> it2.variableReference().equals(it.variableReference())))
+        .filter(old -> values.stream()
+            .noneMatch(
+                newVal -> old.variableReference().equals(newVal.variableReference())
+                    // the variable was removed
+                    || old.name()
+                    .equals(newVal.name()))) // no new variable was added with the same name
         .toList();
 
     var createdVars = values.stream()
-        .filter(it -> isNull(it.variableReference()))
+        .filter(newVal -> isNull(newVal.variableReference())
+            && oldValue.stream().noneMatch(old -> old.name().equals(newVal.name())))
         .toList();
 
     var renamedVars = values.stream()
-        .filter(it -> oldValue.stream().anyMatch(
-            it2 -> it2.variableReference().equals(it.variableReference()) && !it2.name()
-                .equals(it.name())))
+        .filter(newVal -> oldValue.stream().anyMatch(
+            old -> old.variableReference().equals(newVal.variableReference()) && !old.name()
+                .equals(newVal.name())))
         .toList();
 
     for (ConfoundingVariable deletedVar : deletedVars) {
@@ -398,6 +407,15 @@ public class ExperimentDetailsComponent extends PageArea {
     var addDialog = AppDialog.small();
 
     ConfoundingVariablesUserInput confoundingVariablesUserInput = new ConfoundingVariablesUserInput();
+
+    Set<String> namesAlreadyTaken = loadConfoundingVariables(
+        context.projectId().map(ProjectId::value).orElseThrow(),
+        context.experimentId().orElseThrow())
+        .stream()
+        .map(ConfoundingVariableInformation::variableName)
+        .collect(Collectors.toSet());
+    confoundingVariablesUserInput.setForbiddenNames(namesAlreadyTaken);
+
 
     DialogHeader.with(addDialog, "Add Confounding Variables");
     DialogBody.with(addDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
