@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
+import life.qbic.datamanager.CustomOAuth2AccessTokenResponseClient;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -22,6 +25,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfiguration extends VaadinWebSecurity {
 
   final VaadinDefaultRequestCache defaultRequestCache;
+  private final OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient;
 
   @Value("${routing.registration.oidc.orcid.endpoint}")
   String registrationOrcidEndpoint;
@@ -30,9 +34,11 @@ public class SecurityConfiguration extends VaadinWebSecurity {
   String emailConfirmationEndpoint;
 
   public SecurityConfiguration(
-      @Autowired VaadinDefaultRequestCache defaultRequestCache) {
+      @Autowired VaadinDefaultRequestCache defaultRequestCache,
+      OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
+    this.accessTokenResponseClient = accessTokenResponseClient;
   }
 
   @Bean
@@ -74,9 +80,15 @@ public class SecurityConfiguration extends VaadinWebSecurity {
             .requestMatchers("/oauth2/code/**").permitAll()
         )
         .oauth2Login(oauth2 -> oauth2
-            .defaultSuccessUrl("/login2", true) // Redirect after login
+            .defaultSuccessUrl("/login", true)
+                .tokenEndpoint(v -> v.accessTokenResponseClient(accessTokenResponseClient))
         );
 
     super.configure(http);
+  }
+
+  @Bean
+  public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> customAccessTokenResponseClient() {
+    return new CustomOAuth2AccessTokenResponseClient();
   }
 }
