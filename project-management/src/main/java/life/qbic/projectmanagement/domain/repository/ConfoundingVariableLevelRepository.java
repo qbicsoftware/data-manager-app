@@ -6,12 +6,9 @@ import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVaria
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
- * TODO!
- * <b>short description</b>
+ * The repository of confounding variable levels
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.8.0
  */
 public interface ConfoundingVariableLevelRepository {
 

@@ -9,12 +9,9 @@ import jakarta.persistence.Table;
 import java.util.Objects;
 
 /**
- * TODO!
- * <b>short description</b>
+ * Data describing a confounding variable in the database
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.8.0
  */
 @Entity
 @Table(name = "experiments_datamanager_confounding_variables")

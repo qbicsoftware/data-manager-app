@@ -8,12 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * TODO!
- * <b>short description</b>
+ * Data describing a confounding variable level in the database
  *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * @since 1.8.0
  */
 @Entity
 @Table(name = "confounding_variable_levels")

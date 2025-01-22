@@ -5,9 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -47,39 +45,6 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
   public static MetadataConverter measurementConverter() {
     return new MetadataConverter();
-  }
-
-  /**
-   * Generates a hit map, storing the number of matches of a defined set of String values (hit
-   * values), in a target of interest collection of String values.
-   * <p>
-   * The resulting map will contain the number of occurrences of every value in the hit values
-   * collection found in the target collection to investigate.
-   *
-   * @param target    the collection of interest to search in
-   * @param hitValues a set of distinct values, that should be represented in the hit result map
-   * @return a hit result map, containing the number of occurrences of every hit value in the target
-   * String collection (0, if no target was found for a value).
-   * @since 1.4.0
-   */
-  private static Map<String, Integer> countHits(Collection<String> target, Set<String> hitValues,
-      String... ignoredProperties) {
-    Map<String, Integer> hits = new HashMap<>();
-    for (String t : hitValues) {
-      hits.put(t, 0);
-    }
-    for (String s : target) {
-      if (hitValues.contains(s)) {
-        var currentHit = hits.get(s);
-        hits.put(s, ++currentHit);
-      }
-    }
-    for (String ignoredProperty : ignoredProperties) {
-      if (hits.containsKey((ignoredProperty))) {
-        hits.remove(ignoredProperty);
-      }
-    }
-    return hits;
   }
 
   @Override
