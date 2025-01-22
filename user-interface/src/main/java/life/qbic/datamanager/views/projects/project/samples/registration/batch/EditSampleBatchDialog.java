@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.parser.MetadataParser.ParsingException;
 import life.qbic.datamanager.parser.ParsingResult;
 import life.qbic.datamanager.parser.sample.SampleInformationExtractor;
 import life.qbic.datamanager.parser.sample.SampleInformationExtractor.SampleInformationForExistingSample;
@@ -146,8 +147,20 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
     component.setDisplay(uploadProgressDisplay);
 
-    List<SampleInformationForExistingSample> sampleInformationForExistingSamples = extractSampleInformationForExistingSamples(
-        uploadedData);
+    List<SampleInformationForExistingSample> sampleInformationForExistingSamples = null;
+    try {
+      sampleInformationForExistingSamples = extractSampleInformationForExistingSamples(
+          uploadedData);
+    } catch (ParsingException e) {
+      RuntimeException runtimeException = new RuntimeException(
+          "Parsing failed.", e);
+      log.error("Could not complete validation. " + e.getMessage(), runtimeException);
+      InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
+          uploadedData.fileName(),
+          "Could not complete validation. " + e.getMessage());
+      ui.access(() -> component.setDisplay(invalidUploadDisplay));
+      throw runtimeException;
+    }
 
     List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
     for (SampleInformationForExistingSample sampleInformationForExistingSample : sampleInformationForExistingSamples) {
