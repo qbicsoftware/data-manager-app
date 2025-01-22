@@ -344,6 +344,10 @@ Dialog flavours
   width: 100%;
 }
 
+.full-height {
+  height: 100%;
+}
+
 .border-bottom-solid {
   border-bottom-style: solid;
   border-bottom-color: rgba(26, 56, 96, 0.1);

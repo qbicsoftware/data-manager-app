@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
@@ -106,7 +107,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final TabSheet experimentSheet = new TabSheet();
   private final Div experimentalGroupsContainer = new Div();
   private final Div experimentalVariablesContainer = new Div();
-  private final Div confoundingVariablesContainer = new Div();
+  private final Div confoundingVariablesContainer;
   private final CardCollection experimentalGroupsCollection = new CardCollection("GROUPS");
   private final CardCollection experimentalVariableCollection = new CardCollection("VARIABLES");
   private final CardCollection confoundingVariableCollection = new CardCollection(
@@ -145,6 +146,8 @@ public class ExperimentDetailsComponent extends PageArea {
     this.terminologyService = terminologyService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
+    confoundingVariablesContainer = new Div();
+    confoundingVariablesContainer.addClassNames("full-width", "full-height");
     layoutComponent();
     configureComponent();
   }
@@ -818,7 +821,10 @@ public class ExperimentDetailsComponent extends PageArea {
       List<ConfoundingVariableInformation> confoundingVariables) {
     var cards = new ArrayList<Component>();
     for (ConfoundingVariableInformation confoundingVariable : confoundingVariables) {
-      cards.add(new Div(confoundingVariable.variableName()));
+      Card card = new Card();
+      card.addClassNames("padding-left-right-05", "padding-top-bottom-05");
+      card.add(new Div(confoundingVariable.variableName()));
+      cards.add(card);
     }
     confoundingVariableCollection.setContent(cards);
   }
