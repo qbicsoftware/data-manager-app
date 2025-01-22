@@ -54,6 +54,11 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   @Transactional
   public ConfoundingVariableInformation createConfoundingVariable(String projectId,
       ExperimentReference experiment, String variableName) {
+    if (variableRepository.findAll(projectId, experiment.id()).stream()
+        .anyMatch(variable -> variable.getName().equals(variableName))) {
+      throw new ApplicationException(
+          "A confounding variable with this name already exists in this experiment");
+    }
     ConfoundingVariableData confoundingVariableData = new ConfoundingVariableData(null,
         experiment.id(), variableName);
     ConfoundingVariableData savedVariable = variableRepository.save(projectId,
@@ -66,6 +71,11 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   @Transactional
   public ConfoundingVariableInformation renameConfoundingVariable(String projectId,
       ExperimentReference experiment, VariableReference variableReference, String variableName) {
+    if (variableRepository.findAll(projectId, experiment.id()).stream()
+        .anyMatch(variable -> variable.getName().equals(variableName))) {
+      throw new ApplicationException(
+          "A confounding variable with this name already exists in this experiment");
+    }
     ConfoundingVariableData variable = variableRepository.findById(projectId,
         variableReference.id()).orElseThrow(() -> new ApplicationException(
         "No confounding variable with id %s exists in %s".formatted(variableReference.id(),
