@@ -129,6 +129,7 @@ public class SampleBatchRegistrationTemplate {
     }
 
     var startIndex = 1; //start in the second row with index 1.
+    var helperStopIndex = 1; //stop in the second row with index 1
 
     var hiddenSheet = workbook.createSheet("hidden");
     Name analysisToBePerformedOptions = createOptionArea(hiddenSheet, "Analysis to be performed",
@@ -175,7 +176,7 @@ public class SampleBatchRegistrationTemplate {
               column.columnIndex(),
               startIndex,
               column.columnIndex(),
-              MAX_ROW_INDEX_TO,
+              helperStopIndex,
               helper.exampleValue(),
               helper.description())
       );

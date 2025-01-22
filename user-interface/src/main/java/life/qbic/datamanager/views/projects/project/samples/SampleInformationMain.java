@@ -17,6 +17,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -91,7 +92,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final Disclaimer noSamplesRegisteredDisclaimer;
   private final transient ProjectInformationService projectInformationService;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final transient MessageSourceNotificationFactory notificationFactory;
   private final transient SampleValidationService sampleValidationService;
   private final transient TemplateService templateService;
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
@@ -104,7 +105,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired BatchDetailsComponent batchDetailsComponent,
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      MessageSourceNotificationFactory notificationFactory,
       SampleValidationService sampleValidationService,
       TemplateService templateService, SampleRegistrationServiceV2 sampleRegistrationServiceV2) {
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -120,7 +121,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     this.projectInformationService = projectInformationService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
-    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+    this.notificationFactory = requireNonNull(notificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.sampleValidationService = sampleValidationService;
     this.templateService = templateService;
@@ -201,13 +202,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     metadataDownload.trigger();
   }
 
-  private static class HandledException extends RuntimeException {
-
-    public HandledException(Throwable cause) {
-      super(cause);
-    }
-  }
-
   private void onRegisterBatchClicked() {
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId experimentId = context.experimentId().orElseThrow();
@@ -223,12 +217,17 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
         sampleValidationService, templateService, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
+    UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {
-      event.getSource().taskInProgress("Register the sample batch metadata",
-          "It may take some time for the registration task to complete.");
-      UI ui = event.getSource().getUI().orElseThrow();
+      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
+      event.getSource().close();
+      var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Sample registration for batch %s".formatted(event.batchName())},
+          getLocale());
+      ui.access(pendingToast::open);
+
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
-              event.validatedSampleMetadata(),
+              sampleMetadata,
               projectId, event.batchName(), false, new ExperimentReference(experimentId.value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
@@ -236,14 +235,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
             .exceptionally(e -> {
               ui.access(() -> {
                 //this needs to come before all the success events
-                event.getSource().taskFailed("", ""); //todo label and description s
-                displayRegistrationFailure();
+                pendingToast.close();
+                notificationFactory.toast("task.failed",
+                    new Object[]{"Registration of batch '%s'".formatted(event.batchName())},
+                    getLocale()).open();
               });
               throw new HandledException(e);
             })
             .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
-            .thenRun(() -> ui.access(() -> event.getSource().taskSucceeded("", "")))
-            .thenRun(() -> displayRegistrationSuccess(event.batchName()))
+            .thenRun(() -> ui.access(() -> {
+              pendingToast.close();
+              displayRegistrationSuccess(event.batchName());
+            }))
             .exceptionally(e -> {
               //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
               throw new HandledException(e); //we need the future to complete exceptionally
@@ -265,7 +268,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
             "sample-batch.register", getLocale())
         .open();
   }
-
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
     Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
@@ -305,18 +307,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void displayUpdateSuccess(String batchName) {
-    messageSourceNotificationFactory.toast("sample-batch.", new String[]{batchName}, getLocale())
+    notificationFactory.toast("sample-batch.updated.success", new String[]{batchName}, getLocale())
         .open();
   }
 
   private void displayDeletionSuccess(String batchLabel) {
-    messageSourceNotificationFactory.toast("sample-batch.deleted.success", new String[]{batchLabel},
+    notificationFactory.toast("sample-batch.deleted.success", new String[]{batchLabel},
             getLocale())
         .open();
   }
 
   private void displayRegistrationSuccess(String batchLabel) {
-    messageSourceNotificationFactory.toast("sample-batch.registered.success",
+    notificationFactory.toast("sample-batch.registered.success",
             new String[]{batchLabel},
             getLocale())
         .open();
@@ -324,16 +326,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void displayUpdateFailure() {
-    messageSourceNotificationFactory.dialog("sample-batch.update.failure",
+    notificationFactory.dialog("sample-batch.update.failure",
             MessageSourceNotificationFactory.EMPTY_PARAMETERS,
             getLocale())
-        .open();
-  }
-
-  private void displayRegistrationFailure() {
-    messageSourceNotificationFactory.dialog(
-            "sample-batch.register.failure",
-            MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale())
         .open();
   }
 
@@ -354,12 +349,17 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var editSampleBatchDialog = new EditSampleBatchDialog(
         sampleValidationService, templateService, batchId, batchLabel, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
+    UI ui = UI.getCurrent();
     editSampleBatchDialog.addConfirmListener(event -> {
-      event.getSource().taskInProgress("Edit the sample batch metadata",
-          "It may take some time for the editing to complete.");
-      UI ui = event.getSource().getUI().orElseThrow();
+      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
+      event.getSource().close();
+      var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Update for batch %s".formatted(event.batchName())},
+          getLocale());
+      ui.access(pendingToast::open);
+
       CompletableFuture<Void> editTask = sampleRegistrationServiceV2.updateSamples(
-              event.validatedSampleMetadata(),
+              sampleMetadata,
               projectId,
               batchId,
               event.batchName(),
@@ -371,15 +371,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
             .exceptionally(e -> {
               ui.access(() -> {
                 //this needs to come before all the success events
-                event.getSource().taskFailed("", ""); //todo label and description s
-                displayUpdateFailure();
+                pendingToast.close();
+                notificationFactory.toast("task.failed",
+                        new String[]{"Update of batch '%s'".formatted(event.batchName())}, getLocale())
+                    .open();
               });
               throw new HandledException(e);
             })
             .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
-            .thenRun(() -> ui.access(
-                () -> event.getSource().taskSucceeded("", ""))) //todo label and description
-            .thenRun(() -> displayUpdateSuccess(event.batchName()))
+            .thenRun(() -> ui.access(() -> {
+              pendingToast.close();
+              displayUpdateSuccess(event.batchName());
+            }))
             .exceptionally(e -> {
               //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
               throw new HandledException(e); //we need the future to complete exceptionally
@@ -504,5 +507,12 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void reloadSampleInformation() {
     sampleDetailsComponent.setContext(context);
+  }
+
+  private static class HandledException extends RuntimeException {
+
+    public HandledException(Throwable cause) {
+      super(cause);
+    }
   }
 }

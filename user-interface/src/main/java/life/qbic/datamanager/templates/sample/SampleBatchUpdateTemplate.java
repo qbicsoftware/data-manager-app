@@ -131,6 +131,7 @@ public class SampleBatchUpdateTemplate {
     }
 
     var startIndex = 1; //start in the second row with index 1.
+    var helperStopIndex = 1; //stop in the second row with index 1.
     int rowIndex = startIndex;
     for (Sample sample : samples) {
       Row row = getOrCreateRow(sheet, rowIndex);
@@ -187,7 +188,7 @@ public class SampleBatchUpdateTemplate {
               column.columnIndex(),
               startIndex,
               column.columnIndex(),
-              MAX_ROW_INDEX_TO,
+              helperStopIndex,
               helper.exampleValue(),
               helper.description())
       );

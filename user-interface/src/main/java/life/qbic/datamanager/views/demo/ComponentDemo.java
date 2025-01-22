@@ -1,9 +1,11 @@
 package life.qbic.datamanager.views.demo;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -18,6 +20,7 @@ import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
+import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -31,6 +34,8 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -53,9 +58,13 @@ public class ComponentDemo extends Div {
   public static final String HEADING_3 = "heading-3";
   public static final String GAP_04 = "gap-04";
   public static final String FLEX_VERTICAL = "flex-vertical";
+  public static final String NORMAL_BODY_TEXT = "normal-body-text";
   Div title = new Div("Data Manager - Component Demo");
+  private final MessageSourceNotificationFactory messageFactory;
 
-  public ComponentDemo() {
+  @Autowired
+  public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory) {
+    this.messageFactory = Objects.requireNonNull(messageSourceNotificationFactory);
     title.addClassName("heading-1");
     addClassNames("padding-left-right-07", "padding-top-bottom-04");
     add(title);
@@ -66,6 +75,7 @@ public class ComponentDemo extends Div {
     add(detailBoxShowCase());
     add(dialogShowCase());
     add(cardShowCase());
+    add(toastShowCase());
   }
 
   private static Div clickableShowCase() {
@@ -101,7 +111,7 @@ public class ComponentDemo extends Div {
       heading.addClassName("heading-" + i);
       heading.setText("Heading " + i);
       Div description = new Div();
-      description.addClassName("normal-body-text");
+      description.addClassName(NORMAL_BODY_TEXT);
       description.setText("CSS class: %s".formatted(".heading-" + i));
       container.add(heading, description);
     }
@@ -243,6 +253,49 @@ public class ComponentDemo extends Div {
     return content;
   }
 
+  private Div toastShowCase() {
+    var title = new Div("Toast it!");
+    title.addClassName(HEADING_2);
+    var description = new Div(
+        "Let's see how toasts work and also how to use them when we want to indicate a background task to the user.");
+    description.addClassName(NORMAL_BODY_TEXT);
+    var content = new Div();
+    content.addClassNames(FLEX_VERTICAL, GAP_04);
+
+    content.add(title);
+    content.add(description);
+
+    var button = new Button("Show Toast");
+
+    content.add(button);
+
+    button.addClickListener(e ->
+    {
+      var progressBar = new ProgressBar();
+      progressBar.setIndeterminate(true);
+      var toast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{"Doing something really heavy here"}, getLocale());
+      var succeededToast = messageFactory.toast("task.finished", new Object[]{"Heavy Task #1"},  getLocale());
+      toast.open();
+      var ui = UI.getCurrent();
+      CompletableFuture.runAsync(() -> {
+        try {
+          Thread.sleep(5000);
+
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }).thenRunAsync(() -> {
+        ui.access(() -> {
+              toast.close();
+              succeededToast.open();
+            }
+        );
+      });
+    });
+    content.add(button);
+    return content;
+  }
+
   private static Div detailBoxShowCase() {
     Div container = new Div();
     container.add(createHeading2("Detail Box"));
@@ -337,7 +390,7 @@ public class ComponentDemo extends Div {
   private static class BodyFontStyles {
 
     static String[] fontStyles = new String[]{
-        "normal-body-text",
+        NORMAL_BODY_TEXT,
         "small-body-text",
         "extra-small-body-text",
         "field-label-text",
@@ -354,7 +407,8 @@ public class ComponentDemo extends Div {
     Binder<StringBean> binder;
 
     ExampleUserInput(String prefill) {
-      var dialogSection = DialogSection.with("User Input Validation", "Try correct and incorrect input values in the following field.");
+      var dialogSection = DialogSection.with("User Input Validation",
+          "Try correct and incorrect input values in the following field.");
       originalValue = prefill;
       var textField = new TextField();
       textField.setLabel("Correct input is 'Riddikulus'");
