@@ -5,6 +5,7 @@ import static life.qbic.datamanager.views.projects.project.experiments.experimen
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -37,6 +38,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.confounding.ConfoundingVariable;
 import life.qbic.datamanager.views.general.confounding.ConfoundingVariablesUserInput;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
@@ -365,9 +367,19 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void onConfoundingVariablesAddConfirmed(AppDialog dialog,
       ConfoundingVariablesUserInput userInput) {
-    System.out.println("userInput.values() = " + userInput.values());
-    //TODO
+    addConfoundingVariables(userInput.values());
+    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
     dialog.close();
+  }
+
+  private void addConfoundingVariables(List<ConfoundingVariable> values) {
+    var projectId = context.projectId().orElseThrow();
+    var experimentId = context.experimentId().orElseThrow();
+    for (ConfoundingVariable value : values) {
+      confoundingVariableService.createConfoundingVariable(projectId.value(),
+          new ExperimentReference(experimentId.value()),
+          value.name());
+    }
   }
 
   private void deleteExistingExperimentalVariables() {
@@ -731,8 +743,6 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void fillExperimentalVariablesCollection(List<ExperimentalVariable> variables) {
-    this.experimentalVariablesContainer.removeAll();
-
     Comparator<String> natOrder = Comparator.naturalOrder();
     List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
         .sorted((var1, var2) -> natOrder.compare(var1.name().value(), var2.name().value()))
@@ -743,10 +753,11 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void fillConfoundingVariablesCollection(
       List<ConfoundingVariableInformation> confoundingVariables) {
-    this.confoundingVariableCollection.removeAll();
+    var cards = new ArrayList<Component>();
     for (ConfoundingVariableInformation confoundingVariable : confoundingVariables) {
-      confoundingVariableCollection.add(new Div(confoundingVariable.variableName()));
+      cards.add(new Div(confoundingVariable.variableName()));
     }
+    confoundingVariableCollection.setContent(cards);
   }
 
   private List<ConfoundingVariableInformation> loadConfoundingVariables(String projectId,
