@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.model.confounding.jpa.ConfoundingVariableData;
@@ -59,6 +60,21 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
         confoundingVariableData);
     return new ConfoundingVariableInformation(new VariableReference(savedVariable.getId()),
         savedVariable.getName());
+  }
+
+  @Override
+  @Transactional
+  public ConfoundingVariableInformation renameConfoundingVariable(String projectId,
+      ExperimentReference experiment, VariableReference variableReference, String variableName) {
+    ConfoundingVariableData variable = variableRepository.findById(projectId,
+        variableReference.id()).orElseThrow(() -> new ApplicationException(
+        "No confounding variable with id %s exists in %s".formatted(variableReference.id(),
+            experiment.id()
+        )));
+    variable.setName(variableName);
+    variableRepository.save(projectId, variable);
+    return new ConfoundingVariableInformation(new VariableReference(variable.getId()),
+        variable.getName());
   }
 
   @Override

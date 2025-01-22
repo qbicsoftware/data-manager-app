@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
@@ -335,17 +336,61 @@ public class ExperimentDetailsComponent extends PageArea {
     DialogBody.with(editDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
     DialogFooter.with(editDialog, "Cancel", "Confirm");
 
+    List<ConfoundingVariable> confoundingVariableInformation = loadConfoundingVariables(
+        context.projectId().map(ProjectId::value).orElseThrow(),
+        context.experimentId().orElseThrow())
+        .stream()
+        .map(it -> new ConfoundingVariable(it.id(), it.variableName()))
+        .toList();
+    confoundingVariablesUserInput.setVariables(confoundingVariableInformation);
     editDialog.registerConfirmAction(
-        () -> onConfoundingVariablesEditConfirmed(editDialog, confoundingVariablesUserInput));
+        () -> onConfoundingVariablesEditConfirmed(editDialog, confoundingVariablesUserInput,
+            confoundingVariableInformation));
     editDialog.registerCancelAction(editDialog::close);
     editDialog.open();
   }
 
   private void onConfoundingVariablesEditConfirmed(AppDialog dialog,
-      ConfoundingVariablesUserInput userInput) {
-    System.out.println("userInput.values() = " + userInput.values());
-    //TODO
+      ConfoundingVariablesUserInput userInput,
+      List<ConfoundingVariable> oldValue) {
+    editConfoundingVariables(userInput.values(), oldValue);
+    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
     dialog.close();
+  }
+
+  private void editConfoundingVariables(List<ConfoundingVariable> values,
+      List<ConfoundingVariable> oldValue) {
+    var projectId = context.projectId().orElseThrow();
+    var experimentId = context.experimentId().orElseThrow();
+
+    var deletedVars = oldValue.stream()
+        .filter(it -> values.stream()
+            .noneMatch(it2 -> it2.variableReference().equals(it.variableReference())))
+        .toList();
+
+    var createdVars = values.stream()
+        .filter(it -> isNull(it.variableReference()))
+        .toList();
+
+    var renamedVars = values.stream()
+        .filter(it -> oldValue.stream().anyMatch(
+            it2 -> it2.variableReference().equals(it.variableReference()) && !it2.name()
+                .equals(it.name())))
+        .toList();
+
+    for (ConfoundingVariable deletedVar : deletedVars) {
+      confoundingVariableService.deleteConfoundingVariable(projectId.value(),
+          new ExperimentReference(experimentId.value()), deletedVar.variableReference());
+    }
+    for (ConfoundingVariable createdVar : createdVars) {
+      confoundingVariableService.createConfoundingVariable(projectId.value(),
+          new ExperimentReference(experimentId.value()), createdVar.name());
+    }
+    for (ConfoundingVariable renamedVar : renamedVars) {
+      confoundingVariableService.renameConfoundingVariable(projectId.value(),
+          new ExperimentReference(
+              experimentId.value()), renamedVar.variableReference(), renamedVar.name());
+    }
   }
 
   private void openConfoundingVariablesAddDialog() {
