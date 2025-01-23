@@ -33,8 +33,6 @@ import org.springframework.web.client.RestTemplate;
 public class CustomOAuth2AccessTokenResponseClient implements
     OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
 
-  private final RestTemplate restTemplate = new RestTemplate();
-
   private static Map<String, Object> filterOptional(Map<String, Object> body) {
     return body.entrySet().stream().filter(entry -> isOptionalParameter(entry.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -62,7 +60,7 @@ public class CustomOAuth2AccessTokenResponseClient implements
   public OAuth2AccessTokenResponse getTokenResponse(OAuth2AuthorizationCodeGrantRequest request) {
     // Send the token request
     String tokenUri = request.getClientRegistration().getProviderDetails().getTokenUri();
-    ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+    ResponseEntity<Map<String, Object>> response = new RestTemplate().exchange(
         tokenUri, HttpMethod.POST, createRequestEntity(request),
         new ParameterizedTypeReference<>() {
         }

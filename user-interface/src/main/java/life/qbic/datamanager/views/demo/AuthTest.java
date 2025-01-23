@@ -8,26 +8,16 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinServletRequest;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Objects;
-import life.qbic.datamanager.security.ZenodoOAuth2Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -43,14 +33,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @Component
 public class AuthTest extends Div implements BeforeEnterObserver {
 
-  private final ZenodoOAuth2Service zenodoAuthService;
   @Autowired
   private OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
 
   @Autowired
-  public AuthTest(ApplicationContext app, ZenodoOAuth2Service zenodoOAuth2Service) {
+  public AuthTest(ApplicationContext app) {
     Button button = new Button("Authorize Zenodo");
-    this.zenodoAuthService = Objects.requireNonNull(zenodoOAuth2Service);
     button.addClickListener(e -> {
       HttpServletRequest request = ((VaadinServletRequest) VaadinRequest.getCurrent()).getHttpServletRequest();
       saveOriginalRoute(request); //
