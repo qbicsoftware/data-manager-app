@@ -61,4 +61,9 @@ public class DataManagerContextProvider implements AppContextProvider {
       throw new ApplicationException("Data Manager context creation failed.", e);
     }
   }
+
+  @Override
+  public String baseUrl() {
+    return baseUrlApplication.toExternalForm();
+  }
 }

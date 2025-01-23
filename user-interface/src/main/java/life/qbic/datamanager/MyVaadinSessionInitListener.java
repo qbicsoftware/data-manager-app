@@ -17,6 +17,7 @@ import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.WrappedSession;
+import com.vaadin.flow.shared.ui.Transport;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.io.IOException;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;

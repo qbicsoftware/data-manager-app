@@ -76,7 +76,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     super.configure(http);
     setLoginView(http, LoginLayout.class);*/
     http.authorizeHttpRequests(v ->
-            v.requestMatchers("/", "/login", "/oauth2/authorization/zenodo2").permitAll() // Public paths
+            v.requestMatchers("/", "/login", "/oauth2/authorization/zenodo").permitAll() // Public paths
             .requestMatchers("/oauth2/code/**").permitAll()
         )
         .oauth2Login(oauth2 -> oauth2
@@ -87,8 +87,4 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     super.configure(http);
   }
 
-  @Bean
-  public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> customAccessTokenResponseClient() {
-    return new CustomOAuth2AccessTokenResponseClient();
-  }
 }
