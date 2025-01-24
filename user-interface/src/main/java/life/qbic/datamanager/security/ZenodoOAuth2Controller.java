@@ -8,8 +8,11 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
+import life.qbic.datamanager.security.context.DMOAuth2BearerToken;
+import life.qbic.datamanager.security.context.DMSecurityContext;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import org.apache.catalina.util.URLEncoder;
@@ -42,16 +45,16 @@ public class ZenodoOAuth2Controller {
   public static final int STATE_LENGTH = 32;
   private static final Logger log = logger(ZenodoOAuth2Controller.class);
   private final ClientRegistrationRepository clientRepo;
-  private final CustomOAuth2AccessTokenResponseClient customOAuth2AccessTokenResponseClient;
+  private final DMOAuth2AccessTokenResponseClient dmOAuth2AccessTokenResponseClient;
   private final AppContextProvider appContextProvider;
 
   @Autowired
   public ZenodoOAuth2Controller(ClientRegistrationRepository clientRegistrationRepository,
-      CustomOAuth2AccessTokenResponseClient customOAuth2AccessTokenResponseClient,
+      DMOAuth2AccessTokenResponseClient dmOAuth2AccessTokenResponseClient,
       AppContextProvider appContextProvider) {
     this.clientRepo = Objects.requireNonNull(clientRegistrationRepository);
-    this.customOAuth2AccessTokenResponseClient = Objects.requireNonNull(
-        customOAuth2AccessTokenResponseClient);
+    this.dmOAuth2AccessTokenResponseClient = Objects.requireNonNull(
+        dmOAuth2AccessTokenResponseClient);
     this.appContextProvider = Objects.requireNonNull(appContextProvider);
   }
 
@@ -81,7 +84,7 @@ public class ZenodoOAuth2Controller {
       return;
     }
 
-    if (!hasValidState(session, state)) {
+    if (!hasValidState(session, state)) { // CSRF protection
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
       return;
     }
@@ -94,7 +97,7 @@ public class ZenodoOAuth2Controller {
       return;
     }
 
-    // Build the OAuth2AuthorizationCodeGrantRequest
+    // Build the request for the access token
     OAuth2AuthorizationCodeGrantRequest authorizationCodeGrantRequest = new OAuth2AuthorizationCodeGrantRequest(
         clientRegistration,
         new OAuth2AuthorizationExchange(
@@ -113,11 +116,12 @@ public class ZenodoOAuth2Controller {
         )
     );
 
+    // Execute the request via our custom response client, in order to conform to Zenodo's auth API.
     OAuth2AccessTokenResponse tokenResponse = null;
     var round = 1;
     while (round < 10) {
       try {
-        tokenResponse = customOAuth2AccessTokenResponseClient.getTokenResponse(
+        tokenResponse = dmOAuth2AccessTokenResponseClient.getTokenResponse(
             authorizationCodeGrantRequest);
       } catch (Exception e) {
         log.error(e.getMessage());
@@ -147,10 +151,34 @@ public class ZenodoOAuth2Controller {
       return;
     }
 
+    DMSecurityContext context;
+    if (session.getAttribute(DMSecurityContext.NAME) != null) {
+      var existingContext = (DMSecurityContext) session.getAttribute(DMSecurityContext.NAME);
+      context = createSecurityContext(tokenResponse, existingContext.principals().toArray());
+    } else {
+      context = createSecurityContext(tokenResponse);
+    }
+
+    session.setAttribute(DMSecurityContext.NAME, context);
+
     if (originalPath == null) {
       response.sendRedirect(request.getContextPath());
     }
     response.sendRedirect("%s/%s".formatted(request.getContextPath(), originalPath));
+  }
+
+  private static DMSecurityContext createSecurityContext(OAuth2AccessTokenResponse tokenResponse) {
+    var dmToken = new DMOAuth2BearerToken(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken(), "zenodo");
+    var contextBuilder = new DMSecurityContext.Builder();
+    return contextBuilder.addPrincipal(dmToken).build();
+  }
+
+  private static DMSecurityContext createSecurityContext(OAuth2AccessTokenResponse tokenResponse, Object... principals) {
+    var dmToken = new DMOAuth2BearerToken(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken(), "zenodo");
+    var contextBuilder = new DMSecurityContext.Builder();
+    contextBuilder.addPrincipal(dmToken);
+    Arrays.stream(principals).forEach(contextBuilder::addPrincipal);
+    return contextBuilder.build();
   }
 
   private static class OAuth2Error {

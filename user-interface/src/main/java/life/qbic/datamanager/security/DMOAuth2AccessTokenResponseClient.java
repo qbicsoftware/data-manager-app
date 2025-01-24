@@ -30,7 +30,7 @@ import org.springframework.web.client.RestTemplate;
  * @since <version tag>
  */
 @Component
-public class CustomOAuth2AccessTokenResponseClient implements
+public class DMOAuth2AccessTokenResponseClient implements
     OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
 
   private static Map<String, Object> filterOptional(Map<String, Object> body) {
@@ -72,7 +72,7 @@ public class CustomOAuth2AccessTokenResponseClient implements
     var tokenTypeString = (String) body.get(TOKEN_TYPE);
     TokenType tokenType = fromString((String) body.get(TOKEN_TYPE)).orElseThrow(() ->
         new RuntimeException("Unknown token type: '%s'".formatted(tokenTypeString)));
-    Long expiresIn = ((Number) body.get(EXPIRES_IN)).longValue();
+    long expiresIn = ((Number) body.get(EXPIRES_IN)).longValue();
 
     return OAuth2AccessTokenResponse.withToken(accessToken)
         .tokenType(tokenType)

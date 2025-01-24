@@ -77,12 +77,14 @@ public class SecurityConfiguration extends VaadinWebSecurity {
             v.requestMatchers("/oauth2/authorization/zenodo").permitAll() // Public paths
                 .requestMatchers("/oauth2/code/**").permitAll()
                 .requestMatchers("images/*png").permitAll()
+                .requestMatchers("/zenodo/callback").authenticated()
         )
         .oauth2Login(oauth2 -> {
               oauth2.loginPage("/login").permitAll();
               oauth2.defaultSuccessUrl("/", true)
                   .tokenEndpoint(v -> v.accessTokenResponseClient(accessTokenResponseClient));
               oauth2.failureUrl("/login?errorOauth2=true&error");
+              oauth2.successHandler(authenticationSuccessHandler());
             }
         );
     super.configure(http);

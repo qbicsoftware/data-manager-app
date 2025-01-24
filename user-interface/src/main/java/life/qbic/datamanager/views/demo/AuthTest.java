@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
@@ -32,9 +31,6 @@ import org.springframework.stereotype.Component;
 @UIScope
 @Component
 public class AuthTest extends Div implements BeforeEnterObserver {
-
-  @Autowired
-  private OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
 
   private final Div errorPlaceHolder = new Div();
 
