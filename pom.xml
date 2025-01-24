@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.6.6</version>
+  <version>1.7.2</version>
   <modules>
     <module>user-interface</module>
     <module>identity</module>
@@ -146,14 +146,14 @@
       <dependency>
         <groupId>org.apache.groovy</groupId>
         <artifactId>groovy-all</artifactId>
-        <version>4.0.23</version>
+        <version>4.0.24</version>
         <type>pom</type>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.jobrunr</groupId>
         <artifactId>jobrunr-spring-boot-3-starter</artifactId>
-        <version>7.3.1</version>
+        <version>7.3.2</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -183,6 +183,25 @@
   </dependencyManagement>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>2.0.0</version> <!-- Use the latest version -->
+        <executions>
+          <execution>
+            <goals>
+              <goal>aggregate-add-third-party</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <!-- Configuration for licenses aggregation -->
+          <outputDirectory>${project.build.directory}/generated-sources/license</outputDirectory>
+          <thirdPartyFilename>THIRD-PARTY.txt</thirdPartyFilename>
+          <failIfWarning>false</failIfWarning> <!-- Optional: fail the build on issues -->
+          <includeTransitiveDependencies>true</includeTransitiveDependencies>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.gmavenplus</groupId>
         <artifactId>gmavenplus-plugin</artifactId>
@@ -221,7 +240,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>3.5.2</version>
         <configuration>
           <useModulePath>false</useModulePath>
           <includes>

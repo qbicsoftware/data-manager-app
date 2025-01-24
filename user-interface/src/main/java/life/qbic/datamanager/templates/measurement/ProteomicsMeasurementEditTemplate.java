@@ -111,7 +111,7 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
     }
 
     try (Workbook workbook = new XSSFWorkbook();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
       CellStyle readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
       CellStyle boldStyle = createBoldCellStyle(workbook);
@@ -172,7 +172,6 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
       }
 
       var startIndex = 1; // start in row number 2 with index 1 skipping the header in the first row
-      var helperStopIndex = 1; //stop in row number 2 with index 1 as the header row has number 1 index 0
       var rowIndex = startIndex;
 
       for (ProteomicsMeasurementEntry pxpEntry : measurements) {
@@ -193,18 +192,6 @@ public class ProteomicsMeasurementEditTemplate implements DownloadContentProvide
           ProteomicsMeasurementEditColumn.DIGESTION_METHOD.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           digestionMethodArea);
-
-      for (ProteomicsMeasurementEditColumn column : ProteomicsMeasurementEditColumn.values()) {
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addInputHelper(sheet,
-                column.columnIndex(),
-                startIndex,
-                column.columnIndex(),
-                helperStopIndex,
-                helper.exampleValue(),
-                helper.description())
-        );
-      }
 
       setAutoWidth(sheet);
       workbook.setActiveSheet(0);

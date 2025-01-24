@@ -325,12 +325,16 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             proteomicsMeasurement -> renderInstrument().createComponent(
                 proteomicsMeasurement.msDevice()))
         .setHeader("MS Device")
-        .setTooltipGenerator(
-            proteomicsMeasurement -> proteomicsMeasurement.msDevice().formatted())
+        .setTooltipGenerator(proteomicsMeasurement -> proteomicsMeasurement.msDevice().formatted())
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(
+            measurement -> measurement.technicalReplicateName().orElse(""))
+        .setHeader("Technical Replicate")
+        .setTooltipGenerator(measurement -> measurement.technicalReplicateName().orElse(""))
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionEnzyme)
-        .setHeader("Digestion Enzyme").setTooltipGenerator(
-            ProteomicsMeasurement::digestionEnzyme)
+        .setHeader("Digestion Enzyme")
+        .setTooltipGenerator(ProteomicsMeasurement::digestionEnzyme)
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::digestionMethod)
         .setHeader("Digestion Method")
@@ -599,7 +603,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       setLayout();
       setMeasurementId(ngsMeasurement.measurementCode().value());
       setPooledNgsMeasurementDetails(ngsMeasurement);
-      //Todo Replace with specific metadata
       setPooledNgsSampleDetails(ngsMeasurement.specificMeasurementMetadata());
     }
 
@@ -662,7 +665,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       measurementDetailsDiv.add(
           pooledMeasurementEntry("Sample Pool Group", ngsMeasurement.samplePoolGroup()
               .orElseThrow()));
-      //Todo Add measurement specific pooled properties once defined for NGS
     }
 
     private void setPooledNgsSampleDetails(
@@ -698,7 +700,6 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       add(sampleDetailsGrid);
     }
 
-    //Todo This is non-performant and should be changed
     private Optional<Sample> retrieveSampleById(SampleId sampleId) {
       return sampleInformationService.findSample(sampleId);
     }
