@@ -4,24 +4,23 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.virtuallist.VirtualList;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import jakarta.annotation.security.PermitAll;
-import java.util.Arrays;
-import java.util.List;
-import life.qbic.datamanager.templates.Template;
-import life.qbic.datamanager.templates.TemplateDownloadFactory;
-import life.qbic.datamanager.templates.TemplateDownloadFactory.TemplateType;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
+import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
+import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
+import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks;
 import life.qbic.datamanager.views.general.PageArea;
+import org.apache.poi.ss.usermodel.Workbook;
 
 /**
- * Lists all the stored measurement templates via a default {@link Template}. Allows users to
+ * Lists all the stored measurement templates. Allows users to
  * download their template of interest to facilitate measurement registrations dependent on the lab
  * facility (Proteomics, Genomics, Imaging...)
  */
@@ -30,11 +29,10 @@ import life.qbic.datamanager.views.general.PageArea;
 @PermitAll
 public class MeasurementTemplateListComponent extends PageArea {
 
-  private final VirtualList<Template> measurementTemplateList;
+  private final Div measurementTemplateList;
 
   public MeasurementTemplateListComponent() {
-    measurementTemplateList = new VirtualList<>();
-    measurementTemplateList.setRenderer(measurementTemplateItemRenderer());
+    measurementTemplateList = new Div();
     measurementTemplateList.addClassName("measurement-template-list");
     Span title = new Span("Templates");
     title.addClassNames("header", "title");
@@ -46,21 +44,42 @@ public class MeasurementTemplateListComponent extends PageArea {
   }
 
   private void loadMeasurementTemplates() {
-    List<Template> templates = Arrays.stream(TemplateType.values()).map(
-        TemplateDownloadFactory::provider).toList();
-    measurementTemplateList.setItems(templates);
+    measurementTemplateList.removeAll();
+    WorkbookDownloadStreamProvider genomicsStreamProvider = new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return "ngs_measurement_registration_sheet.xlsx";
+      }
+
+      @Override
+      public Workbook getWorkbook() {
+        return NGSWorkbooks.createRegistrationWorkbook();
+      }
+    };
+    MeasurementTemplateItem genomicsTemplate = new MeasurementTemplateItem("Genomics Template");
+
+    WorkbookDownloadStreamProvider proteomicsStreamProvider = new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return "proteomics_measurement_registration_sheet.xlsx";
+      }
+
+      @Override
+      public Workbook getWorkbook() {
+        return ProteomicsWorkbooks.createRegistrationWorkbook();
+      }
+    };
+    MeasurementTemplateItem proteomicsTemplate = new MeasurementTemplateItem("Proteomics Template");
+
+    genomicsTemplate.onDownloadButtonClicked(
+        event -> fireEvent(new DownloadMeasurementTemplateEvent(genomicsStreamProvider, this,
+            event.isFromClient())));
+    proteomicsTemplate.onDownloadButtonClicked(event -> fireEvent(
+        new DownloadMeasurementTemplateEvent(proteomicsStreamProvider, this,
+            event.isFromClient())));
+    measurementTemplateList.add(genomicsTemplate, proteomicsTemplate);
   }
 
-  private ComponentRenderer<MeasurementTemplateItem, Template> measurementTemplateItemRenderer() {
-    return new ComponentRenderer<>(measurementTemplate -> {
-      MeasurementTemplateItem measurementTemplateItem = new MeasurementTemplateItem(
-          measurementTemplate);
-      measurementTemplateItem.onDownloadButtonClicked(event -> fireEvent(
-          new DownloadMeasurementTemplateEvent(measurementTemplate, this,
-              event.isFromClient())));
-      return measurementTemplateItem;
-    });
-  }
 
   public Registration addDownloadMeasurementTemplateClickListener(
       ComponentEventListener<DownloadMeasurementTemplateEvent> listener) {
@@ -70,7 +89,7 @@ public class MeasurementTemplateListComponent extends PageArea {
   public static class DownloadMeasurementTemplateEvent extends
       ComponentEvent<MeasurementTemplateListComponent> {
 
-    private final transient Template measurementTemplate;
+    private final transient DownloadStreamProvider downloadStreamProvider;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -80,54 +99,41 @@ public class MeasurementTemplateListComponent extends PageArea {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public DownloadMeasurementTemplateEvent(Template measurementTemplate,
+    public DownloadMeasurementTemplateEvent(DownloadStreamProvider downloadStreamProvider,
         MeasurementTemplateListComponent source,
         boolean fromClient) {
       super(source, fromClient);
-      this.measurementTemplate = measurementTemplate;
+      this.downloadStreamProvider = downloadStreamProvider;
     }
 
-    public Template measurementTemplate() {
-      return measurementTemplate;
+    public DownloadStreamProvider getDownloadStreamProvider() {
+      return downloadStreamProvider;
     }
   }
 
 
   private static class MeasurementTemplateItem extends Span {
 
-    private final transient Template measurementTemplate;
-    private final Span controls = new Span();
     private final Button downloadButton = new Button(LumoIcon.DOWNLOAD.create());
 
-    public MeasurementTemplateItem(Template measurementTemplate) {
-      this.measurementTemplate = measurementTemplate;
-      createFileInformationSection();
-      createControls();
-      addClassName("measurement-template-list-item");
-    }
-
-    public Template measurementTemplate() {
-      return measurementTemplate;
-    }
-
-    private void createFileInformationSection() {
+    public MeasurementTemplateItem(String domainName) {
       var fileIcon = VaadinIcon.FILE.create();
       fileIcon.addClassName("file-icon");
-      var qualityControlFileName = new Span(measurementTemplate.getDomainName());
-      qualityControlFileName.setTitle(measurementTemplate.getDomainName());
+      var qualityControlFileName = new Span(domainName);
+      qualityControlFileName.setTitle(domainName);
       qualityControlFileName.addClassName("file-name");
       var fileNameWithIcon = new Span(fileIcon, qualityControlFileName);
       fileNameWithIcon.addClassName("file-info-with-icon");
-      add(fileNameWithIcon);
-    }
-
-    private void createControls() {
       downloadButton.addThemeNames("tertiary-inline", "icon");
       downloadButton.setAriaLabel("Download");
       downloadButton.setTooltipText("Download");
+      Span controls = new Span();
       controls.add(downloadButton);
       controls.addClassName("controls");
+
+      add(fileNameWithIcon);
       add(controls);
+      addClassName("measurement-template-list-item");
     }
 
     private void onDownloadButtonClicked(ComponentEventListener<ClickEvent<Button>> listener) {
