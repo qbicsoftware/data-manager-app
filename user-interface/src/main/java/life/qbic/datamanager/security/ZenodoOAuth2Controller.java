@@ -6,14 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Objects;
-import life.qbic.datamanager.CustomOAuth2AccessTokenResponseClient;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AppContextProvider;
+import org.apache.catalina.util.URLEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -41,17 +41,14 @@ public class ZenodoOAuth2Controller {
   public static final String ZENODO_CLIENT_ID = "zenodo";
   public static final int STATE_LENGTH = 32;
   private static final Logger log = logger(ZenodoOAuth2Controller.class);
-  private final OAuth2AuthorizedClientManager authorizedClientManager;
   private final ClientRegistrationRepository clientRepo;
   private final CustomOAuth2AccessTokenResponseClient customOAuth2AccessTokenResponseClient;
   private final AppContextProvider appContextProvider;
 
   @Autowired
-  public ZenodoOAuth2Controller(OAuth2AuthorizedClientManager authorizedClientManager,
-      ClientRegistrationRepository clientRegistrationRepository,
+  public ZenodoOAuth2Controller(ClientRegistrationRepository clientRegistrationRepository,
       CustomOAuth2AccessTokenResponseClient customOAuth2AccessTokenResponseClient,
       AppContextProvider appContextProvider) {
-    this.authorizedClientManager = Objects.requireNonNull(authorizedClientManager);
     this.clientRepo = Objects.requireNonNull(clientRegistrationRepository);
     this.customOAuth2AccessTokenResponseClient = Objects.requireNonNull(
         customOAuth2AccessTokenResponseClient);
@@ -81,10 +78,12 @@ public class ZenodoOAuth2Controller {
     var session = request.getSession(false);
     if (session == null) {
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      return;
     }
 
     if (!hasValidState(session, state)) {
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      return;
     }
 
     // Retrieve the client registration for Zenodo
@@ -128,22 +127,33 @@ public class ZenodoOAuth2Controller {
       }
       round++;
       try {
-        Thread.sleep(100 * 2 ^ round);
+        Thread.sleep(100 * 2 ^ round); // we increase the duration every time to cut the server some slack
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
     }
 
+    var originalPath = session.getAttribute("datamanager.originalRoute");
+
     if (tokenResponse == null) {
       // it failed!
-      response.sendRedirect(request.getContextPath() + "/failure");
+      if (originalPath != null) {
+        response.sendRedirect("%s/%s?error=%s".formatted(request.getContextPath(), originalPath, new URLEncoder().encode(
+            OAuth2Error.AUTH_FAILED, StandardCharsets.UTF_8)));
+      } else {
+        response.sendRedirect("%s?error=%s".formatted(request.getContextPath(), new URLEncoder().encode(
+            OAuth2Error.AUTH_FAILED, StandardCharsets.UTF_8)));
+      }
       return;
     }
 
-    var originalPath = session.getAttribute("datamanager.originalRoute");
     if (originalPath == null) {
       response.sendRedirect(request.getContextPath());
     }
     response.sendRedirect("%s/%s".formatted(request.getContextPath(), originalPath));
+  }
+
+  private static class OAuth2Error {
+    static final String AUTH_FAILED = "auth_failed";
   }
 }

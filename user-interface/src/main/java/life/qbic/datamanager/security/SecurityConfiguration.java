@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
-import life.qbic.datamanager.CustomOAuth2AccessTokenResponseClient;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
 @Configuration
@@ -76,15 +74,19 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     super.configure(http);
     setLoginView(http, LoginLayout.class);*/
     http.authorizeHttpRequests(v ->
-            v.requestMatchers("/", "/login", "/oauth2/authorization/zenodo").permitAll() // Public paths
-            .requestMatchers("/oauth2/code/**").permitAll()
+            v.requestMatchers("/oauth2/authorization/zenodo").permitAll() // Public paths
+                .requestMatchers("/oauth2/code/**").permitAll()
+                .requestMatchers("images/*png").permitAll()
         )
-        .oauth2Login(oauth2 -> oauth2
-            .defaultSuccessUrl("/login", true)
-                .tokenEndpoint(v -> v.accessTokenResponseClient(accessTokenResponseClient))
+        .oauth2Login(oauth2 -> {
+              oauth2.loginPage("/login").permitAll();
+              oauth2.defaultSuccessUrl("/", true)
+                  .tokenEndpoint(v -> v.accessTokenResponseClient(accessTokenResponseClient));
+              oauth2.failureUrl("/login?errorOauth2=true&error");
+            }
         );
-
     super.configure(http);
+    setLoginView(http, LoginLayout.class);
   }
 
 }

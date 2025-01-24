@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  * @since <version tag>
  */
 @Profile("test-ui") // This view will only be available when the "test-ui" profile is active
-@Route("login2")
+@Route("zenodo-auth")
 @PermitAll
 @UIScope
 @Component
@@ -35,6 +35,8 @@ public class AuthTest extends Div implements BeforeEnterObserver {
 
   @Autowired
   private OAuth2AuthorizedClientManager oAuth2AuthorizedClientManager;
+
+  private final Div errorPlaceHolder = new Div();
 
   @Autowired
   public AuthTest(ApplicationContext app) {
@@ -45,6 +47,7 @@ public class AuthTest extends Div implements BeforeEnterObserver {
       UI.getCurrent().getPage().setLocation("/dev/oauth2/authorization/zenodo");
     });
     add(button);
+    add(errorPlaceHolder);
   }
 
   private void saveOriginalRoute(HttpServletRequest request) {
@@ -55,6 +58,9 @@ public class AuthTest extends Div implements BeforeEnterObserver {
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
+    var queryParameters = event.getLocation().getQueryParameters();
+    queryParameters.getSingleParameter("error").ifPresentOrElse(error -> {errorPlaceHolder.setText("You are not authorized to access this resource");}, () -> errorPlaceHolder.setText(""));
+
 
     var auth = SecurityContextHolder.getContext().getAuthentication();
 

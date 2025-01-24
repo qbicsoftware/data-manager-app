@@ -1,4 +1,4 @@
-package life.qbic.datamanager;
+package life.qbic.datamanager.security;
 
 import static org.springframework.security.oauth2.core.OAuth2TokenIntrospectionClaimNames.TOKEN_TYPE;
 import static org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames.ACCESS_TOKEN;
