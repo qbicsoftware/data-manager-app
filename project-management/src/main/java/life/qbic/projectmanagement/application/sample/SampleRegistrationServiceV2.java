@@ -80,8 +80,10 @@ public class SampleRegistrationServiceV2 {
     try {
       var registeredSamples = registerSamples(sampleMetadata, batchId, projectId);
       for (Entry<Sample, SampleMetadata> registeredSample : registeredSamples.entrySet()) {
-        Map<VariableReference, String> levels = new HashMap<>();
-        registeredSample.getValue().confoundingVariables().forEach((k, v) -> levels.put(k.id(), v));
+        Map<VariableReference, String> levels = registeredSample.getValue().confoundingVariables()
+            .entrySet().stream()
+            .collect(Collectors.toMap(entry -> entry.getKey().id(),
+                Entry::getValue));
         SampleReference sampleReference = new SampleReference(
             registeredSample.getKey().sampleId().value());
         confoundingVariableService.setVariableLevelsForSample(projectId.value(),
@@ -128,9 +130,11 @@ public class SampleRegistrationServiceV2 {
     sampleRepository.updateAll(projectId, updatedSamples.keySet());
 
     for (Entry<Sample, SampleMetadata> updatedSample : updatedSamples.entrySet()) {
-      Map<VariableReference, String> levels = new HashMap<>();
+      Map<VariableReference, String> levels = updatedSample.getValue().confoundingVariables()
+          .entrySet().stream()
+          .collect(Collectors.toMap(entry -> entry.getKey().id(),
+              Entry::getValue));
 
-      updatedSample.getValue().confoundingVariables().forEach((k, v) -> levels.put(k.id(), v));
       SampleReference sampleReference = new SampleReference(
           updatedSample.getKey().sampleId().value());
       confoundingVariableService.setVariableLevelsForSample(projectId.value(), experiment,
