@@ -129,7 +129,6 @@ public class SampleBatchRegistrationTemplate {
     }
 
     var startIndex = 1; //start in the second row with index 1.
-    var helperStopIndex = 1; //stop in the second row with index 1
 
     var hiddenSheet = workbook.createSheet("hidden");
     Name analysisToBePerformedOptions = createOptionArea(hiddenSheet, "Analysis to be performed",
@@ -169,18 +168,6 @@ public class SampleBatchRegistrationTemplate {
         RegisterColumn.SPECIMEN.columnIndex(),
         MAX_ROW_INDEX_TO,
         specimenOptions);
-
-    for (var column : RegisterColumn.values()) {
-      column.getFillHelp().ifPresent(
-          helper -> XLSXTemplateHelper.addInputHelper(sheet,
-              column.columnIndex(),
-              startIndex,
-              column.columnIndex(),
-              helperStopIndex,
-              helper.exampleValue(),
-              helper.description())
-      );
-    }
 
     setColumnAutoWidth(sheet, 0, RegisterColumn.maxColumnIndex());
     // Auto width ignores cell validation values (e.g. a list of valid entries). So we need
