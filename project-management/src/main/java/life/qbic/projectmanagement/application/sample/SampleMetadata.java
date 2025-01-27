@@ -62,7 +62,7 @@ public record SampleMetadata(
         experimentId);
   }
 
-  public static SampleMetadata fromNewToExisting(SampleId id, SampleMetadata sampleMetadata) {
+  public static SampleMetadata addSampleId(SampleId id, SampleMetadata sampleMetadata) {
     return new SampleMetadata(
         id, sampleMetadata.sampleCode, sampleMetadata.sampleName,
         sampleMetadata.analysisToBePerformed, sampleMetadata.biologicalReplicate,

@@ -189,7 +189,7 @@ public class SampleRegistrationServiceV2 {
     for (Sample addedSample : addedSamples) {
       SampleMetadata metadata = samplesToRegister.get(addedSample);
       registeredSamples.put(addedSample,
-          SampleMetadata.fromNewToExisting(addedSample.sampleId(), metadata));
+          SampleMetadata.addSampleId(addedSample.sampleId(), metadata));
     }
     return registeredSamples;
   }
