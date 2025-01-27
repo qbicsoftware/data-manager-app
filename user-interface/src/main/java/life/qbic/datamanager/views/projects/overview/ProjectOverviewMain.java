@@ -10,19 +10,26 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
+import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.SuccessMessage;
+import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
@@ -142,35 +149,37 @@ public class ProjectOverviewMain extends Main {
   }
 
   private void createProject(ConfirmEvent confirmEvent) {
-    Funding funding = null;
-    if (confirmEvent.getFundingEntry() != null && !confirmEvent.getFundingEntry()
-        .isEmpty()) {
-      funding = Funding.of(confirmEvent.getFundingEntry().getLabel(),
-          confirmEvent.getFundingEntry().getReferenceId());
+    Funding fundingEntry = null;
+    if (confirmEvent.projectCreationInformation().getFundingEntry().isPresent())
+    {
+      var funding = confirmEvent.projectCreationInformation().getFundingEntry().get();
+      fundingEntry = Funding.of(funding.getLabel(), funding.getReferenceId());
     }
+    var projectDesign = confirmEvent.projectCreationInformation().projectDesign();
+    var projectCollaborators = confirmEvent.projectCreationInformation().projectCollaborators();
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        confirmEvent.getProjectDesign().getOfferId(),
-        confirmEvent.getProjectDesign().getProjectCode(),
-        confirmEvent.getProjectDesign().getProjectTitle(),
-        confirmEvent.getProjectDesign().getProjectObjective(),
-        confirmEvent.getProjectCollaborators().getPrincipalInvestigator().toDomainContact(),
-        confirmEvent.getProjectCollaborators().getResponsiblePerson()
+        projectDesign.getOfferId(),
+        projectDesign.getProjectCode(),
+        projectDesign.getProjectTitle(),
+        projectDesign.getProjectObjective(),
+        projectCollaborators.getPrincipalInvestigator().toDomainContact(),
+        projectCollaborators.getResponsiblePerson()
             .map(Contact::toDomainContact).orElse(null),
-        confirmEvent.getProjectCollaborators().getProjectManager().toDomainContact(),
-        funding);
+        projectCollaborators.getProjectManager().toDomainContact(), fundingEntry);
     project
         .onValue(result -> onProjectCreated(confirmEvent))
         .onError(e -> {
           throw e;
         });
+    var experimentalInformation = confirmEvent.experimentalInformation();
     var experiment = addExperimentToProjectService.addExperimentToProject(
         project.getValue().getId(),
-        confirmEvent.getExperimentalInformation().getExperimentName(),
-        confirmEvent.getExperimentalInformation().getSpecies(),
-        confirmEvent.getExperimentalInformation().getSpecimens(),
-        confirmEvent.getExperimentalInformation().getAnalytes(),
-        confirmEvent.getExperimentalInformation().getSpeciesIcon().getLabel(),
-        confirmEvent.getExperimentalInformation().getSpecimenIcon().getLabel());
+        experimentalInformation.getExperimentName(),
+        experimentalInformation.getSpecies(),
+        experimentalInformation.getSpecimens(),
+        experimentalInformation.getAnalytes(),
+        experimentalInformation.getSpeciesIcon().getLabel(),
+        experimentalInformation.getSpecimenIcon().getLabel());
     experiment.onError(e -> {
       throw e;
     });
@@ -189,4 +198,5 @@ public class ProjectOverviewMain extends Main {
     var notification = new StyledNotification(successMessage);
     notification.open();
   }
+
 }

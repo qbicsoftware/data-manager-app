@@ -17,13 +17,17 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
+import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
@@ -61,7 +65,7 @@ public class AddProjectDialog extends QbicDialog {
 
   private final Map<String, Component> stepContent;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-
+  private final ProjectCreationInformation projectCreationInformation;
 
   private StepIndicator addStep(Stepper stepper, String label, Component layout) {
     stepContent.put(label, layout);
@@ -74,6 +78,7 @@ public class AddProjectDialog extends QbicDialog {
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
 
+    this.projectCreationInformation = new ProjectCreationInformation();
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
@@ -114,7 +119,6 @@ public class AddProjectDialog extends QbicDialog {
     confirmButton.addClassNames("primary", "confirm");
     confirmButton.addClickListener(this::onConfirmClicked);
 
-
     setDialogContent(stepper.getFirstStep());
 
     stepper.addStepSelectionListener(
@@ -138,7 +142,6 @@ public class AddProjectDialog extends QbicDialog {
     adaptFooterButtons(stepper.getFirstStep());
     setEscAction(it -> onCancelClicked());
   }
-
   /**
    * Allows user to search the offer database to prefill some project information
    */
@@ -153,23 +156,22 @@ public class AddProjectDialog extends QbicDialog {
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {
-    if (projectDesignLayout.validate().isInvalid()) {
+    if(projectDesignLayout.validate().isInvalid()){
       return;
     }
-    if (fundingInformationLayout.validate().isInvalid()) {
+    projectCreationInformation.setProjectDesign(projectDesignLayout.getProjectDesign());
+    if(fundingInformationLayout.validate().isInvalid()){
       return;
     }
-    if (collaboratorsLayout.validate().isInvalid()) {
+    projectCreationInformation.setFundingEntry(fundingInformationLayout.getFundingInformation());
+    if(collaboratorsLayout.isInvalid()){
       return;
     }
+    projectCreationInformation.setProjectCollaborators(collaboratorsLayout.getProjectCollaborators());
     if (experimentalInformationLayout.validate().isInvalid()) {
-      return;
+        return;
     }
-    fireEvent(new ConfirmEvent(this, projectDesignLayout.getProjectDesign(),
-        fundingInformationLayout.getFundingInformation(),
-        collaboratorsLayout.getProjectCollaborators(),
-        experimentalInformationLayout.getExperimentalInformation(), true));
-
+    fireEvent(new ConfirmEvent(this, projectCreationInformation, experimentalInformationLayout.getExperimentalInformation(), true));
   }
 
   private void onNextClicked(ClickEvent<Button> event) {
@@ -210,6 +212,11 @@ public class AddProjectDialog extends QbicDialog {
   }
 
   private boolean isDialogContentInvalid() {
+    //Since we don't employ one Binder for all fields within a layout anymore,
+    // we can't use the default vaadin HasBinder Validation and have to check separately for field validity.
+    if(dialogContent.getChildren().anyMatch(component -> component.equals(collaboratorsLayout))){
+     return collaboratorsLayout.isInvalid();
+    }
     return dialogContent.getChildren()
         .filter(HasBinderValidation.class::isInstance)
         .map(HasBinderValidation.class::cast)
@@ -258,37 +265,21 @@ public class AddProjectDialog extends QbicDialog {
 
     @Serial
     private static final long serialVersionUID = 3629446840913968906L;
-    private final ProjectDesign projectDesign;
-    private final FundingEntry fundingEntry;
-    private final ProjectCollaborators projectCollaborators;
+    private final ProjectCreationInformation projectCreationInformation;
     private final ExperimentalInformation experimentalInformation;
 
-    public ProjectDesign getProjectDesign() {
-      return projectDesign;
+    public ConfirmEvent(AddProjectDialog source,
+        ProjectCreationInformation projectCreationInformation, ExperimentalInformation experimentalInformation, boolean fromClient) {
+      super(source, fromClient);
+      this.projectCreationInformation = projectCreationInformation;
+      this.experimentalInformation = experimentalInformation;
     }
 
-    public FundingEntry getFundingEntry() {
-      return fundingEntry;
-    }
-
-    public ProjectCollaborators getProjectCollaborators() {
-      return projectCollaborators;
-    }
-
-    public ExperimentalInformation getExperimentalInformation() {
+    public ExperimentalInformation experimentalInformation() {
       return experimentalInformation;
     }
-
-
-    public ConfirmEvent(AddProjectDialog source,
-        ProjectDesign projectDesign, FundingEntry fundingEntry,
-        ProjectCollaborators projectCollaborators,
-        ExperimentalInformation experimentalInformation, boolean fromClient) {
-      super(source, fromClient);
-      this.projectDesign = projectDesign;
-      this.fundingEntry = fundingEntry;
-      this.projectCollaborators = projectCollaborators;
-      this.experimentalInformation = experimentalInformation;
+    public ProjectCreationInformation projectCreationInformation() {
+      return projectCreationInformation;
     }
   }
 
@@ -304,6 +295,82 @@ public class AddProjectDialog extends QbicDialog {
      */
     public CancelEvent(AddProjectDialog source, boolean fromClient) {
       super(source, fromClient);
+    }
+  }
+
+  /**
+   * <b>Project Creation Information</b>
+   *
+   * <p>Down to earth project info data container.</p>
+   *
+   */
+  public static final class ProjectCreationInformation implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -3282474018583338789L;
+
+    private ProjectDesign projectDesign;
+    private FundingEntry fundingEntry;
+    private ProjectCollaborators projectCollaborators;
+
+    public ProjectDesign projectDesign() {
+      return projectDesign;
+    }
+
+    public void setProjectDesign(
+        ProjectDesign projectDesign) {
+      this.projectDesign = projectDesign;
+    }
+
+    public Optional<FundingEntry> getFundingEntry() {
+      if (fundingEntry == null || fundingEntry.isEmpty()) {
+        return Optional.empty();
+      }
+      return Optional.ofNullable(fundingEntry);
+    }
+
+    public void setFundingEntry(FundingEntry fundingEntry) {
+      this.fundingEntry = fundingEntry;
+    }
+
+    public ProjectCollaborators projectCollaborators() {
+      return projectCollaborators;
+    }
+
+    public void setProjectCollaborators(
+        ProjectCollaborators projectCollaborators) {
+      this.projectCollaborators = projectCollaborators;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof ProjectCreationInformation that)) {
+        return false;
+      }
+
+      return projectDesign.equals(that.projectDesign) && fundingEntry.equals(that.fundingEntry)
+          && projectCollaborators.equals(that.projectCollaborators);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = projectDesign.hashCode();
+      result = 31 * result + fundingEntry.hashCode();
+      result = 31 * result + projectCollaborators.hashCode();
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return "ProjectInformation{" +
+          "fundingEntry=" + fundingEntry +
+          ", projectDesign=" + projectDesign +
+          ", projectCollaborators=" + projectCollaborators +
+          '}';
     }
   }
 }

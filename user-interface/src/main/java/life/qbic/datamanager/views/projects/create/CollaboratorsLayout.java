@@ -2,19 +2,16 @@ package life.qbic.datamanager.views.projects.create;
 
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
-import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.views.general.HasBinderValidation;
-import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
+import life.qbic.datamanager.views.general.contact.BoundContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
-import org.springframework.stereotype.Component;
+import life.qbic.datamanager.views.general.contact.ContactField;
+import life.qbic.datamanager.views.general.utils.Utility;
 
 /**
  * <b>Collaborators Layout</b>
@@ -22,46 +19,26 @@ import org.springframework.stereotype.Component;
  * <p>Layout which enables the user to input the information associated with the collaborators
  * within a project during project creation and validates the provided information</p>
  */
-@Component
-public class CollaboratorsLayout extends Div implements HasBinderValidation<ProjectCollaborators> {
 
-  private final AutocompleteContactField principalInvestigatorField;
-  private final AutocompleteContactField responsiblePersonField;
-  private final AutocompleteContactField projectManagerField;
-  private final Binder<ProjectCollaborators> collaboratorsBinder;
+public class CollaboratorsLayout extends Div {
+
+  protected transient BoundContactField managerBinding;
+  protected transient BoundContactField investigatorBinding;
+  protected transient BoundContactField responsibleBinding;
 
   public CollaboratorsLayout() {
 
-    collaboratorsBinder = new Binder<>(ProjectCollaborators.class);
-    collaboratorsBinder.setValidatorsDisabled(true);
-    collaboratorsBinder.setBean(new ProjectCollaborators());
-    collaboratorsBinder.setFieldsValidationStatusChangeListenerEnabled(true);
-
-    principalInvestigatorField = new AutocompleteContactField("Principal Investigator", "PI");
-    principalInvestigatorField.setRequired(true);
-    collaboratorsBinder.forField(principalInvestigatorField)
-        .withNullRepresentation(principalInvestigatorField.getEmptyValue())
-        .withValidator(it -> principalInvestigatorField.validate().isValid(), "")
-        .bind(ProjectCollaborators::getPrincipalInvestigator,
-            ProjectCollaborators::setPrincipalInvestigator);
-
-    responsiblePersonField = new AutocompleteContactField("Project Responsible/Co-Investigator (optional)", "Responsible");
-    responsiblePersonField.setRequired(false);
-    responsiblePersonField.setHelperText("Should be contacted about project-related questions");
-    collaboratorsBinder.forField(responsiblePersonField)
-        .withNullRepresentation(responsiblePersonField.getEmptyValue())
-        .withValidator(it -> responsiblePersonField.validate().isValid(), "")
-        .bind(bean -> bean.getResponsiblePerson().orElse(null),
-            ProjectCollaborators::setResponsiblePerson);
-
-    projectManagerField = new AutocompleteContactField("Project Manager", "Manager");
-    projectManagerField.setRequired(true);
-    collaboratorsBinder.forField(projectManagerField)
-        .withNullRepresentation(projectManagerField.getEmptyValue())
-        .withValidator(it -> projectManagerField.validate().isValid(), "")
-        .bind(ProjectCollaborators::getProjectManager,
-            ProjectCollaborators::setProjectManager);
-
+    var fieldPrincipalInvestigator = createRequired("Principal Investigator");
+    var fieldProjectResponsible = createOptional(
+        "Project Responsible / Co-Investigator (optional)");
+    var fieldProjectManager = createRequired("Project Manager");
+    var currentUser = Utility.tryToLoadFromPrincipal().orElseThrow();
+    fieldProjectManager.setMyself(currentUser, "Set myself as project manager");
+    fieldProjectResponsible.setMyself(currentUser, "Set myself as project responsible");
+    fieldPrincipalInvestigator.setMyself(currentUser, "Set myself as principal investigator");
+    this.responsibleBinding = BoundContactField.createOptional(fieldProjectResponsible);
+    this.investigatorBinding = BoundContactField.createMandatory(fieldPrincipalInvestigator);
+    this.managerBinding = BoundContactField.createMandatory(fieldProjectManager);
     Span projectContactsTitle = new Span("Project Collaborators");
     projectContactsTitle.addClassName("title");
     Span projectContactsDescription = new Span(
@@ -69,42 +46,50 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     addClassName("collaborators-layout");
     add(projectContactsTitle,
         projectContactsDescription,
-        principalInvestigatorField,
-        responsiblePersonField,
-        projectManagerField);
-    collaboratorsBinder.setValidatorsDisabled(false);
+        fieldPrincipalInvestigator,
+        fieldProjectResponsible,
+        fieldProjectManager);
   }
 
-  @Override
-  public String getDefaultErrorMessage() {
-    return "Please complete the mandatory information. Some input seems to be invalid.";
+  private static ContactField createRequired(String label) {
+    var contact = ContactField.createSimple(label);
+    contact.setRequiredIndicatorVisible(true);
+    return contact;
   }
 
-  @Override
-  public boolean isInvalid() {
-    validate();
-    return HasBinderValidation.super.isInvalid();
-  }
-
-  @Override
-  public Binder<ProjectCollaborators> getBinder() {
-    return collaboratorsBinder;
+  private static ContactField createOptional(String label) {
+    return ContactField.createSimple(label);
   }
 
   /**
-   * Provides set project collaborators. Calling this method will lead to an exception if the
-   * current value is not valid.
+   * Returns the project design. Fails for invalid designs with an exception.
    *
-   * @return a valid {@link ProjectCollaborators} object
+   * @return a valid project design
    */
   public ProjectCollaborators getProjectCollaborators() {
     ProjectCollaborators projectCollaborators = new ProjectCollaborators();
     try {
-      collaboratorsBinder.writeBean(projectCollaborators);
+      projectCollaborators.setProjectManager(managerBinding.getValue());
+      projectCollaborators.setPrincipalInvestigator(investigatorBinding.getValue());
+      //Necessary since otherwise an empty contact will be generated, which will fail during project creation in the application service
+      if(responsibleBinding.getValue().isComplete()){
+        projectCollaborators.setResponsiblePerson(responsibleBinding.getValue());
+      }
     } catch (ValidationException e) {
-      throw new ApplicationException("Tried to access invalid project collaborator information.", e);
+      throw new RuntimeException("Tried to access invalid project collaborators.", e);
     }
     return projectCollaborators;
+  }
+
+  /**
+   * Checks if the contained fields within the collaborator layout are invalid.
+   * Necessary since the binding is now done on a field level and not on one binder for all fields
+   *
+   * @return true if the contained fields are invalid, false otherwise
+   */
+  public boolean isInvalid() {
+    return !(investigatorBinding.isValid() && managerBinding.isValid()
+        && responsibleBinding.isValid());
   }
 
   public static final class ProjectCollaborators implements Serializable {
@@ -117,29 +102,29 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     @NotEmpty
     private Contact projectManager;
 
+    public Contact getPrincipalInvestigator() {
+      return principalInvestigator;
+    }
+
     public void setPrincipalInvestigator(
         Contact principalInvestigator) {
       this.principalInvestigator = principalInvestigator;
-    }
-
-    public void setResponsiblePerson(Contact responsiblePerson) {
-      this.responsiblePerson = responsiblePerson;
-    }
-
-    public void setProjectManager(Contact projectManager) {
-      this.projectManager = projectManager;
-    }
-
-    public Contact getPrincipalInvestigator() {
-      return principalInvestigator;
     }
 
     public Optional<Contact> getResponsiblePerson() {
       return Optional.ofNullable(responsiblePerson);
     }
 
+    public void setResponsiblePerson(Contact responsiblePerson) {
+      this.responsiblePerson = responsiblePerson;
+    }
+
     public Contact getProjectManager() {
       return projectManager;
+    }
+
+    public void setProjectManager(Contact projectManager) {
+      this.projectManager = projectManager;
     }
 
     @Override
