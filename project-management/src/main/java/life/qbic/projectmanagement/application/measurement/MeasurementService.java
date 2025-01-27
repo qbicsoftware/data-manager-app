@@ -23,6 +23,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
@@ -65,28 +66,29 @@ public class MeasurementService {
   private final MeasurementDomainService measurementDomainService;
   private final MeasurementLookupService measurementLookupService;
   private final SampleInformationService sampleInformationService;
-  private final SpeciesLookupService speciesLookupService;
   private final OrganisationLookupService organisationLookupService;
   private final ProjectInformationService projectInformationService;
   private final MeasurementRepository measurementRepository;
+  private final TerminologyService terminologyService;
 
   @Autowired
   public MeasurementService(MeasurementDomainService measurementDomainService,
       SampleInformationService sampleInformationService,
-      SpeciesLookupService speciesLookupService,
       OrganisationLookupService organisationLookupService,
       MeasurementLookupService measurementLookupService,
       ProjectInformationService projectInformationService,
       MeasurementRepository measurementRepository,
+      TerminologyService terminologyService,
       ApplicationContext context) {
     this.measurementDomainService = Objects.requireNonNull(measurementDomainService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
-    this.speciesLookupService = Objects.requireNonNull(speciesLookupService);
     this.organisationLookupService = Objects.requireNonNull(organisationLookupService);
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.measurementRepository = Objects.requireNonNull(measurementRepository);
     this.context = Objects.requireNonNull(context);
+    this.terminologyService = Objects.requireNonNull(terminologyService);
+
   }
 
   /**
@@ -778,7 +780,7 @@ public class MeasurementService {
   }
 
   private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
-    return speciesLookupService.findByCURI(ontologyCURI).map(OntologyTerm::from);
+    return terminologyService.findByCurie(ontologyCURI);
   }
 
   private Optional<SampleIdCodeEntry> queryIdCodePair(SampleCode sampleCode) {
