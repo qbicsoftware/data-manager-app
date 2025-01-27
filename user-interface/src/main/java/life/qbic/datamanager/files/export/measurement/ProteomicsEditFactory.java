@@ -4,6 +4,7 @@ import static life.qbic.datamanager.exporting.xlsx.templates.XLSXTemplateHelper.
 import static life.qbic.datamanager.exporting.xlsx.templates.XLSXTemplateHelper.getOrCreateRow;
 
 import java.util.List;
+import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks.DigestionMethod;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementEditColumn;
@@ -13,7 +14,7 @@ import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
-public class ProteomicsEditFactory implements MeasurementWorkbookFactory {
+public class ProteomicsEditFactory implements WorkbookFactory {
 
   private static final int DEFAULT_GENERATED_ROW_COUNT = 200;
   private final List<ProteomicsMeasurementEntry> measurements;
@@ -39,13 +40,18 @@ public class ProteomicsEditFactory implements MeasurementWorkbookFactory {
   }
 
   @Override
+  public String sheetName() {
+    return "Proteomics Measurement Metadata";
+  }
+
+  @Override
   public Column[] getColumns() {
     return ProteomicsMeasurementEditColumn.values();
   }
 
   @Override
   public void customizeValidation(Sheet hiddenSheet, Sheet sheet) {
-    MeasurementWorkbookFactory.addValidation(
+    WorkbookFactory.addValidation(
         hiddenSheet,
         sheet,
         1,
@@ -58,9 +64,9 @@ public class ProteomicsEditFactory implements MeasurementWorkbookFactory {
   @Override
   public void customizeHeaderCells(Row header, CreationHelper creationHelper,
       CellStyles cellStyles) {
-    MeasurementWorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
+    WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
         ProteomicsMeasurementEditColumn.ORGANISATION_URL.getIndex(), "https://ror.org");
-    MeasurementWorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
+    WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
         ProteomicsMeasurementEditColumn.MS_DEVICE.getIndex(),
         "https://rdm.qbic.uni-tuebingen.de");
   }

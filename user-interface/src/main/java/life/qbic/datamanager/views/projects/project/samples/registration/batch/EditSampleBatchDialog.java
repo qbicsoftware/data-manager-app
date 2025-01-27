@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.exporting.xlsx.templates.TemplateService;
+import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.importing.SampleInformationExtractor;
 import life.qbic.datamanager.importing.SampleInformationExtractor.SampleInformationForExistingSample;
 import life.qbic.datamanager.importing.parser.ParsingResult;
@@ -42,7 +42,7 @@ import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
 
 /**
  * A dialog used for editing sample and batch information.
@@ -232,7 +232,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(buttonClickEvent -> {
-      try (XSSFWorkbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
+      try (Workbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
           batchId,
           projectId,
           experimentId)) {

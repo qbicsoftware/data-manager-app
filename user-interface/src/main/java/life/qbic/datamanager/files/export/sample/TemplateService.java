@@ -1,19 +1,15 @@
-package life.qbic.datamanager.exporting.xlsx.templates;
+package life.qbic.datamanager.files.export.sample;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.exporting.xlsx.templates.sample.SampleBatchRegistrationTemplate;
-import life.qbic.datamanager.exporting.xlsx.templates.sample.SampleBatchUpdateTemplate;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
-import life.qbic.projectmanagement.domain.model.sample.Sample;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -68,17 +64,26 @@ public class TemplateService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public XSSFWorkbook sampleBatchRegistrationXLSXTemplate(String projectId, String experimentId)
+  public Workbook sampleBatchRegistrationXLSXTemplate(String projectId, String experimentId)
       throws NoSuchExperimentException {
     var experiment = experimentInfoService.find(projectId, ExperimentId.parse(experimentId))
         .orElseThrow(
             NoSuchExperimentException::new);
-    return createWorkbookFromExperiment(experiment);
+    var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
+        .map(
+            PropertyConversion::toString).toList();
+    var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
+    var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
+    var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
+    var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
+        .toList();
+    return SampleWorkbooks.createRegistrationWorkbook(analysisMethods, conditions, analytes,
+        species, specimen);
   }
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public XSSFWorkbook sampleBatchUpdateXLSXTemplate(BatchId batchId, String projectId,
+  public Workbook sampleBatchUpdateXLSXTemplate(BatchId batchId, String projectId,
       String experimentId)
       throws NoSuchExperimentException, SampleSearchException {
     var experiment = experimentInfoService.find(projectId, ExperimentId.parse(experimentId))
@@ -92,39 +97,23 @@ public class TemplateService {
     var samplesInBatch = samples.getValue().stream()
         .filter(sample -> sample.assignedBatch().equals(batchId))
         .toList();
-    return createPrefilledWorkbookFromExperiment(experiment, samplesInBatch);
-  }
-
-  private XSSFWorkbook createPrefilledWorkbookFromExperiment(Experiment experiment,
-      List<Sample> samples) {
-    var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
-        .map(
-            PropertyConversion::toString).toList();
+    var conditions = experiment.getExperimentalGroups().stream()
+        .map(ExperimentalGroup::condition)
+        .map(PropertyConversion::toString).toList();
     var experimentalGroups = experiment.getExperimentalGroups();
     var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
     var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
     var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
-    var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
+    var analysisMethods = Arrays.stream(AnalysisMethod.values())
+        .map(AnalysisMethod::abbreviation)
         .toList();
-    return SampleBatchUpdateTemplate.createUpdateTemplate(samples,
-        conditions, species,
-        specimen, analytes,
-        analysisMethods, experimentalGroups);
-  }
-
-  private XSSFWorkbook createWorkbookFromExperiment(Experiment experiment) {
-    var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
-        .map(
-            PropertyConversion::toString).toList();
-    var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
-    var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
-    var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
-    var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
-        .toList();
-    return SampleBatchRegistrationTemplate.createRegistrationTemplate(
-        conditions, species,
-        specimen, analytes,
-        analysisMethods);
+    return SampleWorkbooks.createEditWorkbook(samplesInBatch,
+        analysisMethods,
+        conditions,
+        analytes,
+        species,
+        specimen,
+        experimentalGroups);
   }
 
   public static class NoSuchExperimentException extends RuntimeException {

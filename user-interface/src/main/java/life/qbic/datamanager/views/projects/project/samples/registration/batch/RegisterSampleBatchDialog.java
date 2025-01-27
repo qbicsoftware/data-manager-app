@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.exporting.xlsx.templates.TemplateService;
+import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.importing.SampleInformationExtractor;
 import life.qbic.datamanager.importing.SampleInformationExtractor.SampleInformationForNewSample;
 import life.qbic.datamanager.importing.parser.ParsingResult;
@@ -39,7 +39,7 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
 
 public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
@@ -200,7 +200,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(buttonClickEvent -> {
-      try (XSSFWorkbook workbook = templateService.sampleBatchRegistrationXLSXTemplate(
+      try (Workbook workbook = templateService.sampleBatchRegistrationXLSXTemplate(
           projectId,
           experimentId)) {
         var downloadProvider = new DownloadProvider(
