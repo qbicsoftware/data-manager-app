@@ -167,7 +167,6 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
       }
 
       var startIndex = 1; // start in row number 2 with index 1 as the header row has number 1 index 0
-      var helperStopIndex = 1; //stop in row number 2 with index 1 as the header row has number 1 index 0
       int rowIndex = startIndex;
       for (NGSMeasurementEntry measurement : measurements) {
         Row row = getOrCreateRow(sheet, rowIndex);
@@ -189,18 +188,6 @@ public class NGSMeasurementEditTemplate implements DownloadContentProvider {
           NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.columnIndex(),
           DEFAULT_GENERATED_ROW_COUNT - 1,
           sequencingReadTypeArea);
-
-      for (NGSMeasurementEditColumn column : NGSMeasurementEditColumn.values()) {
-        column.getFillHelp().ifPresent(
-            helper -> XLSXTemplateHelper.addInputHelper(sheet,
-                column.columnIndex(),
-                startIndex,
-                column.columnIndex(),
-                helperStopIndex,
-                helper.exampleValue(),
-                helper.description())
-        );
-      }
 
       setAutoWidth(sheet);
       workbook.setActiveSheet(0);
