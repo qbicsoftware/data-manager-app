@@ -186,10 +186,15 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var experimentId = context.experimentId().orElseThrow();
     var projectCode = projectInformationService.findOverview(projectId)
         .map(ProjectOverview::projectCode).orElseThrow();
+    var experimentName = experimentInformationService.find(projectId.value(), experimentId)
+        .map(Experiment::getName).orElseThrow();
     downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
       @Override
       public String getFilename() {
-        return projectCode + "_sample_information.xlsx";
+        // FIXME unsure what the filename should be projectCode_sample_information.xlsx or experiment_name_sample_information.xlsx
+        return experimentName.replaceAll(" ", "_") + "_sample_information.xlsx";
+//        return projectCode + "_sample_information.xlsx";
+
       }
 
       @Override
