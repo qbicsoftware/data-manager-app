@@ -21,7 +21,6 @@ import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisConnecto
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -59,7 +58,7 @@ public class SampleRepositoryImpl implements SampleRepository {
     this.projectRepository = Objects.requireNonNull(projectRepository);
   }
 
-  @Transactional(propagation = Propagation.REQUIRED)
+  @Transactional
   @Override
   public Collection<Sample> addAll(Project project,
       Collection<Sample> samples) {

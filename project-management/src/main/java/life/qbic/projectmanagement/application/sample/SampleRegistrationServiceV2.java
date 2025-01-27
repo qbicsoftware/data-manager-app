@@ -33,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -68,7 +67,7 @@ public class SampleRegistrationServiceV2 {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  @Transactional
   public CompletableFuture<Void> registerSamples(Collection<SampleMetadata> sampleMetadata,
       ProjectId projectId, String batchLabel, boolean batchIsPilot, ExperimentReference experiment)
       throws RegistrationException {
@@ -104,7 +103,7 @@ public class SampleRegistrationServiceV2 {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   @Async
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  @Transactional
   public CompletableFuture<Void> updateSamples(
       Collection<SampleMetadata> sampleMetadata,
       ProjectId projectId,
