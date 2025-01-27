@@ -8,6 +8,9 @@ import org.apache.poi.ss.usermodel.Workbook;
 
 public class SampleWorkbooks {
 
+  private SampleWorkbooks() {
+  }
+
   public static Workbook createRegistrationWorkbook(List<String> analysisMethods,
       List<String> conditions,
       List<String> analytes, List<String> species, List<String> specimen) {
@@ -26,8 +29,13 @@ public class SampleWorkbooks {
     return factory.createWorkbook();
   }
 
-  public Workbook createInformationWorkbook() {
-    //TODO implement
-    throw new RuntimeException("Not implemented");
+  public static Workbook createInformationWorkbook(List<Sample> samples,
+      List<String> analysisMethods,
+      List<String> conditions,
+      List<String> analytes, List<String> species, List<String> specimen,
+      List<ExperimentalGroup> experimentalGroups) {
+    WorkbookFactory factory = new SampleInformationFactory(samples, analysisMethods, conditions,
+        analytes, species, specimen, experimentalGroups);
+    return factory.createWorkbook();
   }
 }

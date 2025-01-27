@@ -19,24 +19,22 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
-import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditSampleBatchDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
 import life.qbic.logging.api.Logger;
@@ -46,7 +44,6 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -55,6 +52,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -82,8 +80,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
 
-  private final DownloadProvider metadataDownload;
-  private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
+  private final DownloadComponent downloadComponent;
 
   private final Div content = new Div();
   private final TextField searchField = new TextField();
@@ -107,6 +104,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory notificationFactory,
       SampleValidationService sampleValidationService,
       TemplateService templateService, SampleRegistrationServiceV2 sampleRegistrationServiceV2) {
+    this.downloadComponent = new DownloadComponent();
+
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
     this.sampleInformationService = requireNonNull(sampleInformationService,
@@ -123,6 +122,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     this.notificationFactory = requireNonNull(notificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.sampleValidationService = sampleValidationService;
+    this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
+
     this.templateService = templateService;
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
@@ -130,13 +131,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     noSamplesRegisteredDisclaimer = createNoSamplesRegisteredDisclaimer();
     noSamplesRegisteredDisclaimer.setVisible(false);
 
-    sampleInformationXLSXProvider = new SampleInformationXLSXProvider();
-    metadataDownload = new DownloadProvider(sampleInformationXLSXProvider);
-
     add(noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
     initContent();
     add(sampleDetailsComponent, batchDetailsComponent);
-    add(metadataDownload);
 
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
@@ -150,7 +147,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
-    this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
+    add(downloadComponent);
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -185,20 +182,22 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void downloadSampleMetadata() {
-    List<SamplePreview> samplePreviews = sampleInformationService.retrieveSamplePreviewsForExperiment(
-        context.experimentId()
-            .orElseThrow());
+    var projectId = context.projectId().orElseThrow();
+    var experimentId = context.experimentId().orElseThrow();
+    var projectCode = projectInformationService.findOverview(projectId)
+        .map(ProjectOverview::projectCode).orElseThrow();
+    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return projectCode + "_sample_information.xlsx";
+      }
 
-    Comparator<String> natOrder = Comparator.naturalOrder();
-
-    var result = samplePreviews.stream()
-        // sort by measurement codes first, then by sample codes
-        .sorted(Comparator.comparing(SamplePreview::sampleCode, natOrder)
-            .thenComparing(SamplePreview::sampleName, natOrder)).toList();
-    sampleInformationXLSXProvider.setSamples(result,
-        projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
-            .getProjectCode().value());
-    metadataDownload.trigger();
+      @Override
+      public Workbook getWorkbook() {
+        return templateService.sampleBatchInformationXLSXTemplate(projectId.value(),
+            experimentId.value());
+      }
+    });
   }
 
   private void onRegisterBatchClicked() {

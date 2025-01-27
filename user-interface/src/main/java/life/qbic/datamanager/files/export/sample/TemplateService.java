@@ -116,6 +116,39 @@ public class TemplateService {
         experimentalGroups);
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Workbook sampleBatchInformationXLSXTemplate(String projectId,
+      String experimentId)
+      throws NoSuchExperimentException, SampleSearchException {
+    var experiment = experimentInfoService.find(projectId, ExperimentId.parse(experimentId))
+        .orElseThrow(
+            NoSuchExperimentException::new);
+    var samples = sampleInformationService.retrieveSamplesForExperiment(
+        ExperimentId.parse(experimentId));
+    samples.onError(responseCode -> {
+      throw new SampleSearchException();
+    });
+    var samplesInBatch = samples.getValue().stream().toList();
+    var conditions = experiment.getExperimentalGroups().stream()
+        .map(ExperimentalGroup::condition)
+        .map(PropertyConversion::toString).toList();
+    var experimentalGroups = experiment.getExperimentalGroups();
+    var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
+    var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
+    var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
+    var analysisMethods = Arrays.stream(AnalysisMethod.values())
+        .map(AnalysisMethod::abbreviation)
+        .toList();
+    return SampleWorkbooks.createInformationWorkbook(samplesInBatch,
+        analysisMethods,
+        conditions,
+        analytes,
+        species,
+        specimen,
+        experimentalGroups);
+  }
+
   public static class NoSuchExperimentException extends RuntimeException {
 
   }
