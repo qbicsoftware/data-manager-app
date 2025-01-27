@@ -1,9 +1,10 @@
 package life.qbic.datamanager.files.export.measurement;
 
-import static life.qbic.datamanager.exporting.xlsx.templates.XLSXTemplateHelper.getOrCreateCell;
-import static life.qbic.datamanager.exporting.xlsx.templates.XLSXTemplateHelper.getOrCreateRow;
+import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateCell;
+import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateRow;
 
 import java.util.List;
+import java.util.Optional;
 import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks.DigestionMethod;
 import life.qbic.datamanager.files.structure.Column;
@@ -59,6 +60,11 @@ public class ProteomicsEditFactory implements WorkbookFactory {
         ProteomicsMeasurementEditColumn.DIGESTION_METHOD.getIndex(),
         "Digestion method", DigestionMethod.getOptions()
     );
+  }
+
+  @Override
+  public Optional<String> longestValueForColumn(int columnIndex) {
+    return Optional.empty();
   }
 
   @Override

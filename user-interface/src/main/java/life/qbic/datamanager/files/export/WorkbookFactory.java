@@ -1,10 +1,10 @@
 package life.qbic.datamanager.files.export;
 
-import static life.qbic.datamanager.exporting.xlsx.templates.XLSXTemplateHelper.createReadOnlyCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createBoldCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createLinkHeaderCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createOptionArea;
+import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createReadOnlyCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createReadOnlyHeaderCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateCell;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateRow;
@@ -14,6 +14,7 @@ import static life.qbic.datamanager.files.export.XLSXTemplateHelper.lockSheet;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
 import org.apache.poi.common.usermodel.HyperlinkType;
@@ -83,7 +84,12 @@ public interface WorkbookFactory {
     lockSheet(hiddenSheet);
     hideSheet(workbook, hiddenSheet);
 
-    XLSXTemplateHelper.setColumnAutoWidth(sheet, 0, columns.length - 1);
+    var maxColumnIndex = Arrays.stream(columns).mapToInt(Column::getIndex).max().orElse(0);
+    XLSXTemplateHelper.autoSizeAllColumns(sheet,
+        0, maxColumnIndex,
+        numberOfRowsToGenerate(),
+        this::longestValueForColumn,
+        cellStyles.defaultCellStyle);
     workbook.setActiveSheet(0);
     return workbook;
   }
@@ -105,6 +111,8 @@ public interface WorkbookFactory {
         stopRowIndex,
         namedArea);
   }
+
+  Optional<String> longestValueForColumn(int columnIndex);
 
   default void addPropertyInformation(Column[] columns, XSSFWorkbook workbook,
       CellStyles cellStyles) {

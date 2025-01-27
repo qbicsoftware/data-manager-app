@@ -1,9 +1,11 @@
 package life.qbic.datamanager.files.export.sample;
 
-import static life.qbic.datamanager.exporting.xlsx.templates.XLSXTemplateHelper.getOrCreateCell;
-import static life.qbic.datamanager.exporting.xlsx.templates.XLSXTemplateHelper.getOrCreateRow;
+import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateCell;
+import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateRow;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BinaryOperator;
 import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.sample.EditColumn;
@@ -110,6 +112,23 @@ public class SampleEditFactory implements WorkbookFactory {
         specimen);
   }
 
+  @Override
+  public Optional<String> longestValueForColumn(int columnIndex) {
+    BinaryOperator<String> keepLongerString = (String s1, String s2) -> s1.length() > s2.length()
+        ? s1 : s2;
+    if (columnIndex == EditColumn.ANALYSIS.getIndex()) {
+      return analysisMethods.stream().reduce(keepLongerString);
+    } else if (columnIndex == EditColumn.CONDITION.getIndex()) {
+      return conditions.stream().reduce(keepLongerString);
+    } else if (columnIndex == EditColumn.ANALYTE.getIndex()) {
+      return analytes.stream().reduce(keepLongerString);
+    } else if (columnIndex == EditColumn.SPECIES.getIndex()) {
+      return species.stream().reduce(keepLongerString);
+    } else if (columnIndex == EditColumn.SPECIMEN.getIndex()) {
+      return specimen.stream().reduce(keepLongerString);
+    }
+    return Optional.empty();
+  }
   @Override
   public void customizeHeaderCells(Row header, CreationHelper creationHelper,
       CellStyles cellStyles) {

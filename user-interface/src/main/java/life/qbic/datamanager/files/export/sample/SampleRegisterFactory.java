@@ -1,6 +1,8 @@
 package life.qbic.datamanager.files.export.sample;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BinaryOperator;
 import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.sample.RegisterColumn;
@@ -86,6 +88,25 @@ public class SampleRegisterFactory implements WorkbookFactory {
         "Specimen",
         specimen);
   }
+
+  @Override
+  public Optional<String> longestValueForColumn(int columnIndex) {
+    BinaryOperator<String> keepLongerString = (String s1, String s2) -> s1.length() > s2.length()
+        ? s1 : s2;
+    if (columnIndex == RegisterColumn.ANALYSIS.getIndex()) {
+      return analysisMethods.stream().reduce(keepLongerString);
+    } else if (columnIndex == RegisterColumn.CONDITION.getIndex()) {
+      return conditions.stream().reduce(keepLongerString);
+    } else if (columnIndex == RegisterColumn.ANALYTE.getIndex()) {
+      return analytes.stream().reduce(keepLongerString);
+    } else if (columnIndex == RegisterColumn.SPECIES.getIndex()) {
+      return species.stream().reduce(keepLongerString);
+    } else if (columnIndex == RegisterColumn.SPECIMEN.getIndex()) {
+      return specimen.stream().reduce(keepLongerString);
+    }
+    return Optional.empty();
+  }
+
 
   @Override
   public void customizeHeaderCells(Row header, CreationHelper creationHelper,

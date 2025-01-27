@@ -5,6 +5,7 @@ import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateR
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.export.measurement.NGSWorkbooks.SequencingReadType;
 import life.qbic.datamanager.files.structure.Column;
@@ -88,6 +89,11 @@ public class NgsEditFactory implements WorkbookFactory {
     WorkbookFactory.addValidation(hiddenSheet, sheet, 1, numberOfRowsToGenerate() - 1,
         NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.getIndex(),
         "Sequencing read type", SequencingReadType.getOptions());
+  }
+
+  @Override
+  public Optional<String> longestValueForColumn(int columnIndex) {
+    return Optional.empty();
   }
 
   @Override

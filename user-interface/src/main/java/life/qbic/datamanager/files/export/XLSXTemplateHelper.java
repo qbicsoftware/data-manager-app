@@ -6,9 +6,9 @@ import static java.util.Objects.nonNull;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.poi.ss.usermodel.Cell;
@@ -44,8 +44,8 @@ public class XLSXTemplateHelper {
   private static final byte[] DARK_GREY = {(byte) 119, (byte) 119, (byte) 119};
   private static final byte[] LIGHT_GREY = {(byte) 220, (byte) 220, (byte) 220};
   private static final byte[] LINK_BLUE = {(byte) 9, (byte) 105, (byte) 218};
-  private static final int COLUMN_MAX_WIDTH = 255;
   private static final String PROPERTY_INFORMATION_SHEET_NAME = "Property Information";
+  private static final String DEFAULT_FONT = "Open Sans";
 
   protected XLSXTemplateHelper() {
     //hide constructor as static methods only are used
@@ -117,45 +117,18 @@ public class XLSXTemplateHelper {
     return Optional.empty();
   }
 
-  /**
-   * Sets a range of columns via {@link Sheet#autoSizeColumn(int)} to set the width automatically to
-   * the maximum cell value length observed in a column.
-   *
-   * @param sheet            the sheet for which the columns shall be adjusted
-   * @param columnIndexStart the first column index to start the formatting
-   * @param columnIndexEnd   the last column (inclusive) to have to formatting included
-   * @since 1.5.0
-   */
-  public static void setColumnAutoWidth(Sheet sheet, int columnIndexStart,
-      int columnIndexEnd) {
-    for (int currentColumn = columnIndexStart; currentColumn <= columnIndexEnd;
-        currentColumn++) {
-      sheet.autoSizeColumn(currentColumn);
+  public static void autoSizeAllColumns(Sheet sheet, int columnIndexStart, int columnIndexEnd,
+      int maxRowIdx, IntFunction<Optional<String>> longestValueForColumn, CellStyle cellStyle) {
+    Row tempRow = sheet.createRow(maxRowIdx + 1);
+    for (int currentColumnIndex = columnIndexStart; currentColumnIndex <= columnIndexEnd;
+        currentColumnIndex++) {
+      String longestValue = longestValueForColumn.apply(currentColumnIndex).orElse("");
+      Cell cell = tempRow.createCell(currentColumnIndex);
+      cell.setCellValue(longestValue);
+      cell.setCellStyle(cellStyle);
+      sheet.autoSizeColumn(currentColumnIndex);
     }
-  }
-
-  /**
-   * Sets the width of a column explicitly. The width is expected to be the number in characters to
-   * show.
-   * <p>
-   * Disclaimer: The current maximal value for the width is 255, since we inherit this restraint
-   * from the underlying framework. See {@link Sheet#setColumnWidth(int, int)} for more.
-   *
-   * @param sheet             the sheet for which the column shall be adjusted
-   * @param columnIndex       the index of the column to adjust
-   * @param widthInCharacters the designated width of the column in number of characters
-   * @throws IllegalArgumentException if the number of characters > 255
-   * @since 1.5.0
-   */
-  public static void setColumnWidth(Sheet sheet, int columnIndex, int widthInCharacters)
-      throws IllegalArgumentException {
-    Objects.requireNonNull(sheet);
-    if (widthInCharacters > COLUMN_MAX_WIDTH) {
-      throw new IllegalArgumentException(
-          "Column width must be less than %s characters. Provided: %s".formatted(COLUMN_MAX_WIDTH,
-              widthInCharacters));
-    }
-    sheet.setColumnWidth(columnIndex, widthInCharacters * 256);
+    sheet.removeRow(tempRow);
   }
 
 
@@ -163,7 +136,7 @@ public class XLSXTemplateHelper {
     CellStyle boldStyle = workbook.createCellStyle();
     Font fontBold = workbook.createFont();
     fontBold.setBold(true);
-    fontBold.setFontName("Open Sans");
+    fontBold.setFontName(DEFAULT_FONT);
     fontBold.setFontHeightInPoints((short) 12);
 
     boldStyle.setFont(fontBold);
@@ -173,7 +146,7 @@ public class XLSXTemplateHelper {
   public static CellStyle createDefaultCellStyle(Workbook workbook) {
     CellStyle boldStyle = workbook.createCellStyle();
     Font fontBold = workbook.createFont();
-    fontBold.setFontName("Open Sans");
+    fontBold.setFontName(DEFAULT_FONT);
     fontBold.setFontHeightInPoints((short) 12);
 
     boldStyle.setFont(fontBold);
@@ -185,7 +158,7 @@ public class XLSXTemplateHelper {
     XSSFFont linkFont = (XSSFFont) workbook.createFont();
     linkFont.setColor(new XSSFColor(LINK_BLUE, new DefaultIndexedColorMap()));
     linkFont.setBold(true);
-    linkFont.setFontName("Open Sans");
+    linkFont.setFontName(DEFAULT_FONT);
     linkFont.setFontHeightInPoints((short) 12);
 
     linkHeaderStyle.setFont(linkFont);
@@ -198,7 +171,7 @@ public class XLSXTemplateHelper {
     readOnlyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
     XSSFFont font = (XSSFFont) workbook.createFont();
     font.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
-    font.setFontName("Open Sans");
+    font.setFontName(DEFAULT_FONT);
     font.setFontHeightInPoints((short) 12);
     readOnlyStyle.setFont(font);
     return readOnlyStyle;
@@ -212,7 +185,7 @@ public class XLSXTemplateHelper {
     XSSFFont fontHeader = (XSSFFont) workbook.createFont();
     fontHeader.setBold(true);
     fontHeader.setColor(new XSSFColor(DARK_GREY, new DefaultIndexedColorMap()));
-    fontHeader.setFontName("Open Sans");
+    fontHeader.setFontName(DEFAULT_FONT);
     fontHeader.setFontHeightInPoints((short) 12);
     readOnlyHeaderStyle.setFont(fontHeader);
     return readOnlyHeaderStyle;
@@ -276,7 +249,7 @@ public class XLSXTemplateHelper {
    */
   protected static String toCamelCase(String input) {
     StringBuilder stringBuilder = new StringBuilder(input);
-    Predicate<Character> isWordSeparator = character -> String.valueOf(character).matches("\\W|_");
+    Predicate<Character> isWordSeparator = character -> String.valueOf(character).matches("\\W");
     for (int i = 0; i < stringBuilder.length(); i++) {
       if (isWordSeparator.test(stringBuilder.charAt(i))) {
         stringBuilder.deleteCharAt(
@@ -392,7 +365,8 @@ public class XLSXTemplateHelper {
     descriptionCell.setCellStyle(defaultStyle);
     descriptionCell.setCellValue(description);
 
-    setColumnAutoWidth(propertyInformationSheet, 0, 3);
+    autoSizeAllColumns(propertyInformationSheet, 0, 3, lastRowIdx + 1, ignored -> Optional.empty(),
+        defaultStyle);
   }
 
 
