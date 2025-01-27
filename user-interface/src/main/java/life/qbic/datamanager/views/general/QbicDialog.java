@@ -5,6 +5,8 @@ import com.vaadin.flow.component.ShortcutEventListener;
 import com.vaadin.flow.component.ShortcutRegistration;
 import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.server.Command;
 import java.util.Objects;
 
@@ -15,7 +17,7 @@ import java.util.Objects;
  * @see Dialog
  * @since 1.4.0
  */
-public class QbicDialog extends Dialog {
+public class QbicDialog extends Dialog implements BeforeLeaveObserver {
 
   private ShortcutRegistration escShortcut;
 
@@ -37,5 +39,10 @@ public class QbicDialog extends Dialog {
       escShortcut.remove();
     }
     escShortcut = Shortcuts.addShortcutListener(this, command, Key.ESCAPE);
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    this.close();
   }
 }
