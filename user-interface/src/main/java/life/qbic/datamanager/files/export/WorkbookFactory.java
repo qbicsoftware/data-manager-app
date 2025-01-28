@@ -35,19 +35,19 @@ public interface WorkbookFactory {
       @NonNull Column[] columns) {
     Row header = getOrCreateRow(sheet, 0);
     for (Column column : columns) {
-      var cell = getOrCreateCell(header, column.getIndex());
+      var cell = getOrCreateCell(header, column.index());
       if (column.isMandatory()) {
-        cell.setCellValue(column.getName() + "*");
+        cell.setCellValue(column.headerName() + "*");
       } else {
-        cell.setCellValue(column.getName());
+        cell.setCellValue(column.headerName());
       }
 
       //add Helper to header
       column.getFillHelp().ifPresent(
           helper -> XLSXTemplateHelper.addInputHelper(sheet,
-              column.getIndex(),
+              column.index(),
               0,
-              column.getIndex(),
+              column.index(),
               0,
               helper.exampleValue(),
               helper.description()));
@@ -84,7 +84,7 @@ public interface WorkbookFactory {
     lockSheet(hiddenSheet);
     hideSheet(workbook, hiddenSheet);
 
-    var maxColumnIndex = Arrays.stream(columns).mapToInt(Column::getIndex).max().orElse(0);
+    var maxColumnIndex = Arrays.stream(columns).mapToInt(Column::index).max().orElse(0);
     XLSXTemplateHelper.autoSizeAllColumns(sheet,
         0, maxColumnIndex,
         numberOfRowsToGenerate(),
@@ -118,12 +118,12 @@ public interface WorkbookFactory {
       CellStyles cellStyles) {
     // add property information order of columns matters!!
     for (Column column : Arrays.stream(columns)
-        .sorted(Comparator.comparing(Column::getIndex)).toList()) {
+        .sorted(Comparator.comparing(Column::index)).toList()) {
       // add property information
       var exampleValue = column.getFillHelp().map(Helper::exampleValue).orElse("");
       var description = column.getFillHelp().map(Helper::description).orElse("");
       XLSXTemplateHelper.addPropertyInformation(workbook,
-          column.getName(),
+          column.headerName(),
           column.isMandatory(),
           exampleValue,
           description,

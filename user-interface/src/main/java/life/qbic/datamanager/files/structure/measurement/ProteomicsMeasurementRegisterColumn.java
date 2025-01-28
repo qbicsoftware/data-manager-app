@@ -53,14 +53,14 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
         case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
-            """.formatted(ORGANISATION_URL.getName()));
+            """.formatted(ORGANISATION_URL.headerName()));
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Center",
             "The facility's name within the organisation.");
         case MS_DEVICE -> new Helper("CURIE (ontology), e.g. NCIT:C12434", """
             The instrument that has been used for the measurement.
             We expect an ontology term CURIE.
             Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your instrument.
-            """.formatted(MS_DEVICE.getName()));
+            """.formatted(MS_DEVICE.headerName()));
         case CYCLE_FRACTION_NAME -> new Helper("Free text, e.g. Fraction01, AB",
             "Sometimes a sample is fractionated and all fractions are measured. With this property you can indicate which fraction it is.");
         case DIGESTION_METHOD -> new Helper("Enumeration, Select a value from the dropdown",
@@ -98,12 +98,12 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
   }
 
   @Override
-  public String getName() {
+  public String headerName() {
     return headerName;
   }
 
   @Override
-  public int getIndex() {
+  public int index() {
     return columnIndex;
   }
 

@@ -1,5 +1,6 @@
 package life.qbic.datamanager.files.structure.sample;
 
+import java.util.Arrays;
 import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.importing.parser.ExampleProvider;
@@ -60,13 +61,19 @@ public enum InformationColumn implements Column {
     this.mandatory = mandatory;
   }
 
+  public static int maxColumnIndex() {
+    return Arrays.stream(values())
+        .mapToInt(Column::index)
+        .max().orElse(0);
+  }
+
   @Override
-  public int getIndex() {
+  public int index() {
     return index;
   }
 
   @Override
-  public String getName() {
+  public String headerName() {
     return name;
   }
 

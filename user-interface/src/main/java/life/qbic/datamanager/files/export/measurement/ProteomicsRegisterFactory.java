@@ -1,6 +1,7 @@
 package life.qbic.datamanager.files.export.measurement;
 
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks.DigestionMethod;
 import life.qbic.datamanager.files.structure.Column;
@@ -40,13 +41,18 @@ public class ProteomicsRegisterFactory implements WorkbookFactory {
         sheet,
         1,
         numberOfRowsToGenerate() - 1,
-        ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.getIndex(),
+        ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.index(),
         "Digestion method", DigestionMethod.getOptions()
     );
   }
 
   @Override
   public Optional<String> longestValueForColumn(int columnIndex) {
+    BinaryOperator<String> keepLongerString = (String s1, String s2) -> s1.length() > s2.length()
+        ? s1 : s2;
+    if (ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.index() == columnIndex) {
+      return DigestionMethod.getOptions().stream().reduce(keepLongerString);
+    }
     return Optional.empty();
   }
 
@@ -54,9 +60,9 @@ public class ProteomicsRegisterFactory implements WorkbookFactory {
   public void customizeHeaderCells(Row header, CreationHelper creationHelper,
       CellStyles cellStyles) {
     WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
-        ProteomicsMeasurementRegisterColumn.ORGANISATION_URL.getIndex(), "https://ror.org");
+        ProteomicsMeasurementRegisterColumn.ORGANISATION_URL.index(), "https://ror.org");
     WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
-        ProteomicsMeasurementRegisterColumn.MS_DEVICE.getIndex(),
+        ProteomicsMeasurementRegisterColumn.MS_DEVICE.index(),
         "https://rdm.qbic.uni-tuebingen.de");
   }
 }

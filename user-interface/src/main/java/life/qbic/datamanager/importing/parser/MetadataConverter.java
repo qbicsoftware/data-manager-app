@@ -92,37 +92,37 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     var result = new ArrayList<MeasurementMetadata>();
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var sampleCode = SampleCode.create(parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.SAMPLE_ID.getName(), ""));
+          ProteomicsMeasurementRegisterColumn.SAMPLE_ID.headerName(), ""));
       var technicalReplicateName = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.TECHNICAL_REPLICATE_NAME.getName(), "");
+          ProteomicsMeasurementRegisterColumn.TECHNICAL_REPLICATE_NAME.headerName(), "");
       var organisationId = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.ORGANISATION_URL.getName(), "");
+          ProteomicsMeasurementRegisterColumn.ORGANISATION_URL.headerName(), "");
       var msDevice = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.MS_DEVICE.getName(), "");
+          ProteomicsMeasurementRegisterColumn.MS_DEVICE.headerName(), "");
       var samplePoolGroup = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.POOL_GROUP.getName(), "");
+          ProteomicsMeasurementRegisterColumn.POOL_GROUP.headerName(), "");
       var facility = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.FACILITY.getName(), "");
+          ProteomicsMeasurementRegisterColumn.FACILITY.headerName(), "");
       var fractionName = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.CYCLE_FRACTION_NAME.getName(), "");
+          ProteomicsMeasurementRegisterColumn.CYCLE_FRACTION_NAME.headerName(), "");
       var digestionEnzyme = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.DIGESTION_ENZYME.getName(), "");
+          ProteomicsMeasurementRegisterColumn.DIGESTION_ENZYME.headerName(), "");
       var digestionMethod = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.getName(), "");
+          ProteomicsMeasurementRegisterColumn.DIGESTION_METHOD.headerName(), "");
       var enrichmentMethod = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.ENRICHMENT_METHOD.getName(), "");
+          ProteomicsMeasurementRegisterColumn.ENRICHMENT_METHOD.headerName(), "");
       var injectionVolume = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.INJECTION_VOLUME.getName(), "");
+          ProteomicsMeasurementRegisterColumn.INJECTION_VOLUME.headerName(), "");
       var lcColumn = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.LC_COLUMN.getName(), "");
+          ProteomicsMeasurementRegisterColumn.LC_COLUMN.headerName(), "");
       var lcmsMethod = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.LCMS_METHOD.getName(), "");
+          ProteomicsMeasurementRegisterColumn.LCMS_METHOD.headerName(), "");
       var labelingType = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.LABELING_TYPE.getName(), "");
+          ProteomicsMeasurementRegisterColumn.LABELING_TYPE.headerName(), "");
       var label = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.LABEL.getName(), "");
+          ProteomicsMeasurementRegisterColumn.LABEL.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementRegisterColumn.COMMENT.getName(), "");
+          ProteomicsMeasurementRegisterColumn.COMMENT.headerName(), "");
       var pxpMetaDaturm = new ProteomicsMeasurementMetadata(
           "",
           sampleCode,
@@ -150,39 +150,39 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     var result = new ArrayList<MeasurementMetadata>();
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var measurementId = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.MEASUREMENT_ID.getName(), "");
+          ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName(), "");
       var sampleCode = SampleCode.create(parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.SAMPLE_ID.getName(), ""));
+          ProteomicsMeasurementEditColumn.SAMPLE_ID.headerName(), ""));
       var technicalReplicateName = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.TECHNICAL_REPLICATE_NAME.getName(), "");
+          ProteomicsMeasurementEditColumn.TECHNICAL_REPLICATE_NAME.headerName(), "");
       var organisationId = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.ORGANISATION_URL.getName(), "");
+          ProteomicsMeasurementEditColumn.ORGANISATION_URL.headerName(), "");
       var msDevice = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.MS_DEVICE.getName(), "");
+          ProteomicsMeasurementEditColumn.MS_DEVICE.headerName(), "");
       var samplePoolGroup = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.POOL_GROUP.getName(), "");
+          ProteomicsMeasurementEditColumn.POOL_GROUP.headerName(), "");
       var facility = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.FACILITY.getName(), "");
+          ProteomicsMeasurementEditColumn.FACILITY.headerName(), "");
       var fractionName = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.CYCLE_FRACTION_NAME.getName(), "");
+          ProteomicsMeasurementEditColumn.CYCLE_FRACTION_NAME.headerName(), "");
       var digestionEnzyme = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.DIGESTION_ENZYME.getName(), "");
+          ProteomicsMeasurementEditColumn.DIGESTION_ENZYME.headerName(), "");
       var digestionMethod = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.getName(), "");
+          ProteomicsMeasurementEditColumn.DIGESTION_METHOD.headerName(), "");
       var enrichmentMethod = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.ENRICHMENT_METHOD.getName(), "");
+          ProteomicsMeasurementEditColumn.ENRICHMENT_METHOD.headerName(), "");
       var injectionVolume = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.INJECTION_VOLUME.getName(), "");
+          ProteomicsMeasurementEditColumn.INJECTION_VOLUME.headerName(), "");
       var lcColumn = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.LC_COLUMN.getName(), "");
+          ProteomicsMeasurementEditColumn.LC_COLUMN.headerName(), "");
       var lcmsMethod = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.LCMS_METHOD.getName(), "");
+          ProteomicsMeasurementEditColumn.LCMS_METHOD.headerName(), "");
       var labelingType = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.LABELING_TYPE.getName(), "");
+          ProteomicsMeasurementEditColumn.LABELING_TYPE.headerName(), "");
       var label = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.LABEL.getName(), "");
+          ProteomicsMeasurementEditColumn.LABEL.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.COMMENT.getName(), "");
+          ProteomicsMeasurementEditColumn.COMMENT.headerName(), "");
       var pxpMetaDaturm = new ProteomicsMeasurementMetadata(measurementId,
           sampleCode,
           technicalReplicateName,
@@ -209,34 +209,34 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var measurementId = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.MEASUREMENT_ID.getName(), "");
+          NGSMeasurementEditColumn.MEASUREMENT_ID.headerName(), "");
       var sampleCodes = List.of(
           SampleCode.create(
-              parsingResult.getValueOrDefault(i, NGSMeasurementEditColumn.SAMPLE_ID.getName(),
+              parsingResult.getValueOrDefault(i, NGSMeasurementEditColumn.SAMPLE_ID.headerName(),
                   ""))
       );
       var organisationId = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.ORGANISATION_URL.getName(), "");
+          NGSMeasurementEditColumn.ORGANISATION_URL.headerName(), "");
       var instrument = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.INSTRUMENT.getName(), "");
+          NGSMeasurementEditColumn.INSTRUMENT.headerName(), "");
       var facility = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.FACILITY.getName(), "");
+          NGSMeasurementEditColumn.FACILITY.headerName(), "");
       var sequencingReadType = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.getName(), "");
+          NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.headerName(), "");
       var libraryKit = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.LIBRARY_KIT.getName(), "");
+          NGSMeasurementEditColumn.LIBRARY_KIT.headerName(), "");
       var flowCell = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.FLOW_CELL.getName(), "");
+          NGSMeasurementEditColumn.FLOW_CELL.headerName(), "");
       var runProtocol = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.SEQUENCING_RUN_PROTOCOL.getName(), "");
+          NGSMeasurementEditColumn.SEQUENCING_RUN_PROTOCOL.headerName(), "");
       var poolGroup = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.POOL_GROUP.getName(), "");
+          NGSMeasurementEditColumn.POOL_GROUP.headerName(), "");
       var indexI7 = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.INDEX_I7.getName(), "");
+          NGSMeasurementEditColumn.INDEX_I7.headerName(), "");
       var indexI5 = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.INDEX_I5.getName(), "");
+          NGSMeasurementEditColumn.INDEX_I5.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i,
-          NGSMeasurementEditColumn.COMMENT.getName(), "");
+          NGSMeasurementEditColumn.COMMENT.headerName(), "");
       var metadatum = new NGSMeasurementMetadata(
           measurementId,
           sampleCodes,
@@ -264,31 +264,31 @@ public class MetadataConverter implements MeasurementMetadataConverter {
       var sampleCodes = List.of(
           SampleCode.create(
               parsingResult.getValueOrDefault(i,
-                  NGSMeasurementRegisterColumn.SAMPLE_ID.getName(),
+                  NGSMeasurementRegisterColumn.SAMPLE_ID.headerName(),
                   ""))
       );
       var organisationId = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.ORGANISATION_URL.getName(), "");
+          NGSMeasurementRegisterColumn.ORGANISATION_URL.headerName(), "");
       var instrument = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.INSTRUMENT.getName(), "");
+          NGSMeasurementRegisterColumn.INSTRUMENT.headerName(), "");
       var facility = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.FACILITY.getName(), "");
+          NGSMeasurementRegisterColumn.FACILITY.headerName(), "");
       var sequencingReadType = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.SEQUENCING_READ_TYPE.getName(), "");
+          NGSMeasurementRegisterColumn.SEQUENCING_READ_TYPE.headerName(), "");
       var libraryKit = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.LIBRARY_KIT.getName(), "");
+          NGSMeasurementRegisterColumn.LIBRARY_KIT.headerName(), "");
       var flowCell = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.FLOW_CELL.getName(), "");
+          NGSMeasurementRegisterColumn.FLOW_CELL.headerName(), "");
       var runProtocol = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.SEQUENCING_RUN_PROTOCOL.getName(), "");
+          NGSMeasurementRegisterColumn.SEQUENCING_RUN_PROTOCOL.headerName(), "");
       var poolGroup = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.POOL_GROUP.getName(), "");
+          NGSMeasurementRegisterColumn.POOL_GROUP.headerName(), "");
       var indexI7 = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.INDEX_I7.getName(), "");
+          NGSMeasurementRegisterColumn.INDEX_I7.headerName(), "");
       var indexI5 = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.INDEX_I5.getName(), "");
+          NGSMeasurementRegisterColumn.INDEX_I5.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i,
-          NGSMeasurementRegisterColumn.COMMENT.getName(), "");
+          NGSMeasurementRegisterColumn.COMMENT.headerName(), "");
       var metadatum = new NGSMeasurementMetadata(
           "",
           sampleCodes,
@@ -336,12 +336,12 @@ public class MetadataConverter implements MeasurementMetadataConverter {
     Set<String> requiredColumnHeaders;
     if (ignoreID) {
       requiredColumnHeaders = Arrays.stream(ProteomicsMeasurementRegisterColumn.values())
-          .map(ProteomicsMeasurementRegisterColumn::getName)
+          .map(ProteomicsMeasurementRegisterColumn::headerName)
           .map(Sanitizer::headerEncoder)
           .collect(Collectors.toSet());
     } else {
       requiredColumnHeaders = Arrays.stream(ProteomicsMeasurementEditColumn.values())
-          .map(ProteomicsMeasurementEditColumn::getName)
+          .map(ProteomicsMeasurementEditColumn::headerName)
           .map(Sanitizer::headerEncoder)
           .collect(Collectors.toSet());
     }

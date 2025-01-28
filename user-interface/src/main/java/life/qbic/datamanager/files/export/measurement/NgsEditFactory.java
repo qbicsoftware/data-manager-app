@@ -6,6 +6,7 @@ import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateR
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.export.measurement.NGSWorkbooks.SequencingReadType;
 import life.qbic.datamanager.files.structure.Column;
@@ -47,7 +48,7 @@ public class NgsEditFactory implements WorkbookFactory {
         case INDEX_I5 -> ngsMeasurementEntry.indexI5();
         case COMMENT -> ngsMeasurementEntry.comment();
       };
-      var cell = getOrCreateCell(entryRow, measurementColumn.getIndex());
+      var cell = getOrCreateCell(entryRow, measurementColumn.index());
       cell.setCellValue(value);
       cell.setCellStyle(defaultStyle);
       if (measurementColumn.isReadOnly()) {
@@ -87,12 +88,17 @@ public class NgsEditFactory implements WorkbookFactory {
   @Override
   public void customizeValidation(Sheet hiddenSheet, Sheet sheet) {
     WorkbookFactory.addValidation(hiddenSheet, sheet, 1, numberOfRowsToGenerate() - 1,
-        NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.getIndex(),
+        NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.index(),
         "Sequencing read type", SequencingReadType.getOptions());
   }
 
   @Override
   public Optional<String> longestValueForColumn(int columnIndex) {
+    BinaryOperator<String> keepLongerString = (String s1, String s2) -> s1.length() > s2.length()
+        ? s1 : s2;
+    if (NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.index() == columnIndex) {
+      return SequencingReadType.getOptions().stream().reduce(keepLongerString);
+    }
     return Optional.empty();
   }
 
@@ -100,8 +106,8 @@ public class NgsEditFactory implements WorkbookFactory {
   public void customizeHeaderCells(Row header, CreationHelper creationHelper,
       CellStyles cellStyles) {
     WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
-        NGSMeasurementEditColumn.ORGANISATION_URL.getIndex(), "https://ror.org");
+        NGSMeasurementEditColumn.ORGANISATION_URL.index(), "https://ror.org");
     WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
-        NGSMeasurementEditColumn.INSTRUMENT.getIndex(), "https://rdm.qbic.uni-tuebingen.de");
+        NGSMeasurementEditColumn.INSTRUMENT.index(), "https://rdm.qbic.uni-tuebingen.de");
   }
 }

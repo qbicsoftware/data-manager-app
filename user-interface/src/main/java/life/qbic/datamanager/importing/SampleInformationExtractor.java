@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import life.qbic.datamanager.files.structure.sample.EditColumn;
 import life.qbic.datamanager.files.structure.sample.RegisterColumn;
 import life.qbic.datamanager.importing.parser.ParsingResult;
-import life.qbic.datamanager.parser.Sanitizer;
+import life.qbic.datamanager.importing.parser.Sanitizer;
 
 /**
  * Extracts sample information from a parsing result.
@@ -31,17 +31,17 @@ public class SampleInformationExtractor {
     var result = new ArrayList<SampleInformationForNewSample>();
 
     for (int i = 0; i < parsingResult.rows().size(); i++) {
-      var sampleName = parsingResult.getValueOrDefault(i, RegisterColumn.SAMPLE_NAME.getName(),
+      var sampleName = parsingResult.getValueOrDefault(i, RegisterColumn.SAMPLE_NAME.headerName(),
           "");
-      var analysisMethod = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYSIS.getName(),
+      var analysisMethod = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYSIS.headerName(),
           "");
       var biologicalReplicate = parsingResult.getValueOrDefault(i,
-          RegisterColumn.BIOLOGICAL_REPLICATE.getName(), "");
-      var condition = parsingResult.getValueOrDefault(i, RegisterColumn.CONDITION.getName(), "");
-      var species = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIES.getName(), "");
-      var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.getName(), "");
-      var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.getName(), "");
-      var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.getName(), "");
+          RegisterColumn.BIOLOGICAL_REPLICATE.headerName(), "");
+      var condition = parsingResult.getValueOrDefault(i, RegisterColumn.CONDITION.headerName(), "");
+      var species = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIES.headerName(), "");
+      var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.headerName(), "");
+      var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.headerName(), "");
 
       var sanitizedHeaderNames = RegisterColumn.headerNames().stream()
           .map(Sanitizer::headerEncoder)
@@ -85,17 +85,17 @@ public class SampleInformationExtractor {
       ParsingResult parsingResult) {
     var result = new ArrayList<SampleInformationForExistingSample>();
     for (int i = 0; i < parsingResult.rows().size(); i++) {
-      var sampleCode = parsingResult.getValueOrDefault(i, EditColumn.SAMPLE_ID.getName(), "");
-      var sampleName = parsingResult.getValueOrDefault(i, EditColumn.SAMPLE_NAME.getName(), "");
-      var analysisMethod = parsingResult.getValueOrDefault(i, EditColumn.ANALYSIS.getName(),
+      var sampleCode = parsingResult.getValueOrDefault(i, EditColumn.SAMPLE_ID.headerName(), "");
+      var sampleName = parsingResult.getValueOrDefault(i, EditColumn.SAMPLE_NAME.headerName(), "");
+      var analysisMethod = parsingResult.getValueOrDefault(i, EditColumn.ANALYSIS.headerName(),
           "");
       var biologicalReplicate = parsingResult.getValueOrDefault(i,
-          RegisterColumn.BIOLOGICAL_REPLICATE.getName(), "");
-      var condition = parsingResult.getValueOrDefault(i, EditColumn.CONDITION.getName(), "");
-      var species = parsingResult.getValueOrDefault(i, EditColumn.SPECIES.getName(), "");
-      var analyte = parsingResult.getValueOrDefault(i, EditColumn.ANALYTE.getName(), "");
-      var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.getName(), "");
-      var comment = parsingResult.getValueOrDefault(i, EditColumn.COMMENT.getName(), "");
+          RegisterColumn.BIOLOGICAL_REPLICATE.headerName(), "");
+      var condition = parsingResult.getValueOrDefault(i, EditColumn.CONDITION.headerName(), "");
+      var species = parsingResult.getValueOrDefault(i, EditColumn.SPECIES.headerName(), "");
+      var analyte = parsingResult.getValueOrDefault(i, EditColumn.ANALYTE.headerName(), "");
+      var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i, EditColumn.COMMENT.headerName(), "");
 
 
       var sanitizedHeaderNames = EditColumn.headerNames().stream()

@@ -4,9 +4,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.datamanager.parser.Column;
-import life.qbic.datamanager.parser.ExampleProvider;
-import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.importing.parser.ExampleProvider;
 import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
@@ -68,7 +65,7 @@ public enum EditColumn implements Column {
 
   public static int maxColumnIndex() {
     return Arrays.stream(values())
-        .mapToInt(EditColumn::getIndex)
+        .mapToInt(EditColumn::index)
         .max().orElse(0);
   }
 
@@ -90,12 +87,12 @@ public enum EditColumn implements Column {
   }
 
   @Override
-  public String getName() {
+  public String headerName() {
     return headerName;
   }
 
   @Override
-  public int getIndex() {
+  public int index() {
     return columnIndex;
   }
 

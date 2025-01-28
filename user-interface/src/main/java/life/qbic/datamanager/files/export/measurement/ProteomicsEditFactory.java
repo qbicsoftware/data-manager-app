@@ -5,6 +5,7 @@ import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateR
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import life.qbic.datamanager.files.export.WorkbookFactory;
 import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks.DigestionMethod;
 import life.qbic.datamanager.files.structure.Column;
@@ -57,13 +58,18 @@ public class ProteomicsEditFactory implements WorkbookFactory {
         sheet,
         1,
         numberOfRowsToGenerate() - 1,
-        ProteomicsMeasurementEditColumn.DIGESTION_METHOD.getIndex(),
+        ProteomicsMeasurementEditColumn.DIGESTION_METHOD.index(),
         "Digestion method", DigestionMethod.getOptions()
     );
   }
 
   @Override
   public Optional<String> longestValueForColumn(int columnIndex) {
+    BinaryOperator<String> keepLongerString = (String s1, String s2) -> s1.length() > s2.length()
+        ? s1 : s2;
+    if (ProteomicsMeasurementEditColumn.DIGESTION_METHOD.index() == columnIndex) {
+      return DigestionMethod.getOptions().stream().reduce(keepLongerString);
+    }
     return Optional.empty();
   }
 
@@ -71,9 +77,9 @@ public class ProteomicsEditFactory implements WorkbookFactory {
   public void customizeHeaderCells(Row header, CreationHelper creationHelper,
       CellStyles cellStyles) {
     WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
-        ProteomicsMeasurementEditColumn.ORGANISATION_URL.getIndex(), "https://ror.org");
+        ProteomicsMeasurementEditColumn.ORGANISATION_URL.index(), "https://ror.org");
     WorkbookFactory.convertToHeaderWithLink(header, creationHelper, cellStyles,
-        ProteomicsMeasurementEditColumn.MS_DEVICE.getIndex(),
+        ProteomicsMeasurementEditColumn.MS_DEVICE.index(),
         "https://rdm.qbic.uni-tuebingen.de");
   }
 
@@ -105,7 +111,7 @@ public class ProteomicsEditFactory implements WorkbookFactory {
         case LABEL -> pxpEntry.label();
         case COMMENT -> pxpEntry.comment();
       };
-      var cell = getOrCreateCell(entryRow, measurementColumn.getIndex());
+      var cell = getOrCreateCell(entryRow, measurementColumn.index());
       cell.setCellValue(value);
       cell.setCellStyle(defaultStyle);
       if (measurementColumn.isReadOnly()) {

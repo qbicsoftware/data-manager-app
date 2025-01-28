@@ -15,14 +15,14 @@ public interface Column {
    *
    * @return the index of this column
    */
-  int getIndex();
+  int index();
 
   /**
    * The name of the column as it can be used in a header cell for the column
    *
    * @return the name of the column
    */
-  String getName();
+  String headerName();
 
   /**
    * @return true if filling out this column is mandatory; false otherwise

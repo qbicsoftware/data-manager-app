@@ -1,11 +1,10 @@
 package life.qbic.datamanager.files.export.sample;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
-import life.qbic.datamanager.templates.sample.SampleBatchRegistrationTemplate;
-import life.qbic.datamanager.templates.sample.SampleBatchUpdateTemplate;
+import life.qbic.datamanager.views.general.confounding.ConfoundingVariable;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
-import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
@@ -86,9 +85,9 @@ public class TemplateService {
     var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
     var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
         .toList();
-    List<String> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
+    List<ConfoundingVariable> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
             projectId, new ExperimentReference(experimentId)).stream()
-        .map(ConfoundingVariableInformation::variableName)
+        .map(it -> new ConfoundingVariable(it.id(), it.variableName()))
         .toList();
     return SampleWorkbooks.createRegistrationWorkbook(analysisMethods, conditions, analytes,
         species, specimen, confoundingVariables);
@@ -104,11 +103,14 @@ public class TemplateService {
             NoSuchExperimentException::new);
     var samples = sampleInformationService.retrieveSamplesForExperiment(
         ExperimentId.parse(experimentId));
-    List<ConfoundingVariableInformation> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
-        projectId, new ExperimentReference(experimentId));
+    List<ConfoundingVariable> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
+            projectId, new ExperimentReference(experimentId))
+        .stream()
+        .map(it -> new ConfoundingVariable(it.id(), it.variableName()))
+        .toList();
     List<ConfoundingVariableLevel> confoundingVariableLevels = confoundingVariableService.listLevelsForVariables(
         projectId,
-        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
+        confoundingVariables.stream().map(ConfoundingVariable::variableReference).toList());
     samples.onError(responseCode -> {
       throw new SampleSearchException();
     });
@@ -161,11 +163,14 @@ public class TemplateService {
         .map(AnalysisMethod::abbreviation)
         .toList();
 
-    List<ConfoundingVariableInformation> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
-        projectId, new ExperimentReference(experimentId));
+    List<ConfoundingVariable> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
+            projectId, new ExperimentReference(experimentId))
+        .stream()
+        .map(it -> new ConfoundingVariable(it.id(), it.variableName()))
+        .toList();
     List<ConfoundingVariableLevel> confoundingVariableLevels = confoundingVariableService.listLevelsForVariables(
         projectId,
-        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
+        confoundingVariables.stream().map(ConfoundingVariable::variableReference).toList());
     return SampleWorkbooks.createInformationWorkbook(samplesInBatch,
         analysisMethods,
         conditions,

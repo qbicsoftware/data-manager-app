@@ -35,7 +35,7 @@ public enum NGSMeasurementEditColumn implements Column {
   ;
 
 
-  private static ExampleProvider exampleProvider = (Column column) -> {
+  private static final ExampleProvider EXAMPLE_PROVIDER = (Column column) -> {
 
     if (column instanceof NGSMeasurementEditColumn ngsMeasurementEditColumn) {
       return switch (ngsMeasurementEditColumn) {
@@ -50,7 +50,7 @@ public enum NGSMeasurementEditColumn implements Column {
         case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
-            """.formatted(ORGANISATION_URL.getName()));
+            """.formatted(ORGANISATION_URL.headerName()));
         case ORGANISATION_NAME -> new Helper("Free text, e.g. University of Tübingen",
             "The name of the organisation where the measurement has been conducted.");
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Centre",
@@ -59,7 +59,7 @@ public enum NGSMeasurementEditColumn implements Column {
             The instrument that has been used for the measurement.
             We expect an ontology term CURIE.
             Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your instrument.
-            """.formatted(INSTRUMENT.getName()));
+            """.formatted(INSTRUMENT.headerName()));
         case INSTRUMENT_NAME -> new Helper("Free text, e.g. Illumina HiSeq",
             "The name of the instrument model that has been used for the measurement.");
         case SEQUENCING_READ_TYPE -> new Helper("Free text, e.g. paired-end",
@@ -90,11 +90,11 @@ public enum NGSMeasurementEditColumn implements Column {
 
   @Override
   public Optional<Helper> getFillHelp() {
-    return Optional.ofNullable(exampleProvider.getHelper(this));
+    return Optional.ofNullable(EXAMPLE_PROVIDER.getHelper(this));
   }
 
   static int maxColumnIndex() {
-    return Arrays.stream(values()).mapToInt(NGSMeasurementEditColumn::getIndex).max().orElse(0);
+    return Arrays.stream(values()).mapToInt(NGSMeasurementEditColumn::index).max().orElse(0);
   }
 
   /**
@@ -112,12 +112,12 @@ public enum NGSMeasurementEditColumn implements Column {
   }
 
   @Override
-  public String getName() {
+  public String headerName() {
     return headerName;
   }
 
   @Override
-  public int getIndex() {
+  public int index() {
     return columnIndex;
   }
 

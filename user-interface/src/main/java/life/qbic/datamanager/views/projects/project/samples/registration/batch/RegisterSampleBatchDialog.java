@@ -21,17 +21,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.parser.MetadataParser.ParsingException;
-import life.qbic.datamanager.parser.ParsingResult;
-import life.qbic.datamanager.parser.sample.SampleInformationExtractor;
-import life.qbic.datamanager.parser.sample.SampleInformationExtractor.SampleInformationForNewSample;
-import life.qbic.datamanager.parser.xlsx.XLSXParser;
-import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.importing.SampleInformationExtractor;
 import life.qbic.datamanager.importing.SampleInformationExtractor.SampleInformationForNewSample;
+import life.qbic.datamanager.importing.parser.MetadataParser.ParsingException;
 import life.qbic.datamanager.importing.parser.ParsingResult;
 import life.qbic.datamanager.importing.parser.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
@@ -225,7 +221,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         add(downloadProvider);
         downloadProvider.trigger();
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new ApplicationException(e.getMessage(), e);
       }
     });
     Div text = new Div();

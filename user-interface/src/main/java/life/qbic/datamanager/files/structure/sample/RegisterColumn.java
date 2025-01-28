@@ -2,14 +2,11 @@ package life.qbic.datamanager.files.structure.sample;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.importing.parser.ExampleProvider;
 import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
-import java.util.Set;
-import java.util.stream.Collectors;
-import life.qbic.datamanager.parser.Column;
-import life.qbic.datamanager.parser.ExampleProvider;
-import life.qbic.datamanager.parser.ExampleProvider.Helper;
 
 /**
  * <b>Sample Register Columns</b>
@@ -67,7 +64,7 @@ public enum RegisterColumn implements Column {
 
   public static int maxColumnIndex() {
     return Arrays.stream(values())
-        .mapToInt(RegisterColumn::getIndex)
+        .mapToInt(RegisterColumn::index)
         .max().orElse(0);
   }
 
@@ -89,12 +86,12 @@ public enum RegisterColumn implements Column {
   }
 
   @Override
-  public String getName() {
+  public String headerName() {
     return headerName;
   }
 
   @Override
-  public int getIndex() {
+  public int index() {
     return columnIndex;
   }
 

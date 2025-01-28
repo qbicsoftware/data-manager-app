@@ -36,7 +36,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
   private final boolean readOnly;
   private final boolean mandatory;
 
-  private static ExampleProvider exampleProvider = (Column column) -> {
+  private static final ExampleProvider EXAMPLE_PROVIDER = (Column column) -> {
     if (column instanceof NGSMeasurementRegisterColumn ngsMeasurementRegisterColumn) {
       return switch (ngsMeasurementRegisterColumn) {
         case SAMPLE_ID -> new Helper("QBiC sample IDs, e.g. Q2001, Q2002",
@@ -48,14 +48,14 @@ public enum NGSMeasurementRegisterColumn implements Column {
         case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.
-            """.formatted(ORGANISATION_URL.getName()));
+            """.formatted(ORGANISATION_URL.headerName()));
         case FACILITY -> new Helper("Free text, e.g. Quantitative Biology Centre",
             "The facilities name within the organisation (group name, etc.)");
         case INSTRUMENT -> new Helper("CURIE (ontology), e.g. EFO:0008637", """
             The instrument that has been used for the measurement.
             We expect an ontology term CURIE.
             Tip: You can click on the column header (%s) to go to the Data Manager where you can use our Ontology Search to query the CURIE for your instrument.
-            """.formatted(INSTRUMENT.getName()));
+            """.formatted(INSTRUMENT.headerName()));
         case SEQUENCING_READ_TYPE -> new Helper("Free text, e.g. paired-end",
             "The sequencing read type used to generate the sequence data.");
         case LIBRARY_KIT -> new Helper("Free text, e.g. NEBNext Ultra II Directional RNA mRNA UMI",
@@ -80,7 +80,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
 
   static int maxColumnIndex() {
     return Arrays.stream(values())
-        .mapToInt(NGSMeasurementRegisterColumn::getIndex)
+        .mapToInt(NGSMeasurementRegisterColumn::index)
         .max().orElse(0);
   }
 
@@ -99,12 +99,12 @@ public enum NGSMeasurementRegisterColumn implements Column {
   }
 
   @Override
-  public String getName() {
+  public String headerName() {
     return headerName;
   }
 
   @Override
-  public int getIndex() {
+  public int index() {
     return columnIndex;
   }
 
@@ -120,6 +120,6 @@ public enum NGSMeasurementRegisterColumn implements Column {
 
   @Override
   public Optional<Helper> getFillHelp() {
-    return Optional.ofNullable(exampleProvider.getHelper(this));
+    return Optional.ofNullable(EXAMPLE_PROVIDER.getHelper(this));
   }
 }
