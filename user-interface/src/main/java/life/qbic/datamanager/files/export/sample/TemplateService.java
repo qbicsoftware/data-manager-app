@@ -2,6 +2,12 @@ package life.qbic.datamanager.files.export.sample;
 
 import java.util.Arrays;
 import java.util.Objects;
+import life.qbic.datamanager.templates.sample.SampleBatchRegistrationTemplate;
+import life.qbic.datamanager.templates.sample.SampleBatchUpdateTemplate;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -29,12 +35,15 @@ public class TemplateService {
   private final ExperimentInformationService experimentInfoService;
 
   private final SampleInformationService sampleInformationService;
+  private final ConfoundingVariableService confoundingVariableService;
 
   @Autowired
   public TemplateService(ExperimentInformationService experimentInfoService,
-      SampleInformationService sampleInformationService) {
+      SampleInformationService sampleInformationService,
+      ConfoundingVariableService confoundingVariableService) {
     this.experimentInfoService = Objects.requireNonNull(experimentInfoService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
+    this.confoundingVariableService = confoundingVariableService;
   }
 
   /**
@@ -77,8 +86,12 @@ public class TemplateService {
     var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
     var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
         .toList();
+    List<String> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
+            projectId, new ExperimentReference(experimentId)).stream()
+        .map(ConfoundingVariableInformation::variableName)
+        .toList();
     return SampleWorkbooks.createRegistrationWorkbook(analysisMethods, conditions, analytes,
-        species, specimen);
+        species, specimen, confoundingVariables);
   }
 
   @PreAuthorize(
@@ -91,6 +104,11 @@ public class TemplateService {
             NoSuchExperimentException::new);
     var samples = sampleInformationService.retrieveSamplesForExperiment(
         ExperimentId.parse(experimentId));
+    List<ConfoundingVariableInformation> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
+        projectId, new ExperimentReference(experimentId));
+    List<ConfoundingVariableLevel> confoundingVariableLevels = confoundingVariableService.listLevelsForVariables(
+        projectId,
+        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
     samples.onError(responseCode -> {
       throw new SampleSearchException();
     });
@@ -113,7 +131,9 @@ public class TemplateService {
         analytes,
         species,
         specimen,
-        experimentalGroups);
+        experimentalGroups,
+        confoundingVariables,
+        confoundingVariableLevels);
   }
 
   @PreAuthorize(
@@ -140,13 +160,21 @@ public class TemplateService {
     var analysisMethods = Arrays.stream(AnalysisMethod.values())
         .map(AnalysisMethod::abbreviation)
         .toList();
+
+    List<ConfoundingVariableInformation> confoundingVariables = confoundingVariableService.listConfoundingVariablesForExperiment(
+        projectId, new ExperimentReference(experimentId));
+    List<ConfoundingVariableLevel> confoundingVariableLevels = confoundingVariableService.listLevelsForVariables(
+        projectId,
+        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
     return SampleWorkbooks.createInformationWorkbook(samplesInBatch,
         analysisMethods,
         conditions,
         analytes,
         species,
         specimen,
-        experimentalGroups);
+        experimentalGroups,
+        confoundingVariables,
+        confoundingVariableLevels);
   }
 
   public static class NoSuchExperimentException extends RuntimeException {

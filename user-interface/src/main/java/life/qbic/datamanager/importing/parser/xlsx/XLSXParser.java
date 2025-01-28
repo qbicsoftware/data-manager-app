@@ -97,6 +97,9 @@ public class XLSXParser implements MetadataParser {
     while (cellIterator.hasNext()) {
       cell = cellIterator.next();
       var cellValue = Sanitizer.headerEncoder(readCellAsString(cell));
+      if (propertyToIndex.containsKey(cellValue)) {
+        throw new ParsingException("Duplicate column found: " + cellValue);
+      }
       propertyToIndex.put(cellValue, cell.getColumnIndex());
     }
 

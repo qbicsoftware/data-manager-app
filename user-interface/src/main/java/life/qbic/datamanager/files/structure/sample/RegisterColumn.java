@@ -5,6 +5,11 @@ import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.importing.parser.ExampleProvider;
 import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
+import java.util.Set;
+import java.util.stream.Collectors;
+import life.qbic.datamanager.parser.Column;
+import life.qbic.datamanager.parser.ExampleProvider;
+import life.qbic.datamanager.parser.ExampleProvider.Helper;
 
 /**
  * <b>Sample Register Columns</b>
@@ -64,6 +69,10 @@ public enum RegisterColumn implements Column {
     return Arrays.stream(values())
         .mapToInt(RegisterColumn::getIndex)
         .max().orElse(0);
+  }
+
+  public static Set<String> headerNames() {
+    return Arrays.stream(values()).map(RegisterColumn::headerName).collect(Collectors.toSet());
   }
 
   /**

@@ -1,10 +1,12 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -34,9 +36,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
+import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.ConfirmEvent;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.general.confounding.ConfoundingVariable;
+import life.qbic.datamanager.views.general.confounding.ConfoundingVariablesUserInput;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogAction;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -52,6 +63,9 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.updat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -93,17 +107,21 @@ public class ExperimentDetailsComponent extends PageArea {
   private final Span buttonBar = new Span();
   private final Span sampleSourceComponent = new Span();
   private final TabSheet experimentSheet = new TabSheet();
-  private final Div experimentalGroups = new Div();
-  private final Div experimentalVariables = new Div();
+  private final Div experimentalGroupsContainer = new Div();
+  private final Div experimentalVariablesContainer = new Div();
+  private final Div confoundingVariablesContainer;
   private final CardCollection experimentalGroupsCollection = new CardCollection("GROUPS");
   private final CardCollection experimentalVariableCollection = new CardCollection("VARIABLES");
+  private final CardCollection confoundingVariableCollection = new CardCollection(
+      "CONFOUNDING VARIABLES");
   private final Disclaimer noExperimentalVariablesDefined;
   private final Disclaimer noExperimentalGroupsDefined;
-  private final Disclaimer addExperimentalVariablesNote;
+  private final Disclaimer noConfoundingVariablesDefined;
   private final transient DeletionService deletionService;
   private final transient TerminologyService terminologyService;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient ConfoundingVariableService confoundingVariableService;
   private Context context;
   private int experimentalGroupCount;
 
@@ -115,7 +133,9 @@ public class ExperimentDetailsComponent extends PageArea {
       @Autowired SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      ConfoundingVariableService confoundingVariableService) {
+    this.confoundingVariableService = requireNonNull(confoundingVariableService);
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.experimentInformationService = requireNonNull(experimentInformationService);
@@ -124,13 +144,16 @@ public class ExperimentDetailsComponent extends PageArea {
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService);
     this.noExperimentalVariablesDefined = createNoVariableDisclaimer();
     this.noExperimentalGroupsDefined = createNoGroupsDisclaimer();
-    this.addExperimentalVariablesNote = createNoVariableDisclaimer();
+    this.noConfoundingVariablesDefined = createNoConfoundingVariablesDisclaimer();
     this.terminologyService = terminologyService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
+    confoundingVariablesContainer = new Div();
+    confoundingVariablesContainer.addClassNames("full-width", "full-height");
     layoutComponent();
     configureComponent();
   }
+
 
   private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
     return new ComponentRenderer<>(ontologyClassDTO -> {
@@ -171,6 +194,14 @@ public class ExperimentDetailsComponent extends PageArea {
     return disclaimer;
   }
 
+  private Disclaimer createNoConfoundingVariablesDisclaimer() {
+    var disclaimer = Disclaimer.createWithTitle("Define Confoungind Variables",
+        "Add confounding variables to your experiment to use them during sample registration",
+        "Add confounding variables");
+    disclaimer.addDisclaimerConfirmedListener(confirmed -> openConfoundingVariablesAddDialog());
+    return disclaimer;
+  }
+
   private Disclaimer createNoGroupsDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Create conditions for your samples by adding experimental groups", "Add groups");
@@ -194,6 +225,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private void configureComponent() {
     listenForExperimentCollectionComponentEvents();
     listenForExperimentalVariablesComponentEvents();
+    listenForConfoundingVariablesComponentEvents();
   }
 
   private void initButtonBar() {
@@ -273,7 +305,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void onExperimentUpdateEvent(ExperimentUpdateEvent event) {
     ExperimentId experimentId = context.experimentId().orElseThrow();
-
+    ProjectId projectId = context.projectId().orElseThrow();
     ExperimentDraft experimentDraft = event.getExperimentDraft();
     experimentInformationService.editExperimentInformation(
         context.projectId().orElseThrow().value(),
@@ -284,7 +316,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getAnalytes(),
         experimentDraft.getSpeciesIcon().getLabel(),
         experimentDraft.getSpecimenIcon().getLabel());
-    reloadExperimentInfo(experimentId);
+    reloadExperimentInfo(projectId, experimentId);
     event.getSource().close();
   }
 
@@ -292,6 +324,163 @@ public class ExperimentDetailsComponent extends PageArea {
     experimentalVariableCollection.addAddListener(addEvent -> openExperimentalVariablesAddDialog());
     experimentalVariableCollection.addEditListener(
         editEvent -> openExperimentalVariablesEditDialog());
+  }
+
+  private void listenForConfoundingVariablesComponentEvents() {
+    confoundingVariableCollection.addAddListener(addEvent -> openConfoundingVariablesAddDialog());
+    confoundingVariableCollection.addEditListener(
+        editEvent -> openConfoundingVariablesEditDialog());
+  }
+
+  private void openConfoundingVariablesEditDialog() {
+    var editDialog = AppDialog.small();
+
+    ConfoundingVariablesUserInput confoundingVariablesUserInput = new ConfoundingVariablesUserInput();
+
+    DialogHeader.with(editDialog, "Edit Confounding Variables");
+    DialogBody.with(editDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
+    DialogFooter.with(editDialog, "Cancel", "Confirm");
+
+    List<ConfoundingVariable> confoundingVariableInformation = loadConfoundingVariables(
+        context.projectId().map(ProjectId::value).orElseThrow(),
+        context.experimentId().orElseThrow())
+        .stream()
+        .map(it -> new ConfoundingVariable(it.id(), it.variableName()))
+        .toList();
+    confoundingVariablesUserInput.setVariables(confoundingVariableInformation);
+    editDialog.registerConfirmAction(
+        () -> onConfoundingVariablesEditConfirmed(editDialog, confoundingVariablesUserInput,
+            confoundingVariableInformation));
+    editDialog.registerCancelAction(editDialog::close);
+    editDialog.open();
+  }
+
+  private void onConfoundingVariablesEditConfirmed(AppDialog dialog,
+      ConfoundingVariablesUserInput userInput,
+      List<ConfoundingVariable> oldValue) {
+    List<ConfoundingVariable> createdVars = userInput.values().stream()
+        .filter(newVal -> isNull(newVal.variableReference())
+            && oldValue.stream().noneMatch(old -> old.name().equals(newVal.name())))
+        .toList();
+    List<ConfoundingVariable> renamedVars = userInput.values().stream()
+        .filter(newVal -> oldValue.stream().anyMatch(
+            old -> old.variableReference().equals(newVal.variableReference()) && !old.name()
+                .equals(newVal.name())))
+        .toList();
+    List<ConfoundingVariable> deletedVars = oldValue.stream()
+        .filter(old -> userInput.values().stream()
+            .noneMatch(
+                newVal -> old.variableReference().equals(newVal.variableReference())
+                    // the variable was removed
+                    || old.name()
+                    .equals(newVal.name()))) // no new variable was added with the same name
+        .toList();
+    DialogAction editingAction = () -> {
+      editConfoundingVariables(createdVars, renamedVars, deletedVars);
+      reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
+      dialog.close();
+    };
+    if (!deletedVars.isEmpty()) {
+      askToConfirmConfoundingVariableDeletion(deletedVars, editingAction);
+    } else {
+      editingAction.execute();
+    }
+
+  }
+
+  private void askToConfirmConfoundingVariableDeletion(List<ConfoundingVariable> deletedVars,
+      DialogAction confirmAction) {
+    AppDialog confirmDialog = createConfoundingVarsDeleteConfirmDialog(
+        deletedVars, confirmAction);
+    confirmDialog.open();
+  }
+
+  private static AppDialog createConfoundingVarsDeleteConfirmDialog(
+      List<ConfoundingVariable> deletedVars, DialogAction onConfirmAction) {
+    var confirmDialog = AppDialog.small();
+    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog,
+        "Delete confounding variables?",
+        IconFactory.warningIcon());
+    String deletedVariableNames = deletedVars.stream().map(ConfoundingVariable::name)
+        .collect(Collectors.joining());
+    DialogBody.withoutUserInput(confirmDialog, new Div(
+        "Deleting a confounding variable will delete all levels of the confounding variable from annotated samples. "
+            + "Do you want to delete the following confounding variables: " + deletedVariableNames
+            + " ?"));
+    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
+        "Delete " + deletedVars.size() + " confounding variables");
+    confirmDialog.registerConfirmAction(onConfirmAction);
+    confirmDialog.registerCancelAction(confirmDialog::close);
+    return confirmDialog;
+  }
+
+
+  private void editConfoundingVariables(List<ConfoundingVariable> createdVars,
+      List<ConfoundingVariable> renamedVars, List<ConfoundingVariable> deletedVars) {
+    var projectId = context.projectId().orElseThrow();
+    var experimentId = context.experimentId().orElseThrow();
+
+    /*
+     * Please be aware that deleting and re-adding a confounding variable with the same name does not lead to deletion and re-creation of a confounding variable.
+     * For example if a user deletes a confounding variable "Test" in the UI and then re-adds a variable "Test" later on this is considered no change at all.
+     */
+
+    for (ConfoundingVariable deletedVar : deletedVars) {
+      confoundingVariableService.deleteConfoundingVariable(projectId.value(),
+          new ExperimentReference(experimentId.value()), deletedVar.variableReference());
+    }
+    for (ConfoundingVariable createdVar : createdVars) {
+      confoundingVariableService.createConfoundingVariable(projectId.value(),
+          new ExperimentReference(experimentId.value()), createdVar.name());
+    }
+    for (ConfoundingVariable renamedVar : renamedVars) {
+      confoundingVariableService.renameConfoundingVariable(projectId.value(),
+          new ExperimentReference(
+              experimentId.value()), renamedVar.variableReference(), renamedVar.name());
+    }
+  }
+
+  private void openConfoundingVariablesAddDialog() {
+
+    var addDialog = AppDialog.small();
+
+    ConfoundingVariablesUserInput confoundingVariablesUserInput = new ConfoundingVariablesUserInput();
+
+    Set<String> namesAlreadyTaken = loadConfoundingVariables(
+        context.projectId().map(ProjectId::value).orElseThrow(),
+        context.experimentId().orElseThrow())
+        .stream()
+        .map(ConfoundingVariableInformation::variableName)
+        .collect(Collectors.toSet());
+    confoundingVariablesUserInput.setForbiddenNames(namesAlreadyTaken);
+
+
+    DialogHeader.with(addDialog, "Add Confounding Variables");
+    DialogBody.with(addDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
+    DialogFooter.with(addDialog, "Cancel", "Confirm");
+
+    addDialog.registerConfirmAction(
+        () -> onConfoundingVariablesAddConfirmed(addDialog, confoundingVariablesUserInput));
+    addDialog.registerCancelAction(addDialog::close);
+
+    addDialog.open();
+  }
+
+  private void onConfoundingVariablesAddConfirmed(AppDialog dialog,
+      ConfoundingVariablesUserInput userInput) {
+    addConfoundingVariables(userInput.values());
+    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
+    dialog.close();
+  }
+
+  private void addConfoundingVariables(List<ConfoundingVariable> values) {
+    var projectId = context.projectId().orElseThrow();
+    var experimentId = context.experimentId().orElseThrow();
+    for (ConfoundingVariable value : values) {
+      confoundingVariableService.createConfoundingVariable(projectId.value(),
+          new ExperimentReference(experimentId.value()),
+          value.name());
+    }
   }
 
   private void deleteExistingExperimentalVariables() {
@@ -303,9 +492,8 @@ public class ExperimentDetailsComponent extends PageArea {
     });
   }
 
-  private void reloadExperimentInfo(ExperimentId experimentId) {
-    experimentInformationService.find(context.projectId().orElseThrow().value(), experimentId)
-        .ifPresent(this::loadExperimentInformation);
+  private void reloadExperimentInfo(ProjectId projectId, ExperimentId experimentId) {
+    loadExperimentInformation(projectId, experimentId);
   }
 
   private void openExperimentalVariablesAddDialog() {
@@ -323,7 +511,7 @@ public class ExperimentDetailsComponent extends PageArea {
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
     confirmEvent.getSource().close();
-    reloadExperimentInfo(context.experimentId().orElseThrow());
+    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
     if (hasExperimentalGroups()) {
       showSampleRegistrationPossibleNotification();
     }
@@ -357,7 +545,8 @@ public class ExperimentDetailsComponent extends PageArea {
     deleteExistingExperimentalVariables();
     addExperimentalVariables(confirmEvent.getSource().definedVariables());
     confirmEvent.getSource().close();
-    reloadExperimentInfo(context.experimentId().orElseThrow());
+    reloadExperimentInfo(context.projectId().orElseThrow(),
+        context.experimentId().orElseThrow());
   }
 
   private boolean editVariablesNotAllowed() {
@@ -459,10 +648,12 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void layoutTabSheet() {
     experimentSheet.addClassName("experimental-sheet");
-    experimentSheet.add("Experimental Variables", experimentalVariables);
-    experimentalVariables.addClassName("experimental-groups-container");
-    experimentSheet.add("Experimental Groups", experimentalGroups);
-    experimentalGroups.addClassName("experimental-groups-container");
+    experimentSheet.add("Experimental Variables", experimentalVariablesContainer);
+    experimentalVariablesContainer.addClassName("experimental-groups-container");
+    experimentSheet.add("Experimental Groups", experimentalGroupsContainer);
+    experimentalGroupsContainer.addClassName("experimental-groups-container");
+    experimentSheet.add("Confounding Variables", confoundingVariablesContainer);
+    confoundingVariablesContainer.add(confoundingVariableCollection);
     content.add(experimentSheet);
   }
 
@@ -567,7 +758,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void reloadExperimentalGroups() {
-    loadExperimentalGroups();
+    List<ExperimentalGroup> groups = loadExperimentalGroups();
+    fillExperimentalGroupCollection(groups);
     if (hasExperimentalGroups()) {
       onGroupsDefined();
       showSampleRegistrationPossibleNotification();
@@ -580,18 +772,11 @@ public class ExperimentDetailsComponent extends PageArea {
     return this.experimentalGroupCount > 0;
   }
 
-  private void loadExperimentalGroups() {
+  private List<ExperimentalGroup> loadExperimentalGroups() {
     // We load the experimental groups of the experiment and render them as cards
-    List<ExperimentalGroup> groups = experimentInformationService.experimentalGroupsFor(
+    return experimentInformationService.experimentalGroupsFor(
         context.projectId().orElseThrow().value(),
         context.experimentId().orElseThrow());
-    Comparator<String> natOrder = Comparator.naturalOrder();
-    List<ExperimentalGroupCard> experimentalGroupsCards = groups.stream()
-        .sorted((g1, g2) -> natOrder.compare(g1.name(), g2.name()))
-        .map(ExperimentalGroupCard::new)
-        .toList();
-    experimentalGroupsCollection.setContent(experimentalGroupsCards);
-    this.experimentalGroupCount = experimentalGroupsCards.size();
   }
 
   private void addExperimentalVariables(
@@ -606,61 +791,109 @@ public class ExperimentDetailsComponent extends PageArea {
 
   public void setContext(Context context) {
     this.context = requireNonNull(context);
-    if (context.projectId().isEmpty()) {
-      throw new ApplicationException("no project id in context " + context);
-    }
-    ExperimentId experimentId = context.experimentId()
+    var projectId = context.projectId()
+        .orElseThrow(() -> new ApplicationException("no project id in context " + context));
+    var experimentId = context.experimentId()
         .orElseThrow(() -> new ApplicationException("no experiment id in context " + context));
-    reloadExperimentInfo(experimentId);
+    reloadExperimentInfo(projectId, experimentId);
   }
 
-  private void loadExperimentInformation(Experiment experiment) {
+  private void loadExperimentInformation(ProjectId projectId, ExperimentId experimentId) {
+    Experiment experiment = experimentInformationService.find(projectId.value(), experimentId)
+        .orElseThrow();
     title.setText(experiment.getName());
     loadSampleSources(experiment);
-    loadExperimentalVariables(experiment);
-    loadExperimentalGroups();
+    // We load the experimental variables of the experiment and render them as cards
+    var experimentalVariables = experiment.variables();
+    fillExperimentalVariablesCollection(experimentalVariables);
     if (experiment.variables().isEmpty()) {
       onNoVariablesDefined();
-      return;
+    } else {
+      onVariablesDefined();
     }
+
+    var experimentalGroups = loadExperimentalGroups();
+    fillExperimentalGroupCollection(experimentalGroups);
     if (experiment.getExperimentalGroups().isEmpty()) {
       onNoGroupsDefined();
     } else {
       onGroupsDefined();
     }
+
+    var confoundingVariables = loadConfoundingVariables(projectId.value(), experimentId);
+    fillConfoundingVariablesCollection(confoundingVariables);
+    if (confoundingVariables.isEmpty()) {
+      onNoConfoundingDefined();
+    } else {
+      onConfoundingDefined();
+    }
   }
 
-  private void loadExperimentalVariables(Experiment experiment) {
-    this.experimentalVariables.removeAll();
-    // We load the experimental variables of the experiment and render them as cards
-    List<ExperimentalVariable> variables = experiment.variables();
+  private void onVariablesDefined() {
+    experimentalVariablesContainer.removeAll();
+    experimentalVariablesContainer.add(experimentalVariableCollection);
+  }
+
+  private void fillExperimentalGroupCollection(List<ExperimentalGroup> groups) {
+    Comparator<String> natOrder = Comparator.naturalOrder();
+    List<ExperimentalGroupCard> experimentalGroupsCards = groups.stream()
+        .sorted((g1, g2) -> natOrder.compare(g1.name(), g2.name()))
+        .map(ExperimentalGroupCard::new)
+        .toList();
+    experimentalGroupsCollection.setContent(experimentalGroupsCards);
+    this.experimentalGroupCount = experimentalGroupsCards.size();
+  }
+
+  private void fillExperimentalVariablesCollection(List<ExperimentalVariable> variables) {
     Comparator<String> natOrder = Comparator.naturalOrder();
     List<ExperimentalVariableCard> experimentalVariableCards = variables.stream()
         .sorted((var1, var2) -> natOrder.compare(var1.name().value(), var2.name().value()))
         .map(ExperimentalVariableCard::new).toList();
 
     experimentalVariableCollection.setContent(experimentalVariableCards);
+  }
 
-    if (variables.isEmpty()) {
-      this.experimentalVariables.add(addExperimentalVariablesNote);
-    } else {
-      this.experimentalVariables.add(experimentalVariableCollection);
+  private void fillConfoundingVariablesCollection(
+      List<ConfoundingVariableInformation> confoundingVariables) {
+    var cards = new ArrayList<Component>();
+    for (ConfoundingVariableInformation confoundingVariable : confoundingVariables) {
+      Card card = new Card();
+      card.addClassNames("padding-left-right-05", "padding-top-bottom-05");
+      card.add(new Div(confoundingVariable.variableName()));
+      cards.add(card);
     }
+    confoundingVariableCollection.setContent(cards);
+  }
+
+  private List<ConfoundingVariableInformation> loadConfoundingVariables(String projectId,
+      ExperimentId experimentId) {
+    return confoundingVariableService.listConfoundingVariablesForExperiment(projectId,
+        new ExperimentReference(experimentId.value()));
   }
 
   private void onNoVariablesDefined() {
-    experimentalGroups.removeAll();
-    experimentalGroups.add(noExperimentalVariablesDefined);
+    experimentalGroupsContainer.removeAll();
+    experimentalGroupsContainer.add(noExperimentalVariablesDefined);
   }
 
   private void onNoGroupsDefined() {
-    experimentalGroups.removeAll();
-    experimentalGroups.add(noExperimentalGroupsDefined);
+    experimentalGroupsContainer.removeAll();
+    experimentalGroupsContainer.add(noExperimentalGroupsDefined);
   }
 
   private void onGroupsDefined() {
-    experimentalGroups.removeAll();
-    experimentalGroups.add(experimentalGroupsCollection);
+    experimentalGroupsContainer.removeAll();
+    experimentalGroupsContainer.add(experimentalGroupsCollection);
+  }
+
+  private void onNoConfoundingDefined() {
+    confoundingVariablesContainer.removeAll();
+    confoundingVariablesContainer.add(noConfoundingVariablesDefined);
+  }
+
+  private void onConfoundingDefined() {
+    confoundingVariablesContainer.removeAll();
+    confoundingVariablesContainer.add(confoundingVariableCollection);
   }
 
   /**

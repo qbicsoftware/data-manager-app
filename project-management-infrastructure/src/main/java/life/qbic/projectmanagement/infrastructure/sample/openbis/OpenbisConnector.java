@@ -53,7 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
@@ -62,6 +62,7 @@ import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
 import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -69,7 +70,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.infrastructure.experiment.measurement.MeasurementDataRepo;
 import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
-import life.qbic.projectmanagement.infrastructure.sample.QbicSampleDataRepo;
+import life.qbic.projectmanagement.infrastructure.sample.SampleDataRepository;
 import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSessionFactory.ApiV3;
 import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSessionFactory.OpenBisSession;
 import org.springframework.beans.factory.annotation.Value;
@@ -81,7 +82,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo,
+public class OpenbisConnector implements QbicProjectDataRepo, SampleDataRepository,
     MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester {
 
   private static final Logger log = logger(OpenbisConnector.class);
@@ -91,6 +92,8 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   private static final String DEFAULT_EXPERIMENT_TYPE = "Q_SAMPLE_BATCH";
   private static final String EXTERNAL_ID_CODE = "Q_EXTERNAL_ID";
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
+  private static final String NGS_MEASUREMENT_TYPE_CODE = "Q_NGS_MEASUREMENT";
+  private static final String PROTEOMICS_MEASUREMENT_TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
   private final OpenbisSessionFactory sessionFactory;
   private final IApplicationServerApi applicationServer;
   private final IDataStoreServerApi datastoreServer;
@@ -125,11 +128,11 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     float sizeTerra = sizeGb * sizeKb;
 
     if (size < sizeMb) {
-      return df.format(size / sizeKb) + " Kb";
+      return df.format(size / sizeKb) + " KB";
     } else if (size < sizeGb) {
-      return df.format(size / sizeMb) + " Mb";
+      return df.format(size / sizeMb) + " MB";
     } else if (size < sizeTerra) {
-      return df.format(size / sizeGb) + " Gb";
+      return df.format(size / sizeGb) + " GB";
     }
 
     return "";
@@ -244,7 +247,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private int getTrailingNumber(String input) {
     int lastNumberInt = 0;
-    Pattern lastIntPattern = Pattern.compile("[^0-9]+([0-9]+)$");
+    Pattern lastIntPattern = Pattern.compile("\\D+(\\d+)$");
     Matcher matcher = lastIntPattern.matcher(input);
     if (matcher.find()) {
       String someNumberStr = matcher.group(1);
@@ -366,49 +369,32 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
     return updatedSamples.stream().map(s -> createSampleUpdate(projectCode, s)).toList();
   }
 
-  private SampleCreation prepareMeasurementSample(String sampleCode,
-      String measurementTypeCode, List<SampleIdentifier> parentIds, Map<String, String> metadata) {
-    SampleCreation sampleCreation = new SampleCreation();
-    sampleCreation.setCode(sampleCode);
-    sampleCreation.setParentIds(new ArrayList<>(parentIds));
-    sampleCreation.setTypeId(new EntityTypePermId(measurementTypeCode));
-    sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
-    sampleCreation.setProperties(metadata);
-    return sampleCreation;
-  }
-
   @Override
   public void addNGSMeasurement(NGSMeasurement measurement, List<SampleCode> parentCodes) {
-    String TYPE_CODE = "Q_NGS_MEASUREMENT";
-    Map<String, String> metadata = new HashMap<>();
-    metadata.put(EXTERNAL_ID_CODE, measurement.measurementId().value());
-    try (OpenBisSession session = sessionFactory.getSession()) {
-      List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session,
-          parentCodes.stream().map(SampleCode::code).toList());
-      createOpenbisSamples(session, List.of(
-          prepareMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds,
-              metadata)));
-    }
+    createMeasurementInOpenbis(parentCodes, NGS_MEASUREMENT_TYPE_CODE, measurement.measurementId(),
+        measurement.measurementCode());
   }
 
   @Override
   public void saveAllNGS(
       Map<NGSMeasurement, Collection<SampleIdCodeEntry>> ngsMeasurementsMapping) {
-    String TYPE_CODE = "Q_NGS_MEASUREMENT";
-    List<SampleCreation> objectsToCreate = new ArrayList<>();
 
     try (OpenBisSession session = sessionFactory.getSession()) {
-      for (NGSMeasurement measurement : ngsMeasurementsMapping.keySet()) {
-        List<String> parentCodes = ngsMeasurementsMapping.get(measurement).stream()
-            .map(entry -> entry.sampleCode().code()).collect(Collectors.toList());
-        List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session, parentCodes);
+      var objectsToCreate = ngsMeasurementsMapping
+          .entrySet().stream()
+          .map(
+              entry -> {
+                NGSMeasurement measurement = entry.getKey();
+                Collection<SampleIdCodeEntry> sampleIdCodes = entry.getValue();
 
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put(EXTERNAL_ID_CODE, measurement.measurementId().value());
-
-        objectsToCreate.add(prepareMeasurementSample(measurement.measurementCode().value(),
-            TYPE_CODE, parentIds, metadata));
-      }
+                List<String> parentCodes = sampleIdCodes.stream()
+                    .map(sampleEntry -> sampleEntry.sampleCode().code())
+                    .toList();
+                return prepareSampleCreation(NGS_MEASUREMENT_TYPE_CODE, session, parentCodes,
+                    measurement.measurementId(),
+                    measurement.measurementCode());
+              }
+          ).toList();
       createOpenbisSamples(session, objectsToCreate);
     }
   }
@@ -416,38 +402,69 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   @Override
   public void addProteomicsMeasurement(ProteomicsMeasurement measurement,
       List<SampleCode> parentCodes) {
-    String TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
+    createMeasurementInOpenbis(parentCodes, PROTEOMICS_MEASUREMENT_TYPE_CODE,
+        measurement.measurementId(),
+        measurement.measurementCode());
+  }
+
+  private void createMeasurementInOpenbis(List<SampleCode> parentCodes, String typeCode,
+      MeasurementId measurementId, MeasurementCode measurementCode) {
     Map<String, String> metadata = new HashMap<>();
-    metadata.put(EXTERNAL_ID_CODE, measurement.measurementId().value());
+    metadata.put(EXTERNAL_ID_CODE, measurementId.value());
     try (OpenBisSession session = sessionFactory.getSession()) {
       List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session,
           parentCodes.stream().map(SampleCode::code).toList());
-      createOpenbisSamples(session, Arrays.asList(
-          prepareMeasurementSample(measurement.measurementCode().value(), TYPE_CODE, parentIds,
-              metadata)));
+      String sampleCode = measurementCode.value();
+      SampleCreation sampleCreation = new SampleCreation();
+      sampleCreation.setCode(sampleCode);
+      sampleCreation.setParentIds(new ArrayList<>(parentIds));
+      sampleCreation.setTypeId(new EntityTypePermId(typeCode));
+      sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
+      sampleCreation.setProperties(metadata);
+      createOpenbisSamples(session, List.of(
+          sampleCreation));
     }
   }
 
   @Override
   public void saveAllProteomics(
       Map<ProteomicsMeasurement, Collection<SampleIdCodeEntry>> proteomicsMeasurementsMapping) {
-    String TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
-    List<SampleCreation> objectsToCreate = new ArrayList<>();
 
     try (OpenBisSession session = sessionFactory.getSession()) {
-      for (ProteomicsMeasurement measurement : proteomicsMeasurementsMapping.keySet()) {
-        List<String> parentCodes = proteomicsMeasurementsMapping.get(measurement).stream()
-            .map(entry -> entry.sampleCode().code()).collect(Collectors.toList());
-        List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session, parentCodes);
+      List<SampleCreation> objectsToCreate = proteomicsMeasurementsMapping
+          .entrySet().stream()
+          .map(
+              entry -> {
+                ProteomicsMeasurement measurement = entry.getKey();
+                Collection<SampleIdCodeEntry> sampleIdCodes = entry.getValue();
 
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put(EXTERNAL_ID_CODE, measurement.measurementId().value());
-
-        objectsToCreate.add(prepareMeasurementSample(measurement.measurementCode().value(),
-            TYPE_CODE, parentIds, metadata));
-      }
+                List<String> parentCodes = sampleIdCodes.stream()
+                    .map(sampleEntry -> sampleEntry.sampleCode().code())
+                    .toList();
+                return prepareSampleCreation(PROTEOMICS_MEASUREMENT_TYPE_CODE, session, parentCodes,
+                    measurement.measurementId(),
+                    measurement.measurementCode());
+              }
+          ).toList();
       createOpenbisSamples(session, objectsToCreate);
     }
+  }
+
+  private SampleCreation prepareSampleCreation(String typeCode, OpenBisSession session,
+      List<String> parentCodes, MeasurementId measurementId, MeasurementCode measurementCode) {
+    List<SampleIdentifier> parentIds = fetchSampleIdentifiers(session, parentCodes);
+
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(EXTERNAL_ID_CODE, measurementId.value());
+
+    String sampleCode = measurementCode.value();
+    SampleCreation sampleCreation = new SampleCreation();
+    sampleCreation.setCode(sampleCode);
+    sampleCreation.setParentIds(new ArrayList<>(parentIds));
+    sampleCreation.setTypeId(new EntityTypePermId(typeCode));
+    sampleCreation.setSpaceId(new SpacePermId(DEFAULT_SPACE_CODE));
+    sampleCreation.setProperties(metadata);
+    return sampleCreation;
   }
 
   @Override
@@ -462,7 +479,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
 
   private void deleteMeasurements(List<MeasurementCode> measurementCodes) {
     try (OpenBisSession session = sessionFactory.getSession()) {
-      for(MeasurementCode code : measurementCodes) {
+      for (MeasurementCode code : measurementCodes) {
         String sampleCode = code.value();
         // measurement has been deleted in JPA at this moment. We don't fail, but we keep data in
         // openbis that might have been registered between the check and deletion
@@ -596,7 +613,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       searchCriteria.withAndOperator();
       DataSetSearchCriteria filterCriteria = searchCriteria.withSubcriteria().withOrOperator();
       filterCriteria.withSample().withCode().thatContains(filter);
-      //TODO other possibilities to filter by than the measured sample code?
     }
     try (OpenBisSession session = sessionFactory.getSession()) {
 
@@ -674,7 +690,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
       applicationServer.executeOperations(session.getToken(), operationOptions, executionOptions);
     } catch (Exception e) {
       log.error("Unexpected exception during openBIS operation.", e);
-      throw new RuntimeException(e);
+      throw new ApplicationException("Unexpected exception during openBIS operation.", e);
     }
   }
 
@@ -697,13 +713,17 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   public void testDatastoreServer() {
     int major = datastoreServer.getMajorVersion();
     int minor = datastoreServer.getMinorVersion();
-    log.info("Successfully tested connection to openBIS datastore server version: %d.%d".formatted(major, minor));
+    log.info(
+        "Successfully tested connection to openBIS datastore server version: %d.%d".formatted(major,
+            minor));
   }
 
   @Override
   public void testApplicationServer() {
     try (OpenBisSession session = sessionFactory.getSession()) {
-      applicationServer.isSessionActive(session.getToken());
+      if (!applicationServer.isSessionActive(session.getToken())) {
+        throw new ConnectionException("Could not connect to openBIS application server.");
+      }
       log.info("Successfully tested connection to openBIS application server.");
     }
   }
@@ -711,6 +731,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, QbicSampleDataRepo
   // Convenience RTE to describe connection issues
   static class ConnectionException extends RuntimeException {
 
+    public ConnectionException(String message) {
+      super(message);
+    }
   }
 
   static class MappingNotFoundException extends RuntimeException {

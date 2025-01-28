@@ -23,6 +23,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.parser.MetadataParser.ParsingException;
+import life.qbic.datamanager.parser.ParsingResult;
+import life.qbic.datamanager.parser.sample.SampleInformationExtractor;
+import life.qbic.datamanager.parser.sample.SampleInformationExtractor.SampleInformationForNewSample;
+import life.qbic.datamanager.parser.xlsx.XLSXParser;
+import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.importing.SampleInformationExtractor;
 import life.qbic.datamanager.importing.SampleInformationExtractor.SampleInformationForNewSample;
@@ -95,9 +101,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     uploadWithDisplay.addSuccessListener(
         uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
             uploadSucceeded));
-    uploadWithDisplay.addRemovedListener(uploadRemoved -> {
-      setValidatedSampleMetadata(List.of());
-    });
+    uploadWithDisplay.addRemovedListener(uploadRemoved -> setValidatedSampleMetadata(List.of()));
 
     Span uploadTheSampleDataTitle = new Span("Upload the sample data");
     uploadTheSampleDataTitle.addClassName("section-title");
@@ -123,8 +127,19 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
     component.setDisplay(uploadProgressDisplay);
 
-    List<SampleInformationForNewSample> sampleInformationForNewSamples = extractSampleInformationForNewSamples(
-        uploadedData);
+    List<SampleInformationForNewSample> sampleInformationForNewSamples;
+    try {
+      sampleInformationForNewSamples = extractSampleInformationForNewSamples(
+          uploadedData);
+    } catch (ParsingException e) {
+      RuntimeException runtimeException = new RuntimeException(
+          "Parsing failed.", e);
+      log.error("Could not complete validation. " + e.getMessage(), runtimeException);
+      InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
+          uploadedData.fileName(), "Could not complete validation. " + e.getMessage());
+      ui.access(() -> component.setDisplay(invalidUploadDisplay));
+      throw runtimeException;
+    }
 
     List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
     for (SampleInformationForNewSample sampleInformationForNewSample : sampleInformationForNewSamples) {
@@ -137,6 +152,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
           sampleInformationForNewSample.analyte(),
           sampleInformationForNewSample.analysisMethod(),
           sampleInformationForNewSample.comment(),
+          sampleInformationForNewSample.confoundingVariables(),
           experimentId,
           projectId
       ).orTimeout(1, TimeUnit.MINUTES);
@@ -145,6 +161,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     var validationTasks = CompletableFuture
         //allOf makes sure exceptional state is transferred to outer completable future.
         .allOf(validations.toArray(new CompletableFuture[0]))
+        .orTimeout(5, TimeUnit.MINUTES)
         .thenApply(v -> validations.stream()
             .map(CompletableFuture::join)
             .toList())
@@ -501,8 +518,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param batchName
-     * @param validatedSampleMetadata
+     * @param batchName               the name of the batch
+     * @param validatedSampleMetadata a list of validated sample metadata
      */
     public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient,
         String batchName,

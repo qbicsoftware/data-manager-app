@@ -3,8 +3,6 @@ package life.qbic.projectmanagement.domain.repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.application.commons.Result;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -12,7 +10,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
-import life.qbic.projectmanagement.domain.service.SampleDomainService.ResponseCode;
 
 /**
  * Sample data storage interface
@@ -30,14 +27,13 @@ public interface SampleRepository {
    * @param samples a batch of samples to save
    * @since 1.0.0
    */
-  Result<Collection<Sample>, ResponseCode> addAll(Project project, Collection<Sample> samples);
+  Collection<Sample> addAll(Project project, Collection<Sample> samples);
 
-  Result<Collection<Sample>, ResponseCode> addAll(ProjectId projectId, Collection<Sample> samples);
+  Collection<Sample> addAll(ProjectId projectId, Collection<Sample> samples);
 
   void deleteAll(Project project, Collection<SampleId> sampleIds);
 
-  Result<Collection<Sample>, SampleInformationService.ResponseCode> findSamplesByExperimentId(
-      ExperimentId experimentId);
+  Collection<Sample> findSamplesByExperimentId(ExperimentId experimentId);
 
   List<Sample> findSamplesByBatchId(BatchId batchId);
 

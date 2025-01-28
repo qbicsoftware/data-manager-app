@@ -1,10 +1,14 @@
 package life.qbic.datamanager.importing;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.files.structure.sample.EditColumn;
 import life.qbic.datamanager.files.structure.sample.RegisterColumn;
 import life.qbic.datamanager.importing.parser.ParsingResult;
+import life.qbic.datamanager.parser.Sanitizer;
 
 /**
  * Extracts sample information from a parsing result.
@@ -15,7 +19,6 @@ import life.qbic.datamanager.importing.parser.ParsingResult;
  * @since 1.5.0
  */
 public class SampleInformationExtractor {
-
   /**
    * Extract information for new samples from a parsing result.
    *
@@ -26,6 +29,7 @@ public class SampleInformationExtractor {
   public List<SampleInformationForNewSample> extractInformationForNewSamples(
       ParsingResult parsingResult) {
     var result = new ArrayList<SampleInformationForNewSample>();
+
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var sampleName = parsingResult.getValueOrDefault(i, RegisterColumn.SAMPLE_NAME.getName(),
           "");
@@ -38,6 +42,23 @@ public class SampleInformationExtractor {
       var analyte = parsingResult.getValueOrDefault(i, RegisterColumn.ANALYTE.getName(), "");
       var specimen = parsingResult.getValueOrDefault(i, RegisterColumn.SPECIMEN.getName(), "");
       var comment = parsingResult.getValueOrDefault(i, RegisterColumn.COMMENT.getName(), "");
+
+      var sanitizedHeaderNames = RegisterColumn.headerNames().stream()
+          .map(Sanitizer::headerEncoder)
+          .collect(
+              Collectors.toSet());
+
+      var confoundingVariableColumns = new HashMap<String, Integer>();
+      parsingResult.columnMap().forEach((key, value) -> {
+        if (!sanitizedHeaderNames.contains(key)) {
+          confoundingVariableColumns.put(key, value);
+        }
+      });
+      var confoundingVariables = new HashMap<String, String>();
+      final int finalI = i;
+      confoundingVariableColumns.forEach((key, value) -> parsingResult.getValue(finalI, key)
+          .ifPresent(it -> confoundingVariables.put(key, it)));
+
       result.add(new SampleInformationForNewSample(
           sampleName,
           analysisMethod,
@@ -46,7 +67,9 @@ public class SampleInformationExtractor {
           species,
           analyte,
           specimen,
-          comment));
+          comment,
+          confoundingVariables
+      ));
     }
     return result;
   }
@@ -73,6 +96,24 @@ public class SampleInformationExtractor {
       var analyte = parsingResult.getValueOrDefault(i, EditColumn.ANALYTE.getName(), "");
       var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.getName(), "");
       var comment = parsingResult.getValueOrDefault(i, EditColumn.COMMENT.getName(), "");
+
+
+      var sanitizedHeaderNames = EditColumn.headerNames().stream()
+          .map(Sanitizer::headerEncoder)
+          .collect(
+              Collectors.toSet());
+
+      var confoundingVariableColumns = new HashMap<String, Integer>();
+      parsingResult.columnMap().forEach((key, value) -> {
+        if (!sanitizedHeaderNames.contains(key)) {
+          confoundingVariableColumns.put(key, value);
+        }
+      });
+      var confoundingVariables = new HashMap<String, String>();
+      final int finalI = i;
+      confoundingVariableColumns.forEach((key, value) -> parsingResult.getValue(finalI, key)
+          .ifPresent(it -> confoundingVariables.put(key, it)));
+
       result.add(new SampleInformationForExistingSample(sampleCode,
           sampleName,
           analysisMethod,
@@ -81,7 +122,8 @@ public class SampleInformationExtractor {
           species,
           specimen,
           analyte,
-          comment
+          comment,
+          confoundingVariables
       ));
     }
     return result;
@@ -104,7 +146,8 @@ public class SampleInformationExtractor {
       String species,
       String analyte,
       String specimen,
-      String comment
+      String comment,
+      Map<String, String> confoundingVariables
   ) {
 
   }
@@ -128,7 +171,8 @@ public class SampleInformationExtractor {
       String species,
       String specimen,
       String analyte,
-      String comment) {
+      String comment,
+      Map<String, String> confoundingVariables) {
 
   }
 }

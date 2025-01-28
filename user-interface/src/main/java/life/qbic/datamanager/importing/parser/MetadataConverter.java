@@ -5,10 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -48,39 +45,6 @@ public class MetadataConverter implements MeasurementMetadataConverter {
 
   public static MetadataConverter measurementConverter() {
     return new MetadataConverter();
-  }
-
-  /**
-   * Generates a hit map, storing the number of matches of a defined set of String values (hit
-   * values), in a target of interest collection of String values.
-   * <p>
-   * The resulting map will contain the number of occurrences of every value in the hit values
-   * collection found in the target collection to investigate.
-   *
-   * @param target    the collection of interest to search in
-   * @param hitValues a set of distinct values, that should be represented in the hit result map
-   * @return a hit result map, containing the number of occurrences of every hit value in the target
-   * String collection (0, if no target was found for a value).
-   * @since 1.4.0
-   */
-  private static Map<String, Integer> countHits(Collection<String> target, Set<String> hitValues,
-      String... ignoredProperties) {
-    Map<String, Integer> hits = new HashMap<>();
-    for (String t : hitValues) {
-      hits.put(t, 0);
-    }
-    for (String s : target) {
-      if (hitValues.contains(s)) {
-        var currentHit = hits.get(s);
-        hits.put(s, ++currentHit);
-      }
-    }
-    for (String ignoredProperty : ignoredProperties) {
-      if (hits.containsKey((ignoredProperty))) {
-        hits.remove(ignoredProperty);
-      }
-    }
-    return hits;
   }
 
   @Override
@@ -346,65 +310,57 @@ public class MetadataConverter implements MeasurementMetadataConverter {
   }
 
   private boolean looksLikeNgsMeasurement(Collection<String> properties, boolean ignoreID) {
-    var formattedProperties = properties.stream().map(String::toLowerCase)
-        .collect(Collectors.toList());
-    Map<String, Integer> hitMap;
+    var sanitizedColumnHeaders = properties.stream()
+        .map(Sanitizer::headerEncoder)
+        .collect(Collectors.toSet());
+    Set<String> requiredColumnHeaders;
     if (ignoreID) {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementRegisterColumn.values())
-              .map(NGSMeasurementRegisterColumn::getName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()), NGSMeasurementEditColumn.MEASUREMENT_ID.getName());
+      requiredColumnHeaders = Arrays.stream(NGSMeasurementRegisterColumn.values())
+          .map(NGSMeasurementRegisterColumn::headerName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
     } else {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(NGSMeasurementEditColumn.values())
-              .map(NGSMeasurementEditColumn::getName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()));
+      requiredColumnHeaders = Arrays.stream(NGSMeasurementEditColumn.values())
+          .map(NGSMeasurementEditColumn::headerName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
     }
-    var missingProperties = new ArrayList<>();
-    for (Entry<String, Integer> entry : hitMap.entrySet()) {
-      if (entry.getValue() == 0) {
-        missingProperties.add(entry.getKey());
-      }
-    }
-    if (missingProperties.isEmpty()) {
-      return true;
-    } else {
-      log.debug("Missing properties for NGS measurement: %s".formatted(missingProperties));
-    }
-    return false;
+    return hasAllRequiredProperties(requiredColumnHeaders, sanitizedColumnHeaders,
+        "Missing properties for NGS measurement: %s");
   }
 
   private boolean looksLikeProteomicsMeasurement(Collection<String> properties, boolean ignoreID) {
-    var formattedProperties = properties.stream().map(String::toLowerCase)
-        .collect(Collectors.toList());
-    Map<String, Integer> hitMap;
+    var sanitizedColumnHeaders = properties.stream()
+        .map(Sanitizer::headerEncoder)
+        .collect(Collectors.toSet());
+    Set<String> requiredColumnHeaders;
     if (ignoreID) {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementRegisterColumn.values())
-              .map(ProteomicsMeasurementRegisterColumn::getName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()),
-          ProteomicsMeasurementEditColumn.MEASUREMENT_ID.getName());
+      requiredColumnHeaders = Arrays.stream(ProteomicsMeasurementRegisterColumn.values())
+          .map(ProteomicsMeasurementRegisterColumn::getName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
     } else {
-      hitMap = countHits(formattedProperties,
-          Arrays.stream(ProteomicsMeasurementEditColumn.values())
-              .map(ProteomicsMeasurementEditColumn::getName)
-              .map(Sanitizer::headerEncoder)
-              .collect(Collectors.toSet()));
+      requiredColumnHeaders = Arrays.stream(ProteomicsMeasurementEditColumn.values())
+          .map(ProteomicsMeasurementEditColumn::getName)
+          .map(Sanitizer::headerEncoder)
+          .collect(Collectors.toSet());
+    }
+    return hasAllRequiredProperties(requiredColumnHeaders, sanitizedColumnHeaders,
+        "Missing properties for proteomics measurement: %s");
+  }
+
+  private static boolean hasAllRequiredProperties(Set<String> requiredProperties,
+      Set<String> presentProperties, String missingErrorMessage) {
+    if (presentProperties.containsAll(requiredProperties)) {
+      return true;
     }
     var missingProperties = new ArrayList<>();
-    for (Entry<String, Integer> entry : hitMap.entrySet()) {
-      if (entry.getValue() == 0) {
-        missingProperties.add(entry.getKey());
+    for (String requiredProperty : requiredProperties) {
+      if (!presentProperties.contains(requiredProperty)) {
+        missingProperties.add(requiredProperty);
       }
     }
-    if (missingProperties.isEmpty()) {
-      return true;
-    } else {
-      log.debug("Missing properties for proteomics measurement: %s".formatted(missingProperties));
-    }
+    log.debug(missingErrorMessage.formatted(missingProperties));
     return false;
   }
 }

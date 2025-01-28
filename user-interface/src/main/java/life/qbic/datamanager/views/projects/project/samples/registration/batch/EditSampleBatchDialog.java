@@ -30,6 +30,12 @@ import life.qbic.datamanager.importing.SampleInformationExtractor;
 import life.qbic.datamanager.importing.SampleInformationExtractor.SampleInformationForExistingSample;
 import life.qbic.datamanager.importing.parser.ParsingResult;
 import life.qbic.datamanager.importing.parser.xlsx.XLSXParser;
+import life.qbic.datamanager.parser.MetadataParser.ParsingException;
+import life.qbic.datamanager.parser.ParsingResult;
+import life.qbic.datamanager.parser.sample.SampleInformationExtractor;
+import life.qbic.datamanager.parser.sample.SampleInformationExtractor.SampleInformationForExistingSample;
+import life.qbic.datamanager.parser.xlsx.XLSXParser;
+import life.qbic.datamanager.templates.TemplateService;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
@@ -146,8 +152,20 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     InProgressDisplay uploadProgressDisplay = new InProgressDisplay(uploadedData.fileName());
     component.setDisplay(uploadProgressDisplay);
 
-    List<SampleInformationForExistingSample> sampleInformationForExistingSamples = extractSampleInformationForExistingSamples(
-        uploadedData);
+    List<SampleInformationForExistingSample> sampleInformationForExistingSamples;
+    try {
+      sampleInformationForExistingSamples = extractSampleInformationForExistingSamples(
+          uploadedData);
+    } catch (ParsingException e) {
+      RuntimeException runtimeException = new RuntimeException(
+          "Parsing failed.", e);
+      log.error("Could not complete validation. " + e.getMessage(), runtimeException);
+      InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
+          uploadedData.fileName(),
+          "Could not complete validation. " + e.getMessage());
+      ui.access(() -> component.setDisplay(invalidUploadDisplay));
+      throw runtimeException;
+    }
 
     List<CompletableFuture<ValidationResultWithPayload<SampleMetadata>>> validations = new ArrayList<>();
     for (SampleInformationForExistingSample sampleInformationForExistingSample : sampleInformationForExistingSamples) {
@@ -161,6 +179,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
           sampleInformationForExistingSample.analyte(),
           sampleInformationForExistingSample.analysisMethod(),
           sampleInformationForExistingSample.comment(),
+          sampleInformationForExistingSample.confoundingVariables(),
           experimentId,
           projectId
       ).orTimeout(1, TimeUnit.MINUTES);
@@ -498,8 +517,8 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
      * @param source                  the source component
      * @param fromClient              <code>true</code> if the event originated from the client
      *                                side, <code>false</code> otherwise
-     * @param batchName
-     * @param validatedSampleMetadata
+     * @param batchName               the name of the batch
+     * @param validatedSampleMetadata a list of validated sample metadata
      */
     public ConfirmEvent(EditSampleBatchDialog source, boolean fromClient,
         String batchName,
