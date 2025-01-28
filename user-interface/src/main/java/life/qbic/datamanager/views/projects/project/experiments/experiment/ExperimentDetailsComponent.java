@@ -43,9 +43,11 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.confounding.ConfoundingVariable;
 import life.qbic.datamanager.views.general.confounding.ConfoundingVariablesUserInput;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogAction;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
@@ -356,13 +358,65 @@ public class ExperimentDetailsComponent extends PageArea {
   private void onConfoundingVariablesEditConfirmed(AppDialog dialog,
       ConfoundingVariablesUserInput userInput,
       List<ConfoundingVariable> oldValue) {
-    editConfoundingVariables(userInput.values(), oldValue);
-    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
-    dialog.close();
+    List<ConfoundingVariable> createdVars = userInput.values().stream()
+        .filter(newVal -> isNull(newVal.variableReference())
+            && oldValue.stream().noneMatch(old -> old.name().equals(newVal.name())))
+        .toList();
+    List<ConfoundingVariable> renamedVars = userInput.values().stream()
+        .filter(newVal -> oldValue.stream().anyMatch(
+            old -> old.variableReference().equals(newVal.variableReference()) && !old.name()
+                .equals(newVal.name())))
+        .toList();
+    List<ConfoundingVariable> deletedVars = oldValue.stream()
+        .filter(old -> userInput.values().stream()
+            .noneMatch(
+                newVal -> old.variableReference().equals(newVal.variableReference())
+                    // the variable was removed
+                    || old.name()
+                    .equals(newVal.name()))) // no new variable was added with the same name
+        .toList();
+    DialogAction editingAction = () -> {
+      editConfoundingVariables(createdVars, renamedVars, deletedVars);
+      reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
+      dialog.close();
+    };
+    if (!deletedVars.isEmpty()) {
+      askToConfirmConfoundingVariableDeletion(deletedVars, editingAction);
+    } else {
+      editingAction.execute();
+    }
+
   }
 
-  private void editConfoundingVariables(List<ConfoundingVariable> values,
-      List<ConfoundingVariable> oldValue) {
+  private void askToConfirmConfoundingVariableDeletion(List<ConfoundingVariable> deletedVars,
+      DialogAction confirmAction) {
+    AppDialog confirmDialog = createConfoundingVarsDeleteConfirmDialog(
+        deletedVars, confirmAction);
+    confirmDialog.open();
+  }
+
+  private static AppDialog createConfoundingVarsDeleteConfirmDialog(
+      List<ConfoundingVariable> deletedVars, DialogAction onConfirmAction) {
+    var confirmDialog = AppDialog.small();
+    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog,
+        "Delete confounding variables?",
+        IconFactory.warningIcon());
+    String deletedVariableNames = deletedVars.stream().map(ConfoundingVariable::name)
+        .collect(Collectors.joining());
+    DialogBody.withoutUserInput(confirmDialog, new Div(
+        "Deleting a confounding variable will delete all levels of the confounding variable from annotated samples. "
+            + "Do you want to delete the following confounding variables: " + deletedVariableNames
+            + " ?"));
+    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
+        "Delete " + deletedVars.size() + " confounding variables");
+    confirmDialog.registerConfirmAction(onConfirmAction);
+    confirmDialog.registerCancelAction(confirmDialog::close);
+    return confirmDialog;
+  }
+
+
+  private void editConfoundingVariables(List<ConfoundingVariable> createdVars,
+      List<ConfoundingVariable> renamedVars, List<ConfoundingVariable> deletedVars) {
     var projectId = context.projectId().orElseThrow();
     var experimentId = context.experimentId().orElseThrow();
 
@@ -370,25 +424,6 @@ public class ExperimentDetailsComponent extends PageArea {
      * Please be aware that deleting and re-adding a confounding variable with the same name does not lead to deletion and re-creation of a confounding variable.
      * For example if a user deletes a confounding variable "Test" in the UI and then re-adds a variable "Test" later on this is considered no change at all.
      */
-    var deletedVars = oldValue.stream()
-        .filter(old -> values.stream()
-            .noneMatch(
-                newVal -> old.variableReference().equals(newVal.variableReference())
-                    // the variable was removed
-                    || old.name()
-                    .equals(newVal.name()))) // no new variable was added with the same name
-        .toList();
-
-    var createdVars = values.stream()
-        .filter(newVal -> isNull(newVal.variableReference())
-            && oldValue.stream().noneMatch(old -> old.name().equals(newVal.name())))
-        .toList();
-
-    var renamedVars = values.stream()
-        .filter(newVal -> oldValue.stream().anyMatch(
-            old -> old.variableReference().equals(newVal.variableReference()) && !old.name()
-                .equals(newVal.name())))
-        .toList();
 
     for (ConfoundingVariable deletedVar : deletedVars) {
       confoundingVariableService.deleteConfoundingVariable(projectId.value(),
