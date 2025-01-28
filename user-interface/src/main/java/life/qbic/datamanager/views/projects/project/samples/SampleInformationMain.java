@@ -44,12 +44,10 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -86,24 +84,22 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final BatchDetailsComponent batchDetailsComponent;
 
   private final DownloadProvider metadataDownload;
-  private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
+  private final transient SampleInformationXLSXProvider sampleInformationXLSXProvider;
 
   private final Div content = new Div();
   private final TextField searchField = new TextField();
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
-  private final ProjectInformationService projectInformationService;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final MessageSourceNotificationFactory notificationFactory;
-  private final SampleValidationService sampleValidationService;
-  private final TemplateService templateService;
-  private final SampleRegistrationServiceV2 sampleRegistrationServiceV2;
+  private final transient ProjectInformationService projectInformationService;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient MessageSourceNotificationFactory notificationFactory;
+  private final transient SampleValidationService sampleValidationService;
+  private final transient TemplateService templateService;
+  private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
-      @Autowired BatchRegistrationService batchRegistrationService,
       @Autowired DeletionService deletionService,
-      @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent,
@@ -232,7 +228,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
               sampleMetadata,
-              projectId, event.batchName(), false, experimentId)
+              projectId, event.batchName(), false, new ExperimentReference(experimentId.value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         registrationTask
@@ -367,7 +363,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
               projectId,
               batchId,
               event.batchName(),
-              false)
+              false,
+              new ExperimentReference(context.experimentId().orElseThrow().value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         editTask

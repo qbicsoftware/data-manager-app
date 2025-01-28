@@ -6,7 +6,8 @@ import com.vaadin.flow.data.binder.ValidationException;
  * <b>Bound Field</b>
  *
  * <p>A bound field offers some common access and behaviour to the implemented bound field.</p>
- *
+ * @param <T> the type of field
+ * @param <V> the type of the value for said field
  * @since 1.6.0
  */
 public interface HasBoundField<T, V> {

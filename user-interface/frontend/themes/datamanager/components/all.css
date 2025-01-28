@@ -226,6 +226,29 @@ Padding & gaps
   gap: var(--spacing-07);
 }
 
+/***************************
+Colors
+***************************/
+.color-primary {
+  color: var(--lumo-primary-text-color)
+}
+
+.color-secondary {
+  color: var(--lumo-secondary-text-color)
+}
+
+.color-tertiary {
+  color: var(--lumo-tertiary-text-color)
+}
+
+/***************************
+Behaviour
+***************************/
+
+.clickable {
+  cursor: pointer;
+}
+
 
 /***************************
 Dialogs
@@ -319,6 +342,10 @@ Dialog flavours
 
 .full-width {
   width: 100%;
+}
+
+.full-height {
+  height: 100%;
 }
 
 .border-bottom-solid {
@@ -423,6 +450,10 @@ Layout
 
 .flex-align-items-center {
   align-items: center;
+}
+
+.flex-align-items-baseline {
+  align-items: baseline;
 }
 
 .flex-align-items-bottom {

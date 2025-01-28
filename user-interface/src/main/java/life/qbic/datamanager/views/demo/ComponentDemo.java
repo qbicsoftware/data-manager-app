@@ -4,6 +4,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -15,6 +16,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.datamanager.views.StringBean;
+import life.qbic.datamanager.views.general.Card;
+import life.qbic.datamanager.views.general.DetailBox;
+import life.qbic.datamanager.views.general.DetailBox.Header;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
@@ -28,6 +33,7 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.icon.IconFactory;
+import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -49,6 +55,7 @@ import org.springframework.stereotype.Component;
 public class ComponentDemo extends Div {
 
   public static final String HEADING_2 = "heading-2";
+  public static final String HEADING_3 = "heading-3";
   public static final String GAP_04 = "gap-04";
   public static final String FLEX_VERTICAL = "flex-vertical";
   public static final String NORMAL_BODY_TEXT = "normal-body-text";
@@ -62,20 +69,30 @@ public class ComponentDemo extends Div {
     addClassNames("padding-left-right-07", "padding-top-bottom-04");
     add(title);
     add(headingShowcase());
+    add(colorShowCase());
+    add(clickableShowCase());
     add(fontsShowCase());
-    add(dialogShowCase(AppDialog.small(), "Small Dialog Type"));
-    add(dialogShowCase(AppDialog.medium(), "Medium Dialog Type"));
-    add(dialogShowCase(AppDialog.large(), "Large Dialog Type"));
-    add(dialogSectionShowCase());
-    add(stepperDialogShowCase(threeSteps(), "Three steps example"));
+    add(detailBoxShowCase());
+    add(dialogShowCase());
+    add(cardShowCase());
     add(toastShowCase());
+  }
+
+  private static Div clickableShowCase() {
+    Div container = new Div();
+    Div heading = createHeading2("Cursor Classes");
+    Div headingClickable = createHeading3("clickable");
+    headingClickable.addClassName("clickable");
+    var handIcon = VaadinIcon.HAND.create();
+    handIcon.addClassName("clickable");
+    Div headingDefault = createHeading3("no class provided");
+    var cursorIcon = VaadinIcon.CURSOR.create();
+    container.add(heading, headingClickable, handIcon, headingDefault, cursorIcon);
+    return container;
   }
 
   private static Div dialogSectionShowCase() {
     Div container = new Div();
-    var title = new Div("Dialog section example");
-    title.addClassName(HEADING_2);
-    container.add(title);
     container.add(DialogSection.with("Dialog section title...",
         "...Followed by some descriptive text about the content or instructions.",
         new TextField("Some component, like a text field")));
@@ -102,6 +119,18 @@ public class ComponentDemo extends Div {
     return container;
   }
 
+  private static Div colorShowCase() {
+    Div container = new Div();
+    Div heading = createHeading2("Color Classes");
+    Div headingPrimary = createHeading3("color-primary");
+    headingPrimary.addClassName("color-primary");
+    Div headingSecondary = createHeading3("color-secondary");
+    headingSecondary.addClassName("color-secondary");
+    Div headingTertiary = createHeading3("color-tertiary");
+    headingTertiary.addClassName("color-tertiary");
+    container.add(heading, headingPrimary, headingSecondary, headingTertiary);
+    return container;
+  }
   private static Div fontsShowCase() {
     Div container = new Div();
     Div header = new Div("Body Font Styles");
@@ -131,7 +160,7 @@ public class ComponentDemo extends Div {
   private static Div stepperDialogShowCase(List<Step> steps, String dialogTitle) {
     Div content = new Div();
     Div title = new Div("Stepper Dialog");
-    title.addClassName(HEADING_2);
+    title.addClassName(HEADING_3);
     Button showDialog = new Button("Show Stepper");
     AppDialog dialog = AppDialog.medium();
 
@@ -193,10 +222,6 @@ public class ComponentDemo extends Div {
 
   private static Div dialogShowCase(AppDialog dialog, String dialogType) {
     Div content = new Div();
-    Div title = new Div();
-    title.addClassName(HEADING_2);
-    title.setText(dialogType);
-    content.add(title);
     Button showDialog = new Button("Show Dialog");
     // Dialog set-up
     DialogHeader.withIcon(dialog, dialogType, IconFactory.warningIcon());
@@ -271,6 +296,97 @@ public class ComponentDemo extends Div {
     return content;
   }
 
+  private static Div detailBoxShowCase() {
+    Div container = new Div();
+    container.add(createHeading2("Detail Box"));
+
+    DetailBox emptyBox = new DetailBox();
+    container.add(createHeading3("Empty Detail Box"));
+    container.add(emptyBox);
+
+    DetailBox withHeader = new DetailBox();
+    withHeader.setHeader(new DetailBox.Header("What the details are about"));
+    container.add(createHeading3("Empty Detail Box with Heading"));
+    container.add(withHeader);
+
+    DetailBox withHeaderAndIcon = new DetailBox();
+    Header headerWithIcon = new Header(VaadinIcon.BUILDING.create(), "What the details are about");
+    withHeaderAndIcon.setHeader(headerWithIcon);
+    container.add(createHeading3("Empty Detail Box with Heading and Icon"));
+    container.add(withHeaderAndIcon);
+
+    Header header = new Header(VaadinIcon.SCATTER_CHART.create(), "What the details are about");
+    Header header2 = new Header(VaadinIcon.SCATTER_CHART.create(), "What the details are about");
+
+    DetailBox withSmallContent = new DetailBox();
+    withSmallContent.setHeader(header);
+    withSmallContent.setContent(
+        new Div("Here are some details about what this is about. This example is a short text."));
+    container.add(createHeading3("Small content in the box"));
+    container.add(withSmallContent);
+
+    DetailBox withLargeContent = new DetailBox();
+    withLargeContent.setHeader(header2);
+    withLargeContent.setContent(new Div("""
+        Here are some details about what this is about. This example is a long text.
+        orem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis, nibh eget congue imperdiet, nisi enim porta odio, nec dapibus enim augue eget mauris. Mauris ultrices tortor nec arcu pretium consequat. Etiam sit amet nibh quis justo consectetur condimentum in id enim. Etiam nisl nisl, porta sit amet posuere ac, efficitur ut purus. Aenean elementum felis sit amet ligula mattis, malesuada lobortis nisi ornare. Praesent eleifend felis nec commodo maximus. Aliquam erat volutpat. Donec vel malesuada lorem. Mauris ut consequat dolor. Donec sit amet efficitur nulla.
+        Proin orci turpis, ullamcorper eget magna ac, lacinia tristique orci. Aliquam a dui tempor, consequat neque vel, facilisis odio. Pellentesque vehicula augue id turpis gravida sodales. Mauris viverra leo sed enim faucibus, ac ultricies ipsum commodo. Phasellus at erat neque. Curabitur vitae lectus vel nisl posuere pretium nec tincidunt libero. Mauris ut mi vulputate, maximus mi semper, placerat nulla. Etiam velit massa, consequat eu varius eu, rhoncus sed urna. Integer at dolor diam. Aenean at egestas lacus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Morbi imperdiet consectetur iaculis.
+        Nulla lobortis, nunc non molestie efficitur, ipsum justo pellentesque mi, ac pulvinar augue eros nec metus. Morbi ac fermentum dolor. Aenean hendrerit non ante dapibus tristique. Praesent sodales, libero quis consequat lobortis, elit lorem interdum sem, nec tincidunt mauris massa vel tortor. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras non tempor est. Duis tellus urna, consectetur ac sodales sit amet, volutpat dapibus erat.
+        Nunc dictum turpis eget tempus vestibulum. Morbi interdum vehicula ligula eget mollis. Ut interdum sit amet ex ut tempor. Nulla consectetur id metus vitae sollicitudin. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Praesent blandit non orci quis interdum. Mauris id gravida augue.\s
+        """));
+    container.add(createHeading3("Large content in the box"));
+    container.add(withLargeContent);
+
+    return container;
+  }
+
+  private static Div createHeading2(String text) {
+    var heading = new Div();
+    heading.setText(text);
+    heading.addClassName(HEADING_2);
+    return heading;
+  }
+
+  private static Div createHeading3(String text) {
+    var heading = new Div();
+    heading.setText(text);
+    heading.addClassName(HEADING_3);
+    return heading;
+  }
+
+  private static Div dialogShowCase() {
+    Div container = new Div();
+    container.add(createHeading2("Dialogs"));
+
+    container.add(createHeading3("Small Dialog"));
+    container.add(dialogShowCase(AppDialog.small(), "Small Dialog"));
+    container.add(createHeading3("Medium Dialog"));
+    container.add(dialogShowCase(AppDialog.medium(), "Medium Dialog"));
+    container.add(createHeading3("Large Dialog"));
+    container.add(dialogShowCase(AppDialog.large(), "Large Dialog Type"));
+    container.add(createHeading3("Dialog Section"));
+    container.add(dialogSectionShowCase());
+    container.add(createHeading3("Three steps example"));
+    container.add(stepperDialogShowCase(threeSteps(), "Three steps example"));
+
+    return container;
+  }
+
+  private static Div cardShowCase() {
+    Div container = new Div();
+    Div header = new Div();
+    header.addClassName(HEADING_2);
+    header.setText("Cards");
+
+    Card card = new Card();
+    card.add(VaadinIcon.USER.create());
+    card.add(new SimpleParagraph("Some simple paragraph"));
+    container.add(card);
+
+    container.add(header);
+    return container;
+  }
+
   private static class BodyFontStyles {
 
     static String[] fontStyles = new String[]{
@@ -322,23 +438,6 @@ public class ComponentDemo extends Div {
     @Override
     public boolean hasChanges() {
       return binder.hasChanges() || !Objects.equals(valueContainer.getValue(), originalValue);
-    }
-  }
-
-  private static class StringBean {
-
-    private String value;
-
-    StringBean(String value) {
-      this.value = value;
-    }
-
-    public String getValue() {
-      return value;
-    }
-
-    public void setValue(String value) {
-      this.value = value;
     }
   }
 
