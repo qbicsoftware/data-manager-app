@@ -26,9 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.download.DownloadContentProvider;
-import life.qbic.datamanager.download.DownloadProvider;
 import life.qbic.datamanager.files.TempDirectory;
+import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -37,11 +36,13 @@ import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.general.CollapsibleDetails;
 import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.DetailBox;
+import life.qbic.datamanager.views.general.DetailBox.Header;
 import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.general.IconLabel;
 import life.qbic.datamanager.views.general.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
@@ -108,8 +109,8 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section experimentInformationSection;
   private final Section fundingInformationSection;
   private final Section projectContactsSection;
+  private final DownloadComponent downloadComponent;
   private Context context;
-  private DownloadProvider downloadProvider;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
   private EditContactDialog editContactsDialog;
@@ -134,16 +135,17 @@ public class ProjectSummaryComponent extends PageArea {
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = experimentInformationService;
-    this.downloadProvider = new DownloadProvider(null);
+    downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
 
-    add(downloadProvider);
     add(headerSection);
     add(projectDesignSection);
     add(experimentInformationSection);
     add(fundingInformationSection);
     add(projectContactsSection);
+    add(downloadComponent);
+
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -270,14 +272,14 @@ public class ProjectSummaryComponent extends PageArea {
     projectContactsSection.setHeader(
         new SectionHeader(new SectionTitle("Project Contacts"), new ActionBar(editButton)));
     var piBox = new DetailBox();
-    var piBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Principal Investigator");
+    var piBoxHeader = new Header(VaadinIcon.USER.create(), "Principal Investigator");
     piBox.setHeader(piBoxHeader);
     piBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
     var principalInvestigator = project.getPrincipalInvestigator();
     piBox.setContent(renderContactInfo(principalInvestigator));
 
     var pmBox = new DetailBox();
-    var pmBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Manager");
+    var pmBoxHeader = new Header(VaadinIcon.USER.create(), "Project Manager");
     pmBox.setHeader(pmBoxHeader);
     pmBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
     var projectManager = project.getProjectManager();
@@ -288,7 +290,7 @@ public class ProjectSummaryComponent extends PageArea {
     // If no responsible person has been defined, we do not want to show empty sections.
     if (project.getResponsiblePerson().isPresent()) {
       var prBox = new DetailBox();
-      var prBoxHeader = new DetailBox.Header(VaadinIcon.USER.create(), "Project Responsible");
+      var prBoxHeader = new Header(VaadinIcon.USER.create(), "Project Responsible");
       prBox.setHeader(prBoxHeader);
       prBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
       var responsible = project.getResponsiblePerson().orElseThrow();
@@ -391,19 +393,19 @@ public class ProjectSummaryComponent extends PageArea {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information")));
     var speciesBox = new DetailBox();
-    var speciesHeader = new DetailBox.Header(VaadinIcon.MALE.create(), "Species");
+    var speciesHeader = new Header(VaadinIcon.MALE.create(), "Species");
     speciesBox.setHeader(speciesHeader);
     speciesBox.setContent(buildSpeciesInfo(experiments));
     speciesBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
 
     var specimenBox = new DetailBox();
-    var specimenHeader = new DetailBox.Header(VaadinIcon.DROP.create(), "Specimen");
+    var specimenHeader = new Header(VaadinIcon.DROP.create(), "Specimen");
     specimenBox.setHeader(specimenHeader);
     specimenBox.setContent(buildSpecimenInfo(experiments));
     specimenBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
     var analyteBox = new DetailBox();
-    var analyteHeader = new DetailBox.Header(VaadinIcon.CLUSTER.create(), "Analytes");
+    var analyteHeader = new Header(VaadinIcon.CLUSTER.create(), "Analytes");
     analyteBox.setHeader(analyteHeader);
     analyteBox.setContent(buildAnalyteInfo(experiments));
     analyteBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
@@ -558,22 +560,19 @@ public class ProjectSummaryComponent extends PageArea {
       var zippedRoCrateFile = zippedRoCrateDir.resolve(
           "%s-project-summary-ro-crate.zip".formatted(project.getProjectCode().value()));
       roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
-      remove(downloadProvider);
-      var cachedZipContent = Files.readAllBytes(zippedRoCrateFile);
-      downloadProvider = new DownloadProvider(new DownloadContentProvider() {
+      byte[] cachedContent = Files.readAllBytes(zippedRoCrateFile);
+      downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
         @Override
-        public byte[] getContent() {
-          return cachedZipContent;
+        public byte[] getBytes() {
+          return cachedContent;
         }
 
         @Override
-        public String getFileName() {
+        public String getFilename() {
           return zippedRoCrateFile.getFileName().toString();
         }
       });
-      add(downloadProvider);
-      downloadProvider.trigger();
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
       throw new ApplicationException("Error exporting ro-crate.zip", e);
     } finally {
       deleteTempDir(tempBuildDir.toFile());
