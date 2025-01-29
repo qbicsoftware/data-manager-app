@@ -93,7 +93,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringComponent
 public class ProjectSummaryComponent extends PageArea {
 
-  private static final String DATE_TIME_PATTERN = "dd.MM.yyyy HH:mm";
   public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
   public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
   public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
