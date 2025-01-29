@@ -1,4 +1,4 @@
-package life.qbic.datamanager.exporting.model;
+package life.qbic.datamanager.files.structure.rocrate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

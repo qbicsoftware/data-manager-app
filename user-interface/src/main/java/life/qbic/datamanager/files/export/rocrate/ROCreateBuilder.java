@@ -1,7 +1,7 @@
-package life.qbic.datamanager.exporting.rocrate;
+package life.qbic.datamanager.files.export.rocrate;
 
-import static life.qbic.datamanager.exporting.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_DOCX;
-import static life.qbic.datamanager.exporting.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_YAML;
+import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_DOCX;
+import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_YAML;
 
 import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
@@ -11,15 +11,13 @@ import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Objects;
-import life.qbic.datamanager.exporting.TempDirectory;
-import life.qbic.datamanager.exporting.docx.DocxSupplier;
-import life.qbic.datamanager.exporting.model.ContactPoint;
-import life.qbic.datamanager.exporting.model.ResearchProject;
-import life.qbic.datamanager.exporting.yaml.YamlSupplier;
+import life.qbic.datamanager.files.export.DocxFileSupplier;
+import life.qbic.datamanager.files.export.YamlFileSupplier;
+import life.qbic.datamanager.files.structure.rocrate.ContactPoint;
+import life.qbic.datamanager.files.structure.rocrate.ResearchProject;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,19 +30,12 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ROCreateBuilder {
-  
-  private final TempDirectory tempDirectory;
 
   private static final String ROR_URL_QBIC = "https://ror.org/00v34f693";
 
   private static final String DATA_PROVIDER_QBIC = "Quantitative Biology Center";
 
   private static final String LICENSE_URL_CCBY_4 = "https://creativecommons.org/licenses/by/4.0/";
-
-  @Autowired
-  public ROCreateBuilder(TempDirectory tempDir) {
-    this.tempDirectory = Objects.requireNonNull(tempDir);
-  }
 
   private static ContextualEntity licenseCCBY() {
     return new ContextualEntityBuilder()
@@ -66,19 +57,19 @@ public class ROCreateBuilder {
   }
 
   private static RoCrate buildRoCrate(Path buildDir, ResearchProject researchProject) {
-    var projectInfoDocx = DocxSupplier.create()
-        .from(buildDir.resolve(SUMMARY_FILENAME_DOCX.value()).toString(), researchProject);
-    var projectInfoYaml = YamlSupplier.create()
-        .from(buildDir.resolve(SUMMARY_FILENAME_YAML.value()).toString(), researchProject);
+    WordprocessingMLPackage docxContent = new ResearchProjectDocxBuilder().buildFrom(
+        researchProject);
     var crate = new RoCrateBuilder(
         "QBiC-project-%s-ro-crate".formatted(researchProject.identifier()),
         "Description of the project %s with the title '%s', managed on the Data Manager, Quantitative Biology Center, University of Tübingen.".formatted(
             researchProject.identifier(), researchProject.name()))
-        .addContextualEntity(licenseCCBY())// default is CC BY 4.0 international (https://creativecommons.org/licenses/by/4.0/)
+        .addContextualEntity(
+            licenseCCBY())// default is CC BY 4.0 international (https://creativecommons.org/licenses/by/4.0/)
         .addContextualEntity(qbicOrganisation())
         .addDataEntity(
             new FileEntityBuilder()
-                .setSource(projectInfoDocx)
+                .setSource(DocxFileSupplier.supplying(docxContent)
+                    .getFile(buildDir.resolve(SUMMARY_FILENAME_DOCX.value()).toString()))
                 .setId(SUMMARY_FILENAME_DOCX.value())
                 .addProperty("name", "Project Summary")
                 .addProperty("encodingFormat",
@@ -86,7 +77,8 @@ public class ROCreateBuilder {
                 .build())
         .addDataEntity(
             new FileEntityBuilder()
-                .setSource(projectInfoYaml)
+                .setSource(YamlFileSupplier.supplying(researchProject)
+                    .getFile(buildDir.resolve(SUMMARY_FILENAME_YAML.value()).toString()))
                 .setId(SUMMARY_FILENAME_YAML.value())
                 .addProperty("name", "Project Summary")
                 .addProperty("encodingFormat", MimeTypes.YAML.value())
@@ -97,6 +89,7 @@ public class ROCreateBuilder {
     crate.getRootDataEntity().addProperty("datePublished", Instant.now().toString());
     return crate;
   }
+
 
   public RoCrate projectSummary(Project project, Path buildDirectory) throws ROCrateBuildException {
     var researchProject = convertToResearchProject(project);

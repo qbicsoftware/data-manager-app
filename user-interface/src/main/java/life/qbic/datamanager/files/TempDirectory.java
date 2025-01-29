@@ -1,4 +1,4 @@
-package life.qbic.datamanager.exporting;
+package life.qbic.datamanager.files;
 
 import java.io.IOException;
 import java.nio.file.Files;

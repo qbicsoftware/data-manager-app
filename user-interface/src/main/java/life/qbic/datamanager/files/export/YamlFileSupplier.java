@@ -5,17 +5,24 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
 
-@FunctionalInterface
-public interface YamlFileSupplier<T> extends FileSupplier {
+public class YamlFileSupplier<T> implements FileSupplier {
 
-  T payload();
+  private final T payload;
+
+  YamlFileSupplier(T payload) {
+    this.payload = payload;
+  }
+
+  public static <S> YamlFileSupplier<S> supplying(S payload) {
+    return new YamlFileSupplier<>(payload);
+  }
 
   @Override
-  default File getFile(String fileName) {
+  public File getFile(String fileName) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     File file = new File(fileName);
     try {
-      mapper.writeValue(file, payload());
+      mapper.writeValue(file, payload);
       return file;
     } catch (IOException e) {
       throw new FormatException("Could not write to file " + fileName, e);
