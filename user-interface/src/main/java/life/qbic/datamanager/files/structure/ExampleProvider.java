@@ -1,6 +1,4 @@
-package life.qbic.datamanager.importing.parser;
-
-import life.qbic.datamanager.files.structure.Column;
+package life.qbic.datamanager.files.structure;
 
 /**
  * TODO!

@@ -5,8 +5,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.files.structure.Column;
-import life.qbic.datamanager.importing.parser.ExampleProvider;
-import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
+import life.qbic.datamanager.files.structure.ExampleProvider;
+import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
 
 /**
  * <b>Sample Register Columns</b>

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.importing.parser;
+package life.qbic.datamanager.files.parsing;
 
 import java.util.Arrays;
 import java.util.Objects;

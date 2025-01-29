@@ -16,7 +16,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
-import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
+import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;

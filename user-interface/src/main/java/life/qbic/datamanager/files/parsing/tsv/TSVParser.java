@@ -1,4 +1,4 @@
-package life.qbic.datamanager.importing.parser.tsv;
+package life.qbic.datamanager.files.parsing.tsv;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,10 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-import life.qbic.datamanager.importing.parser.MetadataParser;
-import life.qbic.datamanager.importing.parser.ParsingResult;
-import life.qbic.datamanager.importing.parser.ParsingResult.Row;
-import life.qbic.datamanager.importing.parser.Sanitizer;
+import life.qbic.datamanager.files.parsing.MetadataParser;
+import life.qbic.datamanager.files.parsing.ParsingResult;
+import life.qbic.datamanager.files.parsing.ParsingResult.Row;
+import life.qbic.datamanager.files.parsing.Sanitizer;
 
 /**
  * <b>TSV Parser</b>

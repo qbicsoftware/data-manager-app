@@ -1,7 +1,7 @@
 package life.qbic.datamanager.files.structure;
 
 import java.util.Optional;
-import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
+import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
 
 /**
  * A column in a file (for example xlsx files or TSV files)

@@ -1,4 +1,4 @@
-package life.qbic.datamanager.importing;
+package life.qbic.datamanager.files.parsing;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.files.structure.sample.EditColumn;
 import life.qbic.datamanager.files.structure.sample.RegisterColumn;
-import life.qbic.datamanager.importing.parser.ParsingResult;
-import life.qbic.datamanager.importing.parser.Sanitizer;
 
 /**
  * Extracts sample information from a parsing result.

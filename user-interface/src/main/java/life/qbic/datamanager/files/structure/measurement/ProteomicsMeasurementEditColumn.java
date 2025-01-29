@@ -2,8 +2,8 @@ package life.qbic.datamanager.files.structure.measurement;
 
 import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
-import life.qbic.datamanager.importing.parser.ExampleProvider;
-import life.qbic.datamanager.importing.parser.ExampleProvider.Helper;
+import life.qbic.datamanager.files.structure.ExampleProvider;
+import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
 
 /**
  * <b>NGS Measurement Columns</b>

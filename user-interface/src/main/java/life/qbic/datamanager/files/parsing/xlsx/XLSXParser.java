@@ -1,4 +1,4 @@
-package life.qbic.datamanager.importing.parser.xlsx;
+package life.qbic.datamanager.files.parsing.xlsx;
 
 import static java.util.Objects.isNull;
 
@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import life.qbic.datamanager.importing.parser.MetadataParser;
-import life.qbic.datamanager.importing.parser.ParsingResult;
-import life.qbic.datamanager.importing.parser.Sanitizer;
+import life.qbic.datamanager.files.parsing.MetadataParser;
+import life.qbic.datamanager.files.parsing.ParsingResult;
+import life.qbic.datamanager.files.parsing.Sanitizer;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFRow;
