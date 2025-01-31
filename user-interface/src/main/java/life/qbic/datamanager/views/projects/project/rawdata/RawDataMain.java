@@ -15,16 +15,19 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
+import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
@@ -62,8 +65,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
   @Serial
   private static final long serialVersionUID = -4506659645977994192L;
   private static final Logger log = LoggerFactory.logger(RawDataMain.class);
-  private final DownloadProvider urlDownload;
-  private final transient RawDataURLContentProvider urlDownloadFormatter;
+  private final DownloadComponent downloadComponent;
   private final RawDataDetailsComponent rawdataDetailsComponent;
   private final RawDataDownloadInformationComponent rawDataDownloadInformationComponent;
   private final TextField rawDataSearchField = new TextField();
@@ -99,14 +101,14 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     registerMeasurementsDisclaimer.addClassName("no-measurements-registered-disclaimer");
     noRawDataRegisteredDisclaimer = createNoRawDataRegisteredDisclaimer();
     noRawDataRegisteredDisclaimer.addClassName("no-raw-data-registered-disclaimer");
+    downloadComponent = new DownloadComponent();
+
     initContent();
     add(registerMeasurementsDisclaimer);
     add(noRawDataRegisteredDisclaimer);
     add(rawDataDetailsComponent);
     add(rawDataDownloadInformationComponent);
-    urlDownloadFormatter = new RawDataURLContentProvider();
-    urlDownload = new DownloadProvider(urlDownloadFormatter);
-    add(urlDownload);
+    add(downloadComponent);
     addListeners();
     addClassName("raw-data");
     log.debug(String.format(
@@ -116,6 +118,7 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(rawDataDetailsComponent),
         rawDataDownloadInformationComponent.getClass().getSimpleName(),
         System.identityHashCode(rawDataDownloadInformationComponent)));
+
   }
 
   private void initContent() {
@@ -166,9 +169,27 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
         .orElseThrow();
     var currentProjectCode = projectInformationService.find(context.projectId().orElseThrow())
         .orElseThrow().getProjectCode().value();
-    urlDownloadFormatter.updateContext(downloadUrls,
-        String.join("_", currentProjectCode, currentExperiment.getName().replace(" ", "_")));
-    urlDownload.trigger();
+
+    String fileName = String.join("_",
+        currentProjectCode,
+        currentExperiment.getName().replace(" ", "_"),
+        "rawdata_urls.txt");
+    downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
+      @Override
+      public byte[] getBytes() {
+        if (downloadUrls.isEmpty()) {
+          return new byte[0];
+        }
+        return RawDataUrlFile
+            .create(downloadUrls)
+            .getBytes(StandardCharsets.UTF_8);
+      }
+
+      @Override
+      public String getFilename() {
+        return fileName;
+      }
+    });
   }
 
   private List<RawDataURL> generateDownloadUrls(
