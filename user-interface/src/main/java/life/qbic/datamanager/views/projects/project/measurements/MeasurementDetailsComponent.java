@@ -411,7 +411,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         measurement);
     Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
     expandIcon.addClassName("expand-icon");
-    Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
+    var poolName = measurement.samplePoolGroup().orElse("Pooled sample");
+    Span expandSpan = new Span(new Span(poolName), expandIcon);
     expandSpan.addClassNames("sample-column-cell", CLICKABLE);
     expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
     return expandSpan;
@@ -422,7 +423,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         measurement);
     Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
     expandIcon.addClassName("expand-icon");
-    Span expandSpan = new Span(new Span("Pooled sample"), expandIcon);
+    String poolName = measurement.samplePoolGroup().orElse("Pooled sample");
+    Span expandSpan = new Span(new Span(poolName), expandIcon);
     expandSpan.addClassNames("sample-column-cell", CLICKABLE);
     expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
     return expandSpan;
