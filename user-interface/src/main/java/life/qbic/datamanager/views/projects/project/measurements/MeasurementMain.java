@@ -13,6 +13,8 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -50,6 +52,7 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemp
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -76,7 +79,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
-public class MeasurementMain extends Main implements BeforeEnterObserver {
+public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -103,6 +106,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final transient ProjectInformationService projectInformationService;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient MessageSourceNotificationFactory messageFactory;
+  private MeasurementMetadataUploadDialog dialog;
   private transient Context context;
 
   public MeasurementMain(
@@ -157,7 +161,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         getClass().getSimpleName(), System.identityHashCode(this),
         measurementTemplateListComponent.getClass().getSimpleName(),
         System.identityHashCode(measurementTemplateListComponent)));
-
   }
 
   private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
@@ -359,7 +362,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openEditMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
+    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
         cancelConfirmationDialogFactory,
         MODE.EDIT,
         context.projectId().orElse(null));
@@ -549,7 +552,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
+    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
         cancelConfirmationDialogFactory,
         MODE.ADD,
         context.projectId().orElse(null));
@@ -601,4 +604,10 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
 
   }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
+  }
+
 }

@@ -53,7 +53,12 @@ public class SampleInformationService {
   public Result<Collection<Sample>, ResponseCode> retrieveSamplesForExperiment(
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
-    return sampleRepository.findSamplesByExperimentId(experimentId);
+    try {
+      return Result.fromValue(sampleRepository.findSamplesByExperimentId(experimentId));
+    } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
+      return Result.fromError(ResponseCode.QUERY_FAILED);
+    }
   }
 
   public List<SamplePreview> retrieveSamplePreviewsForExperiment(ExperimentId experimentId) {

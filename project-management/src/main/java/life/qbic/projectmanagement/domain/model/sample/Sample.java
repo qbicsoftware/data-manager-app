@@ -200,4 +200,17 @@ public class Sample {
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 
+  @Override
+  public final boolean equals(Object o) {
+    if (!(o instanceof Sample sample)) {
+      return false;
+    }
+
+    return Objects.equals(id, sample.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
+  }
 }

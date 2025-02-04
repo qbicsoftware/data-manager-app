@@ -201,7 +201,8 @@ public class ProjectCollectionComponent extends PageArea {
       Span header = createHeader(projectOverview.projectCode(), projectOverview.projectTitle());
       add(header);
       Span lastModified = new Span(
-          String.format("Last modified on %s", DateTimeRendering.simple(projectOverview.lastModified())));
+          String.format("Last modified on %s",
+              DateTimeRendering.simple(projectOverview.lastModified())));
       lastModified.addClassName("tertiary");
       add(lastModified);
       projectDetails.addClassName("details");
@@ -237,10 +238,10 @@ public class ProjectCollectionComponent extends PageArea {
     public void setMeasurementDependentTags() {
       tags.removeAll();
       Collection<MeasurementType> measurementTypes = new ArrayList<>();
-      if (projectOverview.pxpMeasurementCount() != null) {
+      if (projectOverview.pxpMeasurementCount() > 0) {
         measurementTypes.add(MeasurementType.PROTEOMICS);
       }
-      if (projectOverview.ngsMeasurementCount() != null) {
+      if (projectOverview.ngsMeasurementCount() > 0) {
         measurementTypes.add(MeasurementType.GENOMICS);
       }
       measurementTypes.forEach(measurementType -> {

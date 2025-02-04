@@ -12,14 +12,20 @@ import static life.qbic.datamanager.templates.XLSXTemplateHelper.setColumnAutoWi
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import life.qbic.datamanager.parser.ExampleProvider.Helper;
 import life.qbic.datamanager.parser.sample.EditColumn;
 import life.qbic.datamanager.templates.XLSXTemplateHelper;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
@@ -36,27 +42,32 @@ public class SampleBatchUpdateTemplate {
 
   public static final int MAX_ROW_INDEX_TO = 2000;
 
+  private SampleBatchUpdateTemplate() {
 
+  }
 
   /**
    * Creates a {@link XSSFWorkbook} that contains a prefilled sheet of sample metadata based on the
    * provided list of {@link Sample}.
    *
-   * @param samples            a list of samples with metadata that will be used to fill the
-   *                           spreadsheet
-   * @param conditions         a list of conditions that are available for selection
-   * @param species            a list of species that are available for selection
-   * @param specimen           a list of specimen that are available for selection
-   * @param analytes           a list of analytes that are available for selection
-   * @param analysisToPerform  a list of analysis types available for the sample measurement
-   * @param experimentalGroups a list of experimental groups the samples belong to
+   * @param samples                   a list of samples with metadata that will be used to fill the
+   *                                  spreadsheet
+   * @param conditions                a list of conditions that are available for selection
+   * @param species                   a list of species that are available for selection
+   * @param specimen                  a list of specimen that are available for selection
+   * @param analytes                  a list of analytes that are available for selection
+   * @param analysisToPerform         a list of analysis types available for the sample measurement
+   * @param experimentalGroups        a list of experimental groups the samples belong to
+   * @param confoundingVariables      a list of confounding variables in the experiment
+   * @param confoundingVariableLevels a list of existing levels for confounding variables
    * @return a workbook with a prefilled sheet at tab index 0 that contains the sample metadata
    * @since 1.5.0
    */
   public static XSSFWorkbook createUpdateTemplate(List<Sample> samples, List<String> conditions,
       List<String> species, List<String> specimen, List<String> analytes,
-      List<String> analysisToPerform, List<ExperimentalGroup> experimentalGroups) {
-
+      List<String> analysisToPerform, List<ExperimentalGroup> experimentalGroups,
+      List<ConfoundingVariableInformation> confoundingVariables,
+      List<ConfoundingVariableLevel> confoundingVariableLevels) {
     XSSFWorkbook workbook = new XSSFWorkbook();
     var readOnlyCellStyle = createReadOnlyCellStyle(workbook);
     var readOnlyHeaderStyle = XLSXTemplateHelper.createReadOnlyHeaderCellStyle(workbook);
@@ -88,6 +99,21 @@ public class SampleBatchUpdateTemplate {
               helper.description()));
     }
 
+    Map<ConfoundingVariableInformation, Integer> confoundingVariableColumnIndices = new HashMap<>();
+    var columnOffset = EditColumn.maxColumnIndex();
+    for (int confoundingVariableIndex = 0; confoundingVariableIndex < confoundingVariables.size();
+        confoundingVariableIndex++) {
+      ConfoundingVariableInformation confoundingVariableInformation = confoundingVariables.get(
+          confoundingVariableIndex);
+      String variableName = confoundingVariableInformation.variableName();
+      int columnIndex = confoundingVariableIndex + columnOffset + 1;
+      confoundingVariableColumnIndices.put(confoundingVariableInformation, columnIndex);
+      var cell = XLSXTemplateHelper.getOrCreateCell(header,
+          columnIndex);
+      cell.setCellValue(variableName);
+      cell.setCellStyle(boldCellStyle);
+    }
+
     // add property information order of columns matters!!
     for (EditColumn column : Arrays.stream(
             EditColumn.values())
@@ -111,7 +137,7 @@ public class SampleBatchUpdateTemplate {
       var experimentalGroup = experimentalGroups.stream()
           .filter(group -> group.id() == sample.experimentalGroupId()).findFirst().orElseThrow();
       fillRowWithSampleMetadata(row, sample, experimentalGroup.condition(), defaultStyle,
-          readOnlyCellStyle);
+          readOnlyCellStyle, confoundingVariableLevels, confoundingVariableColumnIndices);
       rowIndex++;
     }
 
@@ -164,7 +190,9 @@ public class SampleBatchUpdateTemplate {
   }
 
   private static void fillRowWithSampleMetadata(Row row, Sample sample,
-      Condition condition, CellStyle defaultStyle, CellStyle readOnlyCellStyle) {
+      Condition condition, CellStyle defaultStyle, CellStyle readOnlyCellStyle,
+      List<ConfoundingVariableLevel> confoundingVariableLevels,
+      Map<ConfoundingVariableInformation, Integer> confoundingVariableColumnMap) {
     for (EditColumn column : EditColumn.values()) {
       var value = switch (column) {
         case SAMPLE_ID -> sample.sampleCode().code();
@@ -184,5 +212,16 @@ public class SampleBatchUpdateTemplate {
         cell.setCellStyle(readOnlyCellStyle);
       }
     }
+    confoundingVariableColumnMap.forEach((variableInformation, columnIndex) -> {
+      Optional<ConfoundingVariableLevel> levelOfSample = confoundingVariableLevels.stream()
+          .filter(level -> level.variable().equals(variableInformation.id()))
+          .filter(level -> level.sample().id().equals(sample.sampleId().value()))
+          .findAny();
+      levelOfSample.ifPresent(level -> {
+        Cell cell = getOrCreateCell(row, columnIndex);
+        cell.setCellValue(level.level());
+        cell.setCellStyle(defaultStyle);
+      });
+    });
   }
 }

@@ -15,7 +15,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public interface QbicSampleDataRepo {
+public interface SampleDataRepository {
 
   /**
    * Creates a reference to one or more {@link Sample}s in the data repository to connect project data.

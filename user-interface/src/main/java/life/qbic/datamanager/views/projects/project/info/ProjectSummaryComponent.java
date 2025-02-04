@@ -19,9 +19,6 @@ import edu.kit.datamanager.ro_crate.writer.ZipWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,8 +34,8 @@ import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
-import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.CollapsibleDetails;
+import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.Heading;
 import life.qbic.datamanager.views.general.IconLabel;
@@ -615,10 +612,10 @@ public class ProjectSummaryComponent extends PageArea {
 
   private List<Tag> buildTags(ProjectOverview projectInformation) {
     var tags = new ArrayList<Tag>();
-    if (projectInformation.ngsMeasurementCount() != null) {
+    if (projectInformation.ngsMeasurementCount() > 0) {
       tags.add(TagFactory.forMeasurement(GENOMICS));
     }
-    if (projectInformation.pxpMeasurementCount() != null) {
+    if (projectInformation.pxpMeasurementCount() > 0) {
       tags.add(TagFactory.forMeasurement(PROTEOMICS));
     }
     return tags;
