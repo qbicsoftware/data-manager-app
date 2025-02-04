@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.application.sample;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
@@ -45,6 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SampleRegistrationServiceV2 {
 
+  private static final Logger log = logger(SampleRegistrationServiceV2.class);
   private final BatchRegistrationService batchRegistrationService;
   private final SampleRepository sampleRepository;
   private final BatchRepository batchRepository;
@@ -94,6 +98,7 @@ public class SampleRegistrationServiceV2 {
           Collectors.toSet());
       batchRegistrationService.addSamplesToBatch(sampleIds, batchId, projectId);
     } catch (RuntimeException e) {
+      log.error(e.getMessage(), e);
       rollbackSampleRegistration(batchId);
       deletionService.deleteSamples(projectId, batchId,
           sampleMetadata.stream().map(SampleMetadata::sampleId).toList());

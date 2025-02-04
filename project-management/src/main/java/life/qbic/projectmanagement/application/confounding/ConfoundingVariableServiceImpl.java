@@ -119,6 +119,9 @@ public class ConfoundingVariableServiceImpl implements ConfoundingVariableServic
   public List<ConfoundingVariableLevel> setVariableLevelsForSample(String projectId,
       ExperimentReference experiment, SampleReference sampleReference,
       Map<VariableReference, String> levels) {
+    if (levels.isEmpty()) {
+      return List.of();
+    }
     List<Long> variableIds = levels.keySet().stream().map(VariableReference::id).toList();
     List<ConfoundingVariableLevel> savedLevels = new ArrayList<>();
     if (!variableRepository.existsAllById(projectId, variableIds)) {
