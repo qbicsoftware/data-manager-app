@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
@@ -394,7 +395,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
                     measurement.measurementId(),
                     measurement.measurementCode());
               }
-          ).toList();
+          ).collect(Collectors.toCollection(ArrayList::new));
       createOpenbisSamples(session, objectsToCreate);
     }
   }
@@ -445,7 +446,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
                     measurement.measurementId(),
                     measurement.measurementCode());
               }
-          ).toList();
+          ).collect(Collectors.toCollection(ArrayList::new));
       createOpenbisSamples(session, objectsToCreate);
     }
   }
