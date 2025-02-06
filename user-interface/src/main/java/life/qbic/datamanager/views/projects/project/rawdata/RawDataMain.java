@@ -16,10 +16,12 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.files.export.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
@@ -170,10 +172,6 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
     var currentProjectCode = projectInformationService.find(context.projectId().orElseThrow())
         .orElseThrow().getProjectCode().value();
 
-    String fileName = String.join("_",
-        currentProjectCode,
-        currentExperiment.getName().replace(" ", "_"),
-        "rawdata_urls.txt");
     downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
       @Override
       public byte[] getBytes() {
@@ -187,7 +185,8 @@ public class RawDataMain extends Main implements BeforeEnterObserver {
 
       @Override
       public String getFilename() {
-        return fileName;
+        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), currentProjectCode,
+            currentExperiment.getName(), "rawdata urls", "txt");
       }
     });
   }

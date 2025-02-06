@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
+import life.qbic.datamanager.files.export.FileNameFormatter;
 import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
 import life.qbic.datamanager.files.parsing.ParsingResult;
@@ -216,8 +217,11 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       try (Workbook workbook = templateService.sampleBatchRegistrationXLSXTemplate(
           projectId,
           experimentId)) {
+        var filename = FileNameFormatter.formatWithVersion(
+            projectCode + "_sample metadata registration template",
+            1, "xlsx");
         var downloadProvider = new DownloadProvider(
-            new XLSXDownloadContentProvider(projectCode + "_registration_template.xlsx", workbook));
+            new XLSXDownloadContentProvider(filename, workbook));
         add(downloadProvider);
         downloadProvider.trigger();
       } catch (IOException e) {

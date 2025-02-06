@@ -12,6 +12,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import jakarta.annotation.security.PermitAll;
+import life.qbic.datamanager.files.export.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
@@ -48,7 +49,7 @@ public class MeasurementTemplateListComponent extends PageArea {
     WorkbookDownloadStreamProvider genomicsStreamProvider = new WorkbookDownloadStreamProvider() {
       @Override
       public String getFilename() {
-        return "ngs_measurement_registration_sheet.xlsx";
+        return FileNameFormatter.formatWithVersion("ngs_measurement_registration_sheet", 1, "xlsx");
       }
 
       @Override

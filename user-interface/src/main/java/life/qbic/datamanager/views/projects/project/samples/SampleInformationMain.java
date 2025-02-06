@@ -17,11 +17,13 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.files.export.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
@@ -45,7 +47,6 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -193,10 +194,10 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
       @Override
       public String getFilename() {
-        // FIXME unsure what the filename should be projectCode_sample_information.xlsx or experiment_name_sample_information.xlsx
-        return experimentName.replaceAll(" ", "_") + "_sample_information.xlsx";
-//        return projectCode + "_sample_information.xlsx";
-
+        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
+            experimentName,
+            "sample information",
+            "xlsx");
       }
 
       @Override
