@@ -39,6 +39,8 @@ import ch.ethz.sis.openbis.generic.dssapi.v3.IDataStoreServerApi;
 import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.DataSetFile;
 import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.fetchoptions.DataSetFileFetchOptions;
 import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.search.DataSetFileSearchCriteria;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -99,11 +101,14 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   private final IApplicationServerApi applicationServer;
   private final IDataStoreServerApi datastoreServer;
 
+  private final KeyStore keyStore;
+
   // used by spring to wire it up
   private OpenbisConnector(@Value("${openbis.user.name}") String userName,
       @Value("${openbis.user.password}") String password,
       @Value("${openbis.datasource.as.url}") String asUrl,
-      @Value("${openbis.datasource.dss.url}") String dssUrl) {
+      @Value("${openbis.datasource.dss.url}") String dssUrl) throws KeyStoreException {
+    keyStore = KeyStore.getInstance("pkcs12");
 
     final String openbisApplicationUrl = asUrl + IApplicationServerApi.SERVICE_URL;
     final String openbisDssUrl = dssUrl + IDataStoreServerApi.SERVICE_URL;
