@@ -10,18 +10,25 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.infrastructure.DataManagerVault;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * A management object that handles the connection to the openBIS backend via its API.
+ * <p>
+ * This object will handle the session of openBIS required to interact with the backend and
+ * refreshes it once its lifetime has ended.
+ * <p>
+ * On the openBIS server side, there is expected to be one session alive for every data manager
+ * instance running, and it should be closed, when the application terminates.
+ * <p>
+ * Inside the {@link OpenbisSession} object, a reference to a protected {@link DataManagerVault}
+ * instance is used to store active tokens for a session, as well as the openBIS credentials to
+ * acquire a new one.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.8.0
  */
 public class OpenbisSession {
 
-  private static final Logger log = logger(OpenbisSession.class);
-
-  private static final String TOKEN_ALIAS = "OBIS_TOKEN";
   public static final String COULD_NOT_AUTHENTICATE_WITH_OPEN_BIS = "Could not authenticate with OpenBIS";
+  private static final Logger log = logger(OpenbisSession.class);
+  private static final String TOKEN_ALIAS = "OBIS_TOKEN";
   private final DataManagerVault vault;
   private final IApplicationServerApi apiV3;
 
@@ -76,8 +83,10 @@ public class OpenbisSession {
     public static IApplicationServerApi applicationServer(String url) {
       return HttpInvokerUtils.createServiceStub(IApplicationServerApi.class, url, 100_000L);
     }
+
     public static IDataStoreServerApi dataStoreServer(String url) {
-      return HttpInvokerUtils.createStreamSupportingServiceStub(IDataStoreServerApi.class, url, 100_000L);
+      return HttpInvokerUtils.createStreamSupportingServiceStub(IDataStoreServerApi.class, url,
+          100_000L);
     }
 
   }

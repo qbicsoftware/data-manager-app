@@ -710,10 +710,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     }
   }
 
-  static class MappingNotFoundException extends RuntimeException {
-
-  }
-
   public static class SampleNotDeletedException extends RuntimeException {
 
     public SampleNotDeletedException(String s) {
