@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.infrastructure;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javax.crypto.spec.SecretKeySpec;
+import life.qbic.logging.api.Logger;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -28,8 +32,9 @@ import org.springframework.stereotype.Component;
  * @since <version tag>
  */
 @Component
-public class DataManagerVault {
+public class DataManagerVault implements DisposableBean {
 
+  private static final Logger log = logger(DataManagerVault.class);
   public static final String UNEXPECTED_VAULT_EXCEPTION = "Unexpected vault exception";
   private static final String KEY_GENERATOR_ALGORITHM = "AES";
   private static final double MIN_ENTROPY = 100; // Shannon entropy * length of secret
@@ -111,7 +116,7 @@ public class DataManagerVault {
   }
 
   /**
-   * Write adds a secret under a given alias to the vault and stores the vault content into the
+   * Adds a secret under a given alias to the vault and stores the vault content into the
    * configured file.
    * <p>
    * {@link DataManagerVault} applies an AES encryption on the provided secret.
@@ -121,7 +126,7 @@ public class DataManagerVault {
    * @param secret the secret to store in the vault
    * @since 1.8.0
    */
-  public void write(String alias, String secret) {
+  public void add(String alias, String secret) {
     try {
       this.keyStore.setEntry(alias, new SecretKeyEntry(new SecretKeySpec(secret.getBytes(
               StandardCharsets.UTF_8), KEY_GENERATOR_ALGORITHM)),
@@ -130,6 +135,10 @@ public class DataManagerVault {
       throw new DataManagerVaultException(UNEXPECTED_VAULT_EXCEPTION, e);
     }
 
+    writeToFileSystem();
+  }
+
+  private void writeToFileSystem() {
     try (var bos = new BufferedOutputStream(new FileOutputStream(keystorePath.toFile()))) {
       keyStore.store(bos, System.getenv(envVarKeystorePassword).toCharArray());
       bos.flush();
@@ -163,6 +172,13 @@ public class DataManagerVault {
     } catch (UnrecoverableKeyException e) {
       throw new DataManagerVaultException("Recovering alias entry failed", e);
     }
+  }
+
+  @Override
+  public void destroy() throws Exception {
+    log.debug("Destroying vault keystore " + this);
+    // Ensure current cached entries are written to the file system
+    writeToFileSystem();
   }
 
   /**
