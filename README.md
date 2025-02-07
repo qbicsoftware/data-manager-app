@@ -260,13 +260,13 @@ The application will fail starting, if the total entropy is below 100.
 Now remove the dummy entry, to have a true empty keystore:
 
 ```bash
- keytool -delete -alias dummy -keystore keystore.p12 -storetype PKCS12 -storepass mypassword
+ keytool -delete -alias dummy -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword
 ```
 
 Verify:
 
 ```bash
- > keytool -list -keystore keystore.p12 -storetype PKCS12 -storepass KgS2zgcjvtusP6mWY1N9EHbdVG
+ > keytool -list -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword
 Keystore type: PKCS12
 Keystore provider: SUN
 
