@@ -1,6 +1,5 @@
-package life.qbic.datamanager.security;
+package life.qbic.projectmanagement.infrastructure;
 
-import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
  *
  * @since <version tag>
  */
-@SpringComponent
+@Component
 public class DataManagerVault {
 
   public static final String UNEXPECTED_VAULT_EXCEPTION = "Unexpected vault exception";
@@ -70,6 +70,8 @@ public class DataManagerVault {
     this.keyStore = createVault(vaultKeyEnvVar, keystorePath);
   }
 
+  // Calculates the product of Shannon entropy and secret length
+  // See https://en.wikipedia.org/wiki/Entropy_(information_theory)
   private static double calculateEntropy(String secret) {
     if (secret == null || secret.isEmpty()) {
       return 0.0;
