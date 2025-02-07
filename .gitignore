@@ -1,3 +1,6 @@
+# Any local PKCS12 stores
+*.p12
+
 */target/
 .idea/
 .settings
