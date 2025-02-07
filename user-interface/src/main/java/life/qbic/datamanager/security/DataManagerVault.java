@@ -2,7 +2,6 @@ package life.qbic.datamanager.security;
 
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,9 +30,9 @@ import org.springframework.beans.factory.annotation.Value;
 @SpringComponent
 public class DataManagerVault {
 
+  public static final String UNEXPECTED_VAULT_EXCEPTION = "Unexpected vault exception";
   private static final String KEY_GENERATOR_ALGORITHM = "AES";
   private static final double MIN_ENTROPY = 100; // Shannon entropy * length of secret
-  public static final String UNEXPECTED_VAULT_EXCEPTION = "Unexpected vault exception";
   private final KeyStore keyStore;
   private final String envVarKeystorePassword;
   private final String envVarKeystoreEntryPassword;
@@ -109,9 +108,20 @@ public class DataManagerVault {
         System.getenv(vaultKeyEnvVar).toCharArray());
   }
 
-  public void write(String alias, String value) {
+  /**
+   * Write adds a secret under a given alias to the vault and stores the vault content into the
+   * configured file.
+   * <p>
+   * {@link DataManagerVault} applies an AES encryption on the provided secret.
+   *
+   * @param alias  the reference the entry can be retrieved again with
+   *               {@link DataManagerVault#read(String)}.
+   * @param secret the secret to store in the vault
+   * @since 1.8.0
+   */
+  public void write(String alias, String secret) {
     try {
-      this.keyStore.setEntry(alias, new SecretKeyEntry(new SecretKeySpec(value.getBytes(
+      this.keyStore.setEntry(alias, new SecretKeyEntry(new SecretKeySpec(secret.getBytes(
               StandardCharsets.UTF_8), KEY_GENERATOR_ALGORITHM)),
           new PasswordProtection(System.getenv(envVarKeystoreEntryPassword).toCharArray()));
     } catch (KeyStoreException e) {
@@ -120,14 +130,28 @@ public class DataManagerVault {
 
     try (var bos = new BufferedOutputStream(new FileOutputStream(keystorePath.toFile()))) {
       keyStore.store(bos, System.getenv(envVarKeystorePassword).toCharArray());
+      bos.flush();
     } catch (IOException e) {
-      throw new DataManagerVaultException("Unexpected vault exception when writing to the keystore", e);
+      throw new DataManagerVaultException("Unexpected vault exception when writing to the keystore",
+          e);
     } catch (CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
       throw new DataManagerVaultException(UNEXPECTED_VAULT_EXCEPTION, e);
     }
   }
 
-  public Optional<String> read(String alias) {
+  /**
+   * Read looks for a matching entry for the provided alias.
+   * <p>
+   * If no entry for the given alias is found, the vault returns an {@link Optional#empty()}.
+   * <p>
+   * If the decryption of the secret fails, an {@link DataManagerVaultException} is thrown.
+   *
+   * @param alias the reference for the entry to retrieve
+   * @return an {@link Optional<String>} with the potential secret.
+   * @throws DataManagerVaultException if the decryption fails.
+   * @since 1.8.0
+   */
+  public Optional<String> read(String alias) throws DataManagerVaultException {
     try {
       return Optional.ofNullable(
               this.keyStore.getKey(alias, System.getenv(envVarKeystoreEntryPassword).toCharArray()))
@@ -139,6 +163,10 @@ public class DataManagerVault {
     }
   }
 
+  /**
+   * Used for exceptions occurring during interactions with the {@link DataManagerVault}.
+   * @since 1.8.0
+   */
   public static class DataManagerVaultException extends RuntimeException {
 
     public DataManagerVaultException(String message) {
