@@ -390,10 +390,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   }
 
   private void downloadProteomicsMetadata() {
-    String projectCode = projectInformationService.find(context.projectId().orElseThrow())
+    ProjectId projectId = context.projectId().orElseThrow();
+    String projectCode = projectInformationService.find(projectId)
         .orElseThrow()
         .getProjectCode().value();
-    var filename = projectCode + "_proteomics_measurements.xlsx";
+
+    var experimentId = context.experimentId().orElseThrow();
+    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
+        .orElseThrow()
+        .getName();
+
     var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
@@ -409,7 +415,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
       @Override
       public String getFilename() {
-        return filename;
+        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
+            experimentName,
+            "proteomics measurements", "xlsx");
       }
 
       @Override
