@@ -8,7 +8,7 @@ public class FileNameFormatter {
   private static final String SPACE_REPLACEMENT = "-";
   private static final String PART_JOINER = "_";
 
-  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   private FileNameFormatter() {
 
