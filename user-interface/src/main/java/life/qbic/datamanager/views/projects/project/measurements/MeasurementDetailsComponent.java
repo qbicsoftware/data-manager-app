@@ -190,7 +190,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             return new Span(
                 String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
           }
-          return createNGSPooledSampleComponent(measurement);
+          return createNGSPooledSampleComponent(measurement,
+              measurement.samplePoolGroup().orElse("Pooled sample"));
         })
         .setTooltipGenerator(measurement -> {
           if (measurement.isSingleSampleMeasurement()) {
@@ -249,7 +250,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             optMetadata.ifPresent(metadata -> singularComment.setText(metadata.comment().orElse("")));
             return singularComment;
           } else {
-            return createNGSPooledSampleComponent(measurement);
+            return createNGSPooledSampleComponent(measurement,
+                "Pooled sample");
           }
         })
         .setHeader("Comment")
@@ -302,7 +304,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             return new Span(
                 String.join(" ", groupSampleInfoIntoCodeAndLabel(measurement.measuredSamples())));
           }
-          return createProteomicsPooledSampleComponent(measurement);
+          return createProteomicsPooledSampleComponent(measurement,
+              measurement.samplePoolGroup().orElse("Pooled sample"));
         })
         .setHeader("Samples")
         .setTooltipGenerator(measurement -> {
@@ -370,7 +373,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
             optMetadata.ifPresent(metadata -> singularComment.setText(metadata.comment().orElse("")));
             return singularComment;
           } else {
-            return createProteomicsPooledSampleComponent(measurement);
+            return createProteomicsPooledSampleComponent(measurement,
+                "Pooled sample");
           }
         })
         .setHeader("Comment")
@@ -406,25 +410,24 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     measurementsGridDataViews.add(proteomicsGridDataView);
   }
 
-  private Span createProteomicsPooledSampleComponent(ProteomicsMeasurement measurement) {
+  private Span createProteomicsPooledSampleComponent(ProteomicsMeasurement measurement,
+      String label) {
     MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
         measurement);
     Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
     expandIcon.addClassName("expand-icon");
-    var poolName = measurement.samplePoolGroup().orElse("Pooled sample");
-    Span expandSpan = new Span(new Span(poolName), expandIcon);
+    Span expandSpan = new Span(new Span(label), expandIcon);
     expandSpan.addClassNames("sample-column-cell", CLICKABLE);
     expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
     return expandSpan;
   }
 
-  private Span createNGSPooledSampleComponent(NGSMeasurement measurement) {
+  private Span createNGSPooledSampleComponent(NGSMeasurement measurement, String label) {
     MeasurementPooledSamplesDialog measurementPooledSamplesDialog = new MeasurementPooledSamplesDialog(
         measurement);
     Icon expandIcon = VaadinIcon.EXPAND_SQUARE.create();
     expandIcon.addClassName("expand-icon");
-    String poolName = measurement.samplePoolGroup().orElse("Pooled sample");
-    Span expandSpan = new Span(new Span(poolName), expandIcon);
+    Span expandSpan = new Span(new Span(label), expandIcon);
     expandSpan.addClassNames("sample-column-cell", CLICKABLE);
     expandSpan.addClickListener(event -> measurementPooledSamplesDialog.open());
     return expandSpan;
