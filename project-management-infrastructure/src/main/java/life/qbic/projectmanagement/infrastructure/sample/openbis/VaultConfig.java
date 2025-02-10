@@ -7,11 +7,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Initialises credentials for the {@link DataManagerVault} to be used in the application.
+ * <p>
+ * To make sure any object gets the initialised vault, inject the {@link VaultConfig} component.
+ * <p>
+ * In order to simplify access to secrets, it is advised to export their vault alias as constants
+ * (e.g. {@link VaultConfig#OPENBIS_USER_ALIAS}).
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.8.0
  */
 @Component
 public class VaultConfig {
@@ -32,6 +35,12 @@ public class VaultConfig {
     password = "";
   }
 
+  /**
+   * Access to the initialised {@link DataManagerVault}.
+   *
+   * @return vault with credentials
+   * @since 1.8.0
+   */
   public DataManagerVault vault() {
     return vault;
   }
