@@ -25,17 +25,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Container for a Java keystore to maintain secrets within the application.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.8.0
  */
 @Component
 public class DataManagerVault implements DisposableBean {
 
-  private static final Logger log = logger(DataManagerVault.class);
   public static final String UNEXPECTED_VAULT_EXCEPTION = "Unexpected vault exception";
+  private static final Logger log = logger(DataManagerVault.class);
   private static final String KEY_GENERATOR_ALGORITHM = "AES";
   private static final double MIN_ENTROPY = 100; // Shannon entropy * length of secret
   private final KeyStore keyStore;
@@ -116,8 +114,8 @@ public class DataManagerVault implements DisposableBean {
   }
 
   /**
-   * Adds a secret under a given alias to the vault and stores the vault content into the
-   * configured file.
+   * Adds a secret under a given alias to the vault and stores the vault content into the configured
+   * file.
    * <p>
    * {@link DataManagerVault} applies an AES encryption on the provided secret.
    *
@@ -183,6 +181,7 @@ public class DataManagerVault implements DisposableBean {
 
   /**
    * Used for exceptions occurring during interactions with the {@link DataManagerVault}.
+   *
    * @since 1.8.0
    */
   public static class DataManagerVaultException extends RuntimeException {
