@@ -233,12 +233,14 @@ Therefore, in order to be able to run the application, a keystore must be set-up
 
 #### Setup keystore
 
-You need [keytool](https://docs.oracle.com/en/java/javase/11/tools/keytool.html) for this step.
+Before the Java keystore can be referenced in Data Manager's configuration, it has to be created in the first place.
 
-With a dummy entry for creation:
+You will need [keytool](https://docs.oracle.com/en/java/javase/11/tools/keytool.html) for this step.
+
+Start the setup with a dummy entry for creation of a keystore file in PKSC12 format:
 
 ```bash
- keytool -genkeypair -alias dummy -keyalg RSA -keysize 2048 -keystore keystore.p12 -storetype PKCS12 -storepass mystoresecret -dname "CN=Dummy, OU=Test, O=Company, L=City, ST=State, C=US"
+ keytool -genkeypair -alias dummy -keyalg RSA -keysize 2048 -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword -dname "CN=Dummy, OU=Test, O=Company, L=City, ST=State, C=US"
 ```
 
 This secures the keystore with the `mysecretpassword` password. Change it to something only you have
@@ -266,7 +268,10 @@ Now remove the dummy entry, to have a true empty keystore:
 Verify:
 
 ```bash
- > keytool -list -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword
+keytool -list -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword
+```
+which should show something like:
+```text
 Keystore type: PKCS12
 Keystore provider: SUN
 
