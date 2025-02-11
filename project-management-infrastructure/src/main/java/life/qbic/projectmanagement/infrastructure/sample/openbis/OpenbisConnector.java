@@ -100,6 +100,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   private final IApplicationServerApi applicationServer;
   private final IDataStoreServerApi datastoreServer;
   private final OpenbisSession openBisSession;
+  private static final int RETRY_COUNT_MAX = 3;
 
   // used by spring to wire it up
   private OpenbisConnector(
@@ -658,11 +659,23 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   private void handleOperations(OpenbisSession session, IOperation operation) {
     List<IOperation> operationOptions = Collections.singletonList(operation);
     AsynchronousOperationExecutionOptions options = new AsynchronousOperationExecutionOptions();
-    try {
-      applicationServer.executeOperations(session.getToken(), operationOptions, options);
-    } catch (Exception e) {
-      log.error("Unexpected exception during openBIS operation.", e);
-      throw new ApplicationException("Unexpected exception during openBIS operation.", e);
+    var round = 1;
+    while (round <= RETRY_COUNT_MAX) {
+      try {
+        applicationServer.executeOperations(session.getToken(), operationOptions, options);
+        break;
+      } catch (Exception e) {
+        log.error("Unexpected exception during openBIS operation.", e);
+      }
+      if (round == RETRY_COUNT_MAX) {
+        throw new ApplicationException("Unexpected exception during openBIS operation.");
+      }
+      try {
+        Thread.sleep((long) (100*Math.pow(2, round)));
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      round++;
     }
   }
 
