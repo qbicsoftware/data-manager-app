@@ -17,6 +17,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.delete.ExperimentDele
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.fetchoptions.ExperimentFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.id.ExperimentIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.search.ExperimentSearchCriteria;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.AsynchronousOperationExecutionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationExecutionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.ProjectCreation;
@@ -655,10 +656,10 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   }
 
   private void handleOperations(OpenbisSession session, IOperation operation) {
-    SynchronousOperationExecutionOptions executionOptions = new SynchronousOperationExecutionOptions();
     List<IOperation> operationOptions = Collections.singletonList(operation);
+    AsynchronousOperationExecutionOptions options = new AsynchronousOperationExecutionOptions();
     try {
-      applicationServer.executeOperations(session.getToken(), operationOptions, executionOptions);
+      applicationServer.executeOperations(session.getToken(), operationOptions, options);
     } catch (Exception e) {
       log.error("Unexpected exception during openBIS operation.", e);
       throw new ApplicationException("Unexpected exception during openBIS operation.", e);
