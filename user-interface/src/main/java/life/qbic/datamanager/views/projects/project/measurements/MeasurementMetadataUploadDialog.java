@@ -32,12 +32,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Collectors;
-import life.qbic.datamanager.parser.MeasurementMetadataConverter.MissingSampleIdException;
-import life.qbic.datamanager.parser.MeasurementMetadataConverter.UnknownMetadataTypeException;
-import life.qbic.datamanager.parser.MetadataConverter;
-import life.qbic.datamanager.parser.ParsingResult;
-import life.qbic.datamanager.parser.tsv.TSVParser;
-import life.qbic.datamanager.parser.xlsx.XLSXParser;
+import life.qbic.datamanager.files.parsing.MeasurementMetadataConverter.MissingSampleIdException;
+import life.qbic.datamanager.files.parsing.MeasurementMetadataConverter.UnknownMetadataTypeException;
+import life.qbic.datamanager.files.parsing.MetadataConverter;
+import life.qbic.datamanager.files.parsing.ParsingResult;
+import life.qbic.datamanager.files.parsing.tsv.TSVParser;
+import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
@@ -337,7 +337,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
       return;
     }
     uploadItemsDisplay.setVisible(false);
-    uploadProgressDisplay.setVisible(true);
     fireEvent(new ConfirmEvent(this, clickEvent.isFromClient(), measurementMetadataUploads));
   }
 

@@ -17,25 +17,26 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.templates.TemplateService;
+import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
+import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.DisclaimerConfirmedEvent;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
-import life.qbic.datamanager.views.projects.project.samples.download.SampleInformationXLSXProvider;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.EditSampleBatchDialog;
 import life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog;
 import life.qbic.logging.api.Logger;
@@ -43,11 +44,9 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
-import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.application.sample.SampleRegistrationService;
 import life.qbic.projectmanagement.application.sample.SampleRegistrationServiceV2;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
@@ -56,6 +55,7 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -83,33 +83,32 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
 
-  private final DownloadProvider metadataDownload;
-  private final SampleInformationXLSXProvider sampleInformationXLSXProvider;
+  private final DownloadComponent downloadComponent;
 
   private final Div content = new Div();
   private final TextField searchField = new TextField();
   private final Disclaimer noGroupsDefinedDisclaimer;
   private final Disclaimer noSamplesRegisteredDisclaimer;
-  private final ProjectInformationService projectInformationService;
-  private final CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final SampleValidationService sampleValidationService;
-  private final TemplateService templateService;
-  private final SampleRegistrationServiceV2 sampleRegistrationServiceV2;
+  private final transient ProjectInformationService projectInformationService;
+  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient MessageSourceNotificationFactory notificationFactory;
+  private final transient SampleValidationService sampleValidationService;
+  private final transient TemplateService templateService;
+  private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
-      @Autowired BatchRegistrationService batchRegistrationService,
       @Autowired DeletionService deletionService,
-      @Autowired SampleRegistrationService sampleRegistrationService,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent,
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      MessageSourceNotificationFactory notificationFactory,
       SampleValidationService sampleValidationService,
       TemplateService templateService, SampleRegistrationServiceV2 sampleRegistrationServiceV2) {
+    this.downloadComponent = new DownloadComponent();
+
     this.experimentInformationService = requireNonNull(experimentInformationService,
         "ExperimentInformationService cannot be null");
     this.sampleInformationService = requireNonNull(sampleInformationService,
@@ -123,9 +122,11 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     this.projectInformationService = projectInformationService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
-    this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
+    this.notificationFactory = requireNonNull(notificationFactory,
         "messageSourceNotificationFactory must not be null");
     this.sampleValidationService = sampleValidationService;
+    this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
+
     this.templateService = templateService;
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
@@ -133,13 +134,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     noSamplesRegisteredDisclaimer = createNoSamplesRegisteredDisclaimer();
     noSamplesRegisteredDisclaimer.setVisible(false);
 
-    sampleInformationXLSXProvider = new SampleInformationXLSXProvider();
-    metadataDownload = new DownloadProvider(sampleInformationXLSXProvider);
-
     add(noGroupsDefinedDisclaimer, noSamplesRegisteredDisclaimer);
     initContent();
     add(sampleDetailsComponent, batchDetailsComponent);
-    add(metadataDownload);
 
     batchDetailsComponent.addBatchCreationListener(ignored -> onRegisterBatchClicked());
     batchDetailsComponent.addBatchDeletionListener(this::onDeleteBatchClicked);
@@ -153,7 +150,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(batchDetailsComponent),
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
-    this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
+    add(downloadComponent);
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -188,27 +185,27 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void downloadSampleMetadata() {
-    List<SamplePreview> samplePreviews = sampleInformationService.retrieveSamplePreviewsForExperiment(
-        context.experimentId()
-            .orElseThrow());
+    var projectId = context.projectId().orElseThrow();
+    var experimentId = context.experimentId().orElseThrow();
+    var projectCode = projectInformationService.findOverview(projectId)
+        .map(ProjectOverview::projectCode).orElseThrow();
+    var experimentName = experimentInformationService.find(projectId.value(), experimentId)
+        .map(Experiment::getName).orElseThrow();
+    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
+            experimentName,
+            "sample information",
+            "xlsx");
+      }
 
-    Comparator<String> natOrder = Comparator.naturalOrder();
-
-    var result = samplePreviews.stream()
-        // sort by measurement codes first, then by sample codes
-        .sorted(Comparator.comparing(SamplePreview::sampleCode, natOrder)
-            .thenComparing(SamplePreview::sampleName, natOrder)).toList();
-    sampleInformationXLSXProvider.setSamples(result,
-        projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
-            .getProjectCode().value());
-    metadataDownload.trigger();
-  }
-
-  private static class HandledException extends RuntimeException {
-
-    public HandledException(Throwable cause) {
-      super(cause);
-    }
+      @Override
+      public Workbook getWorkbook() {
+        return templateService.sampleBatchInformationXLSXTemplate(projectId.value(),
+            experimentId.value());
+      }
+    });
   }
 
   private void onRegisterBatchClicked() {
@@ -226,27 +223,36 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
         sampleValidationService, templateService, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
+    UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {
-      event.getSource().taskInProgress("Register the sample batch metadata",
-          "It may take some time for the registration task to complete.");
-      UI ui = event.getSource().getUI().orElseThrow();
+      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
+      event.getSource().close();
+      var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Sample registration for batch %s".formatted(event.batchName())},
+          getLocale());
+      ui.access(pendingToast::open);
+
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
-              event.validatedSampleMetadata(),
-              projectId, event.batchName(), false, experimentId)
+              sampleMetadata,
+              projectId, event.batchName(), false, new ExperimentReference(experimentId.value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         registrationTask
             .exceptionally(e -> {
               ui.access(() -> {
                 //this needs to come before all the success events
-                event.getSource().taskFailed("", ""); //todo label and description s
-                displayRegistrationFailure();
+                pendingToast.close();
+                notificationFactory.toast("task.failed",
+                    new Object[]{"Registration of batch '%s'".formatted(event.batchName())},
+                    getLocale()).open();
               });
               throw new HandledException(e);
             })
             .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
-            .thenRun(() -> ui.access(() -> event.getSource().taskSucceeded("", "")))
-            .thenRun(() -> displayRegistrationSuccess(event.batchName()))
+            .thenRun(() -> ui.access(() -> {
+              pendingToast.close();
+              displayRegistrationSuccess(event.batchName());
+            }))
             .exceptionally(e -> {
               //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
               throw new HandledException(e); //we need the future to complete exceptionally
@@ -268,7 +274,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
             "sample-batch.register", getLocale())
         .open();
   }
-
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
     Disclaimer noSamplesDefinedCard = Disclaimer.createWithTitle(
@@ -308,18 +313,18 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void displayUpdateSuccess(String batchName) {
-    messageSourceNotificationFactory.toast("sample-batch.", new String[]{batchName}, getLocale())
+    notificationFactory.toast("sample-batch.updated.success", new String[]{batchName}, getLocale())
         .open();
   }
 
   private void displayDeletionSuccess(String batchLabel) {
-    messageSourceNotificationFactory.toast("sample-batch.deleted.success", new String[]{batchLabel},
+    notificationFactory.toast("sample-batch.deleted.success", new String[]{batchLabel},
             getLocale())
         .open();
   }
 
   private void displayRegistrationSuccess(String batchLabel) {
-    messageSourceNotificationFactory.toast("sample-batch.registered.success",
+    notificationFactory.toast("sample-batch.registered.success",
             new String[]{batchLabel},
             getLocale())
         .open();
@@ -327,16 +332,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void displayUpdateFailure() {
-    messageSourceNotificationFactory.dialog("sample-batch.update.failure",
+    notificationFactory.dialog("sample-batch.update.failure",
             MessageSourceNotificationFactory.EMPTY_PARAMETERS,
             getLocale())
-        .open();
-  }
-
-  private void displayRegistrationFailure() {
-    messageSourceNotificationFactory.dialog(
-            "sample-batch.register.failure",
-            MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale())
         .open();
   }
 
@@ -357,31 +355,40 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var editSampleBatchDialog = new EditSampleBatchDialog(
         sampleValidationService, templateService, batchId, batchLabel, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
+    UI ui = UI.getCurrent();
     editSampleBatchDialog.addConfirmListener(event -> {
-      event.getSource().taskInProgress("Edit the sample batch metadata",
-          "It may take some time for the editing to complete.");
-      UI ui = event.getSource().getUI().orElseThrow();
+      var sampleMetadata = new ArrayList<>(event.validatedSampleMetadata());
+      event.getSource().close();
+      var pendingToast = notificationFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Update for batch %s".formatted(event.batchName())},
+          getLocale());
+      ui.access(pendingToast::open);
+
       CompletableFuture<Void> editTask = sampleRegistrationServiceV2.updateSamples(
-              event.validatedSampleMetadata(),
+              sampleMetadata,
               projectId,
               batchId,
               event.batchName(),
-              false)
+              false,
+              new ExperimentReference(context.experimentId().orElseThrow().value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         editTask
             .exceptionally(e -> {
               ui.access(() -> {
                 //this needs to come before all the success events
-                event.getSource().taskFailed("", ""); //todo label and description s
-                displayUpdateFailure();
+                pendingToast.close();
+                notificationFactory.toast("task.failed",
+                        new String[]{"Update of batch '%s'".formatted(event.batchName())}, getLocale())
+                    .open();
               });
               throw new HandledException(e);
             })
             .thenRun(() -> ui.access(this::setBatchAndSampleInformation))
-            .thenRun(() -> ui.access(
-                () -> event.getSource().taskSucceeded("", ""))) //todo label and description
-            .thenRun(() -> displayUpdateSuccess(event.batchName()))
+            .thenRun(() -> ui.access(() -> {
+              pendingToast.close();
+              displayUpdateSuccess(event.batchName());
+            }))
             .exceptionally(e -> {
               //we need to make sure we do not swallow exceptions but still stay in the exceptional state.
               throw new HandledException(e); //we need the future to complete exceptionally
@@ -506,5 +513,12 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private void reloadSampleInformation() {
     sampleDetailsComponent.setContext(context);
+  }
+
+  private static class HandledException extends RuntimeException {
+
+    public HandledException(Throwable cause) {
+      super(cause);
+    }
   }
 }

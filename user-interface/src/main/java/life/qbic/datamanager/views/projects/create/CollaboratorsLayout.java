@@ -7,7 +7,6 @@ import com.vaadin.flow.data.binder.ValidationException;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
@@ -87,17 +86,6 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     return HasBinderValidation.super.isInvalid();
   }
 
-  public void setProjectManagers(List<Contact> projectManagers) {
-    projectManagerField.setItems(projectManagers);
-  }
-
-  public void setResponsiblePersons(List<Contact> contactPersons) {
-    responsiblePersonField.setItems(contactPersons);
-  }
-  public void setPrincipalInvestigators(List<Contact> principalInvestigators) {
-    principalInvestigatorField.setItems(principalInvestigators);
-  }
-
   @Override
   public Binder<ProjectCollaborators> getBinder() {
     return collaboratorsBinder;
@@ -117,18 +105,6 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
       throw new ApplicationException("Tried to access invalid project collaborator information.", e);
     }
     return projectCollaborators;
-  }
-
-  public void setKnownContacts(List<Contact> knownContacts) {
-    principalInvestigatorField.setItems(knownContacts);
-    responsiblePersonField.setItems(knownContacts);
-    projectManagerField.setItems(knownContacts);
-  }
-
-  public void hideContactBox() {
-    principalInvestigatorField.hideContactBox();
-    responsiblePersonField.hideContactBox();
-    projectManagerField.hideContactBox();
   }
 
   public static final class ProjectCollaborators implements Serializable {
