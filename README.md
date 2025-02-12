@@ -245,7 +245,18 @@ Start the setup with a dummy entry for creation of a keystore file in PKSC12 for
 
 This secures the keystore with the `mysecretpassword` password. Change it to something only you have
 access and with
+Please choose a strong password. The application will fail for passwords with entropy below 100. The entropy of your password is calculated as follows
 
+$$
+H = -\sum_{i=1}^{n} P(x_i) \log_2 P(x_i) \times n > 100.,
+$$
+
+$$
+\begin{aligned}
+\text{where } & \text{ P(x_i) is the probability of character } x_i, \\
+& n \text{ is the total length of the password}.
+\end{aligned}
+$$
 $$
 H = -\sum_{i=1}^{n} P(x_i) \log_2 P(x_i) \times n > 100.,
 $$
