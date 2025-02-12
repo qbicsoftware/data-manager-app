@@ -671,10 +671,11 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
         throw new ApplicationException("Unexpected exception during openBIS operation.");
       }
       try {
-        Thread.sleep((long) (100*Math.pow(2, round)));
+        Thread.sleep((long) (500*Math.pow(2, round)));
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
+      log.debug("Retrying operation in openBIS: " + round + " of " + RETRY_COUNT_MAX);
       round++;
     }
   }
