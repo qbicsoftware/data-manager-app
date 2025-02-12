@@ -662,6 +662,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     SynchronousOperationExecutionOptions options = new SynchronousOperationExecutionOptions();
     var round = 1;
     while (round <= RETRY_COUNT_MAX) {
+      log.debug("Try operation in openBIS: " + round + " of " + RETRY_COUNT_MAX);
       try {
         applicationServer.executeOperations(session.getToken(), operationOptions, options);
         log.debug("Operations executed successfully");
@@ -677,7 +678,6 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
-      log.debug("Retrying operation in openBIS: " + round + " of " + RETRY_COUNT_MAX);
       round++;
     }
   }
