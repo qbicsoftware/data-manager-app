@@ -17,7 +17,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.delete.ExperimentDele
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.fetchoptions.ExperimentFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.id.ExperimentIdentifier;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.search.ExperimentSearchCriteria;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.AsynchronousOperationExecutionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.operation.SynchronousOperationExecutionOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.CreateProjectsOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.create.ProjectCreation;
@@ -51,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,10 +97,11 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   private static final String DEFAULT_DELETION_REASON = "Commanded by data manager app";
   private static final String NGS_MEASUREMENT_TYPE_CODE = "Q_NGS_MEASUREMENT";
   private static final String PROTEOMICS_MEASUREMENT_TYPE_CODE = "Q_PROTEOMICS_MEASUREMENT";
+  public static final Random RANDOM = new Random();
   private final IApplicationServerApi applicationServer;
   private final IDataStoreServerApi datastoreServer;
   private final OpenbisSession openBisSession;
-  private static final int RETRY_COUNT_MAX = 3;
+  private static final int RETRY_COUNT_MAX = 10;
 
   // used by spring to wire it up
   private OpenbisConnector(
@@ -672,7 +673,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
         throw new ApplicationException("Unexpected exception during openBIS operation.");
       }
       try {
-        Thread.sleep((long) (500*Math.pow(2, round)));
+        Thread.sleep((long) ((RANDOM.nextInt(200) + 500) * Math.pow(2, round)));
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
