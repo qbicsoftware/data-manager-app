@@ -658,7 +658,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
 
   private void handleOperations(OpenbisSession session, IOperation operation) {
     List<IOperation> operationOptions = Collections.singletonList(operation);
-    AsynchronousOperationExecutionOptions options = new AsynchronousOperationExecutionOptions();
+    SynchronousOperationExecutionOptions options = new SynchronousOperationExecutionOptions();
     var round = 1;
     while (round <= RETRY_COUNT_MAX) {
       try {
