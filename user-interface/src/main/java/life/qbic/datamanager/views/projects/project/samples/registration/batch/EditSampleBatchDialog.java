@@ -25,12 +25,13 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.parser.MetadataParser.ParsingException;
-import life.qbic.datamanager.parser.ParsingResult;
-import life.qbic.datamanager.parser.sample.SampleInformationExtractor;
-import life.qbic.datamanager.parser.sample.SampleInformationExtractor.SampleInformationForExistingSample;
-import life.qbic.datamanager.parser.xlsx.XLSXParser;
-import life.qbic.datamanager.templates.TemplateService;
+import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.datamanager.files.export.sample.TemplateService;
+import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
+import life.qbic.datamanager.files.parsing.ParsingResult;
+import life.qbic.datamanager.files.parsing.SampleInformationExtractor;
+import life.qbic.datamanager.files.parsing.SampleInformationExtractor.SampleInformationForExistingSample;
+import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
@@ -43,7 +44,7 @@ import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
 
 /**
  * A dialog used for editing sample and batch information.
@@ -246,12 +247,15 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(buttonClickEvent -> {
-      try (XSSFWorkbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
+      try (Workbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
           batchId,
           projectId,
           experimentId)) {
+        var filename = FileNameFormatter.formatWithVersion(
+            projectCode + "_sample metadata edit template", 1,
+            "xlsx");
         var downloadProvider = new DownloadProvider(
-            new XLSXDownloadContentProvider(projectCode + "_edit_batch_template.xlsx", workbook));
+            new XLSXDownloadContentProvider(filename, workbook));
         add(downloadProvider);
         downloadProvider.trigger();
       } catch (IOException e) {

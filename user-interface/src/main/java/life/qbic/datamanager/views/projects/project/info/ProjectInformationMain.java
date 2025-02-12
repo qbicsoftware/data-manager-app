@@ -16,11 +16,11 @@ import java.io.Serial;
 import java.util.List;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.download.OfferDownload;
-import life.qbic.datamanager.views.general.download.QualityControlDownload;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
@@ -56,6 +56,7 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.project.purchase.Offer;
 import life.qbic.projectmanagement.domain.model.sample.qualitycontrol.QualityControlUpload;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -86,8 +87,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   private final transient UserPermissions userPermissions;
   private final ProjectSummaryComponent projectSummaryComponent;
   private final ExperimentListComponent experimentListComponent;
-  private final OfferDownload offerDownload;
-  private final QualityControlDownload qualityControlDownload;
+  private final DownloadComponent downloadComponent;
   private final OfferListComponent offerListComponent;
   private final QualityControlListComponent qualityControlListComponent;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
@@ -125,22 +125,15 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
 
+    downloadComponent = new DownloadComponent();
     offerListComponent = getConfiguredOfferList();
     qualityControlListComponent = getConfiguredQualityControlList();
-    offerDownload = new OfferDownload(
-        (projectId, offerId) -> projectPurchaseService.getOfferWithContent(projectId, offerId)
-            .orElseThrow());
-
-    qualityControlDownload = new QualityControlDownload(
-        (projectId, qualityControlId) -> qualityControlService.getQualityControlWithContent(
-                projectId, qualityControlId)
-            .orElseThrow());
 
     this.experimentListComponent.addExperimentSelectionListener(this::onExperimentSelectionEvent);
     this.experimentListComponent.addAddButtonListener(this::onAddExperimentClicked);
     addClassName("project");
-    add(this.projectSummaryComponent, offerListComponent, offerDownload, experimentListComponent,
-        qualityControlListComponent, qualityControlDownload);
+    add(this.projectSummaryComponent, offerListComponent, experimentListComponent,
+        qualityControlListComponent, downloadComponent);
     this.terminologyService = terminologyService;
   }
 
@@ -187,8 +180,21 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
   }
 
   private void onDownloadOfferClicked(DownloadOfferClickEvent downloadOfferClickEvent) {
-    offerDownload.trigger(context.projectId().orElseThrow().value(),
-        downloadOfferClickEvent.offerId());
+    String projectId = context.projectId().orElseThrow().value();
+    Offer offer = projectPurchaseService.getOfferWithContent(projectId,
+        downloadOfferClickEvent.offerId()).orElseThrow();
+
+    downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
+      @Override
+      public byte[] getBytes() {
+        return offer.fileContent();
+      }
+
+      @Override
+      public String getFilename() {
+        return offer.getFileName();
+      }
+    });
   }
 
   private void onDeleteOfferClicked(DeleteOfferClickEvent deleteOfferClickEvent) {
@@ -198,7 +204,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
       projectPurchaseService.deleteOffer(context.projectId().orElseThrow().value(),
           deleteOfferClickEvent.offerId());
       deleteOfferClickEvent.getSource().remove(deleteOfferClickEvent.offerId());
-      offerDownload.removeHref();
+      downloadComponent.removeHref();
       purchaseItemDeletionConfirmationNotification.close();
     });
     purchaseItemDeletionConfirmationNotification.addCancelListener(
@@ -232,8 +238,22 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
 
   private void onDownloadQualityControlClicked(
       DownloadQualityControlEvent downloadQualityControlEvent) {
-    qualityControlDownload.trigger(context.projectId().orElseThrow().value(),
-        downloadQualityControlEvent.qualityControlId());
+    String projectId = context.projectId().orElseThrow().value();
+
+    QualityControlUpload qualityControlUpload = qualityControlService.getQualityControlWithContent(
+        projectId, downloadQualityControlEvent.qualityControlId()).orElseThrow();
+
+    downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return qualityControlUpload.getFileName();
+      }
+
+      @Override
+      public byte[] getBytes() {
+        return qualityControlUpload.fileContent();
+      }
+    });
   }
 
   private void onDeleteQualityControlClicked(DeleteQualityControlEvent deleteQualityControlEvent) {
@@ -242,7 +262,7 @@ public class ProjectInformationMain extends Main implements BeforeEnterObserver 
     qcItemDeletionConfirmationNotification.addConfirmListener(event -> {
       qualityControlService.deleteQualityControl(context.projectId().orElseThrow().value(),
           deleteQualityControlEvent.qualityControlId());
-      qualityControlDownload.removeHref();
+      downloadComponent.removeHref();
       refreshQualityControls();
       qcItemDeletionConfirmationNotification.close();
     });
