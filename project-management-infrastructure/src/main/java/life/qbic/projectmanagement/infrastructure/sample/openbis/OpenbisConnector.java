@@ -663,6 +663,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     while (round <= RETRY_COUNT_MAX) {
       try {
         applicationServer.executeOperations(session.getToken(), operationOptions, options);
+        log.debug("Operations executed successfully");
         break;
       } catch (Exception e) {
         log.error("Unexpected exception during openBIS operation.", e);
