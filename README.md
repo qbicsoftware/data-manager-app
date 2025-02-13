@@ -45,7 +45,8 @@ that enables FAIR-compliant data access.
 
 ## Style Guide
 
-Please find the [styleguide](https://github.com/qbicsoftware/data-manager-app-design-system) in its own repository.
+Please find the [styleguide](https://github.com/qbicsoftware/data-manager-app-design-system) in its
+own repository.
 
 ## How to Run
 
@@ -124,7 +125,8 @@ spring.mail.host=${MAIL_HOST:smtp.gmail.com}
 spring.mail.port=${MAIL_PORT:587}
 ```
 
-For user email confirmation a specific endpoint and context-path (for example if the app runs in a different context than the root path) is addressed. This endpoint can be configured using
+For user email confirmation a specific endpoint and context-path (for example if the app runs in a
+different context than the root path) is addressed. This endpoint can be configured using
 the following properties:
 
 | environment variable           | description                                                       |
@@ -217,6 +219,93 @@ openbis.user.name=${OPENBIS_USER_NAME:openbis-username}
 openbis.user.password=${OPENBIS_USER_PASSWORD:openbis-password}
 openbis.datasource.url=${OPENBIS_DATASOURCE_URL:openbis-url}
 
+```
+
+### Secret handling
+
+Data Manager uses a custom vault concept for storing application secrets, that builds upon
+a [Java Keystore](https://docs.oracle.com/javase/17/docs/api/java/security/KeyStore.html) in its
+core.
+
+We currently stick to a PKCS12 store type and encrypt every secret with AES.
+
+Therefore, in order to be able to run the application, a keystore must be set-up beforehand.
+
+#### Setup keystore
+
+Before the Java keystore can be referenced in Data Manager's configuration, it has to be created in the first place.
+
+You will need [keytool](https://docs.oracle.com/en/java/javase/11/tools/keytool.html) for this step.
+
+Start the setup with a dummy entry for creation of a keystore file in PKSC12 format:
+
+```bash
+ keytool -genkeypair -alias dummy -keyalg RSA -keysize 2048 -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword -dname "CN=Dummy, OU=Test, O=Company, L=City, ST=State, C=US"
+```
+
+This secures the keystore with the `mysecretpassword` password. Change it to something only you have
+access and with
+Please choose a strong password. The application will fail for passwords with entropy below 100. The entropy of your password is calculated as follows
+
+$$
+H = -\sum_{i=1}^{n} P(x_i) \log_2 P(x_i) \times n > 100.,
+$$
+
+$$
+\begin{aligned}
+\text{where } & \text{ P(x_i) is the probability of character } x_i, \\
+& n \text{ is the total length of the password}.
+\end{aligned}
+$$
+$$
+H = -\sum_{i=1}^{n} P(x_i) \log_2 P(x_i) \times n > 100.,
+$$
+
+$$
+\begin{aligned}
+\text{where } & \text{ P(x_i) is the probability of character } x_i, \\
+& n \text{ is the total length of the password}.
+\end{aligned}
+$$
+
+The application will fail starting, if the total entropy is below 100.
+
+Now remove the dummy entry, to have a true empty keystore:
+
+```bash
+ keytool -delete -alias dummy -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword
+```
+
+Verify:
+
+```bash
+keytool -list -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword
+```
+which should show something like:
+```text
+Keystore type: PKCS12
+Keystore provider: SUN
+
+Your keystore contains 0 entries
+```
+
+#### Configure vault in Data Manager
+
+You need these three properties configured properly to operate the vault within the app. The secret
+for the vault is available in a local environment variable `DATAMANAGER_VAULT_KEY` and get more
+hardened with future releases.
+
+For the secret entries themselves, define a strong secret in the `DATAMANAGER_VAULT_ENTRY_PASSWORD`
+environment variable. The same
+strength requirements apply here as well.
+
+```properties
+# Sets the environment variable that contains the vault key
+qbic.security.vault.key.env=DATAMANAGER_VAULT_KEY
+# Since it will be a PKCS12 file, let the file end with *.p12
+qbic.security.vault.path=${DATAMANAGER_VAULT_PATH:keystore.p12}
+# The password used for encrypting entries in the vault. Must be longer than 20 characters.
+qbic.security.vault.entry.password.env=DATAMANAGER_VAULT_ENTRY_PASSWORD
 ```
 
 ### Local testing
@@ -346,4 +435,5 @@ This work is licensed under the [MIT license](https://mit-license.org/).
 This work uses the [Vaadin Framework](https://github.com/vaadin), which is licensed
 under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
-The University of Tübingen logo is a registered trademark and the copyright is owned by the [University of Tübingen](https://uni-tuebingen.de/).
+The University of Tübingen logo is a registered trademark and the copyright is owned by
+the [University of Tübingen](https://uni-tuebingen.de/).

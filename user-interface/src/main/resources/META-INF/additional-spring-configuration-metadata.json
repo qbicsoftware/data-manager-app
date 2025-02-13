@@ -164,6 +164,21 @@
       "name": "server.servlet.session.cookie.domain",
       "type": "java.lang.String",
       "description": "Domain for the session cookie."
+    },
+    {
+      "name": "qbic.security.vault.key.env",
+      "type": "java.lang.String",
+      "description": "Sets the environment variable that contains the vault key."
+    },
+    {
+      "name": "qbic.security.vault.path",
+      "type": "java.lang.String",
+      "description": "Since it will be a PKCS12 file, let the file end with *.p12."
+    },
+    {
+      "name": "qbic.security.vault.entry.password.env",
+      "type": "java.lang.String",
+      "description": "The password used for encrypting entries in the vault. Must be longer than 20 characters."
     }
   ]
 }
