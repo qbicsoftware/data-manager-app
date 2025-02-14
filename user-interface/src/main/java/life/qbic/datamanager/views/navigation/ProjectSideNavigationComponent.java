@@ -344,10 +344,21 @@ private static void routeToProject(ProjectId projectId) {
 
   private void onExperimentAddEvent(ExperimentAddEvent event) {
     ProjectId projectId = context.projectId().orElseThrow();
-    ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
-    event.getSource().close();
-    displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
-    routeToExperiment(createdExperiment);
+    try {
+      ExperimentId createdExperiment = createExperiment(projectId, event.getExperimentDraft());
+
+      displayExperimentCreationSuccess(event.getExperimentDraft().getExperimentName());
+      routeToExperiment(createdExperiment);
+    } catch (ApplicationException e) {
+      log.error(e.getMessage());
+      displayFailure(event.getExperimentDraft().getExperimentName());
+    } finally {
+      event.getSource().close();
+    }
+  }
+
+  private void displayFailure(String experimentName) {
+    messageSourceNotificationFactory.toast("");
   }
 
   private void routeToExperiment(ExperimentId experimentId) {
