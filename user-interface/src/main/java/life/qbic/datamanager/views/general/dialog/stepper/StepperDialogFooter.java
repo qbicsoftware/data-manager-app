@@ -93,7 +93,6 @@ public class StepperDialogFooter implements NavigationListener {
   private static class FirstFooter extends Div {
 
 
-
     FirstFooter(StepperDialog dialog) {
       addClassNames(FLEX_HORIZONTAL, GAP_04, "footer");
       var buttonFactory = new ButtonFactory();

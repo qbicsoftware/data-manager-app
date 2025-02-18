@@ -47,10 +47,10 @@ public class ProjectOverview {
   private String projectResponsibleName;
 
   @Column(name = "amountNgsMeasurements")
-  private String ngsMeasurementCount;
+  private long ngsMeasurementCount;
 
   @Column(name = "amountPxpMeasurements")
-  private String pxpMeasurementCount;
+  private long pxpMeasurementCount;
 
 
   @Convert(converter = CollaboratorUserInfosConverter.class)
@@ -89,11 +89,11 @@ public class ProjectOverview {
     return projectResponsibleName;
   }
 
-  public String ngsMeasurementCount() {
+  public long ngsMeasurementCount() {
     return ngsMeasurementCount;
   }
 
-  public String pxpMeasurementCount() {
+  public long pxpMeasurementCount() {
     return pxpMeasurementCount;
   }
 

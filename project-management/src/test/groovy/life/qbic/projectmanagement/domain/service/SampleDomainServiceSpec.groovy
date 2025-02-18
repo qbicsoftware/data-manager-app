@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.service
 
-import life.qbic.application.commons.Result
+
 import life.qbic.domain.concepts.DomainEvent
 import life.qbic.domain.concepts.DomainEventDispatcher
 import life.qbic.domain.concepts.DomainEventSubscriber
@@ -33,8 +33,8 @@ class SampleDomainServiceSpec extends Specification {
 
         and:
         SampleRepository testRepo = Mock(SampleRepository)
-        testRepo.addAll(_ as Project, _ as Collection<Sample>) >> Result.fromValue(Arrays.asList(testSample))
-        SampleDomainService sampleDomainService = new SampleDomainService(testRepo)
+        testRepo.addAll(_ as Project, _ as Collection<Sample>) >> List.of(testSample)
+        SampleDomainService sampleDomainService = new SampleDomainService(testRepo, null)
 
         and:
         DomainEventSubscriber<SampleRegistered> sampleRegistered = new DomainEventSubscriber<SampleRegistered>() {
@@ -57,8 +57,8 @@ class SampleDomainServiceSpec extends Specification {
         DomainEventDispatcher.instance().subscribe(sampleRegistered)
 
         when:
-        sampleDomainService.registerSamples(project, sampleCodesToRegistrationRequests)
-
+        var a = sampleDomainService.registerSamples(project, sampleCodesToRegistrationRequests)
+        println(a)
         then:
 
         sampleRegistered.batchIdOfEvent.equals(sampleRegistrationRequest.assignedBatch())

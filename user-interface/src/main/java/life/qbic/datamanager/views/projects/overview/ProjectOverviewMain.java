@@ -10,28 +10,26 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
-import jakarta.validation.constraints.NotEmpty;
 import java.io.Serial;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.Locale;
 import java.util.Set;
-import java.util.StringJoiner;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
-import life.qbic.datamanager.views.notifications.StyledNotification;
-import life.qbic.datamanager.views.notifications.SuccessMessage;
-import life.qbic.datamanager.views.projects.ProjectInformation;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ConfirmEvent;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectCreationInformation;
+import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
+import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
+import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.identity.api.UserInformationService;
@@ -69,6 +67,7 @@ public class ProjectOverviewMain extends Main {
   private final transient AddExperimentToProjectService addExperimentToProjectService;
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
+  private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
@@ -78,7 +77,8 @@ public class ProjectOverviewMain extends Main {
       UserInformationService userInformationService,
       AuthenticationToUserIdTranslationService userIdTranslator,
       TerminologyService terminologyService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectCollectionComponent = requireNonNull(projectCollectionComponent,
         "project collection component can not be null");
     this.projectCreationService = requireNonNull(projectCreationService,
@@ -117,6 +117,22 @@ public class ProjectOverviewMain extends Main {
         this.getClass().getSimpleName(), System.identityHashCode(this),
         projectCollectionComponent.getClass().getSimpleName(),
         System.identityHashCode(projectCollectionComponent)));
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+  }
+
+  private static Toast notificationFor(NotificationType type, ConfirmEvent confirmEvent,
+      MessageSourceNotificationFactory factory, Locale locale) {
+    return switch (type) {
+      case PROJECT_CREATED_SUCCESSFULLY -> factory.toast("project.created.success",
+          new Object[]{confirmEvent.projectCreationInformation().projectDesign().getProjectTitle()},
+          locale);
+      case PROJECT_CREATION_FAILED ->
+          factory.toast("project.created.error", new Object[]{}, locale);
+      case EXPERIMENT_CREATED_SUCCESSFULLY -> factory.toast("experiment.created.success",
+          new Object[]{confirmEvent.experimentalInformation().getExperimentName()}, locale);
+      case EXPERIMENT_CREATION_FAILED ->
+          factory.toast("experiment.created.error", new Object[]{}, locale);
+    };
   }
 
   private void addTitleAndDescription() {
@@ -149,14 +165,16 @@ public class ProjectOverviewMain extends Main {
   }
 
   private void createProject(ConfirmEvent confirmEvent) {
-    Funding fundingEntry = null;
-    if (confirmEvent.projectCreationInformation().getFundingEntry().isPresent())
-    {
-      var funding = confirmEvent.projectCreationInformation().getFundingEntry().get();
-      fundingEntry = Funding.of(funding.getLabel(), funding.getReferenceId());
+    Funding funding = null;
+    ProjectCreationInformation projectCreationInformation = confirmEvent.projectCreationInformation();
+    if (projectCreationInformation.getFundingEntry() != null
+        && !projectCreationInformation.getFundingEntry()
+        .isEmpty()) {
+      funding = Funding.of(projectCreationInformation.getFundingEntry().get().getLabel(),
+          projectCreationInformation.getFundingEntry().get().getReferenceId());
     }
-    var projectDesign = confirmEvent.projectCreationInformation().projectDesign();
-    var projectCollaborators = confirmEvent.projectCreationInformation().projectCollaborators();
+    ProjectDesign projectDesign = projectCreationInformation.projectDesign();
+    ProjectCollaborators projectCollaborators = projectCreationInformation.projectCollaborators();
     Result<Project, ApplicationException> project = projectCreationService.createProject(
         projectDesign.getOfferId(),
         projectDesign.getProjectCode(),
@@ -165,13 +183,10 @@ public class ProjectOverviewMain extends Main {
         projectCollaborators.getPrincipalInvestigator().toDomainContact(),
         projectCollaborators.getResponsiblePerson()
             .map(Contact::toDomainContact).orElse(null),
-        projectCollaborators.getProjectManager().toDomainContact(), fundingEntry);
-    project
-        .onValue(result -> onProjectCreated(confirmEvent))
-        .onError(e -> {
-          throw e;
-        });
-    var experimentalInformation = confirmEvent.experimentalInformation();
+        projectCollaborators.getProjectManager().toDomainContact(),
+        funding);
+    handleResultProject(project, confirmEvent);
+    ExperimentalInformation experimentalInformation = confirmEvent.experimentalInformation();
     var experiment = addExperimentToProjectService.addExperimentToProject(
         project.getValue().getId(),
         experimentalInformation.getExperimentName(),
@@ -180,23 +195,43 @@ public class ProjectOverviewMain extends Main {
         experimentalInformation.getAnalytes(),
         experimentalInformation.getSpeciesIcon().getLabel(),
         experimentalInformation.getSpecimenIcon().getLabel());
-    experiment.onError(e -> {
-      throw e;
-    });
-  }
-
-  private void onProjectCreated(ConfirmEvent confirmEvent) {
-    displaySuccessfulProjectCreationNotification();
-    confirmEvent.getSource().close();
-
+    handleResultExperiment(experiment, confirmEvent);
     projectCollectionComponent.refresh();
     projectCollectionComponent.resetSearch();
   }
 
-  private void displaySuccessfulProjectCreationNotification() {
-    var successMessage = new SuccessMessage("Project creation succeeded.", "");
-    var notification = new StyledNotification(successMessage);
-    notification.open();
+  private void handleResultProject(Result<?, ?> result, ConfirmEvent event) {
+    if (result.isError()) {
+      processNotification(notificationFor(NotificationType.PROJECT_CREATION_FAILED, event,
+          messageSourceNotificationFactory, getLocale()));
+      return;
+    }
+    processNotification(notificationFor(NotificationType.PROJECT_CREATED_SUCCESSFULLY, event,
+        messageSourceNotificationFactory, getLocale()));
+    closeDialog(event);
   }
 
+  private void handleResultExperiment(Result<?, ?> result, ConfirmEvent event) {
+    if (result.isError()) {
+      processNotification(notificationFor(NotificationType.EXPERIMENT_CREATION_FAILED, event,
+          messageSourceNotificationFactory, getLocale()));
+      return;
+    }
+    closeDialog(event);
+  }
+
+  private void processNotification(Toast t) {
+    t.open();
+  }
+
+  private void closeDialog(ConfirmEvent event) {
+    event.getSource().close();
+  }
+
+  enum NotificationType {
+    PROJECT_CREATED_SUCCESSFULLY,
+    PROJECT_CREATION_FAILED,
+    EXPERIMENT_CREATED_SUCCESSFULLY,
+    EXPERIMENT_CREATION_FAILED,
+  }
 }

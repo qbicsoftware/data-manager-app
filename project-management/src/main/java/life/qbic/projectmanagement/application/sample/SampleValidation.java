@@ -2,13 +2,21 @@ package life.qbic.projectmanagement.application.sample;
 
 import static java.util.Objects.isNull;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -39,15 +47,18 @@ public class SampleValidation {
   private final TerminologyService terminologyService;
 
   private final SpeciesLookupService speciesLookupService;
+  private final ConfoundingVariableService confoundingVariableService;
 
   @Autowired
   public SampleValidation(SampleInformationService sampleInformationService,
       ExperimentInformationService experimentInformationService,
-      TerminologyService terminologyService, SpeciesLookupService speciesLookupService) {
+      TerminologyService terminologyService, SpeciesLookupService speciesLookupService,
+      ConfoundingVariableService confoundingVariableService) {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.terminologyService = Objects.requireNonNull(terminologyService);
     this.speciesLookupService = Objects.requireNonNull(speciesLookupService);
+    this.confoundingVariableService = confoundingVariableService;
   }
 
   /**
@@ -96,6 +107,7 @@ public class SampleValidation {
       String analyte,
       String analysisMethod,
       String comment,
+      Map<String, String> confoundingVariables,
       String experimentId,
       String projectId) {
 
@@ -116,8 +128,9 @@ public class SampleValidation {
         analyte,
         analysisMethod,
         comment,
-        experimentId,
-        experimentalGroupLookupTable);
+        experimentalGroupLookupTable,
+        confoundingVariables,
+        experimentId, projectId);
   }
 
   private ValidationResultWithPayload<SampleMetadata> validateForNewSample(
@@ -129,8 +142,10 @@ public class SampleValidation {
       String analyte,
       String analysisMethod,
       String comment,
+      Map<String, ExperimentalGroup> experimentalGroupLookupTable,
+      Map<String, String> confoundingVariables,
       String experimentId,
-      Map<String, ExperimentalGroup> experimentalGroupLookupTable) {
+      String projectId) {
 
     var sampleNameValidation = validateSampleName(sampleName);
     var experimentalGroupValidation = validateExperimentalGroupForCondition(condition,
@@ -139,6 +154,8 @@ public class SampleValidation {
     var speciesValidation = validateSpecies(species);
     var specimenValidation = validateSpecimen(specimen);
     var analyteValidation = validateAnalyte(analyte);
+    var confoundingVariableValidation = validateConfoundingVariableLevels(confoundingVariables,
+        new ExperimentReference(experimentId), projectId);
 
     ValidationResult combinedValidationResult = ValidationResult.successful()
         .combine(sampleNameValidation.validationResult())
@@ -146,7 +163,9 @@ public class SampleValidation {
         .combine(analysisMethodValidation.validationResult())
         .combine(speciesValidation.validationResult())
         .combine(specimenValidation.validationResult())
-        .combine(analyteValidation.validationResult());
+        .combine(analyteValidation.validationResult())
+        .combine(confoundingVariableValidation.validationResult());
+
     var metadata = combinedValidationResult.containsFailures()
         ? null
         : SampleMetadata.createNew(
@@ -158,6 +177,7 @@ public class SampleValidation {
             specimenValidation.payload(),
             analyteValidation.payload(),
             comment,
+            confoundingVariableValidation.payload(),
             experimentId);
     return new ValidationResultWithPayload<>(combinedValidationResult, metadata);
   }
@@ -275,6 +295,28 @@ public class SampleValidation {
     return new ValidationResultWithPayload<>(ValidationResult.successful(), sampleId);
   }
 
+  private ValidationResultWithPayload<Map<ConfoundingVariableInformation, String>> validateConfoundingVariableLevels(
+      Map<String, String> confoundingVariables, ExperimentReference experimentId,
+      String projectId) {
+    //can produce: Unknown confounding variables `X, Y, Z`
+    List<ConfoundingVariableInformation> confoundingVariableInformation = confoundingVariableService.listConfoundingVariablesForExperiment(
+        projectId, experimentId);
+    Set<String> unknownVariables = new HashSet<>();
+    var res = new HashMap<ConfoundingVariableInformation, String>();
+    for (Entry<String, String> confoundingLevel : confoundingVariables.entrySet()) {
+      Optional<ConfoundingVariableInformation> existingVariable = confoundingVariableInformation.stream()
+          .filter(it -> (it.variableName()).equals(confoundingLevel.getKey())).findAny();
+      existingVariable.ifPresentOrElse(
+          vari -> res.put(vari, confoundingLevel.getValue()),
+          () -> unknownVariables.add(confoundingLevel.getKey()));
+    }
+    return new ValidationResultWithPayload<>(
+        ValidationResult.withFailures(
+            unknownVariables.stream().map("Unknown confounding variable '%s'"::formatted).toList()),
+        res);
+  }
+
+
   /**
    * Validates the metadata for a sample that has previously been registered. A registered sample
    * has a sample code (sample id to the user) and an internal technical sample id.
@@ -286,14 +328,15 @@ public class SampleValidation {
    * {@link SampleValidation#validateNewSample(String, String, String, String, String, String,
    * String, String, String, String)} call.
    *
-   * @param sampleCode     the sample code of the sample, known as sample id to the user
-   * @param condition      the condition the sample was collected from
-   * @param species        the species the sample was taken from
-   * @param specimen       the specimen of the sample
-   * @param analyte        the analyte that was extracted from the specimen
-   * @param analysisMethod the method applied on the analyte
-   * @param experimentId   the experiment the sample belongs to
-   * @param projectId      the project the sample belongs to
+   * @param sampleCode           the sample code of the sample, known as sample id to the user
+   * @param condition            the condition the sample was collected from
+   * @param species              the species the sample was taken from
+   * @param specimen             the specimen of the sample
+   * @param analyte              the analyte that was extracted from the specimen
+   * @param analysisMethod       the method applied on the analyte
+   * @param confoundingVariables
+   * @param experimentId         the experiment the sample belongs to
+   * @param projectId            the project the sample belongs to
    * @return a {@link ValidationResult} with detailed information about the validation
    * @since 1.5.0
    */
@@ -306,6 +349,7 @@ public class SampleValidation {
       String analyte,
       String analysisMethod,
       String comment,
+      Map<String, String> confoundingVariables,
       String experimentId,
       String projectId) {
 
@@ -327,6 +371,8 @@ public class SampleValidation {
     var speciesValidation = validateSpecies(species);
     var specimenValidation = validateSpecimen(specimen);
     var analyteValidation = validateAnalyte(analyte);
+    var confoundingVariableValidation = validateConfoundingVariableLevels(confoundingVariables,
+        new ExperimentReference(experimentId), projectId);
 
     ValidationResult combinedValidationResult = ValidationResult.successful()
         .combine(sampleIdValidation.validationResult())
@@ -335,7 +381,9 @@ public class SampleValidation {
         .combine(analysisMethodValidation.validationResult())
         .combine(speciesValidation.validationResult())
         .combine(specimenValidation.validationResult())
-        .combine(analyteValidation.validationResult());
+        .combine(analyteValidation.validationResult())
+        .combine(confoundingVariableValidation.validationResult());
+
     var metadata = combinedValidationResult.containsFailures()
         ? null
         : SampleMetadata.createUpdate(
@@ -349,6 +397,7 @@ public class SampleValidation {
             specimenValidation.payload(),
             analyteValidation.payload(),
             comment,
+            confoundingVariableValidation.payload(),
             experimentId);
     return new ValidationResultWithPayload<>(combinedValidationResult, metadata);
   }

@@ -1,6 +1,8 @@
 package life.qbic.projectmanagement.application.sample;
 
+import java.util.Map;
 import java.util.Optional;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -23,6 +25,7 @@ public record SampleMetadata(
     OntologyTerm specimen,
     OntologyTerm analyte,
     String comment,
+    Map<ConfoundingVariableInformation, String> confoundingVariables,
     String experimentId
 ) {
 
@@ -34,9 +37,11 @@ public record SampleMetadata(
       OntologyTerm specimen,
       OntologyTerm analyte,
       String comment,
+      Map<ConfoundingVariableInformation, String> confoundingVariables,
       String experimentId) {
     return new SampleMetadata(null, "", sampleName, analysisToBePerformed, biologicalReplicate,
-        experimentalGroupId, species, specimen, analyte, comment, experimentId);
+        experimentalGroupId, species, specimen, analyte, comment, confoundingVariables,
+        experimentId);
   }
 
   public static SampleMetadata createUpdate(SampleId sampleId,
@@ -49,10 +54,23 @@ public record SampleMetadata(
       OntologyTerm specimen,
       OntologyTerm analyte,
       String comment,
+      Map<ConfoundingVariableInformation, String> confoundingVariables,
       String experimentId) {
     return new SampleMetadata(sampleId, sampleCode, sampleName, analysisToBePerformed,
         biologicalReplicate, experimentalGroupId, species, specimen, analyte, comment,
+        confoundingVariables,
         experimentId);
+  }
+
+  public static SampleMetadata addSampleId(SampleId id, SampleMetadata sampleMetadata) {
+    return new SampleMetadata(
+        id, sampleMetadata.sampleCode, sampleMetadata.sampleName,
+        sampleMetadata.analysisToBePerformed, sampleMetadata.biologicalReplicate,
+        sampleMetadata.experimentalGroupId, sampleMetadata.species, sampleMetadata.specimen,
+        sampleMetadata.analyte, sampleMetadata.comment,
+        sampleMetadata.confoundingVariables,
+        sampleMetadata.experimentId
+    );
   }
 
   public Optional<SampleId> getSampleId() {
