@@ -59,6 +59,9 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
+import life.qbic.datamanager.views.projects.project.info.NonBlockingProjectService.ProjectDesign;
+import life.qbic.datamanager.views.projects.project.info.NonBlockingProjectService.ProjectUpdateRequest;
+import life.qbic.datamanager.views.projects.project.info.NonBlockingProjectService.ProjectUpdateResponse;
 import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
 import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
@@ -497,8 +500,18 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
-    projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
-    projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
+    NonBlockingProjectService service = null;
+    ProjectUpdateRequest request = new ProjectUpdateRequest(projectId.value(),
+        new ProjectDesign(projectInformation.getProjectTitle(),
+            projectInformation.getProjectObjective()));
+    service.update(request)
+        .subscribe(this::onProjectUpdate);
+//    projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
+//    projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
+  }
+
+  private void onProjectUpdate(ProjectUpdateResponse projectUpdateResponse) {
+
   }
 
   private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
