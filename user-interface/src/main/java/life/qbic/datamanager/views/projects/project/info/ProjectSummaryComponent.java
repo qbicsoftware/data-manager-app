@@ -528,7 +528,7 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
-    // the service call is asynchronous and the executed method returns immediately
+    // The service call is asynchronous, therefore the executed method returns immediately
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
