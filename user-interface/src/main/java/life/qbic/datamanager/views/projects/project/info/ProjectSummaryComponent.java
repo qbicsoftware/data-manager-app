@@ -509,23 +509,35 @@ public class ProjectSummaryComponent extends PageArea {
     projectDesignSection.setContent(content);
   }
 
+  /*
+  Handler for project design update events.
+
+  Since the project id is not referenced in the event, we assume that
+  the UI scope was not left and the current context references the project
+  that is supposed to be updated.
+   */
   private void handleUpdateEvent(ProjectDesignUpdateEvent event) {
     if (event.content().isEmpty()) {
       log.debug("No content to be updated");
-      // nothing to be done
+      // Nothing to be done
       return;
     }
     var project = context.projectId().orElseThrow().value();
     var info = event.content().orElseThrow();
+    // Build the request for the service call
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
+    // the service call is asynchronous and the executed method returns immediately
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .subscribe(this::handleSuccess);
   }
 
+  /*
+  Handler for successful project updates
+   */
   private void handleSuccess(ProjectUpdateResponse response) {
     log.debug("Received project update response: " + response);
     var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
@@ -534,13 +546,23 @@ public class ProjectSummaryComponent extends PageArea {
     reloadInformation(context);
   }
 
+  /*
+  Handler for request failures. This covers failures the user can
+  re-try it again, so the last request needs to be cached in the current user
+  session and ui scope.
+   */
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
     var toast = notificationFactory.toast("project.updated.error.retry",
         new String[]{}, getLocale());
+    // Todo Implement retry with cached request
     toast.open();
   }
 
+  /*
+  Handler for unknown requests. This happens when the wrong service method
+  has been called, so be sure to check the requests the service API can handle.
+   */
   private void handleUnknownRequest(UnknownRequestException error) {
     log.error("unknown request", error);
     var toast = notificationFactory.toast("project.updated.error",
