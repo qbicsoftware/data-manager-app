@@ -512,7 +512,7 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleUpdateEvent(ProjectDesignUpdateEvent event) {
     if (event.content().isEmpty()) {
       log.debug("No content to be updated");
-      // nothing can be done
+      // nothing to be done
       return;
     }
     var project = context.projectId().orElseThrow().value();
@@ -520,7 +520,6 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
-    // trigger UI refresh for example, do safe UI thread access
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
@@ -536,13 +535,17 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private void handleRequestFailed(RequestFailedException error) {
-    // show a toast
-    throw new RuntimeException("not implemented", error);
+    log.error("request failed", error);
+    var toast = notificationFactory.toast("project.updated.error.retry",
+        new String[]{}, getLocale());
+    toast.open();
   }
 
   private void handleUnknownRequest(UnknownRequestException error) {
-    //
-    throw new RuntimeException("not implemented", error);
+    log.error("unknown request", error);
+    var toast = notificationFactory.toast("project.updated.error",
+        new String[]{}, getLocale());
+    toast.open();
   }
 
   private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
