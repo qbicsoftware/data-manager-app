@@ -6,6 +6,9 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -31,14 +34,25 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var projectId = request.projectId();
     switch (request.requestBody()) {
       case ProjectDesign design:
-        return updateProjectDesign(projectId, design);
+        return updateProjectDesign2(projectId, design);
       default:
         return Mono.error(new UnknownRequestException("Invalid request body"));
     }
   }
 
+
+  private Mono<ProjectUpdateResponse> updateProjectDesign2(String projectId, ProjectDesign design) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    var rcontext = ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext));
+    Mono.defer(() -> ReactiveSecurityContextHolder.getContext().log()).contextWrite(rcontext).subscribeOn(VirtualThreadScheduler.getScheduler()).subscribe();
+    return ReactiveSecurityContextHolder.getContext().flatMap(securityContext1 -> {
+      SecurityContextHolder.setContext(securityContext1);
+      return updateProjectDesign(projectId, design);
+    }).contextWrite(rcontext).subscribeOn(VirtualThreadScheduler.getScheduler());
+  }
+
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design) {
-    return Mono.<ProjectUpdateResponse>create(sink -> {
+    return Mono.create(sink -> {
       try {
         var id = ProjectId.parse(projectId);
         projectService.updateTitle(id, design.title());
@@ -49,7 +63,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       } catch (Exception e) {
         sink.error(new RequestFailedException("Update project design failed", e));
       }
-    }).subscribeOn(VirtualThreadScheduler.getScheduler());
+    });
   }
 }
 
