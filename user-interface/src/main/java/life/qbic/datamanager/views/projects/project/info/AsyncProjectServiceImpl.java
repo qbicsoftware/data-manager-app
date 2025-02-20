@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.info;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 import life.qbic.datamanager.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -34,20 +35,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var projectId = request.projectId();
     switch (request.requestBody()) {
       case ProjectDesign design:
-        return updateProjectDesign2(projectId, design);
+        return writeWithSecurityContext(SecurityContextHolder.getContext(), () -> updateProjectDesign(projectId, design));
       default:
         return Mono.error(new UnknownRequestException("Invalid request body"));
     }
   }
 
-
-  private Mono<ProjectUpdateResponse> updateProjectDesign2(String projectId, ProjectDesign design) {
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    var rcontext = ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext));
-    Mono.defer(() -> ReactiveSecurityContextHolder.getContext().log()).contextWrite(rcontext).subscribeOn(VirtualThreadScheduler.getScheduler()).subscribe();
+  private Mono<ProjectUpdateResponse> writeWithSecurityContext(SecurityContext sctx, Supplier<Mono<ProjectUpdateResponse>> supplier) {
+    var rcontext = ReactiveSecurityContextHolder.withSecurityContext(Mono.just(sctx));
     return ReactiveSecurityContextHolder.getContext().flatMap(securityContext1 -> {
       SecurityContextHolder.setContext(securityContext1);
-      return updateProjectDesign(projectId, design);
+      return supplier.get();
     }).contextWrite(rcontext).subscribeOn(VirtualThreadScheduler.getScheduler());
   }
 
