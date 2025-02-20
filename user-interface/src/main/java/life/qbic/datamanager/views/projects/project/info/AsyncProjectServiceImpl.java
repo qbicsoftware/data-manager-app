@@ -58,7 +58,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         sink.success(new ProjectUpdateResponse(projectId, design));
       } catch (IllegalArgumentException e) {
         sink.error(new RequestFailedException("Invalid project id: " + projectId));
-      } catch (Exception e) {
+      } catch (RuntimeException e) {
         sink.error(new RequestFailedException("Update project design failed", e));
       }
     });
