@@ -30,7 +30,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
-      throws UnknownRequestException {
+      throws UnknownRequestException, RequestFailedException {
     var projectId = request.projectId();
     switch (request.requestBody()) {
       case ProjectDesign design:

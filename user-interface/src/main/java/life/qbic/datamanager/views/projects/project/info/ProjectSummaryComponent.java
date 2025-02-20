@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.VirtualThreadScheduler;
 import life.qbic.datamanager.files.TempDirectory;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
@@ -83,10 +82,8 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import reactor.core.publisher.Mono;
 
 /**
  * <b>Project Summary Component</b>
@@ -562,10 +559,12 @@ public class ProjectSummaryComponent extends PageArea {
    */
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
-    var toast = notificationFactory.toast("project.updated.error.retry",
-        new String[]{}, getLocale());
-    // Todo Implement retry with cached request
-    toast.open();
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast("project.updated.error.retry",
+          new String[]{}, getLocale());
+      // Todo Implement retry with cached request
+      toast.open();
+    }));
   }
 
   /*
@@ -574,9 +573,12 @@ public class ProjectSummaryComponent extends PageArea {
    */
   private void handleUnknownRequest(UnknownRequestException error) {
     log.error("unknown request", error);
-    var toast = notificationFactory.toast("project.updated.error",
-        new String[]{}, getLocale());
-    toast.open();
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast("project.updated.error",
+          new String[]{}, getLocale());
+      // Todo Implement retry with cached request
+      toast.open();
+    }));
   }
 
   private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
