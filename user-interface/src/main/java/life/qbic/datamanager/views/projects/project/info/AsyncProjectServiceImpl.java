@@ -6,6 +6,8 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -38,18 +40,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design) {
-    return Mono.<ProjectUpdateResponse>create(sink -> {
-      try {
-        var id = ProjectId.parse(projectId);
-        projectService.updateTitle(id, design.title());
-        projectService.updateObjective(id, design.objective());
-        sink.success(new ProjectUpdateResponse(projectId, design));
-      } catch (IllegalArgumentException e) {
-        sink.error(new RequestFailedException("Invalid project id: " + projectId));
-      } catch (Exception e) {
-        sink.error(new RequestFailedException("Update project design failed", e));
-      }
-    }).subscribeOn(VirtualThreadScheduler.getScheduler());
+    return Mono.deferContextual(contextView -> { // Access SecurityContext
+      return ReactiveSecurityContextHolder.getContext()
+          .flatMap(securityContext -> Mono.fromCallable(() -> {
+                    var id = ProjectId.parse(projectId);
+                    projectService.updateTitle(id, design.title());
+                    projectService.updateObjective(id, design.objective());
+                    return new ProjectUpdateResponse(projectId, design);
+                  })
+                  .subscribeOn(VirtualThreadScheduler.getScheduler()) // Move execution to Virtual Thread
+                  .contextWrite(context -> context.put(SecurityContext.class, securityContext)) // Restore SecurityContext
+          );
+    });
   }
 }
 
