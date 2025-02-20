@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.projects.project.info;
 
 import java.util.Objects;
+import life.qbic.datamanager.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design) {
-    return Mono.create(sink -> {
+    return Mono.<ProjectUpdateResponse>create(sink -> {
       try {
         var id = ProjectId.parse(projectId);
         projectService.updateTitle(id, design.title());
@@ -48,7 +49,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       } catch (Exception e) {
         sink.error(new RequestFailedException("Update project design failed", e));
       }
-    });
+    }).subscribeOn(VirtualThreadScheduler.getScheduler());
   }
 }
 
