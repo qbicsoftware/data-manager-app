@@ -149,13 +149,13 @@ public interface AsyncProjectService {
     }
 
     /**
-     * Returns the requestId, if no requestId is set, returns an empty String.
+     * Returns the requestId, can be null.
      *
-     * @return Returns the requestId, if no requestId is set, returns an empty String.
+     * @return Returns the requestId, if no requestId is set, returns null.
      */
     @Override
     public String requestId() {
-      return hasRequestId() ? requestId : "";
+      return requestId;
     }
 
     boolean hasRequestId() {
