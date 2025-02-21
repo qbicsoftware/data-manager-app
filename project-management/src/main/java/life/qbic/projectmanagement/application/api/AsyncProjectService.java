@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
+import java.util.UUID;
 import reactor.core.publisher.Mono;
 
 /**
@@ -63,6 +64,24 @@ public interface AsyncProjectService {
   }
 
   /**
+   * Cacheable requests provide a unique identifier so cache implementations can unambiguously
+   * manage the requests.
+   *
+   * @since 1.9.0
+   */
+  sealed interface CacheableRequest permits ProjectUpdateRequest {
+
+    /**
+     * Returns an ID that is unique to the request.
+     *
+     * @return the id
+     * @since 1.9.0
+     */
+    String requestId();
+
+  }
+
+  /**
    * Container for passing information in an {@link UpdateRequestBody} or
    * {@link UpdateResponseBody}.
    *
@@ -82,8 +101,17 @@ public interface AsyncProjectService {
    * @param requestBody the information to be updated.
    * @since 1.9.0
    */
-  record ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody) {
+  record ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody, String id) implements
+      CacheableRequest {
 
+    public ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody) {
+      this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+
+    @Override
+    public String requestId() {
+      return id;
+    }
   }
 
   /**
@@ -93,7 +121,7 @@ public interface AsyncProjectService {
    * @param responseBody the information that was updated.
    * @since 1.9.0
    */
-  record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody) {
+  record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody, String requestId) {
 
   }
 
