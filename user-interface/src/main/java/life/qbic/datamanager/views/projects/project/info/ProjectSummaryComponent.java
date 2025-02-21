@@ -575,7 +575,6 @@ public class ProjectSummaryComponent extends PageArea {
     getUI().ifPresent(ui -> ui.access(() -> {
       var toast = notificationFactory.toast("project.updated.error",
           new String[]{}, getLocale());
-      // Todo Implement retry with cached request
       toast.open();
     }));
   }

@@ -35,33 +35,73 @@ public interface AsyncProjectService {
    * {@link ProjectUpdateResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException  if the user has insufficient rights
+   * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.9.0
    */
   Mono<ProjectUpdateResponse> update(
-      ProjectUpdateRequest request) throws UnknownRequestException, RequestFailedException, AccessDeniedException;
+      ProjectUpdateRequest request)
+      throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
+  /**
+   * Container of an update request for a service call and part of the
+   * {@link ProjectUpdateRequest}.
+   *
+   * @since 1.9.0
+   */
   sealed interface UpdateRequestBody permits ProjectDesign {
 
   }
 
+  /**
+   * Container of an update response from a service call and part of the
+   * {@link ProjectUpdateResponse}.
+   *
+   * @since 1.9.0
+   */
   sealed interface UpdateResponseBody permits ProjectDesign {
 
   }
 
+  /**
+   * Container for passing information in an {@link UpdateRequestBody} or
+   * {@link UpdateResponseBody}.
+   *
+   * @param title     the title of the project
+   * @param objective the objective of the project
+   * @since 1.9.0
+   */
   record ProjectDesign(String title, String objective) implements UpdateRequestBody,
       UpdateResponseBody {
 
   }
 
+  /**
+   * A service request to update project information.
+   *
+   * @param projectId   the project's id
+   * @param requestBody the information to be updated.
+   * @since 1.9.0
+   */
   record ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody) {
 
   }
 
+  /**
+   * A service response from an update project information request.
+   *
+   * @param projectId    the project's id
+   * @param responseBody the information that was updated.
+   * @since 1.9.0
+   */
   record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody) {
 
   }
 
+  /**
+   * Exception to indicate that the service did not recognise the request.
+   *
+   * @since 1.9.0
+   */
   class UnknownRequestException extends RuntimeException {
 
     public UnknownRequestException(String message) {
@@ -69,6 +109,11 @@ public interface AsyncProjectService {
     }
   }
 
+  /**
+   * Exception to indicate that the service tried to execute the request, but it failed.
+   *
+   * @since 1.9.0
+   */
   class RequestFailedException extends RuntimeException {
 
     public RequestFailedException(String message) {
@@ -80,10 +125,18 @@ public interface AsyncProjectService {
     }
   }
 
+  /**
+   * Exception to indicate that the service tried to execute the request, but the user had
+   * insufficient rights and thus the request failed.
+   *
+   * @since 1.9.0
+   */
   class AccessDeniedException extends RuntimeException {
+
     public AccessDeniedException(String message) {
       super(message);
     }
+
     public AccessDeniedException(String message, Throwable cause) {
       super(message, cause);
     }
