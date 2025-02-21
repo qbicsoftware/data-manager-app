@@ -35,10 +35,11 @@ public interface AsyncProjectService {
    * {@link ProjectUpdateResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException  if the user has insufficient rights
    * @since 1.9.0
    */
   Mono<ProjectUpdateResponse> update(
-      ProjectUpdateRequest request) throws UnknownRequestException, RequestFailedException;
+      ProjectUpdateRequest request) throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
   sealed interface UpdateRequestBody permits ProjectDesign {
 
@@ -75,6 +76,15 @@ public interface AsyncProjectService {
     }
 
     public RequestFailedException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
+
+  class AccessDeniedException extends RuntimeException {
+    public AccessDeniedException(String message) {
+      super(message);
+    }
+    public AccessDeniedException(String message, Throwable cause) {
       super(message, cause);
     }
   }

@@ -61,6 +61,7 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
+import life.qbic.datamanager.views.projects.project.info.AsyncProjectService.AccessDeniedException;
 import life.qbic.datamanager.views.projects.project.info.AsyncProjectService.ProjectDesign;
 import life.qbic.datamanager.views.projects.project.info.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.datamanager.views.projects.project.info.AsyncProjectService.ProjectUpdateResponse;
@@ -82,8 +83,6 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>Project Summary Component</b>
@@ -533,9 +532,11 @@ public class ProjectSummaryComponent extends PageArea {
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
         .subscribe(this::handleSuccess);
 
   }
+
 
   /*
   Handler for successful project updates
@@ -575,6 +576,18 @@ public class ProjectSummaryComponent extends PageArea {
       var toast = notificationFactory.toast("project.updated.error",
           new String[]{}, getLocale());
       // Todo Implement retry with cached request
+      toast.open();
+    }));
+  }
+
+  /*
+  Handler for access denied exceptions. This usually happens, when the service method called
+  requires rights the current logged-in user does not have.
+   */
+  private void handleAccessDenied(AccessDeniedException e) {
+    log.error("access denied", e);
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast("access.denied", new String[]{}, getLocale());
       toast.open();
     }));
   }

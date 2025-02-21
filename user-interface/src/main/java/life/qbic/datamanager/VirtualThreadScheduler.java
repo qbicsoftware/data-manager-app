@@ -2,6 +2,7 @@ package life.qbic.datamanager;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import org.springframework.context.annotation.Bean;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -20,5 +21,12 @@ public class VirtualThreadScheduler {
   public static Scheduler getScheduler() {
     return scheduler;
   }
+
+  @Bean
+  public static Scheduler scheduler() {
+    return scheduler;
+  }
+
+
 
 }
