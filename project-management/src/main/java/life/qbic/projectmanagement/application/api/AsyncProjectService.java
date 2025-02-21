@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -155,11 +155,11 @@ public interface AsyncProjectService {
      */
     @Override
     public String requestId() {
-      return isNull(requestId) ? "" : requestId;
+      return hasRequestId() ? requestId : "";
     }
 
     boolean hasRequestId() {
-      return isNull(requestId);
+      return nonNull(requestId);
     }
   }
 
