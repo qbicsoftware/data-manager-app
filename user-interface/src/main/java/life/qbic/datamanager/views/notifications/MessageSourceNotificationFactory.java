@@ -6,6 +6,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.time.Duration;
@@ -17,8 +18,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 
 /**
- * Notifications created by this factory can be shown to the user.
- * There are multiply types of notifications.
+ * Notifications created by this factory can be shown to the user. There are multiply types of
+ * notifications.
  * <ul>
  *   <li>Toast notification</li>
  *   <li>Notification dialog</li>
@@ -33,8 +34,8 @@ import org.springframework.context.NoSuchMessageException;
 @SpringComponent
 public class MessageSourceNotificationFactory {
 
-  private static final Logger log = logger(MessageSourceNotificationFactory.class);
   public static final Object[] EMPTY_PARAMETERS = new Object[]{};
+  private static final Logger log = logger(MessageSourceNotificationFactory.class);
   private static final String DEFAULT_CONFIRM_TEXT = "Okay";
   private static final NotificationLevel DEFAULT_LEVEL = NotificationLevel.INFO;
   private static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.HTML;
@@ -107,6 +108,34 @@ public class MessageSourceNotificationFactory {
     var toast = toast(key, messageArgs, locale);
     String linkText = parseLinkText(key, routeArgs, locale);
     return toast.withRouting(linkText, navigationTarget, routeParameters);
+  }
+
+  /**
+   * Creates a toast that indicates a pending task. The display duration is set to
+   * {@link Duration#ZERO}, since it is the client's job to close the toast explicitly after the
+   * pending task has finished.
+   * <p>
+   * The following message keys have to be present:
+   * <ul>
+   *   <li>{@code <key>.message.type}
+   *   <li>{@code <key>.message.text}
+   *   <li>{@code <key>.routing.link.text}
+   * </ul>
+   * <p>
+   * For more information please see toast-notifications.properties
+   *
+   * @param key         the key for the messages
+   * @param messageArgs the parameters shown in the message
+   * @param locale      the locale for which to load the message
+   * @return a Toast with loaded content
+   * @see #toast(String, Object[], Locale)
+   */
+  public Toast pendingTaskToast(String key, Object[] messageArgs, Locale locale) {
+    var toast = toast(key, messageArgs, locale);
+    var progressBar = new ProgressBar();
+    progressBar.setIndeterminate(true);
+    toast.setDuration(Duration.ZERO);
+    return toast.add(progressBar);
   }
 
   /**

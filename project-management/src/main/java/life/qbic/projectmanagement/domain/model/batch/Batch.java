@@ -90,8 +90,15 @@ public class Batch {
   }
 
   public void addSample(SampleId sampleId) {
-    this.sampleIds.add(sampleId);
+    addSampleIfNotExists(sampleId);
     this.lastModified = Instant.now();
+  }
+
+  private void addSampleIfNotExists(SampleId sampleId) {
+    if (sampleIds.contains(sampleId)) {
+      return;
+    }
+    sampleIds.add(sampleId);
   }
 
   public void removeSample(SampleId sampleToRemove) {

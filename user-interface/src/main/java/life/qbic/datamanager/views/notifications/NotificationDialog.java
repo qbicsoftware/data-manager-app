@@ -10,6 +10,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.dom.Style.Display;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 
 /**
  * A dialog notifying the user of some event.
@@ -31,7 +33,7 @@ import com.vaadin.flow.dom.Style.Display;
  *   <li>info-dialog</li>
  * </ul>
  */
-public class NotificationDialog extends ConfirmDialog {
+public class NotificationDialog extends ConfirmDialog implements BeforeLeaveObserver {
 
   private final H2 title;
   private final NotificationLevel level;
@@ -191,4 +193,8 @@ public class NotificationDialog extends ConfirmDialog {
     return withContent(hiddenCollectionDiv);
   }
 
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    this.close();
+  }
 }

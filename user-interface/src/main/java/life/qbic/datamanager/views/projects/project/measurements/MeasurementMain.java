@@ -13,11 +13,15 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -28,26 +32,29 @@ import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.templates.measurement.NGSMeasurementEditTemplate;
-import life.qbic.datamanager.templates.measurement.ProteomicsMeasurementEditTemplate;
+import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
+import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
+import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.download.MeasurementTemplateDownload;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -59,8 +66,8 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 
 
 /**
@@ -75,7 +82,7 @@ import org.springframework.util.StringUtils;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
-public class MeasurementMain extends Main implements BeforeEnterObserver {
+public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -83,7 +90,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
   private static Disclaimer registerSamplesDisclaimer;
-  private final MeasurementTemplateDownload measurementTemplateDownload;
+  private final DownloadComponent measurementTemplateDownload;
   private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final Span measurementsSelectedInfoBox = new Span();
   private final MeasurementDetailsComponent measurementDetailsComponent;
@@ -95,12 +102,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
-  private final transient ProteomicsMeasurementEditTemplate proteomicsMeasurementEditTemplate;
-  private final transient NGSMeasurementEditTemplate ngsMeasurementEditTemplate;
-  private final DownloadProvider ngsDownloadProvider;
-  private final DownloadProvider proteomicsDownloadProvider;
+  private final DownloadComponent downloadComponent;
   private final transient ProjectInformationService projectInformationService;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
+  private final transient MessageSourceNotificationFactory messageFactory;
+  private final ExperimentInformationService experimentInformationService;
+  private MeasurementMetadataUploadDialog dialog;
   private transient Context context;
 
   public MeasurementMain(
@@ -111,25 +118,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService,
       ProjectInformationService projectInformationService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
+      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
+      MessageSourceNotificationFactory messageFactory,
+      ExperimentInformationService experimentInformationService) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
+    this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
     this.measurementPresenter = measurementPresenter;
-    this.proteomicsMeasurementEditTemplate = new ProteomicsMeasurementEditTemplate();
-    this.ngsMeasurementEditTemplate = new NGSMeasurementEditTemplate();
-    this.ngsDownloadProvider = new DownloadProvider(ngsMeasurementEditTemplate);
-    this.proteomicsDownloadProvider = new DownloadProvider(proteomicsMeasurementEditTemplate);
     this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.projectInformationService = projectInformationService;
     this.cancelConfirmationDialogFactory = cancelConfirmationDialogFactory;
 
-    measurementTemplateDownload = new MeasurementTemplateDownload();
+    downloadComponent = new DownloadComponent();
+    measurementTemplateDownload = new DownloadComponent();
     measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
         this::onDownloadMeasurementTemplateClicked);
     registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
@@ -145,15 +152,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         selectionChangedEvent -> setSelectedMeasurementsInfo(
             selectionChangedEvent.getSource().getNumberOfSelectedMeasurements()));
 
-    add(ngsDownloadProvider);
-    add(proteomicsDownloadProvider);
+    add(downloadComponent);
     addClassName("measurement");
     log.debug(String.format(
         "New instance for %s(#%s) created with %s(#%s)",
         getClass().getSimpleName(), System.identityHashCode(this),
         measurementTemplateListComponent.getClass().getSimpleName(),
         System.identityHashCode(measurementTemplateListComponent)));
-
+    this.experimentInformationService = experimentInformationService;
   }
 
   private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
@@ -281,57 +287,81 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
     dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(confirmEvent ->
-    {
-      triggerMeasurementRegistration(confirmEvent.uploads(),
-          confirmEvent.getSource());
-      setMeasurementInformation();
-    });
+    dialog.addConfirmListener(this::triggerMeasurementRegistration);
     return dialog;
   }
 
   private void triggerMeasurementRegistration(
-      List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads,
-      MeasurementMetadataUploadDialog measurementMetadataUploadDialog) {
-    String process =
-        measurementMetadataUploadDialog.getMode() == MODE.EDIT ? "update" : "registration";
-    for (var upload : measurementMetadataUploads) {
+      ConfirmEvent event) {
+    var uploads = new ArrayList<>(event.uploads());
+    var dialog = event.getSource();
+    var mode = dialog.getMode();
+    UI ui = event.getSource().getUI().orElseThrow();
+    for (var upload : uploads) {
       var measurementData = upload.measurementMetadata();
-      measurementMetadataUploadDialog.taskInProgress(
-          "%s of %s measurements ...".formatted(StringUtils.capitalize(process),
-              measurementData.size()),
-          "This might take a minute");
+
       //Necessary so the dialog window switches to show the upload progress
-      UI.getCurrent().push();
+      ui.push();
       CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
-      if (measurementMetadataUploadDialog.getMode().equals(MODE.EDIT)) {
-        completableFuture = measurementService.updateAll(upload.measurementMetadata(),
+      Toast pendingToast;
+
+      // we can close the dialog, everything that comes now is executed concurrently and there is
+      // no need the user is blocked
+      event.getSource().close();
+
+      if (mode.equals(MODE.EDIT)) {
+        completableFuture = measurementService.updateAll(measurementData,
             context.projectId().orElseThrow());
+        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
+                "Update of #%d measurements".formatted(measurementData.stream()
+                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
+                    .distinct().toList().size())},
+            getLocale());
       } else {
         completableFuture = measurementService.registerAll(upload.measurementMetadata(),
             context.projectId().orElseThrow());
+        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
+                "Registration of #%d measurements".formatted(upload.measurementMetadata().size())},
+            getLocale());
       }
-      completableFuture.thenAccept(results -> {
-        var errorResult = results.stream().filter(Result::isError).findAny();
-        if (errorResult.isPresent()) {
-          String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
-          measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
-              () -> measurementMetadataUploadDialog.taskFailed(
-                  "Measurement %s could not be completed".formatted(process),
-                  detailedMessage)));
-        } else {
-          measurementMetadataUploadDialog.getUI().ifPresent(ui -> ui.access(
-              () -> measurementMetadataUploadDialog.taskSucceeded(
-                  "Measurement %s is complete".formatted(process),
-                  "Measurement %s for %s measurements was successful".formatted(process,
-                      measurementData.size()))));
-        }
-      }).join(); // we wait for the update to finish
+      ui.access(pendingToast::open);
+      try {
+        completableFuture.exceptionally(e -> {
+              log.error(e.getMessage(), e);
+              ui.access(() -> {
+                pendingToast.close();
+                messageFactory.toast("task.failed", new Object[]{"Registration failed"}, getLocale())
+                    .open();
+              });
+              throw new HandledException(e);
+            })
+            .thenAccept(results -> {
+              var errorResult = results.stream().filter(Result::isError).findAny();
+              if (errorResult.isPresent()) {
+                String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
+                ui.access(() -> {
+                  pendingToast.close();
+                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale()).open();
+                });
+              } else {
+                ui.access(() -> {
+                  pendingToast.close();
+                  messageFactory.toast("task.finished", new Object[]{"Measurement update"},
+                      getLocale()).open();
+                  setMeasurementInformation();
+                });
+              }
+            }).exceptionally(e -> {
+              throw new HandledException(e);
+            });
+      } catch (HandledException e) {
+        log.error(e.getMessage(), e);
+      }
     }
   }
 
   private void openEditMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
+    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
         cancelConfirmationDialogFactory,
         MODE.EDIT,
         context.projectId().orElse(null));
@@ -360,6 +390,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   }
 
   private void downloadProteomicsMetadata() {
+    ProjectId projectId = context.projectId().orElseThrow();
+    String projectCode = projectInformationService.find(projectId)
+        .orElseThrow()
+        .getProjectCode().value();
+
+    var experimentId = context.experimentId().orElseThrow();
+    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
+        .orElseThrow()
+        .getName();
+
     var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
         context.experimentId().orElseThrow(() -> new ApplicationException(
             ErrorCode.GENERAL, null)),
@@ -367,21 +407,37 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     Comparator<String> natOrder = Comparator.naturalOrder();
 
-    var result = proteomicsMeasurements.stream().map(measurementPresenter::expandProteomicsPools)
+    var result = proteomicsMeasurements.stream()
+        .map(measurementPresenter::expandProteomicsPools)
         .flatMap(Collection::stream)
         .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
             .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
-    proteomicsMeasurementEditTemplate.setMeasurements(result,
-        projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
-            .getProjectCode().value());
-    proteomicsDownloadProvider.trigger();
+    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
+            experimentName,
+            "proteomics measurements", "xlsx");
+      }
+
+      @Override
+      public Workbook getWorkbook() {
+        return ProteomicsWorkbooks.createEditWorkbook(result);
+      }
+    });
   }
 
   private void downloadNGSMetadata() {
-    var ngsMeasurements = measurementService.findNGSMeasurements(
-        context.experimentId().orElseThrow(() -> new ApplicationException(
-            ErrorCode.GENERAL, null)),
-        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
+    ProjectId projectId = context.projectId().orElseThrow();
+    String projectCode = projectInformationService.find(projectId)
+        .orElseThrow()
+        .getProjectCode().value();
+
+    var experimentId = context.experimentId().orElseThrow();
+    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
+        .orElseThrow()
+        .getName();
+    var ngsMeasurements = measurementService.findNGSMeasurements(experimentId, projectId);
 
     Comparator<String> natOrder = Comparator.naturalOrder();
 
@@ -390,10 +446,20 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         // sort by measurement codes first, then by sample codes
         .sorted(Comparator.comparing(NGSMeasurementEntry::measurementCode, natOrder)
             .thenComparing(ngs -> ngs.sampleInformation().sampleId(), natOrder)).toList();
-    ngsMeasurementEditTemplate.setMeasurements(result,
-        projectInformationService.find(context.projectId().orElseThrow()).orElseThrow()
-            .getProjectCode().value());
-    ngsDownloadProvider.trigger();
+    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
+            experimentName,
+            "ngs measurements", "xlsx");
+      }
+
+      @Override
+      public Workbook getWorkbook() {
+        return NGSWorkbooks.createEditWorkbook(result);
+      }
+    });
+
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
@@ -517,11 +583,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void onDownloadMeasurementTemplateClicked(
       DownloadMeasurementTemplateEvent downloadMeasurementTemplateEvent) {
-    measurementTemplateDownload.trigger(downloadMeasurementTemplateEvent.measurementTemplate());
+    measurementTemplateDownload.trigger(
+        downloadMeasurementTemplateEvent.getDownloadStreamProvider());
   }
 
   private void openRegisterMeasurementDialog() {
-    var dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
+    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
         cancelConfirmationDialogFactory,
         MODE.ADD,
         context.projectId().orElse(null));
@@ -565,4 +632,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     measurementsSelectedInfoBox.setText(text);
   }
+
+  static class HandledException extends RuntimeException {
+
+    HandledException(Throwable cause) {
+      super(cause);
+    }
+
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent event) {
+    Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
+  }
+
 }
