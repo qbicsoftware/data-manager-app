@@ -42,6 +42,11 @@ public interface AsyncProjectService {
       ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
+
+  Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
+      throws UnknownRequestException, RequestFailedException, AccessDeniedException;
+
+
   /**
    * Container of an update request for a service call and part of the
    * {@link ProjectUpdateRequest}.
@@ -111,6 +116,31 @@ public interface AsyncProjectService {
       UpdateResponseBody {
 
   }
+
+  /**
+   * A service request to create a project.
+   *
+   * @param design   the title and objective of a project
+   * @param contacts the different contact persons of a project
+   * @param funding  some funding information
+   * @since 1.9.0
+   */
+  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
+                                FundingInformation funding) {
+
+  }
+
+
+  /**
+   * A service response from a project creation request
+   *
+   * @param projectId
+   * @since 1.9, 0
+   */
+  record ProjectCreationResponse(String projectId) {
+
+  }
+
 
   /**
    * A service request to update project information.
