@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.files.TempDirectory;
@@ -61,13 +62,6 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
-import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
 import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
@@ -77,6 +71,13 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -84,6 +85,7 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 
 /**
  * <b>Project Summary Component</b>
@@ -128,6 +130,7 @@ public class ProjectSummaryComponent extends PageArea {
   private EditFundingInformationDialog editFundingInfoDialog;
   private EditContactDialog editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
+  private transient ProjectUpdateRequest requestCache;
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
@@ -530,14 +533,18 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
-    asyncProjectService.update(request)
+    submit(request, req -> asyncProjectService.update(req)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .subscribe(this::handleSuccess);
-
+        .subscribe(this::handleSuccess));
   }
 
+  private void submit(@NonNull ProjectUpdateRequest request,
+      @NonNull Consumer<ProjectUpdateRequest> consumer) {
+    requestCache = request;
+    consumer.accept(request);
+  }
 
   /*
   Handler for successful project updates

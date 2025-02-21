@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   /**
-   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
+   * Submits a project update request and returns a reactive {@link Mono< ProjectUpdateResponse >}
    * object immediately.
    * <p>
    * The method is non-blocking.
@@ -48,7 +48,7 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface UpdateRequestBody permits ProjectDesign {
+  sealed interface UpdateRequestBody permits FundingInformation, ProjectContacts, ProjectDesign {
 
   }
 
@@ -58,7 +58,7 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface UpdateResponseBody permits ProjectDesign {
+  sealed interface UpdateResponseBody permits FundingInformation, ProjectContacts, ProjectDesign {
 
   }
 
@@ -71,6 +71,43 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ProjectDesign(String title, String objective) implements UpdateRequestBody,
+      UpdateResponseBody {
+
+  }
+
+  /**
+   * Container for passing information about the different project contacts.
+   *
+   * @param investigator the principal investigator
+   * @param manager      the project manager
+   * @param responsible  the responsible person
+   * @since 1.9.0
+   */
+  record ProjectContacts(ProjectContact investigator, ProjectContact manager,
+                         ProjectContact responsible) implements UpdateRequestBody,
+      UpdateResponseBody {
+
+  }
+
+  /**
+   * A project contact.
+   *
+   * @param fullName the full name of the person
+   * @param email    a valid email address for contact
+   * @since 1.9.0
+   */
+  record ProjectContact(String fullName, String email) {
+
+  }
+
+  /**
+   * Container for funding information of a project.
+   *
+   * @param grant   the grant name
+   * @param grantId the grant ID
+   * @since 1.9.0
+   */
+  record FundingInformation(String grant, String grantId) implements UpdateRequestBody,
       UpdateResponseBody {
 
   }
