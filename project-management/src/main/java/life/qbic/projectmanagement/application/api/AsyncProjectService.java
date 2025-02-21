@@ -1,5 +1,9 @@
 package life.qbic.projectmanagement.application.api;
 
+import static java.util.Objects.nonNull;
+
+import java.util.Optional;
+import java.util.UUID;
 import reactor.core.publisher.Mono;
 
 /**
@@ -63,6 +67,24 @@ public interface AsyncProjectService {
   }
 
   /**
+   * Cacheable requests provide a unique identifier so cache implementations can unambiguously
+   * manage the requests.
+   *
+   * @since 1.9.0
+   */
+  sealed interface CacheableRequest permits ProjectUpdateRequest {
+
+    /**
+     * Returns an ID that is unique to the request.
+     *
+     * @return the id
+     * @since 1.9.0
+     */
+    String requestId();
+
+  }
+
+  /**
    * Container for passing information in an {@link UpdateRequestBody} or
    * {@link UpdateResponseBody}.
    *
@@ -82,8 +104,17 @@ public interface AsyncProjectService {
    * @param requestBody the information to be updated.
    * @since 1.9.0
    */
-  record ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody) {
+  record ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody, String id) implements
+      CacheableRequest {
 
+    public ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody) {
+      this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+
+    @Override
+    public String requestId() {
+      return id;
+    }
   }
 
   /**
@@ -93,8 +124,43 @@ public interface AsyncProjectService {
    * @param responseBody the information that was updated.
    * @since 1.9.0
    */
-  record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody) {
+  record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody, String requestId) {
 
+    public ProjectUpdateResponse {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId != null && requestId.isBlank()) {
+        requestId = null;
+      }
+    }
+
+    /**
+     * Retrieves the request id associated with this response. May be {@link Optional#empty()} but
+     * never null.
+     *
+     * @return an Optional with the requestId; {@link Optional#empty()} otherwise.
+     */
+    public Optional<String> retrieveRequestId() {
+      return Optional.ofNullable(requestId);
+    }
+
+    /**
+     * Returns the requestId, can be null.
+     *
+     * @return Returns the requestId, if no requestId is set, returns null.
+     */
+    @Override
+    public String requestId() {
+      return requestId;
+    }
+
+    boolean hasRequestId() {
+      return nonNull(requestId);
+    }
   }
 
   /**
