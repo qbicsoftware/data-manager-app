@@ -872,8 +872,8 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void onNoVariablesDefined() {
-    experimentalGroupsContainer.removeAll();
-    experimentalGroupsContainer.add(noExperimentalVariablesDefined);
+    experimentalVariablesContainer.removeAll();
+    experimentalVariablesContainer.add(noExperimentalVariablesDefined);
   }
 
   private void onNoGroupsDefined() {
