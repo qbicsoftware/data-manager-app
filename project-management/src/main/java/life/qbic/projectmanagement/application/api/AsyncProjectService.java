@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.info;
+package life.qbic.projectmanagement.application.api;
 
 import reactor.core.publisher.Mono;
 

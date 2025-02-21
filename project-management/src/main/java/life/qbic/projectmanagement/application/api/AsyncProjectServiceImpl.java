@@ -1,4 +1,4 @@
-package life.qbic.datamanager.views.projects.project.info;
+package life.qbic.projectmanagement.application.api;
 
 import java.util.Objects;
 import java.util.function.Supplier;
