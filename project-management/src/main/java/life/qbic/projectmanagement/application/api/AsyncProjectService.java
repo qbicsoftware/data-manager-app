@@ -1,5 +1,8 @@
 package life.qbic.projectmanagement.application.api;
 
+import static java.util.Objects.nonNull;
+
+import java.util.Optional;
 import java.util.UUID;
 import reactor.core.publisher.Mono;
 
@@ -122,7 +125,41 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody, String requestId) {
+    public ProjectUpdateResponse {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId != null && requestId.isBlank()) {
+        requestId = null;
+      }
+    }
 
+    /**
+     * Retrieves the request id associated with this response. May be {@link Optional#empty()} but
+     * never null.
+     *
+     * @return an Optional with the requestId; {@link Optional#empty()} otherwise.
+     */
+    public Optional<String> retrieveRequestId() {
+      return Optional.ofNullable(requestId);
+    }
+
+    /**
+     * Returns the requestId, can be null.
+     *
+     * @return Returns the requestId, if no requestId is set, returns null.
+     */
+    @Override
+    public String requestId() {
+      return requestId;
+    }
+
+    boolean hasRequestId() {
+      return nonNull(requestId);
+    }
   }
 
   /**
