@@ -13,7 +13,6 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
@@ -540,7 +539,7 @@ public class ProjectSummaryComponent extends PageArea {
 
 
   private void submitRequest(ProjectUpdateRequest request) {
-    requestCache.addRequest(request);
+    requestCache.store(request);
 
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)

@@ -6,16 +6,26 @@ import java.util.Optional;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.CacheableRequest;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * A cache for {@link CacheableRequest} that sets the most recent request as attribute in the
+ * current {@link VaadinSession}, if available.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.9.0
  */
 @SpringComponent
 public class RequestCache {
 
-  public void addRequest(CacheableRequest request) throws CacheException{
+  /**
+   * Stores a {@link CacheableRequest} in the current {@link VaadinSession}.
+   * <p>
+   * This method overwrites an existing cache entry of the same class or creates a new one, if none
+   * is present.
+   *
+   * @param request the request to store in the cache
+   * @throws CacheException if there is no VaadinSession available
+   *                        ({@link VaadinSession#getSession()} returned <code>null</code>)
+   * @since 1.9.0
+   */
+  public void store(CacheableRequest request) throws CacheException {
     VaadinSession session = VaadinSession.getCurrent();
     if (session != null) {
       session.setAttribute(CacheableRequest.class.getName(), request);
@@ -24,15 +34,25 @@ public class RequestCache {
     throw new CacheException("No Vaadin session found");
   }
 
+  /**
+   * Retrieves the stored request in the cache associated with the current Vaadin session.
+   *
+   * @return the {@link CacheableRequest} wrapped in an {@link Optional} if available.
+   * @throws CacheException if there is no VaadinSession available *
+   *                        ({@link VaadinSession#getSession()} returned <code>null</code>)
+   * @since 1.9.0
+   */
   public Optional<CacheableRequest> get() throws CacheException {
     VaadinSession session = VaadinSession.getCurrent();
     if (session != null) {
-      return Optional.ofNullable((CacheableRequest) session.getAttribute(CacheableRequest.class.getName()));
+      return Optional.ofNullable(
+          (CacheableRequest) session.getAttribute(CacheableRequest.class.getName()));
     }
     throw new CacheException("No Vaadin session found");
   }
 
   public static class CacheException extends RuntimeException {
+
     public CacheException(String message) {
       super(message);
     }
