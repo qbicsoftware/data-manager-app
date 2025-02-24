@@ -14,11 +14,12 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Implementation of the {@link AsyncProjectService} interface.
+ * <p>
+ * This is the class that should make the actual individual service orchestration and gets all
+ * services injected.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.9.0
  */
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
@@ -40,7 +41,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       case ProjectDesign design:
         return
             withSecurityContext(SecurityContextHolder.getContext(),
-                () -> updateProjectDesign(projectId, design, request.requestId())).subscribeOn(scheduler);
+                () -> updateProjectDesign(projectId, design, request.requestId())).subscribeOn(
+                scheduler);
       default:
         return Mono.error(new UnknownRequestException("Invalid request body"));
     }
@@ -59,7 +61,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     }).contextWrite(rcontext);
   }
 
-  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
+  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design,
+      String requestId) {
     return Mono.create(sink -> {
       try {
         var id = ProjectId.parse(projectId);
