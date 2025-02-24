@@ -13,6 +13,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.RequestCache;
 import life.qbic.datamanager.files.TempDirectory;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
@@ -61,13 +63,6 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
-import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
 import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
@@ -77,6 +72,13 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -123,6 +125,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final RequestCache requestCache;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
@@ -137,7 +140,8 @@ public class ProjectSummaryComponent extends PageArea {
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      RequestCache requestCache) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -151,6 +155,7 @@ public class ProjectSummaryComponent extends PageArea {
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = experimentInformationService;
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.requestCache = Objects.requireNonNull(requestCache);
     downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
@@ -530,12 +535,18 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
+    submitRequest(request);
+  }
+
+
+  private void submitRequest(ProjectUpdateRequest request) {
+    requestCache.addRequest(request);
+
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
         .subscribe(this::handleSuccess);
-
   }
 
 
@@ -560,6 +571,9 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
     getUI().ifPresent(ui -> ui.access(() -> {
+      requestCache.get().ifPresent(request -> {
+        // do sth with the cache
+      });
       var toast = notificationFactory.toast("project.updated.error.retry",
           new String[]{}, getLocale());
       // Todo Implement retry with cached request
