@@ -130,7 +130,6 @@ public class ProjectSummaryComponent extends PageArea {
   private EditFundingInformationDialog editFundingInfoDialog;
   private EditContactDialog editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
-  private transient ProjectUpdateRequest requestCache;
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
@@ -533,17 +532,11 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
-    submit(request, req -> asyncProjectService.update(req)
+    asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
-        .subscribe(this::handleSuccess));
-  }
-
-  private void submit(@NonNull ProjectUpdateRequest request,
-      @NonNull Consumer<ProjectUpdateRequest> consumer) {
-    requestCache = request;
-    consumer.accept(request);
+        .subscribe(this::handleSuccess);
   }
 
   /*
