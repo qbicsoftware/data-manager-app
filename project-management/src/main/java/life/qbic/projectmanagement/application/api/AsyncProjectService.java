@@ -125,7 +125,6 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody, String requestId) {
-
     public ProjectUpdateResponse {
       if (projectId == null) {
         throw new IllegalArgumentException("Project ID cannot be null");
