@@ -40,7 +40,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       case ProjectDesign design:
         return
             withSecurityContext(SecurityContextHolder.getContext(),
-                () -> updateProjectDesign(projectId, design)).subscribeOn(scheduler);
+                () -> updateProjectDesign(projectId, design, request.requestId())).subscribeOn(scheduler);
       default:
         return Mono.error(new UnknownRequestException("Invalid request body"));
     }
@@ -65,13 +65,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     }).contextWrite(rcontext);
   }
 
-  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design) {
+  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
     return Mono.create(sink -> {
       try {
         var id = ProjectId.parse(projectId);
         projectService.updateTitle(id, design.title());
         projectService.updateObjective(id, design.objective());
-        sink.success(new ProjectUpdateResponse(projectId, design));
+        sink.success(new ProjectUpdateResponse(projectId, design, requestId));
       } catch (IllegalArgumentException e) {
         sink.error(new RequestFailedException("Invalid project id: " + projectId));
       } catch (org.springframework.security.access.AccessDeniedException e) {
