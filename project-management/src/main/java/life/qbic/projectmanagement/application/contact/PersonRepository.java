@@ -1,6 +1,8 @@
 package life.qbic.projectmanagement.application.contact;
 
 import java.util.List;
+import life.qbic.projectmanagement.domain.model.project.Contact;
+
 
 /**
  * <b><interface short description - 1 Line!></b>
@@ -11,6 +13,6 @@ import java.util.List;
  */
 public interface PersonRepository {
 
-  List<PersonEntry> findAll(String query, int limit, int offset);
+  List<Contact> findAll(String query, int limit, int offset);
 
 }

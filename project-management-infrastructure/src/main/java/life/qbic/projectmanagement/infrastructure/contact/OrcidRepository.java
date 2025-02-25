@@ -39,7 +39,7 @@ import org.springframework.stereotype.Repository;
 public class OrcidRepository implements PersonRepository {
 
   private static final Logger log = logger(OrcidRepository.class);
-  private static final String PAGINATED_QUERY = "https://pub.orcid.org/v3.0/expanded-search/?start=%s&rows=%s&q=%s";
+  private static final String PAGINATED_QUERY = "https://pub.sandbox.orcid.org/v3.0/expanded-search/?start=%s&rows=%s&q=%s";
   private String token;
   private String refreshToken;
   private HttpClient httpClient;
@@ -97,24 +97,39 @@ public class OrcidRepository implements PersonRepository {
     return new PersonEntry(record.givenName + record.familyName,
         Arrays.stream(record.email()).findFirst().orElse(""), "https://orcid.org/" + record.orcidID,
         record.orcidID);
+  private static Contact convert(OrcidRecord record) {
+
+    return new Contact(record.givenName + record.familyName,
+        //FixMe How should incomplete orcid records be handled
+        Arrays.stream(record.email()).findFirst().orElse(""), record.orcidID, "https://orcid.org");
   }
 
   @Override
-  public List<PersonEntry> findAll(String query, int limit, int offset) {
-    var queryUrl =String.format(PAGINATED_QUERY, offset, limit, query);
+  public List<Contact> findAll(String query, int limit, int offset) {
+    //Orcid queries will fail if the user input is not sanitized
+    var sanitizedInput = query.replaceAll("[^a-zA-Z0-9]", "");
+    var queryUrl = String.format(PAGINATED_QUERY, offset, limit, sanitizedInput);
     HttpRequest request = HttpRequest.newBuilder().uri(URI.create(queryUrl))
         .headers("Authorization", "Bearer " + token, "Accept", "application/json").GET()
         .build();
-
     try {
       var response = httpClient.send(request, BodyHandlers.ofString());
       ObjectMapper mapper = new ObjectMapper();
       var node = mapper.readTree(response.body());
       var value = node.get("expanded-result");
-
-      return new ArrayList<>(
-          Arrays.stream(mapper.convertValue(value, OrcidRecord[].class))
-              .map(OrcidRepository::convert).toList());
+      if (response.statusCode() == HttpStatus.OK.value()) {
+        if (!value.isEmpty()) {
+          return new ArrayList<>(
+              Arrays.stream(mapper.convertValue(value, OrcidRecord[].class))
+                  .map(OrcidRepository::convert).toList());
+        } else {
+          return new ArrayList<>();
+        }
+      } else {
+        log.debug("Error getting orcid records due to " + response.statusCode());
+        throw new OrcidRepository.QueryException("Person repository seems not available",
+            new Throwable(response.body()));
+      }
     } catch (IOException | InterruptedException e) {
       if (e instanceof InterruptedException) {
         Thread.currentThread().interrupt();
