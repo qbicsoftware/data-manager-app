@@ -23,7 +23,7 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   /**
-   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
+   * Submits a project update request and returns a reactive {@link Mono< ProjectUpdateResponse >}
    * object immediately.
    * <p>
    * The method is non-blocking.
@@ -46,13 +46,18 @@ public interface AsyncProjectService {
       ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
+
+  Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
+      throws UnknownRequestException, RequestFailedException, AccessDeniedException;
+
+
   /**
    * Container of an update request for a service call and part of the
    * {@link ProjectUpdateRequest}.
    *
    * @since 1.9.0
    */
-  sealed interface UpdateRequestBody permits ProjectDesign {
+  sealed interface UpdateRequestBody permits FundingInformation, ProjectContacts, ProjectDesign {
 
   }
 
@@ -62,7 +67,7 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface UpdateResponseBody permits ProjectDesign {
+  sealed interface UpdateResponseBody permits FundingInformation, ProjectContacts, ProjectDesign {
 
   }
 
@@ -96,6 +101,68 @@ public interface AsyncProjectService {
       UpdateResponseBody {
 
   }
+
+  /**
+   * Container for passing information about the different project contacts.
+   *
+   * @param investigator the principal investigator
+   * @param manager      the project manager
+   * @param responsible  the responsible person
+   * @since 1.9.0
+   */
+  record ProjectContacts(ProjectContact investigator, ProjectContact manager,
+                         ProjectContact responsible) implements UpdateRequestBody,
+      UpdateResponseBody {
+
+  }
+
+  /**
+   * A project contact.
+   *
+   * @param fullName the full name of the person
+   * @param email    a valid email address for contact
+   * @since 1.9.0
+   */
+  record ProjectContact(String fullName, String email) {
+
+  }
+
+  /**
+   * Container for funding information of a project.
+   *
+   * @param grant   the grant name
+   * @param grantId the grant ID
+   * @since 1.9.0
+   */
+  record FundingInformation(String grant, String grantId) implements UpdateRequestBody,
+      UpdateResponseBody {
+
+  }
+
+  /**
+   * A service request to create a project.
+   *
+   * @param design   the title and objective of a project
+   * @param contacts the different contact persons of a project
+   * @param funding  some funding information
+   * @since 1.9.0
+   */
+  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
+                                FundingInformation funding) {
+
+  }
+
+
+  /**
+   * A service response from a project creation request
+   *
+   * @param projectId
+   * @since 1.9, 0
+   */
+  record ProjectCreationResponse(String projectId) {
+
+  }
+
 
   /**
    * A service request to update project information.
