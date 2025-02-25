@@ -70,7 +70,7 @@ public final class ProjectInformation implements Serializable {
   }
 
   public void setResponsiblePerson(Contact responsiblePerson) {
-    if (responsiblePerson.getFullName().isBlank() || responsiblePerson.getEmail().isBlank()) {
+    if (responsiblePerson.fullName().isBlank() || responsiblePerson.email().isBlank()) {
       this.responsiblePerson = null;
       return;
     }
