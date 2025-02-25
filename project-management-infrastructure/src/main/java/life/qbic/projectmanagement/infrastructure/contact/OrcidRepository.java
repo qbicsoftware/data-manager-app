@@ -94,10 +94,22 @@ public class OrcidRepository implements PersonRepository {
   }
 
   private static Contact convert(OrcidRecord record) {
-
-    return new Contact(record.givenName + record.familyName,
-        //FixMe How should incomplete orcid records be handled
-        Arrays.stream(record.email()).findFirst().orElse(""), record.orcidID, "https://orcid.org");
+    var emailList = Arrays.stream(record.email()).toList();
+    var fullName = record.givenName() + record.familyName();
+    var orcid = record.orcidID();
+    if (orcid.isBlank()) {
+      log.warn("No orcid provided in Orcid Record: ");
+      return null;
+    }
+    if (fullName.isBlank()) {
+      log.warn("Incomplete full name found in Orcid Record: " + record.orcidID());
+      return null;
+    }
+    if (emailList.isEmpty()) {
+      log.warn("No email associated with Orcid Record: " + record.orcidID());
+      return null;
+    }
+    return new Contact(fullName, emailList.stream().findFirst().get(), orcid, "https://orcid.org");
   }
 
   @Override
@@ -115,9 +127,11 @@ public class OrcidRepository implements PersonRepository {
       var value = node.get("expanded-result");
       if (response.statusCode() == HttpStatus.OK.value()) {
         if (!value.isEmpty()) {
-          return new ArrayList<>(
+          var foundRecords = new ArrayList<>(
               Arrays.stream(mapper.convertValue(value, OrcidRecord[].class))
                   .map(OrcidRepository::convert).toList());
+          //Filter null values resulting from invalid records on Orcids side
+          return foundRecords.stream().filter(Objects::nonNull).toList();
         } else {
           return new ArrayList<>();
         }
