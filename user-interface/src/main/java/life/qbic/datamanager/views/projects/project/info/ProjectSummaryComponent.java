@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
 import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 
@@ -67,6 +68,7 @@ import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -98,6 +100,7 @@ public class ProjectSummaryComponent extends PageArea {
   public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
   public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
   private final transient ProjectInformationService projectInformationService;
+  private final transient PersonLookupService personLookupService;
   private final transient ROCreateBuilder roCrateBuilder;
   private final transient TempDirectory tempDirectory;
   private final transient ExperimentInformationService experimentInformationService;
@@ -119,11 +122,14 @@ public class ProjectSummaryComponent extends PageArea {
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
+      PersonLookupService personLookupService,
       UserPermissions userPermissions,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.personLookupService = requireNonNull(personLookupService,
+        "person lookup service must not be null");
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
     this.experimentInformationSection = new SectionBuilder().build();
@@ -134,7 +140,7 @@ public class ProjectSummaryComponent extends PageArea {
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
-    this.experimentInformationService = experimentInformationService;
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
@@ -171,7 +177,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
     return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
-        contact.emailAddress());
+        contact.emailAddress(), contact.oidc(), contact.oidcIssuer());
   }
 
   private static Button createButtonWithListener(String label,
@@ -305,16 +311,20 @@ public class ProjectSummaryComponent extends PageArea {
   private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
     projectInformation.getResponsiblePerson().ifPresentOrElse(
         contact -> projectInformationService.setResponsibility(projectId,
-            new Contact(contact.getFullName(), contact.getEmail())),
+            new Contact(contact.fullName(), contact.email(), contact.oidc(), contact.oidcIssuer())),
         () -> projectInformationService.removeResponsibility(projectId));
 
     projectInformationService.investigateProject(projectId,
-        new Contact(projectInformation.getPrincipalInvestigator().getFullName(),
-            projectInformation.getPrincipalInvestigator().getEmail()));
+        new Contact(projectInformation.getPrincipalInvestigator().fullName(),
+            projectInformation.getPrincipalInvestigator().email(),
+            projectInformation.getPrincipalInvestigator().oidc(),
+            projectInformation.getPrincipalInvestigator().oidcIssuer()));
 
     projectInformationService.manageProject(projectId,
-        new Contact(projectInformation.getProjectManager().getFullName(),
-            projectInformation.getProjectManager().getEmail()));
+        new Contact(projectInformation.getProjectManager().fullName(),
+            projectInformation.getProjectManager().email(),
+            projectInformation.getProjectManager().oidc(),
+            projectInformation.getProjectManager().oidcIssuer()));
   }
 
   private Div renderContactInfo(Contact contact) {
@@ -366,7 +376,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
     var dialog = new EditContactDialog(projectInformation,
-        Utility.tryToLoadFromPrincipal().orElse(null));
+        Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
         PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
@@ -446,15 +456,18 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct().toList();
+    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct()
+        .toList();
   }
 
   private List<OntologyTerm> extractSpecimen(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct().toList();
+    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct()
+        .toList();
   }
 
   private List<OntologyTerm> extractAnalyte(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct().toList();
+    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct()
+        .toList();
   }
 
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {

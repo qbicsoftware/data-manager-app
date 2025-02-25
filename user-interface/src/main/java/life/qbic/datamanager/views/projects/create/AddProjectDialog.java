@@ -25,9 +25,7 @@ import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
 import life.qbic.datamanager.views.general.Stepper.StepIndicator;
-import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
-import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
 import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
@@ -35,6 +33,7 @@ import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -74,6 +73,7 @@ public class AddProjectDialog extends QbicDialog {
 
   public AddProjectDialog(ProjectInformationService projectInformationService,
       FinanceService financeService,
+      PersonLookupService personLookupService,
       SpeciesLookupService speciesLookupService, TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
@@ -82,13 +82,14 @@ public class AddProjectDialog extends QbicDialog {
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
+    requireNonNull(personLookupService, "personLookupService must not be null");
     requireNonNull(speciesLookupService,
         "ontologyTermInformationService must not be null");
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(projectInformationService, financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
-    this.collaboratorsLayout = new CollaboratorsLayout();
+    this.collaboratorsLayout = new CollaboratorsLayout(personLookupService);
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         speciesLookupService, terminologyService);
 

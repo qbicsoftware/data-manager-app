@@ -14,6 +14,7 @@ import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.contact.ContactsForm;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 
 /**
  * <b>Edit Contact Dialog</b>
@@ -32,7 +33,8 @@ public class EditContactDialog extends DialogWindow {
   private transient BoundContactField investigatorBinding;
   private transient BoundContactField projectResponsibleBinding;
 
-  public EditContactDialog(ProjectInformation projectInformation, Contact currentUser) {
+  public EditContactDialog(ProjectInformation projectInformation, Contact currentUser,
+      PersonLookupService personLookupService) {
     super();
     addClassName("large-dialog");
 
@@ -41,10 +43,10 @@ public class EditContactDialog extends DialogWindow {
     setConfirmButtonLabel("Save");
     setCancelButtonLabel("Cancel");
     setHeaderTitle("Edit Project Contacts");
-    var fieldPrincipalInvestigator = createRequired("Principal Investigator");
+    var fieldPrincipalInvestigator = createRequired("Principal Investigator", personLookupService);
     var fieldProjectResponsible = createOptional(
-        "Project Responsible / Co-Investigator (optional)");
-    var fieldProjectManager = createRequired("Project Manager");
+        "Project Responsible / Co-Investigator (optional)", personLookupService);
+    var fieldProjectManager = createRequired("Project Manager", personLookupService);
 
     this.projectInformation = Objects.requireNonNull(projectInformation);
     this.investigatorBinding = BoundContactField.createMandatory(fieldPrincipalInvestigator);
@@ -68,14 +70,16 @@ public class EditContactDialog extends DialogWindow {
     add(content);
   }
 
-  private static ContactField createRequired(String label) {
-    var contact = ContactField.createSimple(label);
+  private static ContactField createRequired(String label,
+      PersonLookupService personLookupService) {
+    var contact = ContactField.createSimple(label, personLookupService);
     contact.setRequiredIndicatorVisible(true);
     return contact;
   }
 
-  private static ContactField createOptional(String label) {
-    return ContactField.createSimple(label);
+  private static ContactField createOptional(String label,
+      PersonLookupService personLookupService) {
+    return ContactField.createSimple(label, personLookupService);
   }
 
   public void setDefaultCancelStrategy(DialogClosingStrategy strategy) {

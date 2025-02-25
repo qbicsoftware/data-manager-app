@@ -12,6 +12,7 @@ import life.qbic.datamanager.views.general.contact.BoundContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.utils.Utility;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 
 /**
  * <b>Collaborators Layout</b>
@@ -26,12 +27,12 @@ public class CollaboratorsLayout extends Div {
   protected transient BoundContactField investigatorBinding;
   protected transient BoundContactField responsibleBinding;
 
-  public CollaboratorsLayout() {
+  public CollaboratorsLayout(PersonLookupService personLookupService) {
 
-    var fieldPrincipalInvestigator = createRequired("Principal Investigator");
+    var fieldPrincipalInvestigator = createRequired("Principal Investigator", personLookupService);
     var fieldProjectResponsible = createOptional(
-        "Project Responsible / Co-Investigator (optional)");
-    var fieldProjectManager = createRequired("Project Manager");
+        "Project Responsible / Co-Investigator (optional)", personLookupService);
+    var fieldProjectManager = createRequired("Project Manager", personLookupService);
     var currentUser = Utility.tryToLoadFromPrincipal().orElseThrow();
     fieldProjectManager.setMyself(currentUser, "Set myself as project manager");
     fieldProjectResponsible.setMyself(currentUser, "Set myself as project responsible");
@@ -51,14 +52,16 @@ public class CollaboratorsLayout extends Div {
         fieldProjectManager);
   }
 
-  private static ContactField createRequired(String label) {
-    var contact = ContactField.createSimple(label);
+  private static ContactField createRequired(String label,
+      PersonLookupService personLookupService) {
+    var contact = ContactField.createSimple(label, personLookupService);
     contact.setRequiredIndicatorVisible(true);
     return contact;
   }
 
-  private static ContactField createOptional(String label) {
-    return ContactField.createSimple(label);
+  private static ContactField createOptional(String label,
+      PersonLookupService personLookupService) {
+    return ContactField.createSimple(label, personLookupService);
   }
 
   /**
@@ -72,7 +75,7 @@ public class CollaboratorsLayout extends Div {
       projectCollaborators.setProjectManager(managerBinding.getValue());
       projectCollaborators.setPrincipalInvestigator(investigatorBinding.getValue());
       //Necessary since otherwise an empty contact will be generated, which will fail during project creation in the application service
-      if(responsibleBinding.getValue().isComplete()){
+      if (responsibleBinding.getValue().hasMinimalInformation()) {
         projectCollaborators.setResponsiblePerson(responsibleBinding.getValue());
       }
     } catch (ValidationException e) {
