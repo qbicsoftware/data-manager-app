@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.RequestCache;
 import life.qbic.datamanager.files.TempDirectory;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
@@ -125,6 +126,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final RequestCache requestCache;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
@@ -139,7 +141,8 @@ public class ProjectSummaryComponent extends PageArea {
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      RequestCache requestCache) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -153,6 +156,7 @@ public class ProjectSummaryComponent extends PageArea {
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = experimentInformationService;
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.requestCache = Objects.requireNonNull(requestCache);
     downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
@@ -532,6 +536,13 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
+    submitRequest(request);
+  }
+
+
+  private void submitRequest(ProjectUpdateRequest request) {
+    requestCache.store(request);
+
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
@@ -560,6 +571,9 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
     getUI().ifPresent(ui -> ui.access(() -> {
+      requestCache.get().ifPresent(request -> {
+        // do sth with the cache
+      });
       var toast = notificationFactory.toast("project.updated.error.retry",
           new String[]{}, getLocale());
       // Todo Implement retry with cached request
