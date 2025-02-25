@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -22,10 +21,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.contact.PersonEntry;
 import life.qbic.projectmanagement.application.contact.PersonRepository;
+import life.qbic.projectmanagement.domain.model.project.Contact;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -93,10 +93,6 @@ public class OrcidRepository implements PersonRepository {
 
   }
 
-  private static PersonEntry convert(OrcidRecord record) {
-    return new PersonEntry(record.givenName + record.familyName,
-        Arrays.stream(record.email()).findFirst().orElse(""), "https://orcid.org/" + record.orcidID,
-        record.orcidID);
   private static Contact convert(OrcidRecord record) {
 
     return new Contact(record.givenName + record.familyName,
