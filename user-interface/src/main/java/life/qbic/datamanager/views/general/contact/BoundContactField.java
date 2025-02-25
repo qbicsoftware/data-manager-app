@@ -29,7 +29,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     this.binder = createBinder(predicate, contactField);
     binder.addStatusChangeListener(
         event -> updateStatus(contactField, event.hasValidationErrors()));
-    this.originalValue = new Contact("", "");
+    this.originalValue = new Contact("", "", "", "");
   }
 
   private static void updateStatus(ContactField contactField, boolean isInvalid) {
@@ -77,9 +77,9 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    */
   private static SerializablePredicate<Contact> isMandatory() {
     return contact -> {
-      var onlyEmailEmpty = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
-      var onlyNameEmpty = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      var bothEmpty = contact.getEmail().isBlank() && contact.getFullName().isBlank();
+      var onlyEmailEmpty = contact.email().isBlank() && !contact.fullName().isBlank();
+      var onlyNameEmpty = !contact.email().isBlank() && contact.fullName().isBlank();
+      var bothEmpty = contact.email().isBlank() && contact.fullName().isBlank();
       return !(onlyEmailEmpty || onlyNameEmpty || bothEmpty);
     };
   }
@@ -91,8 +91,8 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    */
   private static SerializablePredicate<Contact> isOptional() {
     return contact -> {
-      var onlyEmailProvided = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      var onlyNameProvided = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
+      var onlyEmailProvided = !contact.email().isBlank() && contact.fullName().isBlank();
+      var onlyNameProvided = contact.email().isBlank() && !contact.fullName().isBlank();
       return !(onlyEmailProvided || onlyNameProvided);
     };
   }
@@ -151,7 +151,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     private Contact contact;
 
     public ContactContainer() {
-      contact = new Contact("", "");
+      contact = new Contact("", "", "", "");
     }
 
     public Contact getContact() {
@@ -163,7 +163,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     }
 
     public String getEmail() {
-      return contact == null ? "" : contact.getEmail();
+      return contact == null ? "" : contact.email();
     }
 
     public void setEmail(String email) {
@@ -173,7 +173,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     }
 
     public String getFullName() {
-      return contact == null ? "" : contact.getFullName();
+      return contact == null ? "" : contact.fullName();
     }
 
     public void setFullName(String fullName) {
