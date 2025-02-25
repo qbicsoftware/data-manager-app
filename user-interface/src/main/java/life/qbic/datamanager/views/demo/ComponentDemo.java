@@ -220,6 +220,39 @@ public class ComponentDemo extends Div {
     return steps;
   }
 
+  private static Div dialogWithOneButton(AppDialog dialog, String dialogType) {
+    Div content = new Div();
+    Button showDialog = new Button("Show Dialog");
+    // Dialog set-up
+    DialogHeader.withIcon(dialog, dialogType, IconFactory.warningIcon());
+    DialogFooter.withConfirmOnly(dialog, "Close");
+    ExampleUserInput userInput = new ExampleUserInput("Expelliarmus");
+    DialogBody.with(dialog, userInput, userInput);
+
+    Div confirmBox = new Div("Click the button and press 'Cancel' or 'Save'");
+    showDialog.addClickListener(e -> {
+      dialog.open();
+      confirmBox.setText("Cancelled the dialog.");
+    });
+
+    dialog.registerCancelAction(() -> {
+      dialog.close();
+      if (dialog.hasChanges()) {
+        confirmBox.setText("Cancelled the dialog although there where changes made!");
+      } else {
+        confirmBox.setText("Cancelled the dialog. No changes.");
+      }
+    });
+    dialog.registerConfirmAction(() -> {
+      dialog.close();
+      confirmBox.setText("Confirmed the dialog.");
+    });
+
+    content.add(showDialog, confirmBox);
+    content.addClassNames(FLEX_VERTICAL, GAP_04);
+    return content;
+  }
+
   private static Div dialogShowCase(AppDialog dialog, String dialogType) {
     Div content = new Div();
     Button showDialog = new Button("Show Dialog");
@@ -368,6 +401,8 @@ public class ComponentDemo extends Div {
     container.add(dialogSectionShowCase());
     container.add(createHeading3("Three steps example"));
     container.add(stepperDialogShowCase(threeSteps(), "Three steps example"));
+    container.add(createHeading3("Dialog with one button"));
+    container.add(dialogWithOneButton(AppDialog.small(), "Dialog with one button"));
 
     return container;
   }
