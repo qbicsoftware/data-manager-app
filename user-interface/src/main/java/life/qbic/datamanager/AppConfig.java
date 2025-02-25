@@ -74,6 +74,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import reactor.core.scheduler.Scheduler;
 
 /**
  * <b>App bean configuration class</b>
@@ -91,6 +92,11 @@ public class AppConfig {
 
   Section starts below
   */
+  @Bean
+  public Scheduler reactiveScheduler() {
+    return VirtualThreadScheduler.getScheduler();
+  }
+
 
   @Bean
   public IdentityService userRegistrationService(
