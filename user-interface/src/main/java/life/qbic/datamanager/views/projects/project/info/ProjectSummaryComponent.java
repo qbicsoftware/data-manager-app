@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.projects.project.info;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
 import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -45,6 +47,8 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
@@ -65,6 +69,7 @@ import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
@@ -118,6 +123,7 @@ public class ProjectSummaryComponent extends PageArea {
   private EditFundingInformationDialog editFundingInfoDialog;
   private EditContactDialog editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
+  private static final Logger log = logger(ProjectSummaryComponent.class);
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
@@ -333,6 +339,20 @@ public class ProjectSummaryComponent extends PageArea {
     var name = new Span(contact.fullName());
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
+    if (!contact.oidcIssuer().isEmpty() && !contact.oidc().isEmpty()) {
+      var oidcType = Arrays.stream(OidcType.values())
+          .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
+          .findFirst();
+      if (oidcType.isPresent()) {
+        String oidcUrl = String.format(oidcType.get().getUrl()) + contact.oidc();
+        Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
+        oidcLink.setTarget(AnchorTarget.BLANK);
+        OidcLogo oidcLogo = new OidcLogo(oidcType.get());
+        Span oidcSpan = new Span(oidcLogo, oidcLink);
+        oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
+        contactInfo.add(oidcSpan);
+      }
+    }
     return contactInfo;
   }
 
