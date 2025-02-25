@@ -36,7 +36,7 @@ public class EditContactDialog extends DialogWindow {
   public EditContactDialog(ProjectInformation projectInformation, Contact currentUser,
       PersonLookupService personLookupService) {
     super();
-    addClassName("large-dialog");
+    addClassName("dialog-large");
 
     var content = new Div();
     content.addClassNames("vertical-list");
