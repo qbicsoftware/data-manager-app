@@ -25,13 +25,13 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   public static final String GAP_M_CSS = "gap-m";
   private static final String FULL_WIDTH_CSS = "full-width";
+  private static final Logger log = logger(ContactField.class);
   private final TextField fullName;
   private final TextField email;
   private final Checkbox setMyselfCheckBox;
   protected transient ComboBox<Contact> orcidSelection;
   private Contact myself;
   private boolean isOptional = true;
-  private static final Logger log = logger(ContactField.class);
 
   private ContactField(String label, PersonLookupService personLookupService) {
     this.fullName = withErrorMessage(withPlaceHolder(new TextField(), "Please provide a name"),
@@ -45,12 +45,27 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     add(layoutFields(setMyselfCheckBox, layoutFields(fullName, email)), orcidSelection);
     hideCheckbox(); // default is to hide the set myself checkbox
     setMyselfCheckBox.addValueChangeListener(listener -> {
+      orcidSelection.setValue(null);
       if (isChecked(listener.getSource())) {
         loadContact(this, myself);
       }
     });
-    fullName.addValueChangeListener(listener -> updateValue());
-    email.addValueChangeListener(listener -> updateValue());
+    fullName.addValueChangeListener(listener ->
+    {
+      //We need to make sure that the orcid information within the orcid selection is reset as soon as manual entry has begun
+      if (listener.isFromClient()) {
+        orcidSelection.setValue(null);
+      }
+      updateValue();
+    });
+    email.addValueChangeListener(listener ->
+    {
+      //We need to make sure that the orcid information within the orcid selection is reset as soon as manual entry has begun
+      if (listener.isFromClient()) {
+        orcidSelection.setValue(null);
+      }
+      updateValue();
+    });
   }
 
   private static void loadContact(ContactField field, Contact contact) {
@@ -235,7 +250,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
       Span oidcSpan = new Span(oidcLogo, oidcLink);
-      oidcSpan.addClassNames("gap-02", "icon-content-center");
+      oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
       add(oidcSpan);
     }
   }
