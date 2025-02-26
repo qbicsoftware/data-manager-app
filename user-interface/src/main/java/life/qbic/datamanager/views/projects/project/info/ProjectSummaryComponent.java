@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.files.TempDirectory;
@@ -85,7 +84,6 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
 
 /**
  * <b>Project Summary Component</b>
