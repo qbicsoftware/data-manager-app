@@ -45,7 +45,6 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     add(layoutFields(setMyselfCheckBox, layoutFields(fullName, email)), orcidSelection);
     hideCheckbox(); // default is to hide the set myself checkbox
     setMyselfCheckBox.addValueChangeListener(listener -> {
-      orcidSelection.setValue(null);
       if (isChecked(listener.getSource())) {
         loadContact(this, myself);
       }
@@ -131,7 +130,8 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
             .map(contact -> new Contact(contact.fullName(), contact.emailAddress(), contact.oidc(),
                 contact.oidcIssuer()
             )));
-    personSelection.addValueChangeListener(listener -> loadContact(this, listener.getValue()));
+    personSelection.addValueChangeListener(listener ->
+        loadContact(this, listener.getValue()));
     return personSelection;
   }
 
@@ -170,7 +170,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     if (contact != null) {
       fullName.setValue(contact.fullName());
       email.setValue(contact.email());
-      orcidSelection.setValue(contact);
+      //If oidc information is within the contact we can set the field to the correct value
+      if (contact.isComplete()) {
+        orcidSelection.setValue(contact);
+      }
     }
   }
 
@@ -194,6 +197,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   public TextField getFullNameTextField() {
     return fullName;
+  }
+
+  public ComboBox<Contact> getOidcSelection() {
+    return orcidSelection;
   }
 
   private void removeErrors() {

@@ -20,8 +20,11 @@ public class QbicOidcUser extends DefaultOidcUser {
   private final transient QbicUserInfo qbicUserInfo;
   private final String originalAuthName;
 
-  public record QbicUserInfo(String userId, String fullName, String email, boolean active) {
-
+  public QbicOidcUser(Collection<? extends GrantedAuthority> authorities, OidcIdToken idToken,
+      OidcUserInfo userInfo, QbicUserInfo qbicUserInfo) {
+    super(authorities, idToken, userInfo);
+    this.qbicUserInfo = requireNonNull(qbicUserInfo, "qbicUserInfo must not be null");
+    this.originalAuthName = super.getName();
   }
 
   @Override
@@ -46,13 +49,6 @@ public class QbicOidcUser extends DefaultOidcUser {
     return result;
   }
 
-  public QbicOidcUser(Collection<? extends GrantedAuthority> authorities, OidcIdToken idToken,
-      OidcUserInfo userInfo, QbicUserInfo qbicUserInfo) {
-    super(authorities, idToken, userInfo);
-    this.qbicUserInfo = requireNonNull(qbicUserInfo, "qbicUserInfo must not be null");
-    this.originalAuthName = super.getName();
-  }
-
   public String getQbicUserId() {
     return qbicUserInfo.userId();
   }
@@ -73,10 +69,19 @@ public class QbicOidcUser extends DefaultOidcUser {
   }
 
   public String getOidcId() {
-    return originalAuthName;
+    return Optional.ofNullable(originalAuthName).orElse(qbicUserInfo.oidc());
+  }
+
+  public String getOidcIssuer() {
+    return Optional.ofNullable(super.getIssuer().toString()).orElse(qbicUserInfo.oidcIssuer());
   }
 
   public boolean isActive() {
     return qbicUserInfo.active();
+  }
+
+  public record QbicUserInfo(String userId, String fullName, String email, boolean active,
+                             String oidc, String oidcIssuer) {
+
   }
 }

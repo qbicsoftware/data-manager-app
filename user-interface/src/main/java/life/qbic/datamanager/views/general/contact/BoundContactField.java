@@ -107,6 +107,8 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
         .bind(ContactContainer::getEmail, ContactContainer::setEmail);
     binder.forField(contactField.getFullNameTextField())
         .bind(ContactContainer::getFullName, ContactContainer::setFullName);
+    binder.forField(contactField.getOidcSelection())
+        .bind(ContactContainer::getOidcSelection, ContactContainer::setOidcSelection);
     return binder;
   }
 
@@ -182,5 +184,15 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
       }
     }
 
+    public Contact getOidcSelection() {
+      return contact;
+    }
+
+    public void setOidcSelection(Contact oidcSelection) {
+      if (oidcSelection != null && contact != null) {
+        contact.setOidc(oidcSelection.oidc());
+        contact.setOidcIssuer(oidcSelection.oidcIssuer());
+      }
+    }
   }
 }

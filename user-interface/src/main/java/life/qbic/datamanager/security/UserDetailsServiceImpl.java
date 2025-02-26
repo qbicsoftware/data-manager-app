@@ -48,7 +48,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         userInfo.id());
     var user = new User(userInfo.id(), userInfo.fullName(), userInfo.platformUserName(),
         userInfo.emailAddress(),
-        encryptedPassword.orElseGet(null), userInfo.isActive());
+        encryptedPassword.orElseGet(null), userInfo.isActive(), userInfo.oidcId(),
+        userInfo.oidcIssuer());
     return new QbicUserDetails(user, authorities);
   }
 }
