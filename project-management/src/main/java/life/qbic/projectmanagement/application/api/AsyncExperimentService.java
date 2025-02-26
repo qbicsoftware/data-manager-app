@@ -3,15 +3,18 @@ package life.qbic.projectmanagement.application.api;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import reactor.core.publisher.Mono;
 
 public interface AsyncExperimentService {
 
-  sealed interface UpdateRequestBody permits ExperimentDescription, ExperimentalVariables {
+  sealed interface UpdateRequestBody permits ConfoundingVariables, ExperimentDescription,
+      ExperimentalVariables {
 
   }
 
-  sealed interface UpdateResponseBody permits ExperimentDescription, ExperimentalVariables {
+  sealed interface UpdateResponseBody permits ConfoundingVariables, ExperimentDescription,
+      ExperimentalVariables {
 
   }
 
@@ -29,6 +32,11 @@ public interface AsyncExperimentService {
                                Set<String> analytes) implements UpdateRequestBody,
       UpdateResponseBody {
 
+
+  }
+
+  record ConfoundingVariables(List<ConfoundingVariableInformation> confoundingVariables) implements
+      UpdateRequestBody, UpdateResponseBody {
 
   }
 

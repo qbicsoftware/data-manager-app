@@ -15,7 +15,16 @@ public class AsyncExperimentServiceImpl implements AsyncExperimentService {
           updateExperimentDescription(request.projectId(), request.experimentId(),
               experimentDescription);
 
+      case ConfoundingVariables confoundingVariables ->
+          updateConfoundingVariables(request.projectId(), request.experimentId(),
+              confoundingVariables);
     }).subscribeOn(Schedulers.boundedElastic());
+  }
+
+  private ExperimentUpdateResponse updateConfoundingVariables(String projectId, String experimentId,
+      ConfoundingVariables confoundingVariables) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
   }
 
   private ExperimentUpdateResponse updateExperimentDescription(String projectId,
