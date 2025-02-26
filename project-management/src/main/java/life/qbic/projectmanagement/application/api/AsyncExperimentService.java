@@ -3,15 +3,9 @@ package life.qbic.projectmanagement.application.api;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import reactor.core.publisher.Mono;
 
 public interface AsyncExperimentService {
-//
-//      experimentalVariableContents.forEach(
-//  experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
-//      context.projectId().orElseThrow().value(),
-//            context.experimentId().orElseThrow(),
-//            experimentalVariableContent.name(), experimentalVariableContent.unit(),
-//                experimentalVariableContent.levels()));
 
   sealed interface UpdateRequestBody permits ExperimentalVariables {
 
@@ -41,7 +35,17 @@ public interface AsyncExperimentService {
 
   record ExperimentUpdateResponse(String experimentId, UpdateResponseBody body, String requestId) {
 
-
   }
+
+  Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
+
+  //
+//      experimentalVariableContents.forEach(
+//  experimentalVariableContent -> experimentInformationService.addVariableToExperiment(
+//      context.projectId().orElseThrow().value(),
+//            context.experimentId().orElseThrow(),
+//            experimentalVariableContent.name(), experimentalVariableContent.unit(),
+//                experimentalVariableContent.levels()));
+
 
 }
