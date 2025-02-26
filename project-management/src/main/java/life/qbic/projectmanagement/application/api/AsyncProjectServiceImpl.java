@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -36,33 +36,65 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     var projectId = request.projectId();
-    switch (request.requestBody()) {
-      case ProjectDesign design:
-        return
-            withSecurityContext(SecurityContextHolder.getContext(),
-                () -> updateProjectDesign(projectId, design, request.requestId())).subscribeOn(scheduler);
-      default:
-        return Mono.error(new UnknownRequestException("Invalid request body"));
-    }
+    final var securityContext = SecurityContextHolder.getContext();
+    return switch (request.requestBody()) {
+      case ProjectDesign design ->
+          Mono.defer(() -> updateProjectDesign(projectId, design, request.requestId()))
+              .transform(original -> withSecurityContext(securityContext, original));
+      case FundingInformation fundingInformation -> unknownRequest();
+      case ProjectContacts projectContacts -> unknownRequest();
+    };
+  }
+
+  private <T> Mono<T> unknownRequest() {
+    return Mono.error(() -> new UnknownRequestException("Invalid request body"));
+  }
+
+  private <T> Mono<T> withSecurityContext(final SecurityContext securityContext, Mono<T> original) {
+    return original.contextWrite(
+        ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
+  }
+
+  @Override
+  public Mono<ExperimentUpdateResponse> update(
+      ExperimentUpdateRequest request) {
+    return Mono.fromSupplier(() -> switch (request.body()) {
+      case ExperimentalVariables experimentalVariables ->
+          updateExperimentalVariables(request.projectId(), request.experimentId(),
+              experimentalVariables);
+      case ExperimentDescription experimentDescription ->
+          updateExperimentDescription(request.projectId(), request.experimentId(),
+              experimentDescription);
+
+      case ConfoundingVariables confoundingVariables ->
+          updateConfoundingVariables(request.projectId(), request.experimentId(),
+              confoundingVariables);
+    }).subscribeOn(Schedulers.boundedElastic());
+  }
+
+  private ExperimentUpdateResponse updateConfoundingVariables(String projectId, String experimentId,
+      ConfoundingVariables confoundingVariables) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  private ExperimentUpdateResponse updateExperimentDescription(String projectId,
+      String experimentId,
+      ExperimentDescription experimentDescription) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  private ExperimentUpdateResponse updateExperimentalVariables(String projectId,
+      String experimentId, ExperimentalVariables experimentalVariables) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
   }
 
   @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     throw new RuntimeException("not implemented");
-  }
-
-  /*
-  Configures and writes the provided security context for a supplier of type Mono<ProjectUpdateResponse>. Without
-  the context written to the reactive stream, services that have access control methods will fail.
-   */
-  private Mono<ProjectUpdateResponse> withSecurityContext(SecurityContext sctx,
-      Supplier<Mono<ProjectUpdateResponse>> supplier) {
-    var rcontext = ReactiveSecurityContextHolder.withSecurityContext(Mono.just(sctx));
-    return ReactiveSecurityContextHolder.getContext().flatMap(securityContext1 -> {
-      SecurityContextHolder.setContext(securityContext1);
-      return supplier.get();
-    }).contextWrite(rcontext);
   }
 
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
@@ -82,5 +114,3 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     });
   }
 }
-
-
