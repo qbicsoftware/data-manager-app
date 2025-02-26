@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.files.TempDirectory;
@@ -75,7 +74,6 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
-import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
@@ -83,6 +81,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -90,7 +89,6 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
 
 /**
  * <b>Project Summary Component</b>
@@ -136,7 +134,6 @@ public class ProjectSummaryComponent extends PageArea {
   private EditFundingInformationDialog editFundingInfoDialog;
   private EditContactDialog editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
-  private static final Logger log = logger(ProjectSummaryComponent.class);
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
