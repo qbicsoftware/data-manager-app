@@ -255,17 +255,7 @@ $$
 
 $$
 \begin{aligned}
-\text{where } & \text{ P(x_i) is the probability of character } x_i, \\
-& n \text{ is the total length of the password}.
-\end{aligned}
-$$
-$$
-H = -\sum_{i=1}^{n} P(x_i) \log_2 P(x_i) \times n > 100.,
-$$
-
-$$
-\begin{aligned}
-\text{where } & \text{ P(x_i) is the probability of character } x_i, \\
+\text{where } & P(x_i) \text{ is the probability of character } x_i, \\
 & n \text{ is the total length of the password}.
 \end{aligned}
 $$

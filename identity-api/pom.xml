@@ -6,22 +6,22 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.7.2</version>
+    <version>1.8.2</version>
   </parent>
 
   <groupId>life.qbic.datamanager</groupId>
   <artifactId>identity-api</artifactId>
 
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.7.2</version>
+      <version>1.8.2</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
