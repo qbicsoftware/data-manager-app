@@ -7,11 +7,11 @@ import reactor.core.publisher.Mono;
 
 public interface AsyncExperimentService {
 
-  sealed interface UpdateRequestBody permits ExperimentalVariables {
+  sealed interface UpdateRequestBody permits ExperimentDescription, ExperimentalVariables {
 
   }
 
-  sealed interface UpdateResponseBody permits ExperimentalVariables {
+  sealed interface UpdateResponseBody permits ExperimentDescription, ExperimentalVariables {
 
   }
 
@@ -22,6 +22,13 @@ public interface AsyncExperimentService {
   record ExperimentalVariables(List<ExperimentalVariable> experimentalVariables) implements
       UpdateRequestBody,
       UpdateResponseBody {
+
+  }
+
+  record ExperimentDescription(String experimentName, Set<String> species, Set<String> specimen,
+                               Set<String> analytes) implements UpdateRequestBody,
+      UpdateResponseBody {
+
 
   }
 
