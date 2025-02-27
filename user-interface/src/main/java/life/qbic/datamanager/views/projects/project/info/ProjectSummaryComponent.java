@@ -670,7 +670,7 @@ public class ProjectSummaryComponent extends PageArea {
     }
   }
 
-  private boolean deleteTempDir(File dir) throws IOException {
+  private boolean deleteTempDir(File dir) {
     File[] files = dir.listFiles(); //null if not a directory
     // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
     if (files != null) {
