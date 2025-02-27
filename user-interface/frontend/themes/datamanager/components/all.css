@@ -363,11 +363,11 @@ Buttons
   background-color: var(--lumo-primary-color);
 }
 
-.button-size-medium-dialog {
+.button-size-dialog-medium {
   height: var(--lumo-size-m);
 }
 
-.button-size-large-dialog {
+.button-size-dialog-large {
   height: var(--lumo-size-l);
 }
 

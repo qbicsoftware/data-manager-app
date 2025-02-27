@@ -72,6 +72,14 @@ public class QbicUserDetails implements UserDetails {
     return user.fullName();
   }
 
+  public String oidc() {
+    return user.oidc();
+  }
+
+  public String oidcIssuer() {
+    return user.oidcIssuer();
+  }
+
   @Override
   public boolean isAccountNonExpired() {
     return true;

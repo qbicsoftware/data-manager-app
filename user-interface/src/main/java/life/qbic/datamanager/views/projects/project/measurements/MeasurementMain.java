@@ -341,7 +341,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
                 String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
                 ui.access(() -> {
                   pendingToast.close();
-                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale()).open();
+                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale())
+                      .open();
                 });
               } else {
                 ui.access(() -> {

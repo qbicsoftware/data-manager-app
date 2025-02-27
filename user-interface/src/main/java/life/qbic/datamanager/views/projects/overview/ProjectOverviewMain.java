@@ -14,7 +14,6 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -27,8 +26,11 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ConfirmEvent;
+import life.qbic.datamanager.views.projects.create.AddProjectDialog.ProjectCreationInformation;
+import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
+import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
+import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
-import life.qbic.datamanager.views.register.EmailConfirmationMain;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
@@ -36,6 +38,7 @@ import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.project.Funding;
@@ -66,11 +69,13 @@ public class ProjectOverviewMain extends Main {
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final PersonLookupService personLookupService;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
       ProjectInformationService projectInformationService,
       SpeciesLookupService ontologyTermInformationService,
+      PersonLookupService personLookupService,
       AddExperimentToProjectService addExperimentToProjectService,
       UserInformationService userInformationService,
       AuthenticationToUserIdTranslationService userIdTranslator,
@@ -82,6 +87,8 @@ public class ProjectOverviewMain extends Main {
     this.projectCreationService = requireNonNull(projectCreationService,
         "project creation service can not be null");
     this.financeService = requireNonNull(financeService, "finance service can not be null");
+    this.personLookupService = requireNonNull(personLookupService,
+        "person lookup service can not be null");
     this.projectInformationService = requireNonNull(projectInformationService,
         "project information service can not be null");
     this.ontologyTermInformationService = requireNonNull(ontologyTermInformationService,
@@ -100,6 +107,7 @@ public class ProjectOverviewMain extends Main {
     this.projectCollectionComponent.addCreateClickedListener(projectCreationClickedEvent -> {
       AddProjectDialog addProjectDialog = new AddProjectDialog(this.projectInformationService,
           this.financeService,
+          personLookupService,
           this.ontologyTermInformationService, terminologyService,
           cancelConfirmationDialogFactory);
       if (isOfferSearchAllowed()) {
@@ -122,11 +130,12 @@ public class ProjectOverviewMain extends Main {
       MessageSourceNotificationFactory factory, Locale locale) {
     return switch (type) {
       case PROJECT_CREATED_SUCCESSFULLY -> factory.toast("project.created.success",
-          new Object[]{confirmEvent.getProjectDesign().getProjectTitle()}, locale);
+          new Object[]{confirmEvent.projectCreationInformation().projectDesign().getProjectTitle()},
+          locale);
       case PROJECT_CREATION_FAILED ->
           factory.toast("project.created.error", new Object[]{}, locale);
       case EXPERIMENT_CREATED_SUCCESSFULLY -> factory.toast("experiment.created.success",
-          new Object[]{confirmEvent.getExperimentalInformation().getExperimentName()}, locale);
+          new Object[]{confirmEvent.experimentalInformation().getExperimentName()}, locale);
       case EXPERIMENT_CREATION_FAILED ->
           factory.toast("experiment.created.error", new Object[]{}, locale);
     };
@@ -163,30 +172,35 @@ public class ProjectOverviewMain extends Main {
 
   private void createProject(ConfirmEvent confirmEvent) {
     Funding funding = null;
-    if (confirmEvent.getFundingEntry() != null && !confirmEvent.getFundingEntry()
+    ProjectCreationInformation projectCreationInformation = confirmEvent.projectCreationInformation();
+    if (projectCreationInformation.getFundingEntry() != null
+        && !projectCreationInformation.getFundingEntry()
         .isEmpty()) {
-      funding = Funding.of(confirmEvent.getFundingEntry().getLabel(),
-          confirmEvent.getFundingEntry().getReferenceId());
+      funding = Funding.of(projectCreationInformation.getFundingEntry().get().getLabel(),
+          projectCreationInformation.getFundingEntry().get().getReferenceId());
     }
+    ProjectDesign projectDesign = projectCreationInformation.projectDesign();
+    ProjectCollaborators projectCollaborators = projectCreationInformation.projectCollaborators();
     Result<Project, ApplicationException> project = projectCreationService.createProject(
-        confirmEvent.getProjectDesign().getOfferId(),
-        confirmEvent.getProjectDesign().getProjectCode(),
-        confirmEvent.getProjectDesign().getProjectTitle(),
-        confirmEvent.getProjectDesign().getProjectObjective(),
-        confirmEvent.getProjectCollaborators().getPrincipalInvestigator().toDomainContact(),
-        confirmEvent.getProjectCollaborators().getResponsiblePerson()
+        projectDesign.getOfferId(),
+        projectDesign.getProjectCode(),
+        projectDesign.getProjectTitle(),
+        projectDesign.getProjectObjective(),
+        projectCollaborators.getPrincipalInvestigator().toDomainContact(),
+        projectCollaborators.getResponsiblePerson()
             .map(Contact::toDomainContact).orElse(null),
-        confirmEvent.getProjectCollaborators().getProjectManager().toDomainContact(),
+        projectCollaborators.getProjectManager().toDomainContact(),
         funding);
     handleResultProject(project, confirmEvent);
+    ExperimentalInformation experimentalInformation = confirmEvent.experimentalInformation();
     var experiment = addExperimentToProjectService.addExperimentToProject(
         project.getValue().getId(),
-        confirmEvent.getExperimentalInformation().getExperimentName(),
-        confirmEvent.getExperimentalInformation().getSpecies(),
-        confirmEvent.getExperimentalInformation().getSpecimens(),
-        confirmEvent.getExperimentalInformation().getAnalytes(),
-        confirmEvent.getExperimentalInformation().getSpeciesIcon().getLabel(),
-        confirmEvent.getExperimentalInformation().getSpecimenIcon().getLabel());
+        experimentalInformation.getExperimentName(),
+        experimentalInformation.getSpecies(),
+        experimentalInformation.getSpecimens(),
+        experimentalInformation.getAnalytes(),
+        experimentalInformation.getSpeciesIcon().getLabel(),
+        experimentalInformation.getSpecimenIcon().getLabel());
     handleResultExperiment(experiment, confirmEvent);
     projectCollectionComponent.refresh();
     projectCollectionComponent.resetSearch();
