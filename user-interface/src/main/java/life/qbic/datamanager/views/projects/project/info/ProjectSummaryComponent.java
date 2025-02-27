@@ -135,8 +135,7 @@ public class ProjectSummaryComponent extends PageArea {
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
-      AsyncProjectService asyncProjectService,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      AsyncProjectService asyncProjectService) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
