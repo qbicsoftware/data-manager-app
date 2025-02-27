@@ -687,7 +687,7 @@ public class ProjectSummaryComponent extends PageArea {
     AvatarGroup avatarGroup = new AvatarGroup();
     userInfo.forEach(user -> avatarGroup.add(new UserAvatarGroupItem(user.userName(),
         user.userId())));
-    avatarGroup.setMaxItemsVisible(Integer.valueOf(3));
+    avatarGroup.setMaxItemsVisible(3);
     return avatarGroup;
   }
 
