@@ -81,6 +81,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             sink.error(new RequestFailedException("Update project design failed", e));
           }
         })
-    ).subscribeOn(scheduler);
+    ).subscribeOn(
+        scheduler); //we must not expose the blocking behaviour outside of this method, thus we use a non-blocking scheduler
   }
+
 }
