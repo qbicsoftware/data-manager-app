@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.files.TempDirectory;
@@ -85,7 +84,6 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
 
 /**
  * <b>Project Summary Component</b>
@@ -124,7 +122,6 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
@@ -163,7 +160,6 @@ public class ProjectSummaryComponent extends PageArea {
     add(fundingInformationSection);
     add(projectContactsSection);
     add(downloadComponent);
-    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -536,7 +532,11 @@ public class ProjectSummaryComponent extends PageArea {
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(
+            subscription -> log.debug("Subscribed to project update request: " + request))
+        .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
         .subscribe(this::handleSuccess);
+
   }
 
   /*
