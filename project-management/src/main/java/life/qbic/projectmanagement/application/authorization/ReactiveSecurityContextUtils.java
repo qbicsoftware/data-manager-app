@@ -24,7 +24,7 @@ public class ReactiveSecurityContextUtils {
    * @param <T>             the type of the mono
    * @return the mono with a configured {@link ReactiveSecurityContextHolder} in the {@link Context}
    */
-  public static <T> Mono<T> setReactiveSecurityContextHolder(Mono<T> original,
+  public static <T> Mono<T> writeSecurityContext(Mono<T> original,
       SecurityContext securityContext) {
     return original.contextWrite(
         ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
@@ -38,7 +38,7 @@ public class ReactiveSecurityContextUtils {
    * @param <T>      the type of the mono
    * @return the mono with a configured {@link ReactiveSecurityContextHolder} in the {@link Context}
    */
-  public static <T> Mono<T> readSecurityContextToCurrentThread(Mono<T> original) {
+  public static <T> Mono<T> applySecurityContext(Mono<T> original) {
     return ReactiveSecurityContextHolder.getContext().flatMap(securityContext -> {
       SecurityContextHolder.setContext(securityContext);
       return original;

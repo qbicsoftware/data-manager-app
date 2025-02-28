@@ -1,7 +1,7 @@
 package life.qbic.projectmanagement.application.api;
 
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.readSecurityContextToCurrentThread;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.setReactiveSecurityContextHolder;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
@@ -49,7 +49,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return response
-        .transform(original -> setReactiveSecurityContextHolder(original, securityContext))
+        .transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(Retry.maxInARow(5)
             .doBeforeRetry(retrySignal -> log.warn("Update failed (" + retrySignal + ")")));
   }
@@ -66,7 +66,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
-    return readSecurityContextToCurrentThread(
+    return applySecurityContext(
         Mono.<ProjectUpdateResponse>create(sink -> {
           try {
             var id = ProjectId.parse(projectId);
