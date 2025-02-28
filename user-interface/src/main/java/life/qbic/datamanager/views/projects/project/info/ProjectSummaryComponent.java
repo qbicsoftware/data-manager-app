@@ -547,7 +547,11 @@ public class ProjectSummaryComponent extends PageArea {
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(
+            subscription -> log.debug("Subscribed to project update request: " + request))
+        .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
         .subscribe(this::handleSuccess);
+
   }
 
   /*
@@ -685,7 +689,7 @@ public class ProjectSummaryComponent extends PageArea {
     }
   }
 
-  private boolean deleteTempDir(File dir) throws IOException {
+  private boolean deleteTempDir(File dir) {
     File[] files = dir.listFiles(); //null if not a directory
     // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
     if (files != null) {
@@ -702,7 +706,7 @@ public class ProjectSummaryComponent extends PageArea {
     AvatarGroup avatarGroup = new AvatarGroup();
     userInfo.forEach(user -> avatarGroup.add(new UserAvatarGroupItem(user.userName(),
         user.userId())));
-    avatarGroup.setMaxItemsVisible(Integer.valueOf(3));
+    avatarGroup.setMaxItemsVisible(3);
     return avatarGroup;
   }
 

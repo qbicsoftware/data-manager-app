@@ -244,6 +244,7 @@
           <useModulePath>false</useModulePath>
           <includes>
             <include>**/*Spec.class</include>
+            <include>**/*Test.class</include>
           </includes>
         </configuration>
       </plugin>

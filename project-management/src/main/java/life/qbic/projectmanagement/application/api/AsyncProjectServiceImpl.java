@@ -1,17 +1,21 @@
 package life.qbic.projectmanagement.application.api;
 
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
+
 import java.util.Objects;
-import java.util.function.Supplier;
+import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
+import reactor.util.retry.Retry;
 
 /**
  * Implementation of the {@link AsyncProjectService} interface.
@@ -37,15 +41,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     var projectId = request.projectId();
-    switch (request.requestBody()) {
-      case ProjectDesign design:
-        return
-            withSecurityContext(SecurityContextHolder.getContext(),
-                () -> updateProjectDesign(projectId, design, request.requestId())).subscribeOn(
-                scheduler);
-      default:
-        return Mono.error(new UnknownRequestException("Invalid request body"));
-    }
+    Mono<ProjectUpdateResponse> response = switch (request.requestBody()) {
+      case FundingInformation fundingInformation -> unknownRequest();
+      case ProjectContacts projectContacts -> unknownRequest();
+      case ProjectDesign projectDesign ->
+          updateProjectDesign(projectId, projectDesign, request.requestId());
+    };
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return response
+        .transform(original -> writeSecurityContext(original, securityContext))
+        .retryWhen(Retry.maxInARow(5)
+            .doBeforeRetry(retrySignal -> log.warn("Update failed (" + retrySignal + ")")));
   }
 
   @Override
@@ -54,36 +60,28 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     throw new RuntimeException("not implemented");
   }
 
-  /*
-  Configures and writes the provided security context for a supplier of type Mono<ProjectUpdateResponse>. Without
-  the context written to the reactive stream, services that have access control methods will fail.
-   */
-  private Mono<ProjectUpdateResponse> withSecurityContext(SecurityContext sctx,
-      Supplier<Mono<ProjectUpdateResponse>> supplier) {
-    var rcontext = ReactiveSecurityContextHolder.withSecurityContext(Mono.just(sctx));
-    return ReactiveSecurityContextHolder.getContext().flatMap(securityContext1 -> {
-      SecurityContextHolder.setContext(securityContext1);
-      return supplier.get();
-    }).contextWrite(rcontext);
+  private <T> Mono<T> unknownRequest() {
+    return Mono.error(() -> new UnknownRequestException("Invalid request body"));
   }
 
-  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design,
-      String requestId) {
-    return Mono.create(sink -> {
-      try {
-        var id = ProjectId.parse(projectId);
-        projectService.updateTitle(id, design.title());
-        projectService.updateObjective(id, design.objective());
-        sink.success(new ProjectUpdateResponse(projectId, design, requestId));
-      } catch (IllegalArgumentException e) {
-        sink.error(new RequestFailedException("Invalid project id: " + projectId));
-      } catch (org.springframework.security.access.AccessDeniedException e) {
-        sink.error(new AccessDeniedException("Access denied"));
-      } catch (RuntimeException e) {
-        sink.error(new RequestFailedException("Update project design failed", e));
-      }
-    });
+  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
+    return applySecurityContext(
+        Mono.<ProjectUpdateResponse>create(sink -> {
+          try {
+            var id = ProjectId.parse(projectId);
+            projectService.updateTitle(id, design.title());
+            projectService.updateObjective(id, design.objective());
+            sink.success(new ProjectUpdateResponse(projectId, design, requestId));
+          } catch (IllegalArgumentException e) {
+            sink.error(new RequestFailedException("Invalid project id: " + projectId));
+          } catch (org.springframework.security.access.AccessDeniedException e) {
+            sink.error(new AccessDeniedException("Access denied"));
+          } catch (RuntimeException e) {
+            sink.error(new RequestFailedException("Update project design failed", e));
+          }
+        })
+    ).subscribeOn(
+        scheduler); //we must not expose the blocking behaviour outside of this method, thus we use a non-blocking scheduler
   }
+
 }
-
-
