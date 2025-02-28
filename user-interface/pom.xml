@@ -154,6 +154,10 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-client</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
     <!-- docx4j dependencies !-->
     <!-- https://mvnrepository.com/artifact/org.docx4j/docx4j-core -->
     <dependency>
