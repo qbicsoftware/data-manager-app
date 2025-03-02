@@ -152,6 +152,7 @@ public class SampleEditFactory implements WorkbookFactory {
     }
     return Optional.empty();
   }
+
   @Override
   public void customizeHeaderCells(Row header, CreationHelper creationHelper,
       CellStyles cellStyles) {
