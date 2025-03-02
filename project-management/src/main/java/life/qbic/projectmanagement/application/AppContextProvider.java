@@ -27,4 +27,11 @@ public interface AppContextProvider {
    * @since 1.0.0
    */
   String urlToSamplePage(String projectId, String experimentId);
+
+  /**
+   * Returns the base URL of the application including its context path.
+   * @return the base URL and the context path
+   * @since 1.8.0
+   */
+  String baseUrl();
 }
