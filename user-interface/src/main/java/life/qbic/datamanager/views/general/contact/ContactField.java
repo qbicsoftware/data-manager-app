@@ -48,8 +48,15 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     add(layoutFields(setMyselfCheckBox, layoutFields(fullName, email)), orcidSelection);
     hideCheckbox(); // default is to hide the set myself checkbox
     setMyselfCheckBox.addValueChangeListener(listener -> {
-      if (isChecked(listener.getSource())) {
-        loadContact(this, myself);
+      //isFromClient is necessary since the checkbox will be unchecked if the user changes the information
+      if (listener.isFromClient()) {
+        if (isChecked(listener.getSource())) {
+          loadContact(this, myself);
+        } else {
+          //If the checkbox is unchecked, all set values should be deleted from all fields
+          var emptyContact = new Contact("", "", "", "");
+          loadContact(this, emptyContact);
+        }
       }
     });
     fullName.addValueChangeListener(listener ->
@@ -57,6 +64,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       //We need to make sure that the orcid information within the orcid selection is reset as soon as manual entry has begun
       if (listener.isFromClient()) {
         orcidSelection.setValue(null);
+        //We need to make sure that the checkbox is also unchecked as soon as the user changes the field values
+        if (isChecked(setMyselfCheckBox)) {
+          setMyselfCheckBox.setValue(false);
+        }
       }
       updateValue();
     });
@@ -65,6 +76,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       //We need to make sure that the orcid information within the orcid selection is reset as soon as manual entry has begun
       if (listener.isFromClient()) {
         orcidSelection.setValue(null);
+        //We need to make sure that the checkbox is also unchecked as soon as the user changes the field values
+        if (isChecked(setMyselfCheckBox)) {
+          setMyselfCheckBox.setValue(false);
+        }
       }
       updateValue();
     });
@@ -135,17 +150,24 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
                 orcidEntry.oidcIssuer()
             )));
     personSelection.addValueChangeListener(listener -> {
-      var orcidEntry = listener.getValue();
-      //If the entry in the combobox is deleted we want to update all fields accordingly.
-      var convertedContact = new Contact("", "", "", "");
-      if (orcidEntry != null) {
-        convertedContact = new Contact(orcidEntry.fullName(), orcidEntry.emailAddress(),
-            orcidEntry.oidc(), orcidEntry.oidcIssuer());
+      if (listener.isFromClient()) {
+        var orcidEntry = listener.getValue();
+        //If the entry in the combobox is deleted we want to remove the set values from all fields accordingly.
+        var convertedContact = new Contact("", "", "", "");
+        if (orcidEntry != null) {
+          convertedContact = new Contact(orcidEntry.fullName(), orcidEntry.emailAddress(),
+              orcidEntry.oidc(), orcidEntry.oidcIssuer());
+        }
+        //We need to make sure that the checkbox is also unchecked as soon as the user changes the field values
+        if (isChecked(setMyselfCheckBox)) {
+          setMyselfCheckBox.setValue(false);
+        }
+        loadContact(this, convertedContact);
       }
-      loadContact(this, convertedContact);
     });
     return personSelection;
   }
+
   public void setOptional(boolean optional) {
     isOptional = optional;
   }
@@ -184,6 +206,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       if (contact.isComplete()) {
         orcidSelection.setValue(new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
             contact.oidcIssuer()));
+      }
+      // If the checkbox is unchecked, then any selection within the orcid selection should be removed
+      else {
+        orcidSelection.setValue(null);
       }
     }
   }
