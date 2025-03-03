@@ -1,8 +1,7 @@
 package life.qbic.projectmanagement.application.api;
 
-import static java.util.Objects.nonNull;
-
 import java.util.List;
+import static java.util.Objects.nonNull;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -258,6 +257,18 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * A container describing the experiment
+   *
+   * @param experimentName the name of the experiment
+   * @param species        a set of species for the experiment. Expected textual representations
+   *                       containing CURIEs.
+   * @param specimen       a set of specimen for the eperiment. Expected textual representations
+   *                       containing CURIEs.
+   * @param analytes       a set of analytes for the eperiment.Expected textual representations
+   *                       containing CURIEs.
+   * @since 1.9.0
+   */
   record ExperimentDescription(String experimentName, Set<String> species, Set<String> specimen,
                                Set<String> analytes) implements ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
@@ -265,22 +276,48 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * A list of confounding variable information. Can be used in {@link #update(ExperimentUpdateRequest)}
+   * @param confoundingVariables the variable information
+   */
   record ConfoundingVariables(List<ConfoundingVariableInformation> confoundingVariables) implements
       ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
 
   }
 
 
+  /**
+   * A service request to update an experiment
+   * @param projectId the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param body the request body containing information on what was updated
+   * @param requestId The identifier of the request. Please use {@link #ExperimentUpdateRequest(String, String, ExperimentUpdateRequestBody)} if it is not determined yet.
+   * @since 1.9.0
+   */
   record ExperimentUpdateRequest(String projectId, String experimentId,
                                  ExperimentUpdateRequestBody body,
                                  String requestId) implements CacheableRequest {
 
+    /**
+     * A service request to update an experiment
+     * @param projectId the project's identifier. The project containing the experiment.
+     * @param experimentId the experiment's identifier
+     * @param body the request body containing information on what was updated
+     * @since 1.9.0
+     */
     public ExperimentUpdateRequest(String projectId, String experimentId,
         ExperimentUpdateRequestBody body) {
       this(projectId, experimentId, body, UUID.randomUUID().toString());
     }
   }
 
+  /**
+   * A service response from a {@link ExperimentUpdateRequest}
+   * @param experimentId the experiment's identifier
+   * @param body information about the update
+   * @param requestId the identifier of the original request to which this is a response.
+   * @since 1.9.0
+   */
   record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
                                   String requestId) {
 
