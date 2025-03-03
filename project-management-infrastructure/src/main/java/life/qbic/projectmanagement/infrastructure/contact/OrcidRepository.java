@@ -114,9 +114,7 @@ public class OrcidRepository implements PersonRepository {
 
   @Override
   public List<Contact> findAll(String query, int limit, int offset) {
-    //Orcid queries will fail if the user input is not sanitized
-    var sanitizedInput = query.replaceAll("[^a-zA-Z0-9]", "");
-    var queryUrl = String.format(PAGINATED_QUERY, offset, limit, sanitizedInput);
+    var queryUrl = String.format(PAGINATED_QUERY, offset, limit, query);
     HttpRequest request = HttpRequest.newBuilder().uri(URI.create(queryUrl))
         .headers("Authorization", "Bearer " + token, "Accept", "application/json").GET()
         .build();
