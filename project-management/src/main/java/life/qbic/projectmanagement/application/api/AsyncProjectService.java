@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.Nullable;
 
 /**
  * Service API layer the user interface code shall interact with in the application.
@@ -116,12 +117,12 @@ public interface AsyncProjectService {
   }
 
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariables, ExperimentDescription,
-      ExperimentalVariables {
+      ExperimentalGroups, ExperimentalVariables {
 
   }
 
   sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables, ExperimentDescription,
-      ExperimentalVariables {
+      ExperimentalGroups, ExperimentalVariables {
 
   }
 
@@ -201,6 +202,20 @@ public interface AsyncProjectService {
 
   record ExperimentalVariables(
       List<ExperimentalVariable> experimentalVariables) implements
+      ExperimentUpdateRequestBody,
+      ExperimentUpdateResponseBody {
+
+  }
+
+  record VariableLevel(String variableName, String levelValue, @Nullable String unit) {
+
+  }
+
+  record ExperimentalGroup(Long groupId, Set<VariableLevel> levels) {
+
+  }
+
+  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) implements
       ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
 

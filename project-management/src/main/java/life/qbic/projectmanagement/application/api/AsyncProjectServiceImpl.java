@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.retry.Retry;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -51,8 +50,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return response
         .transform(original -> writeSecurityContext(original, securityContext))
-        .retryWhen(Retry.maxInARow(5)
-            .doBeforeRetry(retrySignal -> log.warn("Update failed (" + retrySignal + ")")));
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
@@ -66,7 +64,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentUpdateResponse> update(
       ExperimentUpdateRequest request) {
-    return Mono.fromSupplier(() -> switch (request.body()) {
+    Mono<ExperimentUpdateResponse> response = switch (request.body()) {
       case ExperimentalVariables experimentalVariables ->
           updateExperimentalVariables(request.projectId(), request.experimentId(),
               experimentalVariables);
@@ -77,27 +75,40 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       case ConfoundingVariables confoundingVariables ->
           updateConfoundingVariables(request.projectId(), request.experimentId(),
               confoundingVariables);
-    }).subscribeOn(Schedulers.boundedElastic());
+      case ExperimentalGroups experimentalGroups -> unknownRequest();
+    };
+
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return response
+        .transform(original -> writeSecurityContext(original, securityContext))
+        .retryWhen(defaultRetryStrategy());
   }
 
-  private ExperimentUpdateResponse updateConfoundingVariables(String projectId, String experimentId,
+  private static Retry defaultRetryStrategy() {
+    return Retry.maxInARow(5)
+        .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")"));
+  }
+
+  private Mono<ExperimentUpdateResponse> updateConfoundingVariables(String projectId,
+      String experimentId,
       ConfoundingVariables confoundingVariables) {
     //TODO implement
     throw new RuntimeException("Not implemented");
   }
 
-  private ExperimentUpdateResponse updateExperimentDescription(String projectId,
+  private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
       String experimentId,
       ExperimentDescription experimentDescription) {
     //TODO implement
     throw new RuntimeException("Not implemented");
   }
 
-  private ExperimentUpdateResponse updateExperimentalVariables(String projectId,
+  private Mono<ExperimentUpdateResponse> updateExperimentalVariables(String projectId,
       String experimentId, ExperimentalVariables experimentalVariables) {
     //TODO implement
     throw new RuntimeException("Not implemented");
   }
+
 
   private <T> Mono<T> unknownRequest() {
     return Mono.error(() -> new UnknownRequestException("Invalid request body"));
