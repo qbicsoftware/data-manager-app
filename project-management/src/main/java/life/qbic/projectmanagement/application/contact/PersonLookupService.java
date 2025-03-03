@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.application.contact;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.model.project.Contact;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +21,7 @@ public class PersonLookupService {
   }
 
   /**
-   * Queries {@link life.qbic.projectmanagement.domain.model.project.Contact} with a provided offset
+   * Queries {@link OrcidEntry} with a provided offset
    * and limit that supports pagination.
    *
    * @param filter the user's input will be applied to filter results
@@ -30,22 +29,22 @@ public class PersonLookupService {
    * @param limit  the maximum number of results that should be returned
    * @return the results in the provided range
    */
-  public List<Contact> queryPersons(String filter, int offset, int limit) {
+  public List<OrcidEntry> queryPersons(String filter, int offset, int limit) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    List<Contact> contacts = new ArrayList<>();
+    List<OrcidEntry> orcidEntries = new ArrayList<>();
     //Orcid Repository will return an Error 500 if the search string starts with a special character
     // or contains one of the non-listed characters here (such as % & or :)
-    String validRegex = "^[\\w\\d][A-Za-z0-9.@_-]*$";
+    String validRegex = "^[A-Za-z0-9][A-Za-z0-9.@_-]*$";
     //Return empty result if no query was provided by the user
     if (filter.isBlank()) {
-      return contacts;
+      return orcidEntries;
     }
     //Return empty result if an invalid query was provided by the user
     if (!filter.matches(validRegex)) {
-      return contacts;
+      return orcidEntries;
     }
-    contacts = personRepository.findAll(filter, limit, offset);
+    orcidEntries = personRepository.findAll(filter, limit, offset);
     // the list must be modifiable for spring security to filter it
-    return contacts;
+    return orcidEntries;
   }
 }

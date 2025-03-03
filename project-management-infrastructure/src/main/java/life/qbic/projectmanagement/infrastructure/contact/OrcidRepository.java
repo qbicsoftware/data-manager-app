@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.contact.OrcidEntry;
 import life.qbic.projectmanagement.application.contact.PersonRepository;
-import life.qbic.projectmanagement.domain.model.project.Contact;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -93,27 +93,28 @@ public class OrcidRepository implements PersonRepository {
 
   }
 
-  private static Contact convert(OrcidRecord record) {
-    var emailList = Arrays.stream(record.email()).toList();
-    var fullName = record.givenName() + record.familyName();
-    var orcid = record.orcidID();
+  private static OrcidEntry convert(OrcidRecord orcidRecord) {
+    var emailList = Arrays.stream(orcidRecord.email()).toList();
+    var fullName = orcidRecord.givenName() + orcidRecord.familyName();
+    var orcid = orcidRecord.orcidID();
     if (orcid.isBlank()) {
       log.warn("No orcid provided in Orcid Record: ");
       return null;
     }
     if (fullName.isBlank()) {
-      log.warn("Incomplete full name found in Orcid Record: " + record.orcidID());
+      log.warn("Incomplete full name found in Orcid Record: " + orcidRecord.orcidID());
       return null;
     }
     if (emailList.isEmpty()) {
-      log.warn("No email associated with Orcid Record: " + record.orcidID());
+      log.warn("No email associated with Orcid Record: " + orcidRecord.orcidID());
       return null;
     }
-    return new Contact(fullName, emailList.stream().findFirst().get(), orcid, "https://orcid.org");
+    var email = emailList.stream().findFirst().orElse("");
+    return new OrcidEntry(fullName, email, orcid, "https://orcid.org");
   }
 
   @Override
-  public List<Contact> findAll(String query, int limit, int offset) {
+  public List<OrcidEntry> findAll(String query, int limit, int offset) {
     var queryUrl = String.format(PAGINATED_QUERY, offset, limit, query);
     HttpRequest request = HttpRequest.newBuilder().uri(URI.create(queryUrl))
         .headers("Authorization", "Bearer " + token, "Accept", "application/json").GET()

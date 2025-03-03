@@ -69,7 +69,6 @@ public class ProjectOverviewMain extends Main {
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private final PersonLookupService personLookupService;
 
   public ProjectOverviewMain(@Autowired ProjectCollectionComponent projectCollectionComponent,
       ProjectCreationService projectCreationService, FinanceService financeService,
@@ -87,7 +86,7 @@ public class ProjectOverviewMain extends Main {
     this.projectCreationService = requireNonNull(projectCreationService,
         "project creation service can not be null");
     this.financeService = requireNonNull(financeService, "finance service can not be null");
-    this.personLookupService = requireNonNull(personLookupService,
+    requireNonNull(personLookupService,
         "person lookup service can not be null");
     this.projectInformationService = requireNonNull(projectInformationService,
         "project information service can not be null");
@@ -173,9 +172,9 @@ public class ProjectOverviewMain extends Main {
   private void createProject(ConfirmEvent confirmEvent) {
     Funding funding = null;
     ProjectCreationInformation projectCreationInformation = confirmEvent.projectCreationInformation();
-    if (projectCreationInformation.getFundingEntry() != null
-        && !projectCreationInformation.getFundingEntry()
-        .isEmpty()) {
+    if (projectCreationInformation.getFundingEntry().isPresent()
+        && projectCreationInformation.getFundingEntry()
+        .isPresent()) {
       funding = Funding.of(projectCreationInformation.getFundingEntry().get().getLabel(),
           projectCreationInformation.getFundingEntry().get().getReferenceId());
     }

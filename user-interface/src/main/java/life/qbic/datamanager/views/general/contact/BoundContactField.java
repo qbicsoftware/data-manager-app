@@ -7,6 +7,7 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
+import life.qbic.projectmanagement.application.contact.OrcidEntry;
 
 /**
  * <b>Bound Contact Field</b>
@@ -97,7 +98,8 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     };
   }
 
-  private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate, ContactField contactField) {
+  private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate,
+      ContactField contactField) {
     Binder<ContactContainer> binder = new Binder<>(ContactContainer.class);
     binder.setBean(new ContactContainer());
     binder.forField(contactField).withValidator(predicate, "There is still information missing")
@@ -184,14 +186,20 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
       }
     }
 
-    public Contact getOidcSelection() {
-      return contact;
+    public OrcidEntry getOidcSelection() {
+      return new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
+          contact.oidcIssuer());
     }
 
-    public void setOidcSelection(Contact oidcSelection) {
-      if (oidcSelection != null && contact != null) {
-        contact.setOidc(oidcSelection.oidc());
-        contact.setOidcIssuer(oidcSelection.oidcIssuer());
+    public void setOidcSelection(OrcidEntry oidcSelection) {
+      if (contact != null) {
+        if (oidcSelection != null) {
+          contact.setOidc(oidcSelection.oidc());
+          contact.setOidcIssuer(oidcSelection.oidcIssuer());
+        } else {
+          contact.setOidcIssuer("");
+          contact.setOidc("");
+        }
       }
     }
   }

@@ -18,18 +18,21 @@ import java.util.Objects;
 import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.contact.OrcidEntry;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
 
 
 public class ContactField extends CustomField<Contact> implements HasClientValidation {
 
   public static final String GAP_M_CSS = "gap-m";
+  public static final String GAP_02_CSS = "gap-02";
   private static final String FULL_WIDTH_CSS = "full-width";
+  private static final String FLEX_HORIZONTAL = "flex-horizontal";
   private static final Logger log = logger(ContactField.class);
   private final TextField fullName;
   private final TextField email;
   private final Checkbox setMyselfCheckBox;
-  protected transient ComboBox<Contact> orcidSelection;
+  protected transient ComboBox<OrcidEntry> orcidSelection;
   private Contact myself;
   private boolean isOptional = true;
 
@@ -99,7 +102,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private static Div layoutFields(TextField fullName, TextField email) {
     var layout = new Div(fullName, email);
-    layout.addClassNames("flex-horizontal", GAP_M_CSS, FULL_WIDTH_CSS);
+    layout.addClassNames(FLEX_HORIZONTAL, GAP_M_CSS, FULL_WIDTH_CSS);
     fullName.addClassName(FULL_WIDTH_CSS);
     email.addClassName(FULL_WIDTH_CSS);
     return layout;
@@ -113,28 +116,36 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     return contactField;
   }
 
-  private ComboBox<Contact> createSelection(PersonLookupService personLookupService) {
-    ComboBox<Contact> personSelection = new ComboBox<>("Search the Orcid Repository");
+  private ComboBox<OrcidEntry> createSelection(PersonLookupService personLookupService) {
+    ComboBox<OrcidEntry> personSelection = new ComboBox<>("Search the Orcid Repository");
     //We want to avoid NullPointers as model or presentation values
     personSelection.setPlaceholder("Search");
     personSelection.setHelperText("Please provide at least 2 letters to search for entries");
     personSelection.setPrefixComponent(VaadinIcon.SEARCH.create());
     personSelection.setRenderer(new ComponentRenderer<>(
-        contact -> new ContactInfoComponent(contact.fullName(), contact.email(),
-            contact.oidc(), contact.oidcIssuer())));
-    personSelection.setItemLabelGenerator(Contact::fullName);
+        orcidEntry -> new ContactInfoComponent(orcidEntry.fullName(), orcidEntry.emailAddress(),
+            orcidEntry.oidc(), orcidEntry.oidcIssuer())));
+    personSelection.setItemLabelGenerator(OrcidEntry::fullName);
     personSelection.setItems(
         query -> personLookupService.queryPersons(query.getFilter().orElse(""), query.getOffset(),
                 query.getLimit())
             .stream()
-            .map(contact -> new Contact(contact.fullName(), contact.emailAddress(), contact.oidc(),
-                contact.oidcIssuer()
+            .map(orcidEntry -> new OrcidEntry(orcidEntry.fullName(), orcidEntry.emailAddress(),
+                orcidEntry.oidc(),
+                orcidEntry.oidcIssuer()
             )));
-    personSelection.addValueChangeListener(listener ->
-        loadContact(this, listener.getValue()));
+    personSelection.addValueChangeListener(listener -> {
+      var orcidEntry = listener.getValue();
+      //If the entry in the combobox is deleted we want to update all fields accordingly.
+      var convertedContact = new Contact("", "", "", "");
+      if (orcidEntry != null) {
+        convertedContact = new Contact(orcidEntry.fullName(), orcidEntry.emailAddress(),
+            orcidEntry.oidc(), orcidEntry.oidcIssuer());
+      }
+      loadContact(this, convertedContact);
+    });
     return personSelection;
   }
-
   public void setOptional(boolean optional) {
     isOptional = optional;
   }
@@ -155,7 +166,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   @Override
   protected Contact generateModelValue() {
-    //Avoids Nullpointer exceptions if the user clicks and closes the selection box
+    //Avoids Null pointer exceptions if the user clicks and closes the selection box
     var oidc = "";
     var oidcIssuer = "";
     if (!orcidSelection.isEmpty()) {
@@ -170,9 +181,9 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     if (contact != null) {
       fullName.setValue(contact.fullName());
       email.setValue(contact.email());
-      //If oidc information is within the contact we can set the field to the correct value
       if (contact.isComplete()) {
-        orcidSelection.setValue(contact);
+        orcidSelection.setValue(new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
+            contact.oidcIssuer()));
       }
     }
   }
@@ -199,7 +210,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     return fullName;
   }
 
-  public ComboBox<Contact> getOidcSelection() {
+  public ComboBox<OrcidEntry> getOidcSelection() {
     return orcidSelection;
   }
 
@@ -226,7 +237,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
   public static class ContactInfoComponent extends Div {
 
     public ContactInfoComponent(String fullName, String email, String oidc, String oidcIssuer) {
-      addClassNames("flex-vertical", "flex-align-items-baseline", "gap-02");
+      addClassNames("flex-vertical", "flex-align-items-baseline", GAP_02_CSS);
       setFullNameAndEmail(fullName, email);
       setOidc(oidc, oidcIssuer);
     }
@@ -236,7 +247,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       fullNameSpan.addClassName("bold");
       Span emailSpan = new Span(email);
       Span userNameAndFullName = new Span(fullNameSpan, emailSpan);
-      userNameAndFullName.addClassNames("gap-02", "flex-horizontal");
+      userNameAndFullName.addClassNames(GAP_02_CSS, FLEX_HORIZONTAL);
       add(userNameAndFullName);
     }
 
@@ -257,7 +268,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
       Span oidcSpan = new Span(oidcLogo, oidcLink);
-      oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
+      oidcSpan.addClassNames(GAP_02_CSS, "flex-align-items-center", FLEX_HORIZONTAL);
       add(oidcSpan);
     }
   }
