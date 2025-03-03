@@ -1,9 +1,5 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
-import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
@@ -25,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.RequestCache;
@@ -34,6 +29,8 @@ import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvid
 import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
@@ -69,6 +66,7 @@ import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
@@ -86,7 +84,6 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
 
 /**
  * <b>Project Summary Component</b>
@@ -125,7 +122,6 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final RequestCache requestCache;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
@@ -141,7 +137,6 @@ public class ProjectSummaryComponent extends PageArea {
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
-      MessageSourceNotificationFactory messageSourceNotificationFactory,
       RequestCache requestCache) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
@@ -167,7 +162,6 @@ public class ProjectSummaryComponent extends PageArea {
     add(fundingInformationSection);
     add(projectContactsSection);
     add(downloadComponent);
-    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private static ProjectInformation convertToInfo(Project project) {

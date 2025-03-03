@@ -6,6 +6,7 @@ import static life.qbic.projectmanagement.application.authorization.ReactiveSecu
 
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +29,9 @@ import reactor.util.retry.Retry;
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
-  private static final Logger log = logger(AsyncProjectServiceImpl.class);
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
+  private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
       @Autowired Scheduler scheduler) {
@@ -58,6 +59,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
+    //TODO
     throw new RuntimeException("not implemented");
   }
 
