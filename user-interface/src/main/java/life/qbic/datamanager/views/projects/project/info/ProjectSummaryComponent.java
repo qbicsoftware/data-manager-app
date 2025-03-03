@@ -559,6 +559,7 @@ public class ProjectSummaryComponent extends PageArea {
    */
   private void handleSuccess(ProjectUpdateResponse response) {
     log.debug("Received project update response: " + response);
+    requestCache.remove(response.requestId());
     getUI().ifPresent(ui -> ui.access(() -> {
       var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
           new String[]{}, getLocale());
@@ -575,13 +576,18 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
     getUI().ifPresent(ui -> ui.access(() -> {
-      requestCache.get().ifPresent(request -> {
+      requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
         // do sth with the cache
+        // TODO show button that enables user to resend the request
+        var toast = notificationFactory.toast("project.updated.error.retry",
+            new String[]{}, getLocale());
+        // Todo Implement retry with cached request
+        toast.open();
+      }, () -> {
+        var toast = notificationFactory.toast("project.updated.error",
+            new String[]{}, getLocale());
+        toast.open();
       });
-      var toast = notificationFactory.toast("project.updated.error.retry",
-          new String[]{}, getLocale());
-      // Todo Implement retry with cached request
-      toast.open();
     }));
   }
 
