@@ -1,11 +1,11 @@
 package life.qbic.projectmanagement.application.api;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
-import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +28,7 @@ import reactor.util.retry.Retry;
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
+  private static final Logger log = logger(AsyncProjectServiceImpl.class);
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
 
