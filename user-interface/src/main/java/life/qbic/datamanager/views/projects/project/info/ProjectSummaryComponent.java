@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
 import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import static life.qbic.logging.service.LoggerFactory.logger;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -46,6 +48,8 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
@@ -77,6 +81,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -109,6 +114,7 @@ public class ProjectSummaryComponent extends PageArea {
   public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
   private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
+  private final transient PersonLookupService personLookupService;
   private final transient ROCreateBuilder roCrateBuilder;
   private final transient TempDirectory tempDirectory;
   private final transient ExperimentInformationService experimentInformationService;
@@ -131,12 +137,15 @@ public class ProjectSummaryComponent extends PageArea {
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
+      PersonLookupService personLookupService,
       UserPermissions userPermissions,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.personLookupService = requireNonNull(personLookupService,
+        "person lookup service must not be null");
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
     this.experimentInformationSection = new SectionBuilder().build();
@@ -147,7 +156,7 @@ public class ProjectSummaryComponent extends PageArea {
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
-    this.experimentInformationService = experimentInformationService;
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     downloadComponent = new DownloadComponent();
 
@@ -184,7 +193,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
     return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
-        contact.emailAddress());
+        contact.emailAddress(), contact.oidc(), contact.oidcIssuer());
   }
 
   private static Button createButtonWithListener(String label,
@@ -318,16 +327,20 @@ public class ProjectSummaryComponent extends PageArea {
   private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
     projectInformation.getResponsiblePerson().ifPresentOrElse(
         contact -> projectInformationService.setResponsibility(projectId,
-            new Contact(contact.getFullName(), contact.getEmail())),
+            new Contact(contact.fullName(), contact.email(), contact.oidc(), contact.oidcIssuer())),
         () -> projectInformationService.removeResponsibility(projectId));
 
     projectInformationService.investigateProject(projectId,
-        new Contact(projectInformation.getPrincipalInvestigator().getFullName(),
-            projectInformation.getPrincipalInvestigator().getEmail()));
+        new Contact(projectInformation.getPrincipalInvestigator().fullName(),
+            projectInformation.getPrincipalInvestigator().email(),
+            projectInformation.getPrincipalInvestigator().oidc(),
+            projectInformation.getPrincipalInvestigator().oidcIssuer()));
 
     projectInformationService.manageProject(projectId,
-        new Contact(projectInformation.getProjectManager().getFullName(),
-            projectInformation.getProjectManager().getEmail()));
+        new Contact(projectInformation.getProjectManager().fullName(),
+            projectInformation.getProjectManager().email(),
+            projectInformation.getProjectManager().oidc(),
+            projectInformation.getProjectManager().oidcIssuer()));
   }
 
   private Div renderContactInfo(Contact contact) {
@@ -336,6 +349,20 @@ public class ProjectSummaryComponent extends PageArea {
     var name = new Span(contact.fullName());
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
+    if (!contact.oidcIssuer().isEmpty() && !contact.oidc().isEmpty()) {
+      var oidcType = Arrays.stream(OidcType.values())
+          .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
+          .findFirst();
+      if (oidcType.isPresent()) {
+        String oidcUrl = String.format(oidcType.get().getUrl()) + contact.oidc();
+        Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
+        oidcLink.setTarget(AnchorTarget.BLANK);
+        OidcLogo oidcLogo = new OidcLogo(oidcType.get());
+        Span oidcSpan = new Span(oidcLogo, oidcLink);
+        oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
+        contactInfo.add(oidcSpan);
+      }
+    }
     return contactInfo;
   }
 
@@ -379,7 +406,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
     var dialog = new EditContactDialog(projectInformation,
-        Utility.tryToLoadFromPrincipal().orElse(null));
+        Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
     var defaultStrategy = new ImmediateClosingStrategy(dialog);
     var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
         PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
