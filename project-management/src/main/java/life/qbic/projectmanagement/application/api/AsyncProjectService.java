@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
-import reactor.util.annotation.Nullable;
 
 /**
  * Service API layer the user interface code shall interact with in the application.
@@ -195,11 +195,23 @@ public interface AsyncProjectService {
 
   }
 
-
-  record ExperimentalVariable(String name, Set<String> levels, String unit) {
+  /**
+   * Contains information on one experimental variables
+   *
+   * @param name   the name of the variable
+   * @param levels possible levels of the variable
+   * @param unit   the unit of the experimental variable. Can be null if no unit is set
+   * @since 1.9.0
+   */
+  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
 
   }
 
+  /**
+   * Container of experimental variables. Can be used in {@link #update(ExperimentUpdateRequest)}.
+   * @param experimentalVariables the list of experimental variables
+   * @since 1.9.0
+   */
   record ExperimentalVariables(
       List<ExperimentalVariable> experimentalVariables) implements
       ExperimentUpdateRequestBody,
@@ -207,14 +219,39 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * A level of an experimental variable
+   *
+   * @param variableName the name of the variable
+   * @param levelValue   the value of the level
+   * @param unit         the unit for the value of the level. Can be null if no unit is set
+   * @since 1.9.0
+   */
   record VariableLevel(String variableName, String levelValue, @Nullable String unit) {
 
   }
 
-  record ExperimentalGroup(Long groupId, Set<VariableLevel> levels) {
+  /**
+   * Information about an experimental group
+   *
+   * @param groupId    the identifier of the group
+   * @param name       the name of the eperimental group can be empty but is not expected to be
+   *                   null
+   * @param sampleSize the number of samples in this experimental group
+   * @param levels     the experimental variable levels making up the condition for the samples in
+   *                   this group.
+   * @since 1.9.0
+   */
+  record ExperimentalGroup(@Nullable Long groupId, String name, int sampleSize,
+                           Set<VariableLevel> levels) {
 
   }
 
+  /**
+   * A container for experimental groups. Can be used in {@link #update(ExperimentUpdateRequest)}
+   * @param experimentalGroups the list of experimental groups
+   * @since 1.9.0
+   */
   record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) implements
       ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
@@ -232,6 +269,7 @@ public interface AsyncProjectService {
       ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
 
   }
+
 
   record ExperimentUpdateRequest(String projectId, String experimentId,
                                  ExperimentUpdateRequestBody body,
