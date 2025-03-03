@@ -23,10 +23,10 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   /**
-   * Submits a project update request and returns a reactive {@link Mono< ProjectUpdateResponse >}
+   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
    * object immediately.
    * <p>
-   * The method is non-blocking.
+   * The method implementation must be non-blocking.
    * <p>
    * The implementing class must ensure to be able to process all implementing classes of the
    * {@link UpdateRequestBody} interface contained in the request.
@@ -47,6 +47,20 @@ public interface AsyncProjectService {
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
 
+  /**
+   * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
+   * immediately.
+   * <p>
+   * This implementation must be non-blocking.
+   *
+   * @param request the request with information required for project creation.
+   * @return {@link Mono<ProjectCreationResponse>} object publishing an
+   * {@link ProjectCreationResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.9.0
+   */
   Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
@@ -191,7 +205,8 @@ public interface AsyncProjectService {
    * @param responseBody the information that was updated.
    * @since 1.9.0
    */
-  record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody, String requestId) {
+  record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody,
+                               String requestId) {
 
     public ProjectUpdateResponse {
       if (projectId == null) {
