@@ -46,7 +46,9 @@ public class RequestCache {
 
 
   private static void store(LinkedList<CacheableRequest> list, CacheableRequest request) {
-    if (list.size() == CACHE_SIZE) {
+    // we check for the current configured maximal cache size to not let the cache grow
+    // indefinitely
+    if (list.size() >= CACHE_SIZE) {
       list.removeFirst();
     }
     list.add(request);
@@ -55,6 +57,7 @@ public class RequestCache {
   /**
    * Retrieves the stored request in the cache associated with the current Vaadin session.
    *
+   * @param id the request id to retrieve
    * @return the {@link CacheableRequest} wrapped in an {@link Optional} if available.
    * @throws CacheException if there is no VaadinSession available *
    *                        ({@link VaadinSession#getSession()} returned <code>null</code>)
@@ -73,6 +76,33 @@ public class RequestCache {
       throw new CacheException("Unknown cache type");
     }
     throw new CacheException("No Vaadin session found");
+  }
+
+  /**
+   * Removes the {@link CacheableRequest} from the cache with the given ID.
+   * @param id the ID of the request to remove
+   * @since 1.9.0
+   */
+  public void remove(String id) throws CacheException {
+    VaadinSession session = VaadinSession.getCurrent();
+    if (session != null) {
+      var cache = session.getAttribute(RequestCache.class.getName());
+      if (cache instanceof LinkedList) {
+        removeFrom((LinkedList<CacheableRequest>) cache, id);
+        return;
+      }
+      throw new CacheException("Accessing cache failed");
+    }
+    throw new CacheException("No Vaadin session found");
+  }
+
+  private void removeFrom(LinkedList<CacheableRequest> cache, String id) {
+    for (CacheableRequest c : cache) {
+      if (c.requestId().equals(id)) {
+        cache.remove(c);
+        return;
+      }
+    }
   }
 
   private CacheableRequest findRequest(LinkedList<CacheableRequest> cache, String id) {
