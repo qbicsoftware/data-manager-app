@@ -89,6 +89,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")"));
   }
 
+  private <T> Mono<T> unknownRequest() {
+    return Mono.error(() -> new UnknownRequestException("Invalid request body"));
+  }
+
   private Mono<ExperimentUpdateResponse> updateConfoundingVariables(String projectId,
       String experimentId,
       ConfoundingVariables confoundingVariables) {
@@ -109,10 +113,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     throw new RuntimeException("Not implemented");
   }
 
-
-  private <T> Mono<T> unknownRequest() {
-    return Mono.error(() -> new UnknownRequestException("Invalid request body"));
-  }
 
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
     return applySecurityContext(
