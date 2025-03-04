@@ -180,7 +180,8 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   @Override
   public Optional<OntologyClass> searchByCurie(String curie) throws LookupException {
     try {
-      return searchByOboIdExact(curie).map(this::updateCache).map(TIBTerminologyServiceIntegration::convert);
+      return searchByOboIdExact(curie).map(this::updateCache)
+          .map(TIBTerminologyServiceIntegration::convert);
     } catch (IOException e) {
       // this happens on network interrupts or if the remote service is down
       // we try to recover from the cache
@@ -351,20 +352,25 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     }
   }
 
+  // adds a term to the cache
   private TibTerm updateCache(TibTerm term) {
     cache.add(term);
     return term;
   }
 
+  /**
+   * In-memory cache for {@link TibTerm} as failsafe for network interrupts.
+   *
+   * @since 1.9.0
+   */
   static class RequestCache {
 
+    // Pretty random, we need to see what value actual makes sense
     private static final int DEFAULT_CACHE_SIZE = 500;
 
     private final List<TibTerm> cache = new ArrayList<>();
-
-    private List<AccessStats> accessFrequency = new ArrayList<>();
-
     private final int limit;
+    private List<CacheEntryStat> accessFrequency = new ArrayList<>();
 
     RequestCache() {
       limit = DEFAULT_CACHE_SIZE;
@@ -374,6 +380,15 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       this.limit = limit;
     }
 
+    /**
+     * Adds a {@link TibTerm} to the in-memory cache.
+     * <p>
+     * If the cache max size is reached, the oldest entry will be replaced with the one passed to
+     * the function.
+     *
+     * @param term the term to store in the cache
+     * @since 1.9.0
+     */
     void add(TibTerm term) {
       if (cache.contains(term)) {
         return;
@@ -383,47 +398,70 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
         return;
       }
       cache.add(term);
-      addStats(new AccessStats(term));
+      addStats(new CacheEntryStat(term));
     }
 
-    private void addStats(AccessStats accessStats) {
-      if (accessFrequency.contains(accessStats)) {
+    // Puts the term with the time of caching into an own list for tracking
+    private void addStats(CacheEntryStat cacheEntryStat) {
+      if (accessFrequency.contains(cacheEntryStat)) {
         return;
       }
-      accessFrequency.add(accessStats);
+      accessFrequency.add(cacheEntryStat);
     }
 
+    // A special case of adding by looking for the oldest cache entry and replacing it with
+    // the provided one
     private void addByReplace(TibTerm term) {
       // We want to be sure that the access statistic list is in natural order
       ensureSorted();
       // We then remove the oldest cache entry
       if (!cache.isEmpty()) {
         cache.set(0, term);
-        addStats(new AccessStats(term));
+        addStats(new CacheEntryStat(term));
       }
     }
 
+    // Ensures the natural order sorting by datetime, when the cache entry has been created
+    // Oldest entry will be the first element, newest the last element of the list
     private void ensureSorted() {
       accessFrequency = accessFrequency.stream()
-          .sorted(Comparator.comparing(AccessStats::created, Instant::compareTo))
+          .sorted(Comparator.comparing(CacheEntryStat::created, Instant::compareTo))
           .collect(Collectors.toList());
     }
 
+    /**
+     * Searches for a matching {@link TibTerm} in the cache.
+     *
+     * @param curie the CURIE to search for
+     * @return the search result, {@link Optional#empty()} if no match was found
+     * @since 1.9.0
+     */
     Optional<TibTerm> findByCurie(String curie) {
       return cache.stream().filter(term -> term.oboId.equals(curie)).findFirst();
     }
   }
 
-  static class AccessStats {
+  /**
+   * A small container for when a cache entry has been created.
+   *
+   * @since 1.9.0
+   */
+  static class CacheEntryStat {
 
     private final TibTerm term;
-    private Instant created;
+    private final Instant created;
 
-    AccessStats(TibTerm term) {
+    CacheEntryStat(TibTerm term) {
       this.term = term;
       created = Instant.now();
     }
 
+    /**
+     * When the cache entry has been created
+     *
+     * @return the instant of creation
+     * @since 1.9.0
+     */
     Instant created() {
       return created;
     }
@@ -433,7 +471,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      AccessStats that = (AccessStats) o;
+      CacheEntryStat that = (CacheEntryStat) o;
       return Objects.equals(term, that.term);
     }
 
