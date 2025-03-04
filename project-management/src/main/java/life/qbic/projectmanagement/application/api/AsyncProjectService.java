@@ -441,9 +441,19 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   class UnknownRequestException extends RuntimeException {
+    private String requestId;
 
     public UnknownRequestException(String message) {
       super(message);
+    }
+
+    public UnknownRequestException(String message, String requestId) {
+      super(message);
+      this.requestId = requestId;
+    }
+
+    public String getRequestId() {
+      return requestId;
     }
   }
 
@@ -454,12 +464,28 @@ public interface AsyncProjectService {
    */
   class RequestFailedException extends RuntimeException {
 
+    private String requestId;
+
     public RequestFailedException(String message) {
       super(message);
     }
 
+    public RequestFailedException(String message, String requestId) {
+      super(message);
+      this.requestId = requestId;
+    }
+
     public RequestFailedException(String message, Throwable cause) {
       super(message, cause);
+    }
+
+    public RequestFailedException(String message, Throwable cause, String requestId) {
+      super(message, cause);
+      this.requestId = requestId;
+    }
+
+    public String getRequestId() {
+      return requestId;
     }
   }
 
