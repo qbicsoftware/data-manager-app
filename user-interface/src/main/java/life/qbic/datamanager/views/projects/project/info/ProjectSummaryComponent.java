@@ -553,8 +553,8 @@ public class ProjectSummaryComponent extends PageArea {
    */
   private void handleSuccess(ProjectUpdateResponse response) {
     log.debug("Received project update response: " + response);
-    requestCache.remove(response.requestId());
     getUI().ifPresent(ui -> ui.access(() -> {
+      requestCache.remove(response.requestId());
       var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
           new String[]{}, getLocale());
       toast.open();
