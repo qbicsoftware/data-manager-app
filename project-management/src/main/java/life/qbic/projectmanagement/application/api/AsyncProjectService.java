@@ -204,6 +204,9 @@ public interface AsyncProjectService {
    */
   record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
 
+    public ExperimentalVariable {
+      levels = Set.copyOf(levels);
+    }
   }
 
   /**
@@ -216,6 +219,9 @@ public interface AsyncProjectService {
       ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
 
+    public ExperimentalVariables {
+      experimentalVariables = List.copyOf(experimentalVariables);
+    }
   }
 
   /**
@@ -244,6 +250,9 @@ public interface AsyncProjectService {
   record ExperimentalGroup(@Nullable Long groupId, String name, int sampleSize,
                            Set<VariableLevel> levels) {
 
+    public ExperimentalGroup {
+      levels = Set.copyOf(levels);
+    }
   }
 
   /**
@@ -255,6 +264,9 @@ public interface AsyncProjectService {
       ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
 
+    public ExperimentalGroups {
+      experimentalGroups = List.copyOf(experimentalGroups);
+    }
   }
 
   /**
@@ -273,7 +285,11 @@ public interface AsyncProjectService {
                                Set<String> analytes) implements ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
 
-
+    public ExperimentDescription {
+      species = Set.copyOf(species);
+      specimen = Set.copyOf(specimen);
+      analytes = Set.copyOf(analytes);
+    }
   }
 
   /**
@@ -283,6 +299,9 @@ public interface AsyncProjectService {
   record ConfoundingVariables(List<ConfoundingVariableInformation> confoundingVariables) implements
       ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
 
+    public ConfoundingVariables {
+      confoundingVariables = List.copyOf(confoundingVariables);
+    }
   }
 
 
