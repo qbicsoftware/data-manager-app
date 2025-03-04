@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.LookupException;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
@@ -39,6 +42,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
+  private static final Logger log = logger(TIBTerminologyServiceIntegration.class);
   private static final int TIMEOUT_5_SECONDS = 5;
   private static final HttpClient HTTP_CLIENT = httpClient(TIMEOUT_5_SECONDS);
 
@@ -185,6 +189,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     } catch (IOException e) {
       // this happens on network interrupts or if the remote service is down
       // we try to recover from the cache
+      log.error("Error searching by CURIE: " + curie, e);
       return cache.findByCurie(curie).map(TIBTerminologyServiceIntegration::convert);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
