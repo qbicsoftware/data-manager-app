@@ -1,9 +1,5 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
-import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
@@ -27,11 +23,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.RequestCache;
 import life.qbic.datamanager.files.TempDirectory;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
@@ -67,6 +66,7 @@ import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
@@ -122,6 +122,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
+  private final RequestCache requestCache;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
@@ -135,7 +136,8 @@ public class ProjectSummaryComponent extends PageArea {
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
-      AsyncProjectService asyncProjectService) {
+      AsyncProjectService asyncProjectService,
+      RequestCache requestCache) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -149,6 +151,7 @@ public class ProjectSummaryComponent extends PageArea {
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = experimentInformationService;
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.requestCache = Objects.requireNonNull(requestCache);
     downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
@@ -527,6 +530,13 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
+    submitRequest(request);
+  }
+
+
+  private void submitRequest(ProjectUpdateRequest request) {
+    requestCache.store(request);
+
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
@@ -544,6 +554,7 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleSuccess(ProjectUpdateResponse response) {
     log.debug("Received project update response: " + response);
     getUI().ifPresent(ui -> ui.access(() -> {
+      requestCache.remove(response.requestId());
       var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
           new String[]{}, getLocale());
       toast.open();
@@ -559,10 +570,18 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
     getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("project.updated.error.retry",
-          new String[]{}, getLocale());
-      // Todo Implement retry with cached request
-      toast.open();
+      requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
+        // do sth with the cache
+        // TODO show button that enables user to resend the request
+        var toast = notificationFactory.toast("project.updated.error.retry",
+            new String[]{}, getLocale());
+        // Todo Implement retry with cached request
+        toast.open();
+      }, () -> {
+        var toast = notificationFactory.toast("project.updated.error",
+            new String[]{}, getLocale());
+        toast.open();
+      });
     }));
   }
 

@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 
@@ -18,11 +19,12 @@ import reactor.core.scheduler.Scheduler;
 import reactor.util.retry.Retry;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Implementation of the {@link AsyncProjectService} interface.
+ * <p>
+ * This is the class that should make the actual individual service orchestration and gets all
+ * services injected.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.9.0
  */
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
