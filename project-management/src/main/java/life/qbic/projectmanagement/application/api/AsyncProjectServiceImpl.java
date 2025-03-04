@@ -52,8 +52,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return response
         .transform(original -> writeSecurityContext(original, securityContext))
-        .retryWhen(Retry.maxInARow(5)
-            .doBeforeRetry(retrySignal -> log.warn("Update failed (" + retrySignal + ")")));
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
@@ -63,9 +62,59 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     throw new RuntimeException("not implemented");
   }
 
+
+  @Override
+  public Mono<ExperimentUpdateResponse> update(
+      ExperimentUpdateRequest request) {
+    Mono<ExperimentUpdateResponse> response = switch (request.body()) {
+      case ExperimentalVariables experimentalVariables ->
+          updateExperimentalVariables(request.projectId(), request.experimentId(),
+              experimentalVariables);
+      case ExperimentDescription experimentDescription ->
+          updateExperimentDescription(request.projectId(), request.experimentId(),
+              experimentDescription);
+
+      case ConfoundingVariables confoundingVariables ->
+          updateConfoundingVariables(request.projectId(), request.experimentId(),
+              confoundingVariables);
+      case ExperimentalGroups experimentalGroups -> unknownRequest();
+    };
+
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return response
+        .transform(original -> writeSecurityContext(original, securityContext))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  private static Retry defaultRetryStrategy() {
+    return Retry.maxInARow(5)
+        .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")"));
+  }
+
   private <T> Mono<T> unknownRequest() {
     return Mono.error(() -> new UnknownRequestException("Invalid request body"));
   }
+
+  private Mono<ExperimentUpdateResponse> updateConfoundingVariables(String projectId,
+      String experimentId,
+      ConfoundingVariables confoundingVariables) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
+      String experimentId,
+      ExperimentDescription experimentDescription) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  private Mono<ExperimentUpdateResponse> updateExperimentalVariables(String projectId,
+      String experimentId, ExperimentalVariables experimentalVariables) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
 
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
     return applySecurityContext(
