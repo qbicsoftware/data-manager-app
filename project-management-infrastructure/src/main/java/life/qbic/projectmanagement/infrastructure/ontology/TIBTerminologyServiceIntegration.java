@@ -15,9 +15,13 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import life.qbic.projectmanagement.application.ontology.LookupException;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
@@ -54,6 +58,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   private final URI selectEndpointAbsoluteUrl;
   private final URI searchEndpointAbsoluteUrl;
+  private final RequestCache cache;
 
   @Autowired
   public TIBTerminologyServiceIntegration(
@@ -62,6 +67,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       @Value("${terminology.service.tib.api.url}") String tibApiUrl) {
     this.selectEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(selectEndpoint);
     this.searchEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(searchEndpoint);
+    this.cache = new RequestCache(1000);
   }
 
   /**
@@ -174,9 +180,11 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   @Override
   public Optional<OntologyClass> searchByCurie(String curie) throws LookupException {
     try {
-      return searchByOboIdExact(curie).map(TIBTerminologyServiceIntegration::convert);
+      return searchByOboIdExact(curie).map(this::updateCache).map(TIBTerminologyServiceIntegration::convert);
     } catch (IOException e) {
-      throw wrapIO(e);
+      // this happens on network interrupts or if the remote service is down
+      // we try to recover from the cache
+      return cache.findByCurie(curie).map(TIBTerminologyServiceIntegration::convert);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw wrapInterrupted(e);
@@ -227,7 +235,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
-    return parseResponse(response);
+    return parseResponse(response).stream().toList();
   }
 
   /**
@@ -257,7 +265,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
-    return parseResponse(response);
+    return parseResponse(response).stream().toList();
   }
 
   /**
@@ -340,6 +348,98 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return terms;
     } catch (JsonProcessingException e) {
       throw wrapProcessingException(e);
+    }
+  }
+
+  private TibTerm updateCache(TibTerm term) {
+    cache.add(term);
+    return term;
+  }
+
+  static class RequestCache {
+
+    private static final int DEFAULT_CACHE_SIZE = 500;
+
+    private final List<TibTerm> cache = new ArrayList<>();
+
+    private List<AccessStats> accessFrequency = new ArrayList<>();
+
+    private final int limit;
+
+    RequestCache() {
+      limit = DEFAULT_CACHE_SIZE;
+    }
+
+    RequestCache(int limit) {
+      this.limit = limit;
+    }
+
+    void add(TibTerm term) {
+      if (cache.contains(term)) {
+        return;
+      }
+      if (cache.size() >= limit) {
+        addByReplace(term);
+        return;
+      }
+      cache.add(term);
+      addStats(new AccessStats(term));
+    }
+
+    private void addStats(AccessStats accessStats) {
+      if (accessFrequency.contains(accessStats)) {
+        return;
+      }
+      accessFrequency.add(accessStats);
+    }
+
+    private void addByReplace(TibTerm term) {
+      // We want to be sure that the access statistic list is in natural order
+      ensureSorted();
+      // We then remove the oldest cache entry
+      if (!cache.isEmpty()) {
+        cache.set(0, term);
+        addStats(new AccessStats(term));
+      }
+    }
+
+    private void ensureSorted() {
+      accessFrequency = accessFrequency.stream()
+          .sorted(Comparator.comparing(AccessStats::created, Instant::compareTo))
+          .collect(Collectors.toList());
+    }
+
+    Optional<TibTerm> findByCurie(String curie) {
+      return cache.stream().filter(term -> term.oboId.equals(curie)).findFirst();
+    }
+  }
+
+  static class AccessStats {
+
+    private final TibTerm term;
+    private Instant created;
+
+    AccessStats(TibTerm term) {
+      this.term = term;
+      created = Instant.now();
+    }
+
+    Instant created() {
+      return created;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      AccessStats that = (AccessStats) o;
+      return Objects.equals(term, that.term);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(term);
     }
   }
 }
