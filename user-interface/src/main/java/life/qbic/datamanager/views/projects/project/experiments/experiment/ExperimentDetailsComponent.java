@@ -402,7 +402,7 @@ public class ExperimentDetailsComponent extends PageArea {
         "Delete confounding variables?",
         IconFactory.warningIcon());
     String deletedVariableNames = deletedVars.stream().map(ConfoundingVariable::name)
-        .collect(Collectors.joining());
+        .collect(Collectors.joining(", "));
     DialogBody.withoutUserInput(confirmDialog, new Div(
         "Deleting a confounding variable will delete all levels of the confounding variable from annotated samples. "
             + "Do you want to delete the following confounding variables: " + deletedVariableNames

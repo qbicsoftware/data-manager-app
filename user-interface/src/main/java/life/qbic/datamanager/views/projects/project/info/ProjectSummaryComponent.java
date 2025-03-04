@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
-import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
@@ -26,13 +23,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.RequestCache;
 import life.qbic.datamanager.files.TempDirectory;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
+import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
+import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
 import life.qbic.datamanager.views.general.CollapsibleDetails;
 import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.DetailBox;
@@ -64,9 +65,18 @@ import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
+import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -97,6 +107,7 @@ public class ProjectSummaryComponent extends PageArea {
   public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
   public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
   public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
+  private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
   private final transient ROCreateBuilder roCrateBuilder;
   private final transient TempDirectory tempDirectory;
@@ -110,6 +121,8 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section fundingInformationSection;
   private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
+  private final transient AsyncProjectService asyncProjectService;
+  private final RequestCache requestCache;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
@@ -122,7 +135,9 @@ public class ProjectSummaryComponent extends PageArea {
       UserPermissions userPermissions,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
-      MessageSourceNotificationFactory notificationFactory) {
+      MessageSourceNotificationFactory notificationFactory,
+      AsyncProjectService asyncProjectService,
+      RequestCache requestCache) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -135,6 +150,8 @@ public class ProjectSummaryComponent extends PageArea {
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = experimentInformationService;
+    this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.requestCache = Objects.requireNonNull(requestCache);
     downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
@@ -145,7 +162,6 @@ public class ProjectSummaryComponent extends PageArea {
     add(fundingInformationSection);
     add(projectContactsSection);
     add(downloadComponent);
-
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -446,15 +462,18 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct().toList();
+    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct()
+        .toList();
   }
 
   private List<OntologyTerm> extractSpecimen(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct().toList();
+    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct()
+        .toList();
   }
 
   private List<OntologyTerm> extractAnalyte(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct().toList();
+    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct()
+        .toList();
   }
 
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {
@@ -463,12 +482,8 @@ public class ProjectSummaryComponent extends PageArea {
       editProjectDesignDialog = buildAndWireEditProjectDesign(project);
       editProjectDesignDialog.open();
       editProjectDesignDialog.addUpdateEventListener(event -> {
-        updateProjectDesign(context.projectId().orElseThrow(), event.content().orElseThrow());
-        reloadInformation(context);
+        handleUpdateEvent(event);
         editProjectDesignDialog.close();
-        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-            new String[]{project.getProjectCode().value()}, getLocale());
-        toast.open();
       });
 
     });
@@ -496,9 +511,103 @@ public class ProjectSummaryComponent extends PageArea {
     projectDesignSection.setContent(content);
   }
 
-  private void updateProjectDesign(ProjectId projectId, ProjectInformation projectInformation) {
-    projectInformationService.updateTitle(projectId, projectInformation.getProjectTitle());
-    projectInformationService.updateObjective(projectId, projectInformation.getProjectObjective());
+  /*
+  Handler for project design update events.
+
+  Since the project id is not referenced in the event, we assume that
+  the UI scope was not left and the current context references the project
+  that is supposed to be updated.
+   */
+  private void handleUpdateEvent(ProjectDesignUpdateEvent event) {
+    if (event.content().isEmpty()) {
+      log.debug("No content to be updated");
+      // Nothing to be done
+      return;
+    }
+    var project = context.projectId().orElseThrow().value();
+    var info = event.content().orElseThrow();
+    // Build the request for the service call
+    var request = new ProjectUpdateRequest(project,
+        new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
+
+    submitRequest(request);
+  }
+
+
+  private void submitRequest(ProjectUpdateRequest request) {
+    requestCache.store(request);
+
+    asyncProjectService.update(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(
+            subscription -> log.debug("Subscribed to project update request: " + request))
+        .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
+        .subscribe(this::handleSuccess);
+
+  }
+
+  /*
+  Handler for successful project updates
+   */
+  private void handleSuccess(ProjectUpdateResponse response) {
+    log.debug("Received project update response: " + response);
+    getUI().ifPresent(ui -> ui.access(() -> {
+      requestCache.remove(response.requestId());
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
+  }
+
+  /*
+  Handler for request failures. This covers failures the user can
+  re-try it again, so the last request needs to be cached in the current user
+  session and ui scope.
+   */
+  private void handleRequestFailed(RequestFailedException error) {
+    log.error("request failed", error);
+    getUI().ifPresent(ui -> ui.access(() -> {
+      requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
+        // do sth with the cache
+        // TODO show button that enables user to resend the request
+        var toast = notificationFactory.toast("project.updated.error.retry",
+            new String[]{}, getLocale());
+        // Todo Implement retry with cached request
+        toast.open();
+      }, () -> {
+        var toast = notificationFactory.toast("project.updated.error",
+            new String[]{}, getLocale());
+        toast.open();
+      });
+    }));
+  }
+
+  /*
+  Handler for unknown requests. This happens when the wrong service method
+  has been called, so be sure to check the requests the service API can handle.
+   */
+  private void handleUnknownRequest(UnknownRequestException error) {
+    log.error("unknown request", error);
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast("project.updated.error",
+          new String[]{}, getLocale());
+      toast.open();
+    }));
+  }
+
+  /*
+  Handler for access denied exceptions. This usually happens, when the service method called
+  requires rights the current logged-in user does not have.
+   */
+  private void handleAccessDenied(AccessDeniedException e) {
+    log.error("access denied", e);
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast("access.denied", new String[]{}, getLocale());
+      toast.open();
+    }));
   }
 
   private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
@@ -580,7 +689,7 @@ public class ProjectSummaryComponent extends PageArea {
     }
   }
 
-  private boolean deleteTempDir(File dir) throws IOException {
+  private boolean deleteTempDir(File dir) {
     File[] files = dir.listFiles(); //null if not a directory
     // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
     if (files != null) {
@@ -597,7 +706,7 @@ public class ProjectSummaryComponent extends PageArea {
     AvatarGroup avatarGroup = new AvatarGroup();
     userInfo.forEach(user -> avatarGroup.add(new UserAvatarGroupItem(user.userName(),
         user.userId())));
-    avatarGroup.setMaxItemsVisible(Integer.valueOf(3));
+    avatarGroup.setMaxItemsVisible(3);
     return avatarGroup;
   }
 

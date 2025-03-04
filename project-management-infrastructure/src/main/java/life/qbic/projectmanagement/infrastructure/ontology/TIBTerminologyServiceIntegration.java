@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.infrastructure.ontology;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,9 +17,14 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.LookupException;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
@@ -35,6 +42,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
+  private static final Logger log = logger(TIBTerminologyServiceIntegration.class);
   private static final int TIMEOUT_5_SECONDS = 5;
   private static final HttpClient HTTP_CLIENT = httpClient(TIMEOUT_5_SECONDS);
 
@@ -54,6 +62,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   private final URI selectEndpointAbsoluteUrl;
   private final URI searchEndpointAbsoluteUrl;
+  private final RequestCache cache;
 
   @Autowired
   public TIBTerminologyServiceIntegration(
@@ -62,6 +71,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       @Value("${terminology.service.tib.api.url}") String tibApiUrl) {
     this.selectEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(selectEndpoint);
     this.searchEndpointAbsoluteUrl = URI.create(tibApiUrl).resolve(searchEndpoint);
+    this.cache = new RequestCache(1000);
   }
 
   /**
@@ -174,9 +184,13 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   @Override
   public Optional<OntologyClass> searchByCurie(String curie) throws LookupException {
     try {
-      return searchByOboIdExact(curie).map(TIBTerminologyServiceIntegration::convert);
+      return searchByOboIdExact(curie).map(this::updateCache)
+          .map(TIBTerminologyServiceIntegration::convert);
     } catch (IOException e) {
-      throw wrapIO(e);
+      // this happens on network interrupts or if the remote service is down
+      // we try to recover from the cache
+      log.error("Error searching by CURIE: " + curie, e);
+      return cache.findByCurie(curie).map(TIBTerminologyServiceIntegration::convert);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw wrapInterrupted(e);
@@ -227,7 +241,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
-    return parseResponse(response);
+    return parseResponse(response).stream().toList();
   }
 
   /**
@@ -257,7 +271,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
-    return parseResponse(response);
+    return parseResponse(response).stream().toList();
   }
 
   /**
@@ -340,6 +354,135 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return terms;
     } catch (JsonProcessingException e) {
       throw wrapProcessingException(e);
+    }
+  }
+
+  // adds a term to the cache
+  private TibTerm updateCache(TibTerm term) {
+    cache.add(term);
+    return term;
+  }
+
+  /**
+   * In-memory cache for {@link TibTerm} as failsafe for network interrupts.
+   *
+   * @since 1.9.0
+   */
+  static class RequestCache {
+
+    // Pretty random, we need to see what value actual makes sense
+    private static final int DEFAULT_CACHE_SIZE = 500;
+
+    private final List<TibTerm> cache = new ArrayList<>();
+    private final int limit;
+    private List<CacheEntryStat> accessFrequency = new ArrayList<>();
+
+    RequestCache() {
+      limit = DEFAULT_CACHE_SIZE;
+    }
+
+    RequestCache(int limit) {
+      this.limit = limit;
+    }
+
+    /**
+     * Adds a {@link TibTerm} to the in-memory cache.
+     * <p>
+     * If the cache max size is reached, the oldest entry will be replaced with the one passed to
+     * the function.
+     *
+     * @param term the term to store in the cache
+     * @since 1.9.0
+     */
+    void add(TibTerm term) {
+      if (cache.contains(term)) {
+        return;
+      }
+      if (cache.size() >= limit) {
+        addByReplace(term);
+        return;
+      }
+      cache.add(term);
+      addStats(new CacheEntryStat(term));
+    }
+
+    // Puts the term with the time of caching into an own list for tracking
+    private void addStats(CacheEntryStat cacheEntryStat) {
+      if (accessFrequency.contains(cacheEntryStat)) {
+        return;
+      }
+      accessFrequency.add(cacheEntryStat);
+    }
+
+    // A special case of adding by looking for the oldest cache entry and replacing it with
+    // the provided one
+    private void addByReplace(TibTerm term) {
+      // We want to be sure that the access statistic list is in natural order
+      ensureSorted();
+      // We then remove the oldest cache entry
+      if (!cache.isEmpty()) {
+        cache.set(0, term);
+        addStats(new CacheEntryStat(term));
+      }
+    }
+
+    // Ensures the natural order sorting by datetime, when the cache entry has been created
+    // Oldest entry will be the first element, newest the last element of the list
+    private void ensureSorted() {
+      accessFrequency = accessFrequency.stream()
+          .sorted(Comparator.comparing(CacheEntryStat::created, Instant::compareTo))
+          .collect(Collectors.toList());
+    }
+
+    /**
+     * Searches for a matching {@link TibTerm} in the cache.
+     *
+     * @param curie the CURIE to search for
+     * @return the search result, {@link Optional#empty()} if no match was found
+     * @since 1.9.0
+     */
+    Optional<TibTerm> findByCurie(String curie) {
+      return cache.stream().filter(term -> term.oboId.equals(curie)).findFirst();
+    }
+  }
+
+  /**
+   * A small container for when a cache entry has been created.
+   *
+   * @since 1.9.0
+   */
+  static class CacheEntryStat {
+
+    private final TibTerm term;
+    private final Instant created;
+
+    CacheEntryStat(TibTerm term) {
+      this.term = term;
+      created = Instant.now();
+    }
+
+    /**
+     * When the cache entry has been created
+     *
+     * @return the instant of creation
+     * @since 1.9.0
+     */
+    Instant created() {
+      return created;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      CacheEntryStat that = (CacheEntryStat) o;
+      return Objects.equals(term, that.term);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(term);
     }
   }
 }
