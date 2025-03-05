@@ -429,7 +429,10 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
-
+    public SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+      this.projectId = projectId;
+      this.requests = List.copyOf(requests);
+    }
   }
 
   /**
@@ -440,7 +443,10 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
-
+    public SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+      this.projectId = projectId;
+      this.requests = List.copyOf(requests);
+    }
   }
 
   /**
