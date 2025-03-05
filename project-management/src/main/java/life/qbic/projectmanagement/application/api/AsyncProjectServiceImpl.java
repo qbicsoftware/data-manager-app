@@ -8,12 +8,16 @@ import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
+import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.retry.Retry;
@@ -59,6 +63,31 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     //TODO
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Flux<SamplePreview> getSamplePreviews(String experimentId) throws RequestFailedException {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Flux<SamplePreview> getSamplePreviews(String experimentId, int offset, int limit) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Flux<Sample> getSamples(String experimentId) throws RequestFailedException {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Flux<Sample> getSamplesForBatch(String batchId) throws RequestFailedException {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Mono<SampleIdCodeEntry> findSampleId(String sampleCode) throws RequestFailedException {
     throw new RuntimeException("not implemented");
   }
 

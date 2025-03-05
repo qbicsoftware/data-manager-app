@@ -1,12 +1,19 @@
 package life.qbic.projectmanagement.application.api;
 
+import java.util.Collection;
 import java.util.List;
 import static java.util.Objects.nonNull;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
+import life.qbic.projectmanagement.application.sample.SamplePreview;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.lang.Nullable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -26,7 +33,7 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   /**
-   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
+   * Submits a project update request and returns a reactive {@link Mono< ProjectUpdateResponse >}
    * object immediately.
    * <p>
    * The method implementation must be non-blocking.
@@ -73,10 +80,8 @@ public interface AsyncProjectService {
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request)
       throws RequestFailedException, AccessDeniedException;
 
-
-
   /**
-   * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
+   * Submits a project creation request and returns a {@link Mono< ProjectCreationResponse >}
    * immediately.
    * <p>
    * This implementation must be non-blocking.
@@ -92,6 +97,58 @@ public interface AsyncProjectService {
   Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
+
+  /**
+   * Requests {@link SamplePreview} for a given experiment.
+   *
+   * @param experimentId the experiment ID for which the sample preview shall be retrieved
+   * @return a reactive stream of {@link SamplePreview} objects of the experiment
+   * @throws RequestFailedException if the request could not be executed
+   * @since 1.10.0
+   */
+  Flux<SamplePreview> getSamplePreviews(String experimentId) throws RequestFailedException;
+
+  /**
+   * Requests {@link SamplePreview} for a given experiment with pagination support.
+   *
+   * @param experimentId the experiment ID for which the sample preview shall be retrieved
+   * @param offset       the offset from 0 of all available previews the returned previews should
+   *                     start
+   * @param limit        the maximum number of previews that should be returned
+   * @return a reactive stream of {@link SamplePreview} objects in the experiment
+   * @since 1.10.0
+   */
+  Flux<SamplePreview> getSamplePreviews(String experimentId, int offset, int limit);
+
+  /**
+   * Requests all {@link Sample} for a given experiment.
+   *
+   * @param experimentId the experiment ID for which the samples shall be retrieved
+   * @return a reactive stream of {@link Sample} objects
+   * @throws RequestFailedException in case the request cannot be executed
+   * @since 1.10.0
+   */
+  Flux<Sample> getSamples(String experimentId) throws RequestFailedException;
+
+  /**
+   * Requests all {@link Sample} for a given batch
+   *
+   * @param batchId the batch ID the samples shall be retrieved for
+   * @return a reactive stream of {@link Sample} objects for the given batch
+   * @throws RequestFailedException in case the request cannot be executed
+   * @since 1.10.0
+   */
+  Flux<Sample> getSamplesForBatch(String batchId) throws RequestFailedException;
+
+  /**
+   * Find the sample ID for a given sample code
+   *
+   * @param sampleCode the sample code (e.g. Q2TEST001AE) for the project
+   * @return a reactive container of {@link SampleIdCodeEntry} for the sample code
+   * @throws RequestFailedException in case the request cannot be executed
+   * @since 1.10.0
+   */
+  Mono<SampleIdCodeEntry> findSampleId(String sampleCode) throws RequestFailedException;
 
   /**
    * Container of an update request for a service call and part of the
@@ -211,6 +268,7 @@ public interface AsyncProjectService {
 
   /**
    * Container of experimental variables. Can be used in {@link #update(ExperimentUpdateRequest)}.
+   *
    * @param experimentalVariables the list of experimental variables
    * @since 1.9.0
    */
@@ -257,6 +315,7 @@ public interface AsyncProjectService {
 
   /**
    * A container for experimental groups. Can be used in {@link #update(ExperimentUpdateRequest)}
+   *
    * @param experimentalGroups the list of experimental groups
    * @since 1.9.0
    */
@@ -293,7 +352,9 @@ public interface AsyncProjectService {
   }
 
   /**
-   * A list of confounding variable information. Can be used in {@link #update(ExperimentUpdateRequest)}
+   * A list of confounding variable information. Can be used in
+   * {@link #update(ExperimentUpdateRequest)}
+   *
    * @param confoundingVariables the variable information
    */
   record ConfoundingVariables(List<ConfoundingVariableInformation> confoundingVariables) implements
@@ -307,10 +368,13 @@ public interface AsyncProjectService {
 
   /**
    * A service request to update an experiment
-   * @param projectId the project's identifier. The project containing the experiment.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
    * @param experimentId the experiment's identifier
-   * @param body the request body containing information on what was updated
-   * @param requestId The identifier of the request. Please use {@link #ExperimentUpdateRequest(String, String, ExperimentUpdateRequestBody)} if it is not determined yet.
+   * @param body         the request body containing information on what was updated
+   * @param requestId    The identifier of the request. Please use
+   *                     {@link #ExperimentUpdateRequest(String, String,
+   *                     ExperimentUpdateRequestBody)} if it is not determined yet.
    * @since 1.9.0
    */
   record ExperimentUpdateRequest(String projectId, String experimentId,
@@ -319,9 +383,10 @@ public interface AsyncProjectService {
 
     /**
      * A service request to update an experiment
-     * @param projectId the project's identifier. The project containing the experiment.
+     *
+     * @param projectId    the project's identifier. The project containing the experiment.
      * @param experimentId the experiment's identifier
-     * @param body the request body containing information on what was updated
+     * @param body         the request body containing information on what was updated
      * @since 1.9.0
      */
     public ExperimentUpdateRequest(String projectId, String experimentId,
@@ -332,9 +397,10 @@ public interface AsyncProjectService {
 
   /**
    * A service response from a {@link ExperimentUpdateRequest}
+   *
    * @param experimentId the experiment's identifier
-   * @param body information about the update
-   * @param requestId the identifier of the original request to which this is a response.
+   * @param body         information about the update
+   * @param requestId    the identifier of the original request to which this is a response.
    * @since 1.9.0
    */
   record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
@@ -355,6 +421,39 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * A service request to create one or more new samples for a project.
+   *
+   * @param projectId the project ID of the project the samples shall be created for
+   * @param requests  a collection of {@link SampleRegistrationRequest} items
+   * @since 1.10.0
+   */
+  record SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+
+  }
+
+  /**
+   * A service request to update one or more samples in a project.
+   *
+   * @param projectId the project ID of the project the samples shall be updated in
+   * @param requests  a collection for {@link SampleUpdate} items
+   * @since 1.10.0
+   */
+  record SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+
+  }
+
+  /**
+   * A container for a sample update request, containing the sample identifier and the updated
+   * information.
+   *
+   * @param sampleId    the sample ID of the sample to update
+   * @param information the new information
+   * @since 1.10.0
+   */
+  record SampleUpdate(String sampleId, SampleInformation information) {
+
+  }
 
   /**
    * A service response from a project creation request
@@ -365,7 +464,6 @@ public interface AsyncProjectService {
   record ProjectCreationResponse(String projectId) {
 
   }
-
 
   /**
    * A service request to update project information.
@@ -441,6 +539,7 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   class UnknownRequestException extends RuntimeException {
+
     private String requestId;
 
     public UnknownRequestException(String message) {
