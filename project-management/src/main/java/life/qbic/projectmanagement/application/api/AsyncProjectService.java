@@ -1,9 +1,12 @@
 package life.qbic.projectmanagement.application.api;
 
+import java.util.List;
 import static java.util.Objects.nonNull;
-
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
 
 /**
@@ -29,10 +32,10 @@ public interface AsyncProjectService {
    * The method implementation must be non-blocking.
    * <p>
    * The implementing class must ensure to be able to process all implementing classes of the
-   * {@link UpdateRequestBody} interface contained in the request.
+   * {@link ProjectUpdateRequestBody} interface contained in the request.
    * <p>
    * The implementing class must also ensure to only return responses with classes implementing the
-   * {@link UpdateResponseBody} interface.
+   * {@link ProjectUpdateResponseBody} interface.
    *
    * @param request the request to update a project
    * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
@@ -45,6 +48,31 @@ public interface AsyncProjectService {
   Mono<ProjectUpdateResponse> update(
       ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
+
+
+  /**
+   * Submits an experiment update request and returns a reactive
+   * {@link Mono< ExperimentUpdateResponse >} object immediately.
+   * <p>
+   * The method is non-blocking.
+   * <p>
+   * The implementing class must ensure to be able to process all implementing classes of the
+   * {@link ProjectUpdateRequestBody} interface contained in the request.
+   * <p>
+   * The implementing class must also ensure to only return responses with classes implementing the
+   * {@link ProjectUpdateResponseBody} interface.
+   *
+   * @param request the request to update a project
+   * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
+   * {@link ProjectUpdateResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.9.0
+   */
+  Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request)
+      throws RequestFailedException, AccessDeniedException;
+
 
 
   /**
@@ -71,7 +99,8 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface UpdateRequestBody permits FundingInformation, ProjectContacts, ProjectDesign {
+  sealed interface ProjectUpdateRequestBody permits FundingInformation, ProjectContacts,
+      ProjectDesign {
 
   }
 
@@ -81,9 +110,21 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface UpdateResponseBody permits FundingInformation, ProjectContacts, ProjectDesign {
+  sealed interface ProjectUpdateResponseBody permits FundingInformation, ProjectContacts,
+      ProjectDesign {
 
   }
+
+  sealed interface ExperimentUpdateRequestBody permits ConfoundingVariables, ExperimentDescription,
+      ExperimentalGroups, ExperimentalVariables {
+
+  }
+
+  sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables, ExperimentDescription,
+      ExperimentalGroups, ExperimentalVariables {
+
+  }
+
 
   /**
    * Cacheable requests provide a unique identifier so cache implementations can unambiguously
@@ -91,7 +132,7 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface CacheableRequest permits ProjectUpdateRequest {
+  sealed interface CacheableRequest permits ProjectUpdateRequest, ExperimentUpdateRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -104,15 +145,15 @@ public interface AsyncProjectService {
   }
 
   /**
-   * Container for passing information in an {@link UpdateRequestBody} or
-   * {@link UpdateResponseBody}.
+   * Container for passing information in an {@link ProjectUpdateRequestBody} or
+   * {@link ProjectUpdateResponseBody}.
    *
    * @param title     the title of the project
    * @param objective the objective of the project
    * @since 1.9.0
    */
-  record ProjectDesign(String title, String objective) implements UpdateRequestBody,
-      UpdateResponseBody {
+  record ProjectDesign(String title, String objective) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
 
   }
 
@@ -125,8 +166,8 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ProjectContacts(ProjectContact investigator, ProjectContact manager,
-                         ProjectContact responsible) implements UpdateRequestBody,
-      UpdateResponseBody {
+                         ProjectContact responsible) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
 
   }
 
@@ -148,8 +189,156 @@ public interface AsyncProjectService {
    * @param grantId the grant ID
    * @since 1.9.0
    */
-  record FundingInformation(String grant, String grantId) implements UpdateRequestBody,
-      UpdateResponseBody {
+  record FundingInformation(String grant, String grantId) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  /**
+   * Contains information on one experimental variables
+   *
+   * @param name   the name of the variable
+   * @param levels possible levels of the variable
+   * @param unit   the unit of the experimental variable. Can be null if no unit is set
+   * @since 1.9.0
+   */
+  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
+
+    public ExperimentalVariable {
+      levels = Set.copyOf(levels);
+    }
+  }
+
+  /**
+   * Container of experimental variables. Can be used in {@link #update(ExperimentUpdateRequest)}.
+   * @param experimentalVariables the list of experimental variables
+   * @since 1.9.0
+   */
+  record ExperimentalVariables(
+      List<ExperimentalVariable> experimentalVariables) implements
+      ExperimentUpdateRequestBody,
+      ExperimentUpdateResponseBody {
+
+    public ExperimentalVariables {
+      experimentalVariables = List.copyOf(experimentalVariables);
+    }
+  }
+
+  /**
+   * A level of an experimental variable
+   *
+   * @param variableName the name of the variable
+   * @param levelValue   the value of the level
+   * @param unit         the unit for the value of the level. Can be null if no unit is set
+   * @since 1.9.0
+   */
+  record VariableLevel(String variableName, String levelValue, @Nullable String unit) {
+
+  }
+
+  /**
+   * Information about an experimental group
+   *
+   * @param groupId    the identifier of the group
+   * @param name       the name of the eperimental group can be empty but is not expected to be
+   *                   null
+   * @param sampleSize the number of samples in this experimental group
+   * @param levels     the experimental variable levels making up the condition for the samples in
+   *                   this group.
+   * @since 1.9.0
+   */
+  record ExperimentalGroup(@Nullable Long groupId, String name, int sampleSize,
+                           Set<VariableLevel> levels) {
+
+    public ExperimentalGroup {
+      levels = Set.copyOf(levels);
+    }
+  }
+
+  /**
+   * A container for experimental groups. Can be used in {@link #update(ExperimentUpdateRequest)}
+   * @param experimentalGroups the list of experimental groups
+   * @since 1.9.0
+   */
+  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) implements
+      ExperimentUpdateRequestBody,
+      ExperimentUpdateResponseBody {
+
+    public ExperimentalGroups {
+      experimentalGroups = List.copyOf(experimentalGroups);
+    }
+  }
+
+  /**
+   * A container describing the experiment
+   *
+   * @param experimentName the name of the experiment
+   * @param species        a set of species for the experiment. Expected textual representations
+   *                       containing CURIEs.
+   * @param specimen       a set of specimen for the eperiment. Expected textual representations
+   *                       containing CURIEs.
+   * @param analytes       a set of analytes for the eperiment.Expected textual representations
+   *                       containing CURIEs.
+   * @since 1.9.0
+   */
+  record ExperimentDescription(String experimentName, Set<String> species, Set<String> specimen,
+                               Set<String> analytes) implements ExperimentUpdateRequestBody,
+      ExperimentUpdateResponseBody {
+
+    public ExperimentDescription {
+      species = Set.copyOf(species);
+      specimen = Set.copyOf(specimen);
+      analytes = Set.copyOf(analytes);
+    }
+  }
+
+  /**
+   * A list of confounding variable information. Can be used in {@link #update(ExperimentUpdateRequest)}
+   * @param confoundingVariables the variable information
+   */
+  record ConfoundingVariables(List<ConfoundingVariableInformation> confoundingVariables) implements
+      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
+
+    public ConfoundingVariables {
+      confoundingVariables = List.copyOf(confoundingVariables);
+    }
+  }
+
+
+  /**
+   * A service request to update an experiment
+   * @param projectId the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param body the request body containing information on what was updated
+   * @param requestId The identifier of the request. Please use {@link #ExperimentUpdateRequest(String, String, ExperimentUpdateRequestBody)} if it is not determined yet.
+   * @since 1.9.0
+   */
+  record ExperimentUpdateRequest(String projectId, String experimentId,
+                                 ExperimentUpdateRequestBody body,
+                                 String requestId) implements CacheableRequest {
+
+    /**
+     * A service request to update an experiment
+     * @param projectId the project's identifier. The project containing the experiment.
+     * @param experimentId the experiment's identifier
+     * @param body the request body containing information on what was updated
+     * @since 1.9.0
+     */
+    public ExperimentUpdateRequest(String projectId, String experimentId,
+        ExperimentUpdateRequestBody body) {
+      this(projectId, experimentId, body, UUID.randomUUID().toString());
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentUpdateRequest}
+   * @param experimentId the experiment's identifier
+   * @param body information about the update
+   * @param requestId the identifier of the original request to which this is a response.
+   * @since 1.9.0
+   */
+  record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
+                                  String requestId) {
 
   }
 
@@ -185,10 +374,11 @@ public interface AsyncProjectService {
    * @param requestBody the information to be updated.
    * @since 1.9.0
    */
-  record ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody, String id) implements
+  record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
+                              String id) implements
       CacheableRequest {
 
-    public ProjectUpdateRequest(String projectId, UpdateRequestBody requestBody) {
+    public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
       this(projectId, requestBody, UUID.randomUUID().toString());
     }
 
@@ -205,7 +395,7 @@ public interface AsyncProjectService {
    * @param responseBody the information that was updated.
    * @since 1.9.0
    */
-  record ProjectUpdateResponse(String projectId, UpdateResponseBody responseBody,
+  record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
                                String requestId) {
 
     public ProjectUpdateResponse {
@@ -251,9 +441,19 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   class UnknownRequestException extends RuntimeException {
+    private String requestId;
 
     public UnknownRequestException(String message) {
       super(message);
+    }
+
+    public UnknownRequestException(String message, String requestId) {
+      super(message);
+      this.requestId = requestId;
+    }
+
+    public String getRequestId() {
+      return requestId;
     }
   }
 
@@ -264,12 +464,28 @@ public interface AsyncProjectService {
    */
   class RequestFailedException extends RuntimeException {
 
+    private String requestId;
+
     public RequestFailedException(String message) {
       super(message);
     }
 
+    public RequestFailedException(String message, String requestId) {
+      super(message);
+      this.requestId = requestId;
+    }
+
     public RequestFailedException(String message, Throwable cause) {
       super(message, cause);
+    }
+
+    public RequestFailedException(String message, Throwable cause, String requestId) {
+      super(message, cause);
+      this.requestId = requestId;
+    }
+
+    public String getRequestId() {
+      return requestId;
     }
   }
 

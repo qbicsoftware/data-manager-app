@@ -7,7 +7,7 @@
   <groupId>life.qbic</groupId>
   <artifactId>datamanager</artifactId>
   <name>Data Manager</name>
-  <version>1.8.2</version>
+  <version>1.9.0</version>
   <modules>
     <module>user-interface</module>
     <module>identity</module>
@@ -244,6 +244,7 @@
           <useModulePath>false</useModulePath>
           <includes>
             <include>**/*Spec.class</include>
+            <include>**/*Test.class</include>
           </includes>
         </configuration>
       </plugin>

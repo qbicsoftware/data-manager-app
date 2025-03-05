@@ -4,7 +4,7 @@
   <parent>
     <artifactId>datamanager</artifactId>
     <groupId>life.qbic</groupId>
-    <version>1.8.2</version>
+    <version>1.9.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>project-management</artifactId>
@@ -35,6 +35,12 @@
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/io.projectreactor/reactor-test -->
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>jakarta.persistence</groupId>
       <artifactId>jakarta.persistence-api</artifactId>
@@ -42,13 +48,13 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -59,7 +65,7 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -82,13 +88,13 @@
     <dependency>
       <groupId>life.qbic.datamanager</groupId>
       <artifactId>identity-api</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.finances</groupId>
       <artifactId>finances-api</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
