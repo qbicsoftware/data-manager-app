@@ -349,7 +349,13 @@ public class ProjectSummaryComponent extends PageArea {
     var name = new Span(contact.fullName());
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
-    if (!contact.oidcIssuer().isEmpty() && !contact.oidc().isEmpty()) {
+    //Account for contacts without oidc or oidcissuer set
+    if (contact.oidc() == null || contact.oidcIssuer() == null) {
+      return contactInfo;
+    }
+    if (contact.oidcIssuer().isEmpty() || contact.oidc().isEmpty()) {
+      return contactInfo;
+    } else {
       var oidcType = Arrays.stream(OidcType.values())
           .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
           .findFirst();
