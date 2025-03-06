@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import static java.util.Objects.nonNull;
 import java.util.Optional;
@@ -7,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import org.springframework.lang.Nullable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -74,7 +76,6 @@ public interface AsyncProjectService {
       throws RequestFailedException, AccessDeniedException;
 
 
-
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
    * immediately.
@@ -92,6 +93,28 @@ public interface AsyncProjectService {
   Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
+
+  /**
+   * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
+   * <p>
+   * The content represents a project summary with information about the research project.
+   * <p>
+   * Currently, the RO-Crate contains three files:
+   *
+   * <pre>
+   *    ro-crate-metadata.json // required by the RO-Crate specification
+   *    project-summary.docx // docx version of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+   *    project-summary.yml // yaml encoding of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+   *  </pre>
+   *
+   * @param projectId the project ID for the project the RO-Crate
+   * @return a reactive stream of the zipped RO-Crate
+   * @throws RequestFailedException in case the request cannot be processed
+   * @throws AccessDeniedException in case of insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ByteBuffer> roCrateSummary(String projectId)
+      throws RequestFailedException, AccessDeniedException;
 
   /**
    * Container of an update request for a service call and part of the
@@ -211,6 +234,7 @@ public interface AsyncProjectService {
 
   /**
    * Container of experimental variables. Can be used in {@link #update(ExperimentUpdateRequest)}.
+   *
    * @param experimentalVariables the list of experimental variables
    * @since 1.9.0
    */
@@ -257,6 +281,7 @@ public interface AsyncProjectService {
 
   /**
    * A container for experimental groups. Can be used in {@link #update(ExperimentUpdateRequest)}
+   *
    * @param experimentalGroups the list of experimental groups
    * @since 1.9.0
    */
@@ -293,7 +318,9 @@ public interface AsyncProjectService {
   }
 
   /**
-   * A list of confounding variable information. Can be used in {@link #update(ExperimentUpdateRequest)}
+   * A list of confounding variable information. Can be used in
+   * {@link #update(ExperimentUpdateRequest)}
+   *
    * @param confoundingVariables the variable information
    */
   record ConfoundingVariables(List<ConfoundingVariableInformation> confoundingVariables) implements
@@ -307,10 +334,13 @@ public interface AsyncProjectService {
 
   /**
    * A service request to update an experiment
-   * @param projectId the project's identifier. The project containing the experiment.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
    * @param experimentId the experiment's identifier
-   * @param body the request body containing information on what was updated
-   * @param requestId The identifier of the request. Please use {@link #ExperimentUpdateRequest(String, String, ExperimentUpdateRequestBody)} if it is not determined yet.
+   * @param body         the request body containing information on what was updated
+   * @param requestId    The identifier of the request. Please use
+   *                     {@link #ExperimentUpdateRequest(String, String,
+   *                     ExperimentUpdateRequestBody)} if it is not determined yet.
    * @since 1.9.0
    */
   record ExperimentUpdateRequest(String projectId, String experimentId,
@@ -319,9 +349,10 @@ public interface AsyncProjectService {
 
     /**
      * A service request to update an experiment
-     * @param projectId the project's identifier. The project containing the experiment.
+     *
+     * @param projectId    the project's identifier. The project containing the experiment.
      * @param experimentId the experiment's identifier
-     * @param body the request body containing information on what was updated
+     * @param body         the request body containing information on what was updated
      * @since 1.9.0
      */
     public ExperimentUpdateRequest(String projectId, String experimentId,
@@ -332,9 +363,10 @@ public interface AsyncProjectService {
 
   /**
    * A service response from a {@link ExperimentUpdateRequest}
+   *
    * @param experimentId the experiment's identifier
-   * @param body information about the update
-   * @param requestId the identifier of the original request to which this is a response.
+   * @param body         information about the update
+   * @param requestId    the identifier of the original request to which this is a response.
    * @since 1.9.0
    */
   record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
@@ -441,6 +473,7 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   class UnknownRequestException extends RuntimeException {
+
     private String requestId;
 
     public UnknownRequestException(String message) {
