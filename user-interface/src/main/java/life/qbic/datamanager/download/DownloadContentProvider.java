@@ -1,11 +1,10 @@
 package life.qbic.datamanager.download;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.apache.poi.ss.usermodel.Workbook;
 
 /**

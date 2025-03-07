@@ -1,7 +1,6 @@
 package life.qbic.logging.impl.logger;
 
 import static java.util.Objects.requireNonNull;
-
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.api.Publisher;
 import life.qbic.logging.impl.slf4j.Slf4jWrapper;

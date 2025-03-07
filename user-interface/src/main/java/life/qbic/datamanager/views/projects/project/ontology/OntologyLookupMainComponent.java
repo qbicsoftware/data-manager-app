@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.ontology;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -10,11 +7,13 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import static java.util.Objects.requireNonNull;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.projects.project.ProjectMainLayout;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 

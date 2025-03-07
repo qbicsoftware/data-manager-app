@@ -1,11 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
-import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
-import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
@@ -31,6 +25,8 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -51,6 +47,9 @@ import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventVariableEdit;

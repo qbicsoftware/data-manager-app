@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.infrastructure;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -18,6 +16,7 @@ import java.util.Optional;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.domain.Organisation;
 

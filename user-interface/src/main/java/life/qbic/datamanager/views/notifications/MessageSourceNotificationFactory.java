@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.notifications;
 
-import static java.util.Objects.isNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Span;
@@ -12,8 +9,10 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import static java.util.Objects.isNull;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 

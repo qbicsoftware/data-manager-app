@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.info;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.NotFoundException;
@@ -14,6 +11,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
@@ -44,6 +42,7 @@ import life.qbic.datamanager.views.projects.purchase.UploadPurchaseDialog;
 import life.qbic.datamanager.views.projects.qualityControl.QCItemDeletionConfirmationNotification;
 import life.qbic.datamanager.views.projects.qualityControl.UploadQualityControlDialog;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;

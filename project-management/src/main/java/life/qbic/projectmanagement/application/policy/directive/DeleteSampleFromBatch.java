@@ -1,11 +1,10 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Objects;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService.ResponseCode;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;

@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.application;
 
-import static java.util.Objects.isNull;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
@@ -10,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.Objects.isNull;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 

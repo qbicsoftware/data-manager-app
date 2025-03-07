@@ -1,9 +1,8 @@
 package life.qbic.projectmanagement.domain.model.project;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Record representing a person reference with name and contact email address

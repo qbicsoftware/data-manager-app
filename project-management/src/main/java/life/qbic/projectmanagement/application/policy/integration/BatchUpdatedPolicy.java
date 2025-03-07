@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.policy.integration;
 
 import static java.util.Objects.requireNonNull;
-
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponBatchUpdate;
 import life.qbic.projectmanagement.domain.model.sample.event.BatchUpdated;

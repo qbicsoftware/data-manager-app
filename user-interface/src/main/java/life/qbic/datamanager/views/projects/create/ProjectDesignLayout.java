@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.create;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -30,6 +28,7 @@ import life.qbic.finances.api.FinanceService;
 import life.qbic.finances.api.Offer;
 import life.qbic.finances.api.OfferSummary;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;

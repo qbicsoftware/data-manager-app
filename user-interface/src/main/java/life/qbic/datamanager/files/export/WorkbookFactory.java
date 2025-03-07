@@ -1,5 +1,9 @@
 package life.qbic.datamanager.files.export;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createBoldCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createDefaultCellStyle;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.createLinkHeaderCellStyle;
@@ -10,11 +14,6 @@ import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateC
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateRow;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.hideSheet;
 import static life.qbic.datamanager.files.export.XLSXTemplateHelper.lockSheet;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
 import org.apache.poi.common.usermodel.HyperlinkType;

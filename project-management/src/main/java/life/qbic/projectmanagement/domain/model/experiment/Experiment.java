@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
@@ -11,6 +9,7 @@ import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;

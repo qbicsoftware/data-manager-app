@@ -1,8 +1,7 @@
 package life.qbic.projectmanagement.application;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;

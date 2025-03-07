@@ -1,12 +1,11 @@
 package life.qbic.projectmanagement.domain.model.sample.qualitycontrol;
 
-import static jakarta.persistence.FetchType.LAZY;
-
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import static jakarta.persistence.FetchType.LAZY;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;

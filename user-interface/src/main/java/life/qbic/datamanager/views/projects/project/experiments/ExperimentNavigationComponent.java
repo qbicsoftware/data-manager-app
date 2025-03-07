@@ -1,8 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -22,6 +20,7 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementMain
 import life.qbic.datamanager.views.projects.project.rawdata.RawDataMain;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * Project Side Navigation Component

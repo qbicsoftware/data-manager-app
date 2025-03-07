@@ -1,12 +1,11 @@
 package life.qbic.finance.domain.model;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * <b>OfferPreview</b>

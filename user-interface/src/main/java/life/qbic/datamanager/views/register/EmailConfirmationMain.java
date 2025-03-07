@@ -1,9 +1,5 @@
 package life.qbic.datamanager.views.register;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -16,6 +12,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -35,6 +33,7 @@ import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
 import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import life.qbic.projectmanagement.application.communication.CommunicationException;

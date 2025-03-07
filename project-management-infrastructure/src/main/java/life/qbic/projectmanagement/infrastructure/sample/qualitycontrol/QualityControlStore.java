@@ -1,13 +1,12 @@
 package life.qbic.projectmanagement.infrastructure.sample.qualitycontrol;
 
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorage;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlStorageException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;

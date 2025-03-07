@@ -1,7 +1,5 @@
 package life.qbic.logging.subscription.provider.mail;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
 import jakarta.mail.Message.RecipientType;
@@ -11,6 +9,7 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import static java.util.Objects.requireNonNull;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

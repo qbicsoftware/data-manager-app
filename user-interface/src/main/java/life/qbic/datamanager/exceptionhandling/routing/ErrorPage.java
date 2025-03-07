@@ -1,12 +1,11 @@
 package life.qbic.datamanager.exceptionhandling.routing;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.HasErrorParameter;
 import java.util.Locale;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * <b>An error page displayed when an exception is thrown during routing</b>

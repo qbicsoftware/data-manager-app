@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.policy;
 
 import static java.util.Objects.requireNonNull;
-
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.projectmanagement.application.policy.directive.AddSampleToBatch;
 import life.qbic.projectmanagement.application.policy.directive.UpdateProjectUponSampleCreation;

@@ -1,17 +1,14 @@
 package life.qbic.datamanager.views.projects.create;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.general.OntologyComponent;
 import life.qbic.datamanager.views.projects.project.experiments.OntologyFilterConnector;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 
 /**

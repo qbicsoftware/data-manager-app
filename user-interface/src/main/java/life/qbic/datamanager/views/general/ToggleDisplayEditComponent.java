@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.general;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Focusable;
@@ -12,8 +9,10 @@ import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.dom.Element;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Function;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * ToggleDisplayEditComponent is a custom component enabling the switch between two different Vaadin

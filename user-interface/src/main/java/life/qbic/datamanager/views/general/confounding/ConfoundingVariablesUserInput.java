@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.general.confounding;
 
-import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -19,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;

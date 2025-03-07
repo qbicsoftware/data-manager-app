@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.create;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
@@ -16,6 +14,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout.ExperimentalInformation;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;

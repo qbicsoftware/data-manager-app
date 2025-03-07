@@ -1,8 +1,7 @@
 package life.qbic.datamanager.views.general;
 
-import static java.util.Objects.nonNull;
-
 import com.vaadin.flow.component.Component;
+import static java.util.Objects.nonNull;
 
 public class ComponentFunctions {
 

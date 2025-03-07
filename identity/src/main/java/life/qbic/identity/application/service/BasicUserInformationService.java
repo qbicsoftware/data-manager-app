@@ -1,7 +1,5 @@
 package life.qbic.identity.application.service;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,6 +15,7 @@ import life.qbic.identity.domain.model.User;
 import life.qbic.identity.domain.model.UserId;
 import life.qbic.identity.domain.repository.UserRepository;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 

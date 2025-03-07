@@ -1,7 +1,6 @@
 package life.qbic.datamanager.security;
 
 import static java.util.Objects.requireNonNull;
-
 import java.util.Optional;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;

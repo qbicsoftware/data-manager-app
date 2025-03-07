@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.create;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -19,6 +17,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;

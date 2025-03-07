@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.general;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -16,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.springframework.util.CollectionUtils;
 
 /**

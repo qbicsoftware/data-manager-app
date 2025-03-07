@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.application;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +8,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.finances.api.Offer;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;

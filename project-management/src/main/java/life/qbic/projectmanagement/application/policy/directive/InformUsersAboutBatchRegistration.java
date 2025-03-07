@@ -1,13 +1,12 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.ArrayList;
 import java.util.List;
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.Messages;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;

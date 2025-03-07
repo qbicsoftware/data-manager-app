@@ -1,11 +1,10 @@
 package life.qbic.projectmanagement.domain.model.project;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import life.qbic.projectmanagement.domain.model.project.translation.ProjectObjectiveConverter;
 import life.qbic.projectmanagement.domain.model.project.translation.ProjectTitleConverter;
 

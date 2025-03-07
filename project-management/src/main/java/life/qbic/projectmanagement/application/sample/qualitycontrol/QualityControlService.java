@@ -1,11 +1,9 @@
 package life.qbic.projectmanagement.application.sample.qualitycontrol;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.domain.concepts.DomainEvent;
@@ -13,6 +11,7 @@ import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.api.PurchaseStoreException;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.event.ProjectChanged;

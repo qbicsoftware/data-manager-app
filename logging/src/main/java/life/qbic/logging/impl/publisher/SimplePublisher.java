@@ -1,11 +1,10 @@
 package life.qbic.logging.impl.publisher;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import life.qbic.logging.api.Publisher;

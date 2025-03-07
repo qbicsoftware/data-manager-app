@@ -1,10 +1,9 @@
 package life.qbic.projectmanagement.infrastructure.communication;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.communication.broadcasting.IntegrationEvent;
 import life.qbic.projectmanagement.application.communication.broadcasting.MessageRouter;
 import org.springframework.beans.factory.annotation.Autowired;

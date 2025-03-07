@@ -1,13 +1,12 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationException;
 import life.qbic.projectmanagement.application.ValidationResult;

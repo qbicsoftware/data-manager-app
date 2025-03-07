@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.application.authorization.authorities;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import org.springframework.security.core.GrantedAuthority;
 

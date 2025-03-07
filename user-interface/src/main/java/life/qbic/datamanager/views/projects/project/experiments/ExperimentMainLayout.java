@@ -1,8 +1,6 @@
 package life.qbic.datamanager.views.projects.project.experiments;
 
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -15,6 +13,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.LogoutService;

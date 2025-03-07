@@ -1,8 +1,7 @@
 package life.qbic.datamanager;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.ehcache.event.CacheEvent;
 import org.ehcache.event.CacheEventListener;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;

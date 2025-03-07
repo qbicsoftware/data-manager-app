@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.navigation;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
@@ -25,6 +23,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.IconSize;
 import java.io.Serial;
 import java.util.Collections;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;

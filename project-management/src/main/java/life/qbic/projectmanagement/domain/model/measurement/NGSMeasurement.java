@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -17,6 +15,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.Set;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;

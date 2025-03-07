@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -27,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

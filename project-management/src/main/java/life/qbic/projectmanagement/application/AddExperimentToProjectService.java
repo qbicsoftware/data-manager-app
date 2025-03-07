@@ -1,9 +1,8 @@
 package life.qbic.projectmanagement.application;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;

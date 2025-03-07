@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.overview;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
@@ -14,7 +11,7 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.Result;
@@ -28,10 +25,10 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog;
 import life.qbic.datamanager.views.projects.create.AddProjectDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.overview.components.ProjectCollectionComponent;
-import life.qbic.datamanager.views.register.EmailConfirmationMain;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.ProjectCreationService;

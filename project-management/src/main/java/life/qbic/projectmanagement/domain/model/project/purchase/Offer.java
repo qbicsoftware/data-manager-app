@@ -1,10 +1,9 @@
 package life.qbic.projectmanagement.domain.model.project.purchase;
 
-import static jakarta.persistence.FetchType.LAZY;
-
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import static jakarta.persistence.FetchType.LAZY;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;

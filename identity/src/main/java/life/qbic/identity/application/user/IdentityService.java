@@ -1,11 +1,10 @@
 package life.qbic.identity.application.user;
 
-import static java.util.Objects.isNull;
-
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import static java.util.Objects.isNull;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationResponse;

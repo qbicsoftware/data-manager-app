@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.account;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -12,6 +10,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.account.PersonalAccessTokenComponent.AddTokenEvent;

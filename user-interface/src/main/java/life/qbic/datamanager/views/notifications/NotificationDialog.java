@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.notifications;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
@@ -12,6 +10,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.dom.Style.Display;
 import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.BeforeLeaveObserver;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A dialog notifying the user of some event.

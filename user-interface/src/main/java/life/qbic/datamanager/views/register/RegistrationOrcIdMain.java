@@ -1,9 +1,5 @@
 package life.qbic.datamanager.views.register;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -12,6 +8,8 @@ import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.List;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationResponse;
@@ -27,6 +25,7 @@ import life.qbic.identity.application.user.IdentityService.EmptyUserNameExceptio
 import life.qbic.identity.application.user.IdentityService.UserExistsException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

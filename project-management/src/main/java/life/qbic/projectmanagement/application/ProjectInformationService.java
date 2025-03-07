@@ -1,12 +1,11 @@
 package life.qbic.projectmanagement.application;
 
-import static java.util.function.Predicate.not;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import static java.util.function.Predicate.not;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;

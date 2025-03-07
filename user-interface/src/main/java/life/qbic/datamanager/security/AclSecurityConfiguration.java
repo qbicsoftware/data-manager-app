@@ -1,10 +1,9 @@
 package life.qbic.datamanager.security;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategy;
 import javax.sql.DataSource;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.authorization.acl.QbicPermissionEvaluator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;

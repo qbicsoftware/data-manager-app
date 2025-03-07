@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.notifications;
 
-import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -20,6 +17,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.general.ComponentFunctions;
 
 /**

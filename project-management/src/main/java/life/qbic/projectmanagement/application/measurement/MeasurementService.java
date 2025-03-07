@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.application.measurement;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,9 +18,9 @@ import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;

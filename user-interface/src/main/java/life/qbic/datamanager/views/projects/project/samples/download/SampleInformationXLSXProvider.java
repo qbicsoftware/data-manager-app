@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples.download;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,6 +14,7 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.datamanager.download.DownloadContentProvider;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.experiment.VariableName;

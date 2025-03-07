@@ -1,9 +1,5 @@
 package life.qbic.datamanager.views.account;
 
-import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -21,6 +17,8 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
+import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.account.UserProfileComponent.ChangeUserDetailsDialog.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -33,6 +31,7 @@ import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

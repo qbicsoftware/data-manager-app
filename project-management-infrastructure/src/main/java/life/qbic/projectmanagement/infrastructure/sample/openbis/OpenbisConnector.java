@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.operation.IOperation;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
@@ -58,6 +56,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
 import life.qbic.projectmanagement.application.dataset.RawDataLookup;
 import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;

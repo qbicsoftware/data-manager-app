@@ -1,12 +1,11 @@
 package life.qbic.infrastructure.email.project;
 
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Objects;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.EmailSubmissionException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.communication.Attachment;
 import life.qbic.projectmanagement.application.communication.CommunicationException;
 import life.qbic.projectmanagement.application.communication.Content;

@@ -1,11 +1,10 @@
 package life.qbic.datamanager.views.general;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.data.binder.ValidationResult;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Mixin interface for components that provide a binder for validation. Sets properties for invalid

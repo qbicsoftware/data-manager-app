@@ -1,11 +1,10 @@
 package life.qbic.projectmanagement.infrastructure.project;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.time.Instant;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;

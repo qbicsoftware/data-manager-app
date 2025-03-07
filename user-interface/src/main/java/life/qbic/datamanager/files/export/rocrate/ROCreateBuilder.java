@@ -1,8 +1,5 @@
 package life.qbic.datamanager.files.export.rocrate;
 
-import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_DOCX;
-import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_YAML;
-
 import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
 import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity;
@@ -13,6 +10,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import life.qbic.datamanager.files.export.DocxFileSupplier;
 import life.qbic.datamanager.files.export.YamlFileSupplier;
+import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_DOCX;
+import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_YAML;
 import life.qbic.datamanager.files.structure.rocrate.ContactPoint;
 import life.qbic.datamanager.files.structure.rocrate.ResearchProject;
 import life.qbic.projectmanagement.domain.model.project.Contact;

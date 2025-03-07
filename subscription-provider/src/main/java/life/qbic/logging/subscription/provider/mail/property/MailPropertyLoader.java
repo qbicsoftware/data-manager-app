@@ -1,9 +1,8 @@
 package life.qbic.logging.subscription.provider.mail.property;
 
-import static java.util.Objects.requireNonNull;
-
 import java.io.IOException;
 import java.io.InputStream;
+import static java.util.Objects.requireNonNull;
 import java.util.Properties;
 
 /**

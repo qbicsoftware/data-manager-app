@@ -1,9 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.update;
 
-import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
-import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
-import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
-
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
@@ -33,6 +29,9 @@ import life.qbic.datamanager.views.projects.create.OntologyComboboxFactory;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.BioIcon;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.ANALYTE;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIES;
+import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventSampleOriginEdit;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;

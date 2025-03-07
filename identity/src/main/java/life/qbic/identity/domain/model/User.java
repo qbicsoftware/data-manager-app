@@ -1,8 +1,5 @@
 package life.qbic.identity.domain.model;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.EmbeddedId;
@@ -11,6 +8,8 @@ import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import java.util.Optional;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.identity.domain.event.PasswordResetRequested;

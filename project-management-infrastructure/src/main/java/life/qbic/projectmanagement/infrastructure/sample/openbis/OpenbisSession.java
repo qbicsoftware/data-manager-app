@@ -1,12 +1,11 @@
 package life.qbic.projectmanagement.infrastructure.sample.openbis;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.dssapi.v3.IDataStoreServerApi;
 import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.infrastructure.DataManagerVault;
 
 /**

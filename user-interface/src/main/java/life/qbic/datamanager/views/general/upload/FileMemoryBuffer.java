@@ -1,13 +1,12 @@
 package life.qbic.datamanager.views.general.upload;
 
-import static java.util.Objects.nonNull;
-
 import com.vaadin.flow.component.upload.Receiver;
 import com.vaadin.flow.component.upload.receivers.FileData;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import static java.util.Objects.nonNull;
 import java.util.Optional;
 
 /**

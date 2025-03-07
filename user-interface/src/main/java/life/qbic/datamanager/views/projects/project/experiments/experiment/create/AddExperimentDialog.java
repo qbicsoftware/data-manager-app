@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.experiments.experiment.create;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -19,6 +17,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.events.UserCancelEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.projects.create.BioIconComboboxFactory;

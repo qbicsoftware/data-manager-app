@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.projects.project.access;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
@@ -24,6 +21,7 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -37,6 +35,7 @@ import life.qbic.datamanager.views.projects.project.access.AddCollaboratorToProj
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectCollaborator;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService.ProjectRole;

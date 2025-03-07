@@ -1,10 +1,9 @@
 package life.qbic.datamanager.views.identicon;
 
-import static java.util.Objects.isNull;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import static java.util.Objects.isNull;
 
 /**
  * An Identicon is a visual representation of a hash value. The input is hashed and turned into a

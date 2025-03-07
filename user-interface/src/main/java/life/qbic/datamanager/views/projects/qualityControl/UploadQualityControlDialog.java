@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.qualityControl;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -28,6 +26,7 @@ import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.projects.qualityControl.QualityControlItem.ExperimentItem;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlReport;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;

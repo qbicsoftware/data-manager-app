@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.login.passwordreset;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
@@ -24,6 +22,7 @@ import life.qbic.datamanager.views.login.passwordreset.SetNewPasswordComponent.S
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.domain.model.EncryptedPassword.PasswordValidationException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

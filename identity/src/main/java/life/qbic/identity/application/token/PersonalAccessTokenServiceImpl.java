@@ -1,9 +1,8 @@
 package life.qbic.identity.application.token;
 
-import static java.util.Objects.requireNonNull;
-
 import java.time.Duration;
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import life.qbic.identity.api.PersonalAccessToken;
 import life.qbic.identity.api.PersonalAccessTokenService;
 import life.qbic.identity.api.RawToken;

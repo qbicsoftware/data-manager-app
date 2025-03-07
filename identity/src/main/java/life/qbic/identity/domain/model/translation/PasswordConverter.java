@@ -1,8 +1,7 @@
 package life.qbic.identity.domain.model.translation;
 
-import static java.util.Objects.isNull;
-
 import jakarta.persistence.AttributeConverter;
+import static java.util.Objects.isNull;
 import life.qbic.identity.domain.model.EncryptedPassword;
 
 /**

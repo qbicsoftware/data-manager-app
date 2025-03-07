@@ -1,8 +1,7 @@
 package life.qbic.logging.subscription.provider;
 
-import static java.util.Objects.requireNonNull;
-
 import java.io.IOException;
+import static java.util.Objects.requireNonNull;
 import life.qbic.logging.subscription.api.LogLevel;
 import life.qbic.logging.subscription.api.LogMessage;
 import life.qbic.logging.subscription.api.Subscriber;

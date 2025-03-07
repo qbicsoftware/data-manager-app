@@ -1,11 +1,10 @@
 package life.qbic.datamanager.files.export;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.IntFunction;

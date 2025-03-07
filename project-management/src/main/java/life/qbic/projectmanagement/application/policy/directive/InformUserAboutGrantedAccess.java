@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.policy.directive;
 
 import static java.util.Objects.requireNonNull;
-
 import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventSubscriber;
 import life.qbic.identity.api.UserInformationService;

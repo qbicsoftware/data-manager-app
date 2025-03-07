@@ -1,7 +1,5 @@
 package life.qbic.datamanager.files.parsing;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,6 +13,7 @@ import life.qbic.datamanager.files.structure.measurement.NGSMeasurementRegisterC
 import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementEditColumn;
 import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementRegisterColumn;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;

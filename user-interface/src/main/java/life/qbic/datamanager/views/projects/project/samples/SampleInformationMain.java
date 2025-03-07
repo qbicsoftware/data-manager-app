@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.samples;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -20,6 +18,7 @@ import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;

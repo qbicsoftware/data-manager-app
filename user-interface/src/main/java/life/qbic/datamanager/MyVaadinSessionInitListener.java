@@ -1,8 +1,5 @@
 package life.qbic.datamanager;
 
-import static java.util.Objects.isNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.page.Page.ExtendedClientDetailsReceiver;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -14,11 +11,13 @@ import com.vaadin.flow.server.UIInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.WrappedSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import static java.util.Objects.isNull;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.register.RegistrationOrcIdMain;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;

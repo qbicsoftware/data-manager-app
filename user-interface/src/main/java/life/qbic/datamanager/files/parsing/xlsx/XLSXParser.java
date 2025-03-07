@@ -1,7 +1,5 @@
 package life.qbic.datamanager.files.parsing.xlsx;
 
-import static java.util.Objects.isNull;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -11,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import static java.util.Objects.isNull;
 import java.util.Optional;
 import life.qbic.datamanager.files.parsing.MetadataParser;
 import life.qbic.datamanager.files.parsing.ParsingResult;

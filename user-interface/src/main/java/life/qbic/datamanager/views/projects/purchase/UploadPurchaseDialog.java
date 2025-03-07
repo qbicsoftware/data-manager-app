@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.purchase;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -26,6 +24,7 @@ import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.purchase.OfferDTO;
 
 /**

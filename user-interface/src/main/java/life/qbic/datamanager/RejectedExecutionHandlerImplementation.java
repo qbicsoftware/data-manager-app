@@ -1,11 +1,10 @@
 package life.qbic.datamanager;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.springframework.stereotype.Component;
 
 /**

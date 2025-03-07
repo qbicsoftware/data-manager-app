@@ -1,13 +1,12 @@
 package life.qbic.datamanager.files.export.measurement;
 
-import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateCell;
-import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateRow;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 import life.qbic.datamanager.files.export.WorkbookFactory;
+import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateCell;
+import static life.qbic.datamanager.files.export.XLSXTemplateHelper.getOrCreateRow;
 import life.qbic.datamanager.files.export.measurement.NGSWorkbooks.SequencingReadType;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.measurement.NGSMeasurementEditColumn;

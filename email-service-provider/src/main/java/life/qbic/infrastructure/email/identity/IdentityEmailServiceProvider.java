@@ -1,7 +1,5 @@
 package life.qbic.infrastructure.email.identity;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.identity.application.communication.CommunicationException;
@@ -12,6 +10,7 @@ import life.qbic.identity.application.communication.Subject;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.EmailSubmissionException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 /**
  * <b>Identity Email Provider</b>

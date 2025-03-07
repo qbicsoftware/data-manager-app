@@ -1,13 +1,12 @@
 package life.qbic.projectmanagement.application.sample;
 
-import static java.util.Objects.isNull;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import static java.util.Objects.isNull;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;

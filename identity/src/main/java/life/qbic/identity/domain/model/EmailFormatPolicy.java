@@ -1,7 +1,6 @@
 package life.qbic.identity.domain.model;
 
 import static java.util.Objects.isNull;
-
 import java.util.regex.Pattern;
 import life.qbic.identity.domain.model.policy.PolicyCheckReport;
 import life.qbic.identity.domain.model.policy.PolicyStatus;

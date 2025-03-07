@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.account;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -9,6 +7,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.identity.api.UserInformationService;

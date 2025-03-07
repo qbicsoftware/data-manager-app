@@ -1,9 +1,8 @@
 package life.qbic.datamanager.security;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;

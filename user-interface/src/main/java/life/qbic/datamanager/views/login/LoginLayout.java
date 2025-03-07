@@ -1,8 +1,5 @@
 package life.qbic.datamanager.views.login;
 
-import static java.util.Objects.requireNonNull;
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -25,6 +22,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.util.List;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.general.oidc.OidcLogo;
@@ -36,6 +34,7 @@ import life.qbic.datamanager.views.register.UserRegistrationMain;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 

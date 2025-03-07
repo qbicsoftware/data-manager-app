@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.infrastructure;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -20,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.crypto.spec.SecretKeySpec;
 import life.qbic.logging.api.Logger;
+import static life.qbic.logging.service.LoggerFactory.logger;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

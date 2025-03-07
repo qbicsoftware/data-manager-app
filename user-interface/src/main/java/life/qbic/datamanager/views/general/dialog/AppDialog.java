@@ -1,13 +1,12 @@
 package life.qbic.datamanager.views.general.dialog;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.BeforeLeaveObserver;
 import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 

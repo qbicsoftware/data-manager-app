@@ -1,7 +1,5 @@
 package life.qbic.datamanager.views.projects.project.access;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -18,6 +16,7 @@ import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.account.UserAvatar;

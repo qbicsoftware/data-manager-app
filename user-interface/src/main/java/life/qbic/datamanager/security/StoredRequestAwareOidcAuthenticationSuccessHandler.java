@@ -1,12 +1,11 @@
 package life.qbic.datamanager.security;
 
-import static java.util.Objects.requireNonNull;
-
 import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSuccessHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import static java.util.Objects.requireNonNull;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
