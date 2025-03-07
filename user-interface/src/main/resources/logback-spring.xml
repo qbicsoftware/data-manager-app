@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-  <property name="LOGS" value="${DM_LOG_PATH:-./logs}"/>
+  <springProperty scope="context" name="LOGS" source="logging.file.path"/>
+  <springProperty scope="context" name="LOG_LEVEL_ROOT" source="logging.level.root"/>
 
   <appender name="Console"
     class="ch.qos.logback.core.ConsoleAppender">
@@ -29,14 +30,12 @@
     </encoder>
   </appender>
 
-  <!-- LOG everything at INFO level -->
-  <root level="info">
+  <root>
     <appender-ref ref="RollingFile"/>
     <appender-ref ref="Console"/>
   </root>
 
-  <!-- LOG "life.qbic" at TRACE level -->
-  <logger name="life.qbic" level="trace" additivity="false">
+  <logger name="life.qbic" additivity="false">
     <appender-ref ref="RollingFile"/>
     <appender-ref ref="Console"/>
   </logger>
