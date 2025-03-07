@@ -43,18 +43,22 @@ public interface AsyncProjectService {
    * <p>
    * The implementing class must also ensure to only return responses with classes implementing the
    * {@link ProjectUpdateResponseBody} interface.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    *
    * @param request the request to update a project
    * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
-   * {@link ProjectUpdateResponse} on success.
+   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.9.0
    */
-  Mono<ProjectUpdateResponse> update(
-      ProjectUpdateRequest request)
-      throws UnknownRequestException, RequestFailedException, AccessDeniedException;
+  Mono<ProjectUpdateResponse> update(ProjectUpdateRequest request);
 
 
   /**
@@ -68,27 +72,38 @@ public interface AsyncProjectService {
    * <p>
    * The implementing class must also ensure to only return responses with classes implementing the
    * {@link ProjectUpdateResponseBody} interface.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    *
    * @param request the request to update a project
    * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
-   * {@link ProjectUpdateResponse} on success.
+   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.9.0
    */
-  Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request)
-      throws RequestFailedException, AccessDeniedException;
+  Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
 
   /**
    * Submits a project creation request and returns a {@link Mono< ProjectCreationResponse >}
    * immediately.
    * <p>
    * This implementation must be non-blocking.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    *
    * @param request the request with information required for project creation.
    * @return {@link Mono<ProjectCreationResponse>} object publishing an
-   * {@link ProjectCreationResponse} on success.
+   * {@link ProjectCreationResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -100,34 +115,54 @@ public interface AsyncProjectService {
 
   /**
    * Requests {@link SamplePreview} for a given experiment.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    *
    * @param projectId    the project ID for the project to get the samples for
    * @param experimentId the experiment ID for which the sample preview shall be retrieved
-   * @return a reactive stream of {@link SamplePreview} objects of the experiment
+   * @return a reactive stream of {@link SamplePreview} objects of the experiment. Exceptions are
+   * provided as {@link Mono#error(Throwable)}.
    * @throws RequestFailedException if the request could not be executed
    * @since 1.10.0
    */
-  Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId) throws RequestFailedException;
+  Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId)
+      throws RequestFailedException;
 
   /**
    * Requests {@link SamplePreview} for a given experiment with pagination support.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    *
    * @param projectId    the project ID for the project to get the samples for
    * @param experimentId the experiment ID for which the sample preview shall be retrieved
    * @param offset       the offset from 0 of all available previews the returned previews should
    *                     start
    * @param limit        the maximum number of previews that should be returned
-   * @return a reactive stream of {@link SamplePreview} objects in the experiment
+   * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
+   * provided as {@link Mono#error(Throwable)}.
    * @since 1.10.0
    */
-  Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset, int limit);
+  Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
+      int limit);
 
   /**
    * Requests all {@link Sample} for a given experiment.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    *
    * @param projectId    the project ID for the project to get the samples for
    * @param experimentId the experiment ID for which the samples shall be retrieved
-   * @return a reactive stream of {@link Sample} objects
+   * @return a reactive stream of {@link Sample} objects. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
@@ -136,9 +171,16 @@ public interface AsyncProjectService {
   /**
    * Requests all {@link Sample} for a given batch
    *
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
    * @param projectId the project ID for the project to get the samples for
    * @param batchId   the batch ID the samples shall be retrieved for
-   * @return a reactive stream of {@link Sample} objects for the given batch
+   * @return a reactive stream of {@link Sample} objects for the given batch. Exceptions are
+   * provided as {@link Mono#error(Throwable)}.
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
@@ -146,10 +188,16 @@ public interface AsyncProjectService {
 
   /**
    * Find the sample ID for a given sample code
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    *
    * @param projectId  the project ID for the project to get the samples for
    * @param sampleCode the sample code (e.g. Q2TEST001AE) for the project
-   * @return a reactive container of {@link SampleIdCodeEntry} for the sample code
+   * @return a reactive container of {@link SampleIdCodeEntry} for the sample code. Exceptions are
+   * provided as {@link Mono#error(Throwable)}.
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
@@ -278,10 +326,8 @@ public interface AsyncProjectService {
    * @param experimentalVariables the list of experimental variables
    * @since 1.9.0
    */
-  record ExperimentalVariables(
-      List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentUpdateRequestBody,
-      ExperimentUpdateResponseBody {
+  record ExperimentalVariables(List<ExperimentalVariable> experimentalVariables) implements
+      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
 
     public ExperimentalVariables {
       experimentalVariables = List.copyOf(experimentalVariables);
@@ -326,8 +372,7 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) implements
-      ExperimentUpdateRequestBody,
-      ExperimentUpdateResponseBody {
+      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
 
     public ExperimentalGroups {
       experimentalGroups = List.copyOf(experimentalGroups);
@@ -384,8 +429,8 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ExperimentUpdateRequest(String projectId, String experimentId,
-                                 ExperimentUpdateRequestBody body,
-                                 String requestId) implements CacheableRequest {
+                                 ExperimentUpdateRequestBody body, String requestId) implements
+      CacheableRequest {
 
     /**
      * A service request to update an experiment
@@ -487,8 +532,7 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
-                              String id) implements
-      CacheableRequest {
+                              String id) implements CacheableRequest {
 
     public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
       this(projectId, requestBody, UUID.randomUUID().toString());
