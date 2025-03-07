@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
+import java.nio.ByteBuffer;
 import static life.qbic.logging.service.LoggerFactory.logger;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
@@ -14,6 +15,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.retry.Retry;
@@ -59,6 +61,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     //TODO
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Flux<ByteBuffer> roCrateSummary(String projectId)
+      throws RequestFailedException, AccessDeniedException {
     throw new RuntimeException("not implemented");
   }
 
