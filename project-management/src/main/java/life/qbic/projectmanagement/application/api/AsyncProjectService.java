@@ -101,16 +101,18 @@ public interface AsyncProjectService {
   /**
    * Requests {@link SamplePreview} for a given experiment.
    *
+   * @param projectId    the project ID for the project to get the samples for
    * @param experimentId the experiment ID for which the sample preview shall be retrieved
    * @return a reactive stream of {@link SamplePreview} objects of the experiment
    * @throws RequestFailedException if the request could not be executed
    * @since 1.10.0
    */
-  Flux<SamplePreview> getSamplePreviews(String experimentId) throws RequestFailedException;
+  Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId) throws RequestFailedException;
 
   /**
    * Requests {@link SamplePreview} for a given experiment with pagination support.
    *
+   * @param projectId    the project ID for the project to get the samples for
    * @param experimentId the experiment ID for which the sample preview shall be retrieved
    * @param offset       the offset from 0 of all available previews the returned previews should
    *                     start
@@ -118,37 +120,41 @@ public interface AsyncProjectService {
    * @return a reactive stream of {@link SamplePreview} objects in the experiment
    * @since 1.10.0
    */
-  Flux<SamplePreview> getSamplePreviews(String experimentId, int offset, int limit);
+  Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset, int limit);
 
   /**
    * Requests all {@link Sample} for a given experiment.
    *
+   * @param projectId    the project ID for the project to get the samples for
    * @param experimentId the experiment ID for which the samples shall be retrieved
    * @return a reactive stream of {@link Sample} objects
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
-  Flux<Sample> getSamples(String experimentId) throws RequestFailedException;
+  Flux<Sample> getSamples(String projectId, String experimentId) throws RequestFailedException;
 
   /**
    * Requests all {@link Sample} for a given batch
    *
-   * @param batchId the batch ID the samples shall be retrieved for
+   * @param projectId the project ID for the project to get the samples for
+   * @param batchId   the batch ID the samples shall be retrieved for
    * @return a reactive stream of {@link Sample} objects for the given batch
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
-  Flux<Sample> getSamplesForBatch(String batchId) throws RequestFailedException;
+  Flux<Sample> getSamplesForBatch(String projectId, String batchId) throws RequestFailedException;
 
   /**
    * Find the sample ID for a given sample code
    *
+   * @param projectId  the project ID for the project to get the samples for
    * @param sampleCode the sample code (e.g. Q2TEST001AE) for the project
    * @return a reactive container of {@link SampleIdCodeEntry} for the sample code
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
-  Mono<SampleIdCodeEntry> findSampleId(String sampleCode) throws RequestFailedException;
+  Mono<SampleIdCodeEntry> findSampleId(String projectId, String sampleCode)
+      throws RequestFailedException;
 
   /**
    * Container of an update request for a service call and part of the
@@ -429,6 +435,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+
     public SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
@@ -443,6 +450,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+
     public SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);

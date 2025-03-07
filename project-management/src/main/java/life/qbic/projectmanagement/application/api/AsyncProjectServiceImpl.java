@@ -1,13 +1,11 @@
 package life.qbic.projectmanagement.application.api;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
-
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -33,14 +31,19 @@ import reactor.util.retry.Retry;
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
+  private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
-  private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
       @Autowired Scheduler scheduler) {
     this.projectService = Objects.requireNonNull(projectService);
     this.scheduler = Objects.requireNonNull(scheduler);
+  }
+
+  private static Retry defaultRetryStrategy() {
+    return Retry.maxInARow(5)
+        .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")"));
   }
 
   @Override
@@ -67,30 +70,34 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<SamplePreview> getSamplePreviews(String experimentId) throws RequestFailedException {
+  public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId)
+      throws RequestFailedException {
     throw new RuntimeException("not implemented");
   }
 
   @Override
-  public Flux<SamplePreview> getSamplePreviews(String experimentId, int offset, int limit) {
+  public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
+      int limit) {
     throw new RuntimeException("not implemented");
   }
 
   @Override
-  public Flux<Sample> getSamples(String experimentId) throws RequestFailedException {
+  public Flux<Sample> getSamples(String projectId, String experimentId)
+      throws RequestFailedException {
     throw new RuntimeException("not implemented");
   }
 
   @Override
-  public Flux<Sample> getSamplesForBatch(String batchId) throws RequestFailedException {
+  public Flux<Sample> getSamplesForBatch(String projectId, String batchId)
+      throws RequestFailedException {
     throw new RuntimeException("not implemented");
   }
 
   @Override
-  public Mono<SampleIdCodeEntry> findSampleId(String sampleCode) throws RequestFailedException {
+  public Mono<SampleIdCodeEntry> findSampleId(String projectId, String sampleCode)
+      throws RequestFailedException {
     throw new RuntimeException("not implemented");
   }
-
 
   @Override
   public Mono<ExperimentUpdateResponse> update(
@@ -113,11 +120,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return response
         .transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
-  }
-
-  private static Retry defaultRetryStrategy() {
-    return Retry.maxInARow(5)
-        .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")"));
   }
 
   private <T> Mono<T> unknownRequest() {
@@ -145,7 +147,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
 
-  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design, String requestId) {
+  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design,
+      String requestId) {
     return applySecurityContext(
         Mono.<ProjectUpdateResponse>create(sink -> {
           try {
