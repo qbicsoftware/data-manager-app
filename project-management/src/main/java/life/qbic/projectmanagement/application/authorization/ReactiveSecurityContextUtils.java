@@ -46,6 +46,14 @@ public class ReactiveSecurityContextUtils {
     });
   }
 
+  /**
+   * Same as {@link #applySecurityContext(Mono)} but applies to {@link Flux}.
+   *
+   * @param original the original reactive stream
+   * @param <T>      the type of the flux
+   * @return the reactive stream for which the security context has been set explicitly
+   * @since 1.10.0
+   */
   public static <T> Flux<T> applySecurityContextMany(Flux<T> original) {
     return ReactiveSecurityContextHolder.getContext().flatMapMany(securityContext -> {
       SecurityContextHolder.setContext(securityContext);
@@ -53,8 +61,20 @@ public class ReactiveSecurityContextUtils {
     });
   }
 
-  public static <T> Flux<T> writeSecurityContextMany(Flux<T> original, SecurityContext securityContext) {
-    return original.contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
+  /**
+   * Same as {@link #writeSecurityContext(Mono, SecurityContext)} but applies to {@link Flux}.
+   *
+   * @param original        the original reactive stream
+   * @param securityContext the security context to write into the context of the flux
+   * @param <T>             the type of the flux
+   * @return the reactive stream for which the {@link ReactiveSecurityContextHolder} has been
+   * configured with the provided {@link SecurityContext}.
+   * @since 1.10.0
+   */
+  public static <T> Flux<T> writeSecurityContextMany(Flux<T> original,
+      SecurityContext securityContext) {
+    return original.contextWrite(
+        ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
   }
 
 }
