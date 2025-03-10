@@ -141,7 +141,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<Sample> findSample(String projectId, String sampleId) {
     return Mono.defer(() -> {
       try {
-        return Mono.justOrEmpty(sampleInfoService.findSample(SampleId.parse(sampleId)));
+        return Mono.justOrEmpty(
+            sampleInfoService.findSample(ProjectId.parse(projectId), SampleId.parse(sampleId)));
       } catch (org.springframework.security.access.AccessDeniedException e) {
         log.error(ACCESS_DENIED, e);
         return Mono.error(new AccessDeniedException(ACCESS_DENIED));
