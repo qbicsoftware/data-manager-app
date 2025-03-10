@@ -84,16 +84,25 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
-    return Flux.defer(() -> {
-      try {
-        return Flux.fromIterable(
-            sampleInfoService.queryPreview(ExperimentId.parse(experimentId), offset, limit,
-                sortOrders, filter));
-      } catch (Exception e) {
-        log.error("Error getting sample previews", e);
-        return Flux.error(new RequestFailedException("Error getting sample previews"));
-      }
-    }).subscribeOn(scheduler);
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(() ->
+        fetchSamplePreviews(projectId, experimentId, offset, limit, sortOrders, filter)))
+        .subscribeOn(scheduler)
+        .transform(original -> writeSecurityContextMany(original, securityContext))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  private Flux<SamplePreview> fetchSamplePreviews(String projectId, String experimentId, int offset,
+      int limit, List<SortOrder> sortOrders, String filter) {
+    try {
+      return Flux.fromIterable(
+          sampleInfoService.queryPreview(ProjectId.parse(projectId),
+              ExperimentId.parse(experimentId), offset, limit,
+              sortOrders, filter));
+    } catch (Exception e) {
+      log.error("Error getting sample previews", e);
+      return Flux.error(new RequestFailedException("Error getting sample previews"));
+    }
   }
 
   @Override

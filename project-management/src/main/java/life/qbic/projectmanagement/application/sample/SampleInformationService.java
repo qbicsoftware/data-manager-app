@@ -79,7 +79,16 @@ public class SampleInformationService {
     return sampleRepository.findSamplesByExperimentId(ExperimentId.parse(experimentId));
   }
 
+  /**
+   * @deprecated Use {@link #retrieveSamplesByIds(ProjectId, Collection)} instead.
+   */
+  @Deprecated(since = "1.10.0", forRemoval = true)
   public List<Sample> retrieveSamplesByIds(Collection<SampleId> sampleIds) {
+    return sampleRepository.findSamplesBySampleId(sampleIds.stream().toList());
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public List<Sample> retrieveSamplesByIds(ProjectId projectId, Collection<SampleId> sampleIds) {
     return sampleRepository.findSamplesBySampleId(sampleIds.stream().toList());
   }
 
@@ -106,7 +115,9 @@ public class SampleInformationService {
    * @param sortOrders the sort orders to apply
    * @return the results in the provided range
    * @since 1.0.0
+   * @deprecated Use {@link #queryPreview(ProjectId, ExperimentId, int, int, List, String)} instead.
    */
+  @Deprecated(since = "1.10.0", forRemoval = true)
   public List<SamplePreview> queryPreview(ExperimentId experimentId, int offset, int limit,
       List<SortOrder> sortOrders, String filter) {
     // returned by JPA -> UnmodifiableRandomAccessList
@@ -118,6 +129,40 @@ public class SampleInformationService {
     return new ArrayList<>(previewList);
   }
 
+  /**
+   * Queries {@link SamplePreview}s with a provided offset and limit that supports pagination.
+   * Applies the Spring Security context as well.
+   *
+   * @param projectId  the project ID that contains the information (required to apply the security
+   *                   context)
+   * @param offset     the offset for the search result to start
+   * @param limit      the maximum number of results that should be returned
+   * @param sortOrders the sort orders to apply
+   * @return the results in the provided range
+   * @since 1.10.0
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public List<SamplePreview> queryPreview(ProjectId projectId, ExperimentId experimentId,
+      int offset, int limit,
+      List<SortOrder> sortOrders, String filter) {
+    // returned by JPA -> UnmodifiableRandomAccessList
+    List<SamplePreview> previewList = samplePreviewLookup.queryByExperimentId(experimentId,
+        offset,
+        limit,
+        sortOrders, filter);
+    // the list must be modifiable for spring security to filter it
+    return new ArrayList<>(previewList);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Optional<Sample> findSample(ProjectId projectId, SampleId sampleId) {
+    return sampleRepository.findSample(sampleId);
+  }
+
+  /**
+   * @deprecated Use {@link #findSample(ProjectId, SampleId)} instead.
+   */
+  @Deprecated(since = "1.10.0", forRemoval = true)
   public Optional<Sample> findSample(SampleId sampleId) {
     return sampleRepository.findSample(sampleId);
   }
