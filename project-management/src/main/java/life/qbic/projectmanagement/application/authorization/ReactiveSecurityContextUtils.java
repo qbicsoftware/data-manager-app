@@ -3,6 +3,7 @@ package life.qbic.projectmanagement.application.authorization;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
@@ -43,6 +44,17 @@ public class ReactiveSecurityContextUtils {
       SecurityContextHolder.setContext(securityContext);
       return original;
     });
+  }
+
+  public static <T> Flux<T> applySecurityContextMany(Flux<T> original) {
+    return ReactiveSecurityContextHolder.getContext().flatMapMany(securityContext -> {
+      SecurityContextHolder.setContext(securityContext);
+      return original;
+    });
+  }
+
+  public static <T> Flux<T> writeSecurityContextMany(Flux<T> original, SecurityContext securityContext) {
+    return original.contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
   }
 
 }

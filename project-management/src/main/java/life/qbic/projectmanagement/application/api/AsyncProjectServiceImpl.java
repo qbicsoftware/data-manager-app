@@ -1,7 +1,9 @@
 package life.qbic.projectmanagement.application.api;
 
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContextMany;
 
 import java.util.List;
 import java.util.Objects;
@@ -9,13 +11,11 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
@@ -38,8 +38,8 @@ import reactor.util.retry.Retry;
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
-  private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
   public static final String ACCESS_DENIED = "Access denied";
+  private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
   private final SampleInformationService sampleInfoService;
@@ -99,7 +99,23 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<Sample> getSamples(String projectId, String experimentId)
       throws RequestFailedException {
-    throw new RuntimeException("not implemented");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(() -> {
+      try {
+        return Flux.fromIterable(
+            sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId),
+                experimentId));
+      } catch (org.springframework.security.access.AccessDeniedException e) {
+        log.error("Error getting samples", e);
+        return Flux.error(new AccessDeniedException(ACCESS_DENIED));
+      } catch (Exception e) {
+        log.error("Unexpected exception getting samples", e);
+        return Flux.error(
+            new RequestFailedException("Error getting samples for experiment " + experimentId));
+      }
+    })).subscribeOn(scheduler)
+        .transform(original -> writeSecurityContextMany(original, securityContext))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
@@ -118,7 +134,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         return Mono.error(new AccessDeniedException(ACCESS_DENIED));
       } catch (Exception e) {
         log.error("Error getting sample for sample " + sampleId, e);
-        return Mono.error(new RequestFailedException("Error getting sample for sample " + sampleId));
+        return Mono.error(
+            new RequestFailedException("Error getting sample for sample " + sampleId));
       }
     }).subscribeOn(scheduler);
   }

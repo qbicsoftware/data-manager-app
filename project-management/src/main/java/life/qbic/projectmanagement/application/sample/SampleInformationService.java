@@ -11,11 +11,13 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
@@ -59,6 +61,11 @@ public class SampleInformationService {
       log.error(e.getMessage(), e);
       return Result.fromError(ResponseCode.QUERY_FAILED);
     }
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Collection<Sample> retrieveSamplesForExperiment(ProjectId projectId, String experimentId) {
+    return sampleRepository.findSamplesByExperimentId(ExperimentId.parse(experimentId));
   }
 
   public List<Sample> retrieveSamplesByIds(Collection<SampleId> sampleIds) {
