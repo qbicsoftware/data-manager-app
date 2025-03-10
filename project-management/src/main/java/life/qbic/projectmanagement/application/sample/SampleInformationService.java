@@ -61,10 +61,6 @@ public class SampleInformationService {
     }
   }
 
-  public List<SamplePreview> retrieveSamplePreviewsForExperiment(ExperimentId experimentId) {
-    return samplePreviewLookup.queryByExperimentId(experimentId);
-  }
-
   public List<Sample> retrieveSamplesByIds(Collection<SampleId> sampleIds) {
     return sampleRepository.findSamplesBySampleId(sampleIds.stream().toList());
   }

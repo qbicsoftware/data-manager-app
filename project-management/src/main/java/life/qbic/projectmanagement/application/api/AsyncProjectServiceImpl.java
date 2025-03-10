@@ -1,15 +1,22 @@
 package life.qbic.projectmanagement.application.api;
 
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
+
+import java.util.List;
 import java.util.Objects;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
+import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
@@ -32,12 +39,16 @@ import reactor.util.retry.Retry;
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
+  public static final String ACCESS_DENIED = "Access denied";
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
+  private final SampleInformationService sampleInfoService;
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
+      @Autowired SampleInformationService sampleInfoService,
       @Autowired Scheduler scheduler) {
     this.projectService = Objects.requireNonNull(projectService);
+    this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
   }
 
@@ -69,16 +80,20 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     throw new RuntimeException("not implemented");
   }
 
-  @Override
-  public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId)
-      throws RequestFailedException {
-    throw new RuntimeException("not implemented");
-  }
 
   @Override
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit) {
-    throw new RuntimeException("not implemented");
+      int limit, List<SortOrder> sortOrders, String filter) {
+    return Flux.defer(() -> {
+      try {
+        return Flux.fromIterable(
+            sampleInfoService.queryPreview(ExperimentId.parse(experimentId), offset, limit,
+                sortOrders, filter));
+      } catch (Exception e) {
+        log.error("Error getting sample previews", e);
+        return Flux.error(new RequestFailedException("Error getting sample previews"));
+      }
+    }).subscribeOn(scheduler);
   }
 
   @Override
@@ -94,9 +109,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<SampleIdCodeEntry> findSampleId(String projectId, String sampleCode)
-      throws RequestFailedException {
-    throw new RuntimeException("not implemented");
+  public Mono<Sample> findSample(String projectId, String sampleId) {
+    return Mono.defer(() -> {
+      try {
+        return Mono.justOrEmpty(sampleInfoService.findSample(SampleId.parse(sampleId)));
+      } catch (org.springframework.security.access.AccessDeniedException e) {
+        log.error(ACCESS_DENIED, e);
+        return Mono.error(new AccessDeniedException(ACCESS_DENIED));
+      } catch (Exception e) {
+        log.error("Error getting sample for sample " + sampleId, e);
+        return Mono.error(new RequestFailedException("Error getting sample for sample " + sampleId));
+      }
+    }).subscribeOn(scheduler);
   }
 
   @Override
@@ -159,7 +183,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           } catch (IllegalArgumentException e) {
             sink.error(new RequestFailedException("Invalid project id: " + projectId));
           } catch (org.springframework.security.access.AccessDeniedException e) {
-            sink.error(new AccessDeniedException("Access denied"));
+            sink.error(new AccessDeniedException(ACCESS_DENIED));
           } catch (RuntimeException e) {
             sink.error(new RequestFailedException("Update project design failed", e));
           }
