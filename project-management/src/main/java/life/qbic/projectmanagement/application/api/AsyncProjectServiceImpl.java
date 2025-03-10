@@ -71,8 +71,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<ByteBuffer> roCrateSummary(String projectId)
-      throws RequestFailedException, AccessDeniedException {
+  public Flux<ByteBuffer> roCrateSummary(String projectId) {
     throw new RuntimeException("not implemented");
   }
 

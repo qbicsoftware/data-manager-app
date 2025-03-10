@@ -127,10 +127,16 @@ public interface AsyncProjectService {
    *    project-summary.yml // yaml encoding of <a href="https://schema.org/ResearchProject">ResearchProject</a>
    *  </pre>
    *
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
    * @param projectId the project ID for the project the RO-Crate
-   * @return a reactive stream of the zipped RO-Crate
+   * @return a reactive stream of the zipped RO-Crate. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
    * @throws RequestFailedException in case the request cannot be processed
-   * @throws AccessDeniedException in case of insufficient rights
+   * @throws AccessDeniedException  in case of insufficient rights
    * @since 1.10.0
    */
   Flux<ByteBuffer> roCrateSummary(String projectId)
