@@ -45,6 +45,9 @@ import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -87,12 +90,18 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
   private final transient ClientDetailsProvider clientDetailsProvider;
   private final List<ComponentEventListener<MeasurementSelectionChangedEvent>> listeners = new ArrayList<>();
+  private final transient AsyncProjectService asyncProjectService;
+  private final transient MessageSourceNotificationFactory notificationFactory;
   private transient Context context;
   private String searchTerm = "";
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
       @Autowired SampleInformationService sampleInformationService,
-      ClientDetailsProvider clientDetailsProvider) {
+      @Autowired AsyncProjectService asyncProjectService,
+      ClientDetailsProvider clientDetailsProvider,
+      @Autowired MessageSourceNotificationFactory notificationFactory) {
+    this.notificationFactory = Objects.requireNonNull(notificationFactory);
+    this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
@@ -706,7 +715,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
 
     private Optional<Sample> retrieveSampleById(SampleId sampleId) {
-      return sampleInformationService.findSample(sampleId);
+      return asyncProjectService.findSample(context.projectId().orElseThrow().value(),
+          sampleId.value()).doOnError(
+          RequestFailedException.class, this::handleRequestException).blockOptional();
+    }
+
+    private void handleRequestException(RequestFailedException e) {
+      getUI().ifPresent(ui -> ui.access(() -> notificationFactory.toast("sample.query.failed", new Object[]{}, getLocale()).open()));
     }
 
     private void setDialogHeader() {

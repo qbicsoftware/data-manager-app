@@ -10,6 +10,7 @@ import java.util.UUID;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +22,7 @@ import reactor.test.StepVerifier;
 class AsyncProjectServiceImplTest {
 
   ProjectInformationService projectServiceMock = mock(ProjectInformationService.class);
+  SampleInformationService sampleServiceMock = mock(SampleInformationService.class);
 
   @BeforeEach
   void setUp() {
@@ -38,6 +40,7 @@ class AsyncProjectServiceImplTest {
   void updateProjectDesignCompletes() {
 
     AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
+        sampleServiceMock,
         Schedulers.boundedElastic());
 
     String projectId = UUID.randomUUID().toString();
@@ -68,6 +71,7 @@ class AsyncProjectServiceImplTest {
   void updateProjectDesignRepeats() {
 
     AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
+        sampleServiceMock,
         Schedulers.boundedElastic());
 
     String projectId = UUID.randomUUID().toString();
