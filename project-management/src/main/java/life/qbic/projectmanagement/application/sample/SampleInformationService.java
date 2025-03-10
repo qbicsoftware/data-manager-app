@@ -46,12 +46,23 @@ public class SampleInformationService {
    * @param experimentId {@link ExperimentId}s of the experiment for which it should be determined
    *                     if it has samples registered
    * @return true if experiments has samples, false if not
+   * @deprecated Use {@link SampleInformationService#hasSamples(ProjectId, String)} instead.
    */
   public boolean hasSamples(ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
     return sampleRepository.countSamplesWithExperimentId(experimentId) != 0;
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public boolean hasSamples(ProjectId projectId, String experimentId) {
+    return sampleRepository.countSamplesWithExperimentId(ExperimentId.parse(experimentId)) != 0;
+  }
+
+  /**
+   * @deprecated Use
+   * {@link SampleInformationService#retrieveSamplesForExperiment(ProjectId, String)} instead.
+   */
+  @Deprecated(since = "1.10.0", forRemoval = true)
   public Result<Collection<Sample>, ResponseCode> retrieveSamplesForExperiment(
       ExperimentId experimentId) {
     Objects.requireNonNull(experimentId, "experiment id must not be null");
@@ -72,6 +83,16 @@ public class SampleInformationService {
     return sampleRepository.findSamplesBySampleId(sampleIds.stream().toList());
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public List<Sample> retrieveSampleForBatch(ProjectId projectId, String batchId) {
+    return sampleRepository.findSamplesByBatchId(BatchId.parse(batchId));
+  }
+
+  /**
+   * @deprecated Use {@link SampleInformationService#retrieveSampleForBatch(ProjectId, String)}
+   * instead.
+   */
+  @Deprecated(since = "1.10.0", forRemoval = true)
   public List<Sample> retrieveSamplesForBatch(BatchId batchId) {
     Objects.requireNonNull(batchId, "batch id must not be null");
     return sampleRepository.findSamplesByBatchId(batchId);

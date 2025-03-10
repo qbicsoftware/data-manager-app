@@ -11,16 +11,6 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariables;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDescription;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroups;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariables;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -116,6 +106,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy());
   }
 
+  // disclaimer: no security context, no scheduler applied
   private Flux<Sample> fetchSamples(String projectId, String experimentId) {
     try {
       return Flux.fromIterable(
