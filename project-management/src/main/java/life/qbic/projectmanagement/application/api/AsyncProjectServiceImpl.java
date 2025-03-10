@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
+import java.nio.ByteBuffer;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -66,6 +67,11 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     //TODO
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Flux<ByteBuffer> roCrateSummary(String projectId) {
     throw new RuntimeException("not implemented");
   }
 
