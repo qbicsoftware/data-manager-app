@@ -9,8 +9,6 @@ import static life.qbic.projectmanagement.application.authorization.ReactiveSecu
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
