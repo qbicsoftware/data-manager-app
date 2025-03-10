@@ -11,6 +11,16 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariables;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDescription;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroups;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariables;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -100,22 +110,25 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Flux<Sample> getSamples(String projectId, String experimentId)
       throws RequestFailedException {
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(Flux.defer(() -> {
-      try {
-        return Flux.fromIterable(
-            sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId),
-                experimentId));
-      } catch (org.springframework.security.access.AccessDeniedException e) {
-        log.error("Error getting samples", e);
-        return Flux.error(new AccessDeniedException(ACCESS_DENIED));
-      } catch (Exception e) {
-        log.error("Unexpected exception getting samples", e);
-        return Flux.error(
-            new RequestFailedException("Error getting samples for experiment " + experimentId));
-      }
-    })).subscribeOn(scheduler)
+    return applySecurityContextMany(Flux.defer(() -> fetchSamples(projectId, experimentId)))
+        .subscribeOn(scheduler)
         .transform(original -> writeSecurityContextMany(original, securityContext))
         .retryWhen(defaultRetryStrategy());
+  }
+
+  private Flux<Sample> fetchSamples(String projectId, String experimentId) {
+    try {
+      return Flux.fromIterable(
+          sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId),
+              experimentId));
+    } catch (org.springframework.security.access.AccessDeniedException e) {
+      log.error("Error getting samples", e);
+      return Flux.error(new AccessDeniedException(ACCESS_DENIED));
+    } catch (Exception e) {
+      log.error("Unexpected exception getting samples", e);
+      return Flux.error(
+          new RequestFailedException("Error getting samples for experiment " + experimentId));
+    }
   }
 
   @Override
