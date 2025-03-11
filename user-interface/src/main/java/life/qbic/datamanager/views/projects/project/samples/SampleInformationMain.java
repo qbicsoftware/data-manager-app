@@ -481,8 +481,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
     var result = asyncProjectService
         .getSamples(context.projectId().orElseThrow().value(), experiment.experimentId().value())
-        .toStream().toList();
-    return result.isEmpty();
+        .blockFirst();
+    return result == null;
   }
 
   private void showRegisterGroupsDisclaimer() {
