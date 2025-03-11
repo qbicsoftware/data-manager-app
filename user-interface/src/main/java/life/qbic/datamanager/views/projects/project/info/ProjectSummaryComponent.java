@@ -17,13 +17,10 @@ import com.vaadin.flow.server.InputStreamFactory;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
-import edu.kit.datamanager.ro_crate.writer.ZipWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +31,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.RequestCache;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
@@ -645,20 +642,14 @@ public class ProjectSummaryComponent extends PageArea {
             projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export Project Summary");
 
-    StreamResource streamResource = new StreamResource("download.zip",
-        (InputStreamFactory) () -> forSummary(context.projectId().orElseThrow()));
-
-    Anchor download = new Anchor(streamResource, "");
-    download.getElement().setAttribute("download", true);
 
     crateExportBtn.addClickListener(event -> {
-      download.getElement().callJsFunction("click");
+      try {
+        triggerRoCrateDownload();
+      } catch (IOException e) {
+        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
+      }
     });
-
-    add(download);
-
-    crateExportBtn.getElement().setAttribute("href", streamResource);
-    crateExportBtn.getElement().setAttribute("download", true);
 
     ActionBar actionBar = new ActionBar(crateExportBtn);
     header.setActionBar(actionBar);
@@ -677,6 +668,22 @@ public class ProjectSummaryComponent extends PageArea {
   private InputStream forSummary(ProjectId projectId) {
     return new ByteBufferStreamInputStream(
         asyncProjectService.roCrateSummary(projectId.value()).toStream());
+  }
+
+  private void triggerRoCrateDownload() throws IOException {
+
+    downloadComponent.trigger(new DownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return "test.zip";
+      }
+
+      @Override
+      public InputStream getStream() {
+        return forSummary(context.projectId().orElseThrow());
+      }
+    });
+
   }
 
   /*private void triggerRoCrateDownload() throws IOException {
