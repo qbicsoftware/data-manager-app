@@ -405,6 +405,7 @@ public interface AsyncProjectService {
   /**
    * A level of an experimental variable
    *
+   * @param variableId   the identifier of the variable
    * @param variableName the name of the variable
    * @param levelValue   the value of the level
    * @param unit         the unit for the value of the level. Can be null if no unit is set
