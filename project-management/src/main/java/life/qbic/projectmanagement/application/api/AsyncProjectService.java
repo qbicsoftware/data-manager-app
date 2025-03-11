@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.api;
 
 import static java.util.Objects.nonNull;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -113,6 +114,34 @@ public interface AsyncProjectService {
   Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException;
 
+
+  /**
+   * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
+   * <p>
+   * The content represents a project summary with information about the research project.
+   * <p>
+   * Currently, the RO-Crate contains three files:
+   *
+   * <pre>
+   *    ro-crate-metadata.json // required by the RO-Crate specification
+   *    project-summary.docx // docx version of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+   *    project-summary.yml // yaml encoding of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+   *  </pre>
+   *
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId the project ID for the project the RO-Crate
+   * @return a reactive stream of the zipped RO-Crate. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException in case the request cannot be processed
+   * @throws AccessDeniedException  in case of insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ByteBuffer> roCrateSummary(String projectId)
+      throws RequestFailedException, AccessDeniedException;
 
   /**
    * Requests {@link SamplePreview} for a given experiment.
