@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   /**
-   * Submits a project update request and returns a reactive {@link Mono< ProjectUpdateResponse >}
+   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
    * object immediately.
    * <p>
    * The method implementation must be non-blocking.
@@ -65,7 +65,7 @@ public interface AsyncProjectService {
 
   /**
    * Submits an experiment update request and returns a reactive
-   * {@link Mono< ExperimentUpdateResponse >} object immediately.
+   * {@link Mono<ExperimentUpdateResponse>} object immediately.
    * <p>
    * The method is non-blocking.
    * <p>
@@ -92,7 +92,7 @@ public interface AsyncProjectService {
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
 
   /**
-   * Submits a project creation request and returns a {@link Mono< ProjectCreationResponse >}
+   * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
    * immediately.
    * <p>
    * This implementation must be non-blocking.
@@ -244,8 +244,9 @@ public interface AsyncProjectService {
 
   }
 
-  sealed interface ExperimentUpdateRequestBody permits ConfoundingVariables, ExperimentDescription,
-      ExperimentalGroups, ExperimentalVariables {
+  sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
+      ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription,
+      ExperimentalGroups, ExperimentalVariableAdditions, ExperimentalVariableDeletions {
 
   }
 
@@ -331,10 +332,53 @@ public interface AsyncProjectService {
    * @param unit   the unit of the experimental variable. Can be null if no unit is set
    * @since 1.9.0
    */
-  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
+  record ExperimentalVariable(Long id, String name, Set<String> levels, @Nullable String unit) {
 
     public ExperimentalVariable {
       levels = Set.copyOf(levels);
+    }
+
+    @Override
+    public Set<String> levels() {
+      return Set.copyOf(levels);
+    }
+  }
+
+  /**
+   * Information about variables that should be created
+   *
+   * @param experimentalVariables
+   * @since 1.9.2
+   */
+  record ExperimentalVariableAdditions(List<ExperimentalVariable> experimentalVariables) implements
+      ExperimentUpdateRequestBody {
+
+    public ExperimentalVariableAdditions {
+      experimentalVariables = List.copyOf(experimentalVariables);
+    }
+
+    @Override
+    public List<ExperimentalVariable> experimentalVariables() {
+      return List.copyOf(experimentalVariables);
+    }
+  }
+
+
+  /**
+   * Information about variables that should be deleted
+   *
+   * @param experimentalVariables
+   */
+  record ExperimentalVariableDeletions(List<ExperimentalVariable> experimentalVariables) implements
+      ExperimentUpdateRequestBody {
+
+    public ExperimentalVariableDeletions {
+      experimentalVariables = List.copyOf(experimentalVariables);
+    }
+
+    @Override
+    public List<ExperimentalVariable> experimentalVariables() {
+      return List.copyOf(experimentalVariables);
     }
   }
 
@@ -345,22 +389,29 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ExperimentalVariables(List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
+      ExperimentUpdateResponseBody {
+
 
     public ExperimentalVariables {
       experimentalVariables = List.copyOf(experimentalVariables);
+    }
+
+    @Override
+    public List<ExperimentalVariable> experimentalVariables() {
+      return List.copyOf(experimentalVariables);
     }
   }
 
   /**
    * A level of an experimental variable
    *
+   * @param variableId   the identifier of the variable
    * @param variableName the name of the variable
    * @param levelValue   the value of the level
    * @param unit         the unit for the value of the level. Can be null if no unit is set
    * @since 1.9.0
    */
-  record VariableLevel(String variableName, String levelValue, @Nullable String unit) {
+  record VariableLevel(Long variableId, String variableName, String levelValue, @Nullable String unit) {
 
   }
 
@@ -421,16 +472,80 @@ public interface AsyncProjectService {
   }
 
   /**
-   * A list of confounding variable information. Can be used in
+   * A list of confounding variable information for variable addition. Can be used in
    * {@link #update(ExperimentUpdateRequest)}
    *
    * @param confoundingVariables the variable information
    */
+  record ConfoundingVariableAdditions(
+      List<ConfoundingVariableInformation> confoundingVariables) implements
+      ExperimentUpdateRequestBody {
+
+    public ConfoundingVariableAdditions {
+      confoundingVariables = List.copyOf(confoundingVariables);
+    }
+
+    @Override
+    public List<ConfoundingVariableInformation> confoundingVariables() {
+      return List.copyOf(confoundingVariables);
+    }
+  }
+
+  /**
+   * A list of confounding variable information for variable update. Can be used in
+   * {@link #update(ExperimentUpdateRequest)}
+   *
+   * @param confoundingVariables the variable information
+   */
+  record ConfoundingVariableDeletions(
+      List<ConfoundingVariableInformation> confoundingVariables) implements
+      ExperimentUpdateRequestBody {
+
+    public ConfoundingVariableDeletions {
+      confoundingVariables = List.copyOf(confoundingVariables);
+    }
+
+    @Override
+    public List<ConfoundingVariableInformation> confoundingVariables() {
+      return List.copyOf(confoundingVariables);
+    }
+  }
+
+  /**
+   * A list of confounding variable information for variable deletion. Can be used in
+   * {@link #update(ExperimentUpdateRequest)}
+   *
+   * @param confoundingVariables the variable information
+   */
+  record ConfoundingVariableUpdates(
+      List<ConfoundingVariableInformation> confoundingVariables) implements
+      ExperimentUpdateRequestBody {
+
+    public ConfoundingVariableUpdates {
+      confoundingVariables = List.copyOf(confoundingVariables);
+    }
+
+    @Override
+    public List<ConfoundingVariableInformation> confoundingVariables() {
+      return List.copyOf(confoundingVariables);
+    }
+  }
+
+  /**
+   * A list of confounding variable information.
+   *
+   * @param confoundingVariables the variable information
+   */
   record ConfoundingVariables(List<ConfoundingVariableInformation> confoundingVariables) implements
-      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
+      ExperimentUpdateResponseBody {
 
     public ConfoundingVariables {
       confoundingVariables = List.copyOf(confoundingVariables);
+    }
+
+    @Override
+    public List<ConfoundingVariableInformation> confoundingVariables() {
+      return List.copyOf(confoundingVariables);
     }
   }
 
