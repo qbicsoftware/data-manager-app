@@ -1,4 +1,4 @@
-package life.qbic.datamanager.files.export;
+package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;

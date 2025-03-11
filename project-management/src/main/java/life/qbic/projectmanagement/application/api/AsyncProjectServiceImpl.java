@@ -5,16 +5,24 @@ import static life.qbic.projectmanagement.application.authorization.ReactiveSecu
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContextMany;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.fair.ContactPoint;
+import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
+import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.project.Contact;
+import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
@@ -24,6 +32,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.FluxSink.OverflowStrategy;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.retry.Retry;
@@ -44,13 +54,15 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
   private final SampleInformationService sampleInfoService;
+  private final DigitalObjectFactory digitalObjectFactory;
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
       @Autowired SampleInformationService sampleInfoService,
-      @Autowired Scheduler scheduler) {
+      @Autowired Scheduler scheduler, @Autowired DigitalObjectFactory digitalObjectFactory) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
+    this.digitalObjectFactory = Objects.requireNonNull(digitalObjectFactory);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -83,7 +95,43 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Flux<ByteBuffer> roCrateSummary(String projectId) {
-    throw new RuntimeException("not implemented");
+    return Flux.defer(() -> {
+      var search = projectService.find(projectId);
+      if (search.isEmpty()) {
+        return Flux.empty();
+      }
+      var project = search.get();
+      var digitalObject = digitalObjectFactory.summary(convertToResearchProject(project));
+      return Flux.create(sink -> {
+        byte[] buffer = new byte[1024];
+
+        try(InputStream content = digitalObject.content()) {
+          int bytesRead;
+          while ((bytesRead = content.read(buffer)) != -1) {
+            sink.next(ByteBuffer.wrap(buffer, 0, bytesRead));
+          }
+          sink.complete();
+        } catch (IOException e) {
+          sink.error(e);
+        }
+      }, OverflowStrategy.BUFFER);
+    });
+  }
+
+  private ContactPoint toContactPoint(Contact contact, String contactType) {
+    return ContactPoint.from(contact.fullName(), contact.emailAddress(), contactType);
+  }
+
+  private ResearchProject convertToResearchProject(Project project) {
+    var contactPoints = new ArrayList<ContactPoint>();
+    contactPoints.add(toContactPoint(project.getPrincipalInvestigator(), "Principal Investigator"));
+    contactPoints.add(toContactPoint(project.getProjectManager(), "Project Manager"));
+    if (project.getResponsiblePerson().isPresent()) {
+      contactPoints.add(toContactPoint(project.getResponsiblePerson().orElseThrow(), "Responsible Person"));
+    }
+    return ResearchProject.from(project.getProjectIntent().projectTitle().title(),
+        project.getProjectCode().value(), project.getProjectIntent().objective().objective(),
+        contactPoints);
   }
 
 

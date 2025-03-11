@@ -1,5 +1,9 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
@@ -9,28 +13,30 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.server.InputStreamFactory;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
 import edu.kit.datamanager.ro_crate.writer.ZipWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.RequestCache;
-import life.qbic.datamanager.files.TempDirectory;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
-import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
-import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
-import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
@@ -66,7 +72,6 @@ import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.logging.api.Logger;
-import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
@@ -83,6 +88,8 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.TempDirectory;
+import life.qbic.projectmanagement.infrastructure.api.fair.rocrate.ROCreateBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -637,13 +644,22 @@ public class ProjectSummaryComponent extends PageArea {
         new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
             projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export Project Summary");
+
+    StreamResource streamResource = new StreamResource("download.zip",
+        (InputStreamFactory) () -> forSummary(context.projectId().orElseThrow()));
+
+    Anchor download = new Anchor(streamResource, "");
+    download.getElement().setAttribute("download", true);
+
     crateExportBtn.addClickListener(event -> {
-      try {
-        triggerRoCrateDownload();
-      } catch (IOException e) {
-        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
-      }
+      download.getElement().callJsFunction("click");
     });
+
+    add(download);
+
+    crateExportBtn.getElement().setAttribute("href", streamResource);
+    crateExportBtn.getElement().setAttribute("download", true);
+
     ActionBar actionBar = new ActionBar(crateExportBtn);
     header.setActionBar(actionBar);
     header.setSmallTrailingMargin();
@@ -658,11 +674,19 @@ public class ProjectSummaryComponent extends PageArea {
     headerSection.setContent(sectionContent);
   }
 
-  private void triggerRoCrateDownload() throws IOException {
+  private InputStream forSummary(ProjectId projectId) {
+    return new ByteBufferStreamInputStream(
+        asyncProjectService.roCrateSummary(projectId.value()).toStream());
+  }
+
+  /*private void triggerRoCrateDownload() throws IOException {
     ProjectId projectId = context.projectId().orElseThrow();
     Project project = projectInformationService.find(projectId).orElseThrow();
     var tempBuildDir = tempDirectory.createDirectory();
     var zippedRoCrateDir = tempDirectory.createDirectory();
+
+
+
     try {
       var roCrate = roCrateBuilder.projectSummary(project, tempBuildDir);
       var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
@@ -687,7 +711,7 @@ public class ProjectSummaryComponent extends PageArea {
       deleteTempDir(tempBuildDir.toFile());
       deleteTempDir(zippedRoCrateDir.toFile());
     }
-  }
+  }*/
 
   private boolean deleteTempDir(File dir) {
     File[] files = dir.listFiles(); //null if not a directory
@@ -726,5 +750,40 @@ public class ProjectSummaryComponent extends PageArea {
       tags.add(TagFactory.forMeasurement(PROTEOMICS));
     }
     return tags;
+  }
+
+  static class ByteBufferStreamInputStream extends InputStream {
+
+    private final Iterator<ByteBuffer> bufferIterator;
+    private ByteBuffer currentBuffer;
+
+    public ByteBufferStreamInputStream(Stream<ByteBuffer> byteBufferStream) {
+      this.bufferIterator = byteBufferStream.iterator();
+      advanceBuffer();
+    }
+
+    @Override
+    public int read() {
+      if (currentBuffer == null) {
+        return -1; // End of stream
+      }
+
+      if (!currentBuffer.hasRemaining()) {
+        advanceBuffer();
+        if (currentBuffer == null) {
+          return -1; // No more data
+        }
+      }
+
+      return currentBuffer.get() & 0xFF; // Read a single byte
+    }
+
+    private void advanceBuffer() {
+      if (bufferIterator.hasNext()) {
+        currentBuffer = bufferIterator.next();
+      } else {
+        currentBuffer = null;
+      }
+    }
   }
 }

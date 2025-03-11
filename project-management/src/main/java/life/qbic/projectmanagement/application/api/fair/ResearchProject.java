@@ -1,4 +1,4 @@
-package life.qbic.datamanager.files.structure.rocrate;
+package life.qbic.projectmanagement.application.api.fair;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;

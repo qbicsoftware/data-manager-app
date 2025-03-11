@@ -1,8 +1,8 @@
-package life.qbic.datamanager.files.export;
+package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
 
 import java.util.Collections;
 import java.util.List;
-import life.qbic.datamanager.files.export.FileSupplier.FormatException;
+import life.qbic.projectmanagement.infrastructure.api.fair.rocrate.FileSupplier.FormatException;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;

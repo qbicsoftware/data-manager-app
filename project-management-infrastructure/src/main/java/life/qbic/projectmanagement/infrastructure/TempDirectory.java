@@ -1,4 +1,4 @@
-package life.qbic.datamanager.files;
+package life.qbic.projectmanagement.infrastructure;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * <b>Temporary Director</b>
+ * <b>Temporary Directory</b>
  * <p>
  * Provides a temporary directory for the application to use when files need to be created for
  * exporting them.
