@@ -17,9 +17,9 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -49,10 +49,13 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private final Span countSpan;
   private final Grid<SamplePreview> sampleGrid;
   private final transient AsyncProjectService asyncProjectService;
+  private final MessageSourceNotificationFactory messageFactory;
   private Context context;
 
   @Autowired
-  public SampleDetailsComponent(AsyncProjectService asyncProjectService) {
+  public SampleDetailsComponent(AsyncProjectService asyncProjectService,
+      MessageSourceNotificationFactory messageFactory) {
+    this.messageFactory = Objects.requireNonNull(messageFactory);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     addClassName("sample-details-component");
     sampleGrid = createSampleGrid();
@@ -160,7 +163,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   public void onSearchFieldValueChanged(String searchValue) {
-    updateSampleGridDataProvider(context.projectId().orElseThrow(), context.experimentId().orElseThrow(), searchValue);
+    updateSampleGridDataProvider(context.projectId().orElseThrow(),
+        context.experimentId().orElseThrow(), searchValue);
   }
 
   private void updateSampleGridDataProvider(ProjectId projectId, ExperimentId experimentId,
@@ -171,11 +175,10 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("sampleCode").ascending());
-      return Objects.requireNonNull(
-          asyncProjectService.getSamplePreviews(projectId.value(), experimentId.value(),
-                  query.getOffset(), query.getLimit(), List.copyOf(sortOrders), filter).collectList()
-              .doOnError(RequestFailedException.class, this::handleRequestFailed)
-              .block()).stream();
+      return asyncProjectService.getSamplePreviews(projectId.value(), experimentId.value(),
+              query.getOffset(), query.getLimit(), List.copyOf(sortOrders), filter)
+          .doOnError(RequestFailedException.class, this::handleRequestFailed).toStream();
+
     });
     sampleGrid.getLazyDataView().addItemCountChangeListener(
         countChangeEvent -> setSampleCount((int) sampleGrid.getLazyDataView().getItems().count()));
@@ -183,7 +186,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   private void handleRequestFailed(RequestFailedException e) {
-
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageFactory.toast("sample.query.failed", new Object[]{}, getLocale())));
   }
 
   /**
