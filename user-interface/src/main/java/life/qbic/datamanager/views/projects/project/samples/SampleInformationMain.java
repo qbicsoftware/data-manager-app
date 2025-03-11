@@ -19,7 +19,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
@@ -44,6 +44,7 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -95,6 +96,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient SampleValidationService sampleValidationService;
   private final transient TemplateService templateService;
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
+  private final transient AsyncProjectService asyncProjectService;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -102,6 +104,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       @Autowired SampleInformationService sampleInformationService,
       @Autowired SampleDetailsComponent sampleDetailsComponent,
       @Autowired BatchDetailsComponent batchDetailsComponent,
+      @Autowired AsyncProjectService asyncProjectService,
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory notificationFactory,
@@ -126,6 +129,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         "messageSourceNotificationFactory must not be null");
     this.sampleValidationService = sampleValidationService;
     this.sampleRegistrationServiceV2 = sampleRegistrationServiceV2;
+
+    this.asyncProjectService = requireNonNull(asyncProjectService);
 
     this.templateService = templateService;
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
@@ -474,12 +479,10 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private boolean noSamplesRegisteredInExperiment(Experiment experiment) {
-    return sampleInformationService.retrieveSamplesForExperiment(experiment.experimentId())
-        .map(Collection::isEmpty)
-        .onError(error -> {
-          throw new ApplicationException("Unexpected response code : " + error);
-        })
-        .getValue();
+    var result = asyncProjectService
+        .getSamples(context.projectId().orElseThrow().value(), experiment.experimentId().value())
+        .blockFirst();
+    return result == null;
   }
 
   private void showRegisterGroupsDisclaimer() {
