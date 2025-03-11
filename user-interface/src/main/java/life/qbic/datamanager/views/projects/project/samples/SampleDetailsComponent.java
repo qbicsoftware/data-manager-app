@@ -17,12 +17,15 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
-import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -32,7 +35,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Component embedded within the {@link SampleInformationMain}. It allows the user to see the
  * information associated for all {@link Batch} and {@link Sample} of each
  * {@link Experiment within a {@link Project} Additionally it enables the user to register new
- * {@link Batch} and {@link Sample} via the contained {@link life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
+ * {@link Batch} and {@link Sample} via the contained
+ * {@link
+ * life.qbic.datamanager.views.projects.project.samples.registration.batch.RegisterSampleBatchDialog}.
  */
 
 @SpringComponent
@@ -43,12 +48,15 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   private static final long serialVersionUID = 2893730975944372088L;
   private final Span countSpan;
   private final Grid<SamplePreview> sampleGrid;
-  private final transient SampleInformationService sampleInformationService;
+  private final transient AsyncProjectService asyncProjectService;
+  private final MessageSourceNotificationFactory messageFactory;
   private Context context;
 
-  public SampleDetailsComponent(@Autowired SampleInformationService sampleInformationService) {
-    this.sampleInformationService = Objects.requireNonNull(sampleInformationService,
-        "SampleInformationService cannot be null");
+  @Autowired
+  public SampleDetailsComponent(AsyncProjectService asyncProjectService,
+      MessageSourceNotificationFactory messageFactory) {
+    this.messageFactory = Objects.requireNonNull(messageFactory);
+    this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     addClassName("sample-details-component");
     sampleGrid = createSampleGrid();
     Div content = new Div();
@@ -155,22 +163,31 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
   }
 
   public void onSearchFieldValueChanged(String searchValue) {
-    updateSampleGridDataProvider(context.experimentId().orElseThrow(), searchValue);
+    updateSampleGridDataProvider(context.projectId().orElseThrow(),
+        context.experimentId().orElseThrow(), searchValue);
   }
 
-  private void updateSampleGridDataProvider(ExperimentId experimentId, String filter) {
+  private void updateSampleGridDataProvider(ProjectId projectId, ExperimentId experimentId,
+      String filter) {
     sampleGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("sampleCode").ascending());
-      return sampleInformationService.queryPreview(experimentId, query.getOffset(),
-          query.getLimit(), List.copyOf(sortOrders), filter).stream();
+      return asyncProjectService.getSamplePreviews(projectId.value(), experimentId.value(),
+              query.getOffset(), query.getLimit(), List.copyOf(sortOrders), filter)
+          .doOnError(RequestFailedException.class, this::handleRequestFailed).toStream();
+
     });
     sampleGrid.getLazyDataView().addItemCountChangeListener(
         countChangeEvent -> setSampleCount((int) sampleGrid.getLazyDataView().getItems().count()));
     sampleGrid.recalculateColumnWidths();
+  }
+
+  private void handleRequestFailed(RequestFailedException e) {
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageFactory.toast("sample.query.failed", new Object[]{}, getLocale())));
   }
 
   /**
@@ -186,7 +203,8 @@ public class SampleDetailsComponent extends PageArea implements Serializable {
       throw new ApplicationException("no project id in context " + context);
     }
     this.context = context;
-    updateSampleGridDataProvider(this.context.experimentId().orElseThrow(), "");
+    updateSampleGridDataProvider(context.projectId().orElseThrow(),
+        this.context.experimentId().orElseThrow(), "");
   }
 
   private void setSampleCount(int i) {

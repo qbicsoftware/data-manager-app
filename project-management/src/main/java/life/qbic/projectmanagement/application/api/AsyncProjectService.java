@@ -1,15 +1,16 @@
 package life.qbic.projectmanagement.application.api;
 
+import static java.util.Objects.nonNull;
+
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
-import static java.util.Objects.nonNull;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
-import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
@@ -143,24 +144,6 @@ public interface AsyncProjectService {
       throws RequestFailedException, AccessDeniedException;
 
   /**
-   * Requests {@link SamplePreview} for a given experiment.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param projectId    the project ID for the project to get the samples for
-   * @param experimentId the experiment ID for which the sample preview shall be retrieved
-   * @return a reactive stream of {@link SamplePreview} objects of the experiment. Exceptions are
-   * provided as {@link Mono#error(Throwable)}.
-   * @throws RequestFailedException if the request could not be executed
-   * @since 1.10.0
-   */
-  Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId)
-      throws RequestFailedException;
-
-  /**
    * Requests {@link SamplePreview} for a given experiment with pagination support.
    * <p>
    * <b>Exceptions</b>
@@ -173,12 +156,15 @@ public interface AsyncProjectService {
    * @param offset       the offset from 0 of all available previews the returned previews should
    *                     start
    * @param limit        the maximum number of previews that should be returned
+   * @param sortOrders   the sort orders to apply
+   * @param filter       the filter to apply
    * @return a reactive stream of {@link SamplePreview} objects in the experiment. Exceptions are
    * provided as {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException if the request could not be executed
    * @since 1.10.0
    */
   Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
-      int limit);
+      int limit, List<SortOrder> sortOrders, String filter);
 
   /**
    * Requests all {@link Sample} for a given experiment.
@@ -216,22 +202,25 @@ public interface AsyncProjectService {
   Flux<Sample> getSamplesForBatch(String projectId, String batchId) throws RequestFailedException;
 
   /**
-   * Find the sample ID for a given sample code
+   * Finds the sample for a given sample ID.
+   * <p>
+   * In case no matching sample is found, a {@link Mono#empty()} is returned.
+   *
    * <p>
    * <b>Exceptions</b>
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
    *
-   * @param projectId  the project ID for the project to get the samples for
-   * @param sampleCode the sample code (e.g. Q2TEST001AE) for the project
-   * @return a reactive container of {@link SampleIdCodeEntry} for the sample code. Exceptions are
-   * provided as {@link Mono#error(Throwable)}.
+   * @param projectId the project id to which the sample belongs to
+   * @param sampleId  the sample id of the sample to find
+   * @return a reactive container of {@link Sample} for the sample matching the sample id. For no
+   * matches a {@link Mono#empty()} is returned. Exceptions are * provided as
+   * {@link Mono#error(Throwable)}.
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
-  Mono<SampleIdCodeEntry> findSampleId(String projectId, String sampleCode)
-      throws RequestFailedException;
+  Mono<Sample> findSample(String projectId, String sampleId);
 
   /**
    * Container of an update request for a service call and part of the
