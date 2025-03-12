@@ -108,7 +108,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         try(InputStream content = digitalObject.content()) {
           int bytesRead;
           while ((bytesRead = content.read(buffer)) != -1) {
-            sink.next(ByteBuffer.wrap(buffer, 0, bytesRead));
+            sink.next(ByteBuffer.wrap(buffer.clone(), 0, bytesRead));
           }
           sink.complete();
         } catch (IOException e) {

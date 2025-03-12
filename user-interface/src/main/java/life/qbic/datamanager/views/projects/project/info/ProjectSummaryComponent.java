@@ -13,8 +13,6 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.server.InputStreamFactory;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.File;
@@ -642,7 +640,6 @@ public class ProjectSummaryComponent extends PageArea {
             projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export Project Summary");
 
-
     crateExportBtn.addClickListener(event -> {
       try {
         triggerRoCrateDownload();
@@ -665,9 +662,19 @@ public class ProjectSummaryComponent extends PageArea {
     headerSection.setContent(sectionContent);
   }
 
+  private byte[] craeteCopy(byte[] array) {
+    var copy = new byte[array.length];
+    for (int i = 0; i < array.length; i++) {
+      copy[i] = (byte) (array[i] & 0xFF);
+    }
+    return copy;
+  }
+
   private InputStream forSummary(ProjectId projectId) {
+    var stream = asyncProjectService.roCrateSummary(projectId.value())
+        .doOnNext(bb -> log.info(new String(craeteCopy(bb.array())))).toStream();
     return new ByteBufferStreamInputStream(
-        asyncProjectService.roCrateSummary(projectId.value()).toStream());
+        stream);
   }
 
   private void triggerRoCrateDownload() throws IOException {
@@ -782,7 +789,7 @@ public class ProjectSummaryComponent extends PageArea {
         }
       }
 
-      return currentBuffer.get() & 0xFF; // Read a single byte
+      return currentBuffer.get() & 0xff; // Read a single byte
     }
 
     private void advanceBuffer() {
