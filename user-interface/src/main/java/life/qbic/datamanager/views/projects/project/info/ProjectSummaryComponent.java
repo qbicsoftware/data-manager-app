@@ -640,13 +640,7 @@ public class ProjectSummaryComponent extends PageArea {
             projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export Project Summary");
 
-    crateExportBtn.addClickListener(event -> {
-      try {
-        triggerRoCrateDownload();
-      } catch (IOException e) {
-        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
-      }
-    });
+    crateExportBtn.addClickListener(event -> triggerRoCrateDownload());
 
     ActionBar actionBar = new ActionBar(crateExportBtn);
     header.setActionBar(actionBar);
@@ -681,53 +675,6 @@ public class ProjectSummaryComponent extends PageArea {
       }
     });
 
-  }
-
-  /*private void triggerRoCrateDownload() throws IOException {
-    ProjectId projectId = context.projectId().orElseThrow();
-    Project project = projectInformationService.find(projectId).orElseThrow();
-    var tempBuildDir = tempDirectory.createDirectory();
-    var zippedRoCrateDir = tempDirectory.createDirectory();
-
-
-
-    try {
-      var roCrate = roCrateBuilder.projectSummary(project, tempBuildDir);
-      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
-      var zippedRoCrateFile = zippedRoCrateDir.resolve(
-          "%s-project-summary-ro-crate.zip".formatted(project.getProjectCode().value()));
-      roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
-      byte[] cachedContent = Files.readAllBytes(zippedRoCrateFile);
-      downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-        @Override
-        public byte[] getBytes() {
-          return cachedContent;
-        }
-
-        @Override
-        public String getFilename() {
-          return zippedRoCrateFile.getFileName().toString();
-        }
-      });
-    } catch (RuntimeException e) {
-      throw new ApplicationException("Error exporting ro-crate.zip", e);
-    } finally {
-      deleteTempDir(tempBuildDir.toFile());
-      deleteTempDir(zippedRoCrateDir.toFile());
-    }
-  }*/
-
-  private boolean deleteTempDir(File dir) {
-    File[] files = dir.listFiles(); //null if not a directory
-    // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
-    if (files != null) {
-      for (File file : files) {
-        if (!deleteTempDir(file)) {
-          return false;
-        }
-      }
-    }
-    return dir.delete();
   }
 
   public AvatarGroup createAvatarGroup(Collection<UserInfo> userInfo) {
