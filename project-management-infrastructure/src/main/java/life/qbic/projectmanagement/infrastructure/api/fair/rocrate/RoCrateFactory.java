@@ -59,9 +59,6 @@ public class RoCrateFactory implements DigitalObjectFactory {
           "project-summary-ro-crate.zip");
       roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
       byte[] cachedContent = Files.readAllBytes(zippedRoCrateFile);
-      log.info("----start");
-      log.info(new String(cachedContent));
-      log.info("----end");
       return new DigitalObject() {
         @Override
         public InputStream content() {
