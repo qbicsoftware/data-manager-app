@@ -662,14 +662,6 @@ public class ProjectSummaryComponent extends PageArea {
     headerSection.setContent(sectionContent);
   }
 
-  private byte[] craeteCopy(byte[] array) {
-    var copy = new byte[array.length];
-    for (int i = 0; i < array.length; i++) {
-      copy[i] = (byte) (array[i] & 0xFF);
-    }
-    return copy;
-  }
-
   private InputStream forSummary(ProjectId projectId) {
     var stream = asyncProjectService.roCrateSummary(projectId.value()).toStream();
     return new ByteBufferStreamInputStream(
