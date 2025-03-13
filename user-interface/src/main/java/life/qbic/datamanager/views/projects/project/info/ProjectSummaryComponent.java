@@ -671,8 +671,7 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private InputStream forSummary(ProjectId projectId) {
-    var stream = asyncProjectService.roCrateSummary(projectId.value())
-        .doOnNext(bb -> log.info(new String(craeteCopy(bb.array())))).toStream();
+    var stream = asyncProjectService.roCrateSummary(projectId.value()).toStream();
     return new ByteBufferStreamInputStream(
         stream);
   }
