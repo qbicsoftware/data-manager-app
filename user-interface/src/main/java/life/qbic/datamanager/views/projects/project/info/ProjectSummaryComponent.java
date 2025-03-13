@@ -664,8 +664,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private InputStream forSummary(ProjectId projectId) {
     var stream = asyncProjectService.roCrateSummary(projectId.value()).toStream();
-    return new ByteBufferStreamInputStream(
-        stream);
+    return new ByteBufferStreamInputStream(stream);
   }
 
   private void triggerRoCrateDownload() throws IOException {
