@@ -15,7 +15,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -26,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.RequestCache;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
@@ -657,11 +655,12 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private InputStream forSummary(ProjectId projectId) {
-    var stream = asyncProjectService.roCrateSummary(projectId.value()).toStream();
-    return new ByteBufferStreamInputStream(stream);
+    var byteBufferIterator = asyncProjectService.roCrateSummary(projectId.value()).toIterable()
+        .iterator();
+    return new IterativeByteBufferInputStream(byteBufferIterator);
   }
 
-  private void triggerRoCrateDownload() throws IOException {
+  private void triggerRoCrateDownload() {
 
     downloadComponent.trigger(new DownloadStreamProvider() {
       @Override
@@ -703,38 +702,73 @@ public class ProjectSummaryComponent extends PageArea {
     return tags;
   }
 
-  static class ByteBufferStreamInputStream extends InputStream {
+  static class IterativeByteBufferInputStream extends InputStream {
 
     private final Iterator<ByteBuffer> bufferIterator;
     private ByteBuffer currentBuffer;
 
-    public ByteBufferStreamInputStream(Stream<ByteBuffer> byteBufferStream) {
-      this.bufferIterator = byteBufferStream.iterator();
-      advanceBuffer();
+    public IterativeByteBufferInputStream(Iterator<ByteBuffer> iterator) {
+      this.bufferIterator = iterator;
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+      Objects.checkFromIndexSize(off, len, b.length);
+      if (len == 0) {
+        return 0;
+      }
+      boolean bufferAvailable = makeBufferAvailable();
+      if (!bufferAvailable) {
+        return -1;
+      }
+      int currentBufferPosition = currentBuffer.position();
+      int remainingBytes = currentBuffer.remaining();
+
+      // read all available bytes in this buffer up to length
+      currentBuffer.get(currentBufferPosition, b, off, Math.min(remainingBytes, len));
+      var bytesRead = Math.min(remainingBytes, len);
+      currentBuffer.position(currentBufferPosition + bytesRead);
+
+      // if the buffer did not have enough space try appending the next buffer
+      if (bytesRead < len) {
+        return bytesRead + Math.max(0, read(b, off + bytesRead,
+            len - bytesRead)); // if there is no next buffer (-1), add 0 bytes from the recursion.
+      }
+
+      return bytesRead;
     }
 
     @Override
     public int read() {
-      if (currentBuffer == null) {
-        return -1; // End of stream
+      boolean bufferAvailable = makeBufferAvailable();
+      if (!bufferAvailable) {
+        return -1;
       }
-
-      if (!currentBuffer.hasRemaining()) {
-        advanceBuffer();
-        if (currentBuffer == null) {
-          return -1; // No more data
-        }
-      }
-
-      return currentBuffer.get() & 0xff; // Read a single byte
+      var currentPosition = currentBuffer.position();
+      var value = currentBuffer.get(currentPosition) & 0xFF;
+      currentBuffer.position(currentPosition + 1);
+      return value;
     }
 
-    private void advanceBuffer() {
-      if (bufferIterator.hasNext()) {
-        currentBuffer = bufferIterator.next();
-      } else {
-        currentBuffer = null;
+    /**
+     * Ensures a readable buffer is set.
+     *
+     * @return true if a readable buffer is selected; false if no readable buffer is available.
+     */
+    private boolean makeBufferAvailable() {
+      var buffer = currentBuffer;
+      if (buffer != null && !buffer.hasRemaining()) {
+        // the current buffer is read completely
+        buffer = null;
       }
+      while (buffer == null) {
+        if (!bufferIterator.hasNext()) {
+          return false;
+        }
+        buffer = bufferIterator.next();
+      }
+      currentBuffer = buffer;
+      return true;
     }
   }
 }
