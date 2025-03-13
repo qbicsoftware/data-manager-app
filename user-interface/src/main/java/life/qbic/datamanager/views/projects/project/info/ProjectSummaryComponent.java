@@ -721,21 +721,12 @@ public class ProjectSummaryComponent extends PageArea {
       if (!bufferAvailable) {
         return -1;
       }
-      int currentBufferPosition = currentBuffer.position();
-      int remainingBytes = currentBuffer.remaining();
 
-      // read all available bytes in this buffer up to length
-      currentBuffer.get(currentBufferPosition, b, off, Math.min(remainingBytes, len));
-      var bytesRead = Math.min(remainingBytes, len);
-      currentBuffer.position(currentBufferPosition + bytesRead);
+      int requestedBytes = Math.min(currentBuffer.remaining(), len);
+      currentBuffer.get(currentBuffer.position(), b, off, requestedBytes);
+      currentBuffer.position(currentBuffer.position() + requestedBytes);
 
-      // if the buffer did not have enough space try appending the next buffer
-      if (bytesRead < len) {
-        return bytesRead + Math.max(0, read(b, off + bytesRead,
-            len - bytesRead)); // if there is no next buffer (-1), add 0 bytes from the recursion.
-      }
-
-      return bytesRead;
+      return requestedBytes;
     }
 
     @Override
