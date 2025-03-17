@@ -33,6 +33,18 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+    </dependency>
+    <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>openbis-api</artifactId>
       <version>20.10.7.3</version>
@@ -86,8 +98,8 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
-      <version>2.18.3</version>
     </dependency>
+
 
     <!-- docx4j dependencies !-->
     <!-- https://mvnrepository.com/artifact/org.docx4j/docx4j-core -->
