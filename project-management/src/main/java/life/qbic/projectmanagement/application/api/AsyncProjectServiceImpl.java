@@ -15,7 +15,9 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.api.fair.ContactPoint;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -95,27 +97,51 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Flux<ByteBuffer> roCrateSummary(String projectId) {
-    return Flux.defer(() -> {
-      var search = projectService.find(projectId);
-      if (search.isEmpty()) {
-        return Flux.empty();
-      }
-      var project = search.get();
-      var digitalObject = digitalObjectFactory.summary(convertToResearchProject(project));
-      return Flux.create(sink -> {
-        byte[] buffer = new byte[1024];
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.defer(() -> getByteBufferFlux(projectId)))
+        .transform(original -> writeSecurityContextMany(original, securityContext));
+  }
 
-        try(InputStream content = digitalObject.content()) {
-          int bytesRead;
-          while ((bytesRead = content.read(buffer)) != -1) {
-            sink.next(ByteBuffer.wrap(buffer.clone(), 0, bytesRead));
-          }
-          sink.complete();
-        } catch (IOException e) {
-          sink.error(e);
-        }
-      }, OverflowStrategy.BUFFER);
-    });
+  // Requires the SecurityContext to work
+  private Flux<ByteBuffer> getByteBufferFlux(String projectId) {
+    var search = projectService.find(projectId);
+    if (search.isEmpty()) {
+      return Flux.empty();
+    }
+    var project = search.get();
+    var digitalObject = digitalObjectFactory.summary(convertToResearchProject(project));
+    return Flux
+        .create((FluxSink<ByteBuffer> emitter) -> emitByteBufferFromObject(emitter, digitalObject),
+            OverflowStrategy.BUFFER)
+        .subscribeOn(VirtualThreadScheduler.getScheduler());
+  }
+
+  /**
+   * Emits 0..N {@link ByteBuffer} for the content of a {@link DigitalObject}.
+   * <p>
+   * All bytes are read from the {@link DigitalObject#content()} input stream and converted to byte
+   * buffers. The used byte array cache size is 1024 bytes and fixed.
+   * <p>
+   * After the input stream has been consumed {@link FluxSink#complete()} is called.
+   * <p>
+   * <p>
+   * In case of {@link IOException}: is forwarded via {@link FluxSink#error(Throwable)}.
+   *
+   * @param emitter the emitter for the byte buffers
+   * @param object  the digital object
+   */
+  private void emitByteBufferFromObject(FluxSink<ByteBuffer> emitter, DigitalObject object) {
+    byte[] buffer = new byte[1024];
+
+    try (InputStream content = object.content()) {
+      int bytesRead;
+      while ((bytesRead = content.read(buffer)) != -1) {
+        emitter.next(ByteBuffer.wrap(buffer.clone(), 0, bytesRead));
+      }
+      emitter.complete();
+    } catch (IOException e) {
+      emitter.error(e);
+    }
   }
 
   private ContactPoint toContactPoint(Contact contact, String contactType) {
@@ -127,7 +153,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     contactPoints.add(toContactPoint(project.getPrincipalInvestigator(), "Principal Investigator"));
     contactPoints.add(toContactPoint(project.getProjectManager(), "Project Manager"));
     if (project.getResponsiblePerson().isPresent()) {
-      contactPoints.add(toContactPoint(project.getResponsiblePerson().orElseThrow(), "Responsible Person"));
+      contactPoints.add(
+          toContactPoint(project.getResponsiblePerson().orElseThrow(), "Responsible Person"));
     }
     return ResearchProject.from(project.getProjectIntent().projectTitle().title(),
         project.getProjectCode().value(), project.getProjectIntent().objective().objective(),
