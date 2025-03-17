@@ -22,11 +22,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>RO-Crate Factory.</b>
+ * <p>
+ * Implementation for the {@link DigitalObjectFactory}, creating RO-Crates adhering to
+ * the <a href="https://www.researchobject.org/ro-crate/specification/1.1/index.html">RO-Crate specification 1.1</a>.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.10.0
  */
 @Component
 public class RoCrateFactory implements DigitalObjectFactory {

@@ -16,6 +16,9 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,6 +28,7 @@ import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ByteBufferIteratorInputStream;
 import life.qbic.datamanager.RequestCache;
+import life.qbic.datamanager.files.export.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -78,6 +82,7 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.infrastructure.TempDirectory;
 import life.qbic.projectmanagement.infrastructure.api.fair.rocrate.ROCreateBuilder;
@@ -653,17 +658,21 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private InputStream forSummary(ProjectId projectId) {
-    var byteBufferIterator = asyncProjectService.roCrateSummary(projectId.value()).toIterable()
+    var byteBufferIterator = asyncProjectService.roCrateSummary(projectId.value())
+        .timeout(Duration.ofSeconds(10)).toIterable()
         .iterator();
     return new ByteBufferIteratorInputStream(byteBufferIterator);
   }
 
   private void triggerRoCrateDownload() {
-
+    var projectCode = projectInformationService.find(context.projectId().orElseThrow())
+        .map(Project::getProjectCode)
+        .map(ProjectCode::value)
+        .orElse("");
     downloadComponent.trigger(new DownloadStreamProvider() {
       @Override
       public String getFilename() {
-        return "test.zip";
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "project summary", "zip");
       }
 
       @Override
