@@ -17,11 +17,10 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
-import edu.kit.datamanager.ro_crate.writer.ZipWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,9 +28,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.files.TempDirectory;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
-import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
+import life.qbic.application.commons.ByteBufferIteratorInputStream;
+import life.qbic.datamanager.RequestCache;
+import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.TagFactory;
@@ -87,7 +87,10 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.TempDirectory;
+import life.qbic.projectmanagement.infrastructure.api.fair.rocrate.ROCreateBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -128,6 +131,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final Section projectContactsSection;
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
+  private final RequestCache requestCache;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
@@ -142,7 +146,8 @@ public class ProjectSummaryComponent extends PageArea {
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
-      AsyncProjectService asyncProjectService) {
+      AsyncProjectService asyncProjectService,
+      RequestCache requestCache) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.personLookupService = requireNonNull(personLookupService,
         "person lookup service must not be null");
@@ -158,6 +163,7 @@ public class ProjectSummaryComponent extends PageArea {
     this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
+    this.requestCache = Objects.requireNonNull(requestCache);
     downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
@@ -560,6 +566,13 @@ public class ProjectSummaryComponent extends PageArea {
     var request = new ProjectUpdateRequest(project,
         new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
 
+    submitRequest(request);
+  }
+
+
+  private void submitRequest(ProjectUpdateRequest request) {
+    requestCache.store(request);
+
     asyncProjectService.update(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
@@ -577,6 +590,7 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleSuccess(ProjectUpdateResponse response) {
     log.debug("Received project update response: " + response);
     getUI().ifPresent(ui -> ui.access(() -> {
+      requestCache.remove(response.requestId());
       var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
           new String[]{}, getLocale());
       toast.open();
@@ -592,10 +606,18 @@ public class ProjectSummaryComponent extends PageArea {
   private void handleRequestFailed(RequestFailedException error) {
     log.error("request failed", error);
     getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("project.updated.error.retry",
-          new String[]{}, getLocale());
-      // Todo Implement retry with cached request
-      toast.open();
+      requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
+        // do sth with the cache
+        // TODO show button that enables user to resend the request
+        var toast = notificationFactory.toast("project.updated.error.retry",
+            new String[]{}, getLocale());
+        // Todo Implement retry with cached request
+        toast.open();
+      }, () -> {
+        var toast = notificationFactory.toast("project.updated.error",
+            new String[]{}, getLocale());
+        toast.open();
+      });
     }));
   }
 
@@ -651,13 +673,9 @@ public class ProjectSummaryComponent extends PageArea {
         new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
             projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export Project Summary");
-    crateExportBtn.addClickListener(event -> {
-      try {
-        triggerRoCrateDownload();
-      } catch (IOException e) {
-        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
-      }
-    });
+
+    crateExportBtn.addClickListener(event -> triggerRoCrateDownload());
+
     ActionBar actionBar = new ActionBar(crateExportBtn);
     header.setActionBar(actionBar);
     header.setSmallTrailingMargin();
@@ -672,48 +690,30 @@ public class ProjectSummaryComponent extends PageArea {
     headerSection.setContent(sectionContent);
   }
 
-  private void triggerRoCrateDownload() throws IOException {
-    ProjectId projectId = context.projectId().orElseThrow();
-    Project project = projectInformationService.find(projectId).orElseThrow();
-    var tempBuildDir = tempDirectory.createDirectory();
-    var zippedRoCrateDir = tempDirectory.createDirectory();
-    try {
-      var roCrate = roCrateBuilder.projectSummary(project, tempBuildDir);
-      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
-      var zippedRoCrateFile = zippedRoCrateDir.resolve(
-          "%s-project-summary-ro-crate.zip".formatted(project.getProjectCode().value()));
-      roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
-      byte[] cachedContent = Files.readAllBytes(zippedRoCrateFile);
-      downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-        @Override
-        public byte[] getBytes() {
-          return cachedContent;
-        }
-
-        @Override
-        public String getFilename() {
-          return zippedRoCrateFile.getFileName().toString();
-        }
-      });
-    } catch (RuntimeException e) {
-      throw new ApplicationException("Error exporting ro-crate.zip", e);
-    } finally {
-      deleteTempDir(tempBuildDir.toFile());
-      deleteTempDir(zippedRoCrateDir.toFile());
-    }
+  private InputStream forSummary(ProjectId projectId) {
+    var byteBufferIterator = asyncProjectService.roCrateSummary(projectId.value())
+        .timeout(Duration.ofSeconds(10)).toIterable()
+        .iterator();
+    return new ByteBufferIteratorInputStream(byteBufferIterator);
   }
 
-  private boolean deleteTempDir(File dir) {
-    File[] files = dir.listFiles(); //null if not a directory
-    // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
-    if (files != null) {
-      for (File file : files) {
-        if (!deleteTempDir(file)) {
-          return false;
-        }
+  private void triggerRoCrateDownload() {
+    var projectCode = projectInformationService.find(context.projectId().orElseThrow())
+        .map(Project::getProjectCode)
+        .map(ProjectCode::value)
+        .orElse("");
+    downloadComponent.trigger(new DownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "project summary", "zip");
       }
-    }
-    return dir.delete();
+
+      @Override
+      public InputStream getStream() {
+        return forSummary(context.projectId().orElseThrow());
+      }
+    });
+
   }
 
   public AvatarGroup createAvatarGroup(Collection<UserInfo> userInfo) {
@@ -741,4 +741,5 @@ public class ProjectSummaryComponent extends PageArea {
     }
     return tags;
   }
+
 }

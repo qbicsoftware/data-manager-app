@@ -11,7 +11,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.8.2</version>
+    <version>1.9.1</version>
   </parent>
 
   <repositories>
@@ -154,61 +154,8 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-client</artifactId>
     </dependency>
-    <!-- docx4j dependencies !-->
-    <!-- https://mvnrepository.com/artifact/org.docx4j/docx4j-core -->
-    <dependency>
-      <groupId>org.docx4j</groupId>
-      <artifactId>docx4j-core</artifactId>
-      <version>11.5.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <!-- Needed for docx4j !-->
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>jaxb-runtime</artifactId>
-      <version>4.0.5</version>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.xml.bind</groupId>
-      <artifactId>jakarta.xml.bind-api</artifactId>
-      <version>4.0.2</version>
-    </dependency>
-    <dependency>
-      <groupId>org.docx4j</groupId>
-      <artifactId>docx4j-JAXB-ReferenceImpl</artifactId>
-      <version>11.5.0</version>
-    </dependency>
 
 
-    <!-- Needed for building RO-Crates -->
-    <dependency>
-      <groupId>edu.kit.datamanager</groupId>
-      <artifactId>ro-crate-java</artifactId>
-      <version>1.1.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-jdk14</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -239,31 +186,31 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity-infrastructure</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>broadcasting</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -273,24 +220,24 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>project-management</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.logging</groupId>
       <artifactId>subscription-provider</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>finances-infrastructure</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
@@ -308,13 +255,13 @@
     <dependency>
       <groupId>life.qbic.identity</groupId>
       <artifactId>project-management-infrastructure</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.infrastructure</groupId>
       <artifactId>email-service-provider</artifactId>
-      <version>1.8.2</version>
+      <version>1.9.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

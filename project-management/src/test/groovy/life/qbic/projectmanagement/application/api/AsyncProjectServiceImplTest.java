@@ -10,6 +10,8 @@ import java.util.UUID;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
+import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
+import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +23,8 @@ import reactor.test.StepVerifier;
 class AsyncProjectServiceImplTest {
 
   ProjectInformationService projectServiceMock = mock(ProjectInformationService.class);
+  SampleInformationService sampleServiceMock = mock(SampleInformationService.class);
+  DigitalObjectFactory digitalObjectFactory = mock(DigitalObjectFactory.class);
 
   @BeforeEach
   void setUp() {
@@ -38,7 +42,8 @@ class AsyncProjectServiceImplTest {
   void updateProjectDesignCompletes() {
 
     AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
-        Schedulers.boundedElastic());
+        sampleServiceMock,
+        Schedulers.boundedElastic(), digitalObjectFactory);
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("neq title", "new objective");
@@ -68,7 +73,8 @@ class AsyncProjectServiceImplTest {
   void updateProjectDesignRepeats() {
 
     AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
-        Schedulers.boundedElastic());
+        sampleServiceMock,
+        Schedulers.boundedElastic(), digitalObjectFactory);
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("new title", "new objective");

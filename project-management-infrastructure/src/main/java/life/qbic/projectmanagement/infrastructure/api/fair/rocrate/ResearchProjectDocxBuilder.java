@@ -1,8 +1,7 @@
-package life.qbic.datamanager.files.export.rocrate;
+package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
 
 import java.util.List;
-import life.qbic.datamanager.files.export.DocxBuilder;
-import life.qbic.datamanager.files.structure.rocrate.ResearchProject;
+import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.P;
 
