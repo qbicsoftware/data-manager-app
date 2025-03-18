@@ -1,7 +1,7 @@
-package life.qbic.datamanager.files.export.rocrate;
+package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
 
-import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_DOCX;
-import static life.qbic.datamanager.files.export.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_YAML;
+import static life.qbic.projectmanagement.infrastructure.api.fair.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_DOCX;
+import static life.qbic.projectmanagement.infrastructure.api.fair.rocrate.ROCreateBuilder.ResearchProjectConstants.SUMMARY_FILENAME_YAML;
 
 import edu.kit.datamanager.ro_crate.RoCrate;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
@@ -11,10 +11,8 @@ import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import life.qbic.datamanager.files.export.DocxFileSupplier;
-import life.qbic.datamanager.files.export.YamlFileSupplier;
-import life.qbic.datamanager.files.structure.rocrate.ContactPoint;
-import life.qbic.datamanager.files.structure.rocrate.ResearchProject;
+import life.qbic.projectmanagement.application.api.fair.ContactPoint;
+import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -56,7 +54,7 @@ public class ROCreateBuilder {
         .build();
   }
 
-  private static RoCrate buildRoCrate(Path buildDir, ResearchProject researchProject) {
+  public static RoCrate buildRoCrate(Path buildDir, ResearchProject researchProject) {
     WordprocessingMLPackage docxContent = new ResearchProjectDocxBuilder().buildFrom(
         researchProject);
     var crate = new RoCrateBuilder(
@@ -88,31 +86,6 @@ public class ROCreateBuilder {
     crate.getRootDataEntity().addIdProperty("license", LICENSE_URL_CCBY_4);
     crate.getRootDataEntity().addProperty("datePublished", Instant.now().toString());
     return crate;
-  }
-
-
-  public RoCrate projectSummary(Project project, Path buildDirectory) throws ROCrateBuildException {
-    var researchProject = convertToResearchProject(project);
-    if (!buildDirectory.toFile().exists()) {
-      throw new ROCrateBuildException("File does not exist: " + buildDirectory);
-    }
-    return buildRoCrate(buildDirectory, researchProject);
-  }
-
-  private ResearchProject convertToResearchProject(Project project) {
-    var contactPoints = new ArrayList<ContactPoint>();
-    contactPoints.add(toContactPoint(project.getPrincipalInvestigator(), "Principal Investigator"));
-    contactPoints.add(toContactPoint(project.getProjectManager(), "Project Manager"));
-    if (project.getResponsiblePerson().isPresent()) {
-      contactPoints.add(toContactPoint(project.getResponsiblePerson().orElseThrow(), "Responsible Person"));
-    }
-    return ResearchProject.from(project.getProjectIntent().projectTitle().title(),
-        project.getProjectCode().value(), project.getProjectIntent().objective().objective(),
-        contactPoints);
-  }
-
-  private ContactPoint toContactPoint(Contact contact, String contactType) {
-    return ContactPoint.from(contact.fullName(), contact.emailAddress(), contactType);
   }
 
   enum ResearchProjectConstants implements Value {

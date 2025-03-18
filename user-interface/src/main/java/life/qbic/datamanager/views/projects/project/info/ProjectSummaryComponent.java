@@ -1,5 +1,9 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
@@ -11,11 +15,10 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
-import edu.kit.datamanager.ro_crate.writer.ZipWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,14 +26,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ByteBufferIteratorInputStream;
 import life.qbic.datamanager.RequestCache;
-import life.qbic.datamanager.files.TempDirectory;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
-import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
+import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
-import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
-import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
 import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
@@ -66,7 +67,6 @@ import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.logging.api.Logger;
-import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
@@ -82,7 +82,10 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.TempDirectory;
+import life.qbic.projectmanagement.infrastructure.api.fair.rocrate.ROCreateBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -637,13 +640,9 @@ public class ProjectSummaryComponent extends PageArea {
         new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
             projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export Project Summary");
-    crateExportBtn.addClickListener(event -> {
-      try {
-        triggerRoCrateDownload();
-      } catch (IOException e) {
-        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
-      }
-    });
+
+    crateExportBtn.addClickListener(event -> triggerRoCrateDownload());
+
     ActionBar actionBar = new ActionBar(crateExportBtn);
     header.setActionBar(actionBar);
     header.setSmallTrailingMargin();
@@ -658,48 +657,30 @@ public class ProjectSummaryComponent extends PageArea {
     headerSection.setContent(sectionContent);
   }
 
-  private void triggerRoCrateDownload() throws IOException {
-    ProjectId projectId = context.projectId().orElseThrow();
-    Project project = projectInformationService.find(projectId).orElseThrow();
-    var tempBuildDir = tempDirectory.createDirectory();
-    var zippedRoCrateDir = tempDirectory.createDirectory();
-    try {
-      var roCrate = roCrateBuilder.projectSummary(project, tempBuildDir);
-      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
-      var zippedRoCrateFile = zippedRoCrateDir.resolve(
-          "%s-project-summary-ro-crate.zip".formatted(project.getProjectCode().value()));
-      roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
-      byte[] cachedContent = Files.readAllBytes(zippedRoCrateFile);
-      downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-        @Override
-        public byte[] getBytes() {
-          return cachedContent;
-        }
-
-        @Override
-        public String getFilename() {
-          return zippedRoCrateFile.getFileName().toString();
-        }
-      });
-    } catch (RuntimeException e) {
-      throw new ApplicationException("Error exporting ro-crate.zip", e);
-    } finally {
-      deleteTempDir(tempBuildDir.toFile());
-      deleteTempDir(zippedRoCrateDir.toFile());
-    }
+  private InputStream forSummary(ProjectId projectId) {
+    var byteBufferIterator = asyncProjectService.roCrateSummary(projectId.value())
+        .timeout(Duration.ofSeconds(10)).toIterable()
+        .iterator();
+    return new ByteBufferIteratorInputStream(byteBufferIterator);
   }
 
-  private boolean deleteTempDir(File dir) {
-    File[] files = dir.listFiles(); //null if not a directory
-    // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
-    if (files != null) {
-      for (File file : files) {
-        if (!deleteTempDir(file)) {
-          return false;
-        }
+  private void triggerRoCrateDownload() {
+    var projectCode = projectInformationService.find(context.projectId().orElseThrow())
+        .map(Project::getProjectCode)
+        .map(ProjectCode::value)
+        .orElse("");
+    downloadComponent.trigger(new DownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "project summary", "zip");
       }
-    }
-    return dir.delete();
+
+      @Override
+      public InputStream getStream() {
+        return forSummary(context.projectId().orElseThrow());
+      }
+    });
+
   }
 
   public AvatarGroup createAvatarGroup(Collection<UserInfo> userInfo) {
@@ -727,4 +708,5 @@ public class ProjectSummaryComponent extends PageArea {
     }
     return tags;
   }
+
 }
