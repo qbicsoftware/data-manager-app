@@ -1,8 +1,8 @@
 package life.qbic.projectmanagement.application.api;
 
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContextMany;
 
 import java.io.IOException;
@@ -15,6 +15,7 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
@@ -239,17 +240,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ExperimentUpdateResponse> update(
       ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {
-      case ExperimentalVariables experimentalVariables ->
-          updateExperimentalVariables(request.projectId(), request.experimentId(),
-              experimentalVariables);
+
       case ExperimentDescription experimentDescription ->
           updateExperimentDescription(request.projectId(), request.experimentId(),
               experimentDescription);
 
-      case ConfoundingVariables confoundingVariables ->
-          updateConfoundingVariables(request.projectId(), request.experimentId(),
-              confoundingVariables);
       case ExperimentalGroups experimentalGroups -> unknownRequest();
+      case ConfoundingVariableAdditions confoundingVariableAdditions -> unknownRequest();
+      case ConfoundingVariableDeletions confoundingVariableDeletions -> unknownRequest();
+      case ConfoundingVariableUpdates confoundingVariableUpdates -> unknownRequest();
+      case ExperimentalVariableAdditions experimentalVariableAdditions -> unknownRequest();
+      case ExperimentalVariableDeletions experimentalVariableDeletions -> unknownRequest();
     };
 
     SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -262,22 +263,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return Mono.error(() -> new UnknownRequestException("Invalid request body"));
   }
 
-  private Mono<ExperimentUpdateResponse> updateConfoundingVariables(String projectId,
-      String experimentId,
-      ConfoundingVariables confoundingVariables) {
-    //TODO implement
-    throw new RuntimeException("Not implemented");
-  }
-
   private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
       String experimentId,
       ExperimentDescription experimentDescription) {
-    //TODO implement
-    throw new RuntimeException("Not implemented");
-  }
-
-  private Mono<ExperimentUpdateResponse> updateExperimentalVariables(String projectId,
-      String experimentId, ExperimentalVariables experimentalVariables) {
     //TODO implement
     throw new RuntimeException("Not implemented");
   }
