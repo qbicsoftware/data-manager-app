@@ -234,7 +234,7 @@ public interface AsyncProjectService {
    * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.10.0
    */
-  Flux<ValidationResponse> validate(List<ValidationRequest> requests) throws RequestFailedException;
+  Flux<ValidationResponse> validate(List<ValidationRequest> requests);
 
 
   /**
