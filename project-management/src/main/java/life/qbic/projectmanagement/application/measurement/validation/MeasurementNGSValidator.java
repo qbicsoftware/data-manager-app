@@ -13,7 +13,7 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationException;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
-import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.api.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;

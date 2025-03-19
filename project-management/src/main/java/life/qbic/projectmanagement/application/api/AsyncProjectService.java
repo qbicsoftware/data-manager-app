@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
@@ -225,6 +226,19 @@ public interface AsyncProjectService {
   Mono<Sample> findSample(String projectId, String sampleId);
 
   /**
+   * Submits multiple validation requests in a single service call.
+   *
+   * @param requests a {@link Flux} providing {@link ValidationRequest}.
+   * @return a {@link Flux} of {@link ValidationResponse}, providing the validation results for the
+   * submitted requests. Exceptions are provided as {@link Flux#error(Throwable)}.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ValidationResponse> validate(Flux<ValidationRequest> requests);
+
+  /**
    * Requests a sample registration template in a desired {@link MimeType}.
    * <p>
    * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
@@ -295,6 +309,24 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * A validation request body for information that shall be validated by the service.
+   * <p>
+   * Currently, permits:
+   *
+   * <ul>
+   *   <li>{@link SampleMetadata}</li>
+   *   <li>{@link NGSMeasurementMetadata}</li>
+   *   <li>{@link ProteomicsMeasurementMetadata}</li>
+   * </ul>
+   *
+   * @since 1.10.0
+   */
+  sealed interface ValidationRequestBody permits SampleMetadata, NGSMeasurementMetadata,
+      ProteomicsMeasurementMetadata {
+
+  }
+
 
   /**
    * Cacheable requests provide a unique identifier so cache implementations can unambiguously
@@ -302,7 +334,8 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface CacheableRequest permits ProjectUpdateRequest, ExperimentUpdateRequest {
+  sealed interface CacheableRequest permits ExperimentUpdateRequest, ProjectUpdateRequest,
+      ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -590,16 +623,15 @@ public interface AsyncProjectService {
     }
   }
 
-
   /**
    * A service request to update an experiment
    *
    * @param projectId    the project's identifier. The project containing the experiment.
    * @param experimentId the experiment's identifier
    * @param body         the request body containing information on what was updated
-   * @param requestId    The identifier of the request. Please use
-   *                     {@link #ExperimentUpdateRequest(String, String,
-   *                     ExperimentUpdateRequestBody)} if it is not determined yet.
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
+   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
    * @since 1.9.0
    */
   record ExperimentUpdateRequest(String projectId, String experimentId,
@@ -703,19 +735,31 @@ public interface AsyncProjectService {
    *
    * @param projectId   the project's id
    * @param requestBody the information to be updated.
+   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
+   *                    the response. If <code>null</code> or {@link String#isBlank()} is true, then
+   *                    a random UUID is assigned with {@link UUID#randomUUID()}.
    * @since 1.9.0
    */
   record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
-                              String id) implements CacheableRequest {
+                              String requestId) implements CacheableRequest {
+
+    public ProjectUpdateRequest {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+      }
+    }
+
 
     public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
       this(projectId, requestBody, UUID.randomUUID().toString());
     }
 
-    @Override
-    public String requestId() {
-      return id;
-    }
   }
 
   /**
@@ -723,6 +767,9 @@ public interface AsyncProjectService {
    *
    * @param projectId    the project's id
    * @param responseBody the information that was updated.
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
+   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
    * @since 1.9.0
    */
   record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
@@ -735,8 +782,9 @@ public interface AsyncProjectService {
       if (projectId.isBlank()) {
         throw new IllegalArgumentException("Project ID cannot be blank");
       }
-      if (requestId != null && requestId.isBlank()) {
-        requestId = null;
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+        ;
       }
     }
 
@@ -750,18 +798,56 @@ public interface AsyncProjectService {
       return Optional.ofNullable(requestId);
     }
 
-    /**
-     * Returns the requestId, can be null.
-     *
-     * @return Returns the requestId, if no requestId is set, returns null.
-     */
-    @Override
-    public String requestId() {
-      return requestId;
-    }
-
     boolean hasRequestId() {
       return nonNull(requestId);
+    }
+  }
+
+  /**
+   * The actual request container for metadata validation.
+   * <p>
+   * A validation request contains a {@link ValidationRequestBody} with the actual metadata to be
+   * validated, next to the project ID and the request ID.
+   *
+   * @param projectId   the project ID of the project the metadata shall be validated for
+   * @param requestBody the actual metadata container with the information to be validated
+   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
+   *                    the response. If <code>null</code> or {@link String#isBlank()} is true, then
+   *                    a random UUID is assigned with {@link UUID#randomUUID()}
+   * @since 1.10.0
+   */
+  record ValidationRequest(String projectId, ValidationRequestBody requestBody,
+                           String requestId) implements CacheableRequest {
+
+    public ValidationRequest {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+      }
+    }
+  }
+
+  /**
+   * The response to a corresponding {@link ValidationRequest} with information about the actual
+   * validation result.
+   * <p>
+   * The result itself is provided in the {@link ValidationResult} property.
+   *
+   * @param requestId the original ID of the request from {@link ValidationRequest}
+   * @param result    the validation report provided as {@link ValidationResult}
+   * @since 1.10.0
+   */
+  record ValidationResponse(String requestId, ValidationResult result) {
+
+    public ValidationResponse {
+      if (requestId == null || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request ID cannot be null or blank");
+      }
     }
   }
 
