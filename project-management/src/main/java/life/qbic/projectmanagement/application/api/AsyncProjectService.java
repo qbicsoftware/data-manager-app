@@ -9,12 +9,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.lang.Nullable;
+import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -215,12 +217,50 @@ public interface AsyncProjectService {
    * @param projectId the project id to which the sample belongs to
    * @param sampleId  the sample id of the sample to find
    * @return a reactive container of {@link Sample} for the sample matching the sample id. For no
-   * matches a {@link Mono#empty()} is returned. Exceptions are * provided as
+   * matches a {@link Mono#empty()} is returned. Exceptions are provided as
    * {@link Mono#error(Throwable)}.
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
    */
   Mono<Sample> findSample(String projectId, String sampleId);
+
+  /**
+   * Requests a sample registration template in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
+      MimeType mimeType);
+
+  /**
+   * Requests a sample update template in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      MimeType mimeType);
 
   /**
    * Container of an update request for a service call and part of the
@@ -411,7 +451,8 @@ public interface AsyncProjectService {
    * @param unit         the unit for the value of the level. Can be null if no unit is set
    * @since 1.9.0
    */
-  record VariableLevel(Long variableId, String variableName, String levelValue, @Nullable String unit) {
+  record VariableLevel(Long variableId, String variableName, String levelValue,
+                       @Nullable String unit) {
 
   }
 
@@ -793,6 +834,18 @@ public interface AsyncProjectService {
 
     public AccessDeniedException(String message, Throwable cause) {
       super(message, cause);
+    }
+  }
+
+  /**
+   * Exception to indicate that a service implementation cannot handle a certain mime type.
+   *
+   * @since 1.10.0
+   */
+  class UnsupportedMimeTypeException extends RuntimeException {
+
+    public UnsupportedMimeTypeException(String message) {
+      super(message);
     }
   }
 
