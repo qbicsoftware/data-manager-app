@@ -236,7 +236,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<ValidationResponse> validate(List<ValidationRequest> requests)
+  public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
     throw new RuntimeException("not implemented");
   }

@@ -743,7 +743,8 @@ public interface AsyncProjectService {
         throw new IllegalArgumentException("Project ID cannot be blank");
       }
       if (requestId == null || requestId.isBlank()) {
-        requestId = UUID.randomUUID().toString();;
+        requestId = UUID.randomUUID().toString();
+        ;
       }
     }
 
