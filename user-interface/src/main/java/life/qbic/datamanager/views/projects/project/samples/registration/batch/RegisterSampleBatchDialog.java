@@ -40,7 +40,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
-import life.qbic.projectmanagement.application.api.SampleMetadata;
+import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import org.apache.poi.ss.usermodel.Workbook;
 

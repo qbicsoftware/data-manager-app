@@ -20,8 +20,10 @@ import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
+import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -57,14 +59,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final Scheduler scheduler;
   private final SampleInformationService sampleInfoService;
   private final DigitalObjectFactory digitalObjectFactory;
+  private final SampleValidationService sampleValidationService;
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
       @Autowired SampleInformationService sampleInfoService,
-      @Autowired Scheduler scheduler, @Autowired DigitalObjectFactory digitalObjectFactory) {
+      @Autowired Scheduler scheduler, @Autowired DigitalObjectFactory digitalObjectFactory,
+      @Autowired SampleValidationService sampleValidationService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
     this.digitalObjectFactory = Objects.requireNonNull(digitalObjectFactory);
+    this.sampleValidationService = Objects.requireNonNull(sampleValidationService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -238,8 +243,32 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
-    throw new RuntimeException("not implemented");
+    return requests.flatMap(this::validateRequest);
   }
+
+  private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
+    switch (request.requestBody()) {
+      case SampleRegistration r:
+        return validateSampleMetadata(r, request.requestId());
+      default:
+        return Mono.error(new RequestFailedException("Invalid request"));
+    }
+  }
+
+
+  private Mono<ValidationResponse> validateSampleMetadata(SampleRegistration registration,
+      String requestId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(
+            Mono.fromCallable(
+                    () -> sampleValidationService.validateSample(registration).validationResult()
+                )
+                .map(validationResult -> new ValidationResponse(requestId, validationResult))
+                .subscribeOn(scheduler))
+        .transform(original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+            securityContext));
+  }
+
 
   @Override
   public Mono<ExperimentUpdateResponse> update(
