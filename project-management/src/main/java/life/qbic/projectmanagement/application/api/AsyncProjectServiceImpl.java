@@ -162,6 +162,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Flux<ValidationResponse> validate(List<ValidationRequest> requests)
+      throws RequestFailedException {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
   public Mono<ExperimentUpdateResponse> update(
       ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {

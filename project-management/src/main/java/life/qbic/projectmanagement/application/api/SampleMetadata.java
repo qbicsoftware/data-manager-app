@@ -1,7 +1,8 @@
-package life.qbic.projectmanagement.application.sample;
+package life.qbic.projectmanagement.application.api;
 
 import java.util.Map;
 import java.util.Optional;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
@@ -27,7 +28,7 @@ public record SampleMetadata(
     String comment,
     Map<ConfoundingVariableInformation, String> confoundingVariables,
     String experimentId
-) {
+) implements ValidationRequestBody {
 
   public static SampleMetadata createNew(String sampleName,
       AnalysisMethod analysisToBePerformed,
