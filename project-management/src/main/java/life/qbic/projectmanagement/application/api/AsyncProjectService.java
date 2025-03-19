@@ -711,10 +711,7 @@ public interface AsyncProjectService {
       if (projectId.isBlank()) {
         throw new IllegalArgumentException("Project ID cannot be blank");
       }
-      if (requestId != null && requestId.isBlank()) {
-        requestId = null;
-      }
-      if (requestId == null) {
+      if (requestId == null || requestId.isBlank()) {
         requestId = UUID.randomUUID().toString();
       }
     }
@@ -746,11 +743,8 @@ public interface AsyncProjectService {
       if (projectId.isBlank()) {
         throw new IllegalArgumentException("Project ID cannot be blank");
       }
-      if (requestId != null && requestId.isBlank()) {
-        requestId = null;
-      }
-      if (requestId == null) {
-        requestId = UUID.randomUUID().toString();
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();;
       }
     }
 
@@ -792,10 +786,7 @@ public interface AsyncProjectService {
       if (projectId.isBlank()) {
         throw new IllegalArgumentException("Project ID cannot be blank");
       }
-      if (requestId != null && requestId.isBlank()) {
-        requestId = null;
-      }
-      if (requestId == null) {
+      if (requestId == null || requestId.isBlank()) {
         requestId = UUID.randomUUID().toString();
       }
     }
