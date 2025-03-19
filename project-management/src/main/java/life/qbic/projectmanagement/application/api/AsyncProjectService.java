@@ -281,7 +281,8 @@ public interface AsyncProjectService {
    *
    * @since 1.10.0
    */
-  sealed interface ValidationRequestBody permits SampleMetadata {
+  sealed interface ValidationRequestBody permits SampleMetadata, NGSMeasurementMetadata,
+      ProteomicsMeasurementMetadata {
 
   }
 

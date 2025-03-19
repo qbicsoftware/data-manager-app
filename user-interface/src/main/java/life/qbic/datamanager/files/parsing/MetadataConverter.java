@@ -17,8 +17,8 @@ import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementRe
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
+import life.qbic.projectmanagement.application.api.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.api.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
