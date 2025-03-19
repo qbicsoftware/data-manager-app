@@ -15,6 +15,14 @@ public class FileNameFormatter {
 
   }
 
+  public static String formatWithTimestampedSimple(LocalDate localDate, String project, String type, String extension) {
+    return DATE_FORMATTER.format(localDate)
+        + PART_JOINER
+        + replaceForbiddenCharacters(project)
+        + PART_JOINER
+        + replaceForbiddenCharacters(type)
+        + "." + replaceForbiddenCharacters(extension);
+  }
 
   public static String formatWithTimestampedContext(LocalDate timestamp, String projectPart,
       String experimentPart, String type, String extension) {
