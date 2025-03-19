@@ -226,7 +226,7 @@ public interface AsyncProjectService {
   /**
    * Submits multiple validation requests in a single service call.
    *
-   * @param requests a list of one or more {@link ValidationRequest}.
+   * @param requests a {@link Flux} providing {@link ValidationRequest}.
    * @return a {@link Flux} of {@link ValidationResponse}, providing the validation results for the
    * submitted requests. Exceptions are provided as {@link Flux#error(Throwable)}.
    * @throws UnknownRequestException if an unknown request has been used in the service call
@@ -234,8 +234,7 @@ public interface AsyncProjectService {
    * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.10.0
    */
-  Flux<ValidationResponse> validate(List<ValidationRequest> requests);
-
+  Flux<ValidationResponse> validate(Flux<ValidationRequest> requests);
 
   /**
    * Container of an update request for a service call and part of the
