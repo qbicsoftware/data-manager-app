@@ -277,6 +277,8 @@ public interface AsyncProjectService {
    *
    * <ul>
    *   <li>{@link SampleMetadata}</li>
+   *   <li>{@link NGSMeasurementMetadata}</li>
+   *   <li>{@link ProteomicsMeasurementMetadata}</li>
    * </ul>
    *
    * @since 1.10.0
