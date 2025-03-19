@@ -1,6 +1,9 @@
-package life.qbic.projectmanagement.application.measurement;
+package life.qbic.projectmanagement.application.api;
 
 import java.util.Optional;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
+import life.qbic.projectmanagement.application.measurement.Labeling;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -27,7 +30,7 @@ public record ProteomicsMeasurementMetadata(
     String lcmsMethod,
     Labeling labeling,
     String comment
-) implements MeasurementMetadata {
+) implements MeasurementMetadata, ValidationRequestBody {
 
 
   @Override

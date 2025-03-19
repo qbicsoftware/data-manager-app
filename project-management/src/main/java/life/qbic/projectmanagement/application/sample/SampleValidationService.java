@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
+import life.qbic.projectmanagement.application.api.SampleMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
