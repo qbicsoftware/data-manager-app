@@ -256,8 +256,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(requests).transform(original -> writeSecurityContextMany(original, securityContext)).flatMap(this::validateRequest);
+    return requests.flatMap(this::validateRequest);
   }
 
   private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
