@@ -35,6 +35,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.FluxSink.OverflowStrategy;
@@ -238,6 +239,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             new RequestFailedException("Error getting sample for sample " + sampleId));
       }
     }).subscribeOn(scheduler);
+  }
+
+  @Override
+  public Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
+      MimeType mimeType) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      MimeType mimeType) {
+    throw new RuntimeException("not implemented");
   }
 
   @Override
