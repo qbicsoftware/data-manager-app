@@ -19,8 +19,8 @@ class ProjectSpec extends Specification {
         ProjectIntent intentTwo = ProjectIntent.of(new ProjectTitle("Another project"), new ProjectObjective("another objective"))
 
         expect: "projects with the same uuid are equal"
-        def projectOne = Project.of(ProjectId.of(uuid), intentOne, ProjectCode.random(), new Contact("my name", "some@email.de"), new Contact("my name2", "some@email.de"), null)
-        def projectTwo = Project.of(ProjectId.of(uuid), intentTwo, ProjectCode.random(), new Contact("my name", "some@email.de"), new Contact("my name2", "some@email.de"), null)
+        def projectOne = Project.of(ProjectId.of(uuid), intentOne, ProjectCode.random(), new Contact("my name", "some@email.de", "", ""), new Contact("my name2", "some@email.de", "", ""), null)
+        def projectTwo = Project.of(ProjectId.of(uuid), intentTwo, ProjectCode.random(), new Contact("my name", "some@email.de", "", ""), new Contact("my name2", "some@email.de", "", ""), null)
 
         projectOne == projectTwo
         projectOne.hashCode() == projectTwo.hashCode()
@@ -33,8 +33,8 @@ class ProjectSpec extends Specification {
         def intent = ProjectIntent.of(ProjectTitle.of("A project"), ProjectObjective.create("an objective"))
 
         expect: "projects with different uuid are not equal"
-        def projectOne = Project.of(ProjectId.of(uuidOne), intent, ProjectCode.random(), new Contact("my name", "some@email.de"), new Contact("my name2", "some@email.de"), null)
-        def projectTwo = Project.of(ProjectId.of(uuidTwo), intent, ProjectCode.random(), new Contact("my name", "some@email.de"), new Contact("my name2", "some@email.de"), null)
+        def projectOne = Project.of(ProjectId.of(uuidOne), intent, ProjectCode.random(), new Contact("my name", "some@email.de", "", ""), new Contact("my name2", "some@email.de", "", ""), null)
+        def projectTwo = Project.of(ProjectId.of(uuidTwo), intent, ProjectCode.random(), new Contact("my name", "some@email.de", "", ""), new Contact("my name2", "some@email.de", "", ""), null)
 
 
         projectOne != projectTwo

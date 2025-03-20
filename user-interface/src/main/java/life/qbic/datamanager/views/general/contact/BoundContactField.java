@@ -7,6 +7,7 @@ import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
+import life.qbic.projectmanagement.application.contact.OrcidEntry;
 
 /**
  * <b>Bound Contact Field</b>
@@ -29,7 +30,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     this.binder = createBinder(predicate, contactField);
     binder.addStatusChangeListener(
         event -> updateStatus(contactField, event.hasValidationErrors()));
-    this.originalValue = new Contact("", "");
+    this.originalValue = new Contact("", "", "", "");
   }
 
   private static void updateStatus(ContactField contactField, boolean isInvalid) {
@@ -77,9 +78,9 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    */
   private static SerializablePredicate<Contact> isMandatory() {
     return contact -> {
-      var onlyEmailEmpty = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
-      var onlyNameEmpty = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      var bothEmpty = contact.getEmail().isBlank() && contact.getFullName().isBlank();
+      var onlyEmailEmpty = contact.email().isBlank() && !contact.fullName().isBlank();
+      var onlyNameEmpty = !contact.email().isBlank() && contact.fullName().isBlank();
+      var bothEmpty = contact.email().isBlank() && contact.fullName().isBlank();
       return !(onlyEmailEmpty || onlyNameEmpty || bothEmpty);
     };
   }
@@ -91,13 +92,14 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    */
   private static SerializablePredicate<Contact> isOptional() {
     return contact -> {
-      var onlyEmailProvided = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      var onlyNameProvided = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
+      var onlyEmailProvided = !contact.email().isBlank() && contact.fullName().isBlank();
+      var onlyNameProvided = contact.email().isBlank() && !contact.fullName().isBlank();
       return !(onlyEmailProvided || onlyNameProvided);
     };
   }
 
-  private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate, ContactField contactField) {
+  private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate,
+      ContactField contactField) {
     Binder<ContactContainer> binder = new Binder<>(ContactContainer.class);
     binder.setBean(new ContactContainer());
     binder.forField(contactField).withValidator(predicate, "There is still information missing")
@@ -107,6 +109,8 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
         .bind(ContactContainer::getEmail, ContactContainer::setEmail);
     binder.forField(contactField.getFullNameTextField())
         .bind(ContactContainer::getFullName, ContactContainer::setFullName);
+    binder.forField(contactField.getOidcSelection())
+        .bind(ContactContainer::getOidcSelection, ContactContainer::setOidcSelection);
     return binder;
   }
 
@@ -151,7 +155,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     private Contact contact;
 
     public ContactContainer() {
-      contact = new Contact("", "");
+      contact = new Contact("", "", "", "");
     }
 
     public Contact getContact() {
@@ -163,7 +167,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     }
 
     public String getEmail() {
-      return contact == null ? "" : contact.getEmail();
+      return contact == null ? "" : contact.email();
     }
 
     public void setEmail(String email) {
@@ -173,7 +177,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     }
 
     public String getFullName() {
-      return contact == null ? "" : contact.getFullName();
+      return contact == null ? "" : contact.fullName();
     }
 
     public void setFullName(String fullName) {
@@ -182,5 +186,21 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
       }
     }
 
+    public OrcidEntry getOidcSelection() {
+      return new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
+          contact.oidcIssuer());
+    }
+
+    public void setOidcSelection(OrcidEntry oidcSelection) {
+      if (contact != null) {
+        if (oidcSelection != null) {
+          contact.setOidc(oidcSelection.oidc());
+          contact.setOidcIssuer(oidcSelection.oidcIssuer());
+        } else {
+          contact.setOidcIssuer("");
+          contact.setOidc("");
+        }
+      }
+    }
   }
 }

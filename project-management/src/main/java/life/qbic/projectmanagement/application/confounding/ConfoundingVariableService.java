@@ -8,13 +8,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * This is the aggregate for confounding variables. You can
- * {@link #listConfoundingVariablesForExperiment(String, ExperimentReference)} and for each
- * variable list the existing levels with
- * {@link #listLevelsForVariable(String, VariableReference)}.
+ * {@link #listConfoundingVariablesForExperiment(String, ExperimentReference)} and for each variable
+ * list the existing levels with {@link #listLevelsForVariable(String, VariableReference)}.
  * <p>
  * Further you can get the level of a specific variable for a specific sample with
- * {@link #getVariableLevelForSample(String, SampleReference, VariableReference)} (ProjectId, ExperimentReference, SampleReference,
- * VariableReference)}
+ * {@link #getVariableLevelForSample(String, SampleReference, VariableReference)} (ProjectId,
+ * ExperimentReference, SampleReference, VariableReference)}
  * <p>
  * Apart from listing available information this service is the single point in the application
  * where confounding variables may be modified. Please note: variable levels do not have an
@@ -36,6 +35,7 @@ public interface ConfoundingVariableService {
 
   /**
    * A reference to a sample
+   *
    * @param id the identifier of the sample
    */
   record SampleReference(String id) implements Serializable {
@@ -44,6 +44,7 @@ public interface ConfoundingVariableService {
 
   /**
    * A reference to a variable
+   *
    * @param id the identifier of the variable
    */
   record VariableReference(long id) implements Serializable {
@@ -52,7 +53,8 @@ public interface ConfoundingVariableService {
 
   /**
    * Information about a confounding variable
-   * @param id the identifier of the variable
+   *
+   * @param id           the identifier of the variable
    * @param variableName the name of the variable
    */
   record ConfoundingVariableInformation(VariableReference id, String variableName) implements
@@ -62,9 +64,10 @@ public interface ConfoundingVariableService {
 
   /**
    * A level of a variable on a sample
+   *
    * @param variable the reference of the variable
-   * @param sample the reference of the sample
-   * @param level the value the variable has for the specific sample.
+   * @param sample   the reference of the sample
+   * @param level    the value the variable has for the specific sample.
    */
   record ConfoundingVariableLevel(VariableReference variable, SampleReference sample,
                                   String level) implements Serializable {
@@ -73,9 +76,11 @@ public interface ConfoundingVariableService {
 
   /**
    * List all confounding variables for a given experiment.
-   * @param projectId the project identifier for which to fetch data
+   *
+   * @param projectId  the project identifier for which to fetch data
    * @param experiment the experiment for which to list the confounding variables
-   * @return a list of confounding variable information describing all confounding variables in the experiment.
+   * @return a list of confounding variable information describing all confounding variables in the
+   * experiment.
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   List<ConfoundingVariableInformation> listConfoundingVariablesForExperiment(String projectId,
@@ -91,7 +96,7 @@ public interface ConfoundingVariableService {
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   List<ConfoundingVariableInformation> loadInformationForVariables(String projectId,
-          List<VariableReference> variables);
+      List<VariableReference> variables);
 
 
   /**
@@ -183,10 +188,10 @@ public interface ConfoundingVariableService {
    * <p>
    * Overwrites an existing level of set sample in the variable, if present.
    *
-   * @param projectId         the identifier of the project
-   * @param experiment        the experiment containing the variable
-   * @param sampleReference   the sample for which to set the level
-   * @param levels            a list of values as levels for the variable
+   * @param projectId       the identifier of the project
+   * @param experiment      the experiment containing the variable
+   * @param sampleReference the sample for which to set the level
+   * @param levels          a list of values as levels for the variable
    * @return the created confounding variable level
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -197,9 +202,11 @@ public interface ConfoundingVariableService {
   /**
    * Deletes a confounding variable and all information about the variable.
    * <p>
-   * <i><b>Please note:</b> This will permanently delete all levels of the variable for all samples.</i>
-   * @param projectId the identifier of the project
-   * @param experiment the experiment containing the confounding variable
+   * <i><b>Please note:</b> This will permanently delete all levels of the variable for all
+   * samples.</i>
+   *
+   * @param projectId         the identifier of the project
+   * @param experiment        the experiment containing the confounding variable
    * @param variableReference the confounding variable to delete.
    */
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
