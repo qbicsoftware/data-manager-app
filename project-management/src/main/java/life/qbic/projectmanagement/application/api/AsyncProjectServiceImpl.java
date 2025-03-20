@@ -243,12 +243,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
-    return requests.flatMap(this::validateRequest);
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(requests).transform(original -> writeSecurityContextMany(original, securityContext)).flatMap(this::validateRequest);
   }
 
   private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
     switch (request.requestBody()) {
-      case SampleRegistration r:
+      case SampleRegistrationRequest r:
         return validateSampleMetadata(r, request.requestId());
       default:
         return Mono.error(new RequestFailedException("Invalid request"));
@@ -256,7 +257,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
 
-  private Mono<ValidationResponse> validateSampleMetadata(SampleRegistration registration,
+  private Mono<ValidationResponse> validateSampleMetadata(SampleRegistrationRequest registration,
       String requestId) {
     var securityContext = SecurityContextHolder.getContext();
     return ReactiveSecurityContextUtils.applySecurityContext(

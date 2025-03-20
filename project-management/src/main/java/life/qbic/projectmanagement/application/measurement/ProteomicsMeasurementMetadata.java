@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.measurement;
 
 import java.util.Optional;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**

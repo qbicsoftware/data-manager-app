@@ -13,12 +13,8 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
-import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
-import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -279,12 +275,12 @@ public interface AsyncProjectService {
    * Currently, permits:
    *
    * <ul>
-   *   <li>{@link SampleRegistration}</li>
+   *   <li>{@link SampleRegistrationRequest}</li>
    * </ul>
    *
    * @since 1.10.0
    */
-  sealed interface ValidationRequestBody permits SampleRegistration {
+  sealed interface ValidationRequestBody permits SampleRegistrationRequest {
 
   }
 
@@ -643,12 +639,12 @@ public interface AsyncProjectService {
    * A service request to create one or more new samples for a project.
    *
    * @param projectId the project ID of the project the samples shall be created for
-   * @param requests  a collection of {@link SampleRegistrationRequest} items
+   * @param requests  a collection of {@link life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest} items
    * @since 1.10.0
    */
-  record SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+  record SampleCreationRequest(String projectId, Collection<life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest> requests) {
 
-    public SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+    public SampleCreationRequest(String projectId, Collection<life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -700,7 +696,7 @@ public interface AsyncProjectService {
    * @param projectId            the project ID of the project the experiment belongs to
    * @since 1.10.0
    */
-  record SampleRegistration(
+  record SampleRegistrationRequest(
       String sampleCode,
       String sampleName,
       String biologicalReplicate,

@@ -15,6 +15,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DeletionService;
+import life.qbic.projectmanagement.application.ValidationResultWithPayload;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationRequest;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
@@ -29,7 +31,6 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.model.sample.SampleOrigin;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import life.qbic.projectmanagement.domain.repository.BatchRepository;
 import life.qbic.projectmanagement.domain.repository.SampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,18 +56,52 @@ public class SampleRegistrationServiceV2 {
   private final SampleCodeService sampleCodeService;
   private final DeletionService deletionService;
   private final ConfoundingVariableService confoundingVariableService;
+  private final SampleValidationService validationService;
 
   @Autowired
   public SampleRegistrationServiceV2(BatchRegistrationService batchRegistrationService,
       SampleRepository sampleRepository, BatchRepository batchRepository,
       SampleCodeService sampleCodeService,
-      DeletionService deletionService, ConfoundingVariableService confoundingVariableService) {
+      DeletionService deletionService, ConfoundingVariableService confoundingVariableService,
+      SampleValidationService validationService
+  ) {
     this.batchRegistrationService = Objects.requireNonNull(batchRegistrationService);
     this.sampleRepository = Objects.requireNonNull(sampleRepository);
     this.batchRepository = Objects.requireNonNull(batchRepository);
     this.sampleCodeService = Objects.requireNonNull(sampleCodeService);
     this.deletionService = Objects.requireNonNull(deletionService);
-    this.confoundingVariableService = confoundingVariableService;
+    this.confoundingVariableService = Objects.requireNonNull(confoundingVariableService);
+    this.validationService = Objects.requireNonNull(validationService);
+  }
+
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public CompletableFuture<Void> registerSamples(Collection<SampleRegistrationRequest> requests, ProjectId projectId, String batchName,
+      ExperimentReference experimentReference) throws RegistrationException {
+
+    var validationResults = requests.stream().map(request -> validationService.validateNewSample(
+        request.sampleName(),
+        request.biologicalReplicate(),
+        request.condition(),
+        request.species(),
+        request.specimen(),
+        request.analyte(),
+        request.analysisMethod(),
+        request.comment(),
+        request.confoundingVariables(),
+        request.experimentId(),
+        request.projectId()
+    )).toList();
+
+    // In case there is at least one invalid request, the process can finish exceptionally right here
+    validationResults.stream().filter(result -> result.validationResult().containsFailures()).findAny().ifPresent(result -> {
+      log.error("Sample registration failed: " + result.validationResult().failures());
+      throw new RegistrationException("Sample registration failed, there were invalid metadata provided.");
+    });
+
+    var metadata = validationResults.stream().map(ValidationResultWithPayload::payload).toList();
+
+    return registerSamples(metadata, projectId, batchName, false, experimentReference);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -205,7 +240,8 @@ public class SampleRegistrationServiceV2 {
   private Sample buildSample(SampleMetadata sample, BatchId batchId, SampleCode sampleCode) {
     var sampleOrigin = SampleOrigin.create(sample.species(), sample.specimen(), sample.analyte());
     return Sample.create(sampleCode,
-        new SampleRegistrationRequest(sample.sampleName(), sample.biologicalReplicate(), batchId,
+        new life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest(
+            sample.sampleName(), sample.biologicalReplicate(), batchId,
             ExperimentId.parse(sample.experimentId()), sample.experimentalGroupId(), sampleOrigin,
             sample.analysisToBePerformed(), sample.comment()));
   }
