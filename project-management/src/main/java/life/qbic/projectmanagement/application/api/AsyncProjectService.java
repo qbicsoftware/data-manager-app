@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -15,7 +16,6 @@ import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleI
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
@@ -315,15 +315,12 @@ public interface AsyncProjectService {
    * Currently, permits:
    *
    * <ul>
-   *   <li>{@link SampleMetadata}</li>
-   *   <li>{@link NGSMeasurementMetadata}</li>
-   *   <li>{@link ProteomicsMeasurementMetadata}</li>
+   *   <li>{@link SampleRegistrationRequest}</li>
    * </ul>
    *
    * @since 1.10.0
    */
-  sealed interface ValidationRequestBody permits SampleMetadata, NGSMeasurementMetadata,
-      ProteomicsMeasurementMetadata {
+  sealed interface ValidationRequestBody permits SampleRegistrationRequest {
 
   }
 
@@ -682,12 +679,12 @@ public interface AsyncProjectService {
    * A service request to create one or more new samples for a project.
    *
    * @param projectId the project ID of the project the samples shall be created for
-   * @param requests  a collection of {@link SampleRegistrationRequest} items
+   * @param requests  a collection of {@link life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest} items
    * @since 1.10.0
    */
-  record SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+  record SampleCreationRequest(String projectId, Collection<life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest> requests) {
 
-    public SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+    public SampleCreationRequest(String projectId, Collection<life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -719,6 +716,40 @@ public interface AsyncProjectService {
   record SampleUpdate(String sampleId, SampleInformation information) {
 
   }
+
+  /**
+   * A simple container for sample registration information of an individual sample to register.
+   *
+   * @param sampleCode           the sample ID that is known to the user
+   * @param sampleName           the sample name
+   * @param biologicalReplicate  the biological replicate label given
+   * @param condition            the String representation of a condition
+   * @param species              the String representation of a species with CURIE
+   * @param specimen             the String representation of a specimen with CURIE
+   * @param analyte              the String representation of an analyte with CURIE
+   * @param analysisMethod       the String representation of the analysis method
+   * @param comment              a users comment
+   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+   *                             representation
+   * @param experimentId         the experiment ID of the experiment the sample should be registered
+   *                             to
+   * @param projectId            the project ID of the project the experiment belongs to
+   * @since 1.10.0
+   */
+  record SampleRegistrationRequest(
+      String sampleCode,
+      String sampleName,
+      String biologicalReplicate,
+      String condition,
+      String species,
+      String specimen,
+      String analyte,
+      String analysisMethod,
+      String comment,
+      Map<String, String> confoundingVariables,
+      String experimentId,
+      String projectId
+  ) implements ValidationRequestBody {}
 
   /**
    * A service response from a project creation request

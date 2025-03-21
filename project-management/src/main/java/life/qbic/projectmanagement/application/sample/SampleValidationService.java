@@ -4,7 +4,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
-import life.qbic.projectmanagement.application.api.SampleMetadata;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +26,37 @@ public class SampleValidationService {
   @Autowired
   public SampleValidationService(SampleValidation sampleValidation) {
     this.sampleValidation = Objects.requireNonNull(sampleValidation);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public ValidationResultWithPayload<SampleMetadata> validateSample(
+      SampleRegistrationRequest registration, ProjectId projectId) {
+    if (registration.sampleCode() == null || registration.sampleCode().isBlank()) {
+      return validateNewSample(registration.sampleName(),
+          registration.biologicalReplicate(),
+          registration.condition(),
+          registration.species(),
+          registration.specimen(),
+          registration.analyte(),
+          registration.analysisMethod(),
+          registration.comment(),
+          registration.confoundingVariables(),
+          registration.experimentId(),
+          registration.projectId());
+    }
+    return validateExistingSample(
+        registration.sampleCode(),
+        registration.sampleName(),
+        registration.biologicalReplicate(),
+        registration.condition(),
+        registration.species(),
+        registration.specimen(),
+        registration.analyte(),
+        registration.analysisMethod(),
+        registration.comment(),
+        registration.confoundingVariables(),
+        registration.experimentId(),
+        registration.projectId());
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
