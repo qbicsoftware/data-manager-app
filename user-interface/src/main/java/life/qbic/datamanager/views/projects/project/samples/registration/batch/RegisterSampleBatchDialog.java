@@ -93,7 +93,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     uploadWithDisplay.addFailureListener(
         uploadFailed -> {/* display of the error is handled by the uploadWithDisplay component. So nothing to do here.*/});
     uploadWithDisplay.addSuccessListener(
-        uploadSucceeded -> onUploadSucceeded(asyncProjectService, experimentId, projectId,
+        uploadSucceeded -> onUploadSucceeded(experimentId, projectId,
             uploadSucceeded));
     uploadWithDisplay.addRemovedListener(uploadRemoved -> setValidatedSampleMetadata(List.of()));
 
@@ -134,7 +134,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     this.validatedSampleMetadata.addAll(registrations);
   }
 
-  private void onUploadSucceeded(AsyncProjectService service,
+  private void onUploadSucceeded(
       String experimentId,
       String projectId,
       SucceededEvent uploadSucceeded) {
