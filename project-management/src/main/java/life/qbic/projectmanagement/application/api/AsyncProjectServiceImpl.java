@@ -261,7 +261,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
     switch (request.requestBody()) {
-      case SampleRegistrationRequest r:
+      case SampleRegistrationInformation r:
         return validateSampleMetadata(r, request.requestId(), request.projectId());
       default:
         return Mono.error(new RequestFailedException("Invalid request"));
@@ -269,12 +269,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
 
-  private Mono<ValidationResponse> validateSampleMetadata(SampleRegistrationRequest registration,
+  private Mono<ValidationResponse> validateSampleMetadata(SampleRegistrationInformation registration,
       String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return ReactiveSecurityContextUtils.applySecurityContext(
             Mono.fromCallable(
-                    () -> sampleValidationService.validateSample(registration, ProjectId.parse(projectId)).validationResult()
+                    () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId)).validationResult()
                 )
                 .map(validationResult -> new ValidationResponse(requestId, validationResult))
         )

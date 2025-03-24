@@ -39,7 +39,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -49,7 +49,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
   private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
-  private final List<SampleRegistrationRequest> validatedSampleMetadata;
+  private final List<SampleRegistrationInformation> validatedSampleMetadata;
   private final TextField batchNameField;
   private final Div initialView;
   private final Div inProgressView;
@@ -124,12 +124,12 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     return new InvalidUploadDisplay(fileName, failureReasons);
   }
 
-  private static ValidationRequest convertToRequest(SampleRegistrationRequest registration,
+  private static ValidationRequest convertToRequest(SampleRegistrationInformation registration,
       String projectId) {
     return new ValidationRequest(projectId, registration, null);
   }
 
-  private void setValidatedSampleMetadata(List<SampleRegistrationRequest> registrations) {
+  private void setValidatedSampleMetadata(List<SampleRegistrationInformation> registrations) {
     this.validatedSampleMetadata.clear();
     this.validatedSampleMetadata.addAll(registrations);
   }
@@ -205,10 +205,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
 
-  private SampleRegistrationRequest convertToRegistration(SampleInformationForNewSample information,
+  private SampleRegistrationInformation convertToRegistration(SampleInformationForNewSample information,
       String experimentId, String projectId) {
-    return new SampleRegistrationRequest(
-        null,
+    return new SampleRegistrationInformation(
         information.sampleName(),
         information.biologicalReplicate(),
         information.condition(),
@@ -223,7 +222,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     );
   }
 
-  private Flux<ValidationResponse> executeValidation(List<SampleRegistrationRequest> registrations,
+  private Flux<ValidationResponse> executeValidation(List<SampleRegistrationInformation> registrations,
       String projectId) {
     var requests = registrations.stream()
         .map(registration -> convertToRequest(registration, projectId));
@@ -515,7 +514,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   public static class ConfirmEvent extends ComponentEvent<RegisterSampleBatchDialog> {
 
     private final String batchName;
-    private final List<SampleRegistrationRequest> validatedSampleMetadata;
+    private final List<SampleRegistrationInformation> validatedSampleMetadata;
 
 
     /**
@@ -530,13 +529,13 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
      */
     public ConfirmEvent(RegisterSampleBatchDialog source, boolean fromClient,
         String batchName,
-        List<SampleRegistrationRequest> registrations) {
+        List<SampleRegistrationInformation> registrations) {
       super(source, fromClient);
       this.batchName = batchName;
       this.validatedSampleMetadata = registrations;
     }
 
-    public List<SampleRegistrationRequest> validatedSampleMetadata() {
+    public List<SampleRegistrationInformation> validatedSampleMetadata() {
       return Collections.unmodifiableList(validatedSampleMetadata);
     }
 

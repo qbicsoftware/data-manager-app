@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.batch.BatchRegistrationService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
@@ -76,7 +76,7 @@ public class SampleRegistrationServiceV2 {
 
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public CompletableFuture<Void> registerSamples(Collection<SampleRegistrationRequest> requests, ProjectId projectId, String batchName,
+  public CompletableFuture<Void> registerSamples(Collection<SampleRegistrationInformation> requests, ProjectId projectId, String batchName,
       ExperimentReference experimentReference) throws RegistrationException {
 
     var validationResults = requests.stream().map(request -> validationService.validateNewSample(

@@ -10,8 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
@@ -315,12 +315,13 @@ public interface AsyncProjectService {
    * Currently, permits:
    *
    * <ul>
-   *   <li>{@link SampleRegistrationRequest}</li>
+   *   <li>{@link SampleRegistrationInformation}</li>
+   *   <li>{@link SampleUpdateInformation}</li>
    * </ul>
    *
    * @since 1.10.0
    */
-  sealed interface ValidationRequestBody permits SampleRegistrationRequest {
+  sealed interface ValidationRequestBody permits SampleRegistrationInformation, SampleUpdateInformation {
 
   }
 
@@ -679,12 +680,12 @@ public interface AsyncProjectService {
    * A service request to create one or more new samples for a project.
    *
    * @param projectId the project ID of the project the samples shall be created for
-   * @param requests  a collection of {@link life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest} items
+   * @param requests  a collection of {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleCreationRequest(String projectId, Collection<life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest> requests) {
+  record SampleRegistrationRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
 
-    public SampleCreationRequest(String projectId, Collection<life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest> requests) {
+    public SampleRegistrationRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -694,12 +695,12 @@ public interface AsyncProjectService {
    * A service request to update one or more samples in a project.
    *
    * @param projectId the project ID of the project the samples shall be updated in
-   * @param requests  a collection for {@link SampleUpdate} items
+   * @param requests  a collection for {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+  record SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
 
-    public SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+    public SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -719,6 +720,39 @@ public interface AsyncProjectService {
 
   /**
    * A simple container for sample registration information of an individual sample to register.
+
+   * @param sampleName           the sample name
+   * @param biologicalReplicate  the biological replicate label given
+   * @param condition            the String representation of a condition
+   * @param species              the String representation of a species with CURIE
+   * @param specimen             the String representation of a specimen with CURIE
+   * @param analyte              the String representation of an analyte with CURIE
+   * @param analysisMethod       the String representation of the analysis method
+   * @param comment              a users comment
+   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+   *                             representation
+   * @param experimentId         the experiment ID of the experiment the sample should be registered
+   *                             to
+   * @param projectId            the project ID of the project the experiment belongs to
+   * @since 1.10.0
+   */
+  record SampleRegistrationInformation(
+      String sampleName,
+      String biologicalReplicate,
+      String condition,
+      String species,
+      String specimen,
+      String analyte,
+      String analysisMethod,
+      String comment,
+      Map<String, String> confoundingVariables,
+      String experimentId,
+      String projectId
+  ) implements ValidationRequestBody {}
+
+
+  /**
+   * A simple container for sample update information of an individual sample to register.
    *
    * @param sampleCode           the sample ID that is known to the user
    * @param sampleName           the sample name
@@ -736,7 +770,7 @@ public interface AsyncProjectService {
    * @param projectId            the project ID of the project the experiment belongs to
    * @since 1.10.0
    */
-  record SampleRegistrationRequest(
+  record SampleUpdateInformation(
       String sampleCode,
       String sampleName,
       String biologicalReplicate,

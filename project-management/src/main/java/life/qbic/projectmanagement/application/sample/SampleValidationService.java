@@ -4,7 +4,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -29,34 +30,35 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResultWithPayload<SampleMetadata> validateSample(
-      SampleRegistrationRequest registration, ProjectId projectId) {
-    if (registration.sampleCode() == null || registration.sampleCode().isBlank()) {
-      return validateNewSample(registration.sampleName(),
-          registration.biologicalReplicate(),
-          registration.condition(),
-          registration.species(),
-          registration.specimen(),
-          registration.analyte(),
-          registration.analysisMethod(),
-          registration.comment(),
-          registration.confoundingVariables(),
-          registration.experimentId(),
-          registration.projectId());
-    }
-    return validateExistingSample(
-        registration.sampleCode(),
-        registration.sampleName(),
-        registration.biologicalReplicate(),
-        registration.condition(),
-        registration.species(),
-        registration.specimen(),
-        registration.analyte(),
-        registration.analysisMethod(),
-        registration.comment(),
-        registration.confoundingVariables(),
-        registration.experimentId(),
-        registration.projectId());
+  public ValidationResultWithPayload<SampleMetadata> validateNewSample(
+      SampleRegistrationInformation information, ProjectId projectId) {
+      return validateNewSample(information.sampleName(),
+          information.biologicalReplicate(),
+          information.condition(),
+          information.species(),
+          information.specimen(),
+          information.analyte(),
+          information.analysisMethod(),
+          information.comment(),
+          information.confoundingVariables(),
+          information.experimentId(),
+          information.projectId());
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public ValidationResultWithPayload<SampleMetadata> validateExisingSample(
+      SampleUpdateInformation information, ProjectId projectId) {
+    return validateNewSample(information.sampleName(),
+        information.biologicalReplicate(),
+        information.condition(),
+        information.species(),
+        information.specimen(),
+        information.analyte(),
+        information.analysisMethod(),
+        information.comment(),
+        information.confoundingVariables(),
+        information.experimentId(),
+        information.projectId());
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
