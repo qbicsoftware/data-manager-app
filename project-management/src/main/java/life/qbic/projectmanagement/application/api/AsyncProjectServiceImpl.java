@@ -20,6 +20,8 @@ import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
+import life.qbic.projectmanagement.application.api.template.TemplateService;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -58,14 +60,20 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final Scheduler scheduler;
   private final SampleInformationService sampleInfoService;
   private final DigitalObjectFactory digitalObjectFactory;
+  private final TemplateService templateService;
 
-  public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
+  public AsyncProjectServiceImpl(
+      @Autowired ProjectInformationService projectService,
       @Autowired SampleInformationService sampleInfoService,
-      @Autowired Scheduler scheduler, @Autowired DigitalObjectFactory digitalObjectFactory) {
+      @Autowired Scheduler scheduler,
+      @Autowired DigitalObjectFactory digitalObjectFactory,
+      @Autowired TemplateService templateService
+  ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
     this.digitalObjectFactory = Objects.requireNonNull(digitalObjectFactory);
+    this.templateService = Objects.requireNonNull(templateService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -239,8 +247,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
       MimeType mimeType) {
-
-    throw new RuntimeException("not implemented");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+            () -> templateService.sampleRegistrationTemplate(projectId, experimentId, mimeType)))
+        .subscribeOn(scheduler)
+        .transform(original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+            securityContext));
   }
 
   @Override

@@ -1,10 +1,10 @@
 package life.qbic.projectmanagement.application.api.template;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnsupportedMimeTypeException;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleRegistration;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -91,11 +91,18 @@ public class TemplateService {
     var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
     var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
         .toList();
-    List<ConfoundingVariableInformation> confoundingVariables = confVariableService.listConfoundingVariablesForExperiment(
+    var confoundingVariables = confVariableService.listConfoundingVariablesForExperiment(
             projectId, new ExperimentReference(experimentId)).stream()
         .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
         .toList();
-    return null;
+    return templateProvider.getTemplate(new SampleRegistration(
+        analysisMethods,
+        conditions,
+        analytes,
+        species,
+        specimen,
+        confoundingVariables
+    ));
   }
 
   private boolean isSupportedMimeType(MimeType mimeType) {
@@ -104,6 +111,7 @@ public class TemplateService {
 
 
   static class NoSuchExperimentException extends RuntimeException {
+
     public NoSuchExperimentException() {
       super();
     }
