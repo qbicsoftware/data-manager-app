@@ -11,7 +11,9 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +27,9 @@ class AsyncProjectServiceImplTest {
   ProjectInformationService projectServiceMock = mock(ProjectInformationService.class);
   SampleInformationService sampleServiceMock = mock(SampleInformationService.class);
   DigitalObjectFactory digitalObjectFactory = mock(DigitalObjectFactory.class);
+  SampleValidationService sampleValidationService = mock(SampleValidationService.class);
+  MeasurementValidationService measurementValidationService = mock(
+      MeasurementValidationService.class);
 
   @BeforeEach
   void setUp() {
@@ -43,7 +48,10 @@ class AsyncProjectServiceImplTest {
 
     AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
         sampleServiceMock,
-        Schedulers.boundedElastic(), digitalObjectFactory);
+        Schedulers.boundedElastic(),
+        digitalObjectFactory,
+        sampleValidationService,
+        measurementValidationService);
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("neq title", "new objective");
@@ -74,7 +82,10 @@ class AsyncProjectServiceImplTest {
 
     AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
         sampleServiceMock,
-        Schedulers.boundedElastic(), digitalObjectFactory);
+        Schedulers.boundedElastic(),
+        digitalObjectFactory,
+        sampleValidationService,
+        measurementValidationService);
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("new title", "new objective");

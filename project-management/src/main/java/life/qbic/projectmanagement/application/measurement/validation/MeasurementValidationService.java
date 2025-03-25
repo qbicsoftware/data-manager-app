@@ -4,9 +4,14 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.ValidationResult;
-import life.qbic.projectmanagement.application.api.NGSMeasurementMetadata;
-import life.qbic.projectmanagement.application.api.ProteomicsMeasurementMetadata;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,12 +34,15 @@ public class MeasurementValidationService {
   private final MeasurementNGSValidator measurementNgsValidator;
 
   private final MeasurementProteomicsValidator pxpValidator;
+  private final MeasurementProteomicsValidator measurementProteomicsValidator;
 
   @Autowired
   public MeasurementValidationService(MeasurementNGSValidator measurementNgsValidator,
-      MeasurementProteomicsValidator pxpValidator) {
+      MeasurementProteomicsValidator pxpValidator,
+      MeasurementProteomicsValidator measurementProteomicsValidator) {
     this.measurementNgsValidator = measurementNgsValidator;
     this.pxpValidator = pxpValidator;
+    this.measurementProteomicsValidator = measurementProteomicsValidator;
   }
 
   private static Domain determineDomain(Collection<String> propertyTypes) {
@@ -51,6 +59,92 @@ public class MeasurementValidationService {
   public ValidationResult validateNGS(NGSMeasurementMetadata ngsMeasurementMetadata,
       ProjectId projectId) {
     return measurementNgsValidator.validate(ngsMeasurementMetadata, projectId);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validateNGS(MeasurementRegistrationInformationNGS registration, ProjectId projectId) {
+    var metadata = new NGSMeasurementMetadata(
+        null,
+        registration.sampleCodes().stream().map(SampleCode::create).toList(),
+        registration.organisationId(),
+        registration.instrumentCURI(),
+        registration.facility(),
+        registration.sequencingReadType(),
+        registration.libraryKit(),
+        registration.flowCell(),
+        registration.sequencingRunProtocol(),
+        registration.samplePoolGroup(),
+        registration.indexI7(),
+        registration.indexI5(),
+        registration.comment()
+    );
+    return measurementNgsValidator.validate(metadata, projectId);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validateNGS(MeasurementUpdateInformationNGS update, ProjectId projectId) {
+    var metadata = new NGSMeasurementMetadata(
+        update.measurementCode(),
+        update.sampleCodes().stream().map(SampleCode::create).toList(),
+        update.organisationId(),
+        update.instrumentCURI(),
+        update.facility(),
+        update.sequencingReadType(),
+        update.libraryKit(),
+        update.flowCell(),
+        update.sequencingRunProtocol(),
+        update.samplePoolGroup(),
+        update.indexI7(),
+        update.indexI5(),
+        update.comment()
+    );
+    return measurementNgsValidator.validateUpdate(metadata, projectId);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validatePxp(MeasurementRegistrationInformationPxP registration, ProjectId projectId) {
+    var metadata = new ProteomicsMeasurementMetadata(
+        null,
+        registration.sampleCode(),
+        registration.technicalReplicateName(),
+        registration.organisationId(),
+        registration.msDeviceCURIE(),
+        registration.samplePoolGroup(),
+        registration.facility(),
+        registration.fractionName(),
+        registration.digestionEnzyme(),
+        registration.digestionMethod(),
+        registration.enrichmentMethod(),
+        registration.injectionVolume(),
+        registration.lcColumn(),
+        registration.lcmsMethod(),
+        registration.labeling(),
+        registration.comment()
+    );
+    return measurementProteomicsValidator.validate(metadata, projectId);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validatePxp(MeasurementUpdateInformationPxP update, ProjectId projectId) {
+    var metadata = new ProteomicsMeasurementMetadata(
+        update.measurementId(),
+        update.sampleCode(),
+        update.technicalReplicateName(),
+        update.organisationId(),
+        update.msDeviceCURIE(),
+        update.samplePoolGroup(),
+        update.facility(),
+        update.fractionName(),
+        update.digestionEnzyme(),
+        update.digestionMethod(),
+        update.enrichmentMethod(),
+        update.injectionVolume(),
+        update.lcColumn(),
+        update.lcmsMethod(),
+        update.labeling(),
+        update.comment()
+    );
+    return measurementProteomicsValidator.validateUpdate(metadata, projectId);
   }
 
   /**
