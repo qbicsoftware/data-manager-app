@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
 import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
 import life.qbic.datamanager.files.parsing.ParsingResult;

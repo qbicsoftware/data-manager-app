@@ -239,6 +239,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
       MimeType mimeType) {
+
     throw new RuntimeException("not implemented");
   }
 
