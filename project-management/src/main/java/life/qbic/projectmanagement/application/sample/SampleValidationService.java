@@ -46,7 +46,7 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResultWithPayload<SampleMetadata> validateExisingSample(
+  public ValidationResultWithPayload<SampleMetadata> validateExistingSample(
       SampleUpdateInformation information, ProjectId projectId) {
     return validateNewSample(information.sampleName(),
         information.biologicalReplicate(),

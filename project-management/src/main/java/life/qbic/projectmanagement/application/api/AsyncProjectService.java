@@ -14,8 +14,10 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
@@ -321,7 +323,9 @@ public interface AsyncProjectService {
    *
    * @since 1.10.0
    */
-  sealed interface ValidationRequestBody permits SampleRegistrationInformation, SampleUpdateInformation {
+  sealed interface ValidationRequestBody permits MeasurementRegistrationInformationNGS,
+      MeasurementRegistrationInformationPxP, MeasurementUpdateInformationNGS,
+      MeasurementUpdateInformationPxP, SampleRegistrationInformation, SampleUpdateInformation {
 
   }
 
@@ -683,9 +687,11 @@ public interface AsyncProjectService {
    * @param requests  a collection of {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleRegistrationRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
+  record SampleRegistrationRequest(String projectId,
+                                   Collection<SampleRegistrationInformation> requests) {
 
-    public SampleRegistrationRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
+    public SampleRegistrationRequest(String projectId,
+        Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -700,7 +706,8 @@ public interface AsyncProjectService {
    */
   record SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
 
-    public SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
+    public SampleUpdateRequest(String projectId,
+        Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -720,7 +727,7 @@ public interface AsyncProjectService {
 
   /**
    * A simple container for sample registration information of an individual sample to register.
-
+   *
    * @param sampleName           the sample name
    * @param biologicalReplicate  the biological replicate label given
    * @param condition            the String representation of a condition
@@ -748,8 +755,8 @@ public interface AsyncProjectService {
       Map<String, String> confoundingVariables,
       String experimentId,
       String projectId
-  ) implements ValidationRequestBody {}
-
+  ) implements ValidationRequestBody {
+  }
 
   /**
    * A simple container for sample update information of an individual sample to register.
@@ -783,7 +790,75 @@ public interface AsyncProjectService {
       Map<String, String> confoundingVariables,
       String experimentId,
       String projectId
-  ) implements ValidationRequestBody {}
+  ) implements ValidationRequestBody {
+
+  }
+
+
+
+  record MeasurementRegistrationInformationNGS(
+      Collection<String> sampleCodes,
+      String organisationId, String instrumentCURI, String facility,
+      String sequencingReadType, String libraryKit, String flowCell,
+      String sequencingRunProtocol, String samplePoolGroup,
+      String indexI7, String indexI5,
+      String comment
+  ) implements ValidationRequestBody {
+  }
+
+  record MeasurementUpdateInformationNGS(
+      String measurementCode,
+      Collection<String> sampleCodes,
+      String organisationId, String instrumentCURI,
+      String facility,
+      String sequencingReadType, String libraryKit,
+      String flowCell,
+      String sequencingRunProtocol, String samplePoolGroup,
+      String indexI7, String indexI5,
+      String comment) implements ValidationRequestBody {
+  }
+
+  record MeasurementRegistrationInformationPxP(
+      SampleCode sampleCode,
+      String technicalReplicateName,
+      String organisationId,
+      String msDeviceCURIE,
+      String samplePoolGroup,
+      String facility,
+      String fractionName,
+      String digestionEnzyme,
+      String digestionMethod,
+      String enrichmentMethod,
+      String injectionVolume,
+      String lcColumn,
+      String lcmsMethod,
+      Labeling labeling,
+      String comment
+  ) implements ValidationRequestBody {
+
+  }
+
+  record MeasurementUpdateInformationPxP(
+      String measurementId,
+      SampleCode sampleCode,
+      String technicalReplicateName,
+      String organisationId,
+      String msDeviceCURIE,
+      String samplePoolGroup,
+      String facility,
+      String fractionName,
+      String digestionEnzyme,
+      String digestionMethod,
+      String enrichmentMethod,
+      String injectionVolume,
+      String lcColumn,
+      String lcmsMethod,
+      Labeling labeling,
+      String comment
+  ) implements ValidationRequestBody {
+
+  }
+
 
   /**
    * A service response from a project creation request

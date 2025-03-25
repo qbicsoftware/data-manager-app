@@ -11,6 +11,7 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import org.junit.jupiter.api.AfterEach;
@@ -27,6 +28,8 @@ class AsyncProjectServiceImplTest {
   SampleInformationService sampleServiceMock = mock(SampleInformationService.class);
   DigitalObjectFactory digitalObjectFactory = mock(DigitalObjectFactory.class);
   SampleValidationService sampleValidationService = mock(SampleValidationService.class);
+  MeasurementValidationService measurementValidationService = mock(
+      MeasurementValidationService.class);
 
   @BeforeEach
   void setUp() {
@@ -47,7 +50,8 @@ class AsyncProjectServiceImplTest {
         sampleServiceMock,
         Schedulers.boundedElastic(),
         digitalObjectFactory,
-        sampleValidationService);
+        sampleValidationService,
+        measurementValidationService);
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("neq title", "new objective");
@@ -80,7 +84,8 @@ class AsyncProjectServiceImplTest {
         sampleServiceMock,
         Schedulers.boundedElastic(),
         digitalObjectFactory,
-        sampleValidationService);
+        sampleValidationService,
+        measurementValidationService);
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("new title", "new objective");

@@ -11,16 +11,21 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -30,6 +35,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
@@ -61,16 +67,19 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final SampleInformationService sampleInfoService;
   private final DigitalObjectFactory digitalObjectFactory;
   private final SampleValidationService sampleValidationService;
+  private final MeasurementValidationService measurementValidationService;
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
-      @Autowired SampleInformationService sampleInfoService,
-      @Autowired Scheduler scheduler, @Autowired DigitalObjectFactory digitalObjectFactory,
-      @Autowired SampleValidationService sampleValidationService) {
+      @Autowired SampleInformationService sampleInfoService, @Autowired Scheduler scheduler,
+      @Autowired DigitalObjectFactory digitalObjectFactory,
+      @Autowired SampleValidationService sampleValidationService,
+      @Autowired MeasurementValidationService measurementValidationService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
     this.digitalObjectFactory = Objects.requireNonNull(digitalObjectFactory);
     this.sampleValidationService = Objects.requireNonNull(sampleValidationService);
+    this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -89,8 +98,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           updateProjectDesign(projectId, projectDesign, request.requestId());
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return response
-        .transform(original -> writeSecurityContext(original, securityContext))
+    return response.transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -104,8 +112,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ByteBuffer> roCrateSummary(String projectId) {
     var securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(Flux.defer(() -> getByteBufferFlux(projectId)))
-        .transform(original -> writeSecurityContextMany(original, securityContext));
+    return applySecurityContextMany(Flux.defer(() -> getByteBufferFlux(projectId))).transform(
+        original -> writeSecurityContextMany(original, securityContext));
   }
 
   // Requires the SecurityContext to work
@@ -116,10 +124,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     }
     var project = search.get();
     var digitalObject = digitalObjectFactory.summary(convertToResearchProject(project));
-    return Flux
-        .create((FluxSink<ByteBuffer> emitter) -> emitByteBufferFromObject(emitter, digitalObject),
-            OverflowStrategy.BUFFER)
-        .subscribeOn(VirtualThreadScheduler.getScheduler());
+    return Flux.create(
+        (FluxSink<ByteBuffer> emitter) -> emitByteBufferFromObject(emitter, digitalObject),
+        OverflowStrategy.BUFFER).subscribeOn(VirtualThreadScheduler.getScheduler());
   }
 
   /**
@@ -172,9 +179,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(Flux.defer(() ->
-        fetchSamplePreviews(projectId, experimentId, offset, limit, sortOrders, filter)))
-        .subscribeOn(scheduler)
+    return applySecurityContextMany(Flux.defer(
+        () -> fetchSamplePreviews(projectId, experimentId, offset, limit, sortOrders,
+            filter))).subscribeOn(scheduler)
         .transform(original -> writeSecurityContextMany(original, securityContext))
         .retryWhen(defaultRetryStrategy());
   }
@@ -182,10 +189,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Flux<SamplePreview> fetchSamplePreviews(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
     try {
-      return Flux.fromIterable(
-          sampleInfoService.queryPreview(ProjectId.parse(projectId),
-              ExperimentId.parse(experimentId), offset, limit,
-              sortOrders, filter));
+      return Flux.fromIterable(sampleInfoService.queryPreview(ProjectId.parse(projectId),
+          ExperimentId.parse(experimentId), offset, limit, sortOrders, filter));
     } catch (Exception e) {
       log.error("Error getting sample previews", e);
       return Flux.error(new RequestFailedException("Error getting sample previews"));
@@ -196,8 +201,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Flux<Sample> getSamples(String projectId, String experimentId)
       throws RequestFailedException {
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(Flux.defer(() -> fetchSamples(projectId, experimentId)))
-        .subscribeOn(scheduler)
+    return applySecurityContextMany(
+        Flux.defer(() -> fetchSamples(projectId, experimentId))).subscribeOn(scheduler)
         .transform(original -> writeSecurityContextMany(original, securityContext))
         .retryWhen(defaultRetryStrategy());
   }
@@ -206,8 +211,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Flux<Sample> fetchSamples(String projectId, String experimentId) {
     try {
       return Flux.fromIterable(
-          sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId),
-              experimentId));
+          sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId), experimentId));
     } catch (org.springframework.security.access.AccessDeniedException e) {
       log.error("Error getting samples", e);
       return Flux.error(new AccessDeniedException(ACCESS_DENIED));
@@ -260,32 +264,126 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
-    switch (request.requestBody()) {
-      case SampleRegistrationInformation r:
-        return validateSampleMetadata(r, request.requestId(), request.projectId());
-      default:
-        return Mono.error(new RequestFailedException("Invalid request"));
-    }
+    return switch (request.requestBody()) {
+      // Sample Registration
+      case SampleRegistrationInformation req ->
+          validateSampleMetadata(req, request.requestId(), request.projectId());
+      // Sample Update
+      case SampleUpdateInformation req ->
+          validateSampleMetadataUpdate(req, request.requestId(), request.projectId());
+      // Measurement Registration - NGS
+      case MeasurementRegistrationInformationNGS req ->
+          validateMeasurementMetadataNGS(req, request.requestId(), request.projectId());
+      // Measurement Update - NGS
+      case MeasurementUpdateInformationNGS req ->
+          validateMeasurementMetadataNGSUpdate(req, request.requestId(), request.projectId());
+      // Measurement Registration - Proteomics
+      case MeasurementRegistrationInformationPxP req ->
+          validateMeasurementMetadataPxP(req, request.requestId(), request.projectId());
+      // Measurement Update - Proteomics
+      case MeasurementUpdateInformationPxP req ->
+          validateMeasurementMetadataPxPUpdate(req, request.requestId(), request.projectId());
+      default -> Mono.error(new RequestFailedException("Invalid request"));
+    };
   }
 
 
-  private Mono<ValidationResponse> validateSampleMetadata(SampleRegistrationInformation registration,
+  /**
+   * Ensures that the security context is applied in the correct order and written when it is
+   * required.
+   * <p>
+   * Also ensures that the {@link Callable} is executed on the {@link VirtualThreadScheduler} with
+   * {@link Mono#subscribeOn(Scheduler)}.
+   *
+   * @param securityApplicant
+   * @param serviceCallable
+   * @param converter
+   * @param transformer
+   * @return a {@link Mono} containing the
+   * {@link life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse}
+   */
+  private Mono<ValidationResponse> validateMetadata(
+      UnaryOperator<Mono<ValidationResponse>> securityApplicant,
+      Callable<ValidationResult> serviceCallable,
+      Function<ValidationResult, ValidationResponse> converter,
+      Function<Mono<ValidationResponse>, Publisher<ValidationResponse>> transformer) {
+    return securityApplicant.apply(Mono.fromCallable(serviceCallable).map(converter))
+        .transform(transformer).subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataPxP(
+      MeasurementRegistrationInformationPxP registration, String requestId,
+      String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataPxPUpdate(
+      MeasurementUpdateInformationPxP update, String requestId,
+      String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataNGS(
+      MeasurementRegistrationInformationNGS registration, String requestId, String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validateNGS(registration, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataNGSUpdate(
+      MeasurementUpdateInformationNGS update, String requestId, String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validateNGS(update, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateSampleMetadataUpdate(SampleUpdateInformation update,
       String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
-    return ReactiveSecurityContextUtils.applySecurityContext(
-            Mono.fromCallable(
-                    () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId)).validationResult()
-                )
-                .map(validationResult -> new ValidationResponse(requestId, validationResult))
-        )
-        .transform(original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
-            securityContext)).subscribeOn(scheduler);
+    return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
+        () -> sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId))
+            .validationResult(),
+        result -> new ValidationResponse(requestId, result),
+        original -> ReactiveSecurityContextUtils.writeSecurityContext(original, securityContext)
+    );
   }
 
+  private Mono<ValidationResponse> validateSampleMetadata(
+      SampleRegistrationInformation registration, String requestId, String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
+        () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId))
+            .validationResult(),
+        result -> new ValidationResponse(requestId, result),
+        original -> ReactiveSecurityContextUtils.writeSecurityContext(original, securityContext));
+  }
 
   @Override
-  public Mono<ExperimentUpdateResponse> update(
-      ExperimentUpdateRequest request) {
+  public Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {
 
       case ExperimentDescription experimentDescription ->
@@ -301,8 +399,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     };
 
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return response
-        .transform(original -> writeSecurityContext(original, securityContext))
+    return response.transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -311,8 +408,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
-      String experimentId,
-      ExperimentDescription experimentDescription) {
+      String experimentId, ExperimentDescription experimentDescription) {
     //TODO implement
     throw new RuntimeException("Not implemented");
   }
@@ -320,22 +416,20 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design,
       String requestId) {
-    return applySecurityContext(
-        Mono.<ProjectUpdateResponse>create(sink -> {
-          try {
-            var id = ProjectId.parse(projectId);
-            projectService.updateTitle(id, design.title());
-            projectService.updateObjective(id, design.objective());
-            sink.success(new ProjectUpdateResponse(projectId, design, requestId));
-          } catch (IllegalArgumentException e) {
-            sink.error(new RequestFailedException("Invalid project id: " + projectId));
-          } catch (org.springframework.security.access.AccessDeniedException e) {
-            sink.error(new AccessDeniedException(ACCESS_DENIED));
-          } catch (RuntimeException e) {
-            sink.error(new RequestFailedException("Update project design failed", e));
-          }
-        })
-    ).subscribeOn(
+    return applySecurityContext(Mono.<ProjectUpdateResponse>create(sink -> {
+      try {
+        var id = ProjectId.parse(projectId);
+        projectService.updateTitle(id, design.title());
+        projectService.updateObjective(id, design.objective());
+        sink.success(new ProjectUpdateResponse(projectId, design, requestId));
+      } catch (IllegalArgumentException e) {
+        sink.error(new RequestFailedException("Invalid project id: " + projectId));
+      } catch (org.springframework.security.access.AccessDeniedException e) {
+        sink.error(new AccessDeniedException(ACCESS_DENIED));
+      } catch (RuntimeException e) {
+        sink.error(new RequestFailedException("Update project design failed", e));
+      }
+    })).subscribeOn(
         scheduler); //we must not expose the blocking behaviour outside of this method, thus we use a non-blocking scheduler
   }
 
