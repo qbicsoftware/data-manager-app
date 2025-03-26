@@ -31,6 +31,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -67,7 +68,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired SampleInformationService sampleInfoService,
       @Autowired Scheduler scheduler,
       @Autowired DigitalObjectFactory digitalObjectFactory,
-      @Autowired TemplateService templateService
+      @Autowired @Qualifier("templateServiceV2") TemplateService templateService
   ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);

@@ -26,7 +26,7 @@ import org.springframework.util.MimeType;
  *
  * @since <version tag>
  */
-@Service
+@Service("templateServiceV2")
 public class TemplateService {
 
   private final ExperimentInformationService experimentService;
@@ -45,9 +45,8 @@ public class TemplateService {
   }
 
   /**
-   * Creates a {@link XSSFWorkbook} that contains a template
-   * {@link org.apache.poi.xssf.usermodel.XSSFSheet} that can be used to register one or more sample
-   * batches for an experiment.
+   * Creates a {@link DigitalObject} that contains a template in the provided {@link MimeType} that
+   * can be used to register one or more sample batches for an experiment.
    * <p>
    * The workbook contains two sheets. The first one is for the user input and contains cell with
    * data-validation, e.g. a list of available conditions in the experiment.
@@ -66,7 +65,8 @@ public class TemplateService {
    *                     template shall be generated
    * @param experimentId the experiment id of the experiment to create the template for
    * @return a pre-configured template workbook
-   * @throws NoSuchExperimentException if no experiment with the provided id can be found.
+   * @throws NoSuchExperimentException    if no experiment with the provided id can be found.
+   * @throws UnsupportedMimeTypeException if there is no support for the requested {@link MimeType}
    * @since 1.5.0
    */
   @PreAuthorize(

@@ -16,6 +16,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
+import java.io.IOException;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
-import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
+import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
@@ -44,6 +45,8 @@ import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -55,8 +58,8 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.MimeType;
 
 /**
  * Sample Information Main Component
@@ -74,6 +77,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  private static final MimeType OPEN_XML = MimeType.valueOf(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   @Serial
   private static final long serialVersionUID = 3778218989387044758L;
   private static final Logger log = LoggerFactory.logger(SampleInformationMain.class);
@@ -96,6 +101,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient TemplateService templateService;
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private final transient AsyncProjectService asyncProjectService;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -108,7 +114,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory notificationFactory,
       SampleValidationService sampleValidationService,
-      TemplateService templateService, SampleRegistrationServiceV2 sampleRegistrationServiceV2) {
+      TemplateService templateService,
+      SampleRegistrationServiceV2 sampleRegistrationServiceV2,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.downloadComponent = new DownloadComponent();
 
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -155,6 +163,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
     add(downloadComponent);
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -195,21 +204,52 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .map(ProjectOverview::projectCode).orElseThrow();
     var experimentName = experimentInformationService.find(projectId.value(), experimentId)
         .map(Experiment::getName).orElseThrow();
-    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
-      @Override
-      public String getFilename() {
-        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
-            experimentName,
-            "sample information",
-            "xlsx");
-      }
 
-      @Override
-      public Workbook getWorkbook() {
-        return templateService.sampleBatchInformationXLSXTemplate(projectId.value(),
-            experimentId.value());
-      }
-    });
+    asyncProjectService.sampleRegistrationTemplate(projectId.value(), experimentId.value(),
+        OPEN_XML).doOnSuccess(resource ->
+        triggerDownload(resource,
+            FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
+                experimentName,
+                "sample information",
+                "xlsx")
+        )).doOnError(this::handleError).subscribe();
+  }
+
+  private void handleError(Throwable throwable) {
+    switch (throwable) {
+      case AccessDeniedException ignored:
+        handleAccessDeniedError();
+        return;
+      default:
+        handleUnexpectedError(throwable);
+    }
+  }
+
+  private void handleUnexpectedError(Throwable throwable) {
+    throw new ApplicationException("We are sorry, an unexpected error occurred.", throwable);
+  }
+
+  private void handleAccessDeniedError() {
+    getUI().ifPresent(ui -> ui.access(() -> messageSourceNotificationFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
+  }
+
+  private void triggerDownload(DigitalObject resource, String filename) {
+    getUI().ifPresent(
+        ui -> ui.access(() -> downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
+          @Override
+          public byte[] getBytes() {
+            try (var content = resource.content()) {
+              return content.readAllBytes();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+
+          @Override
+          public String getFilename() {
+            return filename;
+          }
+        })));
   }
 
   private void onRegisterBatchClicked() {
@@ -225,7 +265,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow();
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
-        sampleValidationService, templateService, experimentId.value(),
+        sampleValidationService, asyncProjectService, messageSourceNotificationFactory, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {
