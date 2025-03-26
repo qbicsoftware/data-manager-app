@@ -6,9 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.Optional;
-import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
@@ -37,20 +35,45 @@ public class TemplateProviderOpenXML implements TemplateProvider {
   public DigitalObject getTemplate(TemplateRequest request) {
     return switch (request) {
       case SampleRegistration req -> getTemplate(req);
+      case SampleUpdate req -> getTemplate(req);
     };
   }
 
-  private DigitalObject getTemplate(SampleRegistration req) {
-    WorkbookFactory factory = new SampleRegisterFactory(
+  private Workbook forRequest(SampleRegistration req) {
+    return new SampleRegisterFactory(
         req.analysisMethods(),
         req.conditions(),
         req.analytes(),
         req.species(),
         req.specimen(),
-        req.confoundingVariables());
+        req.confoundingVariables()).createWorkbook();
+  }
 
-    return new TemplateContent(factory.createWorkbook(), providedMimeType(),
-        FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), "my project", "whatever", "xlsx"));
+  private Workbook forRequest(SampleUpdate req) {
+    return new SampleUpdateFactory(
+        req.samplesInBatch(),
+        req.analysisMethods(),
+        req.conditions(),
+        req.analytes(),
+        req.species(),
+        req.specimen(),
+        req.experimentalGroups(),
+        req.confoundingVariables(),
+        req.confoundingVariableLevels()).createWorkbook();
+  }
+
+  private DigitalObject getTemplate(SampleRegistration req) {
+    var workbook = forRequest(req);
+
+    return new TemplateContent(workbook, providedMimeType(),
+        "sample registration template");
+  }
+
+  private DigitalObject getTemplate(SampleUpdate req) {
+    var workbook = forRequest(req);
+
+    return new TemplateContent(workbook, providedMimeType(),
+        "sample update template");
   }
 
   private record TemplateContent(Workbook workbook, MimeType type, String templateName) implements

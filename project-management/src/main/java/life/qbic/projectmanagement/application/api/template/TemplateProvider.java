@@ -2,8 +2,10 @@ package life.qbic.projectmanagement.application.api.template;
 
 import java.util.List;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
-import life.qbic.projectmanagement.application.api.template.TemplateProvider.TemplateRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.util.MimeType;
 
 /**
@@ -19,15 +21,34 @@ public interface TemplateProvider {
 
   DigitalObject getTemplate(TemplateRequest request);
 
-  sealed interface TemplateRequest permits SampleRegistration{
+  sealed interface TemplateRequest permits SampleRegistration, SampleUpdate {
+
   }
 
   record SampleRegistration(
       List<String> analysisMethods,
       List<String> conditions,
-      List<String> analytes, List<String> species, List<String> specimen,
-      List<ConfoundingVariableInformation> confoundingVariables) implements TemplateRequest {}
+      List<String> analytes,
+      List<String> species,
+      List<String> specimen,
+      List<ConfoundingVariableInformation> confoundingVariables
+  ) implements TemplateRequest {
 
+  }
+
+  record SampleUpdate(
+      List<Sample> samplesInBatch,
+      List<String> analysisMethods,
+      List<String> conditions,
+      List<String> analytes,
+      List<String> species,
+      List<String> specimen,
+      List<ExperimentalGroup> experimentalGroups,
+      List<ConfoundingVariableInformation> confoundingVariables,
+      List<ConfoundingVariableLevel> confoundingVariableLevels
+  ) implements TemplateRequest {
+
+  }
 
 }
 
