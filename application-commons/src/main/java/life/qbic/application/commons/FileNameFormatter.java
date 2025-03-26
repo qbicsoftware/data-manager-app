@@ -41,7 +41,7 @@ public class FileNameFormatter {
   }
 
   private static String replaceSpaces(String projectPart) {
-    return projectPart.replaceAll("\\s", SPACE_REPLACEMENT);
+    return projectPart.trim().replaceAll("\\s", SPACE_REPLACEMENT);
   }
 
   private static String replaceSlashes(String input) {

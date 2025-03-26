@@ -265,7 +265,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       service.sampleRegistrationTemplate(projectId, experimentId,
           OPEN_XML).doOnSuccess(resource ->
           triggerDownload(resource,
-              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, " sample metadata template",
+              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "sample metadata template",
                   "xlsx")
           )).doOnError(this::handleError).subscribe();
     });

@@ -397,7 +397,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     BatchId batchId = editBatchEvent.batchPreview().batchId();
     String batchLabel = editBatchEvent.batchPreview().batchLabel();
     var editSampleBatchDialog = new EditSampleBatchDialog(
-        sampleValidationService, templateService, batchId, batchLabel, experimentId.value(),
+        sampleValidationService, asyncProjectService, messageSourceNotificationFactory, batchId, batchLabel, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     editSampleBatchDialog.addConfirmListener(event -> {

@@ -265,6 +265,7 @@ public interface AsyncProjectService {
    *
    * @param projectId    the project ID of the project the template should be created for
    * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param batchId
    * @param mimeType     the mime type the digital object should be
    * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
    * @throws AccessDeniedException        if the user has insufficient rights
@@ -274,7 +275,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
-      MimeType mimeType);
+      String batchId, MimeType mimeType);
 
   /**
    * Container of an update request for a service call and part of the
