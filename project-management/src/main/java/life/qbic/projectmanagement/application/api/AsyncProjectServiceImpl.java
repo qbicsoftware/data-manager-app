@@ -268,6 +268,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
+      MimeType mimeType) {
+    return null;
+  }
+
+  @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
     throw new RuntimeException("not implemented");

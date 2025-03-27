@@ -1,11 +1,14 @@
 package life.qbic.projectmanagement.application.api.template;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnsupportedMimeTypeException;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleInformation;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleRegistration;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider.SampleUpdate;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
@@ -17,7 +20,6 @@ import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,6 +36,7 @@ import org.springframework.util.MimeType;
 @Service("templateServiceV2")
 public class TemplateService {
 
+  private static final Logger log = logger(TemplateService.class);
   private final ExperimentInformationService experimentService;
   private final SampleInformationService sampleService;
   private final ConfoundingVariableService confVariableService;
@@ -137,15 +140,17 @@ public class TemplateService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public DigitalObject sampleUpdateTemplate(String projectId, String experimentId, String batchId, MimeType type) {
+  public DigitalObject sampleUpdateTemplate(String projectId, String experimentId, String batchId,
+      MimeType type) {
     if (!isSupportedMimeType(type)) {
       throw new UnsupportedMimeTypeException("Unsupported mime type: " + type);
     }
-    return generateSampleUpdateTemplate(projectId, experimentId, batchId, type);
+    return generateSampleUpdateTemplate(projectId, experimentId, batchId);
   }
 
 
-  private DigitalObject generateSampleUpdateTemplate(String projectId, String experimentId, String batchId, MimeType type) {
+  private DigitalObject generateSampleUpdateTemplate(String projectId, String experimentId,
+      String batchId) {
     var experiment = experimentService.find(projectId, ExperimentId.parse(experimentId))
         .orElseThrow(
             NoSuchExperimentException::new);
@@ -162,8 +167,11 @@ public class TemplateService {
       throw new SampleSearchException();
     });
     var samplesInBatch = samples.getValue().stream()
-        .filter(sample -> sample.assignedBatch().equals(batchId))
+        .filter(sample -> sample.assignedBatch().value().equals(batchId))
         .toList();
+    if (samplesInBatch.isEmpty()) {
+      log.warn("No samples found for experiment during template generation: " + experimentId);
+    }
     var conditions = experiment.getExperimentalGroups().stream()
         .map(ExperimentalGroup::condition)
         .map(PropertyConversion::toString).toList();
@@ -176,7 +184,61 @@ public class TemplateService {
         .toList();
 
     return templateProvider.getTemplate(new SampleUpdate(
-        samplesInBatch,
+        new SampleInformation(
+            samplesInBatch,
+            analysisMethods,
+            conditions,
+            analytes,
+            species,
+            specimen,
+            experimentalGroups,
+            confoundingVariables,
+            confoundingVariableLevels)
+    ));
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public DigitalObject sampleInformationTemplate(String projectId, String experimentId,
+      MimeType type) {
+    if (!isSupportedMimeType(type)) {
+      throw new UnsupportedMimeTypeException("Unsupported mime type: " + type);
+    }
+    return generateSampleInfoTemplate(projectId, experimentId, type);
+  }
+
+  private DigitalObject generateSampleInfoTemplate(String projectId, String experimentId,
+      MimeType type) {
+    if (!isSupportedMimeType(type)) {
+      throw new UnsupportedMimeTypeException("Unsupported mime type: " + type);
+    }
+    var experiment = experimentService.find(projectId, ExperimentId.parse(experimentId))
+        .orElseThrow(
+            NoSuchExperimentException::new);
+    var samples = sampleService.retrieveSamplesForExperiment(
+        ExperimentId.parse(experimentId));
+    var confoundingVariables = confVariableService.listConfoundingVariablesForExperiment(
+            projectId, new ExperimentReference(experimentId)).stream()
+        .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
+        .toList();
+    List<ConfoundingVariableLevel> confoundingVariableLevels = confVariableService.listLevelsForVariables(
+        projectId,
+        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
+    samples.onError(responseCode -> {
+      throw new SampleSearchException();
+    });
+    var conditions = experiment.getExperimentalGroups().stream()
+        .map(ExperimentalGroup::condition)
+        .map(PropertyConversion::toString).toList();
+    var experimentalGroups = experiment.getExperimentalGroups();
+    var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
+    var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
+    var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
+    var analysisMethods = Arrays.stream(AnalysisMethod.values())
+        .map(AnalysisMethod::abbreviation)
+        .toList();
+    return templateProvider.getTemplate(new SampleInformation(
+        samples.getValue().stream().toList(),
         analysisMethods,
         conditions,
         analytes,
@@ -188,11 +250,13 @@ public class TemplateService {
     ));
   }
 
+
   private boolean isSupportedMimeType(MimeType mimeType) {
     return mimeType.equalsTypeAndSubtype(templateProvider.providedMimeType());
   }
 
   static class SampleSearchException extends RuntimeException {
+
     public SampleSearchException() {
       super();
     }

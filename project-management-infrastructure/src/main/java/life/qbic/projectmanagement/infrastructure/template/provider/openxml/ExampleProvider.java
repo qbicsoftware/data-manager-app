@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure.api.template;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml;
 
 /**
  * TODO!
@@ -11,9 +11,7 @@ package life.qbic.projectmanagement.infrastructure.api.template;
 public interface ExampleProvider {
 
   record Helper(String exampleValue, String description) {
-
   }
 
   Helper getHelper(Column column);
-
 }

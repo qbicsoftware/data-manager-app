@@ -1,33 +1,30 @@
-package life.qbic.projectmanagement.infrastructure.api.template;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.column;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import life.qbic.projectmanagement.infrastructure.api.template.ExampleProvider.Helper;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
 
-/**
- * <b>Sample Register Columns</b>
- *
- * <p>Enumeration of the columns shown in the file used for sample registration
- * in the context of sample batch file based upload. Provides the name of the header column, the
- * column index and if the column should be set to readOnly in the generated sheet
- * </p>
- */
-public enum RegisterColumn implements Column {
 
-  SAMPLE_NAME("Sample Name", 0, false, true),
-  ANALYSIS("Analysis to be performed", 1, false, true),
-  BIOLOGICAL_REPLICATE("Biological Replicate", 2, false, false),
-  CONDITION("Condition", 3, false, true),
-  SPECIES("Species", 4, false, true),
-  SPECIMEN("Specimen", 5, false, true),
-  ANALYTE("Analyte", 6, false, true),
-  COMMENT("Comment", 7, false, false);
+public enum InformationColumn implements Column {
+  SAMPLE_ID("QBiC Sample Id", 0, true),
+  SAMPLE_NAME("Sample Name", 1, true),
+  ANALYSIS("Analysis to be performed", 2, true),
+  BIOLOGICAL_REPLICATE("Biological Replicate", 3, false),
+  CONDITION("Condition", 4, true),
+  SPECIES("Species", 5, true),
+  SPECIMEN("Specimen", 6, true),
+  ANALYTE("Analyte", 7, true),
+  COMMENT("Comment", 8, false),
+  ;
+
 
   private static final ExampleProvider exampleProvider = column -> {
-    if (column instanceof RegisterColumn registerColumn) {
-      return switch (registerColumn) {
+    if (column instanceof InformationColumn infoColumn) {
+      return switch (infoColumn) {
+        case SAMPLE_ID -> new Helper("QBiC sample IDs, e.g. Q2001, Q2002",
+            "The sample(s) that will be linked to the measurement.");
         case SAMPLE_NAME -> new Helper("Free text, e.g. RNA Sample 1, RNA Sample 2",
             "A visual aid to simplify navigation for the person managing the metadata.");
         case ANALYSIS -> new Helper("Enumeration, Select a value from the dropdown",
@@ -51,51 +48,34 @@ public enum RegisterColumn implements Column {
       };
     }
     throw new IllegalArgumentException(
-        "Column not of class " + RegisterColumn.class.getName() + " but is "
-            + column.getClass().getName());
+        "Column not of class " + InformationColumn.class.getName() + " but is " + column.getClass()
+            .getName());
   };
 
-  private final String headerName;
-  private final int columnIndex;
-  private final boolean readOnly;
+  private final String name;
+  private final int index;
   private final boolean mandatory;
 
-  public static int maxColumnIndex() {
-    return Arrays.stream(values())
-        .mapToInt(RegisterColumn::index)
-        .max().orElse(0);
-  }
-
-  public static Set<String> headerNames() {
-    return Arrays.stream(values()).map(RegisterColumn::headerName).collect(Collectors.toSet());
-  }
-
-  /**
-   * @param headerName  the name in the header
-   * @param columnIndex the index of the column this property is in
-   * @param readOnly    is the property read only
-   * @param mandatory
-   */
-  RegisterColumn(String headerName, int columnIndex, boolean readOnly, boolean mandatory) {
-    this.headerName = headerName;
-    this.columnIndex = columnIndex;
-    this.readOnly = readOnly;
+  InformationColumn(String columnName, int columnIndex, boolean mandatory) {
+    this.name = columnName;
+    this.index = columnIndex;
     this.mandatory = mandatory;
   }
 
-  @Override
-  public String headerName() {
-    return headerName;
+  public static int maxColumnIndex() {
+    return Arrays.stream(values())
+        .mapToInt(Column::index)
+        .max().orElse(0);
   }
 
   @Override
   public int index() {
-    return columnIndex;
+    return index;
   }
 
   @Override
-  public boolean isReadOnly() {
-    return readOnly;
+  public String headerName() {
+    return name;
   }
 
   @Override
@@ -104,7 +84,13 @@ public enum RegisterColumn implements Column {
   }
 
   @Override
-  public Optional<Helper> getFillHelp() {
-    return Optional.of(exampleProvider.getHelper(this));
+  public boolean isReadOnly() {
+    return false;
   }
+
+  @Override
+  public Optional<Helper> getFillHelp() {
+    return Optional.ofNullable(exampleProvider.getHelper(this));
+  }
+
 }

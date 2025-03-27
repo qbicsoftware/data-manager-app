@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure.api.template;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.util;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;

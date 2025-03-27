@@ -1,8 +1,9 @@
-package life.qbic.projectmanagement.infrastructure.api.template;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.column;
 
 import java.util.Optional;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.VariableReference;
-import life.qbic.projectmanagement.infrastructure.api.template.ExampleProvider.Helper;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
 
 public record ConfoundingVariableColumn(VariableReference variableReference, int index,
                                         String headerName) implements Column {

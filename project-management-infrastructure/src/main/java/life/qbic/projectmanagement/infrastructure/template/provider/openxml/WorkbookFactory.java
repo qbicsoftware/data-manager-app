@@ -1,21 +1,22 @@
-package life.qbic.projectmanagement.infrastructure.api.template;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml;
 
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.createBoldCellStyle;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.createDefaultCellStyle;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.createLinkHeaderCellStyle;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.createOptionArea;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.createReadOnlyCellStyle;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.createReadOnlyHeaderCellStyle;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.getOrCreateCell;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.getOrCreateRow;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.hideSheet;
-import static life.qbic.projectmanagement.infrastructure.api.template.XLSXTemplateHelper.lockSheet;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.createBoldCellStyle;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.createDefaultCellStyle;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.createLinkHeaderCellStyle;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.createOptionArea;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.createReadOnlyCellStyle;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.createReadOnlyHeaderCellStyle;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.getOrCreateCell;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.getOrCreateRow;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.hideSheet;
+import static life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper.lockSheet;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.infrastructure.api.template.ExampleProvider.Helper;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;

@@ -1,7 +1,7 @@
-package life.qbic.projectmanagement.infrastructure.api.template;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml;
 
 import java.util.Optional;
-import life.qbic.projectmanagement.infrastructure.api.template.ExampleProvider.Helper;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
 
 /**
  * A column in a file (for example xlsx files or TSV files)

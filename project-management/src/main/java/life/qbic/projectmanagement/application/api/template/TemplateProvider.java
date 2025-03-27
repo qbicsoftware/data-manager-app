@@ -21,7 +21,7 @@ public interface TemplateProvider {
 
   DigitalObject getTemplate(TemplateRequest request);
 
-  sealed interface TemplateRequest permits SampleRegistration, SampleUpdate {
+  sealed interface TemplateRequest permits SampleInformation, SampleRegistration, SampleUpdate {
 
   }
 
@@ -36,8 +36,12 @@ public interface TemplateProvider {
 
   }
 
-  record SampleUpdate(
-      List<Sample> samplesInBatch,
+  record SampleUpdate(SampleInformation information) implements TemplateRequest {
+
+  }
+
+  record SampleInformation(
+      List<Sample> samples,
       List<String> analysisMethods,
       List<String> conditions,
       List<String> analytes,

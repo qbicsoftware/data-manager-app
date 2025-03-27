@@ -1,10 +1,12 @@
-package life.qbic.projectmanagement.infrastructure.api.template;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.column;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import life.qbic.projectmanagement.infrastructure.api.template.ExampleProvider.Helper;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
 
 /**
  * <b>Sample Edit Columns</b>
