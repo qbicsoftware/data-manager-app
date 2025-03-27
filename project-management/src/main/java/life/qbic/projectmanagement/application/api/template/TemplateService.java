@@ -5,6 +5,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnsupportedMimeTypeException;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
@@ -18,25 +20,29 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.PropertyConversion;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
+import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Template service.
+ * <p>
+ * The interface to generate templates of various types and use cases.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.10.0
  */
-@Service("templateServiceV2")
+@Service
 public class TemplateService {
 
   private static final Logger log = logger(TemplateService.class);
+  public static final String UNSUPPORTED_MIME_TYPE = "Unsupported mime type: ";
   private final ExperimentInformationService experimentService;
   private final SampleInformationService sampleService;
   private final ConfoundingVariableService confVariableService;
@@ -50,6 +56,10 @@ public class TemplateService {
     this.sampleService = Objects.requireNonNull(sampleService);
     this.confVariableService = confVariableService;
     this.templateProvider = Objects.requireNonNull(templateProvider);
+  }
+
+  private static Predicate<Sample> inBatchPredicate(String targetBatchId) {
+    return sample -> sample.assignedBatch().value().equals(targetBatchId);
   }
 
   /**
@@ -82,34 +92,23 @@ public class TemplateService {
   public DigitalObject sampleRegistrationTemplate(String projectId, String experimentId,
       MimeType type) {
     if (!isSupportedMimeType(type)) {
-      throw new UnsupportedMimeTypeException("Unsupported mime type: " + type);
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
     }
-    return generateSampleRegistrationTemplate(projectId, experimentId);
+    return generateSampleRegistrationTemplate(experimentSupplier(projectId, experimentId),
+        projectId, experimentId);
   }
 
-  private DigitalObject generateSampleRegistrationTemplate(String projectId, String experimentId) {
-    var experiment = experimentService.find(projectId, ExperimentId.parse(experimentId))
-        .orElseThrow(
-            NoSuchExperimentException::new);
-    var conditions = experiment.getExperimentalGroups().stream().map(ExperimentalGroup::condition)
-        .map(
-            PropertyConversion::toString).toList();
-    var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
-    var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
-    var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
-    var analysisMethods = Arrays.stream(AnalysisMethod.values()).map(AnalysisMethod::abbreviation)
-        .toList();
-    var confoundingVariables = confVariableService.listConfoundingVariablesForExperiment(
-            projectId, new ExperimentReference(experimentId)).stream()
-        .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
-        .toList();
+  private DigitalObject generateSampleRegistrationTemplate(Supplier<Experiment> experimentSupplier,
+      String projectId, String experimentId) {
+    var experiment = experimentSupplier.get();
+    var sampleBasic = querySampleBasicInfo(experiment, projectId, experimentId);
     return templateProvider.getTemplate(new SampleRegistration(
-        analysisMethods,
-        conditions,
-        analytes,
-        species,
-        specimen,
-        confoundingVariables
+        sampleBasic.analysisMethods(),
+        sampleBasic.conditions(),
+        sampleBasic.analytes(),
+        sampleBasic.species(),
+        sampleBasic.specimen(),
+        sampleBasic.confoundingVariables()
     ));
   }
 
@@ -143,58 +142,92 @@ public class TemplateService {
   public DigitalObject sampleUpdateTemplate(String projectId, String experimentId, String batchId,
       MimeType type) {
     if (!isSupportedMimeType(type)) {
-      throw new UnsupportedMimeTypeException("Unsupported mime type: " + type);
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
     }
-    return generateSampleUpdateTemplate(projectId, experimentId, batchId);
+    return generateSampleUpdateTemplate(
+        experimentSupplier(projectId, experimentId),
+        projectId,
+        experimentId,
+        batchId);
   }
 
+  private Supplier<Experiment> experimentSupplier(String projectId, String experimentId) {
+    return () -> experimentService.find(projectId, ExperimentId.parse(experimentId))
+        .orElseThrow(NoSuchExperimentException::new);
+  }
 
-  private DigitalObject generateSampleUpdateTemplate(String projectId, String experimentId,
+  private DigitalObject generateSampleUpdateTemplate(
+      Supplier<Experiment> experimentSupplier,
+      String projectId,
+      String experimentId,
       String batchId) {
-    var experiment = experimentService.find(projectId, ExperimentId.parse(experimentId))
-        .orElseThrow(
-            NoSuchExperimentException::new);
-    var samples = sampleService.retrieveSamplesForExperiment(
-        ExperimentId.parse(experimentId));
-    var confoundingVariables = confVariableService.listConfoundingVariablesForExperiment(
-            projectId, new ExperimentReference(experimentId)).stream()
-        .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
-        .toList();
-    List<ConfoundingVariableLevel> confoundingVariableLevels = confVariableService.listLevelsForVariables(
-        projectId,
-        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
-    samples.onError(responseCode -> {
-      throw new SampleSearchException();
-    });
-    var samplesInBatch = samples.getValue().stream()
-        .filter(sample -> sample.assignedBatch().value().equals(batchId))
+    var experiment = experimentSupplier.get();
+    var sampleBasic = querySampleBasicInfo(experiment, projectId, experimentId);
+    var sampleExtension = querySampleExtension(experiment, projectId, experimentId);
+    var samplesInBatch = sampleExtension.samples().stream().filter(inBatchPredicate(batchId))
         .toList();
     if (samplesInBatch.isEmpty()) {
       log.warn("No samples found for experiment during template generation: " + experimentId);
     }
+
+    return templateProvider.getTemplate(new SampleUpdate(
+        new SampleInformation(
+            samplesInBatch,
+            sampleBasic.analysisMethods(),
+            sampleBasic.conditions(),
+            sampleBasic.analytes(),
+            sampleBasic.species(),
+            sampleBasic.specimen(),
+            sampleExtension.experimentalGroups(),
+            sampleBasic.confoundingVariables(),
+            sampleExtension.confoundingVariableLevels())
+    ));
+  }
+
+  private SampleExtension querySampleExtension(Experiment experiment, String projectId,
+      String experimentId) {
+    var experimentalGroups = experiment.getExperimentalGroups();
+    var samples = sampleService.retrieveSamplesForExperiment(
+        ProjectId.parse(projectId), experimentId).stream().toList();
+    var confoundingVariablesIds = confVariableService.listConfoundingVariablesForExperiment(
+            projectId, new ExperimentReference(experimentId)).stream()
+        .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
+        .map(ConfoundingVariableInformation::id)
+        .toList();
+    var confoundingVariableLevels = confVariableService.listLevelsForVariables(
+        projectId,
+        confoundingVariablesIds);
+    return new SampleExtension(
+        samples,
+        experimentalGroups,
+        confoundingVariableLevels
+    );
+  }
+
+
+  private SampleBasic querySampleBasicInfo(Experiment experiment, String projectId,
+      String experimentId) {
     var conditions = experiment.getExperimentalGroups().stream()
         .map(ExperimentalGroup::condition)
         .map(PropertyConversion::toString).toList();
-    var experimentalGroups = experiment.getExperimentalGroups();
     var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
     var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
     var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
     var analysisMethods = Arrays.stream(AnalysisMethod.values())
         .map(AnalysisMethod::abbreviation)
         .toList();
-
-    return templateProvider.getTemplate(new SampleUpdate(
-        new SampleInformation(
-            samplesInBatch,
-            analysisMethods,
-            conditions,
-            analytes,
-            species,
-            specimen,
-            experimentalGroups,
-            confoundingVariables,
-            confoundingVariableLevels)
-    ));
+    var confoundingVariables = confVariableService.listConfoundingVariablesForExperiment(
+            projectId, new ExperimentReference(experimentId)).stream()
+        .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
+        .toList();
+    return new SampleBasic(
+        analysisMethods,
+        conditions,
+        analytes,
+        species,
+        specimen,
+        confoundingVariables
+    );
   }
 
   @PreAuthorize(
@@ -202,57 +235,52 @@ public class TemplateService {
   public DigitalObject sampleInformationTemplate(String projectId, String experimentId,
       MimeType type) {
     if (!isSupportedMimeType(type)) {
-      throw new UnsupportedMimeTypeException("Unsupported mime type: " + type);
+      throw new UnsupportedMimeTypeException(UNSUPPORTED_MIME_TYPE + type);
     }
-    return generateSampleInfoTemplate(projectId, experimentId, type);
+    return generateSampleInfoTemplate(experimentSupplier(projectId, experimentId), projectId,
+        experimentId);
   }
 
-  private DigitalObject generateSampleInfoTemplate(String projectId, String experimentId,
-      MimeType type) {
-    if (!isSupportedMimeType(type)) {
-      throw new UnsupportedMimeTypeException("Unsupported mime type: " + type);
-    }
-    var experiment = experimentService.find(projectId, ExperimentId.parse(experimentId))
-        .orElseThrow(
-            NoSuchExperimentException::new);
-    var samples = sampleService.retrieveSamplesForExperiment(
-        ExperimentId.parse(experimentId));
-    var confoundingVariables = confVariableService.listConfoundingVariablesForExperiment(
-            projectId, new ExperimentReference(experimentId)).stream()
-        .map(it -> new ConfoundingVariableInformation(it.id(), it.variableName()))
-        .toList();
-    List<ConfoundingVariableLevel> confoundingVariableLevels = confVariableService.listLevelsForVariables(
-        projectId,
-        confoundingVariables.stream().map(ConfoundingVariableInformation::id).toList());
-    samples.onError(responseCode -> {
-      throw new SampleSearchException();
-    });
-    var conditions = experiment.getExperimentalGroups().stream()
-        .map(ExperimentalGroup::condition)
-        .map(PropertyConversion::toString).toList();
-    var experimentalGroups = experiment.getExperimentalGroups();
-    var species = experiment.getSpecies().stream().map(PropertyConversion::toString).toList();
-    var specimen = experiment.getSpecimens().stream().map(PropertyConversion::toString).toList();
-    var analytes = experiment.getAnalytes().stream().map(PropertyConversion::toString).toList();
-    var analysisMethods = Arrays.stream(AnalysisMethod.values())
-        .map(AnalysisMethod::abbreviation)
-        .toList();
-    return templateProvider.getTemplate(new SampleInformation(
-        samples.getValue().stream().toList(),
-        analysisMethods,
-        conditions,
-        analytes,
-        species,
-        specimen,
-        experimentalGroups,
-        confoundingVariables,
-        confoundingVariableLevels
-    ));
+  private DigitalObject generateSampleInfoTemplate(Supplier<Experiment> experimentSupplier,
+      String projectId, String experimentId) {
+    var experiment = experimentSupplier.get();
+    var sampleBasic = querySampleBasicInfo(experiment, projectId, experimentId);
+    var sampleExtension = querySampleExtension(experiment, projectId, experimentId);
+    return templateProvider.getTemplate(
+        new SampleInformation(
+            sampleExtension.samples(),
+            sampleBasic.analysisMethods(),
+            sampleBasic.conditions(),
+            sampleBasic.analytes(),
+            sampleBasic.species(),
+            sampleBasic.specimen(),
+            sampleExtension.experimentalGroups(),
+            sampleBasic.confoundingVariables(),
+            sampleExtension.confoundingVariableLevels()
+        ));
   }
-
 
   private boolean isSupportedMimeType(MimeType mimeType) {
     return mimeType.equalsTypeAndSubtype(templateProvider.providedMimeType());
+  }
+
+  record SampleBasic(
+      List<String> analysisMethods,
+      List<String> conditions,
+      List<String> analytes,
+      List<String> species,
+      List<String> specimen,
+      List<ConfoundingVariableInformation> confoundingVariables
+  ) {
+
+  }
+
+  record SampleExtension(
+      List<Sample> samples,
+      List<ExperimentalGroup> experimentalGroups,
+      List<ConfoundingVariableLevel> confoundingVariableLevels
+  ) {
+
   }
 
   static class SampleSearchException extends RuntimeException {

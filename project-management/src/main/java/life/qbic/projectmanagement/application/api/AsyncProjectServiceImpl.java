@@ -31,7 +31,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,7 +54,7 @@ import reactor.util.retry.Retry;
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
-  public static final String ACCESS_DENIED = "Access denied";
+  private static final String ACCESS_DENIED = "Access denied";
   private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
@@ -68,7 +67,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired SampleInformationService sampleInfoService,
       @Autowired Scheduler scheduler,
       @Autowired DigitalObjectFactory digitalObjectFactory,
-      @Autowired @Qualifier("templateServiceV2") TemplateService templateService
+      @Autowired TemplateService templateService
   ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
