@@ -270,7 +270,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType) {
-    return null;
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+            () -> templateService.sampleInformationTemplate(projectId, experimentId, mimeType)))
+        .subscribeOn(scheduler)
+        .transform(original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+            securityContext));
   }
 
   @Override

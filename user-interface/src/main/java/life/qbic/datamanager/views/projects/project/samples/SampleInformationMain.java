@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
-import life.qbic.datamanager.files.export.sample.TemplateService;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -98,7 +97,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient MessageSourceNotificationFactory notificationFactory;
   private final transient SampleValidationService sampleValidationService;
-  private final transient TemplateService templateService;
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
@@ -114,7 +112,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory notificationFactory,
       SampleValidationService sampleValidationService,
-      TemplateService templateService,
       SampleRegistrationServiceV2 sampleRegistrationServiceV2,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.downloadComponent = new DownloadComponent();
@@ -139,7 +136,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
     this.asyncProjectService = requireNonNull(asyncProjectService);
 
-    this.templateService = templateService;
     noGroupsDefinedDisclaimer = createNoGroupsDefinedDisclaimer();
     noGroupsDefinedDisclaimer.setVisible(false);
 
@@ -205,7 +201,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var experimentName = experimentInformationService.find(projectId.value(), experimentId)
         .map(Experiment::getName).orElseThrow();
 
-    asyncProjectService.sampleRegistrationTemplate(projectId.value(), experimentId.value(),
+    asyncProjectService.sampleInformationTemplate(projectId.value(), experimentId.value(),
         OPEN_XML).doOnSuccess(resource ->
         triggerDownload(resource,
             FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
