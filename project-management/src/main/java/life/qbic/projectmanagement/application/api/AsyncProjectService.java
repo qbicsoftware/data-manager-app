@@ -278,7 +278,7 @@ public interface AsyncProjectService {
       String batchId, MimeType mimeType);
 
   /**
-   * Requests a sample update template in a desired {@link MimeType}.
+   * Requests sample information in a desired {@link MimeType}.
    * <p>
    * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
    * {@link Mono#error(Throwable)}.
