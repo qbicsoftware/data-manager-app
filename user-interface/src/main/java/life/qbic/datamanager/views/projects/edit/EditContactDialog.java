@@ -55,14 +55,15 @@ public class EditContactDialog extends DialogWindow {
     this.noChangesClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
     this.warningClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
 
+    //We need to load the current user into the dialog so we can compare which type of user was provided
+    fieldProjectManager.setMyself(currentUser, "Set myself as project manager");
+    fieldProjectResponsible.setMyself(currentUser, "Set myself as project responsible");
+    fieldPrincipalInvestigator.setMyself(currentUser, "Set myself as principal investigator");
+
     investigatorBinding.setValue(projectInformation.getPrincipalInvestigator());
     managerBinding.setValue(projectInformation.getProjectManager());
     projectInformation.getResponsiblePerson()
         .ifPresent(contact -> projectResponsibleBinding.setValue(contact));
-
-    fieldProjectManager.setMyself(currentUser, "Set myself as project manager");
-    fieldProjectResponsible.setMyself(currentUser, "Set myself as project responsible");
-    fieldPrincipalInvestigator.setMyself(currentUser, "Set myself as principal investigator");
 
     content.add(
         new ContactsForm(fieldPrincipalInvestigator, fieldProjectResponsible, fieldProjectManager));

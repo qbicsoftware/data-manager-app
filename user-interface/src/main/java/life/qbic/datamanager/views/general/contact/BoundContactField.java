@@ -1,9 +1,9 @@
 package life.qbic.datamanager.views.general.contact;
 
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.EmailValidator;
+import com.vaadin.flow.data.validator.StringLengthValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
@@ -35,12 +35,6 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
 
   private static void updateStatus(ContactField contactField, boolean isInvalid) {
     contactField.getElement().setProperty("invalid", isInvalid);
-    updateStatus(contactField.getEmailTextField(), isInvalid);
-    updateStatus(contactField.getFullNameTextField(), isInvalid);
-  }
-
-  private static void updateStatus(TextField textField, boolean isInvalid) {
-    textField.setInvalid(isInvalid);
   }
 
   /**
@@ -102,14 +96,15 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
       ContactField contactField) {
     Binder<ContactContainer> binder = new Binder<>(ContactContainer.class);
     binder.setBean(new ContactContainer());
-    binder.forField(contactField).withValidator(predicate, "There is still information missing")
+    binder.forField(contactField).withValidator(predicate, "Please specify a valid contact")
         .bind(ContactContainer::getContact, ContactContainer::setContact);
-    binder.forField(contactField.getEmailTextField()).withValidator(
-            new EmailValidator("Please provide a valid email address, e.g. my.name@example.com", true))
+    binder.forField(contactField.email()).withValidator(
+            new EmailValidator("Please provide a valid email address, e.g. my.name@example.com", false))
         .bind(ContactContainer::getEmail, ContactContainer::setEmail);
-    binder.forField(contactField.getFullNameTextField())
+    binder.forField(contactField.fullName()).withValidator(
+            new StringLengthValidator("Please provide the full name of the contact", 2, null))
         .bind(ContactContainer::getFullName, ContactContainer::setFullName);
-    binder.forField(contactField.getOidcSelection())
+    binder.forField(contactField.oidcSelection())
         .bind(ContactContainer::getOidcSelection, ContactContainer::setOidcSelection);
     return binder;
   }
@@ -187,20 +182,22 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     }
 
     public OrcidEntry getOidcSelection() {
+      //We only want to show contact information within the orcid selection combobox if it's originated from the orcidRepository
+      if (contact.oidc().isEmpty() || contact.oidcIssuer().isEmpty()) {
+        return null;
+      }
       return new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
           contact.oidcIssuer());
     }
 
     public void setOidcSelection(OrcidEntry oidcSelection) {
-      if (contact != null) {
-        if (oidcSelection != null) {
-          contact.setOidc(oidcSelection.oidc());
-          contact.setOidcIssuer(oidcSelection.oidcIssuer());
-        } else {
-          contact.setOidcIssuer("");
-          contact.setOidc("");
-        }
+      if (oidcSelection == null) {
+        return;
       }
+      contact.setFullName(oidcSelection.fullName());
+      contact.setEmail(oidcSelection.emailAddress());
+      contact.setOidc(oidcSelection.oidc());
+      contact.setOidcIssuer(oidcSelection.oidcIssuer());
     }
   }
 }
