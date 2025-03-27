@@ -3,7 +3,7 @@ package life.qbic.datamanager.views.projects.project.measurements;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.projectmanagement.application.ValidationResult;
-import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.api.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * <b>Measurement NGS Validation Executor</b>
  * <p>
  * Implementation of the {@link MeasurementValidationExecutor} interface,
- * handling the validation of to be registered or edited  {@link life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata}
+ * handling the validation of to be registered or edited  {@link NGSMeasurementMetadata}
  *
  */
 @Component

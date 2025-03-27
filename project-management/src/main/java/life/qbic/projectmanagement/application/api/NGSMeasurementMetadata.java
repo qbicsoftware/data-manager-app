@@ -1,7 +1,9 @@
-package life.qbic.projectmanagement.application.measurement;
+package life.qbic.projectmanagement.application.api;
 
 import java.util.Collection;
 import java.util.Optional;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
+import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
@@ -16,7 +18,8 @@ public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode
                                      String sequencingReadType, String libraryKit, String flowCell,
                                      String sequencingRunProtocol, String samplePoolGroup,
                                      String indexI7, String indexI5,
-                                     String comment) implements MeasurementMetadata {
+                                     String comment) implements MeasurementMetadata,
+    ValidationRequestBody {
 
   public static NGSMeasurementMetadata copyWithNewProperties(
       Collection<SampleCode> associatedSamples, String indexI7, String indexI5,

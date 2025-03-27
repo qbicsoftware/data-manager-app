@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.measurement.validation
 
 import life.qbic.projectmanagement.application.ProjectInformationService
 import life.qbic.projectmanagement.application.measurement.MeasurementService
-import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata
+import life.qbic.projectmanagement.application.api.NGSMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.TerminologyService
 import life.qbic.projectmanagement.application.sample.SampleInformationService
