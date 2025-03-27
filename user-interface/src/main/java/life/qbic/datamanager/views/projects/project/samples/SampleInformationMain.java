@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
@@ -33,6 +34,7 @@ import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.DeleteBatchEvent;
 import life.qbic.datamanager.views.projects.project.samples.BatchDetailsComponent.EditBatchEvent;
@@ -57,8 +59,10 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
+import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MimeType;
+import reactor.core.publisher.SignalType;
 
 /**
  * Sample Information Main Component
@@ -86,9 +90,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient DeletionService deletionService;
   private final transient SampleDetailsComponent sampleDetailsComponent;
   private final BatchDetailsComponent batchDetailsComponent;
-
   private final DownloadComponent downloadComponent;
-
   private final Div content = new Div();
   private final TextField searchField = new TextField();
   private final Disclaimer noGroupsDefinedDisclaimer;
@@ -99,7 +101,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient SampleValidationService sampleValidationService;
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private final transient AsyncProjectService asyncProjectService;
-  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final MessageSourceNotificationFactory messageFactory;
+  private Toast pendingTask;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
@@ -159,7 +162,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         sampleDetailsComponent.getClass().getSimpleName(),
         System.identityHashCode(sampleDetailsComponent)));
     add(downloadComponent);
-    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+    this.messageFactory = messageSourceNotificationFactory;
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
@@ -202,13 +205,31 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         .map(Experiment::getName).orElseThrow();
 
     asyncProjectService.sampleInformationTemplate(projectId.value(), experimentId.value(),
-        OPEN_XML).doOnSuccess(resource ->
-        triggerDownload(resource,
-            FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
-                experimentName,
-                "sample information",
-                "xlsx")
-        )).doOnError(this::handleError).subscribe();
+            OPEN_XML)
+        .doOnSubscribe(showInProgress("preparing sample information"))
+        .doOnSuccess(resource -> handleSuccess(projectCode, experimentName).accept(resource))
+        .doOnError(this::handleError)
+        .doFinally(this::closePendingTaskNotification)
+        .subscribe();
+  }
+
+  private Consumer<DigitalObject> handleSuccess(String projectCode, String experimentName) {
+    return resource -> getUI().ifPresent(ui -> ui.access(() -> {
+      messageFactory.toast("task.finished", new Object[]{"Preparation of sample information"}, getLocale()).open();
+      triggerDownload(resource,
+          FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
+              experimentName,
+              "sample information",
+              "xlsx"));
+    }));
+  }
+
+  private Consumer<? super Subscription> showInProgress(String preparingSampleInformation) {
+    return subscriber -> getUI().ifPresent(ui -> ui.access(() -> {
+      pendingTask = messageFactory.pendingTaskToast("task.in-progress",
+          new Object[]{preparingSampleInformation}, getLocale());
+      pendingTask.open();
+    }));
   }
 
   private void handleError(Throwable throwable) {
@@ -226,7 +247,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   }
 
   private void handleAccessDeniedError() {
-    getUI().ifPresent(ui -> ui.access(() -> messageSourceNotificationFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
   }
 
   private void triggerDownload(DigitalObject resource, String filename) {
@@ -261,7 +283,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow();
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
-        sampleValidationService, asyncProjectService, messageSourceNotificationFactory, experimentId.value(),
+        sampleValidationService, asyncProjectService, messageFactory, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {
@@ -393,7 +415,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     BatchId batchId = editBatchEvent.batchPreview().batchId();
     String batchLabel = editBatchEvent.batchPreview().batchLabel();
     var editSampleBatchDialog = new EditSampleBatchDialog(
-        sampleValidationService, asyncProjectService, messageSourceNotificationFactory, batchId, batchLabel, experimentId.value(),
+        sampleValidationService, asyncProjectService, messageFactory, batchId, batchLabel,
+        experimentId.value(),
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     editSampleBatchDialog.addConfirmListener(event -> {
@@ -470,6 +493,15 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     });
     batchDeletionConfirmationNotification.addCancelListener(
         event -> batchDeletionConfirmationNotification.close());
+  }
+
+  private void closePendingTaskNotification(SignalType signalType) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      if (this.pendingTask == null) {
+        return;
+      }
+      this.pendingTask.close();
+    }));
   }
 
   /**
