@@ -33,15 +33,21 @@ public class Utility {
     var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     String fullName;
     String emailAddress;
+    String oidc;
+    String oidcIssuer;
     if (principal instanceof QbicUserDetails qbicUserDetails) {
       fullName = qbicUserDetails.fullName();
       emailAddress = qbicUserDetails.getEmailAddress();
+      oidc = qbicUserDetails.oidc();
+      oidcIssuer = qbicUserDetails.oidcIssuer();
     } else if (principal instanceof QbicOidcUser qbicOidcUser) {
       fullName = qbicOidcUser.getFullName();
       emailAddress = qbicOidcUser.getEmail();
+      oidc = qbicOidcUser.getOidcId();
+      oidcIssuer = qbicOidcUser.getOidcIssuer();
     } else {
       return Optional.empty();
     }
-    return Optional.of(new Contact(fullName, emailAddress));
+    return Optional.of(new Contact(fullName, emailAddress, oidc, oidcIssuer));
   }
 }

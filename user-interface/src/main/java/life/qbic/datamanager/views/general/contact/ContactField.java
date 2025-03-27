@@ -1,59 +1,68 @@
 package life.qbic.datamanager.views.general.contact;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.customfield.CustomField;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasClientValidation;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
+import java.io.Serial;
+import java.util.Arrays;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.contact.OrcidEntry;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 
 
 public class ContactField extends CustomField<Contact> implements HasClientValidation {
 
   public static final String GAP_M_CSS = "gap-m";
+  public static final String GAP_02_CSS = "gap-02";
   private static final String FULL_WIDTH_CSS = "full-width";
-  private final TextField fullName;
-  private final TextField email;
+  private static final String FLEX_HORIZONTAL = "flex-horizontal";
+  private static final String PADDING_BOTTOM = "padding-top-bottom-04";
+  private static final Logger log = logger(ContactField.class);
+
   private final Checkbox setMyselfCheckBox;
+  private final ManualContactSetter manualContactSetter;
+  protected transient ComboBox<OrcidEntry> orcidSelection;
   private Contact myself;
   private boolean isOptional = true;
 
-  private ContactField(String label) {
-    this.fullName = withErrorMessage(withPlaceHolder(new TextField(), "Please provide a name"),
-        "");
-    this.email = withErrorMessage(withPlaceHolder(new TextField(), "Please enter an email address"),
-        "");
+  private ContactField(String label, PersonLookupService personLookupService) {
+    this.orcidSelection = createSelection(personLookupService);
+    orcidSelection.addClassName(FULL_WIDTH_CSS);
     this.setMyselfCheckBox = new Checkbox();
+    this.manualContactSetter = new ManualContactSetter();
     setLabel(label);
-    add(layoutFields(setMyselfCheckBox, layoutFields(fullName, email)));
+    add(layoutFields(setMyselfCheckBox, orcidSelection, manualContactSetter));
     hideCheckbox(); // default is to hide the set myself checkbox
-    setMyselfCheckBox.addValueChangeListener(listener -> {
-      if (isChecked(listener.getSource())) {
-        loadContact(this, myself);
-      }
-    });
-    fullName.addValueChangeListener(listener -> updateValue());
-    email.addValueChangeListener(listener -> updateValue());
+    addValueChangeListeners();
   }
 
   private static void loadContact(ContactField field, Contact contact) {
     field.setPresentationValue(contact);
   }
 
-  private static boolean isChecked(Checkbox checkbox) {
-    return checkbox.getValue();
+  private static void resetFieldValues(ContactField field) {
+    var emptyContact = new Contact("", "", "", "");
+    field.setPresentationValue(emptyContact);
   }
 
-  public static ContactField createSimple(String label) {
-    return new ContactField(label);
-  }
-
-  public static ContactField createWithMyselfOption(String label, Contact myself, String hint,
-      boolean setOptional) {
-    var contactField = createSimple(label);
-    contactField.setMyself(myself, hint);
-    contactField.setOptional(setOptional);
-    return contactField;
+  public static ContactField createSimple(String label, PersonLookupService personLookupService) {
+    return new ContactField(label, personLookupService);
   }
 
   private static TextField withPlaceHolder(TextField textField, String placeHolder) {
@@ -66,20 +75,71 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     return textField;
   }
 
-  private static Div layoutFields(Checkbox box, Div fields) {
+  private static Div layoutFields(Checkbox box, ComboBox<OrcidEntry> contactBox,
+      ManualContactSetter manualContactSetter) {
     var layout = new Div();
     layout.addClassNames("flex-vertical", GAP_M_CSS);
     layout.add(box);
-    layout.add(fields);
+    layout.add(contactBox);
+    layout.add(manualContactSetter);
     return layout;
   }
 
-  private static Div layoutFields(TextField fullName, TextField email) {
-    var layout = new Div(fullName, email);
-    layout.addClassNames("flex-horizontal", GAP_M_CSS, FULL_WIDTH_CSS);
-    fullName.addClassName(FULL_WIDTH_CSS);
-    email.addClassName(FULL_WIDTH_CSS);
-    return layout;
+  private void addValueChangeListeners() {
+
+    setMyselfCheckBox.addValueChangeListener(listener -> {
+      //isFromClient is necessary since the checkbox will be unchecked if another selection mode is chosen
+      if (!listener.isFromClient()) {
+        return;
+      }
+      //Reset any values stored within the other selection modes
+      resetFieldValues(this);
+      if (Boolean.TRUE.equals(listener.getValue())) {
+        loadContact(this, myself);
+      }
+    });
+    orcidSelection.addValueChangeListener(listener -> {
+      if (!listener.isFromClient()) {
+        return;
+      }
+      //Reset any values stored within the other selection modes
+      resetFieldValues(this);
+      var orcidEntry = listener.getValue();
+      if (orcidEntry != null) {
+        var convertedContact = new Contact(orcidEntry.fullName(), orcidEntry.emailAddress(),
+            orcidEntry.oidc(), orcidEntry.oidcIssuer());
+        loadContact(this, convertedContact);
+      }
+    });
+    manualContactSetter.addExpandSpanClickListener(listener -> {
+      if (!listener.isFromClient()) {
+        return;
+      }
+      //Reset any values stored within the other selection modes
+      resetFieldValues(this);
+      manualContactSetter.openFieldLayout();
+    });
+  }
+
+  private ComboBox<OrcidEntry> createSelection(PersonLookupService personLookupService) {
+    ComboBox<OrcidEntry> personSelection = new ComboBox<>("Search the Orcid Repository");
+    //We want to avoid NullPointers as model or presentation values
+    personSelection.setPlaceholder("Search");
+    personSelection.setHelperText("Please provide at least 2 letters to search for entries");
+    personSelection.setPrefixComponent(VaadinIcon.SEARCH.create());
+    personSelection.setRenderer(new ComponentRenderer<>(
+        orcidEntry -> new ContactInfoComponent(orcidEntry.fullName(), orcidEntry.emailAddress(),
+            orcidEntry.oidc(), orcidEntry.oidcIssuer())));
+    personSelection.setItemLabelGenerator(OrcidEntry::fullName);
+    personSelection.setItems(
+        query -> personLookupService.queryPersons(query.getFilter().orElse(""), query.getOffset(),
+                query.getLimit())
+            .stream()
+            .map(orcidEntry -> new OrcidEntry(orcidEntry.fullName(), orcidEntry.emailAddress(),
+                orcidEntry.oidc(),
+                orcidEntry.oidcIssuer()
+            )));
+    return personSelection;
   }
 
   public void setOptional(boolean optional) {
@@ -102,13 +162,50 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   @Override
   protected Contact generateModelValue() {
-    return new Contact(fullName.getValue(), email.getValue());
+    //We have to avoid checking null values (e.g. the user clicks the checkbox then no value is in the orcid combobox
+    String oidc = "";
+    String oidcIssuer = "";
+    if (oidcSelection().getValue() != null) {
+      oidc = oidcSelection().getValue().oidc();
+      oidcIssuer = oidcSelection().getValue().oidcIssuer();
+    }
+    return new Contact(fullName().getValue(), email().getValue(), oidc, oidcIssuer);
+
+  }
+
+  public TextField fullName() {
+    return manualContactSetter.fullNameField();
+  }
+
+  public TextField email() {
+    return manualContactSetter.emailField();
   }
 
   @Override
   protected void setPresentationValue(Contact contact) {
-    fullName.setValue(contact.getFullName());
-    email.setValue(contact.getEmail());
+    //If no contact was provided all fields should be set to empty values.
+    if (contact == null || contact.isEmpty()) {
+      manualContactSetter.closeFieldLayout();
+      orcidSelection.setValue(orcidSelection.getEmptyValue());
+      setMyselfCheckBox.setValue(false);
+      return;
+    }
+    //If the user selected herself, only the checkbox should be highlighted
+    if (contact.equals(myself)) {
+      setMyselfCheckBox.setValue(true);
+      manualContactSetter.setValues(contact.fullName(), contact.email());
+      return;
+    }
+    //If the user provided an entry from the orcidrepository show the full name within the combobox
+    if (contact.isComplete()) {
+      orcidSelection.setValue(new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
+          contact.oidcIssuer()));
+      manualContactSetter.setValues(contact.fullName(), contact.email());
+      return;
+    }
+    // Only open the Field Layout if the user was not provided via the checkbox or the orcid.
+    manualContactSetter.setValues(contact.fullName(), contact.email());
+    manualContactSetter.openFieldLayout();
   }
 
   @Override
@@ -120,29 +217,179 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     }
   }
 
-  public TextField getEmailTextField() {
-    return email;
-  }
-
-  public TextField getFullNameTextField() {
-    return fullName;
+  public ComboBox<OrcidEntry> oidcSelection() {
+    return orcidSelection;
   }
 
   private void removeErrors() {
-    email.setInvalid(false);
-    fullName.setInvalid(false);
+    email().setInvalid(false);
+    fullName().setInvalid(false);
+    orcidSelection.setInvalid(false);
   }
 
   private void invalidate() {
-    if (email.getValue().isEmpty() && fullName.getValue().isEmpty() && isOptional) {
+    if (email().getValue().isEmpty() && fullName().getValue().isEmpty() && isOptional) {
       return;
     }
-    if (email.getValue().isBlank()) {
-      email.setInvalid(true);
+    if (email().getValue().isBlank()) {
+      email().setInvalid(true);
     }
-    if (fullName.getValue().isBlank()) {
-      fullName.setInvalid(true);
+    if (fullName().getValue().isBlank()) {
+      fullName().setInvalid(true);
     }
   }
 
+  /**
+   * A component displaying a users orcid, full name and email
+   */
+  public static class ContactInfoComponent extends Div {
+
+    public ContactInfoComponent(String fullName, String email, String oidc, String oidcIssuer) {
+      addClassNames("flex-vertical", "flex-align-items-baseline", GAP_02_CSS);
+      setFullNameAndEmail(fullName, email);
+      setOidc(oidc, oidcIssuer);
+    }
+
+    private void setFullNameAndEmail(String fullName, String email) {
+      Span fullNameSpan = new Span(fullName);
+      fullNameSpan.addClassName("bold");
+      Span emailSpan = new Span(email);
+      Span userNameAndFullName = new Span(fullNameSpan, emailSpan);
+      userNameAndFullName.addClassNames(GAP_02_CSS, FLEX_HORIZONTAL);
+      add(userNameAndFullName);
+    }
+
+    protected void setOidc(String oidc, String oidcIssuer) {
+      if (oidcIssuer.isEmpty() || oidc.isEmpty()) {
+        return;
+      }
+      Arrays.stream(OidcType.values())
+          .filter(ot -> ot.getIssuer().equals(oidcIssuer))
+          .findFirst()
+          .ifPresentOrElse(oidcType -> addOidcInfoItem(oidcType, oidc),
+              () -> log.warn("Unknown oidc Issuer %s".formatted(oidcIssuer)));
+    }
+
+    private void addOidcInfoItem(OidcType oidcType, String oidc) {
+      String oidcUrl = String.format(oidcType.getUrl()) + oidc;
+      Anchor oidcLink = new Anchor(oidcUrl, oidc);
+      oidcLink.setTarget(AnchorTarget.BLANK);
+      OidcLogo oidcLogo = new OidcLogo(oidcType);
+      Span oidcSpan = new Span(oidcLogo, oidcLink);
+      oidcSpan.addClassNames(GAP_02_CSS, "flex-align-items-center", FLEX_HORIZONTAL);
+      add(oidcSpan);
+    }
+  }
+
+  /**
+   * A hideable component enabling the user to provide full name and email
+   */
+  public class ManualContactSetter extends Div {
+
+    private final TextField fullNameField;
+    private final TextField emailField;
+    private final Span fieldLayout;
+
+    public ManualContactSetter() {
+      this.fullNameField = withErrorMessage(
+          withPlaceHolder(new TextField(), "Please provide a name"),
+          "");
+      this.emailField = withErrorMessage(
+          withPlaceHolder(new TextField(), "Please enter an email address"),
+          "");
+      fieldLayout = new Span();
+      fieldLayout.add(fullNameField, emailField);
+      styleFieldLayout();
+      add(createManualSelectionSpan(), fieldLayout);
+      addValueChangeListeners();
+    }
+
+    private void styleFieldLayout() {
+      fieldLayout.addClassNames(FLEX_HORIZONTAL, GAP_M_CSS, FULL_WIDTH_CSS, PADDING_BOTTOM);
+      fullNameField.addClassName(FULL_WIDTH_CSS);
+      emailField.addClassName(FULL_WIDTH_CSS);
+      closeFieldLayout();
+    }
+
+    private void addValueChangeListeners() {
+      fullNameField.setValueChangeMode(ValueChangeMode.ON_BLUR);
+      emailField.setValueChangeMode(ValueChangeMode.ON_BLUR);
+      fullNameField.addValueChangeListener(
+          event -> updateValue());
+      emailField.addValueChangeListener(event -> updateValue());
+    }
+
+    private Span createManualSelectionSpan() {
+      Span manualSelectionSpan = new Span();
+      Span textSpan = new Span("Not on the list?");
+      Span clickableSpan = new Span("Enter the details manually");
+      clickableSpan.addClassName("link");
+      manualSelectionSpan.add(textSpan, clickableSpan);
+      manualSelectionSpan.addClassNames(FLEX_HORIZONTAL, GAP_M_CSS, FULL_WIDTH_CSS);
+      clickableSpan.addClickListener(spanClickEvent -> {
+        //Only Fire an Event if the layout has not been opened yet
+        if (fieldLayout.isVisible()) {
+          return;
+        }
+        fireEvent(new SetManualContactEvent(this, true));
+      });
+      return manualSelectionSpan;
+    }
+
+    private void openFieldLayout() {
+      if (fieldLayout.isVisible()) {
+        return;
+      }
+      fieldLayout.setVisible(true);
+    }
+
+    private void closeFieldLayout() {
+      if (!fieldLayout.isVisible()) {
+        return;
+      }
+      fieldLayout.setVisible(false);
+      resetLayoutFields();
+    }
+
+    private void resetLayoutFields() {
+      fullNameField.setValue(fullNameField.getEmptyValue());
+      emailField.setValue(emailField.getEmptyValue());
+      fullNameField.setInvalid(false);
+      emailField.setInvalid(false);
+    }
+
+    private void setValues(String fullName, String email) {
+      fullNameField.setValue(fullName);
+      emailField.setValue(email);
+    }
+
+    private void addExpandSpanClickListener(
+        ComponentEventListener<SetManualContactEvent> listener) {
+      addListener(SetManualContactEvent.class, listener);
+    }
+
+    public TextField fullNameField() {
+      return fullNameField;
+    }
+
+    public TextField emailField() {
+      return emailField;
+    }
+
+    /**
+     * <b>Switch to copy icon event</b>
+     *
+     * <p>Indicates that the copy icon was switched to it's default copy icon state</p>
+     */
+    public static class SetManualContactEvent extends ComponentEvent<ManualContactSetter> {
+
+      @Serial
+      private static final long serialVersionUID = 5053589646150265555L;
+
+      public SetManualContactEvent(ManualContactSetter source, boolean fromClient) {
+        super(source, fromClient);
+      }
+    }
+
+  }
 }

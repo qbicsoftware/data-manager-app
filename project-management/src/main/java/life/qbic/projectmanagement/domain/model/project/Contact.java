@@ -17,9 +17,15 @@ public class Contact {
 
   private String emailAddress;
 
-  public Contact(String fullName, String emailAddress) {
+  private String oidc;
+
+  private String oidcIssuer;
+
+  public Contact(String fullName, String emailAddress, String oidc, String oidcIssuer) {
     requireNonNull(fullName, "fullName must not be null");
     requireNonNull(emailAddress, "emailAddress must not be null");
+    requireNonNull(oidc, "oidc must not be null");
+    requireNonNull(oidcIssuer, "oidcIssuer must not be null");
     if (fullName.isBlank()) {
       throw new IllegalArgumentException("A contacts name must not be empty");
     }
@@ -28,6 +34,8 @@ public class Contact {
     }
     this.fullName = fullName;
     this.emailAddress = emailAddress;
+    this.oidc = oidc;
+    this.oidcIssuer = oidcIssuer;
   }
 
   protected Contact() {
@@ -42,6 +50,13 @@ public class Contact {
     return emailAddress;
   }
 
+  public String oidc() {
+    return oidc;
+  }
+
+  public String oidcIssuer() {
+    return oidcIssuer;
+  }
 
   @Override
   public boolean equals(Object object) {
