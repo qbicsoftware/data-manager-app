@@ -264,7 +264,7 @@ public class TemplateService {
     return mimeType.equalsTypeAndSubtype(templateProvider.providedMimeType());
   }
 
-  record SampleBasic(
+  private record SampleBasic(
       List<String> analysisMethods,
       List<String> conditions,
       List<String> analytes,
@@ -275,19 +275,12 @@ public class TemplateService {
 
   }
 
-  record SampleExtension(
+  private record SampleExtension(
       List<Sample> samples,
       List<ExperimentalGroup> experimentalGroups,
       List<ConfoundingVariableLevel> confoundingVariableLevels
   ) {
 
-  }
-
-  static class SampleSearchException extends RuntimeException {
-
-    public SampleSearchException() {
-      super();
-    }
   }
 
   static class NoSuchExperimentException extends RuntimeException {
