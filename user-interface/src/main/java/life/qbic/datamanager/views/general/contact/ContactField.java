@@ -94,7 +94,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       }
       //Reset any values stored within the other selection modes
       resetFieldValues(this);
-      if (listener.getValue()) {
+      if (Boolean.TRUE.equals(listener.getValue())) {
         loadContact(this, myself);
       }
     });
@@ -197,7 +197,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       return;
     }
     //If the user provided an entry from the orcidrepository show the full name within the combobox
-    if (contact.isComplete() && !contact.equals(myself)) {
+    if (contact.isComplete()) {
       orcidSelection.setValue(new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
           contact.oidcIssuer()));
       manualContactSetter.setValues(contact.fullName(), contact.email());
