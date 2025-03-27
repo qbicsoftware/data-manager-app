@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.export.rawdata.RawDataUrlFile;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;

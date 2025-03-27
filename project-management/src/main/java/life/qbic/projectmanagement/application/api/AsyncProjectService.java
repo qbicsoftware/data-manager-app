@@ -9,8 +9,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
@@ -265,6 +265,7 @@ public interface AsyncProjectService {
    *
    * @param projectId    the project ID of the project the template should be created for
    * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param batchId      the batch ID for which the samples shall be updated
    * @param mimeType     the mime type the digital object should be
    * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
    * @throws AccessDeniedException        if the user has insufficient rights
@@ -274,7 +275,27 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      String batchId, MimeType mimeType);
+
+  /**
+   * Requests sample information in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType);
+
 
   /**
    * Container of an update request for a service call and part of the

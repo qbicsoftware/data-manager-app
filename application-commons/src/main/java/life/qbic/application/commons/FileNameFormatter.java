@@ -1,4 +1,4 @@
-package life.qbic.datamanager.files.export;
+package life.qbic.application.commons;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -41,7 +41,7 @@ public class FileNameFormatter {
   }
 
   private static String replaceSpaces(String projectPart) {
-    return projectPart.replaceAll("\\s", SPACE_REPLACEMENT);
+    return projectPart.trim().replaceAll("\\s", SPACE_REPLACEMENT);
   }
 
   private static String replaceSlashes(String input) {

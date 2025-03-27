@@ -1,30 +1,30 @@
-package life.qbic.datamanager.files.export.sample;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
-import life.qbic.datamanager.files.export.WorkbookFactory;
-import life.qbic.datamanager.files.structure.Column;
-import life.qbic.datamanager.files.structure.sample.ConfoundingVariableColumn;
-import life.qbic.datamanager.files.structure.sample.RegisterColumn;
-import life.qbic.datamanager.views.general.confounding.ConfoundingVariable;
+import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.ConfoundingVariableColumn;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.RegisterColumn;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
-public class SampleRegisterFactory implements WorkbookFactory {
+class SampleRegisterFactory implements WorkbookFactory {
 
   private final List<String> analysisMethods;
   private final List<String> conditions;
   private final List<String> analytes;
   private final List<String> species;
   private final List<String> specimen;
-  private final List<ConfoundingVariable> confoundingVariables;
+  private final List<ConfoundingVariableInformation> confoundingVariables;
 
   public SampleRegisterFactory(List<String> analysisMethods, List<String> conditions,
       List<String> analytes, List<String> species,
-      List<String> specimen, List<ConfoundingVariable> confoundingVariables) {
+      List<String> specimen, List<ConfoundingVariableInformation> confoundingVariables) {
     this.analysisMethods = analysisMethods;
     this.conditions = conditions;
     this.analytes = analytes;
@@ -57,8 +57,8 @@ public class SampleRegisterFactory implements WorkbookFactory {
       var confoundingVariable = confoundingVariables.get(i);
       int columnIndex = colOffset + i;
       columns.add(
-          new ConfoundingVariableColumn(confoundingVariable.variableReference(), columnIndex,
-              confoundingVariable.name()));
+          new ConfoundingVariableColumn(confoundingVariable.id(), columnIndex,
+              confoundingVariable.variableName()));
     }
 
     return columns.toArray(new Column[0]);

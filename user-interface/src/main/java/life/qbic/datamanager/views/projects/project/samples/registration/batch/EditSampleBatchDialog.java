@@ -14,37 +14,42 @@ import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.download.DownloadContentProvider.XLSXDownloadContentProvider;
-import life.qbic.datamanager.download.DownloadProvider;
-import life.qbic.datamanager.files.export.FileNameFormatter;
-import life.qbic.datamanager.files.export.sample.TemplateService;
+import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.MetadataParser.ParsingException;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.parsing.SampleInformationExtractor;
 import life.qbic.datamanager.files.parsing.SampleInformationExtractor.SampleInformationForExistingSample;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.general.WizardDialogWindow;
+import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.FileType;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.SucceededEvent;
 import life.qbic.datamanager.views.general.upload.UploadWithDisplay.UploadedData;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.ValidationResultWithPayload;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
 import life.qbic.projectmanagement.application.api.SampleMetadata;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.batch.BatchId;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.util.MimeType;
 
 /**
  * A dialog used for editing sample and batch information.
@@ -52,7 +57,8 @@ import org.apache.poi.ss.usermodel.Workbook;
  * @since 1.4.0
  */
 public class EditSampleBatchDialog extends WizardDialogWindow {
-
+  private static final MimeType OPEN_XML = MimeType.valueOf(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   private static final String YOUR_DATA_HAS_BEEN_APPROVED_TEXT = "Your data has been approved";
   private static final String ERROR_CSS = "error";
   private static final String EDIT_THE_SAMPLE_BATCH_METADATA_TEXT = "Edit the sample batch metadata";
@@ -71,14 +77,18 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   private final Div inProgressView;
   private final Div failedView;
   private final Div succeededView;
+  private final MessageSourceNotificationFactory messageFactory;
+  private final DownloadComponent downloadComponent;
 
   public EditSampleBatchDialog(SampleValidationService sampleValidationService,
-      TemplateService templateService,
+      AsyncProjectService service, MessageSourceNotificationFactory messageFactory,
       BatchId batchId,
       String batchName,
       String experimentId,
       String projectId,
       String projectCode) {
+    this.messageFactory = Objects.requireNonNull(messageFactory);
+    this.downloadComponent = new DownloadComponent();
 
     setHeaderTitle("Edit Sample Batch");
     setConfirmButtonLabel("Edit Batch");
@@ -99,7 +109,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     batchNameField.setPlaceholder("Please enter a name for your batch");
     batchNameField.addClassName("batch-name-field");
 
-    Div downloadMetadataSection = setupDownloadMetadataSection(templateService, batchId,
+    Div downloadMetadataSection = setupDownloadMetadataSection(service, batchId.value(),
         experimentId,
         projectId, projectCode);
 
@@ -129,7 +139,7 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     inProgressView.setVisible(false);
     failedView.setVisible(false);
     succeededView.setVisible(false);
-    add(initialView, inProgressView, failedView, succeededView);
+    add(initialView, inProgressView, failedView, succeededView, downloadComponent);
   }
 
   private static InvalidUploadDisplay invalidDisplay(String fileName,
@@ -240,28 +250,19 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
 
   }
 
-  private Div setupDownloadMetadataSection(TemplateService templateService,
-      BatchId batchId,
+  private Div setupDownloadMetadataSection(AsyncProjectService service,
+      String batchId,
       String experimentId,
       String projectId, String projectCode) {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
     downloadTemplate.addClickListener(buttonClickEvent -> {
-      try (Workbook workbook = templateService.sampleBatchUpdateXLSXTemplate(
-          batchId,
-          projectId,
-          experimentId)) {
-        var filename = FileNameFormatter.formatWithVersion(
-            projectCode + "_sample metadata edit template", 1,
-            "xlsx");
-        var downloadProvider = new DownloadProvider(
-            new XLSXDownloadContentProvider(filename, workbook));
-        add(downloadProvider);
-        downloadProvider.trigger();
-      } catch (IOException e) {
-        log.error("Writing the batch template failed.", e);
-        throw new ApplicationException("Creating the template resource failed.");
-      }
+      service.sampleUpdateTemplate(projectId, experimentId, batchId,
+          OPEN_XML).doOnSuccess(resource ->
+          triggerDownload(resource,
+              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "sample metadata update template",
+                  "xlsx")
+          )).doOnError(this::handleError).subscribe();
     });
     Div text = new Div();
     text.addClassName("download-metadata-text");
@@ -278,6 +279,43 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
     sectionContent.add(text, downloadTemplate);
     downloadMetadataSection.add(sectionTitle, sectionContent);
     return downloadMetadataSection;
+  }
+
+  private void handleError(Throwable throwable) {
+    switch (throwable) {
+      case AccessDeniedException ignored:
+        handleAccessDeniedError();
+        return;
+      default:
+        handleUnexpectedError(throwable);
+    }
+  }
+
+  private void handleUnexpectedError(Throwable throwable) {
+    throw new ApplicationException("We are sorry, an unexpected error occurred.", throwable);
+  }
+
+  private void handleAccessDeniedError() {
+    getUI().ifPresent(ui -> ui.access(() -> messageFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
+  }
+
+  private void triggerDownload(DigitalObject resource, String filename) {
+    getUI().ifPresent(
+        ui -> ui.access(() -> downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
+          @Override
+          public byte[] getBytes() {
+            try (var content = resource.content()) {
+              return content.readAllBytes();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+
+          @Override
+          public String getFilename() {
+            return filename;
+          }
+        })));
   }
 
   public Registration addConfirmListener(ComponentEventListener<ConfirmEvent> listener) {
