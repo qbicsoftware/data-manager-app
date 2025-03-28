@@ -44,6 +44,9 @@ import life.qbic.datamanager.views.general.IconLabel;
 import life.qbic.datamanager.views.general.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.section.ActionBar;
@@ -621,6 +624,15 @@ public class ProjectSummaryComponent extends PageArea {
   private void removeFunding(ProjectId projectId) {
     projectInformationService.removeFunding(projectId);
   }
+
+  private AppDialog openEditProjectDialog(String projectId) {
+    var dialog = AppDialog.medium();
+    var header = DialogHeader.with(dialog, "Edit Project Design");
+    var footer = DialogFooter.with(dialog, "Cancel", "Save");
+    // TODO continue implementation
+    throw new RuntimeException("Not implemented yet");
+  }
+
 
   private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
     var projectInfo = convertToInfo(project);
