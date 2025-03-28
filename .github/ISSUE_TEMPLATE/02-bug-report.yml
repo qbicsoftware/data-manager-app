@@ -3,9 +3,6 @@ description: File a bug report.
 title: "[Provide a short descriptive title]"
 labels: ["bug", "triage"]
 projects: ["qbicsoftware/25"]
-assignees:
-  - sven1103
-  - Shraddha0903
 body:
   - type: markdown
     attributes:
