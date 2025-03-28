@@ -5,10 +5,12 @@ import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -17,7 +19,6 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.InputStream;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,8 +46,10 @@ import life.qbic.datamanager.views.general.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.section.ActionBar;
@@ -64,6 +67,7 @@ import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
+import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
 import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
 import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
@@ -129,6 +133,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
   private final RequestCache requestCache;
+  private final Dialog dialog;
   private Context context;
   private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
@@ -143,7 +148,7 @@ public class ProjectSummaryComponent extends PageArea {
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
-      RequestCache requestCache) {
+      RequestCache requestCache, Dialog dialog) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -168,6 +173,7 @@ public class ProjectSummaryComponent extends PageArea {
     add(fundingInformationSection);
     add(projectContactsSection);
     add(downloadComponent);
+    this.dialog = dialog;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -485,14 +491,16 @@ public class ProjectSummaryComponent extends PageArea {
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {
     var editButton = new Button("Edit");
     editButton.addClickListener(listener -> {
-      editProjectDesignDialog = buildAndWireEditProjectDesign(project);
-      editProjectDesignDialog.open();
-      editProjectDesignDialog.addUpdateEventListener(event -> {
-        handleUpdateEvent(event);
-        editProjectDesignDialog.close();
-      });
-
+      var form = new ProjectDesignForm();
+      form.setContent(convertToInfo(project));
+      AppDialog dialog = createEditDesignDialog(project.getId().value(), form, form);
+      dialog.registerCancelAction(dialog::close);
+      dialog.registerConfirmAction(() -> submitRequest(
+          new ProjectUpdateRequest(project.getId().value(), form.getProjectDesign())));
+      dialog.open();
+      add(dialog);
     });
+
     projectDesignSection.setHeader(
         new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
     var content = new SectionContent();
@@ -625,12 +633,18 @@ public class ProjectSummaryComponent extends PageArea {
     projectInformationService.removeFunding(projectId);
   }
 
-  private AppDialog openEditProjectDialog(String projectId) {
-    var dialog = AppDialog.medium();
-    var header = DialogHeader.with(dialog, "Edit Project Design");
-    var footer = DialogFooter.with(dialog, "Cancel", "Save");
-    // TODO continue implementation
-    throw new RuntimeException("Not implemented yet");
+  private AppDialog createEditDesignDialog(String projectId, Component body, UserInput input) {
+    var appDialog = AppDialog.medium();
+    DialogHeader.with(appDialog, "Edit Project Design");
+    DialogFooter.with(appDialog, "Cancel", "Save");
+
+    DialogBody.with(appDialog, body, input);
+    return appDialog;
+  }
+
+  private ProjectInformation getProjectInformation(String projectId) {
+    // TODO replace with future async service call
+    return convertToInfo(projectInformationService.find(projectId).orElseThrow());
   }
 
 
@@ -684,7 +698,8 @@ public class ProjectSummaryComponent extends PageArea {
     downloadComponent.trigger(new DownloadStreamProvider() {
       @Override
       public String getFilename() {
-        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "project summary", "zip");
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+            "project summary", "zip");
       }
 
       @Override

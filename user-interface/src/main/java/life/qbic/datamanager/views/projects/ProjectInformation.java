@@ -99,6 +99,7 @@ public final class ProjectInformation implements Serializable {
 
   public void setProjectObjective(String projectObjective) {
     this.projectObjective = projectObjective;
+    System.out.println("Project objective: " + projectObjective);
   }
 
   public String getProjectId() {
