@@ -357,7 +357,6 @@ public interface AsyncProjectService {
    */
   record ProjectDesign(String title, String objective) implements ProjectUpdateRequestBody,
       ProjectUpdateResponseBody {
-
   }
 
   /**
