@@ -77,8 +77,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     var projectId = request.projectId();
+    var requestId = request.requestId();
     Mono<ProjectUpdateResponse> response = switch (request.requestBody()) {
-      case FundingInformation fundingInformation -> unknownRequest();
+      case FundingInformation fundingInformation -> update(projectId, requestId, fundingInformation);
       case ProjectContacts projectContacts -> unknownRequest();
       case ProjectDesign projectDesign ->
           updateProjectDesign(projectId, projectDesign, request.requestId());
@@ -87,6 +88,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return response
         .transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
+  }
+
+  private Mono<ProjectUpdateResponse> update(String projectId, String requestId, FundingInformation fundingInformation) {
+    return Mono.fromCallable(() -> {
+      projectService.setFunding(ProjectId.parse(projectId), fundingInformation.grant(), fundingInformation.grantId());
+      return new ProjectUpdateResponse(projectId, fundingInformation, requestId);
+    });
   }
 
   @Override

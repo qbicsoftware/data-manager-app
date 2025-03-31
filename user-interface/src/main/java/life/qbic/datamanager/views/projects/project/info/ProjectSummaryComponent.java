@@ -15,6 +15,8 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.data.binder.Validator;
+import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.InputStream;
@@ -51,7 +53,10 @@ import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
+import life.qbic.datamanager.views.general.funding.BoundFundingField;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.funding.FundingField;
+import life.qbic.datamanager.views.general.funding.FundingInputForm;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
@@ -63,10 +68,10 @@ import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactDialog;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
-import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
 import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
 import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
@@ -79,6 +84,7 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
@@ -134,8 +140,9 @@ public class ProjectSummaryComponent extends PageArea {
   private final transient AsyncProjectService asyncProjectService;
   private final RequestCache requestCache;
   private final Dialog dialog;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private Toast taskInProgressToast;
   private Context context;
-  private EditProjectDesignDialog editProjectDesignDialog;
   private EditFundingInformationDialog editFundingInfoDialog;
   private EditContactDialog editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
@@ -148,7 +155,8 @@ public class ProjectSummaryComponent extends PageArea {
       ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
-      RequestCache requestCache, Dialog dialog) {
+      RequestCache requestCache, Dialog dialog,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -174,6 +182,7 @@ public class ProjectSummaryComponent extends PageArea {
     add(projectContactsSection);
     add(downloadComponent);
     this.dialog = dialog;
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -227,6 +236,12 @@ public class ProjectSummaryComponent extends PageArea {
     return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
   }
 
+  private static SerializablePredicate<FundingEntry> incompletePredicate() {
+    return (FundingEntry entry) ->
+        !((entry.getLabel().isBlank() && !entry.getReferenceId().isBlank()) ||
+            (!entry.getLabel().isBlank() && entry.getReferenceId().isBlank()));
+  }
+
   public void setContext(Context context) {
     this.context = Objects.requireNonNull(context);
     var projectId = context.projectId()
@@ -243,7 +258,6 @@ public class ProjectSummaryComponent extends PageArea {
     // The header section only contains the RO-Crate action, which we want to enable always
     loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
   }
-
 
   private void reloadInformation(Context context) {
     var projectId = context.projectId()
@@ -357,21 +371,27 @@ public class ProjectSummaryComponent extends PageArea {
   private void buildFundingInformationSection(Project fullProject,
       ProjectInformation projectInformation) {
     var editButton = createButtonWithListener("Edit", listener -> {
-      editFundingInfoDialog = buildAndWireEditFinanceInfo(projectInformation);
-      editFundingInfoDialog.open();
-      editFundingInfoDialog.addUpdateEventListener(event -> {
-        var projectId = context.projectId().orElseThrow();
-        // If the funding entry is "null", we need to remove the funding from the project
-        // Otherwise we update it
-        event.content().orElseThrow().getFundingEntry()
-            .ifPresentOrElse(fundingEntry -> updateFundingInfo(projectId, fundingEntry),
-                () -> removeFunding(projectId));
-        reloadInformation(context);
-        editFundingInfoDialog.close();
-        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-            new String[]{fullProject.getProjectCode().value()}, getLocale());
-        toast.open();
+      var dialog = AppDialog.small();
+      DialogHeader.with(dialog, "Edit funding information");
+      DialogFooter.with(dialog, "Cancel", "Save");
+
+      var fundingField = FundingField.createHorizontal("Funding");
+      var form = FundingInputForm.create(new BoundFundingField(fundingField,
+          Validator.from(incompletePredicate(),
+              "Please provide complete information for both, grant and grand ID.")));
+      form.setContent(projectInformation.getFundingEntry().orElse(new FundingEntry("", "")));
+
+      dialog.registerConfirmAction(() -> {
+        dialog.close();
+        var funding = form.getIfValid().orElseThrow();
+        submitRequest(new ProjectUpdateRequest(fullProject.getId().value(),
+            new FundingInformation(funding.getLabel(), funding.getReferenceId())));
       });
+
+      dialog.registerCancelAction(dialog::close);
+
+      DialogBody.with(dialog, form, form);
+      dialog.open();
     });
 
     fundingInformationSection.setHeader(
@@ -495,8 +515,11 @@ public class ProjectSummaryComponent extends PageArea {
       form.setContent(convertToInfo(project));
       AppDialog dialog = createEditDesignDialog(project.getId().value(), form, form);
       dialog.registerCancelAction(dialog::close);
-      dialog.registerConfirmAction(() -> submitRequest(
-          new ProjectUpdateRequest(project.getId().value(), form.getProjectDesign())));
+      dialog.registerConfirmAction(() -> {
+        dialog.close();
+        submitRequest(
+            new ProjectUpdateRequest(project.getId().value(), form.getProjectDesign()));
+      });
       dialog.open();
       add(dialog);
     });
@@ -556,10 +579,26 @@ public class ProjectSummaryComponent extends PageArea {
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
         .doOnSubscribe(
-            subscription -> log.debug("Subscribed to project update request: " + request))
+            subscription -> showPendingTaskToast())
         .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
+        .doOnTerminate(this::closePendingTaskToast)
         .subscribe(this::handleSuccess);
+  }
 
+  private void showPendingTaskToast() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      taskInProgressToast = messageSourceNotificationFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Updating project"}, getLocale());
+      taskInProgressToast.open();
+    }));
+  }
+
+  private void closePendingTaskToast() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      if (taskInProgressToast != null) {
+        taskInProgressToast.close();
+      }
+    }));
   }
 
   /*
@@ -572,6 +611,7 @@ public class ProjectSummaryComponent extends PageArea {
       var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
           new String[]{}, getLocale());
       toast.open();
+      ui.push();
       reloadInformation(context);
     }));
   }
@@ -640,24 +680,6 @@ public class ProjectSummaryComponent extends PageArea {
 
     DialogBody.with(appDialog, body, input);
     return appDialog;
-  }
-
-  private ProjectInformation getProjectInformation(String projectId) {
-    // TODO replace with future async service call
-    return convertToInfo(projectInformationService.find(projectId).orElseThrow());
-  }
-
-
-  private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
-    var projectInfo = convertToInfo(project);
-    var dialog = new EditProjectDesignDialog(projectInfo);
-    var defaultStrategy = new ImmediateClosingStrategy(dialog);
-    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
-    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
-    dialog.setDefaultStrategy(defaultStrategy);
-    dialog.setWarningStrategy(withWarning);
-    return dialog;
   }
 
   private void buildHeaderSection(ProjectOverview projectOverview) {

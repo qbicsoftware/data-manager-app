@@ -3,7 +3,12 @@ package life.qbic.datamanager.views.general.funding;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.data.binder.ValidationException;
 import java.util.Objects;
+import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBoundField;
+import life.qbic.datamanager.views.general.dialog.InputValidation;
+import life.qbic.datamanager.views.general.dialog.UserInput;
+import org.apache.poi.sl.draw.geom.GuideIf.Op;
+import org.springframework.lang.NonNull;
 
 /**
  * <b>Funding Input Form</b>
@@ -12,7 +17,7 @@ import life.qbic.datamanager.views.general.HasBoundField;
  *
  * @since 1.6.0
  */
-public class FundingInputForm extends FormLayout {
+public class FundingInputForm extends FormLayout implements UserInput {
 
   private final transient HasBoundField<FundingField, FundingEntry> fundingField;
 
@@ -34,6 +39,28 @@ public class FundingInputForm extends FormLayout {
     return fundingField.getValue();
   }
 
+  public Optional<FundingEntry> getIfValid() {
+    if (fundingField.isValid()) {
+      try {
+        return Optional.ofNullable(fundingField.getValue());
+      } catch (ValidationException e) {
+        // swallow exception by design
+      }
+    }
+    return Optional.empty();
+  }
+
+
+  @Override
+  @NonNull
+  public InputValidation validate() {
+    if (fundingField.isValid()) {
+      return InputValidation.passed();
+    }
+    return InputValidation.failed();
+  }
+
+  @Override
   public boolean hasChanges() {
     return fundingField.hasChanged();
   }
