@@ -70,11 +70,9 @@ import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
-import life.qbic.datamanager.views.projects.edit.EditContactDialog;
+import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
-import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
-import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
@@ -85,6 +83,8 @@ import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContacts;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
@@ -144,7 +144,7 @@ public class ProjectSummaryComponent extends PageArea {
   private Toast taskInProgressToast;
   private Context context;
   private EditFundingInformationDialog editFundingInfoDialog;
-  private EditContactDialog editContactsDialog;
+  private EditContactsComponent editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
 
   @Autowired
@@ -298,17 +298,27 @@ public class ProjectSummaryComponent extends PageArea {
   private void buildProjectContactsInfoSection(Project project) {
     // set up the edit button, that opens the dialog for editing contacts
     var editButton = createButtonWithListener("Edit", listener -> {
-      editContactsDialog = buildAndWireEditContacts(convertToInfo(project));
-      editContactsDialog.open();
-      editContactsDialog.addUpdateEventListener(event -> {
-        updateContactInfo(context.projectId().orElseThrow(),
-            event.content().orElseThrow());
-        reloadInformation(context);
-        editContactsDialog.close();
-        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-            new String[]{project.getProjectCode().value()}, getLocale());
-        toast.open();
+      var editContacts = new EditContactsComponent(convertToInfo(project),
+          Utility.tryToLoadFromPrincipal().orElse(null));
+      var dialog = AppDialog.medium();
+      DialogHeader.with(dialog, "Edit Contacts");
+      DialogFooter.with(dialog, "Cancel", "Save");
+      DialogBody.with(dialog, editContacts, editContacts);
+
+      dialog.registerCancelAction(dialog::close);
+      dialog.registerConfirmAction(() -> {
+        dialog.close();
+        var manager = editContacts.getIfValidManager().orElseThrow();
+        var responsible = editContacts.getIfValidProjectResponsible().orElseThrow();
+        var investigator = editContacts.getIfValidInvestigator().orElseThrow();
+        var projectContacts = new ProjectContacts(
+            new ProjectContact(investigator.getFullName(), investigator.getEmail()),
+            new ProjectContact(manager.getFullName(), manager.getEmail()),
+            new ProjectContact(responsible.getFullName(), responsible.getEmail()));
+        submitRequest(new ProjectUpdateRequest(project.getId().value(), projectContacts));
       });
+
+      dialog.open();
     });
     // create the section with header and content
     projectContactsSection.setHeader(
@@ -410,30 +420,6 @@ public class ProjectSummaryComponent extends PageArea {
       fundingInformationSection.setContent(new SectionContent(grantIconLabel));
     }
 
-  }
-
-  private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
-    var dialog = new EditContactDialog(projectInformation,
-        Utility.tryToLoadFromPrincipal().orElse(null));
-    var defaultStrategy = new ImmediateClosingStrategy(dialog);
-    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
-    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
-    dialog.setDefaultCancelStrategy(defaultStrategy);
-    dialog.setCancelWithoutSaveStrategy(withWarning);
-    return dialog;
-  }
-
-  private EditFundingInformationDialog buildAndWireEditFinanceInfo(
-      ProjectInformation projectInformation) {
-    var dialog = new EditFundingInformationDialog(projectInformation);
-    var defaultStrategy = new ImmediateClosingStrategy(dialog);
-    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
-    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
-    dialog.setDefaultCancelStrategy(defaultStrategy);
-    dialog.setCancelWithoutSaveStrategy(withWarning);
-    return dialog;
   }
 
   private void buildExperimentInformationSection(
@@ -548,29 +534,6 @@ public class ProjectSummaryComponent extends PageArea {
     projectDesignSection.setContent(content);
   }
 
-  /*
-  Handler for project design update events.
-
-  Since the project id is not referenced in the event, we assume that
-  the UI scope was not left and the current context references the project
-  that is supposed to be updated.
-   */
-  private void handleUpdateEvent(ProjectDesignUpdateEvent event) {
-    if (event.content().isEmpty()) {
-      log.debug("No content to be updated");
-      // Nothing to be done
-      return;
-    }
-    var project = context.projectId().orElseThrow().value();
-    var info = event.content().orElseThrow();
-    // Build the request for the service call
-    var request = new ProjectUpdateRequest(project,
-        new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
-
-    submitRequest(request);
-  }
-
-
   private void submitRequest(ProjectUpdateRequest request) {
     requestCache.store(request);
 
@@ -662,15 +625,6 @@ public class ProjectSummaryComponent extends PageArea {
       var toast = notificationFactory.toast("access.denied", new String[]{}, getLocale());
       toast.open();
     }));
-  }
-
-  private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
-    projectInformationService.setFunding(projectId, fundingEntry.getLabel(),
-        fundingEntry.getReferenceId());
-  }
-
-  private void removeFunding(ProjectId projectId) {
-    projectInformationService.removeFunding(projectId);
   }
 
   private AppDialog createEditDesignDialog(String projectId, Component body, UserInput input) {

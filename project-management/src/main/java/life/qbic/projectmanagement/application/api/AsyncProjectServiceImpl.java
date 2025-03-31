@@ -80,7 +80,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var requestId = request.requestId();
     Mono<ProjectUpdateResponse> response = switch (request.requestBody()) {
       case FundingInformation fundingInformation -> update(projectId, requestId, fundingInformation);
-      case ProjectContacts projectContacts -> unknownRequest();
+      case ProjectContacts projectContacts -> update(projectId, requestId, projectContacts);
       case ProjectDesign projectDesign ->
           updateProjectDesign(projectId, projectDesign, request.requestId());
     };
@@ -88,6 +88,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return response
         .transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
+  }
+
+  private Mono<ProjectUpdateResponse> update(String projectId, String requestId,
+      ProjectContacts projectContacts) {
+    var projectID = ProjectId.parse(projectId);
+    return Mono.fromCallable(() -> {
+      projectService.setResponsibility(projectID, projectContacts.responsible());
+      projectService.manageProject(projectID, projectContacts.manager());
+      projectService.investigateProject(projectID, projectContacts.investigator());
+      return new ProjectUpdateResponse(projectId, projectContacts, requestId);
+    });
   }
 
   private Mono<ProjectUpdateResponse> update(String projectId, String requestId, FundingInformation fundingInformation) {
