@@ -88,7 +88,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       case ProjectDesign projectDesign -> update(projectId, requestId, projectDesign);
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return response
+    return ReactiveSecurityContextUtils.applySecurityContext(response)
+        .subscribeOn(scheduler)
         .transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
   }
@@ -328,7 +329,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
       ProjectResponsibleDeletion request) {
-    return Mono.defer(() -> {
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.defer(() -> {
       try {
         projectService.removeResponsibility(ProjectId.parse(projectId));
         return Mono.just(new ProjectDeletionResponse(projectId, requestId));
@@ -340,7 +341,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             + requestId, e);
         return Mono.error(new RequestFailedException("Unexpected exception during deletion"));
       }
-    });
+    })).subscribeOn(scheduler);
   }
 
   private <T> Mono<T> unknownRequest() {
@@ -357,8 +358,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
       ProjectDesign design) {
-    return applySecurityContext(
-        Mono.<ProjectUpdateResponse>create(sink -> {
+    return
+       Mono.<ProjectUpdateResponse>create(sink -> {
           try {
             projectService.updateTitle(projectId, design.title());
             projectService.updateObjective(projectId, design.objective());
@@ -370,9 +371,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           } catch (RuntimeException e) {
             sink.error(new RequestFailedException("Update project design failed", e));
           }
-        })
-    ).subscribeOn(
-        scheduler); //we must not expose the blocking behaviour outside of this method, thus we use a non-blocking scheduler
+        }
+    );
   }
 
 }
