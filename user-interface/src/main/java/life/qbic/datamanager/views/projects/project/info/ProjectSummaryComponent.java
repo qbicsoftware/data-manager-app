@@ -352,7 +352,6 @@ public class ProjectSummaryComponent extends PageArea {
       dialog.registerCancelAction(dialog::close);
       dialog.registerConfirmAction(() -> {
         dialog.close();
-        UI.getCurrent().push();
         var manager = toProjectContacts(
             editContacts.getIfValidManager().orElseThrow()).orElseThrow();
         var responsible = toProjectContacts(
@@ -615,15 +614,6 @@ public class ProjectSummaryComponent extends PageArea {
         .subscribe();
   }
 
-  private void handleSuccess(ProjectDeletionResponse projectDeletionResponse) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-          new String[]{}, getLocale());
-      toast.open();
-      ui.push();
-      reloadInformation(context);
-    }));
-  }
 
   private void submitRequest(ProjectUpdateRequest request) {
     requestCache.store(request);
@@ -689,6 +679,16 @@ public class ProjectSummaryComponent extends PageArea {
           new String[]{}, getLocale());
       toast.open();
       ui.push();
+      reloadInformation(context);
+    }));
+  }
+
+
+  private void handleSuccess(ProjectDeletionResponse projectDeletionResponse) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
       reloadInformation(context);
     }));
   }
