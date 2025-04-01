@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -76,13 +77,15 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
-    var projectId = request.projectId();
+    var projectId = ProjectId.parse(request.projectId());
     var requestId = request.requestId();
     Mono<ProjectUpdateResponse> response = switch (request.requestBody()) {
-      case FundingInformation fundingInformation -> update(projectId, requestId, fundingInformation);
-      case ProjectContacts projectContacts -> update(projectId, requestId, projectContacts);
-      case ProjectDesign projectDesign ->
-          updateProjectDesign(projectId, projectDesign, request.requestId());
+      case FundingInformation fundingInformation ->
+          update(projectId, requestId, fundingInformation);
+      case ProjectManager manager -> update(projectId, requestId, manager);
+      case ProjectResponsible responsible -> update(projectId, requestId, responsible);
+      case PrincipalInvestigator investigator -> update(projectId, requestId, investigator);
+      case ProjectDesign projectDesign -> update(projectId, requestId, projectDesign);
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return response
@@ -90,21 +93,36 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy());
   }
 
-  private Mono<ProjectUpdateResponse> update(String projectId, String requestId,
-      ProjectContacts projectContacts) {
-    var projectID = ProjectId.parse(projectId);
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      PrincipalInvestigator investigator) {
     return Mono.fromCallable(() -> {
-      projectService.setResponsibility(projectID, projectContacts.responsible());
-      projectService.manageProject(projectID, projectContacts.manager());
-      projectService.investigateProject(projectID, projectContacts.investigator());
-      return new ProjectUpdateResponse(projectId, projectContacts, requestId);
+      projectService.investigateProject(projectId, investigator.contact());
+      return new ProjectUpdateResponse(projectId.value(), investigator, requestId);
     });
   }
 
-  private Mono<ProjectUpdateResponse> update(String projectId, String requestId, FundingInformation fundingInformation) {
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      ProjectResponsible responsible) {
     return Mono.fromCallable(() -> {
-      projectService.setFunding(ProjectId.parse(projectId), fundingInformation.grant(), fundingInformation.grantId());
-      return new ProjectUpdateResponse(projectId, fundingInformation, requestId);
+      projectService.setResponsibility(projectId, responsible.contact());
+      return new ProjectUpdateResponse(projectId.value(), responsible, requestId);
+    });
+  }
+
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      ProjectManager manager) {
+    return Mono.fromCallable(() -> {
+      projectService.manageProject(projectId, manager.contact());
+      return new ProjectUpdateResponse(projectId.value(), manager, requestId);
+    });
+  }
+
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      FundingInformation fundingInformation) {
+    return Mono.fromCallable(() -> {
+      projectService.setFunding(projectId, fundingInformation.grant(),
+          fundingInformation.grantId());
+      return new ProjectUpdateResponse(projectId.value(), fundingInformation, requestId);
     });
   }
 
@@ -296,6 +314,35 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy());
   }
 
+  @Override
+  public Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request) {
+    Mono<ProjectDeletionResponse> responseMono = switch (request.body()) {
+      case ProjectResponsibleDeletion target ->
+          delete(request.projectId(), request.requestId(), target);
+    };
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(responseMono)
+        .transform(original -> writeSecurityContext(original, securityContext))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
+      ProjectResponsibleDeletion request) {
+    return Mono.defer(() -> {
+      try {
+        projectService.removeResponsibility(ProjectId.parse(projectId));
+        return Mono.just(new ProjectDeletionResponse(projectId, requestId));
+      } catch (org.springframework.security.access.AccessDeniedException e) {
+        log.error("Access was denied during deletion of a project responsible", e);
+        return Mono.error(new AccessDeniedException(ACCESS_DENIED));
+      } catch (Exception e) {
+        log.error("Unexpected exception during deletion of a project responsible in request: "
+            + requestId, e);
+        return Mono.error(new RequestFailedException("Unexpected exception during deletion"));
+      }
+    });
+  }
+
   private <T> Mono<T> unknownRequest() {
     return Mono.error(() -> new UnknownRequestException("Invalid request body"));
   }
@@ -308,15 +355,14 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
 
-  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design,
-      String requestId) {
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      ProjectDesign design) {
     return applySecurityContext(
         Mono.<ProjectUpdateResponse>create(sink -> {
           try {
-            var id = ProjectId.parse(projectId);
-            projectService.updateTitle(id, design.title());
-            projectService.updateObjective(id, design.objective());
-            sink.success(new ProjectUpdateResponse(projectId, design, requestId));
+            projectService.updateTitle(projectId, design.title());
+            projectService.updateObjective(projectId, design.objective());
+            sink.success(new ProjectUpdateResponse(projectId.value(), design, requestId));
           } catch (IllegalArgumentException e) {
             sink.error(new RequestFailedException("Invalid project id: " + projectId));
           } catch (org.springframework.security.access.AccessDeniedException e) {
