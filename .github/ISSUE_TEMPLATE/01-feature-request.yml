@@ -3,9 +3,6 @@ description: File a feature request.
 title: "[Please create a short, descriptive title]"
 labels: ["enhancement", "triage"]
 projects: ["qbicsoftware/25"]
-assignees:
-  - sven1103
-  - Shraddha0903
 body:
   - type: markdown
     attributes:
