@@ -58,7 +58,7 @@ public class TemplateService {
     this.templateProvider = Objects.requireNonNull(templateProvider);
   }
 
-  private static Predicate<Sample> inBatchPredicate(String targetBatchId) {
+  private static Predicate<Sample> isInBatch(String targetBatchId) {
     return sample -> sample.assignedBatch().value().equals(targetBatchId);
   }
 
@@ -164,7 +164,7 @@ public class TemplateService {
     var experiment = experimentSupplier.get();
     var sampleBasic = querySampleBasicInfo(experiment, projectId, experimentId);
     var sampleExtension = querySampleExtension(experiment, projectId, experimentId);
-    var samplesInBatch = sampleExtension.samples().stream().filter(inBatchPredicate(batchId))
+    var samplesInBatch = sampleExtension.samples().stream().filter(isInBatch(batchId))
         .toList();
     if (samplesInBatch.isEmpty()) {
       log.warn("No samples found for experiment during template generation: " + experimentId);
