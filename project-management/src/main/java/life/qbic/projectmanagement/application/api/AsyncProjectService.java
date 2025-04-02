@@ -380,7 +380,8 @@ public interface AsyncProjectService {
 
   }
 
-  sealed interface ProjectDeletionRequestBody permits ProjectResponsibleDeletion {
+  sealed interface ProjectDeletionRequestBody permits FundingDeletion,
+      ProjectResponsibleDeletion {
 
   }
 
@@ -830,6 +831,10 @@ public interface AsyncProjectService {
   }
 
   record ProjectDeletionResponse(String projectId, String requestId) {
+
+  }
+
+  record FundingDeletion() implements ProjectDeletionRequestBody {
 
   }
 

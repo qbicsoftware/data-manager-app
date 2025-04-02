@@ -320,16 +320,34 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     Mono<ProjectDeletionResponse> responseMono = switch (request.body()) {
       case ProjectResponsibleDeletion target ->
           delete(request.projectId(), request.requestId(), target);
+      case FundingDeletion target -> delete(request.projectId(), request.requestId(), target);
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return ReactiveSecurityContextUtils.applySecurityContext(responseMono)
         .transform(original -> writeSecurityContext(original, securityContext))
-        .retryWhen(defaultRetryStrategy());
+        .retryWhen(defaultRetryStrategy())
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
+      FundingDeletion target) {
+    return Mono.defer(() -> {
+      try {
+        projectService.removeFunding(ProjectId.parse(projectId));
+        return Mono.just(new ProjectDeletionResponse(projectId, requestId));
+      } catch (org.springframework.security.access.AccessDeniedException e) {
+        log.error("Access was denied during deletion of funding information", e);
+        return Mono.error(new AccessDeniedException(ACCESS_DENIED));
+      } catch (Exception e) {
+        log.error("Unexpected exception deleting funding information", e);
+        return Mono.error(new RequestFailedException("Unexpected exception deleting funding information"));
+      }
+    });
   }
 
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
       ProjectResponsibleDeletion request) {
-    return ReactiveSecurityContextUtils.applySecurityContext(Mono.defer(() -> {
+    return Mono.defer(() -> {
       try {
         projectService.removeResponsibility(ProjectId.parse(projectId));
         return Mono.just(new ProjectDeletionResponse(projectId, requestId));
@@ -341,7 +359,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             + requestId, e);
         return Mono.error(new RequestFailedException("Unexpected exception during deletion"));
       }
-    })).subscribeOn(scheduler);
+    });
   }
 
   private <T> Mono<T> unknownRequest() {

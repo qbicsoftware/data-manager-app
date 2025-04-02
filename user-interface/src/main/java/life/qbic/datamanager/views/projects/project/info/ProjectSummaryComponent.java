@@ -7,11 +7,9 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -71,12 +69,10 @@ import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.general.utils.Utility;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
-import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
@@ -87,6 +83,7 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingDeletion;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.PrincipalInvestigator;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
@@ -106,8 +103,6 @@ import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.infrastructure.TempDirectory;
-import life.qbic.projectmanagement.infrastructure.api.fair.rocrate.ROCreateBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 
@@ -131,16 +126,14 @@ import reactor.core.publisher.Flux;
 public class ProjectSummaryComponent extends PageArea {
 
   public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
-  public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
   public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
+  public static final String CANCEL_BUTTON_TEXT = "Cancel";
+  public static final String SAVE_BUTTON_TEXT = "Save";
   private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
-  private final transient ROCreateBuilder roCrateBuilder;
-  private final transient TempDirectory tempDirectory;
   private final transient ExperimentInformationService experimentInformationService;
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
-  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final Section headerSection;
   private final Section projectDesignSection;
   private final Section experimentInformationSection;
@@ -153,16 +146,12 @@ public class ProjectSummaryComponent extends PageArea {
   private final Map<String, Toast> pendingTaskToasts = new HashMap<>();
   private Toast taskInProgressToast;
   private Context context;
-  private EditFundingInformationDialog editFundingInfoDialog;
-  private EditContactsComponent editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
       UserPermissions userPermissions,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
       RequestCache requestCache,
@@ -173,15 +162,12 @@ public class ProjectSummaryComponent extends PageArea {
     this.experimentInformationSection = new SectionBuilder().build();
     this.fundingInformationSection = new SectionBuilder().build();
     this.projectContactsSection = new SectionBuilder().build();
-    this.tempDirectory = Objects.requireNonNull(tempDirectory);
-    this.roCrateBuilder = Objects.requireNonNull(rOCreateBuilder);
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
-    this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = experimentInformationService;
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.requestCache = Objects.requireNonNull(requestCache);
-    downloadComponent = new DownloadComponent();
+    this.downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
 
@@ -251,11 +237,25 @@ public class ProjectSummaryComponent extends PageArea {
             (!entry.getLabel().isBlank() && entry.getReferenceId().isBlank()));
   }
 
+  private static boolean isEmpty(FundingInformation funding) {
+    if (funding == null) {
+      return true;
+    }
+    return funding.grant().isBlank() && funding.grantId().isBlank();
+  }
+
   private static boolean isEmpty(ProjectContact contact) {
     if (contact == null) {
       return true;
     }
-    return contact.email().isEmpty() && contact.fullName().isEmpty();
+    return contact.email().isBlank() && contact.fullName().isBlank();
+  }
+
+  private static FundingInformation convertFrom(FundingEntry entry) {
+    if (entry == null) {
+      return new FundingInformation("", "");
+    }
+    return new FundingInformation(entry.getLabel(), entry.getReferenceId());
   }
 
   public void setContext(Context context) {
@@ -319,7 +319,8 @@ public class ProjectSummaryComponent extends PageArea {
     return Optional.of(new ProjectContact(contact.getFullName(), contact.getEmail()));
   }
 
-  private void handleSubmission(String projectId, ProjectContact manager, ProjectContact investigator, ProjectContact responsible) {
+  private void handleSubmission(String projectId, ProjectContact manager,
+      ProjectContact investigator, ProjectContact responsible) {
     if (responsible != null) {
       submitMultiple(
           List.of(
@@ -344,9 +345,9 @@ public class ProjectSummaryComponent extends PageArea {
     var editButton = createButtonWithListener("Edit", listener -> {
       var editContacts = new EditContactsComponent(convertToInfo(project),
           Utility.tryToLoadFromPrincipal().orElse(null));
-      AppDialog dialog = AppDialog.small();
+      AppDialog dialog = AppDialog.medium();
       DialogHeader.with(dialog, "Edit Contacts");
-      DialogFooter.with(dialog, "Cancel", "Save");
+      DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
       DialogBody.with(dialog, editContacts, editContacts);
 
       dialog.registerCancelAction(dialog::close);
@@ -358,7 +359,7 @@ public class ProjectSummaryComponent extends PageArea {
             editContacts.getIfValidProjectResponsible().orElseThrow()).orElseThrow();
         var investigator = toProjectContacts(
             editContacts.getIfValidInvestigator().orElseThrow()).orElseThrow();
-        if (responsible.email().isBlank() && responsible.fullName().isBlank()) {
+        if (isEmpty(responsible)) {
           // we infer that the information has been removed for deletion
           // which might be risky and I will the future me: I told you so.
           responsible = null;
@@ -401,21 +402,6 @@ public class ProjectSummaryComponent extends PageArea {
         "wrapping-flex-container");
   }
 
-  private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
-    projectInformation.getResponsiblePerson().ifPresentOrElse(
-        contact -> projectInformationService.setResponsibility(projectId,
-            new Contact(contact.getFullName(), contact.getEmail())),
-        () -> projectInformationService.removeResponsibility(projectId));
-
-    projectInformationService.investigateProject(projectId,
-        new Contact(projectInformation.getPrincipalInvestigator().getFullName(),
-            projectInformation.getPrincipalInvestigator().getEmail()));
-
-    projectInformationService.manageProject(projectId,
-        new Contact(projectInformation.getProjectManager().getFullName(),
-            projectInformation.getProjectManager().getEmail()));
-  }
-
   private Div renderContactInfo(Contact contact) {
     var contactInfo = new Div();
     contactInfo.addClassName("vertical-list");
@@ -430,7 +416,7 @@ public class ProjectSummaryComponent extends PageArea {
     var editButton = createButtonWithListener("Edit", listener -> {
       var dialog = AppDialog.small();
       DialogHeader.with(dialog, "Edit funding information");
-      DialogFooter.with(dialog, "Cancel", "Save");
+      DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
 
       var fundingField = FundingField.createHorizontal("Funding");
       var form = FundingInputForm.create(new BoundFundingField(fundingField,
@@ -440,9 +426,8 @@ public class ProjectSummaryComponent extends PageArea {
 
       dialog.registerConfirmAction(() -> {
         dialog.close();
-        var funding = form.getIfValid().orElseThrow();
-        submitRequest(new ProjectUpdateRequest(fullProject.getId().value(),
-            new FundingInformation(funding.getLabel(), funding.getReferenceId())));
+        var funding = convertFrom(form.getIfValid().orElseThrow());
+        handleSubmission(fullProject.getId().value(), funding);
       });
 
       dialog.registerCancelAction(dialog::close);
@@ -467,6 +452,14 @@ public class ProjectSummaryComponent extends PageArea {
       fundingInformationSection.setContent(new SectionContent(grantIconLabel));
     }
 
+  }
+
+  private void handleSubmission(String projectId, FundingInformation funding) {
+    if (isEmpty(funding)) {
+      submitRequest(new ProjectDeletionRequest(projectId, new FundingDeletion()));
+      return;
+    }
+    submitRequest(new ProjectUpdateRequest(projectId, funding));
   }
 
   private void buildExperimentInformationSection(
@@ -614,7 +607,6 @@ public class ProjectSummaryComponent extends PageArea {
         .subscribe();
   }
 
-
   private void submitRequest(ProjectUpdateRequest request) {
     requestCache.store(request);
 
@@ -748,19 +740,10 @@ public class ProjectSummaryComponent extends PageArea {
     }));
   }
 
-  private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
-    projectInformationService.setFunding(projectId, fundingEntry.getLabel(),
-        fundingEntry.getReferenceId());
-  }
-
-  private void removeFunding(ProjectId projectId) {
-    projectInformationService.removeFunding(projectId);
-  }
-
   private AppDialog createEditDesignDialog(String projectId, Component body, UserInput input) {
     var appDialog = AppDialog.medium();
     DialogHeader.with(appDialog, "Edit Project Design");
-    DialogFooter.with(appDialog, "Cancel", "Save");
+    DialogFooter.with(appDialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
 
     DialogBody.with(appDialog, body, input);
     return appDialog;
