@@ -12,6 +12,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDe
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import org.junit.jupiter.api.AfterEach;
@@ -30,6 +31,7 @@ class AsyncProjectServiceImplTest {
   SampleValidationService sampleValidationService = mock(SampleValidationService.class);
   MeasurementValidationService measurementValidationService = mock(
       MeasurementValidationService.class);
+  TemplateService templateService = mock(TemplateService.class);
 
   @BeforeEach
   void setUp() {
@@ -46,8 +48,13 @@ class AsyncProjectServiceImplTest {
   @DisplayName("Test that the update completes for ProjectDesign")
   void updateProjectDesignCompletes() {
 
-    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
+    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(
+        projectServiceMock,
         sampleServiceMock,
+        Schedulers.boundedElastic(),
+        digitalObjectFactory,
+        templateService
+    );
         Schedulers.boundedElastic(),
         digitalObjectFactory,
         sampleValidationService,
@@ -80,8 +87,13 @@ class AsyncProjectServiceImplTest {
   @DisplayName("Test that the update retries for ProjectDesign")
   void updateProjectDesignRepeats() {
 
-    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
+    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(
+        projectServiceMock,
         sampleServiceMock,
+        Schedulers.boundedElastic(),
+        digitalObjectFactory,
+        templateService
+    );
         Schedulers.boundedElastic(),
         digitalObjectFactory,
         sampleValidationService,

@@ -1,11 +1,11 @@
-package life.qbic.datamanager.templates
+package life.qbic.datamanager.views.identicon
 
 import life.qbic.datamanager.files.export.XLSXTemplateHelper
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import spock.lang.Specification
 
-class XLSXTemplateHelperTest extends Specification {
+class XLSXTemplateHelperSpec extends Specification {
     def "test to camel case"() {
         expect:
         XLSXTemplateHelper.toCamelCase(input).equals(output)
@@ -32,7 +32,7 @@ class XLSXTemplateHelperTest extends Specification {
                 "test values",
                 List.of("test1", "test2", "aböüß"))
         then:
-        result.getRefersToFormula() == "'My sheet'!\$A\$1:\$A\$4"
+        result.getRefersToFormula() == "'My sheet'!\$A\$2:\$A\$4"
         result.getNameName() == "testValues"
         workbook.getName("testValues") != null
     }

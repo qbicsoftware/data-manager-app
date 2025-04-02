@@ -1,4 +1,4 @@
-package life.qbic.datamanager.files.export;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.util;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -247,9 +247,9 @@ public class XLSXTemplateHelper {
    * @return a camel case representation of the input
    * @since 1.5.0
    */
-  public static String toCamelCase(String input) {
+  protected static String toCamelCase(String input) {
     StringBuilder stringBuilder = new StringBuilder(input);
-    Predicate<Character> isWordSeparator = character -> String.valueOf(character).matches("\\W|_");
+    Predicate<Character> isWordSeparator = character -> String.valueOf(character).matches("\\W");
     for (int i = 0; i < stringBuilder.length(); i++) {
       if (isWordSeparator.test(stringBuilder.charAt(i))) {
         stringBuilder.deleteCharAt(

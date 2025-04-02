@@ -39,6 +39,10 @@ import reactor.core.publisher.Mono;
  */
 public interface AsyncProjectService {
 
+  /*
+  API method section - start
+   */
+
   /**
    * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
    * object immediately.
@@ -95,6 +99,25 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
+
+
+  /**
+   * Submits a {@link ProjectDeletionRequest} to remove information from a project.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the actual {@link ProjectDeletionRequest}
+   * @return a {@link Mono<ProjectDeletionResponse>} object publishing an {@link ProjectDeletionResponse} on success.
+   * Exceptions are provided as {@link Mono#error(Throwable)}
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request);
 
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
@@ -267,6 +290,7 @@ public interface AsyncProjectService {
    *
    * @param projectId    the project ID of the project the template should be created for
    * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param batchId      the batch ID for which the samples shall be updated
    * @param mimeType     the mime type the digital object should be
    * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
    * @throws AccessDeniedException        if the user has insufficient rights
@@ -276,7 +300,36 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      String batchId, MimeType mimeType);
+
+  /**
+   * Requests sample information in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType);
+
+
+  /*
+  API method section - end
+   */
+
+
+  /*
+  API concept section - start
+   */
 
   /**
    * Container of an update request for a service call and part of the
@@ -284,8 +337,8 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface ProjectUpdateRequestBody permits FundingInformation, ProjectContacts,
-      ProjectDesign {
+  sealed interface ProjectUpdateRequestBody permits FundingInformation, PrincipalInvestigator,
+      ProjectDesign, ProjectManager, ProjectResponsible {
 
   }
 
@@ -295,8 +348,8 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface ProjectUpdateResponseBody permits FundingInformation, ProjectContacts,
-      ProjectDesign {
+  sealed interface ProjectUpdateResponseBody permits FundingInformation,
+      PrincipalInvestigator, ProjectDesign, ProjectManager, ProjectResponsible {
 
   }
 
@@ -349,6 +402,11 @@ public interface AsyncProjectService {
 
   }
 
+  sealed interface ProjectDeletionRequestBody permits FundingDeletion,
+      ProjectResponsibleDeletion {
+
+  }
+
   /**
    * Container for passing information in an {@link ProjectUpdateRequestBody} or
    * {@link ProjectUpdateResponseBody}.
@@ -367,12 +425,11 @@ public interface AsyncProjectService {
    *
    * @param investigator the principal investigator
    * @param manager      the project manager
-   * @param responsible  the responsible person
+   * @param responsible  the responsible person, can be <code>null</code>
    * @since 1.9.0
    */
   record ProjectContacts(ProjectContact investigator, ProjectContact manager,
-                         ProjectContact responsible) implements ProjectUpdateRequestBody,
-      ProjectUpdateResponseBody {
+                         ProjectContact responsible) {
 
   }
 
@@ -395,6 +452,21 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record FundingInformation(String grant, String grantId) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record ProjectResponsible(ProjectContact contact) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record ProjectManager(ProjectContact contact) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record PrincipalInvestigator(ProjectContact contact) implements ProjectUpdateRequestBody,
       ProjectUpdateResponseBody {
 
   }
@@ -437,7 +509,6 @@ public interface AsyncProjectService {
       return List.copyOf(experimentalVariables);
     }
   }
-
 
   /**
    * Information about variables that should be deleted
@@ -895,10 +966,39 @@ public interface AsyncProjectService {
       }
     }
 
-
     public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
       this(projectId, requestBody, UUID.randomUUID().toString());
     }
+
+  }
+
+  record ProjectDeletionRequest(String projectId, String requestId, ProjectDeletionRequestBody body) {
+    public ProjectDeletionRequest {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+      }
+    }
+
+    public ProjectDeletionRequest(String projectId, ProjectDeletionRequestBody requestBody) {
+      this(projectId, UUID.randomUUID().toString(), requestBody);
+    }
+  }
+
+  record ProjectDeletionResponse(String projectId, String requestId) {
+
+  }
+
+  record FundingDeletion() implements ProjectDeletionRequestBody {
+
+  }
+
+  record ProjectResponsibleDeletion() implements ProjectDeletionRequestBody {
 
   }
 

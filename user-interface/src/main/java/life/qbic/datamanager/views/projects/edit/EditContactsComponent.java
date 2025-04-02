@@ -1,46 +1,40 @@
 package life.qbic.datamanager.views.projects.edit;
 
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.data.binder.ValidationException;
 import java.util.Objects;
-import life.qbic.datamanager.views.events.ContactUpdateEvent;
-import life.qbic.datamanager.views.general.DialogWindow;
+import java.util.Optional;
+import java.util.stream.Stream;
 import life.qbic.datamanager.views.general.contact.BoundContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
 import life.qbic.datamanager.views.general.contact.ContactsForm;
+import life.qbic.datamanager.views.general.dialog.InputValidation;
+import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.ProjectInformation;
-import life.qbic.datamanager.views.strategy.dialog.DialogClosingStrategy;
+import org.springframework.lang.NonNull;
 
 /**
- * <b>Edit Contact Dialog</b>
+ * <b>Edit Contacts Component</b>
  * <p>
- * Dialog that is displayed to the user, when they want to edit contact information.
+ * Component that can be displayed to the user, when they want to edit contact information.
  *
- * @since 1.6.0
+ * @since 1.10.0
  */
-public class EditContactDialog extends DialogWindow {
+public class EditContactsComponent extends FormLayout implements UserInput {
 
   private final ProjectInformation projectInformation;
-  private transient DialogClosingStrategy noChangesClosingStrategy;
-  private transient DialogClosingStrategy warningClosingStrategy;
 
   private transient BoundContactField managerBinding;
   private transient BoundContactField investigatorBinding;
   private transient BoundContactField projectResponsibleBinding;
 
-  public EditContactDialog(ProjectInformation projectInformation, Contact currentUser) {
+  public EditContactsComponent(ProjectInformation projectInformation, Contact currentUser) {
     super();
-    addClassName("large-dialog");
 
     var content = new Div();
     content.addClassNames("vertical-list");
-    setConfirmButtonLabel("Save");
-    setCancelButtonLabel("Cancel");
-    setHeaderTitle("Edit Project Contacts");
     var fieldPrincipalInvestigator = createRequired("Principal Investigator");
     var fieldProjectResponsible = createOptional(
         "Project Responsible / Co-Investigator (optional)");
@@ -50,8 +44,6 @@ public class EditContactDialog extends DialogWindow {
     this.investigatorBinding = BoundContactField.createMandatory(fieldPrincipalInvestigator);
     this.managerBinding = BoundContactField.createMandatory(fieldProjectManager);
     this.projectResponsibleBinding = BoundContactField.createOptional(fieldProjectResponsible);
-    this.noChangesClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
-    this.warningClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
 
     investigatorBinding.setValue(projectInformation.getPrincipalInvestigator());
     managerBinding.setValue(projectInformation.getProjectManager());
@@ -68,6 +60,39 @@ public class EditContactDialog extends DialogWindow {
     add(content);
   }
 
+  public Optional<Contact> getIfValidManager() {
+    if (managerBinding.isValid()) {
+      try {
+        return Optional.ofNullable(managerBinding.getValue());
+      } catch (ValidationException e) {
+        // swallow exception by design
+      }
+    }
+    return Optional.empty();
+  }
+
+  public Optional<Contact> getIfValidInvestigator() {
+    if (investigatorBinding.isValid()) {
+      try {
+        return Optional.ofNullable(investigatorBinding.getValue());
+      } catch (ValidationException e) {
+        // swallow exception by design
+      }
+    }
+    return Optional.empty();
+  }
+
+  public Optional<Contact> getIfValidProjectResponsible() {
+    if (investigatorBinding.isValid()) {
+      try {
+        return Optional.ofNullable(projectResponsibleBinding.getValue());
+      } catch (ValidationException e) {
+        // swallow exception by design
+      }
+    }
+    return Optional.empty();
+  }
+
   private static ContactField createRequired(String label) {
     var contact = ContactField.createSimple(label);
     contact.setRequiredIndicatorVisible(true);
@@ -78,43 +103,24 @@ public class EditContactDialog extends DialogWindow {
     return ContactField.createSimple(label);
   }
 
-  public void setDefaultCancelStrategy(DialogClosingStrategy strategy) {
-    this.noChangesClosingStrategy = strategy;
-  }
-
-  public void setCancelWithoutSaveStrategy(DialogClosingStrategy strategy) {
-    this.warningClosingStrategy = strategy;
-  }
-
-
-  @Override
-  protected void onConfirmClicked(ClickEvent<Button> clickEvent) {
-    try {
-      projectInformation.setPrincipalInvestigator(investigatorBinding.getValue());
-      projectInformation.setResponsiblePerson(projectResponsibleBinding.getValue());
-      projectInformation.setProjectManager(managerBinding.getValue());
-      fireEvent(new ContactUpdateEvent(this, true, projectInformation));
-    } catch (ValidationException e) {
-      // user needs to intervene
-    }
-  }
-
-  @Override
-  protected void onCancelClicked(ClickEvent<Button> clickEvent) {
-    if (anyChanges()) {
-      warningClosingStrategy.execute();
-    } else {
-      noChangesClosingStrategy.execute();
-    }
-  }
 
   private boolean anyChanges() {
     return investigatorBinding.hasChanged() || projectResponsibleBinding.hasChanged()
         || managerBinding.hasChanged();
   }
 
-  public void addUpdateEventListener(
-      ComponentEventListener<ContactUpdateEvent> listener) {
-    addListener(ContactUpdateEvent.class, listener);
+  @Override
+  @NonNull
+  public InputValidation validate() {
+    if (Stream.of(managerBinding, investigatorBinding, projectResponsibleBinding)
+        .anyMatch(field -> !field.isValid())) {
+      return InputValidation.failed();
+    }
+    return InputValidation.passed();
+  }
+
+  @Override
+  public boolean hasChanges() {
+    return anyChanges();
   }
 }

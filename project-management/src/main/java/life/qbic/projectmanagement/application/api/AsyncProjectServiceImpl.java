@@ -26,6 +26,9 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
+import life.qbic.projectmanagement.application.api.template.TemplateService;
+import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -60,24 +63,30 @@ import reactor.util.retry.Retry;
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
-  public static final String ACCESS_DENIED = "Access denied";
+  private static final String ACCESS_DENIED = "Access denied";
   private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
   private final SampleInformationService sampleInfoService;
   private final DigitalObjectFactory digitalObjectFactory;
+  private final TemplateService templateService;
   private final SampleValidationService sampleValidationService;
   private final MeasurementValidationService measurementValidationService;
 
-  public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
-      @Autowired SampleInformationService sampleInfoService, @Autowired Scheduler scheduler,
+  public AsyncProjectServiceImpl(
+      @Autowired ProjectInformationService projectService,
+      @Autowired SampleInformationService sampleInfoService,
+      @Autowired Scheduler scheduler,
       @Autowired DigitalObjectFactory digitalObjectFactory,
+      @Autowired TemplateService templateService,
       @Autowired SampleValidationService sampleValidationService,
-      @Autowired MeasurementValidationService measurementValidationService) {
+      @Autowired MeasurementValidationService measurementValidationService
+  ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
     this.digitalObjectFactory = Objects.requireNonNull(digitalObjectFactory);
+    this.templateService = Objects.requireNonNull(templateService);
     this.sampleValidationService = Objects.requireNonNull(sampleValidationService);
     this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
   }
@@ -90,16 +99,54 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
-    var projectId = request.projectId();
+    var projectId = ProjectId.parse(request.projectId());
+    var requestId = request.requestId();
     Mono<ProjectUpdateResponse> response = switch (request.requestBody()) {
-      case FundingInformation fundingInformation -> unknownRequest();
-      case ProjectContacts projectContacts -> unknownRequest();
-      case ProjectDesign projectDesign ->
-          updateProjectDesign(projectId, projectDesign, request.requestId());
+      case FundingInformation fundingInformation ->
+          update(projectId, requestId, fundingInformation);
+      case ProjectManager manager -> update(projectId, requestId, manager);
+      case ProjectResponsible responsible -> update(projectId, requestId, responsible);
+      case PrincipalInvestigator investigator -> update(projectId, requestId, investigator);
+      case ProjectDesign projectDesign -> update(projectId, requestId, projectDesign);
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return response.transform(original -> writeSecurityContext(original, securityContext))
+    return ReactiveSecurityContextUtils.applySecurityContext(response)
+        .subscribeOn(scheduler)
+        .transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
+  }
+
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      PrincipalInvestigator investigator) {
+    return Mono.fromCallable(() -> {
+      projectService.investigateProject(projectId, investigator.contact());
+      return new ProjectUpdateResponse(projectId.value(), investigator, requestId);
+    });
+  }
+
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      ProjectResponsible responsible) {
+    return Mono.fromCallable(() -> {
+      projectService.setResponsibility(projectId, responsible.contact());
+      return new ProjectUpdateResponse(projectId.value(), responsible, requestId);
+    });
+  }
+
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      ProjectManager manager) {
+    return Mono.fromCallable(() -> {
+      projectService.manageProject(projectId, manager.contact());
+      return new ProjectUpdateResponse(projectId.value(), manager, requestId);
+    });
+  }
+
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      FundingInformation fundingInformation) {
+    return Mono.fromCallable(() -> {
+      projectService.setFunding(projectId, fundingInformation.grant(),
+          fundingInformation.grantId());
+      return new ProjectUpdateResponse(projectId.value(), fundingInformation, requestId);
+    });
   }
 
   @Override
@@ -179,9 +226,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(Flux.defer(
-        () -> fetchSamplePreviews(projectId, experimentId, offset, limit, sortOrders,
-            filter))).subscribeOn(scheduler)
+    return applySecurityContextMany(Flux.defer(() ->
+        fetchSamplePreviews(projectId, experimentId, offset, limit, sortOrders, filter)))
+        .subscribeOn(scheduler)
         .transform(original -> writeSecurityContextMany(original, securityContext))
         .retryWhen(defaultRetryStrategy());
   }
@@ -189,8 +236,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Flux<SamplePreview> fetchSamplePreviews(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
     try {
-      return Flux.fromIterable(sampleInfoService.queryPreview(ProjectId.parse(projectId),
-          ExperimentId.parse(experimentId), offset, limit, sortOrders, filter));
+      return Flux.fromIterable(
+          sampleInfoService.queryPreview(ProjectId.parse(projectId),
+              ExperimentId.parse(experimentId), offset, limit,
+              sortOrders, filter));
     } catch (Exception e) {
       log.error("Error getting sample previews", e);
       return Flux.error(new RequestFailedException("Error getting sample previews"));
@@ -201,8 +250,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Flux<Sample> getSamples(String projectId, String experimentId)
       throws RequestFailedException {
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(
-        Flux.defer(() -> fetchSamples(projectId, experimentId))).subscribeOn(scheduler)
+    return applySecurityContextMany(Flux.defer(() -> fetchSamples(projectId, experimentId)))
+        .subscribeOn(scheduler)
         .transform(original -> writeSecurityContextMany(original, securityContext))
         .retryWhen(defaultRetryStrategy());
   }
@@ -211,7 +260,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Flux<Sample> fetchSamples(String projectId, String experimentId) {
     try {
       return Flux.fromIterable(
-          sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId), experimentId));
+          sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId),
+              experimentId));
     } catch (org.springframework.security.access.AccessDeniedException e) {
       log.error("Error getting samples", e);
       return Flux.error(new AccessDeniedException(ACCESS_DENIED));
@@ -248,13 +298,34 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
       MimeType mimeType) {
-    throw new RuntimeException("not implemented");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+            () -> templateService.sampleRegistrationTemplate(projectId, experimentId, mimeType)))
+        .subscribeOn(scheduler)
+        .transform(original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+            securityContext));
   }
 
   @Override
-  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId, String batchId,
       MimeType mimeType) {
-    throw new RuntimeException("not implemented");
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+            () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId, mimeType)))
+        .subscribeOn(scheduler)
+        .transform(original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+            securityContext));
+  }
+
+  @Override
+  public Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
+      MimeType mimeType) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+            () -> templateService.sampleInformationTemplate(projectId, experimentId, mimeType)))
+        .subscribeOn(scheduler)
+        .transform(original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+            securityContext));
   }
 
   @Override
@@ -383,7 +454,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request) {
+  public Mono<ExperimentUpdateResponse> update(
+      ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {
 
       case ExperimentDescription experimentDescription ->
@@ -399,8 +471,56 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     };
 
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return response.transform(original -> writeSecurityContext(original, securityContext))
+    return response
+        .transform(original -> writeSecurityContext(original, securityContext))
         .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request) {
+    Mono<ProjectDeletionResponse> responseMono = switch (request.body()) {
+      case ProjectResponsibleDeletion target ->
+          delete(request.projectId(), request.requestId(), target);
+      case FundingDeletion target -> delete(request.projectId(), request.requestId(), target);
+    };
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(responseMono)
+        .transform(original -> writeSecurityContext(original, securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
+      FundingDeletion target) {
+    return Mono.defer(() -> {
+      try {
+        projectService.removeFunding(ProjectId.parse(projectId));
+        return Mono.just(new ProjectDeletionResponse(projectId, requestId));
+      } catch (org.springframework.security.access.AccessDeniedException e) {
+        log.error("Access was denied during deletion of funding information", e);
+        return Mono.error(new AccessDeniedException(ACCESS_DENIED));
+      } catch (Exception e) {
+        log.error("Unexpected exception deleting funding information", e);
+        return Mono.error(new RequestFailedException("Unexpected exception deleting funding information"));
+      }
+    });
+  }
+
+  private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
+      ProjectResponsibleDeletion request) {
+    return Mono.defer(() -> {
+      try {
+        projectService.removeResponsibility(ProjectId.parse(projectId));
+        return Mono.just(new ProjectDeletionResponse(projectId, requestId));
+      } catch (org.springframework.security.access.AccessDeniedException e) {
+        log.error("Access was denied during deletion of a project responsible", e);
+        return Mono.error(new AccessDeniedException(ACCESS_DENIED));
+      } catch (Exception e) {
+        log.error("Unexpected exception during deletion of a project responsible in request: "
+            + requestId, e);
+        return Mono.error(new RequestFailedException("Unexpected exception during deletion"));
+      }
+    });
   }
 
   private <T> Mono<T> unknownRequest() {
@@ -408,29 +528,30 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
-      String experimentId, ExperimentDescription experimentDescription) {
+      String experimentId,
+      ExperimentDescription experimentDescription) {
     //TODO implement
     throw new RuntimeException("Not implemented");
   }
 
 
-  private Mono<ProjectUpdateResponse> updateProjectDesign(String projectId, ProjectDesign design,
-      String requestId) {
-    return applySecurityContext(Mono.<ProjectUpdateResponse>create(sink -> {
-      try {
-        var id = ProjectId.parse(projectId);
-        projectService.updateTitle(id, design.title());
-        projectService.updateObjective(id, design.objective());
-        sink.success(new ProjectUpdateResponse(projectId, design, requestId));
-      } catch (IllegalArgumentException e) {
-        sink.error(new RequestFailedException("Invalid project id: " + projectId));
-      } catch (org.springframework.security.access.AccessDeniedException e) {
-        sink.error(new AccessDeniedException(ACCESS_DENIED));
-      } catch (RuntimeException e) {
-        sink.error(new RequestFailedException("Update project design failed", e));
-      }
-    })).subscribeOn(
-        scheduler); //we must not expose the blocking behaviour outside of this method, thus we use a non-blocking scheduler
+  private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
+      ProjectDesign design) {
+    return
+       Mono.<ProjectUpdateResponse>create(sink -> {
+          try {
+            projectService.updateTitle(projectId, design.title());
+            projectService.updateObjective(projectId, design.objective());
+            sink.success(new ProjectUpdateResponse(projectId.value(), design, requestId));
+          } catch (IllegalArgumentException e) {
+            sink.error(new RequestFailedException("Invalid project id: " + projectId));
+          } catch (org.springframework.security.access.AccessDeniedException e) {
+            sink.error(new AccessDeniedException(ACCESS_DENIED));
+          } catch (RuntimeException e) {
+            sink.error(new RequestFailedException("Update project design failed", e));
+          }
+        }
+    );
   }
 
 }
