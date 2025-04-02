@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -102,6 +104,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient SampleRegistrationServiceV2 sampleRegistrationServiceV2;
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageFactory;
+  private final HashMap<String, Toast> pendingTaskToasts = new HashMap<>();
   private Toast pendingTask;
   private transient Context context;
 
@@ -204,12 +207,14 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     var experimentName = experimentInformationService.find(projectId.value(), experimentId)
         .map(Experiment::getName).orElseThrow();
 
+    var requestId = UUID.randomUUID().toString();
+
     asyncProjectService.sampleInformationTemplate(projectId.value(), experimentId.value(),
             OPEN_XML)
-        .doOnSubscribe(showInProgress("preparing sample information"))
+        .doOnSubscribe(showInProgress(requestId, "preparing sample information"))
         .doOnSuccess(resource -> handleSuccess(projectCode, experimentName).accept(resource))
         .doOnError(this::handleError)
-        .doFinally(this::closePendingTaskNotification)
+        .doFinally(signalType -> clearPendingTask(requestId))
         .subscribe();
   }
 
@@ -224,11 +229,29 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }));
   }
 
-  private Consumer<? super Subscription> showInProgress(String preparingSampleInformation) {
+  private Consumer<? super Subscription> showInProgress(String requestId, String preparingSampleInformation) {
     return subscriber -> getUI().ifPresent(ui -> ui.access(() -> {
       pendingTask = messageFactory.pendingTaskToast("task.in-progress",
           new Object[]{preparingSampleInformation}, getLocale());
       pendingTask.open();
+      addToast(requestId, pendingTask);
+    }));
+  }
+
+  private void addToast(String requestId, Toast pendingTask) {
+    if (pendingTaskToasts.containsKey(requestId)) {
+      return;
+    }
+    pendingTaskToasts.put(requestId, pendingTask);
+  }
+
+  private void clearPendingTask(String requestId) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      if (pendingTaskToasts.containsKey(requestId)) {
+        var toast = pendingTaskToasts.get(requestId);
+        toast.close();
+        pendingTaskToasts.remove(requestId);
+      }
     }));
   }
 
@@ -493,15 +516,6 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     });
     batchDeletionConfirmationNotification.addCancelListener(
         event -> batchDeletionConfirmationNotification.close());
-  }
-
-  private void closePendingTaskNotification(SignalType signalType) {
-    getUI().ifPresent(ui -> ui.access(() -> {
-      if (this.pendingTask == null) {
-        return;
-      }
-      this.pendingTask.close();
-    }));
   }
 
   /**
