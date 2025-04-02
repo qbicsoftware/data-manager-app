@@ -36,6 +36,7 @@ import life.qbic.application.commons.ByteBufferIteratorInputStream;
 import life.qbic.datamanager.RequestCache;
 import life.qbic.datamanager.RequestCache.CacheException;
 import life.qbic.datamanager.files.export.FileNameFormatter;
+import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
