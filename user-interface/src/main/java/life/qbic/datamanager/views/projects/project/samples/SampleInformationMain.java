@@ -306,7 +306,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow();
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
-        sampleValidationService, asyncProjectService, messageFactory, experimentId.value(),
+        asyncProjectService, messageFactory, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {

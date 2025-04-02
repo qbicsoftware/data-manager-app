@@ -19,8 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
@@ -41,29 +39,23 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ValidationResult;
-import life.qbic.projectmanagement.application.ValidationResultWithPayload;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
-import life.qbic.projectmanagement.application.api.SampleMetadata;
-import life.qbic.projectmanagement.application.api.fair.DigitalObject;
-import life.qbic.projectmanagement.application.sample.SampleValidationService;
-import org.springframework.util.MimeType;
-import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
-import org.apache.poi.ss.usermodel.Workbook;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.sample.SampleMetadata;
+import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 
 public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  private final List<SampleMetadata> validatedSampleMetadata;
+  private final List<SampleRegistrationInformation> validatedSampleMetadata;
   private final TextField batchNameField;
   private static final Logger log = LoggerFactory.logger(RegisterSampleBatchDialog.class);
   private static final int MAX_FILE_SIZE = 25 * 1024 * 1024;
-  private final List<SampleRegistrationInformation> validatedSampleMetadata;
-  private final TextField batchNameField;
   private final Div initialView;
   private final Div inProgressView;
   private final Div failedView;
@@ -72,11 +64,6 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private transient final MessageSourceNotificationFactory messageFactory;
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService service;
-
-  private void setValidatedSampleMetadata(List<SampleMetadata> validatedSampleMetadata) {
-    this.validatedSampleMetadata.clear();
-    this.validatedSampleMetadata.addAll(validatedSampleMetadata);
-  }
 
   public RegisterSampleBatchDialog(AsyncProjectService asyncProjectService,
       MessageSourceNotificationFactory messageFactory,

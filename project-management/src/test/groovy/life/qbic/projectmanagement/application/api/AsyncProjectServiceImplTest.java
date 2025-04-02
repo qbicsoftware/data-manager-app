@@ -53,12 +53,10 @@ class AsyncProjectServiceImplTest {
         sampleServiceMock,
         Schedulers.boundedElastic(),
         digitalObjectFactory,
-        templateService
-    );
-        Schedulers.boundedElastic(),
-        digitalObjectFactory,
+        templateService,
         sampleValidationService,
-        measurementValidationService);
+        measurementValidationService
+    );
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("neq title", "new objective");
@@ -92,12 +90,10 @@ class AsyncProjectServiceImplTest {
         sampleServiceMock,
         Schedulers.boundedElastic(),
         digitalObjectFactory,
-        templateService
-    );
-        Schedulers.boundedElastic(),
-        digitalObjectFactory,
+        templateService,
         sampleValidationService,
-        measurementValidationService);
+        measurementValidationService
+    );
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("new title", "new objective");
