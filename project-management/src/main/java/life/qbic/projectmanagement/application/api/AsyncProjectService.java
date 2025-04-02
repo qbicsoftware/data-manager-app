@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -13,9 +14,10 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
@@ -368,15 +370,15 @@ public interface AsyncProjectService {
    * Currently, permits:
    *
    * <ul>
-   *   <li>{@link SampleMetadata}</li>
-   *   <li>{@link NGSMeasurementMetadata}</li>
-   *   <li>{@link ProteomicsMeasurementMetadata}</li>
+   *   <li>{@link SampleRegistrationInformation}</li>
+   *   <li>{@link SampleUpdateInformation}</li>
    * </ul>
    *
    * @since 1.10.0
    */
-  sealed interface ValidationRequestBody permits SampleMetadata, NGSMeasurementMetadata,
-      ProteomicsMeasurementMetadata {
+  sealed interface ValidationRequestBody permits MeasurementRegistrationInformationNGS,
+      MeasurementRegistrationInformationPxP, MeasurementUpdateInformationNGS,
+      MeasurementUpdateInformationPxP, SampleRegistrationInformation, SampleUpdateInformation {
 
   }
 
@@ -753,12 +755,14 @@ public interface AsyncProjectService {
    * A service request to create one or more new samples for a project.
    *
    * @param projectId the project ID of the project the samples shall be created for
-   * @param requests  a collection of {@link SampleRegistrationRequest} items
+   * @param requests  a collection of {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+  record SampleRegistrationRequest(String projectId,
+                                   Collection<SampleRegistrationInformation> requests) {
 
-    public SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+    public SampleRegistrationRequest(String projectId,
+        Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -768,12 +772,13 @@ public interface AsyncProjectService {
    * A service request to update one or more samples in a project.
    *
    * @param projectId the project ID of the project the samples shall be updated in
-   * @param requests  a collection for {@link SampleUpdate} items
+   * @param requests  a collection for {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+  record SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
 
-    public SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+    public SampleUpdateRequest(String projectId,
+        Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -790,6 +795,141 @@ public interface AsyncProjectService {
   record SampleUpdate(String sampleId, SampleInformation information) {
 
   }
+
+  /**
+   * A simple container for sample registration information of an individual sample to register.
+   *
+   * @param sampleName           the sample name
+   * @param biologicalReplicate  the biological replicate label given
+   * @param condition            the String representation of a condition
+   * @param species              the String representation of a species with CURIE
+   * @param specimen             the String representation of a specimen with CURIE
+   * @param analyte              the String representation of an analyte with CURIE
+   * @param analysisMethod       the String representation of the analysis method
+   * @param comment              a users comment
+   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+   *                             representation
+   * @param experimentId         the experiment ID of the experiment the sample should be registered
+   *                             to
+   * @param projectId            the project ID of the project the experiment belongs to
+   * @since 1.10.0
+   */
+  record SampleRegistrationInformation(
+      String sampleName,
+      String biologicalReplicate,
+      String condition,
+      String species,
+      String specimen,
+      String analyte,
+      String analysisMethod,
+      String comment,
+      Map<String, String> confoundingVariables,
+      String experimentId,
+      String projectId
+  ) implements ValidationRequestBody {
+  }
+
+  /**
+   * A simple container for sample update information of an individual sample to register.
+   *
+   * @param sampleCode           the sample ID that is known to the user
+   * @param sampleName           the sample name
+   * @param biologicalReplicate  the biological replicate label given
+   * @param condition            the String representation of a condition
+   * @param species              the String representation of a species with CURIE
+   * @param specimen             the String representation of a specimen with CURIE
+   * @param analyte              the String representation of an analyte with CURIE
+   * @param analysisMethod       the String representation of the analysis method
+   * @param comment              a users comment
+   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+   *                             representation
+   * @param experimentId         the experiment ID of the experiment the sample should be registered
+   *                             to
+   * @param projectId            the project ID of the project the experiment belongs to
+   * @since 1.10.0
+   */
+  record SampleUpdateInformation(
+      String sampleCode,
+      String sampleName,
+      String biologicalReplicate,
+      String condition,
+      String species,
+      String specimen,
+      String analyte,
+      String analysisMethod,
+      String comment,
+      Map<String, String> confoundingVariables,
+      String experimentId,
+      String projectId
+  ) implements ValidationRequestBody {
+
+  }
+
+
+
+  record MeasurementRegistrationInformationNGS(
+      Collection<String> sampleCodes,
+      String organisationId, String instrumentCURI, String facility,
+      String sequencingReadType, String libraryKit, String flowCell,
+      String sequencingRunProtocol, String samplePoolGroup,
+      String indexI7, String indexI5,
+      String comment
+  ) implements ValidationRequestBody {
+  }
+
+  record MeasurementUpdateInformationNGS(
+      String measurementCode,
+      Collection<String> sampleCodes,
+      String organisationId, String instrumentCURI,
+      String facility,
+      String sequencingReadType, String libraryKit,
+      String flowCell,
+      String sequencingRunProtocol, String samplePoolGroup,
+      String indexI7, String indexI5,
+      String comment) implements ValidationRequestBody {
+  }
+
+  record MeasurementRegistrationInformationPxP(
+      SampleCode sampleCode,
+      String technicalReplicateName,
+      String organisationId,
+      String msDeviceCURIE,
+      String samplePoolGroup,
+      String facility,
+      String fractionName,
+      String digestionEnzyme,
+      String digestionMethod,
+      String enrichmentMethod,
+      String injectionVolume,
+      String lcColumn,
+      String lcmsMethod,
+      Labeling labeling,
+      String comment
+  ) implements ValidationRequestBody {
+
+  }
+
+  record MeasurementUpdateInformationPxP(
+      String measurementId,
+      SampleCode sampleCode,
+      String technicalReplicateName,
+      String organisationId,
+      String msDeviceCURIE,
+      String samplePoolGroup,
+      String facility,
+      String fractionName,
+      String digestionEnzyme,
+      String digestionMethod,
+      String enrichmentMethod,
+      String injectionVolume,
+      String lcColumn,
+      String lcmsMethod,
+      Labeling labeling,
+      String comment
+  ) implements ValidationRequestBody {
+
+  }
+
 
   /**
    * A service response from a project creation request

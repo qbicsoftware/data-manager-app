@@ -306,7 +306,7 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     ProjectOverview projectOverview = projectInformationService.findOverview(projectId)
         .orElseThrow();
     RegisterSampleBatchDialog registerSampleBatchDialog = new RegisterSampleBatchDialog(
-        sampleValidationService, asyncProjectService, messageFactory, experimentId.value(),
+        asyncProjectService, messageFactory, experimentId.value(),
         projectId.value(), projectOverview.projectCode());
     UI ui = UI.getCurrent();
     registerSampleBatchDialog.addConfirmListener(event -> {
@@ -317,9 +317,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
           getLocale());
       ui.access(pendingToast::open);
 
-      CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2.registerSamples(
-              sampleMetadata,
-              projectId, event.batchName(), false, new ExperimentReference(experimentId.value()))
+
+      CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2
+          .registerSamples(sampleMetadata, projectId, event.batchName(), new ExperimentReference(experimentId.value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         registrationTask
