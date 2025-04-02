@@ -247,9 +247,9 @@ public class XLSXTemplateHelper {
    * @return a camel case representation of the input
    * @since 1.5.0
    */
-  protected static String toCamelCase(String input) {
+  public static String toCamelCase(String input) {
     StringBuilder stringBuilder = new StringBuilder(input);
-    Predicate<Character> isWordSeparator = character -> String.valueOf(character).matches("\\W");
+    Predicate<Character> isWordSeparator = character -> String.valueOf(character).matches("\\W|_");
     for (int i = 0; i < stringBuilder.length(); i++) {
       if (isWordSeparator.test(stringBuilder.charAt(i))) {
         stringBuilder.deleteCharAt(
