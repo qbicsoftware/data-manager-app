@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application.api;
 
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContextMany;
@@ -24,11 +23,9 @@ import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
-import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
-import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -354,7 +351,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       // Measurement Update - Proteomics
       case MeasurementUpdateInformationPxP req ->
           validateMeasurementMetadataPxPUpdate(req, request.requestId(), request.projectId());
-      default -> Mono.error(new RequestFailedException("Invalid request"));
     };
   }
 
