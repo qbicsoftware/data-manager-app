@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application.api;
 
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContextMany;
@@ -11,26 +10,32 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
-import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
+import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
@@ -62,19 +67,25 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final SampleInformationService sampleInfoService;
   private final DigitalObjectFactory digitalObjectFactory;
   private final TemplateService templateService;
+  private final SampleValidationService sampleValidationService;
+  private final MeasurementValidationService measurementValidationService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
       @Autowired SampleInformationService sampleInfoService,
       @Autowired Scheduler scheduler,
       @Autowired DigitalObjectFactory digitalObjectFactory,
-      @Autowired TemplateService templateService
+      @Autowired TemplateService templateService,
+      @Autowired SampleValidationService sampleValidationService,
+      @Autowired MeasurementValidationService measurementValidationService
   ) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
     this.digitalObjectFactory = Objects.requireNonNull(digitalObjectFactory);
     this.templateService = Objects.requireNonNull(templateService);
+    this.sampleValidationService = Objects.requireNonNull(sampleValidationService);
+    this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -145,8 +156,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ByteBuffer> roCrateSummary(String projectId) {
     var securityContext = SecurityContextHolder.getContext();
-    return applySecurityContextMany(Flux.defer(() -> getByteBufferFlux(projectId)))
-        .transform(original -> writeSecurityContextMany(original, securityContext));
+    return applySecurityContextMany(Flux.defer(() -> getByteBufferFlux(projectId))).transform(
+        original -> writeSecurityContextMany(original, securityContext));
   }
 
   // Requires the SecurityContext to work
@@ -157,10 +168,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     }
     var project = search.get();
     var digitalObject = digitalObjectFactory.summary(convertToResearchProject(project));
-    return Flux
-        .create((FluxSink<ByteBuffer> emitter) -> emitByteBufferFromObject(emitter, digitalObject),
-            OverflowStrategy.BUFFER)
-        .subscribeOn(VirtualThreadScheduler.getScheduler());
+    return Flux.create(
+        (FluxSink<ByteBuffer> emitter) -> emitByteBufferFromObject(emitter, digitalObject),
+        OverflowStrategy.BUFFER).subscribeOn(VirtualThreadScheduler.getScheduler());
   }
 
   /**
@@ -318,7 +328,125 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
-    throw new RuntimeException("not implemented");
+    return requests.flatMap(this::validateRequest);
+  }
+
+  private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
+    return switch (request.requestBody()) {
+      // Sample Registration
+      case SampleRegistrationInformation req ->
+          validateSampleMetadata(req, request.requestId(), request.projectId());
+      // Sample Update
+      case SampleUpdateInformation req ->
+          validateSampleMetadataUpdate(req, request.requestId(), request.projectId());
+      // Measurement Registration - NGS
+      case MeasurementRegistrationInformationNGS req ->
+          validateMeasurementMetadataNGS(req, request.requestId(), request.projectId());
+      // Measurement Update - NGS
+      case MeasurementUpdateInformationNGS req ->
+          validateMeasurementMetadataNGSUpdate(req, request.requestId(), request.projectId());
+      // Measurement Registration - Proteomics
+      case MeasurementRegistrationInformationPxP req ->
+          validateMeasurementMetadataPxP(req, request.requestId(), request.projectId());
+      // Measurement Update - Proteomics
+      case MeasurementUpdateInformationPxP req ->
+          validateMeasurementMetadataPxPUpdate(req, request.requestId(), request.projectId());
+    };
+  }
+
+
+  /**
+   * Ensures that the security context is applied in the correct order and written when it is
+   * required.
+   * <p>
+   * Also ensures that the {@link Callable} is executed on the {@link VirtualThreadScheduler} with
+   * {@link Mono#subscribeOn(Scheduler)}.
+   *
+   * @param securityApplicant
+   * @param serviceCallable
+   * @param converter
+   * @param transformer
+   * @return a {@link Mono} containing the
+   * {@link life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse}
+   */
+  private Mono<ValidationResponse> validateMetadata(
+      UnaryOperator<Mono<ValidationResponse>> securityApplicant,
+      Callable<ValidationResult> serviceCallable,
+      Function<ValidationResult, ValidationResponse> converter,
+      Function<Mono<ValidationResponse>, Publisher<ValidationResponse>> transformer) {
+    return securityApplicant.apply(Mono.fromCallable(serviceCallable).map(converter))
+        .transform(transformer).subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataPxP(
+      MeasurementRegistrationInformationPxP registration, String requestId,
+      String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataPxPUpdate(
+      MeasurementUpdateInformationPxP update, String requestId,
+      String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataNGS(
+      MeasurementRegistrationInformationNGS registration, String requestId, String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validateNGS(registration, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateMeasurementMetadataNGSUpdate(
+      MeasurementUpdateInformationNGS update, String requestId, String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
+                () -> measurementValidationService.validateNGS(update, ProjectId.parse(projectId)))
+            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+        .transform(
+            original -> ReactiveSecurityContextUtils.writeSecurityContext(original,
+                securityContext))
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ValidationResponse> validateSampleMetadataUpdate(SampleUpdateInformation update,
+      String requestId, String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
+        () -> sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId))
+            .validationResult(),
+        result -> new ValidationResponse(requestId, result),
+        original -> ReactiveSecurityContextUtils.writeSecurityContext(original, securityContext)
+    );
+  }
+
+  private Mono<ValidationResponse> validateSampleMetadata(
+      SampleRegistrationInformation registration, String requestId, String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
+        () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId))
+            .validationResult(),
+        result -> new ValidationResponse(requestId, result),
+        original -> ReactiveSecurityContextUtils.writeSecurityContext(original, securityContext));
   }
 
   @Override
