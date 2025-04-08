@@ -381,7 +381,7 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     List<ExperimentalVariableInformation> addedVariables = new ArrayList<>();
     try {
-      for (ExperimentalVariableAddition variableAddition : variableAdditions) {
+      for (var variableAddition : variableAdditions) {
         var levels = variableAddition.levels().stream()
             .map(level -> ExperimentalValue.create(level, variableAddition.unit()))
             .toList();
@@ -394,7 +394,8 @@ public class ExperimentInformationService {
       handleLocalEventCache(domainEventsCache);
     } catch (RuntimeException e) {
       //remove all added variables again
-      List<String> addedNames = addedVariables.stream().map(ExperimentalVariableInformation::name)
+      List<String> addedNames = addedVariables.stream()
+          .map(ExperimentalVariableInformation::name)
           .toList();
       experiment.removeExperimentalVariables(addedNames);
       throw e;
