@@ -28,11 +28,9 @@ import life.qbic.projectmanagement.application.contact.PersonLookupService;
 
 public class ContactField extends CustomField<Contact> implements HasClientValidation {
 
-  public static final String GAP_M_CSS = "gap-m";
   public static final String GAP_02_CSS = "gap-02";
   private static final String FULL_WIDTH_CSS = "full-width";
   private static final String FLEX_HORIZONTAL = "flex-horizontal";
-  private static final String PADDING_BOTTOM = "padding-top-bottom-04";
   private static final Logger log = logger(ContactField.class);
 
   private final Checkbox setMyselfCheckBox;
@@ -71,11 +69,11 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     return textField;
   }
 
-  private static Div layoutFields(Checkbox box, ComboBox<OrcidEntry> contactBox,
+  private static Div layoutFields(Checkbox setMyselfCheckBox, ComboBox<OrcidEntry> contactBox,
       ManualContactSetter manualContactSetter) {
     var layout = new Div();
-    layout.addClassNames("flex-vertical", GAP_M_CSS);
-    layout.add(box);
+    layout.addClassNames("flex-vertical", GAP_02_CSS, "padding-top-03");
+    layout.add(setMyselfCheckBox);
     layout.add(contactBox);
     layout.add(manualContactSetter);
     return layout;
@@ -279,6 +277,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     private final TextField fullNameField;
     private final TextField emailField;
     private final Span fieldLayout;
+    public static final String GAP_04_CSS = "gap-04";
 
     public ManualContactSetter() {
       this.fullNameField = withErrorMessage(
@@ -295,7 +294,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     }
 
     private void styleFieldLayout() {
-      fieldLayout.addClassNames(FLEX_HORIZONTAL, GAP_M_CSS, FULL_WIDTH_CSS, PADDING_BOTTOM);
+      fieldLayout.addClassNames(FLEX_HORIZONTAL, GAP_04_CSS, FULL_WIDTH_CSS);
       fullNameField.addClassName(FULL_WIDTH_CSS);
       emailField.addClassName(FULL_WIDTH_CSS);
       closeFieldLayout();
@@ -311,11 +310,12 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
     private Span createManualSelectionSpan() {
       Span manualSelectionSpan = new Span();
-      Span textSpan = new Span("Not on the list?");
+      Span textSpan = new Span("Not in the list?");
       Span clickableSpan = new Span("Enter the details manually");
       clickableSpan.addClassName("link");
       manualSelectionSpan.add(textSpan, clickableSpan);
-      manualSelectionSpan.addClassNames(FLEX_HORIZONTAL, GAP_M_CSS, FULL_WIDTH_CSS);
+      manualSelectionSpan.addClassNames(FLEX_HORIZONTAL, GAP_02_CSS, FULL_WIDTH_CSS,
+          "small-body-text");
       clickableSpan.addClickListener(spanClickEvent -> {
         //Only Fire an Event if the layout has not been opened yet
         if (fieldLayout.isVisible()) {

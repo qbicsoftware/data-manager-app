@@ -3,7 +3,6 @@ package life.qbic.datamanager.views.projects.edit;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.data.binder.ValidationException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import life.qbic.datamanager.views.general.contact.BoundContactField;
@@ -25,8 +24,6 @@ import org.springframework.lang.NonNull;
  */
 public class EditContactsComponent extends FormLayout implements UserInput {
 
-  private final ProjectInformation projectInformation;
-
   private transient BoundContactField managerBinding;
   private transient BoundContactField investigatorBinding;
   private transient BoundContactField projectResponsibleBinding;
@@ -36,13 +33,11 @@ public class EditContactsComponent extends FormLayout implements UserInput {
     super();
 
     var content = new Div();
-    content.addClassNames("vertical-list");
     var fieldPrincipalInvestigator = createRequired("Principal Investigator", personLookupService);
     var fieldProjectResponsible = createOptional(
         "Project Responsible / Co-Investigator (optional)", personLookupService);
     var fieldProjectManager = createRequired("Project Manager", personLookupService);
 
-    this.projectInformation = Objects.requireNonNull(projectInformation);
     this.investigatorBinding = BoundContactField.createMandatory(fieldPrincipalInvestigator);
     this.managerBinding = BoundContactField.createMandatory(fieldProjectManager);
     this.projectResponsibleBinding = BoundContactField.createOptional(fieldProjectResponsible);
@@ -56,7 +51,7 @@ public class EditContactsComponent extends FormLayout implements UserInput {
     managerBinding.setValue(projectInformation.getProjectManager());
     projectInformation.getResponsiblePerson()
         .ifPresent(contact -> projectResponsibleBinding.setValue(contact));
-
+    setResponsiveSteps(new ResponsiveStep("0", 1));
     content.add(
         new ContactsForm(fieldPrincipalInvestigator, fieldProjectResponsible, fieldProjectManager));
 

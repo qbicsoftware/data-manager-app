@@ -182,6 +182,10 @@ Padding & gaps
   padding-right: var(--spacing-07);
 }
 
+.padding-top-03 {
+  padding-top: var(--spacing-03);
+}
+
 .padding-top-bottom-04 {
   padding-top: var(--spacing-04);
   padding-bottom: var(--spacing-04);
