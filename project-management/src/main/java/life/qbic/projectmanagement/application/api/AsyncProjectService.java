@@ -110,8 +110,9 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the actual {@link ProjectDeletionRequest}
-   * @return a {@link Mono<ProjectDeletionResponse>} object publishing an {@link ProjectDeletionResponse} on success.
-   * Exceptions are provided as {@link Mono#error(Throwable)}
+   * @return a {@link Mono<ProjectDeletionResponse>} object publishing an
+   * {@link ProjectDeletionResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -170,6 +171,22 @@ public interface AsyncProjectService {
    */
   Flux<ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
+
+  /**
+   * Return a reactive stream of {@link ExperimentDescription} for a given project.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param projectId the identifier of the project to get the experiments for
+   * @return a {@link Flux} of {@link ExperimentDescription}. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException in case the request cannot be processed
+   * @throws AccessDeniedException  in case of insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ExperimentDescription> getExperiments(String projectId);
 
   /**
    * Requests {@link SamplePreview} for a given experiment with pagination support.
@@ -827,6 +844,7 @@ public interface AsyncProjectService {
       String experimentId,
       String projectId
   ) implements ValidationRequestBody {
+
   }
 
   /**
@@ -866,7 +884,6 @@ public interface AsyncProjectService {
   }
 
 
-
   record MeasurementRegistrationInformationNGS(
       Collection<String> sampleCodes,
       String organisationId, String instrumentCURI, String facility,
@@ -875,6 +892,7 @@ public interface AsyncProjectService {
       String indexI7, String indexI5,
       String comment
   ) implements ValidationRequestBody {
+
   }
 
   record MeasurementUpdateInformationNGS(
@@ -887,6 +905,7 @@ public interface AsyncProjectService {
       String sequencingRunProtocol, String samplePoolGroup,
       String indexI7, String indexI5,
       String comment) implements ValidationRequestBody {
+
   }
 
   record MeasurementRegistrationInformationPxP(
@@ -972,7 +991,9 @@ public interface AsyncProjectService {
 
   }
 
-  record ProjectDeletionRequest(String projectId, String requestId, ProjectDeletionRequestBody body) {
+  record ProjectDeletionRequest(String projectId, String requestId,
+                                ProjectDeletionRequestBody body) {
+
     public ProjectDeletionRequest {
       if (projectId == null) {
         throw new IllegalArgumentException("Project ID cannot be null");
