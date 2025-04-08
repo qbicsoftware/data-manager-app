@@ -485,6 +485,16 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(scheduler);
   }
 
+  @Override
+  public Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request) {
+    Mono<ExperimentDeletionResponse> response = switch (request.body()) {
+      case ExperimentalVariableDeletions experimentalVariableDeletions -> Mono.empty();
+    };
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return response;
+  }
+
+
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
       FundingDeletion target) {
     return Mono.defer(() -> {
