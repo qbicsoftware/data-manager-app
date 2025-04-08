@@ -205,7 +205,7 @@ public class ExperimentalDesign {
       this.variables.clear();
     }
 
-    public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
 
     public enum ResponseCode {
       SUCCESS,

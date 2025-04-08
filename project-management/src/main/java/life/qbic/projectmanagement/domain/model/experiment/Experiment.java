@@ -280,8 +280,9 @@ public class Experiment {
 
 
   public void removeExperimentalVariables(List<String> addedNames) {
-//    experimentalDesign.removeExperimentalVariables(addedNames);
-//  TODO
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+
   }
 
   /**
