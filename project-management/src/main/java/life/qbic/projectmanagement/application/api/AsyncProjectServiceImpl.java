@@ -160,6 +160,11 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         original -> writeSecurityContextMany(original, securityContext));
   }
 
+  @Override
+  public Flux<ExperimentDescription> getExperiments(String projectId) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
   // Requires the SecurityContext to work
   private Flux<ByteBuffer> getByteBufferFlux(String projectId) {
     var search = projectService.find(projectId);
