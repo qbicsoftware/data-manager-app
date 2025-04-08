@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.api;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -781,8 +782,8 @@ public interface AsyncProjectService {
    */
   record OntologyTerm(String label, Curie oboId, URI id) {
     public OntologyTerm {
-      Objects.requireNonNull(oboId);
-      Objects.requireNonNull(id);
+      requireNonNull(oboId);
+      requireNonNull(id);
     }
   }
 
