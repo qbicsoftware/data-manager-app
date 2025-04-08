@@ -626,8 +626,8 @@ public interface AsyncProjectService {
    *                       containing CURIEs.
    * @since 1.9.0
    */
-  record ExperimentDescription(String experimentName, Set<String> species, Set<String> specimen,
-                               Set<String> analytes) implements ExperimentUpdateRequestBody,
+  record ExperimentDescription(String experimentName, Set<OntologyTerm> species, Set<OntologyTerm> specimen,
+                               Set<OntologyTerm> analytes) implements ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
 
     public ExperimentDescription {
