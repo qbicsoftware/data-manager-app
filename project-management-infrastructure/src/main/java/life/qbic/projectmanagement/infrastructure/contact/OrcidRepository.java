@@ -136,7 +136,8 @@ public class OrcidRepository implements PersonRepository {
         }
       } else {
         log.debug("Error getting orcid records due to " + response.statusCode());
-        throw new OrcidRepository.QueryException("Person repository seems not available",
+        throw new OrcidRepository.QueryException(
+            "Orcid Public repository does not seem to be available",
             new Throwable(response.body()));
       }
     } catch (IOException | InterruptedException e) {
