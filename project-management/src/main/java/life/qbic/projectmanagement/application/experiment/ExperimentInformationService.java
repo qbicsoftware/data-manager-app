@@ -358,13 +358,17 @@ public class ExperimentInformationService {
     if (variableAdditions.isEmpty()) {
       return List.of();
     }
-    if (variableAdditions.stream()
-        .anyMatch(addition -> addition.name() == null || addition.name().isBlank())) {
+    Predicate<ExperimentalVariableAddition> noNameProvided = addition ->
+        addition.name() == null || addition.name().isBlank();
+
+    if (variableAdditions.stream().anyMatch(noNameProvided)) {
       throw new IllegalArgumentException("All variables must have a name");
     }
 
-    if (variableAdditions.stream()
-        .anyMatch(addition -> addition.levels() == null || addition.levels().isEmpty())) {
+    Predicate<ExperimentalVariableAddition> noLevelsProvided = addition ->
+        addition.levels().isEmpty();
+
+    if (variableAdditions.stream().anyMatch(noLevelsProvided)) {
       throw new IllegalArgumentException("All variables must have a levels");
     }
 
