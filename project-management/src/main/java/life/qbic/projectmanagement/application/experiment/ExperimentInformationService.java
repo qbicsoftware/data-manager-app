@@ -321,11 +321,27 @@ public class ExperimentInformationService {
 
   public record ExperimentalVariableAddition(String name, String unit, List<String> levels) {
 
+    public ExperimentalVariableAddition {
+      levels = List.copyOf(levels);
+    }
+
+    @Override
+    public List<String> levels() {
+      return List.copyOf(levels);
+    }
   }
 
   public record ExperimentalVariableInformation(String experimentId, String name, String unit,
                                                 List<String> levels) {
 
+    public ExperimentalVariableInformation {
+      levels = List.copyOf(levels);
+    }
+
+    @Override
+    public List<String> levels() {
+      return List.copyOf(levels);
+    }
   }
 
   /**
