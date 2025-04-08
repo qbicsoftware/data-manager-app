@@ -1,18 +1,20 @@
 package life.qbic.projectmanagement.application.api;
 
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
-import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
+import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.writeSecurityContextMany;
 
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -45,13 +47,16 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ProjectInformationService projectService;
   private final Scheduler scheduler;
   private final SampleInformationService sampleInfoService;
+  private final ExperimentInformationService experimentInformationService;
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
       @Autowired SampleInformationService sampleInfoService,
-      @Autowired Scheduler scheduler) {
+      @Autowired Scheduler scheduler,
+      @Autowired ExperimentInformationService experimentInformationService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
+    this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -174,7 +179,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       case ConfoundingVariableAdditions confoundingVariableAdditions -> unknownRequest();
       case ConfoundingVariableDeletions confoundingVariableDeletions -> unknownRequest();
       case ConfoundingVariableUpdates confoundingVariableUpdates -> unknownRequest();
-      case ExperimentalVariableAdditions experimentalVariableAdditions -> unknownRequest();
+      case ExperimentalVariableAdditions experimentalVariableAdditions ->
+          addExperimentalVariables(request.projectId(), experimentalVariableAdditions,
+              ExperimentId.parse(request.experimentId()), request.requestId());
       case ExperimentalVariableDeletions experimentalVariableDeletions -> unknownRequest();
     };
 
@@ -193,6 +200,33 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       ExperimentDescription experimentDescription) {
     //TODO implement
     throw new RuntimeException("Not implemented");
+  }
+
+  private Mono<ExperimentUpdateResponse> addExperimentalVariables(
+      String projectId,
+      ExperimentalVariableAdditions experimentalVariableAdditions, ExperimentId experimentId,
+      String requestId) {
+
+    var variableAdditions = experimentalVariableAdditions.experimentalVariables().stream()
+        .map(experimentalVariable -> new ExperimentalVariableAddition(experimentalVariable.name(),
+            experimentalVariable.unit(), List.copyOf(experimentalVariable.levels())))
+        .toList();
+
+    return applySecurityContext(Mono.fromSupplier(
+        () -> experimentInformationService.addVariablesToExperiment(projectId, experimentId,
+            variableAdditions)
+    ))
+        .map(experimentalVariableInformation -> experimentalVariableInformation.stream()
+            .map(info -> new ExperimentalVariable(info.name(), new HashSet<>(info.levels()),
+                info.unit())
+            )
+            .peek(System.out::println)
+            .toList())
+        .map(ExperimentalVariables::new)
+        .map(experimentalVariables ->
+            new ExperimentUpdateResponse(experimentId.value(), experimentalVariables,
+                requestId)
+        ).subscribeOn(scheduler);
   }
 
 

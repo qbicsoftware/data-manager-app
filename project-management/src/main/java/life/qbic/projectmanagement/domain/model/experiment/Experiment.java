@@ -260,6 +260,27 @@ public class Experiment {
     emitExperimentUpdatedEvent();
   }
 
+//  /**
+//   * Creates a new experimental variable and adds it to the experimental design. A successful
+//   * operation is indicated in the result, which can be verified via {@link Result#isValue()}.
+//   * <p>
+//   * <b>Note</b>: If a variable with the provided name already exists, the creation will fail with
+//   * an {@link ExperimentalVariableExistsException} and no variable is added to the design. You can
+//   * check via {@link Result#isError()} if this is the case.
+//   *
+//   * @param variableName a declarative and unique name for the variable
+//   * @param levels       a list containing at least one value for the variable
+//   * @return a {@link Result} object containing the {@link VariableName} or contains declarative
+//   * exceptions. The result will contain an {@link ExperimentalVariableExistsException} if the
+//   * variable already exists or an {@link IllegalArgumentException} if no level has been provided.
+//   * @since 1.0.0
+//   */
+//  public Result<VariableName, Exception> addVariableToDesign(String variableName,
+//      List<ExperimentalValue> levels) {
+//    return experimentalDesign.addVariable(variableName, levels)
+//    .onValue(x -> emitExperimentUpdatedEvent());
+//  }
+
   /**
    * Creates a new experimental variable and adds it to the experimental design. A successful
    * operation is indicated in the result, which can be verified via {@link Result#isValue()}.
@@ -275,10 +296,17 @@ public class Experiment {
    * variable already exists or an {@link IllegalArgumentException} if no level has been provided.
    * @since 1.0.0
    */
-  public Result<VariableName, Exception> addVariableToDesign(String variableName,
+  public ExperimentalVariable addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
     return experimentalDesign.addVariable(variableName, levels)
-    .onValue(x -> emitExperimentUpdatedEvent());
+        .onValue(ignored -> emitExperimentCreatedEvent())
+        .valueOrElseThrow(e -> new RuntimeException(e));
+  }
+
+
+  public void removeExperimentalVariables(List<String> addedNames) {
+//    experimentalDesign.removeExperimentalVariables(addedNames);
+//  TODO
   }
 
   /**
@@ -391,4 +419,5 @@ public class Experiment {
     var createdEvent = new ExperimentCreatedEvent(this.experimentId());
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
+
 }

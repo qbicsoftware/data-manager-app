@@ -318,6 +318,70 @@ public class ExperimentInformationService {
     handleLocalEventCache(domainEventsCache);
   }
 
+
+  public record ExperimentalVariableAddition(String name, String unit, List<String> levels) {
+
+  }
+
+  public record ExperimentalVariableInformation(String experimentId, String name, String unit,
+                                                List<String> levels) {
+
+  }
+
+  /**
+   * Adds {@link ExperimentalVariable} to an {@link Experiment}
+   *
+   * @param experimentId the Id of the experiment
+   * @param projectId    the Id of the project that is being changed
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public List<ExperimentalVariableInformation> addVariablesToExperiment(String projectId,
+      ExperimentId experimentId,
+      List<ExperimentalVariableAddition> variableAdditions) {
+    if (variableAdditions.isEmpty()) {
+      return List.of();
+    }
+    if (variableAdditions.stream()
+        .anyMatch(addition -> addition.name() == null || addition.name().isBlank())) {
+      throw new IllegalArgumentException("All variables must have a name");
+    }
+
+    if (variableAdditions.stream()
+        .anyMatch(addition -> addition.levels() == null || addition.levels().isEmpty())) {
+      throw new IllegalArgumentException("All variables must have a levels");
+    }
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = loadExperimentById(experimentId);
+    List<ExperimentalVariableInformation> addedVariables = new ArrayList<>();
+    try {
+      for (ExperimentalVariableAddition variableAddition : variableAdditions) {
+        var levels = variableAddition.levels().stream()
+            .map(level -> ExperimentalValue.create(level, variableAddition.unit()))
+            .toList();
+        experiment.addVariableToDesign(variableAddition.name(), levels);
+        addedVariables.add(
+            new ExperimentalVariableInformation(experimentId.value(), variableAddition.name(),
+                variableAddition.unit(), variableAddition.levels()));
+      }
+      experimentRepository.update(experiment);
+      handleLocalEventCache(domainEventsCache);
+    } catch (RuntimeException e) {
+      //remove all added variables again
+      List<String> addedNames = addedVariables.stream().map(ExperimentalVariableInformation::name)
+          .toList();
+      experiment.removeExperimentalVariables(addedNames);
+      throw e;
+    }
+    return addedVariables;
+  }
+
   /**
    * Retrieve all analytes of an experiment.
    *

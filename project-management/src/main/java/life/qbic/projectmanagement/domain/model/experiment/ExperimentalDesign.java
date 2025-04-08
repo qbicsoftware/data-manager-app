@@ -177,7 +177,8 @@ public class ExperimentalDesign {
     return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
   }
 
-  Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
+  Result<ExperimentalVariable, Exception> addVariable(String variableName,
+      List<ExperimentalValue> levels) {
     if (levels.isEmpty()) {
       return Result.fromError(new IllegalArgumentException(
           "No levels were defined for " + variableName));
@@ -191,7 +192,7 @@ public class ExperimentalDesign {
       ExperimentalVariable variable = ExperimentalVariable.create(variableName,
           levels.toArray(ExperimentalValue[]::new));
       variables.add(variable);
-      return Result.fromValue(variable.name());
+      return Result.fromValue(variable);
     } catch (IllegalArgumentException e) {
       return Result.fromError(e);
     }

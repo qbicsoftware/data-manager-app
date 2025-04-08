@@ -332,7 +332,7 @@ public interface AsyncProjectService {
    * @param unit   the unit of the experimental variable. Can be null if no unit is set
    * @since 1.9.0
    */
-  record ExperimentalVariable(Long id, String name, Set<String> levels, @Nullable String unit) {
+  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
 
     public ExperimentalVariable {
       levels = Set.copyOf(levels);
