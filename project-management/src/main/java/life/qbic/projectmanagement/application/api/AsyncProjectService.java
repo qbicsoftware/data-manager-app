@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -767,7 +768,6 @@ public interface AsyncProjectService {
    */
   record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
                                 FundingInformation funding) {
-
   }
 
   /**
@@ -780,7 +780,10 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record OntologyTerm(String label, Curie oboId, URI id) {
-
+    public OntologyTerm {
+      Objects.requireNonNull(oboId);
+      Objects.requireNonNull(id);
+    }
   }
 
   /**
