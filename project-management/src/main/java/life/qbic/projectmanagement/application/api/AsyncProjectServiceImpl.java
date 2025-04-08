@@ -27,9 +27,9 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -562,7 +562,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             .map(info -> new ExperimentalVariable(info.name(), new HashSet<>(info.levels()),
                 info.unit())
             )
-            .peek(System.out::println)
             .toList())
         .map(ExperimentalVariables::new)
         .map(experimentalVariables ->
