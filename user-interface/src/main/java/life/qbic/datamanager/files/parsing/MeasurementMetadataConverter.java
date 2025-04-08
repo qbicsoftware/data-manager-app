@@ -1,9 +1,9 @@
 package life.qbic.datamanager.files.parsing;
 
 import java.util.List;
-import life.qbic.projectmanagement.application.api.NGSMeasurementMetadata;
-import life.qbic.projectmanagement.application.api.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 
 /**
  * <b>Measurement Metadata Converter</b>

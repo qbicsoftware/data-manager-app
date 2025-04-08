@@ -12,6 +12,7 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.identity.api.AuthenticationToUserIdTranslator;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
 import life.qbic.projectmanagement.application.api.ProjectOverviewLookup;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -139,6 +140,13 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void manageProject(ProjectId projectId, ProjectContact contact) {
+    var projectContact = new Contact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer());
+    manageProject(projectId, projectContact);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void investigateProject(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setPrincipalInvestigator(contact);
@@ -146,10 +154,24 @@ public class ProjectInformationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void investigateProject(ProjectId projectId, ProjectContact contact) {
+    var projectContact = new Contact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer());
+    investigateProject(projectId, projectContact);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void setResponsibility(ProjectId projectId, Contact contact) {
     Project project = loadProject(projectId);
     project.setResponsiblePerson(contact);
     projectRepository.update(project);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public void setResponsibility(ProjectId projectId, ProjectContact contact) {
+    var projectContact = new Contact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer());
+    setResponsibility(projectId, projectContact);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
