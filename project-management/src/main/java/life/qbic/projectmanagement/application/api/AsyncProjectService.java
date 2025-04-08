@@ -498,6 +498,10 @@ public interface AsyncProjectService {
    */
   record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
 
+    public ExperimentalVariable(String name, Set<String> levels) {
+      this(name, levels, "");
+    }
+
     public ExperimentalVariable {
       levels = Set.copyOf(levels);
     }
