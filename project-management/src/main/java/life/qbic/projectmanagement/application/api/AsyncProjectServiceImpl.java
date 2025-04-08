@@ -488,10 +488,21 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request) {
     Mono<ExperimentDeletionResponse> response = switch (request.body()) {
-      case ExperimentalVariableDeletions experimentalVariableDeletions -> Mono.empty();
+      case ExperimentalVariableDeletions experimentalVariableDeletions ->
+          deleteExperimentalVariables(request, experimentalVariableDeletions);
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return response;
+    return applySecurityContext(response)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy())
+        .subscribeOn(scheduler);
+  }
+
+  private Mono<ExperimentDeletionResponse> deleteExperimentalVariables(
+      ExperimentDeletionRequest request,
+      ExperimentalVariableDeletions experimentalVariableDeletions) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
   }
 
 
