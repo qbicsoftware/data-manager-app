@@ -2,12 +2,9 @@ package life.qbic.datamanager.views.general.contact;
 
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.validator.EmailValidator;
-import com.vaadin.flow.data.validator.StringLengthValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.HasBoundField;
-import life.qbic.projectmanagement.application.contact.OrcidEntry;
 
 /**
  * <b>Bound Contact Field</b>
@@ -98,14 +95,6 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     binder.setBean(new ContactContainer());
     binder.forField(contactField).withValidator(predicate, "Please specify a valid contact")
         .bind(ContactContainer::getContact, ContactContainer::setContact);
-    binder.forField(contactField.email()).withValidator(
-            new EmailValidator("Please provide a valid email address, e.g. my.name@example.com", false))
-        .bind(ContactContainer::getEmail, ContactContainer::setEmail);
-    binder.forField(contactField.fullName()).withValidator(
-            new StringLengthValidator("Please provide the full name of the contact", 2, null))
-        .bind(ContactContainer::getFullName, ContactContainer::setFullName);
-    binder.forField(contactField.oidcSelection())
-        .bind(ContactContainer::getOidcSelection, ContactContainer::setOidcSelection);
     return binder;
   }
 
@@ -159,45 +148,6 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
 
     public void setContact(Contact contact) {
       this.contact = Objects.requireNonNull(contact);
-    }
-
-    public String getEmail() {
-      return contact == null ? "" : contact.email();
-    }
-
-    public void setEmail(String email) {
-      if (contact != null) {
-        contact.setEmail(email);
-      }
-    }
-
-    public String getFullName() {
-      return contact == null ? "" : contact.fullName();
-    }
-
-    public void setFullName(String fullName) {
-      if (contact != null) {
-        contact.setFullName(fullName);
-      }
-    }
-
-    public OrcidEntry getOidcSelection() {
-      //We only want to show contact information within the orcid selection combobox if it's originated from the orcidRepository
-      if (contact.oidc().isEmpty() || contact.oidcIssuer().isEmpty()) {
-        return null;
-      }
-      return new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
-          contact.oidcIssuer());
-    }
-
-    public void setOidcSelection(OrcidEntry oidcSelection) {
-      if (oidcSelection == null) {
-        return;
-      }
-      contact.setFullName(oidcSelection.fullName());
-      contact.setEmail(oidcSelection.emailAddress());
-      contact.setOidc(oidcSelection.oidc());
-      contact.setOidcIssuer(oidcSelection.oidcIssuer());
     }
   }
 }

@@ -52,10 +52,6 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     addValueChangeListeners();
   }
 
-  private static void loadContact(ContactField field, Contact contact) {
-    field.setPresentationValue(contact);
-  }
-
   private static void resetFieldValues(ContactField field) {
     var emptyContact = new Contact("", "", "", "");
     field.setPresentationValue(emptyContact);
@@ -92,31 +88,27 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       if (!listener.isFromClient()) {
         return;
       }
-      //Reset any values stored within the other selection modes
+      //Ensures that all other field values are set to empty before the value provided by the listener is set
       resetFieldValues(this);
-      if (Boolean.TRUE.equals(listener.getValue())) {
-        loadContact(this, myself);
-      }
+      setMyselfCheckBox.setValue(listener.getValue());
+      updateValue();
     });
     orcidSelection.addValueChangeListener(listener -> {
       if (!listener.isFromClient()) {
         return;
       }
-      //Reset any values stored within the other selection modes
+      //Ensures that all other field values are set to empty before the value provided by the listener is set
       resetFieldValues(this);
-      var orcidEntry = listener.getValue();
-      if (orcidEntry != null) {
-        var convertedContact = new Contact(orcidEntry.fullName(), orcidEntry.emailAddress(),
-            orcidEntry.oidc(), orcidEntry.oidcIssuer());
-        loadContact(this, convertedContact);
-      }
+      orcidSelection.setValue(listener.getValue());
+      updateValue();
     });
     manualContactSetter.addExpandSpanClickListener(listener -> {
       if (!listener.isFromClient()) {
         return;
       }
-      //Reset any values stored within the other selection modes
+      //Ensures that all other field values are set to empty before the value provided by the listener is set
       resetFieldValues(this);
+      updateValue();
       manualContactSetter.openFieldLayout();
     });
   }
@@ -162,15 +154,18 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   @Override
   protected Contact generateModelValue() {
-    //We have to avoid checking null values (e.g. the user clicks the checkbox then no value is in the orcid combobox
-    String oidc = "";
-    String oidcIssuer = "";
-    if (oidcSelection().getValue() != null) {
-      oidc = oidcSelection().getValue().oidc();
-      oidcIssuer = oidcSelection().getValue().oidcIssuer();
+    //If the checkbox was checked return the currently loggedin user as a contact
+    if (Boolean.TRUE.equals(setMyselfCheckBox.getValue())) {
+      return myself;
     }
-    return new Contact(fullName().getValue(), email().getValue(), oidc, oidcIssuer);
-
+    //If an orcidEntry was selected return the values provided from the orcid Repository
+    if (orcidSelection.getValue() != orcidSelection.getEmptyValue()) {
+      var selectedEntry = orcidSelection.getValue();
+      return new Contact(selectedEntry.fullName(), selectedEntry.emailAddress(),
+          selectedEntry.oidc(), selectedEntry.oidcIssuer());
+    }
+    // Else return the values provided within the manual fields.
+    return new Contact(fullName().getValue(), email().getValue(), "", "");
   }
 
   public TextField fullName() {
@@ -185,27 +180,26 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
   protected void setPresentationValue(Contact contact) {
     //If no contact was provided all fields should be set to empty values.
     if (contact == null || contact.isEmpty()) {
-      manualContactSetter.closeFieldLayout();
       orcidSelection.setValue(orcidSelection.getEmptyValue());
-      setMyselfCheckBox.setValue(false);
+      setMyselfCheckBox.setValue(setMyselfCheckBox.getEmptyValue());
+      manualContactSetter.closeFieldLayout();
+      manualContactSetter.resetLayoutFields();
       return;
     }
     //If the user selected herself, only the checkbox should be highlighted
     if (contact.equals(myself)) {
       setMyselfCheckBox.setValue(true);
-      manualContactSetter.setValues(contact.fullName(), contact.email());
       return;
     }
-    //If the user provided an entry from the orcidrepository show the full name within the combobox
+    //If the user provided an entry from the orcid repository show the full name within the combobox
     if (contact.isComplete()) {
       orcidSelection.setValue(new OrcidEntry(contact.fullName(), contact.email(), contact.oidc(),
           contact.oidcIssuer()));
-      manualContactSetter.setValues(contact.fullName(), contact.email());
       return;
     }
     // Only open the Field Layout if the user was not provided via the checkbox or the orcid.
-    manualContactSetter.setValues(contact.fullName(), contact.email());
     manualContactSetter.openFieldLayout();
+    manualContactSetter.setValues(contact.fullName(), contact.email());
   }
 
   @Override
@@ -215,10 +209,6 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     } else {
       removeErrors();
     }
-  }
-
-  public ComboBox<OrcidEntry> oidcSelection() {
-    return orcidSelection;
   }
 
   private void removeErrors() {
@@ -293,10 +283,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     public ManualContactSetter() {
       this.fullNameField = withErrorMessage(
           withPlaceHolder(new TextField(), "Please provide a name"),
-          "");
+          "Please provide the full name of the contact");
       this.emailField = withErrorMessage(
           withPlaceHolder(new TextField(), "Please enter an email address"),
-          "");
+          "Please provide a valid email address, e.g. my.name@example.com");
       fieldLayout = new Span();
       fieldLayout.add(fullNameField, emailField);
       styleFieldLayout();
@@ -331,7 +321,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
         if (fieldLayout.isVisible()) {
           return;
         }
-        fireEvent(new SetManualContactEvent(this, true));
+        fireEvent(new SetContactManuallyEvent(this, true));
       });
       return manualSelectionSpan;
     }
@@ -364,8 +354,8 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     }
 
     private void addExpandSpanClickListener(
-        ComponentEventListener<SetManualContactEvent> listener) {
-      addListener(SetManualContactEvent.class, listener);
+        ComponentEventListener<SetContactManuallyEvent> listener) {
+      addListener(SetContactManuallyEvent.class, listener);
     }
 
     public TextField fullNameField() {
@@ -377,16 +367,16 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     }
 
     /**
-     * <b>Switch to copy icon event</b>
+     * <b>Set Manual Contact Event</b>
      *
-     * <p>Indicates that the copy icon was switched to it's default copy icon state</p>
+     * <p>Indicates that the user intends to set the contact manually</p>
      */
-    public static class SetManualContactEvent extends ComponentEvent<ManualContactSetter> {
+    public static class SetContactManuallyEvent extends ComponentEvent<ManualContactSetter> {
 
       @Serial
       private static final long serialVersionUID = 5053589646150265555L;
 
-      public SetManualContactEvent(ManualContactSetter source, boolean fromClient) {
+      public SetContactManuallyEvent(ManualContactSetter source, boolean fromClient) {
         super(source, fromClient);
       }
     }
