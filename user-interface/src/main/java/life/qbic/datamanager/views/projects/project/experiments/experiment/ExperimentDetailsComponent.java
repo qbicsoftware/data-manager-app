@@ -7,6 +7,7 @@ import static life.qbic.datamanager.views.projects.project.experiments.experimen
 import static life.qbic.datamanager.views.projects.project.experiments.experiment.SampleOriginType.SPECIMEN;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AnchorTarget;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +65,9 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.updat
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
 import life.qbic.datamanager.views.projects.project.samples.SampleInformationMain;
 import life.qbic.projectmanagement.application.DeletionService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableAdditions;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -122,6 +127,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private final transient MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient ConfoundingVariableService confoundingVariableService;
+  private final AsyncProjectService asyncProjectService;
   private Context context;
   private int experimentalGroupCount;
 
@@ -134,7 +140,8 @@ public class ExperimentDetailsComponent extends PageArea {
       TerminologyService terminologyService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      ConfoundingVariableService confoundingVariableService) {
+      ConfoundingVariableService confoundingVariableService,
+      AsyncProjectService asyncProjectService) {
     this.confoundingVariableService = requireNonNull(confoundingVariableService);
     this.messageSourceNotificationFactory = requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
@@ -152,6 +159,7 @@ public class ExperimentDetailsComponent extends PageArea {
     confoundingVariablesContainer.addClassNames("full-width", "full-height");
     layoutComponent();
     configureComponent();
+    this.asyncProjectService = asyncProjectService;
   }
 
 
@@ -509,12 +517,33 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void onExperimentalVariablesAddConfirmed(
       ExperimentalVariablesDialog.ConfirmEvent confirmEvent) {
-    addExperimentalVariables(confirmEvent.getSource().definedVariables());
-    confirmEvent.getSource().close();
-    reloadExperimentInfo(context.projectId().orElseThrow(), context.experimentId().orElseThrow());
-    if (hasExperimentalGroups()) {
-      showSampleRegistrationPossibleNotification();
-    }
+
+    List<ExperimentalVariableContent> variableContents = confirmEvent.getSource()
+        .definedVariables();
+    List<AsyncProjectService.ExperimentalVariable> variables = variableContents.stream()
+        .map(it -> new AsyncProjectService.ExperimentalVariable(it.name(),
+            new HashSet<>(it.levels()), it.unit()))
+        .toList();
+
+    ExperimentalVariableAdditions body = new ExperimentalVariableAdditions(variables);
+    ProjectId projectId = context.projectId().orElseThrow();
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    var ui = UI.getCurrent();
+
+    ExperimentUpdateRequest request = new ExperimentUpdateRequest(
+        projectId.value(),
+        experimentId.value(), body);
+
+    asyncProjectService.update(request)
+        .doOnNext(it -> ui.access(() -> {
+          confirmEvent.getSource().close();
+          reloadExperimentInfo(projectId,
+              experimentId);
+          if (hasExperimentalGroups()) {
+            showSampleRegistrationPossibleNotification();
+          }
+        }))
+        .subscribe();
   }
 
   private void openExperimentalVariablesEditDialog() {
