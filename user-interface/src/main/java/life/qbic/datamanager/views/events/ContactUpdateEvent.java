@@ -4,10 +4,10 @@ import com.vaadin.flow.component.ComponentEvent;
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.datamanager.views.projects.ProjectInformation;
-import life.qbic.datamanager.views.projects.edit.EditContactDialog;
+import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 
 
-public class ContactUpdateEvent extends ComponentEvent<EditContactDialog> {
+public class ContactUpdateEvent extends ComponentEvent<EditContactsComponent> {
 
   private final ProjectInformation projectInfo;
 
@@ -19,7 +19,7 @@ public class ContactUpdateEvent extends ComponentEvent<EditContactDialog> {
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public ContactUpdateEvent(EditContactDialog source, boolean fromClient, ProjectInformation projectInformation) {
+  public ContactUpdateEvent(EditContactsComponent source, boolean fromClient, ProjectInformation projectInformation) {
     super(source, fromClient);
     this.projectInfo = Objects.requireNonNull(projectInformation);
   }

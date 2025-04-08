@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * <b>Measurement NGS Validation Executor</b>
  * <p>
  * Implementation of the {@link MeasurementValidationExecutor} interface,
- * handling the validation of to be registered or edited  {@link life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata}
+ * handling the validation of to be registered or edited  {@link NGSMeasurementMetadata}
  *
  */
 @Component

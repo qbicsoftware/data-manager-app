@@ -5,16 +5,21 @@ import static java.util.Objects.nonNull;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
+import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
+import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleRegistrationRequest;
+import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
+import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -33,6 +38,10 @@ import reactor.core.publisher.Mono;
  * @since 1.9.0
  */
 public interface AsyncProjectService {
+
+  /*
+  API method section - start
+   */
 
   /**
    * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
@@ -91,6 +100,26 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
 
+
+  /**
+   * Submits a {@link ProjectDeletionRequest} to remove information from a project.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the actual {@link ProjectDeletionRequest}
+   * @return a {@link Mono<ProjectDeletionResponse>} object publishing an
+   * {@link ProjectDeletionResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request);
+
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
    * immediately.
@@ -142,6 +171,22 @@ public interface AsyncProjectService {
    */
   Flux<ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
+
+  /**
+   * Return a reactive stream of {@link ExperimentDescription} for a given project.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param projectId the identifier of the project to get the experiments for
+   * @return a {@link Flux} of {@link ExperimentDescription}. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException in case the request cannot be processed
+   * @throws AccessDeniedException  in case of insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ExperimentDescription> getExperiments(String projectId);
 
   /**
    * Requests {@link SamplePreview} for a given experiment with pagination support.
@@ -215,7 +260,7 @@ public interface AsyncProjectService {
    * @param projectId the project id to which the sample belongs to
    * @param sampleId  the sample id of the sample to find
    * @return a reactive container of {@link Sample} for the sample matching the sample id. For no
-   * matches a {@link Mono#empty()} is returned. Exceptions are * provided as
+   * matches a {@link Mono#empty()} is returned. Exceptions are provided as
    * {@link Mono#error(Throwable)}.
    * @throws RequestFailedException in case the request cannot be executed
    * @since 1.10.0
@@ -223,13 +268,94 @@ public interface AsyncProjectService {
   Mono<Sample> findSample(String projectId, String sampleId);
 
   /**
+   * Submits multiple validation requests in a single service call.
+   *
+   * @param requests a {@link Flux} providing {@link ValidationRequest}.
+   * @return a {@link Flux} of {@link ValidationResponse}, providing the validation results for the
+   * submitted requests. Exceptions are provided as {@link Flux#error(Throwable)}.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ValidationResponse> validate(Flux<ValidationRequest> requests);
+
+  /**
+   * Requests a sample registration template in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
+      MimeType mimeType);
+
+  /**
+   * Requests a sample update template in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param batchId      the batch ID for which the samples shall be updated
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      String batchId, MimeType mimeType);
+
+  /**
+   * Requests sample information in a desired {@link MimeType}.
+   * <p>
+   * If the mime type is not supported, a {@link UnsupportedMimeTypeException} will be provided as
+   * {@link Mono#error(Throwable)}.
+   *
+   * @param projectId    the project ID of the project the template should be created for
+   * @param experimentId the experiment ID of the experiment the template should be created for
+   * @param mimeType     the mime type the digital object should be
+   * @return a {@link Mono} with a {@link DigitalObject} providing the requested template
+   * @throws AccessDeniedException        if the user has insufficient rights
+   * @throws RequestFailedException       if the request cannot be executed
+   * @throws UnsupportedMimeTypeException if the service cannot provide the requested
+   *                                      {@link MimeType}
+   * @since 1.10.0
+   */
+  Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
+      MimeType mimeType);
+
+
+  /*
+  API method section - end
+   */
+
+
+  /*
+  API concept section - start
+   */
+
+  /**
    * Container of an update request for a service call and part of the
    * {@link ProjectUpdateRequest}.
    *
    * @since 1.9.0
    */
-  sealed interface ProjectUpdateRequestBody permits FundingInformation, ProjectContacts,
-      ProjectDesign {
+  sealed interface ProjectUpdateRequestBody permits FundingInformation, PrincipalInvestigator,
+      ProjectDesign, ProjectManager, ProjectResponsible {
 
   }
 
@@ -239,8 +365,8 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface ProjectUpdateResponseBody permits FundingInformation, ProjectContacts,
-      ProjectDesign {
+  sealed interface ProjectUpdateResponseBody permits FundingInformation,
+      PrincipalInvestigator, ProjectDesign, ProjectManager, ProjectResponsible {
 
   }
 
@@ -255,6 +381,24 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * A validation request body for information that shall be validated by the service.
+   * <p>
+   * Currently, permits:
+   *
+   * <ul>
+   *   <li>{@link SampleRegistrationInformation}</li>
+   *   <li>{@link SampleUpdateInformation}</li>
+   * </ul>
+   *
+   * @since 1.10.0
+   */
+  sealed interface ValidationRequestBody permits MeasurementRegistrationInformationNGS,
+      MeasurementRegistrationInformationPxP, MeasurementUpdateInformationNGS,
+      MeasurementUpdateInformationPxP, SampleRegistrationInformation, SampleUpdateInformation {
+
+  }
+
 
   /**
    * Cacheable requests provide a unique identifier so cache implementations can unambiguously
@@ -262,7 +406,8 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface CacheableRequest permits ProjectUpdateRequest, ExperimentUpdateRequest {
+  sealed interface CacheableRequest permits ExperimentUpdateRequest, ProjectUpdateRequest,
+      ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -271,6 +416,11 @@ public interface AsyncProjectService {
      * @since 1.9.0
      */
     String requestId();
+
+  }
+
+  sealed interface ProjectDeletionRequestBody permits FundingDeletion,
+      ProjectResponsibleDeletion {
 
   }
 
@@ -292,12 +442,11 @@ public interface AsyncProjectService {
    *
    * @param investigator the principal investigator
    * @param manager      the project manager
-   * @param responsible  the responsible person
+   * @param responsible  the responsible person, can be <code>null</code>
    * @since 1.9.0
    */
   record ProjectContacts(ProjectContact investigator, ProjectContact manager,
-                         ProjectContact responsible) implements ProjectUpdateRequestBody,
-      ProjectUpdateResponseBody {
+                         ProjectContact responsible) {
 
   }
 
@@ -320,6 +469,21 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record FundingInformation(String grant, String grantId) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record ProjectResponsible(ProjectContact contact) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record ProjectManager(ProjectContact contact) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record PrincipalInvestigator(ProjectContact contact) implements ProjectUpdateRequestBody,
       ProjectUpdateResponseBody {
 
   }
@@ -362,7 +526,6 @@ public interface AsyncProjectService {
       return List.copyOf(experimentalVariables);
     }
   }
-
 
   /**
    * Information about variables that should be deleted
@@ -411,7 +574,8 @@ public interface AsyncProjectService {
    * @param unit         the unit for the value of the level. Can be null if no unit is set
    * @since 1.9.0
    */
-  record VariableLevel(Long variableId, String variableName, String levelValue, @Nullable String unit) {
+  record VariableLevel(Long variableId, String variableName, String levelValue,
+                       @Nullable String unit) {
 
   }
 
@@ -549,16 +713,15 @@ public interface AsyncProjectService {
     }
   }
 
-
   /**
    * A service request to update an experiment
    *
    * @param projectId    the project's identifier. The project containing the experiment.
    * @param experimentId the experiment's identifier
    * @param body         the request body containing information on what was updated
-   * @param requestId    The identifier of the request. Please use
-   *                     {@link #ExperimentUpdateRequest(String, String,
-   *                     ExperimentUpdateRequestBody)} if it is not determined yet.
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
+   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
    * @since 1.9.0
    */
   record ExperimentUpdateRequest(String projectId, String experimentId,
@@ -609,12 +772,14 @@ public interface AsyncProjectService {
    * A service request to create one or more new samples for a project.
    *
    * @param projectId the project ID of the project the samples shall be created for
-   * @param requests  a collection of {@link SampleRegistrationRequest} items
+   * @param requests  a collection of {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+  record SampleRegistrationRequest(String projectId,
+                                   Collection<SampleRegistrationInformation> requests) {
 
-    public SampleCreationRequest(String projectId, Collection<SampleRegistrationRequest> requests) {
+    public SampleRegistrationRequest(String projectId,
+        Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -624,12 +789,13 @@ public interface AsyncProjectService {
    * A service request to update one or more samples in a project.
    *
    * @param projectId the project ID of the project the samples shall be updated in
-   * @param requests  a collection for {@link SampleUpdate} items
+   * @param requests  a collection for {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+  record SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
 
-    public SampleUpdateRequest(String projectId, Collection<SampleUpdate> requests) {
+    public SampleUpdateRequest(String projectId,
+        Collection<SampleRegistrationInformation> requests) {
       this.projectId = projectId;
       this.requests = List.copyOf(requests);
     }
@@ -648,6 +814,143 @@ public interface AsyncProjectService {
   }
 
   /**
+   * A simple container for sample registration information of an individual sample to register.
+   *
+   * @param sampleName           the sample name
+   * @param biologicalReplicate  the biological replicate label given
+   * @param condition            the String representation of a condition
+   * @param species              the String representation of a species with CURIE
+   * @param specimen             the String representation of a specimen with CURIE
+   * @param analyte              the String representation of an analyte with CURIE
+   * @param analysisMethod       the String representation of the analysis method
+   * @param comment              a users comment
+   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+   *                             representation
+   * @param experimentId         the experiment ID of the experiment the sample should be registered
+   *                             to
+   * @param projectId            the project ID of the project the experiment belongs to
+   * @since 1.10.0
+   */
+  record SampleRegistrationInformation(
+      String sampleName,
+      String biologicalReplicate,
+      String condition,
+      String species,
+      String specimen,
+      String analyte,
+      String analysisMethod,
+      String comment,
+      Map<String, String> confoundingVariables,
+      String experimentId,
+      String projectId
+  ) implements ValidationRequestBody {
+
+  }
+
+  /**
+   * A simple container for sample update information of an individual sample to register.
+   *
+   * @param sampleCode           the sample ID that is known to the user
+   * @param sampleName           the sample name
+   * @param biologicalReplicate  the biological replicate label given
+   * @param condition            the String representation of a condition
+   * @param species              the String representation of a species with CURIE
+   * @param specimen             the String representation of a specimen with CURIE
+   * @param analyte              the String representation of an analyte with CURIE
+   * @param analysisMethod       the String representation of the analysis method
+   * @param comment              a users comment
+   * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
+   *                             representation
+   * @param experimentId         the experiment ID of the experiment the sample should be registered
+   *                             to
+   * @param projectId            the project ID of the project the experiment belongs to
+   * @since 1.10.0
+   */
+  record SampleUpdateInformation(
+      String sampleCode,
+      String sampleName,
+      String biologicalReplicate,
+      String condition,
+      String species,
+      String specimen,
+      String analyte,
+      String analysisMethod,
+      String comment,
+      Map<String, String> confoundingVariables,
+      String experimentId,
+      String projectId
+  ) implements ValidationRequestBody {
+
+  }
+
+
+  record MeasurementRegistrationInformationNGS(
+      Collection<String> sampleCodes,
+      String organisationId, String instrumentCURI, String facility,
+      String sequencingReadType, String libraryKit, String flowCell,
+      String sequencingRunProtocol, String samplePoolGroup,
+      String indexI7, String indexI5,
+      String comment
+  ) implements ValidationRequestBody {
+
+  }
+
+  record MeasurementUpdateInformationNGS(
+      String measurementCode,
+      Collection<String> sampleCodes,
+      String organisationId, String instrumentCURI,
+      String facility,
+      String sequencingReadType, String libraryKit,
+      String flowCell,
+      String sequencingRunProtocol, String samplePoolGroup,
+      String indexI7, String indexI5,
+      String comment) implements ValidationRequestBody {
+
+  }
+
+  record MeasurementRegistrationInformationPxP(
+      SampleCode sampleCode,
+      String technicalReplicateName,
+      String organisationId,
+      String msDeviceCURIE,
+      String samplePoolGroup,
+      String facility,
+      String fractionName,
+      String digestionEnzyme,
+      String digestionMethod,
+      String enrichmentMethod,
+      String injectionVolume,
+      String lcColumn,
+      String lcmsMethod,
+      Labeling labeling,
+      String comment
+  ) implements ValidationRequestBody {
+
+  }
+
+  record MeasurementUpdateInformationPxP(
+      String measurementId,
+      SampleCode sampleCode,
+      String technicalReplicateName,
+      String organisationId,
+      String msDeviceCURIE,
+      String samplePoolGroup,
+      String facility,
+      String fractionName,
+      String digestionEnzyme,
+      String digestionMethod,
+      String enrichmentMethod,
+      String injectionVolume,
+      String lcColumn,
+      String lcmsMethod,
+      Labeling labeling,
+      String comment
+  ) implements ValidationRequestBody {
+
+  }
+
+
+  /**
    * A service response from a project creation request
    *
    * @param projectId
@@ -662,19 +965,62 @@ public interface AsyncProjectService {
    *
    * @param projectId   the project's id
    * @param requestBody the information to be updated.
+   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
+   *                    the response. If <code>null</code> or {@link String#isBlank()} is true, then
+   *                    a random UUID is assigned with {@link UUID#randomUUID()}.
    * @since 1.9.0
    */
   record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
-                              String id) implements CacheableRequest {
+                              String requestId) implements CacheableRequest {
+
+    public ProjectUpdateRequest {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+      }
+    }
 
     public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
       this(projectId, requestBody, UUID.randomUUID().toString());
     }
 
-    @Override
-    public String requestId() {
-      return id;
+  }
+
+  record ProjectDeletionRequest(String projectId, String requestId,
+                                ProjectDeletionRequestBody body) {
+
+    public ProjectDeletionRequest {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+      }
     }
+
+    public ProjectDeletionRequest(String projectId, ProjectDeletionRequestBody requestBody) {
+      this(projectId, UUID.randomUUID().toString(), requestBody);
+    }
+  }
+
+  record ProjectDeletionResponse(String projectId, String requestId) {
+
+  }
+
+  record FundingDeletion() implements ProjectDeletionRequestBody {
+
+  }
+
+  record ProjectResponsibleDeletion() implements ProjectDeletionRequestBody {
+
   }
 
   /**
@@ -682,6 +1028,9 @@ public interface AsyncProjectService {
    *
    * @param projectId    the project's id
    * @param responseBody the information that was updated.
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
+   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
    * @since 1.9.0
    */
   record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
@@ -694,8 +1043,9 @@ public interface AsyncProjectService {
       if (projectId.isBlank()) {
         throw new IllegalArgumentException("Project ID cannot be blank");
       }
-      if (requestId != null && requestId.isBlank()) {
-        requestId = null;
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+        ;
       }
     }
 
@@ -709,18 +1059,56 @@ public interface AsyncProjectService {
       return Optional.ofNullable(requestId);
     }
 
-    /**
-     * Returns the requestId, can be null.
-     *
-     * @return Returns the requestId, if no requestId is set, returns null.
-     */
-    @Override
-    public String requestId() {
-      return requestId;
-    }
-
     boolean hasRequestId() {
       return nonNull(requestId);
+    }
+  }
+
+  /**
+   * The actual request container for metadata validation.
+   * <p>
+   * A validation request contains a {@link ValidationRequestBody} with the actual metadata to be
+   * validated, next to the project ID and the request ID.
+   *
+   * @param projectId   the project ID of the project the metadata shall be validated for
+   * @param requestBody the actual metadata container with the information to be validated
+   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
+   *                    the response. If <code>null</code> or {@link String#isBlank()} is true, then
+   *                    a random UUID is assigned with {@link UUID#randomUUID()}
+   * @since 1.10.0
+   */
+  record ValidationRequest(String projectId, ValidationRequestBody requestBody,
+                           String requestId) implements CacheableRequest {
+
+    public ValidationRequest {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+      }
+    }
+  }
+
+  /**
+   * The response to a corresponding {@link ValidationRequest} with information about the actual
+   * validation result.
+   * <p>
+   * The result itself is provided in the {@link ValidationResult} property.
+   *
+   * @param requestId the original ID of the request from {@link ValidationRequest}
+   * @param result    the validation report provided as {@link ValidationResult}
+   * @since 1.10.0
+   */
+  record ValidationResponse(String requestId, ValidationResult result) {
+
+    public ValidationResponse {
+      if (requestId == null || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request ID cannot be null or blank");
+      }
     }
   }
 
@@ -793,6 +1181,18 @@ public interface AsyncProjectService {
 
     public AccessDeniedException(String message, Throwable cause) {
       super(message, cause);
+    }
+  }
+
+  /**
+   * Exception to indicate that a service implementation cannot handle a certain mime type.
+   *
+   * @since 1.10.0
+   */
+  class UnsupportedMimeTypeException extends RuntimeException {
+
+    public UnsupportedMimeTypeException(String message) {
+      super(message);
     }
   }
 

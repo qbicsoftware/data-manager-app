@@ -22,8 +22,12 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Experimen
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariables;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
+import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
+import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
@@ -40,6 +44,11 @@ class AsyncProjectServiceImplTest {
 
   ProjectInformationService projectServiceMock = mock(ProjectInformationService.class);
   SampleInformationService sampleServiceMock = mock(SampleInformationService.class);
+  DigitalObjectFactory digitalObjectFactory = mock(DigitalObjectFactory.class);
+  SampleValidationService sampleValidationService = mock(SampleValidationService.class);
+  MeasurementValidationService measurementValidationService = mock(
+      MeasurementValidationService.class);
+  TemplateService templateService = mock(TemplateService.class);
   ExperimentInformationService experimentInformationServiceMock = mock(
       ExperimentInformationService.class);
 
@@ -58,9 +67,16 @@ class AsyncProjectServiceImplTest {
   @DisplayName("Test that the update completes for ProjectDesign")
   void updateProjectDesignCompletes() {
 
-    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
+    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(
+        projectServiceMock,
         sampleServiceMock,
-        Schedulers.boundedElastic(), experimentInformationServiceMock);
+        Schedulers.boundedElastic(),
+        digitalObjectFactory,
+        templateService,
+        sampleValidationService,
+        measurementValidationService,
+        experimentInformationServiceMock
+    );
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("neq title", "new objective");
@@ -89,9 +105,16 @@ class AsyncProjectServiceImplTest {
   @DisplayName("Test that the update retries for ProjectDesign")
   void updateProjectDesignRepeats() {
 
-    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
+    AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(
+        projectServiceMock,
         sampleServiceMock,
-        Schedulers.boundedElastic(), experimentInformationServiceMock);
+        Schedulers.boundedElastic(),
+        digitalObjectFactory,
+        templateService,
+        sampleValidationService,
+        measurementValidationService,
+        experimentInformationServiceMock
+    );
 
     String projectId = UUID.randomUUID().toString();
     ProjectDesign requestBody = new ProjectDesign("new title", "new objective");
@@ -138,7 +161,12 @@ class AsyncProjectServiceImplTest {
 
     AsyncProjectServiceImpl underTest = new AsyncProjectServiceImpl(projectServiceMock,
         sampleServiceMock,
-        Schedulers.boundedElastic(), experimentInformationService);
+        Schedulers.boundedElastic(),
+        digitalObjectFactory,
+        templateService,
+        sampleValidationService,
+        measurementValidationService,
+        experimentInformationService);
 
     String projectId = UUID.randomUUID().toString();
     String experimentId = UUID.randomUUID().toString();

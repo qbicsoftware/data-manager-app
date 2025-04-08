@@ -28,7 +28,7 @@ public class RequestCache {
    *                        ({@link VaadinSession#getSession()} returned <code>null</code>)
    * @since 1.9.0
    */
-  public void store(CacheableRequest request) throws CacheException {
+  public synchronized void store(CacheableRequest request) throws CacheException {
     VaadinSession session = VaadinSession.getCurrent();
     if (session != null) {
       if (session.getAttribute(RequestCache.class.getName()) == null) {
@@ -63,7 +63,7 @@ public class RequestCache {
    *                        ({@link VaadinSession#getSession()} returned <code>null</code>)
    * @since 1.9.0
    */
-  public Optional<CacheableRequest> get(String id) throws CacheException {
+  public synchronized Optional<CacheableRequest> get(String id) throws CacheException {
     VaadinSession session = VaadinSession.getCurrent();
     if (session != null) {
       var cache = session.getAttribute(RequestCache.class.getName());
@@ -83,7 +83,7 @@ public class RequestCache {
    * @param id the ID of the request to remove
    * @since 1.9.0
    */
-  public void remove(String id) throws CacheException {
+  public synchronized void remove(String id) throws CacheException {
     VaadinSession session = VaadinSession.getCurrent();
     if (session != null) {
       var cache = session.getAttribute(RequestCache.class.getName());

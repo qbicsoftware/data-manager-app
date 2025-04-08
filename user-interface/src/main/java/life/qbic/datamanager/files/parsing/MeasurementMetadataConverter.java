@@ -1,6 +1,8 @@
 package life.qbic.datamanager.files.parsing;
 
 import java.util.List;
+import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
+import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 
 /**
@@ -20,8 +22,8 @@ public interface MeasurementMetadataConverter {
    * Currently supported implementations are:
    *
    * <ul>
-   *   <li>NGS Measurement Metadata {@link life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata}</li>
-   *   <li>Proteomics Measurement Metadata {@link life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata}</li>
+   *   <li>NGS Measurement Metadata {@link NGSMeasurementMetadata}</li>
+   *   <li>Proteomics Measurement Metadata {@link ProteomicsMeasurementMetadata}</li>
    * </ul>
    *
    * @param parsingResult       the parsing result to take as input for the conversion.
