@@ -309,7 +309,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId, String batchId,
+  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      String batchId,
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return ReactiveSecurityContextUtils.applySecurityContext(Mono.fromCallable(
@@ -502,7 +503,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         return Mono.error(new AccessDeniedException(ACCESS_DENIED));
       } catch (Exception e) {
         log.error("Unexpected exception deleting funding information", e);
-        return Mono.error(new RequestFailedException("Unexpected exception deleting funding information"));
+        return Mono.error(
+            new RequestFailedException("Unexpected exception deleting funding information"));
       }
     });
   }
@@ -539,7 +541,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
       ProjectDesign design) {
     return
-       Mono.<ProjectUpdateResponse>create(sink -> {
+        Mono.<ProjectUpdateResponse>create(sink -> {
           try {
             projectService.updateTitle(projectId, design.title());
             projectService.updateObjective(projectId, design.objective());
@@ -551,8 +553,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           } catch (RuntimeException e) {
             sink.error(new RequestFailedException("Update project design failed", e));
           }
-        }
-    );
+            }
+        );
   }
 
 }

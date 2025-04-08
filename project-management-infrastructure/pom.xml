@@ -130,7 +130,7 @@
       <version>4.0.2</version>
     </dependency>
 
-   <!-- Needed for xlsx support !-->
+    <!-- Needed for xlsx support !-->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>

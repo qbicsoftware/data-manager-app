@@ -134,9 +134,12 @@ class SampleInformationFactory implements WorkbookFactory {
           case InformationColumn.SAMPLE_NAME -> sample.label();
           case InformationColumn.BIOLOGICAL_REPLICATE -> sample.biologicalReplicate();
           case InformationColumn.CONDITION -> PropertyConversion.toString(condition);
-          case InformationColumn.SPECIES -> PropertyConversion.toString(sample.sampleOrigin().getSpecies());
-          case InformationColumn.ANALYTE -> PropertyConversion.toString(sample.sampleOrigin().getAnalyte());
-          case InformationColumn.SPECIMEN -> PropertyConversion.toString(sample.sampleOrigin().getSpecimen());
+          case InformationColumn.SPECIES ->
+              PropertyConversion.toString(sample.sampleOrigin().getSpecies());
+          case InformationColumn.ANALYTE ->
+              PropertyConversion.toString(sample.sampleOrigin().getAnalyte());
+          case InformationColumn.SPECIMEN ->
+              PropertyConversion.toString(sample.sampleOrigin().getSpecimen());
           case InformationColumn.COMMENT -> sample.comment().orElse(null);
         };
       } else if (column instanceof ConfoundingVariableColumn confoundingVariableColumn) {

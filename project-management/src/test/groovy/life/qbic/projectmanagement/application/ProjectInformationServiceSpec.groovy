@@ -39,7 +39,7 @@ class ProjectInformationServiceSpec extends Specification {
         projectRepository.find((ProjectId) _) >> Optional.empty()
 
         when: "the project manager is updated for a project"
-        Contact personReference = new Contact("Newly_Improved Jane_Doe", "TheJaneDoe@New.Improved")
+        Contact personReference = new Contact("Newly_Improved Jane_Doe", "TheJaneDoe@New.Improved", "", "")
         projectInformationService.manageProject(project.getId(), personReference)
 
         then: "the project contains the new person reference as project manager"
@@ -56,7 +56,7 @@ class ProjectInformationServiceSpec extends Specification {
         projectRepository.find((ProjectId) _) >> Optional.empty()
 
         when: "the principal investigator is updated for a project"
-        Contact personReference = new Contact("Newly_Improved Jane_Doe", "TheJaneDoe@New.Improved")
+        Contact personReference = new Contact("Newly_Improved Jane_Doe", "TheJaneDoe@New.Improved", "", "")
         projectInformationService.investigateProject(project.getId(), personReference)
 
         then: "the project contains the new person reference as principal investigator"
@@ -73,7 +73,7 @@ class ProjectInformationServiceSpec extends Specification {
         projectRepository.find((ProjectId) _) >> Optional.empty()
 
         when: "the responsible Person is updated for a project"
-        Contact personReference = new Contact("Newly_Improved Jane_Doe", "TheJaneDoe@New.Improved")
+        Contact personReference = new Contact("Newly_Improved Jane_Doe", "TheJaneDoe@New.Improved", "", "")
         projectInformationService.setResponsibility(project.getId(), personReference)
 
         then: "the project contains the new person reference as responsible person"
@@ -106,7 +106,7 @@ class ProjectInformationServiceSpec extends Specification {
         ProjectIntent projectIntent = ProjectIntent.of(ProjectTitle.of("Oral microbiome study"),
                 ProjectObjective.create("Analysis if tooth paste has an impact oral health and the mouth microbiome"))
         ProjectCode projectCode = ProjectCode.random()
-        Contact personReference = new Contact("John Doe", "john@doe.abcdefg")
+        Contact personReference = new Contact("John Doe", "john@doe.abcdefg", "", "")
         return Project.of(projectId, projectIntent, projectCode, personReference, personReference, personReference)
     }
 }

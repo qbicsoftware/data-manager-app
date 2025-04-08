@@ -7,7 +7,6 @@ import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBoundField;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
-import org.apache.poi.sl.draw.geom.GuideIf.Op;
 import org.springframework.lang.NonNull;
 
 /**
