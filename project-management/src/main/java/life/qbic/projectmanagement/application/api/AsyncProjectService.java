@@ -799,6 +799,18 @@ public interface AsyncProjectService {
    */
   record Curie(String idSpace, String localId) {
 
+    public static Curie parse(String value) {
+      requireNonNull(value);
+      if (value.contains(":")) {
+        var parts = value.split(":");
+        return new Curie(parts[0], parts[1]);
+      }
+      throw new IllegalArgumentException("Invalid Curie: " + value);
+    }
+
+    public String toString() {
+      return idSpace + ":" + localId;
+    }
   }
 
   /**
