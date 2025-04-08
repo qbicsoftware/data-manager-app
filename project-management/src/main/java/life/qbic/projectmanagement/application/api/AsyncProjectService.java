@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.api;
 
 import static java.util.Objects.nonNull;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -179,6 +180,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param projectId the identifier of the project to get the experiments for
    * @return a {@link Flux} of {@link ExperimentDescription}. Exceptions are provided as
    * {@link Mono#error(Throwable)}.
@@ -765,6 +767,33 @@ public interface AsyncProjectService {
    */
   record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
                                 FundingInformation funding) {
+
+  }
+
+  /**
+   * Represents an ontology term definition with a simple label that can be used to display the term
+   * for humans, its assigned OBO identifier and its globally unique identifier.
+   *
+   * @param label an {@link OntologyTerm} label for visualisation
+   * @param oboId the assigned OBO identifier
+   * @param id    the globally unique identifier of the term
+   * @since 1.10.0
+   */
+  record OntologyTerm(String label, Curie oboId, URI id) {
+
+  }
+
+  /**
+   * Represents a CURIE in the format <code>IDSPACE:LOCALID</code>.
+   * <p>
+   * Example: <code>GO:0008150</code>
+   *
+   * @param idSpace the id space defined that holds a set of local identifiers unique within a
+   *                space
+   * @param localId the local id which is unique within the space
+   * @since 1.10.0
+   */
+  record Curie(String idSpace, String localId) {
 
   }
 
