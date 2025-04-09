@@ -2,8 +2,10 @@ package life.qbic.datamanager.views.general.contact;
 
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import life.qbic.datamanager.views.general.HasBoundField;
 
 /**
@@ -27,7 +29,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     this.binder = createBinder(predicate, contactField);
     binder.addStatusChangeListener(
         event -> updateStatus(contactField, event.hasValidationErrors()));
-    this.originalValue = new Contact("", "", "", "");
+    this.originalValue = Contact.empty();
   }
 
   private static void updateStatus(ContactField contactField, boolean isInvalid) {
@@ -68,12 +70,10 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    * @since
    */
   private static SerializablePredicate<Contact> isMandatory() {
-    return contact -> {
-      var onlyEmailEmpty = contact.email().isBlank() && !contact.fullName().isBlank();
-      var onlyNameEmpty = !contact.email().isBlank() && contact.fullName().isBlank();
-      var bothEmpty = contact.email().isBlank() && contact.fullName().isBlank();
-      return !(onlyEmailEmpty || onlyNameEmpty || bothEmpty);
-    };
+
+    SerializablePredicate<Contact> isFilled = contact -> !contact.email().isBlank()
+        && !contact.fullName().isBlank();
+    return isValidContact().and(isFilled);
   }
 
   /**
@@ -82,18 +82,31 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    * If either is filled alone, the predicate will return <code>false</code>
    */
   private static SerializablePredicate<Contact> isOptional() {
+    return isValidContact();
+  }
+
+  private static SerializablePredicate<Contact> isValidContact() {
     return contact -> {
       var onlyEmailProvided = !contact.email().isBlank() && contact.fullName().isBlank();
       var onlyNameProvided = contact.email().isBlank() && !contact.fullName().isBlank();
-      return !(onlyEmailProvided || onlyNameProvided);
+      var isValidEmail = contact.email().isBlank() || isValidEmail(contact.email());
+      return !onlyEmailProvided && !onlyNameProvided && isValidEmail;
     };
+  }
+
+  private static boolean isValidEmail(String email) {
+    var pattern = Pattern.compile(EmailValidator.PATTERN);
+    var matcher = pattern.matcher(email);
+    return matcher.matches();
   }
 
   private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate,
       ContactField contactField) {
     Binder<ContactContainer> binder = new Binder<>(ContactContainer.class);
     binder.setBean(new ContactContainer());
-    binder.forField(contactField).withValidator(predicate, "Please specify a valid contact")
+    // If the user specified an invalid contact show a general error message (e.g. no selection mode was chosen)
+    binder.forField(contactField)
+        .withValidator(predicate, "Please specify a valid contact")
         .bind(ContactContainer::getContact, ContactContainer::setContact);
     return binder;
   }
