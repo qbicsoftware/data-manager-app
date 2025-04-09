@@ -11,6 +11,7 @@ import jakarta.persistence.PostLoad;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -202,6 +203,37 @@ public class Experiment {
   }
 
   /**
+   * Removes an experimental variable if possible.
+   *
+   * @param name the name of the variable
+   * @return true if the variable was removed, falso if there was no need to remove it.
+   */
+  public boolean removeExperimentalVariable(String name) {
+
+    Optional<ExperimentalVariable> variableOptional = experimentalDesign.getVariable(name);
+    if (variableOptional.isEmpty()) {
+      return false;
+    }
+    ExperimentalVariable variable = variableOptional.get();
+    //check if any group contains this variable
+    if (!experimentalDesign.getExperimentalGroups().isEmpty()) {
+      throw new GroupPreventingVariableDeletionException(
+          "There are experimental groups in the experimental design. Cannot remove experimental variable "
+              + name);
+    }
+    experimentalDesign.removeExperimentalVariable(variable);
+    emitExperimentUpdatedEvent();
+    return true;
+  }
+
+  public static class GroupPreventingVariableDeletionException extends RuntimeException {
+
+    public GroupPreventingVariableDeletionException(String message) {
+      super(message);
+    }
+  }
+
+  /**
    * Removes experimental groups with the provided ids from the experiment .
    *
    * @since 1.0.0
@@ -261,24 +293,28 @@ public class Experiment {
   }
 
   /**
-   * Creates a new experimental variable and adds it to the experimental design. A successful
-   * operation is indicated in the result, which can be verified via {@link Result#isValue()}.
+   * Creates a new experimental variable and adds it to the experimental design.
    * <p>
-   * <b>Note</b>: If a variable with the provided name already exists, the creation will fail with
-   * an {@link ExperimentalVariableExistsException} and no variable is added to the design. You can
-   * check via {@link Result#isError()} if this is the case.
+   * <b>Note</b>: If a variable with the provided name already exists, the creation will throw
+   * an {@link ExperimentalVariableExistsException} and no variable is added to the design.
    *
    * @param variableName a declarative and unique name for the variable
    * @param levels       a list containing at least one value for the variable
-   * @return a {@link Result} object containing the {@link VariableName} or contains declarative
-   * exceptions. The result will contain an {@link ExperimentalVariableExistsException} if the
-   * variable already exists or an {@link IllegalArgumentException} if no level has been provided.
-   * @since 1.0.0
+   * @return the {@link ExperimentalVariable} that was added to the design
+   * @since 1.10.0
    */
-  public Result<VariableName, Exception> addVariableToDesign(String variableName,
+  public ExperimentalVariable addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
     return experimentalDesign.addVariable(variableName, levels)
-    .onValue(x -> emitExperimentUpdatedEvent());
+        .onValue(ignored -> emitExperimentCreatedEvent())
+        .valueOrElseThrow(e -> new RuntimeException(e));
+  }
+
+
+  public void removeExperimentalVariables(List<String> addedNames) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+
   }
 
   /**
@@ -391,4 +427,5 @@ public class Experiment {
     var createdEvent = new ExperimentCreatedEvent(this.experimentId());
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
+
 }
