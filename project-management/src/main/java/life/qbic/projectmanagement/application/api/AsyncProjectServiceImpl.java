@@ -463,7 +463,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       case ExperimentalVariableAdditions experimentalVariableAdditions ->
           addExperimentalVariables(request.projectId(), experimentalVariableAdditions,
               ExperimentId.parse(request.experimentId()), request.requestId());
-      case ExperimentalVariableDeletions experimentalVariableDeletions -> unknownRequest();
     };
 
     SecurityContext securityContext = SecurityContextHolder.getContext();
