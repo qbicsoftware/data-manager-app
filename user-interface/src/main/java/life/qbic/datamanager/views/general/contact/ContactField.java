@@ -72,33 +72,29 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private void addValueChangeListeners() {
 
-    setMyselfCheckBox.addValueChangeListener(listener -> {
+    setMyselfCheckBox.addValueChangeListener(event -> {
       //isFromClient is necessary since the checkbox will be unchecked if another selection mode is chosen
-      if (!listener.isFromClient()) {
+      if (!event.isFromClient()) {
         return;
       }
       //Ensures that all other field values are set to empty before the value provided by the listener is set
       clearAllShownInformation(this);
-      setMyselfCheckBox.setValue(listener.getValue());
-      updateValue();
+      setMyselfCheckBox.setValue(event.getValue());
     });
-    orcidSelection.addValueChangeListener(listener -> {
-      if (!listener.isFromClient()) {
+    orcidSelection.addValueChangeListener(event -> {
+      if (!event.isFromClient()) {
         return;
       }
       //Ensures that all other field values are set to empty before the value provided by the listener is set
       clearAllShownInformation(this);
-      orcidSelection.setValue(listener.getValue());
-      updateValue();
+      orcidSelection.setValue(event.getValue());
     });
-    manualContactSetter.addExpandSpanClickListener(listener -> {
-      if (!listener.isFromClient()) {
+    manualContactSetter.addExpandSpanClickListener(event -> {
+      if (!event.isFromClient()) {
         return;
       }
       //Ensures that all other field values are set to empty before the value provided by the listener is set
       clearAllShownInformation(this);
-      //generate current model value based on cleared presentation
-      updateValue();
       manualContactSetter.showManualEntryFields();
     });
   }
@@ -181,8 +177,6 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
   private void toggleManualEntryBasedOnOidc(Contact contact) {
     if (contact.hasOidc()) {
       manualContactSetter.hideManualEntryFields();
-      manualContactSetter.setValues(manualContactSetter.fullNameField().getEmptyValue(),
-          manualContactSetter.emailField().getEmptyValue());
     } else if (!contact.hasOidc()) {
       // Only open the Field Layout if the user was not provided via the checkbox or the orcid.
       manualContactSetter.setValues(contact.fullName(), contact.email());
@@ -257,7 +251,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
   /**
    * A hideable component enabling the user to provide full name and email
    */
-  public class ManualContactSetter extends Div {
+  public static class ManualContactSetter extends Div {
 
     public static final String GAP_04_CSS = "gap-04";
     private final TextField fullNameField;
@@ -266,7 +260,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
     public ManualContactSetter() {
       this.fullNameField = new TextField();
-      fullNameField.setErrorMessage("Please provide the full name of the contact");
+      fullNameField.setErrorMessage("Please provide at least 2 letters to specify a contact name");
       fullNameField.setPlaceholder("Please provide a name");
       fullNameField.setMinLength(2);
       this.emailField = new EmailField();
@@ -276,7 +270,24 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       fieldLayout.add(fullNameField, emailField);
       styleFieldLayout();
       add(createManualSelectionSpan(), fieldLayout);
-      addValueChangeListeners();
+      setValueChangeListeners();
+    }
+
+    private void setValueChangeListeners() {
+      emailField.setValueChangeMode(ValueChangeMode.ON_BLUR);
+      fullNameField.setValueChangeMode(ValueChangeMode.ON_BLUR);
+      //We only want to show an error message if the user provides no value in the field not if the field is initialized with an empty value
+      emailField.addValueChangeListener(event -> {
+        if (event.isFromClient() && event.getValue().isBlank()) {
+          emailField.setInvalid(true);
+        }
+      });
+      //We only want to show an error message if the user provides no value in the field not if the field is initialized with an empty value
+      fullNameField.addValueChangeListener(event -> {
+        if (event.isFromClient() && event.getValue().isBlank()) {
+          fullNameField.setInvalid(true);
+        }
+      });
     }
 
     private void styleFieldLayout() {
@@ -284,31 +295,6 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       fullNameField.addClassName(FULL_WIDTH_CSS);
       emailField.addClassName(FULL_WIDTH_CSS);
       hideManualEntryFields();
-    }
-
-    private void addValueChangeListeners() {
-      fullNameField.setValueChangeMode(ValueChangeMode.ON_BLUR);
-      emailField.setValueChangeMode(ValueChangeMode.ON_BLUR);
-      fullNameField.addValueChangeListener(
-          event -> {
-            if (event.isFromClient()) {
-              //Only update the model value if a valid input was provided.
-              // We cannot check the input validity of individual fields on a contact binder level
-              if (!fullNameField.isInvalid() || !emailField.isInvalid()) {
-                updateValue();
-              }
-            }
-          }
-      );
-      emailField.addValueChangeListener(event -> {
-        if (event.isFromClient()) {
-          //Only update the model value if a valid input was provided
-          // We cannot check the input validity of individual fields on a contact binder level
-          if (!fullNameField.isInvalid() || !emailField.isInvalid()) {
-            updateValue();
-          }
-        }
-      });
     }
 
     private Span createManualSelectionSpan() {
@@ -341,10 +327,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
         return;
       }
       fieldLayout.setVisible(false);
-      resetLayoutFields();
+      resetManualEmptyFields();
     }
 
-    private void resetLayoutFields() {
+    private void resetManualEmptyFields() {
       fullNameField.setValue(fullNameField.getEmptyValue());
       emailField.setValue(emailField.getEmptyValue());
       fullNameField.setInvalid(false);
