@@ -191,7 +191,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           var specimen = experimentInformationService.getSpecimensOfExperiment(id);
           var species = experimentInformationService.getSpeciesOfExperiment(id);
           var experimentName = experimentInformationService.find(projectId, id)
-              .map(Experiment::getName).orElse("");
+              .map(Experiment::getName).orElse("not available");
           return Mono.just(new ExperimentDescription(experimentName, convertToApi(species),
               convertToApi(specimen), convertToApi(analytes)));
         })).subscribeOn(VirtualThreadScheduler.getScheduler())

@@ -76,6 +76,7 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
@@ -146,6 +147,7 @@ public class ProjectSummaryComponent extends PageArea {
   private final RequestCache requestCache;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final Map<String, Toast> pendingTaskToasts = new HashMap<>();
+  private final ExperimentDetailsComponent experimentDetailsComponent;
   private Toast taskInProgressToast;
   private Context context;
   private transient List<? extends UserScopeStrategy> scopes;
@@ -160,7 +162,8 @@ public class ProjectSummaryComponent extends PageArea {
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
       RequestCache requestCache,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      ExperimentDetailsComponent experimentDetailsComponent) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -183,6 +186,7 @@ public class ProjectSummaryComponent extends PageArea {
     add(projectContactsSection);
     add(downloadComponent);
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+    this.experimentDetailsComponent = experimentDetailsComponent;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -282,17 +286,22 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private void loadExperimentInfo(String projectId) {
-    asyncProjectService.getExperiments(projectId).collectList().doOnSuccess(info -> {
-      var species = new HashSet<OntologyTerm>();
-      var specimen = new HashSet<OntologyTerm>();
-      var analytes = new HashSet<OntologyTerm>();
-      info.stream().forEach(experiment -> {
-        species.addAll(experiment.species());
-        specimen.addAll(experiment.specimen());
-        analytes.addAll(experiment.analytes());
-      });
-      renderExperimentInfo(species, specimen, analytes);
-    }).subscribe();
+    asyncProjectService.getExperiments(projectId).collectList()
+        .doOnSuccess(experiments -> {
+          var species = new HashSet<OntologyTerm>();
+          var specimen = new HashSet<OntologyTerm>();
+          var analytes = new HashSet<OntologyTerm>();
+          experiments.stream().forEach(experiment -> {
+            species.addAll(experiment.species());
+            specimen.addAll(experiment.specimen());
+            analytes.addAll(experiment.analytes());
+          });
+          renderExperimentInfo(species, specimen, analytes);
+        })
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .subscribe();
   }
 
   private void renderExperimentInfo(Set<OntologyTerm> species,
