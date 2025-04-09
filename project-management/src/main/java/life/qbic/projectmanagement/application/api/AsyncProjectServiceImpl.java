@@ -495,7 +495,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(response)
         .contextWrite(reactiveSecurity(securityContext))
-        //.retryWhen(defaultRetryStrategy())
+        .retryWhen(defaultRetryStrategy())
         .subscribeOn(scheduler);
   }
 
