@@ -32,6 +32,7 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
+import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -494,15 +495,40 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(response)
         .contextWrite(reactiveSecurity(securityContext))
-        .retryWhen(defaultRetryStrategy())
+        //.retryWhen(defaultRetryStrategy())
         .subscribeOn(scheduler);
   }
 
   private Mono<ExperimentDeletionResponse> deleteExperimentalVariables(
       ExperimentDeletionRequest request,
       ExperimentalVariableDeletions experimentalVariableDeletions) {
-    //TODO implement
-    throw new RuntimeException("Not implemented");
+    return Mono.fromSupplier(() -> {
+      ExperimentId experimentId = ExperimentId.parse(request.experimentId());
+      ProjectId projectId = ProjectId.parse(request.projectId());
+      Experiment experiment = experimentInformationService.find(
+              request.projectId(),
+              experimentId)
+          .orElseThrow(() -> new ExperimentNotFoundException("No experiment was found."));
+
+      var removedVariables = new ArrayList<ExperimentalVariable>();
+      for (ExperimentalVariable experimentalVariable : experimentalVariableDeletions.experimentalVariables()) {
+        var wasRemoved = experimentInformationService.deleteExperimentalVariable(projectId,
+            experimentId, experimentalVariable.name());
+        if (wasRemoved) {
+          removedVariables.add(experimentalVariable);
+        }
+      }
+
+      return new ExperimentDeletionResponse(request.projectId(), request.experimentId(),
+          request.requestId(), new ExperimentalVariables(removedVariables));
+    });
+  }
+
+  public static class ExperimentNotFoundException extends RuntimeException {
+
+    public ExperimentNotFoundException(String message) {
+      super(message);
+    }
   }
 
 

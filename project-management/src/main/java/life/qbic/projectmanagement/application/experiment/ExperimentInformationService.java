@@ -159,6 +159,7 @@ public class ExperimentInformationService {
    * @param projectId the Id of the project that is being changed
    * @since 1.0.0
    */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void deleteAllExperimentalVariables(ExperimentId experimentId, ProjectId projectId) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
@@ -172,6 +173,40 @@ public class ExperimentInformationService {
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
     handleLocalEventCache(domainEventsCache);
+  }
+
+  /**
+   * Will attemt to delete an experimental variable.
+   *
+   * @param projectId
+   * @param experimentId
+   * @return
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public boolean deleteExperimentalVariable(ProjectId projectId, ExperimentId experimentId,
+      String variableName) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = loadExperimentById(experimentId);
+    try {
+      var wasRemoved = experiment.removeExperimentalVariable(variableName);
+      experimentRepository.update(experiment);
+      handleLocalEventCache(domainEventsCache);
+      return wasRemoved;
+    } catch (Experiment.GroupPreventingVariableDeletionException e) {
+      throw new GroupPreventingVariableDeletionException(e);
+    }
+  }
+
+  public static class GroupPreventingVariableDeletionException extends RuntimeException {
+
+    public GroupPreventingVariableDeletionException(Throwable cause) {
+      super(cause);
+    }
   }
 
   /**
@@ -394,10 +429,9 @@ public class ExperimentInformationService {
       handleLocalEventCache(domainEventsCache);
     } catch (RuntimeException e) {
       //remove all added variables again
-      List<String> addedNames = addedVariables.stream()
+      addedVariables.stream()
           .map(ExperimentalVariableInformation::name)
-          .toList();
-      experiment.removeExperimentalVariables(addedNames);
+          .forEach(experiment::removeExperimentalVariable);
       throw e;
     }
     return addedVariables;
@@ -462,7 +496,7 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  
+
   public void deleteExperimentalGroupsWithIds(String projectId, ExperimentId id, List<Long> groupIds) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
@@ -559,8 +593,8 @@ public class ExperimentInformationService {
       String experimentName,
       List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
       String speciesIconName, String specimenIconName) {
-  
-   List<DomainEvent> domainEventsCache = new ArrayList<>();
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
