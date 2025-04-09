@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -379,7 +378,7 @@ public interface AsyncProjectService {
 
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription,
-      ExperimentalGroups, ExperimentalVariableAdditions, ExperimentalVariableDeletions {
+      ExperimentalGroups, ExperimentalVariableAdditions {
 
   }
 
@@ -553,7 +552,7 @@ public interface AsyncProjectService {
    * @param experimentalVariables
    */
   record ExperimentalVariableDeletions(List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentUpdateRequestBody, ExperimentDeletionRequestBody {
+      ExperimentDeletionRequestBody {
 
     public ExperimentalVariableDeletions {
       experimentalVariables = List.copyOf(experimentalVariables);
