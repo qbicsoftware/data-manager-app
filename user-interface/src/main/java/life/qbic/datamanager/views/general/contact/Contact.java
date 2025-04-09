@@ -28,6 +28,10 @@ public final class Contact implements Serializable {
     this.oidcIssuer = oidcIssuer;
   }
 
+  public static Contact empty() {
+    return new Contact("", "", "", "");
+  }
+
   public void setFullName(String fullName) {
     this.fullName = fullName;
   }
@@ -66,7 +70,7 @@ public final class Contact implements Serializable {
         || oidcIssuer == null);
   }
 
-  public boolean isComplete() {
+  public boolean hasOidc() {
     return fullName != null && !fullName.isBlank() && email != null && !email.isBlank() && oidc
         != null && !oidc.isBlank() && oidcIssuer != null && !oidcIssuer.isBlank();
   }
