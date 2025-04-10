@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PostLoad;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,9 @@ public class Project {
 
   @EmbeddedId
   private ProjectId projectId;
+
+  @Version
+  private int version;
 
   @Embedded
   private ProjectIntent projectIntent;
