@@ -160,7 +160,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   private void showFile(MeasurementFileItem measurementFileItem) {
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
     uploadItemsDisplay.addFileToDisplay(measurementFileDisplay);
-    //Todo Move logic to Display itself
     uploadItemsDisplay.toggleFileSectionIfEmpty(!measurementFileItems.isEmpty());
   }
 
@@ -315,8 +314,6 @@ public class MeasurementMetadataUploadDialog extends WizardDialogWindow {
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
-    //Todo Replace with error message below file if possible as outlined in https://vaadin.com/docs/latest/components/upload#best-practices
-    // requires a fully setup I18n instance
     String errorMessage = fileRejectedEvent.getErrorMessage();
     showErrorNotification("File upload failed", errorMessage);
   }

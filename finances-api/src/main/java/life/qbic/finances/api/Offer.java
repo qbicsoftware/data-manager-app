@@ -15,5 +15,4 @@ package life.qbic.finances.api;
  * @since 1.0.0
  */
 public record Offer(String id, String title, String objective, String experimentDescription) {
-
 }

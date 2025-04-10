@@ -1,19 +1,15 @@
 package life.qbic.datamanager.files.structure;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Provides {@link Helper} with example values and description for columns in spreadsheet templates
+ * provided in Data Manager.
  */
 public interface ExampleProvider {
+
+  Helper getHelper(Column column);
 
   record Helper(String exampleValue, String description) {
 
   }
-
-  Helper getHelper(Column column);
 
 }
