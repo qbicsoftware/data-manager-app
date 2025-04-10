@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -122,6 +121,9 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request);
+
+
+  Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
 
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
@@ -376,7 +378,7 @@ public interface AsyncProjectService {
 
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription,
-      ExperimentalGroups, ExperimentalVariableAdditions, ExperimentalVariableDeletions {
+      ExperimentalGroups, ExperimentalVariableAdditions {
 
   }
 
@@ -425,6 +427,15 @@ public interface AsyncProjectService {
 
   sealed interface ProjectDeletionRequestBody permits FundingDeletion,
       ProjectResponsibleDeletion {
+
+  }
+
+  sealed interface ExperimentDeletionRequestBody permits ExperimentalVariableDeletions {
+
+  }
+
+
+  sealed interface ExperimentDeletionResponseBody permits ExperimentalVariables {
 
   }
 
@@ -500,7 +511,11 @@ public interface AsyncProjectService {
    * @param unit   the unit of the experimental variable. Can be null if no unit is set
    * @since 1.9.0
    */
-  record ExperimentalVariable(Long id, String name, Set<String> levels, @Nullable String unit) {
+  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
+
+    public ExperimentalVariable(String name, Set<String> levels) {
+      this(name, levels, "");
+    }
 
     public ExperimentalVariable {
       levels = Set.copyOf(levels);
@@ -537,7 +552,7 @@ public interface AsyncProjectService {
    * @param experimentalVariables
    */
   record ExperimentalVariableDeletions(List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentUpdateRequestBody {
+      ExperimentDeletionRequestBody {
 
     public ExperimentalVariableDeletions {
       experimentalVariables = List.copyOf(experimentalVariables);
@@ -556,7 +571,7 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   record ExperimentalVariables(List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentUpdateResponseBody {
+      ExperimentUpdateResponseBody, ExperimentDeletionResponseBody {
 
 
     public ExperimentalVariables {
@@ -1080,7 +1095,6 @@ public interface AsyncProjectService {
    */
   record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
                                String requestId) {
-
     public ProjectUpdateResponse {
       if (projectId == null) {
         throw new IllegalArgumentException("Project ID cannot be null");
@@ -1090,7 +1104,6 @@ public interface AsyncProjectService {
       }
       if (requestId == null || requestId.isBlank()) {
         requestId = UUID.randomUUID().toString();
-        ;
       }
     }
 
@@ -1106,6 +1119,50 @@ public interface AsyncProjectService {
 
     boolean hasRequestId() {
       return nonNull(requestId);
+    }
+
+  }
+
+  record ExperimentDeletionRequest(String projectId, String experimentId, String requestId,
+                                   ExperimentDeletionRequestBody body) {
+
+    public ExperimentDeletionRequest {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (experimentId == null || experimentId.isBlank()) {
+        throw new IllegalArgumentException("Experiment ID cannot be empty");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        requestId = UUID.randomUUID().toString();
+      }
+    }
+
+    public ExperimentDeletionRequest(String projectId, String experimentId,
+        ExperimentDeletionRequestBody body) {
+      this(projectId, experimentId, null, body);
+    }
+  }
+
+  record ExperimentDeletionResponse(String projectId, String experimentId, String requestId,
+                                    ExperimentDeletionResponseBody body) {
+
+    public ExperimentDeletionResponse {
+      if (projectId == null) {
+        throw new IllegalArgumentException("Project ID cannot be null");
+      }
+      if (projectId.isBlank()) {
+        throw new IllegalArgumentException("Project ID cannot be blank");
+      }
+      if (experimentId == null || experimentId.isBlank()) {
+        throw new IllegalArgumentException("Experiment ID cannot be empty");
+      }
+      if (requestId == null || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request information cannot be empty");
+      }
     }
   }
 
