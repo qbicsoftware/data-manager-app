@@ -155,7 +155,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
-    //TODO
     throw new RuntimeException("not implemented");
   }
 
@@ -571,7 +570,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
       String experimentId,
       ExperimentDescription experimentDescription) {
-    //TODO implement
     throw new RuntimeException("Not implemented");
   }
 

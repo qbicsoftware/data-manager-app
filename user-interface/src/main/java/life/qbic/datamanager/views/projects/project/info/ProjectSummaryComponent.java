@@ -702,10 +702,8 @@ public class ProjectSummaryComponent extends PageArea {
     getUI().ifPresent(ui -> ui.access(() -> {
       requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
         // do sth with the cache
-        // TODO show button that enables user to resend the request
         var toast = notificationFactory.toast("project.updated.error.retry",
             new String[]{}, getLocale());
-        // Todo Implement retry with cached request
         toast.open();
       }, () -> {
         var toast = notificationFactory.toast("project.updated.error",

@@ -121,8 +121,6 @@ public class ExperimentalInformationLayout extends Div implements
     ExperimentalInformation experimentalInformation = new ExperimentalInformation();
     experimentalInformationBinder.writeBeanIfValid(experimentalInformation);
     return experimentalInformation;
-    //TODO I am unsure whether it is intended that on invalid input, empty output is
-    // provided instead of a failure.
   }
 
 
