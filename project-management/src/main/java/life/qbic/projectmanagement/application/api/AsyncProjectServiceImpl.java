@@ -197,7 +197,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           return Mono.just(new ExperimentDescription(experimentName, convertToApi(species),
               convertToApi(specimen), convertToApi(analytes)));
         })).subscribeOn(VirtualThreadScheduler.getScheduler())
-        .transform(original -> writeSecurityContextMany(original, securityContext));
+        .contextWrite(reactiveSecurity(securityContext));
   }
 
   // Requires the SecurityContext to work
