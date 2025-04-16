@@ -53,14 +53,12 @@ public class Experiment {
   
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
-  //FIXME should be `analyte`in the database and here
   private List<OntologyTerm> analytes = new ArrayList<>();
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "species", columnDefinition = "longtext CHECK (json_valid(`species`))")
   private List<OntologyTerm> species = new ArrayList<>();
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
-  //FIXME should be `specimen`in the database and here
   private List<OntologyTerm> specimens = new ArrayList<>();
   private static final String DEFAULT_ICON_NAME = "default";
 
@@ -312,7 +310,6 @@ public class Experiment {
 
 
   public void removeExperimentalVariables(List<String> addedNames) {
-    //TODO implement
     throw new RuntimeException("Not implemented");
 
   }

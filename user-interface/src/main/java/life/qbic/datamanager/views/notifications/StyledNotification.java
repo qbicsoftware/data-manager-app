@@ -3,12 +3,9 @@ package life.qbic.datamanager.views.notifications;
 import com.vaadin.flow.component.notification.Notification;
 
 /**
- * <b>short description</b>
- * TODO
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Former styled notification that is superseded by {@link Toast}.
  */
+@Deprecated
 public class StyledNotification extends Notification {
 
   public static final int DEFAULT_DURATION_MILLI_SECONDS = 3500;
