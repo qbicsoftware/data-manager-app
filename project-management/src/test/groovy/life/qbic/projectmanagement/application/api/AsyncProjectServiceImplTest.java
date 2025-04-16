@@ -23,6 +23,8 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Experimen
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -49,6 +51,7 @@ class AsyncProjectServiceImplTest {
   MeasurementValidationService measurementValidationService = mock(
       MeasurementValidationService.class);
   TemplateService templateService = mock(TemplateService.class);
+  ExperimentInformationService experimentInformationService = mock(ExperimentInformationService.class);
   ExperimentInformationService experimentInformationServiceMock = mock(
       ExperimentInformationService.class);
 
