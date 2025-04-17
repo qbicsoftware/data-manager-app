@@ -82,10 +82,10 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       setMyselfCheckBox.setValue(event.getValue());
       if (event.getValue().equals(true)) {
         hideOrcidSelection();
-        hideManualEntryFields();
+        hideManualContactSetter();
       } else {
         showOrcidSelection();
-        showManualEntryFields();
+        showManualContactSetter();
       }
     });
     orcidSelection.addValueChangeListener(event -> {
@@ -102,7 +102,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       }
       //Ensures that all other field values are set to empty before the value provided by the listener is set
       clearAllShownInformation(this);
-      showManualEntryFields();
+      manualContactSetter.showManualEntryFields();
     });
   }
 
@@ -153,11 +153,12 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     orcidSelection.setVisible(false);
   }
 
-  private void hideManualEntryFields() {
+  private void hideManualContactSetter() {
     manualContactSetter.setVisible(false);
+    manualContactSetter.hideManualEntryFields();
   }
 
-  private void showManualEntryFields() {
+  private void showManualContactSetter() {
     manualContactSetter.setVisible(true);
   }
 
@@ -199,11 +200,12 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private void toggleManualEntryBasedOnOidc(Contact contact) {
     if (contact.hasOidc()) {
-      hideManualEntryFields();
+      hideManualContactSetter();
     } else if (!contact.hasOidc()) {
       // Only open the Field Layout if the user was not provided via the checkbox or the orcid.
       manualContactSetter.setValues(contact.fullName(), contact.email());
-      showManualEntryFields();
+      showManualContactSetter();
+      manualContactSetter.showManualEntryFields();
     }
   }
 
@@ -218,7 +220,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     setMyselfCheckBox.setValue(setMyselfCheckBox.getEmptyValue());
     if (contact.equals(myself)) {
       setMyselfCheckBox.setValue(true);
-      hideManualEntryFields();
+      hideManualContactSetter();
       hideOrcidSelection();
     }
   }
