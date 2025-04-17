@@ -80,6 +80,13 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       //Ensures that all other field values are set to empty before the value provided by the listener is set
       clearAllShownInformation(this);
       setMyselfCheckBox.setValue(event.getValue());
+      if (event.getValue().equals(true)) {
+        hideOrcidSelection();
+        hideManualEntryFields();
+      } else {
+        showOrcidSelection();
+        showManualEntryFields();
+      }
     });
     orcidSelection.addValueChangeListener(event -> {
       if (!event.isFromClient()) {
@@ -95,7 +102,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       }
       //Ensures that all other field values are set to empty before the value provided by the listener is set
       clearAllShownInformation(this);
-      manualContactSetter.showManualEntryFields();
+      showManualEntryFields();
     });
   }
 
@@ -138,6 +145,22 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     setMyselfCheckBox.setVisible(false);
   }
 
+  private void showOrcidSelection() {
+    orcidSelection.setVisible(true);
+  }
+
+  private void hideOrcidSelection() {
+    orcidSelection.setVisible(false);
+  }
+
+  private void hideManualEntryFields() {
+    manualContactSetter.setVisible(false);
+  }
+
+  private void showManualEntryFields() {
+    manualContactSetter.setVisible(true);
+  }
+
   @Override
   protected Contact generateModelValue() {
     //If the checkbox was checked return the currently loggedin user as a contact
@@ -176,11 +199,11 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
 
   private void toggleManualEntryBasedOnOidc(Contact contact) {
     if (contact.hasOidc()) {
-      manualContactSetter.hideManualEntryFields();
+      hideManualEntryFields();
     } else if (!contact.hasOidc()) {
       // Only open the Field Layout if the user was not provided via the checkbox or the orcid.
       manualContactSetter.setValues(contact.fullName(), contact.email());
-      manualContactSetter.showManualEntryFields();
+      showManualEntryFields();
     }
   }
 
@@ -195,6 +218,8 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
     setMyselfCheckBox.setValue(setMyselfCheckBox.getEmptyValue());
     if (contact.equals(myself)) {
       setMyselfCheckBox.setValue(true);
+      hideManualEntryFields();
+      hideOrcidSelection();
     }
   }
 
