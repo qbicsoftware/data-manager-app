@@ -177,7 +177,8 @@ public class ExperimentalDesign {
     return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
   }
 
-  Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
+  Result<ExperimentalVariable, Exception> addVariable(String variableName,
+      List<ExperimentalValue> levels) {
     if (levels.isEmpty()) {
       return Result.fromError(new IllegalArgumentException(
           "No levels were defined for " + variableName));
@@ -191,7 +192,7 @@ public class ExperimentalDesign {
       ExperimentalVariable variable = ExperimentalVariable.create(variableName,
           levels.toArray(ExperimentalValue[]::new));
       variables.add(variable);
-      return Result.fromValue(variable.name());
+      return Result.fromValue(variable);
     } catch (IllegalArgumentException e) {
       return Result.fromError(e);
     }
@@ -204,7 +205,28 @@ public class ExperimentalDesign {
       this.variables.clear();
     }
 
-    public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+  /**
+   * Gets a variable from the design
+   *
+   * @param name the name of the variable
+   * @return the optional variable, {@link Optional#empty()} if no variable with that name exists.
+   */
+  public Optional<ExperimentalVariable> getVariable(String name) {
+    return variables.stream()
+        .filter(it -> it.name().value().equals(name))
+        .findAny();
+  }
+
+  /**
+   * removes an experimental variable from the design
+   *
+   * @param variable the variable to be removed
+   */
+  public void removeExperimentalVariable(ExperimentalVariable variable) {
+    variables.remove(variable);
+  }
+
+  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
 
     public enum ResponseCode {
       SUCCESS,

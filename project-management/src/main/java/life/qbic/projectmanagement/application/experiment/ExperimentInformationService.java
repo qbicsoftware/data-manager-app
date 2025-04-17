@@ -159,6 +159,7 @@ public class ExperimentInformationService {
    * @param projectId the Id of the project that is being changed
    * @since 1.0.0
    */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void deleteAllExperimentalVariables(ExperimentId experimentId, ProjectId projectId) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
@@ -172,6 +173,40 @@ public class ExperimentInformationService {
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
     handleLocalEventCache(domainEventsCache);
+  }
+
+  /**
+   * Will attemt to delete an experimental variable.
+   *
+   * @param projectId
+   * @param experimentId
+   * @return
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public boolean deleteExperimentalVariable(ProjectId projectId, ExperimentId experimentId,
+      String variableName) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = loadExperimentById(experimentId);
+    try {
+      var wasRemoved = experiment.removeExperimentalVariable(variableName);
+      experimentRepository.update(experiment);
+      handleLocalEventCache(domainEventsCache);
+      return wasRemoved;
+    } catch (Experiment.GroupPreventingVariableDeletionException e) {
+      throw new GroupPreventingVariableDeletionException(e);
+    }
+  }
+
+  public static class GroupPreventingVariableDeletionException extends RuntimeException {
+
+    public GroupPreventingVariableDeletionException(Throwable cause) {
+      super(cause);
+    }
   }
 
   /**
@@ -318,6 +353,90 @@ public class ExperimentInformationService {
     handleLocalEventCache(domainEventsCache);
   }
 
+
+  public record ExperimentalVariableAddition(String name, String unit, List<String> levels) {
+
+    public ExperimentalVariableAddition {
+      levels = List.copyOf(levels);
+    }
+
+    @Override
+    public List<String> levels() {
+      return List.copyOf(levels);
+    }
+  }
+
+  public record ExperimentalVariableInformation(String experimentId, String name, String unit,
+                                                List<String> levels) {
+
+    public ExperimentalVariableInformation {
+      levels = List.copyOf(levels);
+    }
+
+    @Override
+    public List<String> levels() {
+      return List.copyOf(levels);
+    }
+  }
+
+  /**
+   * Adds {@link ExperimentalVariable} to an {@link Experiment}
+   *
+   * @param experimentId the Id of the experiment
+   * @param projectId    the Id of the project that is being changed
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public List<ExperimentalVariableInformation> addVariablesToExperiment(String projectId,
+      ExperimentId experimentId,
+      List<ExperimentalVariableAddition> variableAdditions) {
+    if (variableAdditions.isEmpty()) {
+      return List.of();
+    }
+    Predicate<ExperimentalVariableAddition> noNameProvided = addition ->
+        addition.name() == null || addition.name().isBlank();
+
+    if (variableAdditions.stream().anyMatch(noNameProvided)) {
+      throw new IllegalArgumentException("All variables must have a name");
+    }
+
+    Predicate<ExperimentalVariableAddition> noLevelsProvided = addition ->
+        addition.levels().isEmpty();
+
+    if (variableAdditions.stream().anyMatch(noLevelsProvided)) {
+      throw new IllegalArgumentException("All variables must have a levels");
+    }
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = loadExperimentById(experimentId);
+    List<ExperimentalVariableInformation> addedVariables = new ArrayList<>();
+    try {
+      for (var variableAddition : variableAdditions) {
+        var levels = variableAddition.levels().stream()
+            .map(level -> ExperimentalValue.create(level, variableAddition.unit()))
+            .toList();
+        experiment.addVariableToDesign(variableAddition.name(), levels);
+        addedVariables.add(
+            new ExperimentalVariableInformation(experimentId.value(), variableAddition.name(),
+                variableAddition.unit(), variableAddition.levels()));
+      }
+      experimentRepository.update(experiment);
+      handleLocalEventCache(domainEventsCache);
+    } catch (RuntimeException e) {
+      //remove all added variables again
+      addedVariables.stream()
+          .map(ExperimentalVariableInformation::name)
+          .forEach(experiment::removeExperimentalVariable);
+      throw e;
+    }
+    return addedVariables;
+  }
+
   /**
    * Retrieve all analytes of an experiment.
    *
@@ -377,7 +496,7 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  
+
   public void deleteExperimentalGroupsWithIds(String projectId, ExperimentId id, List<Long> groupIds) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
@@ -474,8 +593,8 @@ public class ExperimentInformationService {
       String experimentName,
       List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
       String speciesIconName, String specimenIconName) {
-  
-   List<DomainEvent> domainEventsCache = new ArrayList<>();
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
