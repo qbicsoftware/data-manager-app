@@ -64,21 +64,27 @@ public class Project {
   @Embedded
   @AttributeOverrides({
       @AttributeOverride(name = "fullName", column = @Column(name = "projectManagerFullName")),
-      @AttributeOverride(name = "emailAddress", column = @Column(name = "projectManagerEmailAddress"))
+      @AttributeOverride(name = "emailAddress", column = @Column(name = "projectManagerEmailAddress")),
+      @AttributeOverride(name = "oidc", column = @Column(name = "projectManagerOidc")),
+      @AttributeOverride(name = "oidcIssuer", column = @Column(name = "projectManagerOidcIssuer"))
   })
   private Contact projectManager;
 
   @Embedded
   @AttributeOverrides({
       @AttributeOverride(name = "fullName", column = @Column(name = "principalInvestigatorFullName")),
-      @AttributeOverride(name = "emailAddress", column = @Column(name = "principalInvestigatorEmailAddress"))
+      @AttributeOverride(name = "emailAddress", column = @Column(name = "principalInvestigatorEmailAddress")),
+      @AttributeOverride(name = "oidc", column = @Column(name = "principalInvestigatorOidc")),
+      @AttributeOverride(name = "oidcIssuer", column = @Column(name = "principalInvestigatorOidcIssuer"))
   })
   private Contact principalInvestigator;
 
   @Embedded
   @AttributeOverrides({
       @AttributeOverride(name = "fullName", column = @Column(name = "responsibePersonFullName")),
-      @AttributeOverride(name = "emailAddress", column = @Column(name = "responsibePersonEmailAddress"))
+      @AttributeOverride(name = "emailAddress", column = @Column(name = "responsibePersonEmailAddress")),
+      @AttributeOverride(name = "oidc", column = @Column(name = "responsiblePersonOidc")),
+      @AttributeOverride(name = "oidcIssuer", column = @Column(name = "responsiblePersonOidcIssuer"))
   })
   private Contact responsiblePerson;
 

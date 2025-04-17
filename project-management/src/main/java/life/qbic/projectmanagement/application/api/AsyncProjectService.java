@@ -470,9 +470,11 @@ public interface AsyncProjectService {
    *
    * @param fullName the full name of the person
    * @param email    a valid email address for contact
+   * @param oidc     the UUID which identifies the contact within the oidcIssuer
+   * @param oidcIssuer the oidcIssuer providing the UUID to identify a user if registered
    * @since 1.9.0
    */
-  record ProjectContact(String fullName, String email) {
+  record ProjectContact(String fullName, String email, String oidc, String oidcIssuer) {
 
   }
 
@@ -643,7 +645,8 @@ public interface AsyncProjectService {
    *                       containing CURIEs.
    * @since 1.9.0
    */
-  record ExperimentDescription(String experimentName, Set<OntologyTerm> species, Set<OntologyTerm> specimen,
+  record ExperimentDescription(String experimentName, Set<OntologyTerm> species,
+                               Set<OntologyTerm> specimen,
                                Set<OntologyTerm> analytes) implements ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
 
@@ -784,6 +787,7 @@ public interface AsyncProjectService {
    */
   record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
                                 FundingInformation funding) {
+
   }
 
   /**
@@ -796,6 +800,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record OntologyTerm(String label, Curie oboId, URI id) {
+
     public OntologyTerm {
       requireNonNull(oboId);
       requireNonNull(id);

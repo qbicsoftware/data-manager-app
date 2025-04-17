@@ -182,6 +182,10 @@ Padding & gaps
   padding-right: var(--spacing-07);
 }
 
+.padding-top-03 {
+  padding-top: var(--spacing-03);
+}
+
 .padding-top-bottom-04 {
   padding-top: var(--spacing-04);
   padding-bottom: var(--spacing-04);
@@ -363,11 +367,11 @@ Buttons
   background-color: var(--lumo-primary-color);
 }
 
-.button-size-medium-dialog {
+.button-size-dialog-medium {
   height: var(--lumo-size-m);
 }
 
-.button-size-large-dialog {
+.button-size-dialog-large {
   height: var(--lumo-size-l);
 }
 

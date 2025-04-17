@@ -19,7 +19,8 @@ public class ContactUpdateEvent extends ComponentEvent<EditContactsComponent> {
    * @param fromClient <code>true</code> if the event originated from the client
    *                   side, <code>false</code> otherwise
    */
-  public ContactUpdateEvent(EditContactsComponent source, boolean fromClient, ProjectInformation projectInformation) {
+  public ContactUpdateEvent(EditContactsComponent source, boolean fromClient,
+      ProjectInformation projectInformation) {
     super(source, fromClient);
     this.projectInfo = Objects.requireNonNull(projectInformation);
   }

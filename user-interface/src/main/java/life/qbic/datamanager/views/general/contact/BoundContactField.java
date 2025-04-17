@@ -1,11 +1,11 @@
 package life.qbic.datamanager.views.general.contact;
 
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.function.SerializablePredicate;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import life.qbic.datamanager.views.general.HasBoundField;
 
 /**
@@ -29,17 +29,11 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     this.binder = createBinder(predicate, contactField);
     binder.addStatusChangeListener(
         event -> updateStatus(contactField, event.hasValidationErrors()));
-    this.originalValue = new Contact("", "");
+    this.originalValue = Contact.empty();
   }
 
   private static void updateStatus(ContactField contactField, boolean isInvalid) {
     contactField.getElement().setProperty("invalid", isInvalid);
-    updateStatus(contactField.getEmailTextField(), isInvalid);
-    updateStatus(contactField.getFullNameTextField(), isInvalid);
-  }
-
-  private static void updateStatus(TextField textField, boolean isInvalid) {
-    textField.setInvalid(isInvalid);
   }
 
   /**
@@ -76,12 +70,10 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    * @since
    */
   private static SerializablePredicate<Contact> isMandatory() {
-    return contact -> {
-      var onlyEmailEmpty = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
-      var onlyNameEmpty = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      var bothEmpty = contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      return !(onlyEmailEmpty || onlyNameEmpty || bothEmpty);
-    };
+
+    SerializablePredicate<Contact> isFilled = contact -> !contact.email().isBlank()
+        && !contact.fullName().isBlank();
+    return isValidContact().and(isFilled);
   }
 
   /**
@@ -90,23 +82,32 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
    * If either is filled alone, the predicate will return <code>false</code>
    */
   private static SerializablePredicate<Contact> isOptional() {
+    return isValidContact();
+  }
+
+  private static SerializablePredicate<Contact> isValidContact() {
     return contact -> {
-      var onlyEmailProvided = !contact.getEmail().isBlank() && contact.getFullName().isBlank();
-      var onlyNameProvided = contact.getEmail().isBlank() && !contact.getFullName().isBlank();
-      return !(onlyEmailProvided || onlyNameProvided);
+      var onlyEmailProvided = !contact.email().isBlank() && contact.fullName().isBlank();
+      var onlyNameProvided = contact.email().isBlank() && !contact.fullName().isBlank();
+      var isValidEmail = contact.email().isBlank() || isValidEmail(contact.email());
+      return !onlyEmailProvided && !onlyNameProvided && isValidEmail;
     };
   }
 
-  private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate, ContactField contactField) {
+  private static boolean isValidEmail(String email) {
+    var pattern = Pattern.compile(EmailValidator.PATTERN);
+    var matcher = pattern.matcher(email);
+    return matcher.matches();
+  }
+
+  private static Binder<ContactContainer> createBinder(SerializablePredicate<Contact> predicate,
+      ContactField contactField) {
     Binder<ContactContainer> binder = new Binder<>(ContactContainer.class);
     binder.setBean(new ContactContainer());
-    binder.forField(contactField).withValidator(predicate, "There is still information missing")
+    // If the user specified an invalid contact show a general error message (e.g. no selection mode was chosen)
+    binder.forField(contactField)
+        .withValidator(predicate, "Please specify a valid contact")
         .bind(ContactContainer::getContact, ContactContainer::setContact);
-    binder.forField(contactField.getEmailTextField()).withValidator(
-            new EmailValidator("Please provide a valid email address, e.g. my.name@example.com", true))
-        .bind(ContactContainer::getEmail, ContactContainer::setEmail);
-    binder.forField(contactField.getFullNameTextField())
-        .bind(ContactContainer::getFullName, ContactContainer::setFullName);
     return binder;
   }
 
@@ -151,7 +152,7 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     private Contact contact;
 
     public ContactContainer() {
-      contact = new Contact("", "");
+      contact = new Contact("", "", "", "");
     }
 
     public Contact getContact() {
@@ -161,26 +162,5 @@ public class BoundContactField implements HasBoundField<ContactField, Contact> {
     public void setContact(Contact contact) {
       this.contact = Objects.requireNonNull(contact);
     }
-
-    public String getEmail() {
-      return contact == null ? "" : contact.getEmail();
-    }
-
-    public void setEmail(String email) {
-      if (contact != null) {
-        contact.setEmail(email);
-      }
-    }
-
-    public String getFullName() {
-      return contact == null ? "" : contact.getFullName();
-    }
-
-    public void setFullName(String fullName) {
-      if (contact != null) {
-        contact.setFullName(fullName);
-      }
-    }
-
   }
 }

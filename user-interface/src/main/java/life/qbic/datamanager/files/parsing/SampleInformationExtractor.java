@@ -95,7 +95,6 @@ public class SampleInformationExtractor {
       var specimen = parsingResult.getValueOrDefault(i, EditColumn.SPECIMEN.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i, EditColumn.COMMENT.headerName(), "");
 
-
       var sanitizedHeaderNames = EditColumn.headerNames().stream()
           .map(Sanitizer::headerEncoder)
           .collect(

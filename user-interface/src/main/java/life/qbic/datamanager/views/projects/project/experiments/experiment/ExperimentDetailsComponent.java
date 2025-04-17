@@ -471,7 +471,6 @@ public class ExperimentDetailsComponent extends PageArea {
         .collect(Collectors.toSet());
     confoundingVariablesUserInput.setForbiddenNames(namesAlreadyTaken);
 
-
     DialogHeader.with(addDialog, "Add Confounding Variables");
     DialogBody.with(addDialog, confoundingVariablesUserInput, confoundingVariablesUserInput);
     DialogFooter.with(addDialog, "Cancel", "Confirm");

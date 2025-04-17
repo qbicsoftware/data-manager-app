@@ -11,6 +11,7 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml;
 public interface ExampleProvider {
 
   record Helper(String exampleValue, String description) {
+
   }
 
   Helper getHelper(Column column);

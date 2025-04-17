@@ -57,6 +57,7 @@ import org.springframework.util.MimeType;
  * @since 1.4.0
  */
 public class EditSampleBatchDialog extends WizardDialogWindow {
+
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   private static final String YOUR_DATA_HAS_BEEN_APPROVED_TEXT = "Your data has been approved";
@@ -260,7 +261,8 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
       service.sampleUpdateTemplate(projectId, experimentId, batchId,
           OPEN_XML).doOnSuccess(resource ->
           triggerDownload(resource,
-              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "sample metadata update template",
+              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+                  "sample metadata update template",
                   "xlsx")
           )).doOnError(this::handleError).subscribe();
     });
@@ -296,7 +298,8 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   }
 
   private void handleAccessDeniedError() {
-    getUI().ifPresent(ui -> ui.access(() -> messageFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
   }
 
   private void triggerDownload(DigitalObject resource, String filename) {
