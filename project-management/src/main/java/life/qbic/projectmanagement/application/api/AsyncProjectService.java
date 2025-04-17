@@ -274,6 +274,89 @@ public interface AsyncProjectService {
   Mono<Sample> findSample(String projectId, String sampleId);
 
   /**
+   * Requests a {@link Flux} of matching {@link OntologyTerm} for a given search value.
+   * <p>
+   * The implementation must support pagination based on the provided values for offset and limit.
+   * <p>
+   * Note: it is not guaranteed that taxa will be emitted to the flux. To search for taxa, please
+   * use the dedicated method {@link #searchTaxa(String, int, int)}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Flux#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param value  the value for searching matching {@link OntologyTerm}
+   * @param offset the offset value from 0 for paginated queries
+   * @param limit  the maximum number of hits returned in the flux
+   * @return a {@link Flux} of {@link OntologyTerm} matching the search value
+   * @throws RequestFailedException if the request was not successfully executed
+   * @since 1.10.0
+   */
+  Flux<OntologyTerm> searchTerm(String value, int offset, int limit);
+
+  /**
+   * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
+   * <p>
+   * If no matching {@link OntologyTerm} can be found, the {@link Mono#empty()} will complete
+   * without emitting a value.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param value the {@link Curie} of the term to search for
+   * @return a {@link Mono} emitting the {@link OntologyTerm} if an exact match was found or else
+   * completes empty.
+   * @throws RequestFailedException if the request was not successfully executed
+   * @since 1.10.0
+   */
+  Mono<OntologyTerm> searchByCurie(Curie value);
+
+  /**
+   * Requests a {@link Flux} of {@link OntologyTerm} for a given search value.
+   * <p>
+   * The implementation must support:
+   * <ul>
+   *   <li>pagination based on the provided values for offset and limit</li>
+   *   <li>taxa as emitted values, and <strong>taxa only</strong></li>
+   * </ul>
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Flux#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param value  the value for searching matching {@link OntologyTerm}
+   * @param offset the offset value from 0 for paginated queries
+   * @param limit  the maximum number of hits returned in the flux
+   * @return a {@link Flux} of {@link OntologyTerm} matching the search value
+   * @throws RequestFailedException if the request was not successfully executed
+   * @since 1.10.0
+   */
+  Flux<OntologyTerm> searchTaxa(String value, int offset, int limit);
+
+  /**
+   * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
+   * <p>
+   * If no matching {@link OntologyTerm} can be found, the {@link Mono#empty()} will complete
+   * without emitting a value.
+   * <p>
+   * Note: the implementation must only search for taxa.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param value the {@link Curie} of the term to search fo
+   * @return a {@link Mono} emitting the {@link OntologyTerm} if an exact match was found or else
+   * completes empty.
+   * @throws RequestFailedException if the request was not successfully executed
+   * @since 1.10.0
+   */
+  Mono<OntologyTerm> searchTaxonByCurie(Curie value);
+
+  /**
    * Submits multiple validation requests in a single service call.
    *
    * @param requests a {@link Flux} providing {@link ValidationRequest}.
@@ -643,7 +726,8 @@ public interface AsyncProjectService {
    *                       containing CURIEs.
    * @since 1.9.0
    */
-  record ExperimentDescription(String experimentName, Set<OntologyTerm> species, Set<OntologyTerm> specimen,
+  record ExperimentDescription(String experimentName, Set<OntologyTerm> species,
+                               Set<OntologyTerm> specimen,
                                Set<OntologyTerm> analytes) implements ExperimentUpdateRequestBody,
       ExperimentUpdateResponseBody {
 
@@ -784,6 +868,7 @@ public interface AsyncProjectService {
    */
   record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
                                 FundingInformation funding) {
+
   }
 
   /**
@@ -796,6 +881,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record OntologyTerm(String label, Curie oboId, URI id) {
+
     public OntologyTerm {
       requireNonNull(oboId);
       requireNonNull(id);
@@ -1083,6 +1169,7 @@ public interface AsyncProjectService {
    */
   record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
                                String requestId) {
+
     public ProjectUpdateResponse {
       if (projectId == null) {
         throw new IllegalArgumentException("Project ID cannot be null");
