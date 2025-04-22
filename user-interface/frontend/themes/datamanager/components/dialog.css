@@ -88,7 +88,6 @@ Since we want to remove the spacing between the cancel and confirm button we rep
   font-weight: bold;
 }
 
-/* ToDo adjust once dialog PR is approved */
 .add-personal-access-token-dialog::part(overlay) {
   height: 50%;
   min-width: 50vw;
