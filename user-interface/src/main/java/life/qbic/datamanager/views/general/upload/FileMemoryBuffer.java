@@ -11,12 +11,7 @@ import java.io.OutputStream;
 import java.util.Optional;
 
 /**
- * TODO!
- * <b>short description</b>
- *
- * <p>detailed description</p>
- *
- * @since <version tag>
+ * Simple in-memory buffer for receiving uploaded content in the application.
  */
 public class FileMemoryBuffer implements Receiver {
 
