@@ -87,18 +87,14 @@ public final class Contact implements Serializable {
         oidcIssuer);
   }
 
-
   @Override
-  public boolean equals(Object obj) {
-    if (obj == this) {
-      return true;
-    }
-    if (obj == null || obj.getClass() != this.getClass()) {
+  public boolean equals(Object o) {
+    if (!(o instanceof Contact contact)) {
       return false;
     }
-    var that = (Contact) obj;
-    return Objects.equals(this.fullName, that.fullName) &&
-        Objects.equals(this.email, that.email);
+    return fullName.equals(contact.fullName) && email.equals(contact.email)
+        && Objects.equals(oidc, contact.oidc) && Objects.equals(oidcIssuer,
+        contact.oidcIssuer);
   }
 
   @Override
