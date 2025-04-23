@@ -45,9 +45,10 @@ public class OrcidRepository implements PersonRepository {
   private final HttpClient httpClient;
 
   @Autowired
-  public OrcidRepository(@Value("${qbic.orcid.api.client.id}") String clientID,
-      @Value("${qbic.orcid.api.client.secret}") String clientSecret,
-      @Value("${qbic.orcid.api.endpoint.token}") String tokenEndpoint) {
+  public OrcidRepository(
+      @Value("${spring.security.oauth2.client.registration.orcid.client-id}") String clientID,
+      @Value("${spring.security.oauth2.client.registration.orcid.client-secret}") String clientSecret,
+      @Value("${spring.security.oauth2.client.provider.orcid.token-uri}") String tokenEndpoint) {
     httpClient = createHttpClient();
     var authResponse = authenticate(httpClient, clientID, clientSecret, tokenEndpoint);
     this.refreshToken = authResponse.refresh_token();
