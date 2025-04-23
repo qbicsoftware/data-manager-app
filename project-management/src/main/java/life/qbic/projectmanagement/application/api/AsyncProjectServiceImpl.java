@@ -10,11 +10,14 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -27,6 +30,7 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -107,6 +111,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")"));
   }
 
+  private static Set<OntologyTerm> convertToApi(
+      Collection<life.qbic.projectmanagement.domain.model.OntologyTerm> terms) {
+    return terms.stream().map(AsyncProjectServiceImpl::convertToApi).collect(Collectors.toSet());
+  }
+
+  private static OntologyTerm convertToApi(
+      life.qbic.projectmanagement.domain.model.OntologyTerm term) {
+    return new OntologyTerm(term.getLabel(), Curie.parse(term.oboId().toString()),
+        URI.create(term.getOntologyIri()));
+  }
+
   private static OntologyTerm convertTerm(life.qbic.projectmanagement.domain.model.OntologyTerm term) {
     return new OntologyTerm(term.getLabel(), convertCurie(term.getOboId()), URI.create(term.getClassIri()));
   }
@@ -177,7 +192,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
-    //TODO
     throw new RuntimeException("not implemented");
   }
 
@@ -190,7 +204,20 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Flux<ExperimentDescription> getExperiments(String projectId) {
-    throw new RuntimeException("Not yet implemented");
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContextMany(Flux.fromIterable(
+            () -> experimentInformationService.findAllForProject(ProjectId.parse(projectId)).iterator())
+        .map(e -> e.experimentId())
+        .flatMap(id -> {
+          var analytes = experimentInformationService.getAnalytesOfExperiment(id);
+          var specimen = experimentInformationService.getSpecimensOfExperiment(id);
+          var species = experimentInformationService.getSpeciesOfExperiment(id);
+          var experimentName = experimentInformationService.find(projectId, id)
+              .map(Experiment::getName).orElse("not available");
+          return Mono.just(new ExperimentDescription(experimentName, convertToApi(species),
+              convertToApi(specimen), convertToApi(analytes)));
+        })).subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(securityContext));
   }
 
   // Requires the SecurityContext to work
@@ -613,7 +640,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
       String experimentId,
       ExperimentDescription experimentDescription) {
-    //TODO implement
     throw new RuntimeException("Not implemented");
   }
 

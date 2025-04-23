@@ -34,6 +34,8 @@ public class OntologyTerm implements Serializable {
   private String description;
   @JsonProperty("classIri")
   private String classIri;
+  @JsonProperty("oboId")
+  private OboId realOboId;
 
   public OntologyTerm() {
   }
@@ -106,10 +108,21 @@ public class OntologyTerm implements Serializable {
     this.description = description;
   }
 
+  @Deprecated(since = "1.10.0", forRemoval = true)
   public String getOboId() {
     return oboId;
   }
 
+  public OboId oboId() {
+    // Legacy support for CURIE specification violation
+    return Objects.requireNonNullElseGet(realOboId, () -> OboId.parse(oboId, "_"));
+  }
+
+  public void setOboId(OboId oboId) {
+    this.realOboId = Objects.requireNonNull(oboId);
+  }
+
+  @Deprecated(since = "1.10.0", forRemoval = true)
   public void setOboId(String oboId) {
     this.oboId = oboId;
   }
@@ -161,5 +174,27 @@ public class OntologyTerm implements Serializable {
         .add("oboId='" + oboId + "'")
         .add("classIri='" + classIri + "'")
         .toString();
+  }
+
+  public record OboId(String idSpace, String localId) {
+    static OboId parse(String id) {
+      if (id == null || id.isEmpty()) {
+        throw new IllegalArgumentException("OboId cannot be null or empty");
+      }
+      String[] parts = id.split(":");
+      return new OboId(parts[0], parts[1]);
+    }
+
+    static OboId parse(String id, String separator) {
+      if (id == null || id.isEmpty()) {
+        throw new IllegalArgumentException("OboId cannot be null or empty");
+      }
+      String[] parts = id.split(separator);
+      return new OboId(parts[0], parts[1]);
+    }
+
+    public String toString() {
+      return idSpace + ":" + localId;
+    }
   }
 }

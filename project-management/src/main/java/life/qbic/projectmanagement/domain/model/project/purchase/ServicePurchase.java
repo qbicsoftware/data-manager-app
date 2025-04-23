@@ -44,7 +44,6 @@ public class ServicePurchase {
     this.projectId = projectId;
     this.purchasedOn = purchasedOn;
     this.offer = offer;
-    emitCreatedEvent();
   }
 
   public static ServicePurchase create(ProjectId projectId, Instant purchasedOn, Offer offer) {
@@ -61,12 +60,6 @@ public class ServicePurchase {
 
   public Instant purchasedOn() {
     return purchasedOn;
-  }
-
-  private void emitCreatedEvent() {
-    //FIXME id is null
-    //var createdEvent = new PurchaseCreatedEvent(this.id);
-    //LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
 
   @Override

@@ -25,10 +25,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
@@ -74,6 +76,7 @@ import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
 import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
 import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
@@ -85,6 +88,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingDeletion;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.OntologyTerm;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.PrincipalInvestigator;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionRequest;
@@ -97,7 +101,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -144,9 +147,13 @@ public class ProjectSummaryComponent extends PageArea {
   private final RequestCache requestCache;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private final Map<String, Toast> pendingTaskToasts = new HashMap<>();
+  private final ExperimentDetailsComponent experimentDetailsComponent;
   private Toast taskInProgressToast;
   private Context context;
   private transient List<? extends UserScopeStrategy> scopes;
+  private DetailBox speciesDetailBox;
+  private DetailBox specimenDetailBox;
+  private DetailBox analyteDetailBox;
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
@@ -155,7 +162,8 @@ public class ProjectSummaryComponent extends PageArea {
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
       RequestCache requestCache,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      ExperimentDetailsComponent experimentDetailsComponent) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
@@ -178,6 +186,7 @@ public class ProjectSummaryComponent extends PageArea {
     add(projectContactsSection);
     add(downloadComponent);
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+    this.experimentDetailsComponent = experimentDetailsComponent;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -273,6 +282,36 @@ public class ProjectSummaryComponent extends PageArea {
     this.scopes.forEach(UserScopeStrategy::execute);
     // The header section only contains the RO-Crate action, which we want to enable always
     loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
+    loadExperimentInfo(projectId.value());
+  }
+
+  private void loadExperimentInfo(String projectId) {
+    asyncProjectService.getExperiments(projectId).collectList()
+        .doOnSuccess(experiments -> {
+          var species = new HashSet<OntologyTerm>();
+          var specimen = new HashSet<OntologyTerm>();
+          var analytes = new HashSet<OntologyTerm>();
+          experiments.stream().forEach(experiment -> {
+            species.addAll(experiment.species());
+            specimen.addAll(experiment.specimen());
+            analytes.addAll(experiment.analytes());
+          });
+          renderExperimentInfo(species, specimen, analytes);
+        })
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .subscribe();
+  }
+
+  private void renderExperimentInfo(Set<OntologyTerm> species,
+      Set<OntologyTerm> specimen,
+      Set<OntologyTerm> analytes) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      speciesDetailBox.setContent(buildOntologyInfo(species));
+      specimenDetailBox.setContent(buildOntologyInfo(specimen));
+      analyteDetailBox.setContent(buildOntologyInfo(analytes));
+    }));
   }
 
   private void reloadInformation(Context context) {
@@ -306,7 +345,7 @@ public class ProjectSummaryComponent extends PageArea {
     Objects.requireNonNull(projectOverview);
     buildHeaderSection(projectOverview);
     buildDesignSection(projectOverview, fullProject);
-    buildExperimentInformationSection(experiments);
+    buildExperimentInformationSection();
     buildFundingInformationSection(fullProject, convertToInfo(fullProject));
     buildProjectContactsInfoSection(fullProject);
   }
@@ -462,77 +501,46 @@ public class ProjectSummaryComponent extends PageArea {
     submitRequest(new ProjectUpdateRequest(projectId, funding));
   }
 
-  private void buildExperimentInformationSection(
-      List<Experiment> experiments) {
+  private void buildExperimentInformationSection() {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information")));
-    var speciesBox = new DetailBox();
+    speciesDetailBox = new DetailBox();
     var speciesHeader = new Header(VaadinIcon.MALE.create(), "Species");
-    speciesBox.setHeader(speciesHeader);
-    speciesBox.setContent(buildSpeciesInfo(experiments));
-    speciesBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
+    speciesDetailBox.setHeader(speciesHeader);
+    speciesDetailBox.setContent(new EmptyContent());
+    speciesDetailBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
 
-    var specimenBox = new DetailBox();
+    specimenDetailBox = new DetailBox();
     var specimenHeader = new Header(VaadinIcon.DROP.create(), "Specimen");
-    specimenBox.setHeader(specimenHeader);
-    specimenBox.setContent(buildSpecimenInfo(experiments));
-    specimenBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+    specimenDetailBox.setHeader(specimenHeader);
+    specimenDetailBox.setContent(new EmptyContent());
+    specimenDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
-    var analyteBox = new DetailBox();
+    analyteDetailBox = new DetailBox();
     var analyteHeader = new Header(VaadinIcon.CLUSTER.create(), "Analytes");
-    analyteBox.setHeader(analyteHeader);
-    analyteBox.setContent(buildAnalyteInfo(experiments));
-    analyteBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+    analyteDetailBox.setHeader(analyteHeader);
+    analyteDetailBox.setContent(new EmptyContent());
+    analyteDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
     var sectionContent = new SectionContent();
-    sectionContent.add(speciesBox);
-    sectionContent.add(specimenBox);
-    sectionContent.add(analyteBox);
+    sectionContent.add(speciesDetailBox);
+    sectionContent.add(specimenDetailBox);
+    sectionContent.add(analyteDetailBox);
     sectionContent.addClassNames("horizontal-list", "gap-medium", "wrapping-flex-container");
     experimentInformationSection.setContent(sectionContent);
   }
 
-  private Div buildSpeciesInfo(List<Experiment> experiments) {
-    var ontologyTerms = extractSpecies(experiments);
-    return buildOntologyInfo(ontologyTerms);
-  }
-
-  private Div buildSpecimenInfo(List<Experiment> experiments) {
-    var ontologyTerms = extractSpecimen(experiments);
-    return buildOntologyInfo(ontologyTerms);
-  }
-
-  private Div buildAnalyteInfo(List<Experiment> experiments) {
-    var ontologyTerms = extractAnalyte(experiments);
-    return buildOntologyInfo(ontologyTerms);
-  }
-
-  private Div buildOntologyInfo(List<OntologyTerm> terms) {
+  private Div buildOntologyInfo(Set<OntologyTerm> terms) {
     var container = new Div();
     terms.stream().map(this::convert).forEach(container::add);
     container.addClassNames("vertical-list", "gap-small");
     return container;
   }
 
-  private OntologyTermDisplay convert(OntologyTerm ontologyTerm) {
-    return new OntologyTermDisplay(ontologyTerm.getLabel(), ontologyTerm.getOboId(),
-        ontologyTerm.getClassIri());
+  private OntologyTermDisplay convert(OntologyTerm term) {
+    return new OntologyTermDisplay(term.label(), term.oboId().toString(), term.id().toString());
   }
 
-  private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct()
-        .toList();
-  }
-
-  private List<OntologyTerm> extractSpecimen(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct()
-        .toList();
-  }
-
-  private List<OntologyTerm> extractAnalyte(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct()
-        .toList();
-  }
 
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {
     var editButton = new Button("Edit");
@@ -675,7 +683,6 @@ public class ProjectSummaryComponent extends PageArea {
     }));
   }
 
-
   private void handleSuccess(ProjectDeletionResponse projectDeletionResponse) {
     getUI().ifPresent(ui -> ui.access(() -> {
       var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
@@ -702,10 +709,8 @@ public class ProjectSummaryComponent extends PageArea {
     getUI().ifPresent(ui -> ui.access(() -> {
       requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
         // do sth with the cache
-        // TODO show button that enables user to resend the request
         var toast = notificationFactory.toast("project.updated.error.retry",
             new String[]{}, getLocale());
-        // Todo Implement retry with cached request
         toast.open();
       }, () -> {
         var toast = notificationFactory.toast("project.updated.error",
@@ -823,6 +828,14 @@ public class ProjectSummaryComponent extends PageArea {
       tags.add(TagFactory.forMeasurement(PROTEOMICS));
     }
     return tags;
+  }
+
+  private static class EmptyContent extends Div {
+
+    EmptyContent() {
+      addClassNames("vertical-list", "gap-small");
+      add("No information available");
+    }
   }
 
 }
