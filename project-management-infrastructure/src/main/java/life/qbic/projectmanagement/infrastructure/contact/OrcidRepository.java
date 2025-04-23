@@ -39,7 +39,8 @@ import org.springframework.stereotype.Repository;
 public class OrcidRepository implements PersonRepository {
 
   private static final Logger log = logger(OrcidRepository.class);
-  private static final String PAGINATED_QUERY = "https://pub.sandbox.orcid.org/v3.0/expanded-search/?start=%s&rows=%s&q=%s";
+  private static final String PAGINATED_QUERY = "https://pub.orcid.org/v3.0/expanded-search/?start=%s&rows=%s&q=%s";
+  private static final String OIDC_ISSUER = "https://orcid.org";
   private final String token;
   private final String refreshToken;
   private final HttpClient httpClient;
@@ -109,7 +110,7 @@ public class OrcidRepository implements PersonRepository {
       return null;
     }
     var email = emailList.stream().findFirst().orElse("");
-    return new OrcidEntry(fullName, email, orcid, "https://orcid.org");
+    return new OrcidEntry(fullName, email, orcid, OIDC_ISSUER);
   }
 
   @Override
