@@ -9,8 +9,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -31,9 +31,9 @@ import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -118,8 +118,15 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private static OntologyTerm convertToApi(
       life.qbic.projectmanagement.domain.model.OntologyTerm term) {
-    return new OntologyTerm(term.getLabel(), Curie.parse(term.oboId().toString()),
-        URI.create(term.getClassIri()));
+    return new OntologyTerm(term.getLabel(), term.getDescription(),
+        Curie.parse(term.oboId().toString()),
+        URI.create(term.getClassIri()), term.getOntologyAbbreviation());
+  }
+
+  private static OntologyTerm convertToApi(OntologyClass term) {
+    return new OntologyTerm(term.getClassLabel(), term.getDescription(),
+        Curie.parse(term.oboId()), URI.create(term.getClassIri()),
+        term.getOntologyAbbreviation());
   }
 
 
@@ -353,17 +360,40 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<OntologyTerm> searchByCurie(Curie value) {
-    return null;
+    return Mono.defer(() -> {
+      try {
+        return Mono.justOrEmpty(terminologyService.findByCurie(value.toString()))
+            .map(AsyncProjectServiceImpl::convertToApi);
+      } catch (Exception e) {
+        log.error("Error searching for term " + value, e);
+        return Mono.error(new RequestFailedException("Error searching for term " + value));
+      }
+    }).subscribeOn(scheduler);
   }
 
   @Override
-  public Flux<OntologyTerm> searchTaxa(String value, int offset, int limit) {
-    return null;
+  public Flux<OntologyTerm> searchTaxa(String value, int offset, int limit, List<SortOrder> sorting) {
+    return Flux.defer(() -> {
+      try {
+        return Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting))
+            .map(AsyncProjectServiceImpl::convertToApi);
+      } catch (Exception e) {
+        log.error("Error searching for taxa " + value, e);
+        return Flux.error(new RequestFailedException("Error searching for taxa " + value));
+      }
+    }).subscribeOn(scheduler);
   }
 
   @Override
   public Mono<OntologyTerm> searchTaxonByCurie(Curie value) {
-    return null;
+    return Mono.defer(() -> {
+      try {
+        return Mono.justOrEmpty(taxaService.findByCURI(value.toString())).map(AsyncProjectServiceImpl::convertToApi);
+      } catch (Exception e) {
+        log.error("Error searching for taxa " + value, e);
+        return Mono.error(new RequestFailedException("Error searching for taxa " + value));
+      }
+    }).subscribeOn(scheduler);
   }
 
   @Override

@@ -306,6 +306,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param value the {@link Curie} of the term to search for
    * @return a {@link Mono} emitting the {@link OntologyTerm} if an exact match was found or else
    * completes empty.
@@ -328,14 +329,15 @@ public interface AsyncProjectService {
    * Exceptions are wrapped as {@link Flux#error(Throwable)} and are one of the types described in
    * the throw section below.
    *
-   * @param value  the value for searching matching {@link OntologyTerm}
-   * @param offset the offset value from 0 for paginated queries
-   * @param limit  the maximum number of hits returned in the flux
+   * @param value   the value for searching matching {@link OntologyTerm}
+   * @param offset  the offset value from 0 for paginated queries
+   * @param limit   the maximum number of hits returned in the flux
+   * @param sorting a {@link List} of {@link SortOrder}s to sort the results by
    * @return a {@link Flux} of {@link OntologyTerm} matching the search value
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Flux<OntologyTerm> searchTaxa(String value, int offset, int limit);
+  Flux<OntologyTerm> searchTaxa(String value, int offset, int limit, List<SortOrder> sorting);
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
@@ -349,6 +351,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param value the {@link Curie} of the term to search fo
    * @return a {@link Mono} emitting the {@link OntologyTerm} if an exact match was found or else
    * completes empty.
@@ -876,16 +879,21 @@ public interface AsyncProjectService {
    * Represents an ontology term definition with a simple label that can be used to display the term
    * for humans, its assigned OBO identifier and its globally unique identifier.
    *
-   * @param label an {@link OntologyTerm} label for visualisation
-   * @param oboId the assigned OBO identifier
-   * @param id    the globally unique identifier of the term
+   * @param label       an {@link OntologyTerm} label for visualization
+   * @param description a short description of the term
+   * @param oboId       the assigned OBO identifier
+   * @param id          the globally unique identifier of the term
+   * @param ontologyId  the identifier of the ontology the term belongs to, e.g. <code>ncit</code>
+   *                    for the National Cancer Institute Thesaurus (NCIT)
    * @since 1.10.0
    */
-  record OntologyTerm(String label, Curie oboId, URI id) {
+  record OntologyTerm(String label, String description, Curie oboId, URI id, String ontologyId) {
 
     public OntologyTerm {
+      requireNonNull(label);
       requireNonNull(oboId);
       requireNonNull(id);
+      requireNonNull(ontologyId);
     }
 
     @Override

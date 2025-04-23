@@ -102,7 +102,7 @@ public class OntologyLookupComponent extends PageArea {
 
       return asyncService.searchTaxa(searchTerm,
           query.getOffset(),
-          query.getLimit()).toStream();
+          query.getLimit(), sortOrders).toStream();
     });
   }
 
@@ -118,7 +118,7 @@ public class OntologyLookupComponent extends PageArea {
     searchGrid.addComponentColumn(
         term -> new OntologyItem(term.label(),
             term.oboId().toString(),
-            term.id().toString(), "", ""));
+            term.id().toString(), term.description(), term.ontologyId()));
     searchGrid.addClassName("ontology-grid");
     searchGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     setLazyDataProviderForOntologyGrid(searchGrid);
