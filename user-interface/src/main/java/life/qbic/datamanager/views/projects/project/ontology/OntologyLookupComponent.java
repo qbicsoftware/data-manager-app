@@ -109,7 +109,7 @@ public class OntologyLookupComponent extends PageArea {
   private void setLazyDataProviderForOntologyGrid(Grid<AsyncProjectService.OntologyTerm> ontologyGrid) {
     ontologyGridLazyDataView = ontologyGrid.setItems(
         query -> asyncService.searchTerm(searchTerm, query.getOffset(), query.getLimit())
-            .toStream());
+            .toStream().distinct());
   }
 
   private void initGridSection() {

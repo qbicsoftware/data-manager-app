@@ -119,7 +119,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private static OntologyTerm convertToApi(
       life.qbic.projectmanagement.domain.model.OntologyTerm term) {
     return new OntologyTerm(term.getLabel(), Curie.parse(term.oboId().toString()),
-        URI.create(term.getOntologyIri()));
+        URI.create(term.getClassIri()));
   }
 
 
