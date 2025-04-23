@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -885,6 +886,20 @@ public interface AsyncProjectService {
     public OntologyTerm {
       requireNonNull(oboId);
       requireNonNull(id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      OntologyTerm that = (OntologyTerm) o;
+      return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(id);
     }
   }
 

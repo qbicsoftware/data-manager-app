@@ -122,19 +122,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         URI.create(term.getOntologyIri()));
   }
 
-  private static OntologyTerm convertTerm(life.qbic.projectmanagement.domain.model.OntologyTerm term) {
-    return new OntologyTerm(term.getLabel(), convertCurie(term.getOboId()), URI.create(term.getClassIri()));
-  }
-
-  private static Curie convertCurie(String curie) throws IllegalArgumentException {
-    try {
-      var split = curie.split(":");
-      return new Curie(split[0], split[1]);
-    } catch (Exception e) {
-      throw new IllegalArgumentException(
-          "%s does not look like a valid CURIE (example: EFO:1234)".formatted(curie));
-    }
-  }
 
   @Override
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
@@ -356,7 +343,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return Flux.defer(() -> {
       try {
         return Flux.fromIterable(terminologyService.search(value, offset, limit))
-            .map(AsyncProjectServiceImpl::convertTerm);
+            .map(AsyncProjectServiceImpl::convertToApi);
       } catch (Exception e) {
         log.error("Error searching for term " + value, e);
         return Flux.error(new RequestFailedException("Error searching for term " + value));
