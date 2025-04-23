@@ -6,6 +6,7 @@ import static life.qbic.projectmanagement.application.authorization.ReactiveSecu
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,6 +30,8 @@ import life.qbic.projectmanagement.application.authorization.ReactiveSecurityCon
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -73,6 +76,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final SampleValidationService sampleValidationService;
   private final MeasurementValidationService measurementValidationService;
   private final ExperimentInformationService experimentInformationService;
+  private final TerminologyService terminologyService;
+  private final SpeciesLookupService taxaService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -82,8 +87,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired TemplateService templateService,
       @Autowired SampleValidationService sampleValidationService,
       @Autowired MeasurementValidationService measurementValidationService,
-      @Autowired ExperimentInformationService experimentInformationService
-  ) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired TerminologyService termService,
+      @Autowired SpeciesLookupService taxaService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -92,11 +98,27 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.sampleValidationService = Objects.requireNonNull(sampleValidationService);
     this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
+    this.terminologyService = Objects.requireNonNull(termService);
+    this.taxaService = Objects.requireNonNull(taxaService);
   }
 
   private static Retry defaultRetryStrategy() {
     return Retry.maxInARow(5)
         .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")"));
+  }
+
+  private static OntologyTerm convertTerm(life.qbic.projectmanagement.domain.model.OntologyTerm term) {
+    return new OntologyTerm(term.getLabel(), convertCurie(term.getOboId()), URI.create(term.getClassIri()));
+  }
+
+  private static Curie convertCurie(String curie) throws IllegalArgumentException {
+    try {
+      var split = curie.split(":");
+      return new Curie(split[0], split[1]);
+    } catch (Exception e) {
+      throw new IllegalArgumentException(
+          "%s does not look like a valid CURIE (example: EFO:1234)".formatted(curie));
+    }
   }
 
   @Override
@@ -229,7 +251,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         contactPoints);
   }
 
-
   @Override
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
@@ -304,6 +325,34 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Flux<OntologyTerm> searchTerm(String value, int offset, int limit) {
+    return Flux.defer(() -> {
+      try {
+        return Flux.fromIterable(terminologyService.search(value, offset, limit))
+            .map(AsyncProjectServiceImpl::convertTerm);
+      } catch (Exception e) {
+        log.error("Error searching for term " + value, e);
+        return Flux.error(new RequestFailedException("Error searching for term " + value));
+      }
+    }).subscribeOn(scheduler);
+  }
+
+  @Override
+  public Mono<OntologyTerm> searchByCurie(Curie value) {
+    return null;
+  }
+
+  @Override
+  public Flux<OntologyTerm> searchTaxa(String value, int offset, int limit) {
+    return null;
+  }
+
+  @Override
+  public Mono<OntologyTerm> searchTaxonByCurie(Curie value) {
+    return null;
+  }
+
+  @Override
   public Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -315,11 +364,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId, String batchId,
+  public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
+      String batchId,
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId, mimeType)))
+        () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId, mimeType)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext));
   }
@@ -329,7 +379,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> templateService.sampleInformationTemplate(projectId, experimentId, mimeType)))
+        () -> templateService.sampleInformationTemplate(projectId, experimentId, mimeType)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext));
   }
@@ -374,8 +424,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
    * @param securityApplicant
    * @param serviceCallable
    * @param converter
-   * @return a {@link Mono} containing the
-   * {@link ValidationResponse}
+   * @return a {@link Mono} containing the {@link ValidationResponse}
    */
   private Mono<ValidationResponse> validateMetadata(
       UnaryOperator<Mono<ValidationResponse>> securityApplicant,
@@ -390,8 +439,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -401,8 +450,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -411,8 +460,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MeasurementRegistrationInformationNGS registration, String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validateNGS(registration, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validateNGS(registration, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -421,8 +470,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MeasurementUpdateInformationNGS update, String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validateNGS(update, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validateNGS(update, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -523,14 +572,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     });
   }
 
-  public static class ExperimentNotFoundException extends RuntimeException {
-
-    public ExperimentNotFoundException(String message) {
-      super(message);
-    }
-  }
-
-
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
       FundingDeletion target) {
     return Mono.defer(() -> {
@@ -542,7 +583,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         return Mono.error(new AccessDeniedException(ACCESS_DENIED));
       } catch (Exception e) {
         log.error("Unexpected exception deleting funding information", e);
-        return Mono.error(new RequestFailedException("Unexpected exception deleting funding information"));
+        return Mono.error(
+            new RequestFailedException("Unexpected exception deleting funding information"));
       }
     });
   }
@@ -601,24 +643,30 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         ).subscribeOn(scheduler);
   }
 
-
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
       ProjectDesign design) {
     return
-       Mono.<ProjectUpdateResponse>create(sink -> {
-          try {
-            projectService.updateTitle(projectId, design.title());
-            projectService.updateObjective(projectId, design.objective());
-            sink.success(new ProjectUpdateResponse(projectId.value(), design, requestId));
-          } catch (IllegalArgumentException e) {
-            sink.error(new RequestFailedException("Invalid project id: " + projectId));
-          } catch (org.springframework.security.access.AccessDeniedException e) {
-            sink.error(new AccessDeniedException(ACCESS_DENIED));
-          } catch (RuntimeException e) {
-            sink.error(new RequestFailedException("Update project design failed", e));
-          }
-        }
-    );
+        Mono.<ProjectUpdateResponse>create(sink -> {
+              try {
+                projectService.updateTitle(projectId, design.title());
+                projectService.updateObjective(projectId, design.objective());
+                sink.success(new ProjectUpdateResponse(projectId.value(), design, requestId));
+              } catch (IllegalArgumentException e) {
+                sink.error(new RequestFailedException("Invalid project id: " + projectId));
+              } catch (org.springframework.security.access.AccessDeniedException e) {
+                sink.error(new AccessDeniedException(ACCESS_DENIED));
+              } catch (RuntimeException e) {
+                sink.error(new RequestFailedException("Update project design failed", e));
+              }
+            }
+        );
+  }
+
+  public static class ExperimentNotFoundException extends RuntimeException {
+
+    public ExperimentNotFoundException(String message) {
+      super(message);
+    }
   }
 
 }
