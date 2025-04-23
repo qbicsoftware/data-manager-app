@@ -204,7 +204,6 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       manualContactSetter.setValues(contact.fullName(), contact.email());
       manualContactSetter.showManualEntryFields();
     }
-    showManualContactSetter();
   }
 
   private void showSelectionIfOidcPresent(Contact contact) {
