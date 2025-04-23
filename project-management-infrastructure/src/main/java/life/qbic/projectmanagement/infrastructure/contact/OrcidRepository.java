@@ -40,9 +40,9 @@ public class OrcidRepository implements PersonRepository {
 
   private static final Logger log = logger(OrcidRepository.class);
   private static final String PAGINATED_QUERY = "https://pub.sandbox.orcid.org/v3.0/expanded-search/?start=%s&rows=%s&q=%s";
-  private String token;
-  private String refreshToken;
-  private HttpClient httpClient;
+  private final String token;
+  private final String refreshToken;
+  private final HttpClient httpClient;
 
   @Autowired
   public OrcidRepository(@Value("${qbic.orcid.api.client.id}") String clientID,
@@ -97,16 +97,14 @@ public class OrcidRepository implements PersonRepository {
     var emailList = Arrays.stream(orcidRecord.email()).toList();
     var fullName = orcidRecord.givenName() + orcidRecord.familyName();
     var orcid = orcidRecord.orcidID();
+    //If an orcid record does not contain a name or email it is considered invalid and will not be considered further
     if (orcid.isBlank()) {
-      log.warn("No orcid provided in Orcid Record: ");
       return null;
     }
     if (fullName.isBlank()) {
-      log.warn("Incomplete full name found in Orcid Record: " + orcidRecord.orcidID());
       return null;
     }
     if (emailList.isEmpty()) {
-      log.warn("No email associated with Orcid Record: " + orcidRecord.orcidID());
       return null;
     }
     var email = emailList.stream().findFirst().orElse("");
@@ -129,13 +127,18 @@ public class OrcidRepository implements PersonRepository {
           var foundRecords = new ArrayList<>(
               Arrays.stream(mapper.convertValue(value, OrcidRecord[].class))
                   .map(OrcidRepository::convert).toList());
-          //Filter null values resulting from invalid records on Orcids side
-          return foundRecords.stream().filter(Objects::nonNull).toList();
+          var invalidRecords = foundRecords.stream().filter(Objects::isNull).toList();
+          //Filter null values resulting from invalid records on OrcIds side
+          var validRecords = foundRecords.stream().filter(Objects::nonNull).toList();
+          log.info(
+              "From a total of %d parsed orcid records, %d were valid and %d were invalid".formatted(
+                  foundRecords.size(), validRecords.size(), invalidRecords.size()));
+          return validRecords;
         } else {
           return new ArrayList<>();
         }
       } else {
-        log.debug("Error getting orcid records due to " + response.statusCode());
+        log.error("Error getting orcid records due to " + response.statusCode());
         throw new OrcidRepository.QueryException(
             "Orcid Public repository does not seem to be available",
             new Throwable(response.body()));
