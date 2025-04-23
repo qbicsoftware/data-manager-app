@@ -199,14 +199,12 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
   }
 
   private void toggleManualEntryBasedOnOidc(Contact contact) {
-    if (contact.hasOidc()) {
-      hideManualContactSetter();
-    } else if (!contact.hasOidc()) {
+    if (!contact.hasOidc()) {
       // Only open the Field Layout if the user was not provided via the checkbox or the orcid.
       manualContactSetter.setValues(contact.fullName(), contact.email());
-      showManualContactSetter();
       manualContactSetter.showManualEntryFields();
     }
+    showManualContactSetter();
   }
 
   private void showSelectionIfOidcPresent(Contact contact) {

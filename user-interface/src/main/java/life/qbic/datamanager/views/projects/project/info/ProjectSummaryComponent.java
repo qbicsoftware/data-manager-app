@@ -463,19 +463,18 @@ public class ProjectSummaryComponent extends PageArea {
     }
     if (contact.oidcIssuer().isEmpty() || contact.oidc().isEmpty()) {
       return contactInfo;
-    } else {
-      var oidcType = Arrays.stream(OidcType.values())
-          .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
-          .findFirst();
-      if (oidcType.isPresent()) {
-        String oidcUrl = String.format(oidcType.get().getUrl()) + contact.oidc();
-        Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
-        oidcLink.setTarget(AnchorTarget.BLANK);
-        OidcLogo oidcLogo = new OidcLogo(oidcType.get());
-        Span oidcSpan = new Span(oidcLogo, oidcLink);
-        oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
-        contactInfo.add(oidcSpan);
-      }
+    }
+    var oidcType = Arrays.stream(OidcType.values())
+        .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
+        .findFirst();
+    if (oidcType.isPresent()) {
+      String oidcUrl = String.format(oidcType.get().getUrl()) + contact.oidc();
+      Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
+      oidcLink.setTarget(AnchorTarget.BLANK);
+      OidcLogo oidcLogo = new OidcLogo(oidcType.get());
+      Span oidcSpan = new Span(oidcLogo, oidcLink);
+      oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
+      contactInfo.add(oidcSpan);
     }
     return contactInfo;
   }
