@@ -127,8 +127,7 @@ public class OrcidRepository implements PersonRepository {
 
     //We want to enable the user to enter a query with spaces (e.g. searching for John Doe), so we need to sanitize the query string
     String sanitizedQuery = query.trim().replaceAll("\\s+", "+AND+");
-    String encodedQuery = URLEncoder.encode(sanitizedQuery, StandardCharsets.UTF_8);
-    var queryUrl = String.format(url, offset, limit, encodedQuery);
+    var queryUrl = String.format(url, offset, limit, sanitizedQuery);
     URI uri;
     try {
       uri = URI.create(queryUrl);
