@@ -101,7 +101,8 @@ public class OrcidRepository implements PersonRepository {
 
   private static OrcidEntry convert(OrcidRecord orcidRecord) {
     var emailList = Arrays.stream(orcidRecord.email()).toList();
-    var fullName = orcidRecord.givenName() + orcidRecord.familyName();
+    //We want to show the full name meaning first and last name in a human readable format, ensuring that no trailing whitespaces are added
+    var fullName = orcidRecord.givenName() + " " + orcidRecord.familyName().trim();
     var orcid = orcidRecord.orcidID();
     //If an orcid record does not contain a name or email it is considered invalid and will not be considered further
     if (orcid.isBlank()) {
@@ -121,9 +122,13 @@ public class OrcidRepository implements PersonRepository {
   public List<OrcidEntry> findAll(String query, int limit, int offset) {
     String url = paginatedQuery;
     url += "+AND+email:*"; //require an email to be present
-    url += "+AND+given-names:*"; //require an email to be present
-    url += "+AND+family-name:*"; //require an email to be present
-    var queryUrl = String.format(url, offset, limit, query);
+    url += "+AND+given-names:*"; //require a first name to be present
+    url += "+AND+family-name:*"; //require a family name to be present
+
+    //We want to enable the user to enter a query with spaces (e.g. searching for John Doe), so we need to sanitize the query string
+    String sanitizedQuery = query.trim().replace(" ", "+AND+");
+    String encodedQuery = URLEncoder.encode(sanitizedQuery, StandardCharsets.UTF_8);
+    var queryUrl = String.format(url, offset, limit, encodedQuery);
     URI uri;
     try {
       uri = URI.create(queryUrl);
