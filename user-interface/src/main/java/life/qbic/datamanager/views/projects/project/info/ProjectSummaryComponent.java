@@ -468,7 +468,7 @@ public class ProjectSummaryComponent extends PageArea {
         .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
         .findFirst();
     if (oidcType.isPresent()) {
-      String oidcUrl = String.format(oidcType.get().getUrl()) + contact.oidc();
+      String oidcUrl = oidcType.get().getUrlFor(contact.oidc());
       Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType.get());
