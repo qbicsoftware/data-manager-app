@@ -279,6 +279,6 @@ Deletion of a resource or sub-resource shall be possible with the resource ID or
 and its sub-resource local ID.
 
 For example an `Experimental Group 1` in an `Experiment X` for `Project A` should be deletable by the client by e.g. calling `delete(ExperimentalGroupDeletionRequest request)`. The combination of project ID, experiment ID and experimental group ID ensures the
-identity of the resource manipulation,
+identity of the resource manipulation. Each request is transactional for the resource.
 
 
