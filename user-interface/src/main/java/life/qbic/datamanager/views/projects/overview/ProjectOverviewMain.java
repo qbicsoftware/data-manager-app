@@ -172,10 +172,9 @@ public class ProjectOverviewMain extends Main {
   private void createProject(ConfirmEvent confirmEvent) {
     Funding funding = null;
     ProjectCreationInformation projectCreationInformation = confirmEvent.projectCreationInformation();
-    if (projectCreationInformation.getFundingEntry().isPresent()) {
-      funding = projectCreationInformation.getFundingEntry()
-          .map(fundingEntry -> Funding.of(fundingEntry.getLabel(), fundingEntry.getReferenceId()))
-          .orElse(null);
+    if (!projectCreationInformation.fundingEntry().isEmpty()) {
+      funding = Funding.of(projectCreationInformation.fundingEntry().getLabel(),
+          projectCreationInformation.fundingEntry().getReferenceId());
     }
     ProjectDesign projectDesign = projectCreationInformation.projectDesign();
     ProjectCollaborators projectCollaborators = projectCreationInformation.projectCollaborators();

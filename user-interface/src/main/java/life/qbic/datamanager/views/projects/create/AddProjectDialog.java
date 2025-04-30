@@ -17,10 +17,8 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import life.qbic.datamanager.views.general.HasBinderValidation;
 import life.qbic.datamanager.views.general.QbicDialog;
 import life.qbic.datamanager.views.general.Stepper;
@@ -64,7 +62,6 @@ public class AddProjectDialog extends QbicDialog {
 
   private final Map<String, Component> stepContent;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
-  private final ProjectCreationInformation projectCreationInformation;
 
   private StepIndicator addStep(Stepper stepper, String label, Component layout) {
     stepContent.put(label, layout);
@@ -78,7 +75,6 @@ public class AddProjectDialog extends QbicDialog {
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
 
-    this.projectCreationInformation = new ProjectCreationInformation();
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
@@ -157,22 +153,23 @@ public class AddProjectDialog extends QbicDialog {
   }
 
   private void onConfirmClicked(ClickEvent<Button> event) {
-    if(projectDesignLayout.validate().isInvalid()){
+    if (projectDesignLayout.validate().isInvalid()) {
       return;
     }
-    projectCreationInformation.setProjectDesign(projectDesignLayout.getProjectDesign());
-    if(fundingInformationLayout.validate().isInvalid()){
+    if (fundingInformationLayout.validate().isInvalid()) {
       return;
     }
-    projectCreationInformation.setFundingEntry(fundingInformationLayout.getFundingInformation());
-    if(collaboratorsLayout.isInvalid()){
+    if (collaboratorsLayout.isInvalid()) {
       return;
     }
-    projectCreationInformation.setProjectCollaborators(collaboratorsLayout.getProjectCollaborators());
     if (experimentalInformationLayout.validate().isInvalid()) {
-        return;
+      return;
     }
-    fireEvent(new ConfirmEvent(this, projectCreationInformation, experimentalInformationLayout.getExperimentalInformation(), true));
+    fireEvent(new ConfirmEvent(this,
+        new ProjectCreationInformation(projectDesignLayout.getProjectDesign(),
+            fundingInformationLayout.getFundingInformation(),
+            collaboratorsLayout.getProjectCollaborators()),
+        experimentalInformationLayout.getExperimentalInformation(), true));
   }
 
   private void onNextClicked(ClickEvent<Button> event) {
@@ -303,75 +300,8 @@ public class AddProjectDialog extends QbicDialog {
    * <b>Project Creation Information</b>
    *
    * <p>Down to earth project info data container.</p>
-   *
    */
-  public static final class ProjectCreationInformation implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -3282474018583338789L;
-
-    private ProjectDesign projectDesign;
-    private FundingEntry fundingEntry;
-    private ProjectCollaborators projectCollaborators;
-
-    public ProjectDesign projectDesign() {
-      return projectDesign;
-    }
-
-    public void setProjectDesign(
-        ProjectDesign projectDesign) {
-      this.projectDesign = projectDesign;
-    }
-
-    public Optional<FundingEntry> getFundingEntry() {
-      if (fundingEntry == null || fundingEntry.isEmpty()) {
-        return Optional.empty();
-      }
-      return Optional.ofNullable(fundingEntry);
-    }
-
-    public void setFundingEntry(FundingEntry fundingEntry) {
-      this.fundingEntry = fundingEntry;
-    }
-
-    public ProjectCollaborators projectCollaborators() {
-      return projectCollaborators;
-    }
-
-    public void setProjectCollaborators(
-        ProjectCollaborators projectCollaborators) {
-      this.projectCollaborators = projectCollaborators;
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (!(o instanceof ProjectCreationInformation that)) {
-        return false;
-      }
-
-      return projectDesign.equals(that.projectDesign) && fundingEntry.equals(that.fundingEntry)
-          && projectCollaborators.equals(that.projectCollaborators);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = projectDesign.hashCode();
-      result = 31 * result + fundingEntry.hashCode();
-      result = 31 * result + projectCollaborators.hashCode();
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return "ProjectInformation{" +
-          "fundingEntry=" + fundingEntry +
-          ", projectDesign=" + projectDesign +
-          ", projectCollaborators=" + projectCollaborators +
-          '}';
-    }
+  public record ProjectCreationInformation(ProjectDesign projectDesign, FundingEntry fundingEntry,
+                                           ProjectCollaborators projectCollaborators) {
   }
 }
