@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
     `responsibePersonOidc`            varchar(255) DEFAULT NULL,
     `responsibePersonOidcIssuer`      varchar(255) DEFAULT NULL,
+    `version` int NOT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
