@@ -81,8 +81,8 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `projectManagerOidcIssuer`        varchar(255) DEFAULT NULL,
     `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
-    `responsibePersonOidc`            varchar(255) DEFAULT NULL,
-    `responsibePersonOidcIssuer`      varchar(255) DEFAULT NULL,
+    `responsiblePersonOidc`       varchar(255) DEFAULT NULL,
+    `responsiblePersonOidcIssuer` varchar(255) DEFAULT NULL,
     `version` int NOT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
