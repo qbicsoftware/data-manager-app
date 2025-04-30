@@ -8,6 +8,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
+import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.contact.BoundContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.general.contact.ContactField;
@@ -79,7 +80,7 @@ public class CollaboratorsLayout extends Div {
         projectCollaborators.setResponsiblePerson(responsibleBinding.getValue());
       }
     } catch (ValidationException e) {
-      throw new RuntimeException("Tried to access invalid project collaborators.", e);
+      throw new ApplicationException("Tried to access invalid project collaborators.", e);
     }
     return projectCollaborators;
   }
