@@ -129,7 +129,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     url += "+AND+family-name:*"; //require a family name to be present
 
     //We want to enable the user to enter a query with spaces (e.g. searching for John Doe), so we need to sanitize the query string
-    String sanitizedQuery = query.trim().replaceAll("\\s+", "+AND+");
+    String sanitizedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
     var queryUrl = String.format(url, offset, limit, sanitizedQuery);
     URI uri;
     try {
