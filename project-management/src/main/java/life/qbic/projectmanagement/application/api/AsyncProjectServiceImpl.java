@@ -347,53 +347,39 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Flux<OntologyTerm> getTerms(String value, int offset, int limit) {
-    return Flux.defer(() -> {
-      try {
-        return Flux.fromIterable(terminologyService.search(value, offset, limit))
-            .map(AsyncProjectServiceImpl::convertToApi);
-      } catch (Exception e) {
-        log.error("Error searching for term " + value, e);
-        return Flux.error(new RequestFailedException("Error searching for term " + value));
-      }
-    }).subscribeOn(scheduler);
+    return Flux.defer(() -> Flux.fromIterable(terminologyService.search(value, offset, limit)))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for term " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for term " + value))
+        .subscribeOn(scheduler);
   }
 
   @Override
   public Mono<OntologyTerm> getTermWithCurie(Curie value) {
-    return Mono.defer(() -> {
-      try {
-        return Mono.justOrEmpty(terminologyService.findByCurie(value.toString()))
-            .map(AsyncProjectServiceImpl::convertToApi);
-      } catch (Exception e) {
-        log.error("Error searching for term " + value, e);
-        return Mono.error(new RequestFailedException("Error searching for term " + value));
-      }
-    }).subscribeOn(scheduler);
+    return Mono.defer(() -> Mono.justOrEmpty(terminologyService.findByCurie(value.toString())))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for term " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for term " + value))
+        .subscribeOn(scheduler);
   }
 
   @Override
   public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting) {
-    return Flux.defer(() -> {
-      try {
-        return Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting))
-            .map(AsyncProjectServiceImpl::convertToApi);
-      } catch (Exception e) {
-        log.error("Error searching for taxa " + value, e);
-        return Flux.error(new RequestFailedException("Error searching for taxa " + value));
-      }
-    }).subscribeOn(scheduler);
+    return Flux.defer(
+            () -> Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting)))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for taxa " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for taxa " + value))
+        .subscribeOn(scheduler);
   }
 
   @Override
   public Mono<OntologyTerm> getTaxonWithCurie(Curie value) {
-    return Mono.defer(() -> {
-      try {
-        return Mono.justOrEmpty(taxaService.findByCURI(value.toString())).map(AsyncProjectServiceImpl::convertToApi);
-      } catch (Exception e) {
-        log.error("Error searching for taxa " + value, e);
-        return Mono.error(new RequestFailedException("Error searching for taxa " + value));
-      }
-    }).subscribeOn(scheduler);
+    return Mono.defer(() -> Mono.justOrEmpty(taxaService.findByCURI(value.toString())))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for taxa " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for taxa " + value))
+        .subscribeOn(scheduler);
   }
 
   @Override
@@ -667,7 +653,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
     var variableAdditions = experimentalVariableAdditions.experimentalVariables().stream()
         .map(experimentalVariable -> new ExperimentalVariableAddition(experimentalVariable.name(),
-            experimentalVariable.unit(), List.copyOf(experimentalVariable.levels())))
+            experimentalVariable.unit(), java.util.List.copyOf(experimentalVariable.levels())))
         .toList();
 
     return applySecurityContext(Mono.fromSupplier(
