@@ -64,11 +64,11 @@ classDiagram
 ### Creating a sub-resource
 Creating a sub-resource that are in a many-to-one relationship with their parent resource should be made easy.
 
-For example, creating an `Example Group` for an existing `Experiment` shall be a no-brainer. Therefore, it is 
+For example, creating an `Experimental Group` for an existing `Experiment` shall be a no-brainer. Therefore, it is 
 adviced that the API provides semantically matching request objects for these tasks, that contain
 the required identifiers to enable the service to create these resource enrichments.
 
-For example, the method call for creating a new `Example Group` could be `create(ExperimentGroupCreationRequest request)` and the request
+For example, the method call for creating a new `Experimental Group` could be `create(ExperimentGroupCreationRequest request)` and the request
 contains the required IDs to enable the service to perform the task.
 
 ```mermaid
@@ -155,7 +155,7 @@ title: Get Experiments Example
 ---
 classDiagram
     class AsyncProjectService {
-        Flux~ExperimentInformation~ getExperiment(String projectId, String experimentId)
+        Flux~ExperimentInformation~ getExperiments(String projectId, String experimentId)
     }
     <<interface>> AsyncProjectService
 ```
