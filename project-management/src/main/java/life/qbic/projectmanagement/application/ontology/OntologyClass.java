@@ -102,6 +102,10 @@ public class OntologyClass {
     this.classIri = classIri;
   }
 
+  public String oboId() {
+    return curie.replace("_", ":");
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

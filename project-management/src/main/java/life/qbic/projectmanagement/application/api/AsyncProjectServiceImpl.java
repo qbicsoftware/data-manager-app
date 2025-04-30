@@ -9,8 +9,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -31,9 +31,11 @@ import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.ontology.OntologyClass;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
@@ -78,6 +80,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final SampleValidationService sampleValidationService;
   private final MeasurementValidationService measurementValidationService;
   private final ExperimentInformationService experimentInformationService;
+  private final TerminologyService terminologyService;
+  private final SpeciesLookupService taxaService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -87,8 +91,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired TemplateService templateService,
       @Autowired SampleValidationService sampleValidationService,
       @Autowired MeasurementValidationService measurementValidationService,
-      @Autowired ExperimentInformationService experimentInformationService
-  ) {
+      @Autowired ExperimentInformationService experimentInformationService,
+      @Autowired TerminologyService termService,
+      @Autowired SpeciesLookupService taxaService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -97,6 +102,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.sampleValidationService = Objects.requireNonNull(sampleValidationService);
     this.measurementValidationService = Objects.requireNonNull(measurementValidationService);
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
+    this.terminologyService = Objects.requireNonNull(termService);
+    this.taxaService = Objects.requireNonNull(taxaService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -111,9 +118,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private static OntologyTerm convertToApi(
       life.qbic.projectmanagement.domain.model.OntologyTerm term) {
-    return new OntologyTerm(term.getLabel(), Curie.parse(term.oboId().toString()),
-        URI.create(term.getOntologyIri()));
+    return new OntologyTerm(term.getLabel(), term.getDescription(),
+        Curie.parse(term.oboId().toString()),
+        URI.create(term.getClassIri()), term.getOntologyAbbreviation());
   }
+
+  private static OntologyTerm convertToApi(OntologyClass term) {
+    return new OntologyTerm(term.getClassLabel(), term.getDescription(),
+        Curie.parse(term.oboId()), URI.create(term.getClassIri()),
+        term.getOntologyAbbreviation());
+  }
+
 
   @Override
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
@@ -257,7 +272,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         contactPoints);
   }
 
-
   @Override
   public Flux<SamplePreview> getSamplePreviews(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
@@ -332,6 +346,43 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Flux<OntologyTerm> getTerms(String value, int offset, int limit) {
+    return Flux.defer(() -> Flux.fromIterable(terminologyService.search(value, offset, limit)))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for term " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for term " + value))
+        .subscribeOn(scheduler);
+  }
+
+  @Override
+  public Mono<OntologyTerm> getTermWithCurie(Curie value) {
+    return Mono.defer(() -> Mono.justOrEmpty(terminologyService.findByCurie(value.toString())))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for term " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for term " + value))
+        .subscribeOn(scheduler);
+  }
+
+  @Override
+  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting) {
+    return Flux.defer(
+            () -> Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting)))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for taxa " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for taxa " + value))
+        .subscribeOn(scheduler);
+  }
+
+  @Override
+  public Mono<OntologyTerm> getTaxonWithCurie(Curie value) {
+    return Mono.defer(() -> Mono.justOrEmpty(taxaService.findByCURI(value.toString())))
+        .map(AsyncProjectServiceImpl::convertToApi)
+        .doOnError(e -> log.error("Error searching for taxa " + value, e))
+        .onErrorMap(e -> new RequestFailedException("Error searching for taxa " + value))
+        .subscribeOn(scheduler);
+  }
+
+  @Override
   public Mono<DigitalObject> sampleRegistrationTemplate(String projectId, String experimentId,
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -348,7 +399,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId, mimeType)))
+        () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId, mimeType)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext));
   }
@@ -358,7 +409,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> templateService.sampleInformationTemplate(projectId, experimentId, mimeType)))
+        () -> templateService.sampleInformationTemplate(projectId, experimentId, mimeType)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext));
   }
@@ -403,8 +454,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
    * @param securityApplicant
    * @param serviceCallable
    * @param converter
-   * @return a {@link Mono} containing the
-   * {@link ValidationResponse}
+   * @return a {@link Mono} containing the {@link ValidationResponse}
    */
   private Mono<ValidationResponse> validateMetadata(
       UnaryOperator<Mono<ValidationResponse>> securityApplicant,
@@ -419,8 +469,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -430,8 +480,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -440,8 +490,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MeasurementRegistrationInformationNGS registration, String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validateNGS(registration, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validateNGS(registration, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -450,8 +500,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MeasurementUpdateInformationNGS update, String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-                () -> measurementValidationService.validateNGS(update, ProjectId.parse(projectId)))
-            .map(validationResult -> new ValidationResponse(requestId, validationResult)))
+            () -> measurementValidationService.validateNGS(update, ProjectId.parse(projectId)))
+        .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
@@ -552,14 +602,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     });
   }
 
-  public static class ExperimentNotFoundException extends RuntimeException {
-
-    public ExperimentNotFoundException(String message) {
-      super(message);
-    }
-  }
-
-
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
       FundingDeletion target) {
     return Mono.defer(() -> {
@@ -611,7 +653,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
     var variableAdditions = experimentalVariableAdditions.experimentalVariables().stream()
         .map(experimentalVariable -> new ExperimentalVariableAddition(experimentalVariable.name(),
-            experimentalVariable.unit(), List.copyOf(experimentalVariable.levels())))
+            experimentalVariable.unit(), java.util.List.copyOf(experimentalVariable.levels())))
         .toList();
 
     return applySecurityContext(Mono.fromSupplier(
@@ -630,7 +672,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         ).subscribeOn(scheduler);
   }
 
-
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
       ProjectDesign design) {
     return
@@ -648,6 +689,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
               }
             }
         );
+  }
+
+  public static class ExperimentNotFoundException extends RuntimeException {
+
+    public ExperimentNotFoundException(String message) {
+      super(message);
+    }
   }
 
 }
