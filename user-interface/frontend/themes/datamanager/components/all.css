@@ -279,7 +279,15 @@ Dialog flavours
 
 .dialog-medium {}
 
+.dialog-medium .button {
+  height: var(--lumo-size-m);
+}
+
 .dialog-large {}
+
+.dialog-large .button {
+  height: var(--lumo-size-l);
+}
 
 .dialog-small::part(overlay) {
   width: var(--dialog-width-small);
@@ -366,15 +374,6 @@ Buttons
   color: var(--lumo-primary-contrast-color);
   background-color: var(--lumo-primary-color);
 }
-
-.button-size-dialog-medium {
-  height: var(--lumo-size-m);
-}
-
-.button-size-dialog-large {
-  height: var(--lumo-size-l);
-}
-
 
 /***************************
 Icons
