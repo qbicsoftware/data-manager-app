@@ -70,13 +70,19 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `lastModified`                      datetime(6)  NOT NULL,
     `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
     `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
+    `principalInvestigatorOidc`       varchar(255) DEFAULT NULL,
+    `principalInvestigatorOidcIssuer` varchar(255) DEFAULT NULL,
     `projectCode`                       varchar(255)  DEFAULT NULL,
     `objective`                         varchar(2000) DEFAULT NULL,
     `projectTitle`                      varchar(255)  DEFAULT NULL,
     `projectManagerEmailAddress`        varchar(255)  DEFAULT NULL,
     `projectManagerFullName`            varchar(255)  DEFAULT NULL,
+    `projectManagerOidc`              varchar(255) DEFAULT NULL,
+    `projectManagerOidcIssuer`        varchar(255) DEFAULT NULL,
     `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
+    `responsibePersonOidc`            varchar(255) DEFAULT NULL,
+    `responsibePersonOidcIssuer`      varchar(255) DEFAULT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
