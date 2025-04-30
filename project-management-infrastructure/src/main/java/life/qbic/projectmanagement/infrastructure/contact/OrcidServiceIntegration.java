@@ -53,10 +53,13 @@ public class OrcidServiceIntegration implements PersonSelect {
       @Value("${qbic.external-service.person-search.orcid.client-id}") String clientID,
       @Value("${qbic.external-service.person-search.orcid.client-secret}") String clientSecret,
       @Value("${qbic.external-service.person-search.orcid.token-uri}") String tokenEndpoint,
-      @Value("${qbic.external-service.person-search.orcid.extended-search-uri}") String paginatedQuery) {
+      @Value("${qbic.external-service.person-search.orcid.extended-search-uri}") String paginatedQuery,
+      @Value("${qbic.external-service.person-search.orcid.scope}") String scope,
+      @Value("${qbic.external-service.person-search.orcid.grant-type}") String grantType) {
     this.paginatedQuery = paginatedQuery;
     httpClient = createHttpClient();
-    var authResponse = authenticate(httpClient, clientID, clientSecret, tokenEndpoint);
+    var authResponse = authenticate(httpClient, clientID, clientSecret, tokenEndpoint, scope,
+        grantType);
     this.refreshToken = authResponse.refresh_token();
     this.token = authResponse.access_token();
   }
@@ -68,10 +71,9 @@ public class OrcidServiceIntegration implements PersonSelect {
   }
 
   private static AuthResponse authenticate(HttpClient client, String clientID, String clientSecret,
-      String tokenEndpoint) {
+      String tokenEndpoint, String scope, String grantType) {
     var params = Map.of("client_id", clientID, "client_secret", clientSecret, "scope",
-        "/read-public", "grant_type", "client_credentials");
-
+        scope, "grant_type", grantType);
     String form = params.entrySet().stream()
         .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
             URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
@@ -103,7 +105,7 @@ public class OrcidServiceIntegration implements PersonSelect {
   private static OrcidEntry convert(OrcidRecord orcidRecord) {
     var emailList = Arrays.stream(orcidRecord.email()).toList();
     //We want to show the full name meaning first and last name in a human readable format, ensuring that no trailing whitespaces are added
-    var fullName = orcidRecord.givenName() + " " + orcidRecord.familyName().trim();
+    var fullName = orcidRecord.givenName().trim() + " " + orcidRecord.familyName().trim();
     var orcid = orcidRecord.orcidID();
     //If an orcid record does not contain a name or email it is considered invalid and will not be considered further
     if (orcid.isBlank()) {
@@ -115,7 +117,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     if (emailList.isEmpty()) {
       return null;
     }
-    var email = emailList.stream().findFirst().orElse("");
+    var email = emailList.stream().findFirst().orElseThrow();
     return new OrcidEntry(fullName, email, orcid, OIDC_ISSUER);
   }
 
