@@ -3,11 +3,6 @@ package life.qbic.datamanager.views.projects.create;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.binder.ValidationException;
-import jakarta.validation.constraints.NotEmpty;
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.general.contact.BoundContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
@@ -66,23 +61,22 @@ public class CollaboratorsLayout extends Div {
   }
 
   /**
-   * Returns the project design. Fails for invalid designs with an exception.
+   * Returns the project collaborators. Fails for invalid collaborators with an exception.
    *
    * @return a valid project design
    */
   public ProjectCollaborators getProjectCollaborators() {
-    ProjectCollaborators projectCollaborators = new ProjectCollaborators();
     try {
-      projectCollaborators.setProjectManager(managerBinding.getValue());
-      projectCollaborators.setPrincipalInvestigator(investigatorBinding.getValue());
       //Necessary since otherwise an empty contact will be generated, which will fail during project creation in the application service
+      Contact responsiblePerson = Contact.empty();
       if (responsibleBinding.getValue().hasMinimalInformation()) {
-        projectCollaborators.setResponsiblePerson(responsibleBinding.getValue());
+        responsiblePerson = responsibleBinding.getValue();
       }
+      return new ProjectCollaborators(investigatorBinding.getValue(), responsiblePerson,
+          managerBinding.getValue());
     } catch (ValidationException e) {
       throw new ApplicationException("Tried to access invalid project collaborators.", e);
     }
-    return projectCollaborators;
   }
 
   /**
@@ -96,76 +90,8 @@ public class CollaboratorsLayout extends Div {
         && responsibleBinding.isValid());
   }
 
-  public static final class ProjectCollaborators implements Serializable {
+  public record ProjectCollaborators(Contact principalInvestigator, Contact responsiblePerson,
+                                     Contact projectManager) {
 
-    @Serial
-    private static final long serialVersionUID = 8403602920219892326L;
-    @NotEmpty
-    private Contact principalInvestigator;
-    private Contact responsiblePerson;
-    @NotEmpty
-    private Contact projectManager;
-
-    public Contact getPrincipalInvestigator() {
-      return principalInvestigator;
-    }
-
-    public void setPrincipalInvestigator(
-        Contact principalInvestigator) {
-      this.principalInvestigator = principalInvestigator;
-    }
-
-    public Optional<Contact> getResponsiblePerson() {
-      return Optional.ofNullable(responsiblePerson);
-    }
-
-    public void setResponsiblePerson(Contact responsiblePerson) {
-      this.responsiblePerson = responsiblePerson;
-    }
-
-    public Contact getProjectManager() {
-      return projectManager;
-    }
-
-    public void setProjectManager(Contact projectManager) {
-      this.projectManager = projectManager;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      ProjectCollaborators that = (ProjectCollaborators) o;
-
-      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
-        return false;
-      }
-      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
-        return false;
-      }
-      return (!Objects.equals(projectManager, that.projectManager));
-    }
-
-    @Override
-    public int hashCode() {
-      int result = principalInvestigator.hashCode();
-      result = 31 * result + responsiblePerson.hashCode();
-      result = 31 * result + projectManager.hashCode();
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return "ProjectCollaborators{" +
-          "principalInvestigator=" + principalInvestigator +
-          ", responsiblePerson=" + responsiblePerson +
-          ", projectManager=" + projectManager +
-          '}';
-    }
   }
 }

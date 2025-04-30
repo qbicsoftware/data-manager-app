@@ -20,7 +20,6 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.datamanager.views.general.Main;
-import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
@@ -41,6 +40,7 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
+import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -172,21 +172,25 @@ public class ProjectOverviewMain extends Main {
   private void createProject(ConfirmEvent confirmEvent) {
     Funding funding = null;
     ProjectCreationInformation projectCreationInformation = confirmEvent.projectCreationInformation();
-    if (!projectCreationInformation.fundingEntry().isEmpty()) {
+    if (projectCreationInformation.fundingEntry() != null
+        && !projectCreationInformation.fundingEntry().isEmpty()) {
       funding = Funding.of(projectCreationInformation.fundingEntry().getLabel(),
           projectCreationInformation.fundingEntry().getReferenceId());
     }
     ProjectDesign projectDesign = projectCreationInformation.projectDesign();
     ProjectCollaborators projectCollaborators = projectCreationInformation.projectCollaborators();
+    Contact responsiblePerson = null;
+    if (projectCollaborators.responsiblePerson().hasMinimalInformation()) {
+      responsiblePerson = projectCollaborators.responsiblePerson().toDomainContact();
+    }
     Result<Project, ApplicationException> project = projectCreationService.createProject(
         projectDesign.getOfferId(),
         projectDesign.getProjectCode(),
         projectDesign.getProjectTitle(),
         projectDesign.getProjectObjective(),
-        projectCollaborators.getPrincipalInvestigator().toDomainContact(),
-        projectCollaborators.getResponsiblePerson()
-            .map(Contact::toDomainContact).orElse(null),
-        projectCollaborators.getProjectManager().toDomainContact(),
+        projectCollaborators.principalInvestigator().toDomainContact(),
+        responsiblePerson,
+        projectCollaborators.projectManager().toDomainContact(),
         funding);
     handleResultProject(project, confirmEvent);
     ExperimentalInformation experimentalInformation = confirmEvent.experimentalInformation();
