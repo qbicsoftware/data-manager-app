@@ -271,7 +271,7 @@ To enable clients to update a certain sub-resource, a combination of the parent 
 ID of the sub-resource is required.
 
 For example to update an `Experimental Group` of an `Experiment`, the API shall provide a method like `update(ExperimentalGroupUpdateRequest request)`. The object request needs to provide
-the required IDs to ensure that the service can perform the task.
+the required IDs to ensure that the service can perform the task. Each request is transactional for the resource.
 
 ## Delete Example
 
