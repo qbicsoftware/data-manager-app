@@ -18,13 +18,11 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 public class QbicOidcUser extends DefaultOidcUser {
 
   private final transient QbicUserInfo qbicUserInfo;
-  private final String originalAuthName;
 
   public QbicOidcUser(Collection<? extends GrantedAuthority> authorities, OidcIdToken idToken,
       OidcUserInfo userInfo, QbicUserInfo qbicUserInfo) {
     super(authorities, idToken, userInfo);
     this.qbicUserInfo = requireNonNull(qbicUserInfo, "qbicUserInfo must not be null");
-    this.originalAuthName = super.getName();
   }
 
   @Override
@@ -67,21 +65,17 @@ public class QbicOidcUser extends DefaultOidcUser {
   public String getName() {
     return qbicUserInfo.userId(); //needed for ACL permission checks
   }
-
   public String getOidcId() {
-    return Optional.ofNullable(originalAuthName).orElse(qbicUserInfo.oidc());
+    return super.getName();
   }
 
   public String getOidcIssuer() {
-    return Optional.ofNullable(super.getIssuer().toString()).orElse(qbicUserInfo.oidcIssuer());
+    return super.getIssuer().toString();
   }
-
   public boolean isActive() {
     return qbicUserInfo.active();
   }
 
-  public record QbicUserInfo(String userId, String fullName, String email, boolean active,
-                             String oidc, String oidcIssuer) {
-
+  public record QbicUserInfo(String userId, String fullName, String email, boolean active) {
   }
 }
