@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -35,15 +36,15 @@ import org.springframework.stereotype.Service;
  *
  * <p>Implementation for the {@link PersonSelect} interface.
  *
- * <p>Integrates the Orcid Service API Endpoint to support querying for publicly available orcid information
- *
+ * <p>Integrates the Orcid Service API Endpoint to support querying for publicly available orcid
+ * information
  */
 @Service
 public class OrcidServiceIntegration implements PersonSelect {
 
   private static final Logger log = logger(OrcidServiceIntegration.class);
-  private final String paginatedQuery;
   private static final String OIDC_ISSUER = "https://orcid.org";
+  private final String searchEndpoint;
   private final String token;
   private final String refreshToken;
   private final HttpClient httpClient;
@@ -53,10 +54,10 @@ public class OrcidServiceIntegration implements PersonSelect {
       @Value("${qbic.external-service.person-search.orcid.client-id}") String clientID,
       @Value("${qbic.external-service.person-search.orcid.client-secret}") String clientSecret,
       @Value("${qbic.external-service.person-search.orcid.token-uri}") String tokenEndpoint,
-      @Value("${qbic.external-service.person-search.orcid.extended-search-uri}") String paginatedQuery,
+      @Value("${qbic.external-service.person-search.orcid.extended-search-uri}") String searchEndpoint,
       @Value("${qbic.external-service.person-search.orcid.scope}") String scope,
       @Value("${qbic.external-service.person-search.orcid.grant-type}") String grantType) {
-    this.paginatedQuery = paginatedQuery;
+    this.searchEndpoint = searchEndpoint;
     httpClient = createHttpClient();
     var authResponse = authenticate(httpClient, clientID, clientSecret, tokenEndpoint, scope,
         grantType);
@@ -104,36 +105,54 @@ public class OrcidServiceIntegration implements PersonSelect {
 
   private static OrcidEntry convert(OrcidRecord orcidRecord) {
     var emailList = Arrays.stream(orcidRecord.email()).toList();
-    //We want to show the full name meaning first and last name in a human readable format, ensuring that no trailing whitespaces are added
-    var fullName = orcidRecord.givenName().trim() + " " + orcidRecord.familyName().trim();
-    var orcid = orcidRecord.orcidID();
-    //If an orcid record does not contain a name or email it is considered invalid and will not be considered further
-    if (orcid.isBlank()) {
+    if (orcidRecord.orcidID() == null || orcidRecord.orcidID().isEmpty()) {
       return null;
     }
-    if (fullName.isBlank()) {
+    if (orcidRecord.givenName() == null || orcidRecord.givenName().isEmpty()) {
       return null;
     }
     if (emailList.isEmpty()) {
       return null;
     }
+    //The family Name is not required by orcid, so we have to account for the possibility it's not provided
+    String familyName = "";
+    if (orcidRecord.familyName() != null && !orcidRecord.familyName().isEmpty()) {
+      familyName = orcidRecord.familyName().trim();
+    }
+    //We want to show the full name meaning first and last name in a human readable format, ensuring that no trailing whitespaces are added
+    var fullName = orcidRecord.givenName().trim() + " " + familyName;
+    var orcid = orcidRecord.orcidID();
+    //If an orcid record does not contain a name or email it is considered invalid and will not be considered further
     var email = emailList.stream().findFirst().orElseThrow();
     return new OrcidEntry(fullName, email, orcid, OIDC_ISSUER);
   }
 
+  private static String buildQueryUrl(String query, int limit, int offset) {
+    String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
+    String queryChainSymbol = "&";
+    Map<String, String> paginationParameters = Map.of("rows", String.valueOf(limit), "start",
+        String.valueOf(offset));
+    StringBuilder queryBuilder = new StringBuilder("?");
+    for (Entry<String, String> entry : paginationParameters.entrySet()) {
+      queryBuilder.append(entry.getKey()).append("=")
+          .append(entry.getValue())
+          .append(queryChainSymbol);
+    }
+    Map<String, String> additionalParameters = Map.of("email", "*", "given-names", "*",
+        "family-name", "*");
+    String combinedAdditionalParameters = URLEncoder.encode(additionalParameters.entrySet().stream()
+        .map(entry -> entry.getKey() + ":" + entry.getValue())
+        .collect(Collectors.joining(" & ")), StandardCharsets.UTF_8);
+    return queryBuilder.append("q=").append(encodedQuery).append("&")
+        .append(combinedAdditionalParameters).toString();
+  }
+
   @Override
   public List<OrcidEntry> findAll(String query, int limit, int offset) {
-    String url = paginatedQuery;
-    url += "+AND+email:*"; //require an email to be present
-    url += "+AND+given-names:*"; //require a first name to be present
-    url += "+AND+family-name:*"; //require a family name to be present
-
-    //We want to enable the user to enter a query with spaces (e.g. searching for John Doe), so we need to sanitize the query string
-    String sanitizedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
-    var queryUrl = String.format(url, offset, limit, sanitizedQuery);
+    var urlWithEncodedQuery = searchEndpoint + "/" + buildQueryUrl(query, limit, offset);
     URI uri;
     try {
-      uri = URI.create(queryUrl);
+      uri = URI.create(urlWithEncodedQuery);
     } catch (IllegalArgumentException invalidQuery) {
       log.error(invalidQuery.getMessage(), invalidQuery);
       return List.of();
