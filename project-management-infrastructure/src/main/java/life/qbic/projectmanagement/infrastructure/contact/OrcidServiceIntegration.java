@@ -24,23 +24,24 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.contact.OrcidEntry;
-import life.qbic.projectmanagement.application.contact.PersonRepository;
+import life.qbic.projectmanagement.application.contact.PersonSelect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Orcid Service Integration</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation for the {@link PersonSelect} interface.
  *
- * @since <version tag>
+ * <p>Integrates the Orcid Service API Endpoint to support querying for publicly available orcid information
+ *
  */
-@Repository
-public class OrcidRepository implements PersonRepository {
+@Service
+public class OrcidServiceIntegration implements PersonSelect {
 
-  private static final Logger log = logger(OrcidRepository.class);
+  private static final Logger log = logger(OrcidServiceIntegration.class);
   private final String paginatedQuery;
   private static final String OIDC_ISSUER = "https://orcid.org";
   private final String token;
@@ -48,7 +49,7 @@ public class OrcidRepository implements PersonRepository {
   private final HttpClient httpClient;
 
   @Autowired
-  public OrcidRepository(
+  public OrcidServiceIntegration(
       @Value("${qbic.external-service.person-search.orcid.client-id}") String clientID,
       @Value("${qbic.external-service.person-search.orcid.client-secret}") String clientSecret,
       @Value("${qbic.external-service.person-search.orcid.token-uri}") String tokenEndpoint,
@@ -94,7 +95,7 @@ public class OrcidRepository implements PersonRepository {
         Thread.currentThread().interrupt();
       }
       log.error("Error sending orcid request", e);
-      throw new OrcidRepository.QueryException("Authentication failed", e);
+      throw new OrcidServiceIntegration.QueryException("Authentication failed", e);
     }
 
   }
@@ -169,7 +170,7 @@ public class OrcidRepository implements PersonRepository {
     }
     if (httpStatus != null && httpStatus.is2xxSuccessful()) {
       List<OrcidEntry> foundRecords = Arrays.stream(mapper.convertValue(value, OrcidRecord[].class))
-          .map(OrcidRepository::convert).toList();
+          .map(OrcidServiceIntegration::convert).toList();
       return foundRecords.stream()
           .filter(Objects::nonNull)
           .toList();

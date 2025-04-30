@@ -14,10 +14,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class PersonLookupService {
 
-  PersonRepository personRepository;
+  PersonSelect personSelect;
 
-  public PersonLookupService(@Autowired PersonRepository personRepository) {
-    this.personRepository = Objects.requireNonNull(personRepository);
+  public PersonLookupService(@Autowired PersonSelect personRepository) {
+    this.personSelect = Objects.requireNonNull(personRepository);
   }
 
   /**
@@ -36,7 +36,7 @@ public class PersonLookupService {
     if (filter.isBlank()) {
       return orcidEntries;
     }
-    orcidEntries.addAll(personRepository.findAll(filter, limit, offset));
+    orcidEntries.addAll(personSelect.findAll(filter, limit, offset));
     // the list must be modifiable for spring security to filter it
     return orcidEntries;
   }
