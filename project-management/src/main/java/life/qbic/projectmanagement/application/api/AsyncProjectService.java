@@ -294,7 +294,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Flux<OntologyTerm> searchTerm(String value, int offset, int limit);
+  Flux<OntologyTerm> getTerms(String value, int offset, int limit);
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
@@ -313,7 +313,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Mono<OntologyTerm> searchByCurie(Curie value);
+  Mono<OntologyTerm> getTermWithCurie(Curie value);
 
   /**
    * Requests a {@link Flux} of {@link OntologyTerm} for a given search value.
@@ -337,7 +337,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Flux<OntologyTerm> searchTaxa(String value, int offset, int limit, List<SortOrder> sorting);
+  Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting);
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
@@ -358,7 +358,7 @@ public interface AsyncProjectService {
    * @throws RequestFailedException if the request was not successfully executed
    * @since 1.10.0
    */
-  Mono<OntologyTerm> searchTaxonByCurie(Curie value);
+  Mono<OntologyTerm> getTaxonWithCurie(Curie value);
 
   /**
    * Submits multiple validation requests in a single service call.

@@ -346,7 +346,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<OntologyTerm> searchTerm(String value, int offset, int limit) {
+  public Flux<OntologyTerm> getTerms(String value, int offset, int limit) {
     return Flux.defer(() -> {
       try {
         return Flux.fromIterable(terminologyService.search(value, offset, limit))
@@ -359,7 +359,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<OntologyTerm> searchByCurie(Curie value) {
+  public Mono<OntologyTerm> getTermWithCurie(Curie value) {
     return Mono.defer(() -> {
       try {
         return Mono.justOrEmpty(terminologyService.findByCurie(value.toString()))
@@ -372,7 +372,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<OntologyTerm> searchTaxa(String value, int offset, int limit, List<SortOrder> sorting) {
+  public Flux<OntologyTerm> getTaxa(String value, int offset, int limit, List<SortOrder> sorting) {
     return Flux.defer(() -> {
       try {
         return Flux.fromIterable(taxaService.queryOntologyTerm(value, offset, limit, sorting))
@@ -385,7 +385,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Mono<OntologyTerm> searchTaxonByCurie(Curie value) {
+  public Mono<OntologyTerm> getTaxonWithCurie(Curie value) {
     return Mono.defer(() -> {
       try {
         return Mono.justOrEmpty(taxaService.findByCURI(value.toString())).map(AsyncProjectServiceImpl::convertToApi);

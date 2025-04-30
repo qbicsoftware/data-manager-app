@@ -26,11 +26,9 @@ import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.ToggleButton;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.OntologyTerm;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.Ontology;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -100,7 +98,7 @@ public class OntologyLookupComponent extends PageArea {
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .toList();
 
-      return asyncService.searchTaxa(searchTerm,
+      return asyncService.getTaxa(searchTerm,
           query.getOffset(),
           query.getLimit(), sortOrders).toStream();
     });
@@ -108,7 +106,7 @@ public class OntologyLookupComponent extends PageArea {
 
   private void setLazyDataProviderForOntologyGrid(Grid<AsyncProjectService.OntologyTerm> ontologyGrid) {
     ontologyGridLazyDataView = ontologyGrid.setItems(
-        query -> asyncService.searchTerm(searchTerm, query.getOffset(), query.getLimit())
+        query -> asyncService.getTerms(searchTerm, query.getOffset(), query.getLimit())
             .toStream().distinct());
   }
 
