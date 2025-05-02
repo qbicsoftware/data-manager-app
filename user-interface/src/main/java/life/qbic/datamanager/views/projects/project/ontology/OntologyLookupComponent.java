@@ -25,11 +25,10 @@ import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.ToggleButton;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.Ontology;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -53,16 +52,20 @@ public class OntologyLookupComponent extends PageArea {
   private final transient TerminologyService terminologyService;
   private final Span numberOfHitsInfo = new Span();
   private final transient SpeciesLookupService speciesTermLookupService;
-  private GridLazyDataView<OntologyTerm> ontologyGridLazyDataView;
+  private final ToggleButton speciesSearchToggleButton = ToggleButton.createWithLabel(
+      "I want to search for species");
+  private final transient AsyncProjectService asyncService;
+  private GridLazyDataView<AsyncProjectService.OntologyTerm> ontologyGridLazyDataView;
   private String searchTerm = "";
-  private final ToggleButton speciesSearchToggleButton = ToggleButton.createWithLabel("I want to search for species");
-  private Grid<OntologyTerm> searchGrid;
+  private Grid<AsyncProjectService.OntologyTerm> searchGrid;
 
   public OntologyLookupComponent(
       @Autowired SpeciesLookupService speciesTermLookupService, @Autowired
-  TerminologyService terminologyService) {
+      TerminologyService terminologyService,
+      @Autowired AsyncProjectService asyncProjectService) {
     this.speciesTermLookupService = Objects.requireNonNull(speciesTermLookupService);
     this.terminologyService = Objects.requireNonNull(terminologyService);
+    this.asyncService = Objects.requireNonNull(asyncProjectService);
 
     Span title = new Span("Ontology Search");
     title.addClassName("title");
@@ -89,33 +92,31 @@ public class OntologyLookupComponent extends PageArea {
     updateResultSection(ontologyGridLazyDataView.getItems().count());
   }
 
-  private void setSpeciesLazyDataProviderForOntologyGrid(Grid<OntologyTerm> searchGrid) {
+  private void setSpeciesLazyDataProviderForOntologyGrid(Grid<AsyncProjectService.OntologyTerm> searchGrid) {
     ontologyGridLazyDataView = searchGrid.setItems(query -> {
       List<SortOrder> sortOrders = query.getSortOrders().stream().map(
               it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.DESCENDING)))
           .toList();
-      return speciesTermLookupService.queryOntologyTerm(searchTerm,
+
+      return asyncService.getTaxa(searchTerm,
           query.getOffset(),
-          query.getLimit(),
-          List.copyOf(sortOrders)).stream().map(OntologyTerm::from);
+          query.getLimit(), sortOrders).toStream();
     });
   }
 
-  private void setLazyDataProviderForOntologyGrid(Grid<OntologyTerm> ontologyGrid) {
+  private void setLazyDataProviderForOntologyGrid(Grid<AsyncProjectService.OntologyTerm> ontologyGrid) {
     ontologyGridLazyDataView = ontologyGrid.setItems(
-        query -> terminologyService.search(searchTerm, query.getOffset(), query.getLimit())
-            .stream());
+        query -> asyncService.getTerms(searchTerm, query.getOffset(), query.getLimit())
+            .toStream().distinct());
   }
 
   private void initGridSection() {
     this.searchGrid = new Grid<>();
     searchGrid.setSelectionMode(SelectionMode.NONE);
     searchGrid.addComponentColumn(
-        ontologyClass -> new OntologyItem(ontologyClass.getLabel(),
-            ontologyClass.getOboId().replace("_", ":"),
-            ontologyClass.getClassIri(), ontologyClass.getDescription(),
-            Ontology.findOntologyByAbbreviation(ontologyClass.getOntologyAbbreviation())
-                .getName()));
+        term -> new OntologyItem(term.label(),
+            term.oboId().toString(),
+            term.id().toString(), term.description(), term.ontologyId()));
     searchGrid.addClassName("ontology-grid");
     searchGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
     setLazyDataProviderForOntologyGrid(searchGrid);
@@ -203,7 +204,7 @@ public class OntologyLookupComponent extends PageArea {
     }
 
     private Anchor createUrl(String ontologyURL) {
-      Anchor url = new Anchor(ontologyURL, ontologyURL,  AnchorTarget.BLANK);
+      Anchor url = new Anchor(ontologyURL, ontologyURL, AnchorTarget.BLANK);
       url.addClassName("url");
       return url;
     }

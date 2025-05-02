@@ -28,6 +28,8 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
+import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -54,6 +56,8 @@ class AsyncProjectServiceImplTest {
   ExperimentInformationService experimentInformationService = mock(ExperimentInformationService.class);
   ExperimentInformationService experimentInformationServiceMock = mock(
       ExperimentInformationService.class);
+  TerminologyService terminologyService = mock(TerminologyService.class);
+  SpeciesLookupService taxaService = mock(SpeciesLookupService.class);
 
   @BeforeEach
   void setUp() {
@@ -78,7 +82,9 @@ class AsyncProjectServiceImplTest {
         templateService,
         sampleValidationService,
         measurementValidationService,
-        experimentInformationServiceMock
+        experimentInformationServiceMock,
+        terminologyService,
+        taxaService
     );
 
     String projectId = UUID.randomUUID().toString();
@@ -116,7 +122,9 @@ class AsyncProjectServiceImplTest {
         templateService,
         sampleValidationService,
         measurementValidationService,
-        experimentInformationServiceMock
+        experimentInformationServiceMock,
+        terminologyService,
+        taxaService
     );
 
     String projectId = UUID.randomUUID().toString();
@@ -169,7 +177,9 @@ class AsyncProjectServiceImplTest {
         templateService,
         sampleValidationService,
         measurementValidationService,
-        experimentInformationService);
+        experimentInformationService,
+        terminologyService,
+        taxaService);
 
     String projectId = UUID.randomUUID().toString();
     String experimentId = UUID.randomUUID().toString();
