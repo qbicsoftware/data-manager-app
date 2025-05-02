@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import life.qbic.logging.api.Logger;
@@ -114,16 +115,12 @@ public class OrcidServiceIntegration implements PersonSelect {
     if (emailList.isEmpty()) {
       return null;
     }
-    //The family Name is not required by orcid, so we have to account for the possibility it's not provided
-    String familyName = "";
-    if (orcidRecord.familyName() != null && !orcidRecord.familyName().isEmpty()) {
-      familyName = orcidRecord.familyName().trim();
-    }
-    //We want to show the full name meaning first and last name in a human readable format, ensuring that no trailing whitespaces are added
-    var fullName = orcidRecord.givenName().trim() + " " + familyName;
+    //The family Name is not required by orcid
+    String familyName = Optional.ofNullable(orcidRecord.familyName()).orElse("");
+    var fullName = (orcidRecord.givenName().trim() + " " + familyName).trim();
     var orcid = orcidRecord.orcidID();
-    //If an orcid record does not contain a name or email it is considered invalid and will not be considered further
-    var email = emailList.stream().findFirst().orElseThrow();
+    var email = emailList.stream().findFirst()
+        .orElseThrow(); //cannot throw as isEmpty is checked before
     return new OrcidEntry(fullName, email, orcid, OIDC_ISSUER);
   }
 
