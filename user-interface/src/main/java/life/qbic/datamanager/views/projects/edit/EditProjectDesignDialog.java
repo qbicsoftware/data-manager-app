@@ -32,7 +32,7 @@ public class EditProjectDesignDialog extends DialogWindow {
 
   public EditProjectDesignDialog(ProjectInformation project) {
     super();
-    addClassName("large-dialog");
+    addClassName("dialog-small");
     var content = new Div();
     content.addClassName("vertical-list");
     setConfirmButtonLabel("Save");

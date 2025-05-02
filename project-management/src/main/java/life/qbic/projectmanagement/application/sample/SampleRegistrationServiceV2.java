@@ -76,7 +76,8 @@ public class SampleRegistrationServiceV2 {
 
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public CompletableFuture<Void> registerSamples(Collection<SampleRegistrationInformation> requests, ProjectId projectId, String batchName,
+  public CompletableFuture<Void> registerSamples(Collection<SampleRegistrationInformation> requests,
+      ProjectId projectId, String batchName,
       ExperimentReference experimentReference) throws RegistrationException {
 
     var validationResults = requests.stream().map(request -> validationService.validateNewSample(
@@ -94,10 +95,12 @@ public class SampleRegistrationServiceV2 {
     )).toList();
 
     // In case there is at least one invalid request, the process can finish exceptionally right here
-    validationResults.stream().filter(result -> result.validationResult().containsFailures()).findAny().ifPresent(result -> {
-      log.error("Sample registration failed: " + result.validationResult().failures());
-      throw new RegistrationException("Sample registration failed, there were invalid metadata provided.");
-    });
+    validationResults.stream().filter(result -> result.validationResult().containsFailures())
+        .findAny().ifPresent(result -> {
+          log.error("Sample registration failed: " + result.validationResult().failures());
+          throw new RegistrationException(
+              "Sample registration failed, there were invalid metadata provided.");
+        });
 
     var metadata = validationResults.stream().map(ValidationResultWithPayload::payload).toList();
 

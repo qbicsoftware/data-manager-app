@@ -45,11 +45,11 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleReg
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
-import life.qbic.projectmanagement.application.sample.SampleMetadata;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 
 public class RegisterSampleBatchDialog extends WizardDialogWindow {
+
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   private final List<SampleRegistrationInformation> validatedSampleMetadata;
@@ -135,7 +135,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
   private void handleAccessDeniedError() {
-    getUI().ifPresent(ui -> ui.access(() -> messageFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
+    getUI().ifPresent(ui -> ui.access(
+        () -> messageFactory.toast("access.denied.message", new Object[]{}, getLocale()).open()));
   }
 
   private static List<SampleInformationForNewSample> extractSampleInformationForNewSamples(
@@ -233,7 +234,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
 
-  private SampleRegistrationInformation convertToRegistration(SampleInformationForNewSample information,
+  private SampleRegistrationInformation convertToRegistration(
+      SampleInformationForNewSample information,
       String experimentId, String projectId) {
     return new SampleRegistrationInformation(
         information.sampleName(),
@@ -250,7 +252,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     );
   }
 
-  private Flux<ValidationResponse> executeValidation(List<SampleRegistrationInformation> registrations,
+  private Flux<ValidationResponse> executeValidation(
+      List<SampleRegistrationInformation> registrations,
       String projectId) {
     var requests = registrations.stream()
         .map(registration -> convertToRequest(registration, projectId));
@@ -284,7 +287,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       service.sampleRegistrationTemplate(projectId, experimentId,
           OPEN_XML).doOnSuccess(resource ->
           triggerDownload(resource,
-              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode, "sample metadata template",
+              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+                  "sample metadata template",
                   "xlsx")
           )).doOnError(this::handleError).subscribe();
     });

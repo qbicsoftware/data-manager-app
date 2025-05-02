@@ -64,7 +64,6 @@ import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MimeType;
-import reactor.core.publisher.SignalType;
 
 /**
  * Sample Information Main Component
@@ -220,7 +219,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
 
   private Consumer<DigitalObject> handleSuccess(String projectCode, String experimentName) {
     return resource -> getUI().ifPresent(ui -> ui.access(() -> {
-      messageFactory.toast("task.finished", new Object[]{"Preparation of sample information"}, getLocale()).open();
+      messageFactory.toast("task.finished", new Object[]{"Preparation of sample information"},
+          getLocale()).open();
       triggerDownload(resource,
           FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
               experimentName,
@@ -229,7 +229,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
     }));
   }
 
-  private Consumer<? super Subscription> showInProgress(String requestId, String preparingSampleInformation) {
+  private Consumer<? super Subscription> showInProgress(String requestId,
+      String preparingSampleInformation) {
     return subscriber -> getUI().ifPresent(ui -> ui.access(() -> {
       pendingTask = messageFactory.pendingTaskToast("task.in-progress",
           new Object[]{preparingSampleInformation}, getLocale());
@@ -317,9 +318,9 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
           getLocale());
       ui.access(pendingToast::open);
 
-
       CompletableFuture<Void> registrationTask = sampleRegistrationServiceV2
-          .registerSamples(sampleMetadata, projectId, event.batchName(), new ExperimentReference(experimentId.value()))
+          .registerSamples(sampleMetadata, projectId, event.batchName(),
+              new ExperimentReference(experimentId.value()))
           .orTimeout(5, TimeUnit.MINUTES);
       try {
         registrationTask

@@ -141,7 +141,8 @@ public class ProjectInformationService {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void manageProject(ProjectId projectId, ProjectContact contact) {
-    var projectContact = new Contact(contact.fullName(), contact.email());
+    var projectContact = new Contact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer());
     manageProject(projectId, projectContact);
   }
 
@@ -154,7 +155,8 @@ public class ProjectInformationService {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void investigateProject(ProjectId projectId, ProjectContact contact) {
-    var projectContact = new Contact(contact.fullName(), contact.email());
+    var projectContact = new Contact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer());
     investigateProject(projectId, projectContact);
   }
 
@@ -167,7 +169,8 @@ public class ProjectInformationService {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public void setResponsibility(ProjectId projectId, ProjectContact contact) {
-    var projectContact = new Contact(contact.fullName(), contact.email());
+    var projectContact = new Contact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer());
     setResponsibility(projectId, projectContact);
   }
 

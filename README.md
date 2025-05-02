@@ -233,7 +233,8 @@ Therefore, in order to be able to run the application, a keystore must be set-up
 
 #### Setup keystore
 
-Before the Java keystore can be referenced in Data Manager's configuration, it has to be created in the first place.
+Before the Java keystore can be referenced in Data Manager's configuration, it has to be created in
+the first place.
 
 You will need [keytool](https://docs.oracle.com/en/java/javase/11/tools/keytool.html) for this step.
 
@@ -245,7 +246,8 @@ Start the setup with a dummy entry for creation of a keystore file in PKSC12 for
 
 This secures the keystore with the `mysecretpassword` password. Change it to something only you have
 access and with
-Please choose a strong password. The application will fail for passwords with entropy below 100. The entropy of your password is calculated as follows
+Please choose a strong password. The application will fail for passwords with entropy below 100. The
+entropy of your password is calculated as follows
 
 $$
 H = -\sum_{i=1}^{n} P(x_i) \log_2 P(x_i) \times n > 100.,
@@ -271,7 +273,9 @@ Verify:
 ```bash
 keytool -list -keystore keystore.p12 -storetype PKCS12 -storepass mysecretpassword
 ```
+
 which should show something like:
+
 ```text
 Keystore type: PKCS12
 Keystore provider: SUN

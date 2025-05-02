@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static java.util.Objects.requireNonNull;
 import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
 import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import static life.qbic.logging.service.LoggerFactory.logger;
@@ -11,6 +12,7 @@ import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -62,6 +64,8 @@ import life.qbic.datamanager.views.general.funding.BoundFundingField;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
 import life.qbic.datamanager.views.general.funding.FundingField;
 import life.qbic.datamanager.views.general.funding.FundingInputForm;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
@@ -100,6 +104,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -135,6 +140,7 @@ public class ProjectSummaryComponent extends PageArea {
   private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
   private final transient ExperimentInformationService experimentInformationService;
+  private final transient PersonLookupService personLookupService;
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
   private final Section headerSection;
@@ -158,6 +164,7 @@ public class ProjectSummaryComponent extends PageArea {
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
+      PersonLookupService personLookupService,
       UserPermissions userPermissions,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
@@ -165,6 +172,8 @@ public class ProjectSummaryComponent extends PageArea {
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       ExperimentDetailsComponent experimentDetailsComponent) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.personLookupService = requireNonNull(personLookupService,
+        "person lookup service must not be null");
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
     this.experimentInformationSection = new SectionBuilder().build();
@@ -212,7 +221,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
     return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
-        contact.emailAddress());
+        contact.emailAddress(), contact.oidc(), contact.oidcIssuer());
   }
 
   private static Button createButtonWithListener(String label,
@@ -355,7 +364,8 @@ public class ProjectSummaryComponent extends PageArea {
     if (contact == null) {
       return Optional.empty();
     }
-    return Optional.of(new ProjectContact(contact.getFullName(), contact.getEmail()));
+    return Optional.of(new ProjectContact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer()));
   }
 
   private void handleSubmission(String projectId, ProjectContact manager,
@@ -383,7 +393,7 @@ public class ProjectSummaryComponent extends PageArea {
     // set up the edit button, that opens the dialog for editing contacts
     var editButton = createButtonWithListener("Edit", listener -> {
       var editContacts = new EditContactsComponent(convertToInfo(project),
-          Utility.tryToLoadFromPrincipal().orElse(null));
+          Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
       AppDialog dialog = AppDialog.medium();
       DialogHeader.with(dialog, "Edit Contacts");
       DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
@@ -447,6 +457,25 @@ public class ProjectSummaryComponent extends PageArea {
     var name = new Span(contact.fullName());
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
+    //Account for contacts without oidc or oidcissuer set
+    if (contact.oidc() == null || contact.oidcIssuer() == null) {
+      return contactInfo;
+    }
+    if (contact.oidcIssuer().isEmpty() || contact.oidc().isEmpty()) {
+      return contactInfo;
+    }
+    var oidcType = Arrays.stream(OidcType.values())
+        .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
+        .findFirst();
+    if (oidcType.isPresent()) {
+      String oidcUrl = oidcType.get().getUrlFor(contact.oidc());
+      Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
+      oidcLink.setTarget(AnchorTarget.BLANK);
+      OidcLogo oidcLogo = new OidcLogo(oidcType.get());
+      Span oidcSpan = new Span(oidcLogo, oidcLink);
+      oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
+      contactInfo.add(oidcSpan);
+    }
     return contactInfo;
   }
 

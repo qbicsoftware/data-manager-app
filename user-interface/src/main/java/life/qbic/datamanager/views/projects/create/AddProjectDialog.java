@@ -31,6 +31,7 @@ import life.qbic.datamanager.views.projects.create.ExperimentalInformationLayout
 import life.qbic.datamanager.views.projects.create.ProjectDesignLayout.ProjectDesign;
 import life.qbic.finances.api.FinanceService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -62,7 +63,6 @@ public class AddProjectDialog extends QbicDialog {
   private final Map<String, Component> stepContent;
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
 
-
   private StepIndicator addStep(Stepper stepper, String label, Component layout) {
     stepContent.put(label, layout);
     return stepper.addStep(label);
@@ -70,6 +70,7 @@ public class AddProjectDialog extends QbicDialog {
 
   public AddProjectDialog(ProjectInformationService projectInformationService,
       FinanceService financeService,
+      PersonLookupService personLookupService,
       SpeciesLookupService speciesLookupService, TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory) {
     super();
@@ -77,13 +78,14 @@ public class AddProjectDialog extends QbicDialog {
     addClassName("add-project-dialog");
     requireNonNull(projectInformationService, "project information service must not be null");
     requireNonNull(financeService, "financeService must not be null");
+    requireNonNull(personLookupService, "personLookupService must not be null");
     requireNonNull(speciesLookupService,
         "ontologyTermInformationService must not be null");
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
     this.projectDesignLayout = new ProjectDesignLayout(projectInformationService, financeService);
     this.fundingInformationLayout = new FundingInformationLayout();
-    this.collaboratorsLayout = new CollaboratorsLayout();
+    this.collaboratorsLayout = new CollaboratorsLayout(personLookupService);
     this.experimentalInformationLayout = new ExperimentalInformationLayout(
         speciesLookupService, terminologyService);
 
@@ -114,7 +116,6 @@ public class AddProjectDialog extends QbicDialog {
     confirmButton.addClassNames("primary", "confirm");
     confirmButton.addClickListener(this::onConfirmClicked);
 
-
     setDialogContent(stepper.getFirstStep());
 
     stepper.addStepSelectionListener(
@@ -138,7 +139,6 @@ public class AddProjectDialog extends QbicDialog {
     adaptFooterButtons(stepper.getFirstStep());
     setEscAction(it -> onCancelClicked());
   }
-
   /**
    * Allows user to search the offer database to prefill some project information
    */
@@ -159,17 +159,17 @@ public class AddProjectDialog extends QbicDialog {
     if (fundingInformationLayout.validate().isInvalid()) {
       return;
     }
-    if (collaboratorsLayout.validate().isInvalid()) {
+    if (collaboratorsLayout.isInvalid()) {
       return;
     }
     if (experimentalInformationLayout.validate().isInvalid()) {
       return;
     }
-    fireEvent(new ConfirmEvent(this, projectDesignLayout.getProjectDesign(),
-        fundingInformationLayout.getFundingInformation(),
-        collaboratorsLayout.getProjectCollaborators(),
+    fireEvent(new ConfirmEvent(this,
+        new ProjectCreationInformation(projectDesignLayout.getProjectDesign(),
+            fundingInformationLayout.getFundingInformation(),
+            collaboratorsLayout.getProjectCollaborators()),
         experimentalInformationLayout.getExperimentalInformation(), true));
-
   }
 
   private void onNextClicked(ClickEvent<Button> event) {
@@ -210,6 +210,11 @@ public class AddProjectDialog extends QbicDialog {
   }
 
   private boolean isDialogContentInvalid() {
+    //Since we don't employ one Binder for all fields within a layout anymore,
+    // we can't use the default vaadin HasBinder Validation and have to check separately for field validity.
+    if(dialogContent.getChildren().anyMatch(component -> component.equals(collaboratorsLayout))){
+     return collaboratorsLayout.isInvalid();
+    }
     return dialogContent.getChildren()
         .filter(HasBinderValidation.class::isInstance)
         .map(HasBinderValidation.class::cast)
@@ -258,37 +263,21 @@ public class AddProjectDialog extends QbicDialog {
 
     @Serial
     private static final long serialVersionUID = 3629446840913968906L;
-    private final ProjectDesign projectDesign;
-    private final FundingEntry fundingEntry;
-    private final ProjectCollaborators projectCollaborators;
+    private final ProjectCreationInformation projectCreationInformation;
     private final ExperimentalInformation experimentalInformation;
 
-    public ProjectDesign getProjectDesign() {
-      return projectDesign;
+    public ConfirmEvent(AddProjectDialog source,
+        ProjectCreationInformation projectCreationInformation, ExperimentalInformation experimentalInformation, boolean fromClient) {
+      super(source, fromClient);
+      this.projectCreationInformation = projectCreationInformation;
+      this.experimentalInformation = experimentalInformation;
     }
 
-    public FundingEntry getFundingEntry() {
-      return fundingEntry;
-    }
-
-    public ProjectCollaborators getProjectCollaborators() {
-      return projectCollaborators;
-    }
-
-    public ExperimentalInformation getExperimentalInformation() {
+    public ExperimentalInformation experimentalInformation() {
       return experimentalInformation;
     }
-
-
-    public ConfirmEvent(AddProjectDialog source,
-        ProjectDesign projectDesign, FundingEntry fundingEntry,
-        ProjectCollaborators projectCollaborators,
-        ExperimentalInformation experimentalInformation, boolean fromClient) {
-      super(source, fromClient);
-      this.projectDesign = projectDesign;
-      this.fundingEntry = fundingEntry;
-      this.projectCollaborators = projectCollaborators;
-      this.experimentalInformation = experimentalInformation;
+    public ProjectCreationInformation projectCreationInformation() {
+      return projectCreationInformation;
     }
   }
 
@@ -305,5 +294,14 @@ public class AddProjectDialog extends QbicDialog {
     public CancelEvent(AddProjectDialog source, boolean fromClient) {
       super(source, fromClient);
     }
+  }
+
+  /**
+   * <b>Project Creation Information</b>
+   *
+   * <p>Down to earth project info data container.</p>
+   */
+  public record ProjectCreationInformation(ProjectDesign projectDesign, FundingEntry fundingEntry,
+                                           ProjectCollaborators projectCollaborators) {
   }
 }

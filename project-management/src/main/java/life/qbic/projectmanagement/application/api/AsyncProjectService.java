@@ -557,9 +557,11 @@ public interface AsyncProjectService {
    *
    * @param fullName the full name of the person
    * @param email    a valid email address for contact
+   * @param oidc     the UUID which identifies the contact within the oidcIssuer
+   * @param oidcIssuer the oidcIssuer providing the UUID to identify a user if registered
    * @since 1.9.0
    */
-  record ProjectContact(String fullName, String email) {
+  record ProjectContact(String fullName, String email, String oidc, String oidcIssuer) {
 
   }
 

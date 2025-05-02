@@ -62,7 +62,8 @@ public class MeasurementValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validateNGS(MeasurementRegistrationInformationNGS registration, ProjectId projectId) {
+  public ValidationResult validateNGS(MeasurementRegistrationInformationNGS registration,
+      ProjectId projectId) {
     var metadata = new NGSMeasurementMetadata(
         null,
         registration.sampleCodes().stream().map(SampleCode::create).toList(),
@@ -102,7 +103,8 @@ public class MeasurementValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validatePxp(MeasurementRegistrationInformationPxP registration, ProjectId projectId) {
+  public ValidationResult validatePxp(MeasurementRegistrationInformationPxP registration,
+      ProjectId projectId) {
     var metadata = new ProteomicsMeasurementMetadata(
         null,
         registration.sampleCode(),
