@@ -271,7 +271,9 @@ Dialog flavours
  */
 .dialog-app {}
 
-.dialog-app, .button-text, .button-text-primary {
+.dialog-app,
+.button-text,
+.button-text-primary {
   margin: 0;
 }
 
@@ -279,15 +281,7 @@ Dialog flavours
 
 .dialog-medium {}
 
-.dialog-medium .button {
-  height: var(--lumo-size-m);
-}
-
 .dialog-large {}
-
-.dialog-large .button {
-  height: var(--lumo-size-l);
-}
 
 .dialog-small::part(overlay) {
   width: var(--dialog-width-small);

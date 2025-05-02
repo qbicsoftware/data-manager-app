@@ -19,7 +19,7 @@ public class ButtonFactory {
 
   public Button createConfirmButton(String label) {
     return createButton(label,
-        new String[]{"button-text-primary", "button-color-primary", "button-size-dialog-medium"});
+        new String[]{"button-text-primary", "button-color-primary"});
   }
 
   public Button createCancelButton(String label) {
