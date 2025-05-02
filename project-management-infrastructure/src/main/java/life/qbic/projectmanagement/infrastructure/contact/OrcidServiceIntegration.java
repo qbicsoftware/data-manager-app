@@ -44,7 +44,7 @@ import org.springframework.stereotype.Service;
 public class OrcidServiceIntegration implements PersonSelect {
 
   private static final Logger log = logger(OrcidServiceIntegration.class);
-  private static final String OIDC_ISSUER = "https://orcid.org";
+  private final String oidcIssuer;
   private final String searchEndpoint;
   private final String token;
   private final String refreshToken;
@@ -57,8 +57,10 @@ public class OrcidServiceIntegration implements PersonSelect {
       @Value("${qbic.external-service.person-search.orcid.token-uri}") String tokenEndpoint,
       @Value("${qbic.external-service.person-search.orcid.extended-search-uri}") String searchEndpoint,
       @Value("${qbic.external-service.person-search.orcid.scope}") String scope,
-      @Value("${qbic.external-service.person-search.orcid.grant-type}") String grantType) {
+      @Value("${qbic.external-service.person-search.orcid.grant-type}") String grantType,
+      @Value("${qbic.external-service.person-search.orcid.issuer}") String oidcIssuer) {
     this.searchEndpoint = searchEndpoint;
+    this.oidcIssuer = Objects.requireNonNull(oidcIssuer);
     httpClient = createHttpClient();
     var authResponse = authenticate(httpClient, clientID, clientSecret, tokenEndpoint, scope,
         grantType);
@@ -104,7 +106,7 @@ public class OrcidServiceIntegration implements PersonSelect {
 
   }
 
-  private static OrcidEntry convert(OrcidRecord orcidRecord) {
+  private OrcidEntry convert(OrcidRecord orcidRecord) {
     var emailList = Arrays.stream(orcidRecord.email()).toList();
     if (orcidRecord.orcidID() == null || orcidRecord.orcidID().isEmpty()) {
       return null;
@@ -121,7 +123,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     var orcid = orcidRecord.orcidID();
     var email = emailList.stream().findFirst()
         .orElseThrow(); //cannot throw as isEmpty is checked before
-    return new OrcidEntry(fullName, email, orcid, OIDC_ISSUER);
+    return new OrcidEntry(fullName, email, orcid, oidcIssuer);
   }
 
   private static String buildQueryUrl(String query, int limit, int offset) {
@@ -188,7 +190,7 @@ public class OrcidServiceIntegration implements PersonSelect {
     }
     if (httpStatus != null && httpStatus.is2xxSuccessful()) {
       List<OrcidEntry> foundRecords = Arrays.stream(mapper.convertValue(value, OrcidRecord[].class))
-          .map(OrcidServiceIntegration::convert).toList();
+          .map(this::convert).toList();
       return foundRecords.stream()
           .filter(Objects::nonNull)
           .toList();
