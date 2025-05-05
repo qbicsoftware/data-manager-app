@@ -131,6 +131,26 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
 
   @Override
+  public Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Mono<ExperimentalGroupDeletionResponse> delete(ExperimentalGroupDeletionRequest request) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
   public Mono<ProjectUpdateResponse> update(@NonNull ProjectUpdateRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     var projectId = ProjectId.parse(request.projectId());
