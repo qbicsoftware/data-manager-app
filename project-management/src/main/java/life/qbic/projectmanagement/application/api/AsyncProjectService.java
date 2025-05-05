@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.application.api;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
@@ -966,8 +965,7 @@ public interface AsyncProjectService {
    * @param experimentId the experiment's identifier
    * @param body         the request body containing information on what was updated
    * @param requestId    the request ID, needs to be provided by the client and will be referenced
-   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
-   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
+   *                     in the response.
    * @since 1.9.0
    */
   record ExperimentUpdateRequest(String projectId, String experimentId,
@@ -990,9 +988,7 @@ public interface AsyncProjectService {
     public ExperimentUpdateRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
   }
 
@@ -1035,9 +1031,7 @@ public interface AsyncProjectService {
     public ExperimentalGroupCreationRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
   }
 
@@ -1080,9 +1074,7 @@ public interface AsyncProjectService {
     public ExperimentalGroupUpdateRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
   }
 
@@ -1126,9 +1118,7 @@ public interface AsyncProjectService {
       requireNonNull(projectId);
       requireNonNull(experimentId);
       requireNonNull(experimentGroupId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
   }
 
@@ -1162,9 +1152,7 @@ public interface AsyncProjectService {
                                 FundingInformation funding, String requestId) {
 
     public ProjectCreationRequest {
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
   }
 
@@ -1182,9 +1170,7 @@ public interface AsyncProjectService {
 
     public SampleRegistrationRequest {
       requireNonNull(projectId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
       requests = List.copyOf(requests);
     }
   }
@@ -1201,9 +1187,7 @@ public interface AsyncProjectService {
 
     public SampleUpdateRequest {
       requireNonNull(projectId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
       requests = List.copyOf(requests);
     }
   }
@@ -1377,8 +1361,7 @@ public interface AsyncProjectService {
    * @param projectId   the project's id
    * @param requestBody the information to be updated.
    * @param requestId   the request ID, needs to be provided by the client and will be referenced in
-   *                    the response. If <code>null</code> or {@link String#isBlank()} is true, then
-   *                    a random UUID is assigned with {@link UUID#randomUUID()}.
+   *                    the response.
    * @since 1.9.0
    */
   record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
@@ -1390,9 +1373,7 @@ public interface AsyncProjectService {
 
     public ProjectUpdateRequest {
       requireNonNull(projectId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
 
   }
@@ -1402,9 +1383,7 @@ public interface AsyncProjectService {
 
     public ProjectDeletionRequest {
       requireNonNull(projectId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
 
     public ProjectDeletionRequest(String projectId, ProjectDeletionRequestBody requestBody) {
@@ -1453,9 +1432,7 @@ public interface AsyncProjectService {
     public ExperimentDeletionRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
 
     public ExperimentDeletionRequest(String projectId, String experimentId,
@@ -1483,8 +1460,7 @@ public interface AsyncProjectService {
    * @param projectId   the project ID of the project the metadata shall be validated for
    * @param requestBody the actual metadata container with the information to be validated
    * @param requestId   the request ID, needs to be provided by the client and will be referenced in
-   *                    the response. If <code>null</code> or {@link String#isBlank()} is true, then
-   *                    a random UUID is assigned with {@link UUID#randomUUID()}
+   *                    the response.
    * @since 1.10.0
    */
   record ValidationRequest(String projectId, ValidationRequestBody requestBody,
@@ -1492,9 +1468,7 @@ public interface AsyncProjectService {
 
     public ValidationRequest {
       requireNonNull(projectId);
-      if (isNull(requestId) || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request id not provided");
-      }
+      requireNonNull(requestId);
     }
   }
 
