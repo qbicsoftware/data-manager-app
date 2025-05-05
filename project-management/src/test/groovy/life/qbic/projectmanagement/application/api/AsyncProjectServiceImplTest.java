@@ -23,8 +23,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Experimen
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -103,8 +101,8 @@ class AsyncProjectServiceImplTest {
         .expectNextMatches(projectUpdateResponse ->
             projectUpdateResponse.projectId().equals(projectId)
                 && projectUpdateResponse.responseBody() instanceof ProjectDesign
-                && projectUpdateResponse.hasRequestId() && projectUpdateResponse.requestId()
-                .equals(requestId))
+                && requestId
+                .equals(projectUpdateResponse.requestId()))
         .expectComplete()
         .verify(Duration.of(3, ChronoUnit.SECONDS));
   }
@@ -153,8 +151,8 @@ class AsyncProjectServiceImplTest {
         .expectNextMatches(projectUpdateResponse ->
             projectUpdateResponse.projectId().equals(projectId)
                 && projectUpdateResponse.responseBody() instanceof ProjectDesign
-                && projectUpdateResponse.hasRequestId() && projectUpdateResponse.requestId()
-                .equals(requestId))
+                && requestId
+                .equals(projectUpdateResponse.requestId()))
         .expectComplete()
         .verify(Duration.of(3, ChronoUnit.SECONDS));
   }
