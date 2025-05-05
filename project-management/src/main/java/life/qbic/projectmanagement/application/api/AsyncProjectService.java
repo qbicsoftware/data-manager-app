@@ -47,6 +47,81 @@ public interface AsyncProjectService {
    */
 
   /**
+   * Submits an experimental group creation request and returns a reactive
+   * {@link Mono<ExperimentalGroupCreationResponse>}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the request to create an experimental group for a project
+   * @return a {@link Mono<ExperimentalGroupCreationResponse>} object publishing a
+   * {@link ExperimentalGroupCreationResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request);
+
+  /**
+   * Submits an experimental group update request and returns a reactive
+   * {@link Mono<ExperimentalGroupUpdateResponse>}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param request the request to update an experimental group for a project
+   * @return a {@link Mono<ExperimentalGroupUpdateResponse>} object publishing a
+   * {@link ExperimentalGroupUpdateResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request);
+
+  /**
+   * Submits an experimental group deletion request and returns a reactive
+   * {@link Mono<ExperimentalGroupDeletionResponse>}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param request the request to delete an experimental group for a project
+   * @return a {@link Mono<ExperimentalGroupDeletionResponse>} object publishing a
+   * {@link ExperimentalGroupDeletionResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalGroupDeletionResponse> delete(ExperimentalGroupDeletionRequest request);
+
+  /**
+   * Requests a {@link Flux} of all {@link ExperimentalGroup} for a given experiment in a given
+   * project.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param projectId    the project ID for the project the experimental groups shall be retrieved
+   *                     for
+   * @param experimentId the experiment ID for the experiment the experimental groups shall be
+   *                     retrieved
+   * @return a {@link Flux} of {@link ExperimentalGroup} for the given project and experiment.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
+
+  /**
    * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
    * object immediately.
    * <p>
@@ -102,7 +177,6 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
-
 
   /**
    * Submits a {@link ProjectDeletionRequest} to remove information from a project.
@@ -280,7 +354,7 @@ public interface AsyncProjectService {
    * The implementation must support pagination based on the provided values for offset and limit.
    * <p>
    * Note: it is not guaranteed that taxa will be emitted to the flux. To search for taxa, please
-   * use the dedicated method {@link #searchTaxa(String, int, int)}.
+   * use the dedicated method {@link #getTaxa(String, int, int, List)}.
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -499,8 +573,9 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface CacheableRequest permits ExperimentUpdateRequest, ProjectUpdateRequest,
-      ValidationRequest {
+  sealed interface CacheableRequest permits ExperimentalGroupCreationRequest,
+      ExperimentalGroupDeletionRequest, ExperimentalGroupUpdateRequest, ExperimentUpdateRequest,
+      ProjectUpdateRequest, ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -555,9 +630,9 @@ public interface AsyncProjectService {
   /**
    * A project contact.
    *
-   * @param fullName the full name of the person
-   * @param email    a valid email address for contact
-   * @param oidc     the UUID which identifies the contact within the oidcIssuer
+   * @param fullName   the full name of the person
+   * @param email      a valid email address for contact
+   * @param oidc       the UUID which identifies the contact within the oidcIssuer
    * @param oidcIssuer the oidcIssuer providing the UUID to identify a user if registered
    * @since 1.9.0
    */
@@ -861,6 +936,105 @@ public interface AsyncProjectService {
    */
   record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
                                   String requestId) {
+
+  }
+
+  /**
+   * A service request to create a new experimental group.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group to create
+   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupCreationRequest(String projectId, String experimentId,
+                                          ExperimentalGroup group, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupCreationRequest(String projectId, String experimentId,
+        ExperimentalGroup group) {
+      this(projectId, experimentId, group, UUID.randomUUID().toString());
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupCreationRequest}.
+   *
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group created
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupCreationResponse(String experimentId, ExperimentalGroup group,
+                                           String requestId) {
+
+  }
+
+  /**
+   * A service request to update an experimental group.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group to update
+   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupUpdateRequest(String projectId, String experimentId,
+                                        ExperimentalGroup group, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupUpdateRequest(String projectId, String experimentId,
+        ExperimentalGroup group) {
+      this(projectId, experimentId, group, UUID.randomUUID().toString());
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupUpdateRequest}.
+   *
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group updated
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupUpdateResponse(String experimentId, ExperimentalGroup group,
+                                         String requestId) {
+
+  }
+
+  /**
+   * A service request to delete an experimental group.
+   *
+   * @param projectId         the project's identifier. The project containing the experiment.
+   * @param experimentId      the experiment's identifier'
+   * @param experimentGroupId the identifier of the experimental group to delete
+   * @param requestId         the request ID. Needs to be provided by the client and will be
+   *                          referenced in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
+                                          Long experimentGroupId, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
+        Long experimentGroupId) {
+      this(projectId, experimentId, experimentGroupId, UUID.randomUUID().toString());
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupDeletionRequest}.
+   *
+   * @param experimentId      the experiment's identifier
+   * @param experimentGroupId the identifier of the experimental group deleted
+   * @param requestId         the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupDeletionResponse(String experimentId, Long experimentGroupId,
+                                           String requestId) {
 
   }
 
