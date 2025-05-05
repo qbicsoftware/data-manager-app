@@ -990,8 +990,9 @@ public interface AsyncProjectService {
     public ExperimentUpdateRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
   }
 
@@ -1034,8 +1035,9 @@ public interface AsyncProjectService {
     public ExperimentalGroupCreationRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
   }
 
@@ -1078,8 +1080,9 @@ public interface AsyncProjectService {
     public ExperimentalGroupUpdateRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
   }
 
@@ -1123,8 +1126,9 @@ public interface AsyncProjectService {
       requireNonNull(projectId);
       requireNonNull(experimentId);
       requireNonNull(experimentGroupId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
   }
 
@@ -1158,8 +1162,9 @@ public interface AsyncProjectService {
                                 FundingInformation funding, String requestId) {
 
     public ProjectCreationRequest {
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
   }
 
@@ -1177,8 +1182,9 @@ public interface AsyncProjectService {
 
     public SampleRegistrationRequest {
       requireNonNull(projectId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
       requests = List.copyOf(requests);
     }
   }
@@ -1195,8 +1201,9 @@ public interface AsyncProjectService {
 
     public SampleUpdateRequest {
       requireNonNull(projectId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
       requests = List.copyOf(requests);
     }
   }
@@ -1383,8 +1390,9 @@ public interface AsyncProjectService {
 
     public ProjectUpdateRequest {
       requireNonNull(projectId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
 
   }
@@ -1394,8 +1402,9 @@ public interface AsyncProjectService {
 
     public ProjectDeletionRequest {
       requireNonNull(projectId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
 
     public ProjectDeletionRequest(String projectId, ProjectDeletionRequestBody requestBody) {
@@ -1444,8 +1453,9 @@ public interface AsyncProjectService {
     public ExperimentDeletionRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
 
     public ExperimentDeletionRequest(String projectId, String experimentId,
@@ -1482,8 +1492,9 @@ public interface AsyncProjectService {
 
     public ValidationRequest {
       requireNonNull(projectId);
-      requestId =
-          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      if (isNull(requestId) || requestId.isBlank()) {
+        throw new IllegalArgumentException("Request id not provided");
+      }
     }
   }
 
