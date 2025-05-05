@@ -134,6 +134,14 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         level.unit());
   }
 
+  private static Throwable mapToAPIException(Throwable e) {
+    if (e instanceof org.springframework.security.access.AccessDeniedException) {
+      return new AccessDeniedException(ACCESS_DENIED);
+    }
+    return new RequestFailedException("Error creating experimental group", e);
+
+  }
+
   @Override
   public Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request) {
     var call = Mono.fromCallable(() -> {
@@ -145,13 +153,16 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
               group.sampleSize()));
       return new ExperimentalGroupCreationResponse(request.experimentId(),
           new ExperimentalGroup(createdGroup.id(), createdGroup.name(),
-              createdGroup.replicateCount(), createdGroup.levels().stream().map(this::convertLevelToApi).collect(
-              Collectors.toSet())), request.requestId());
+              createdGroup.replicateCount(),
+              createdGroup.levels().stream().map(this::convertLevelToApi).collect(
+                  Collectors.toSet())), request.requestId());
     });
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
-        .retryWhen(defaultRetryStrategy());
+        .retryWhen(defaultRetryStrategy())
+        .doOnError(e -> log.error("Error creating experimental group", e))
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
   }
 
   private VariableLevel convertLevelToApi(ExperimentInformationService.VariableLevel level) {
