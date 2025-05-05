@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
-import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
@@ -9,7 +9,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
@@ -897,159 +896,6 @@ public interface AsyncProjectService {
     }
   }
 
-  /**
-   * A service request to update an experiment
-   *
-   * @param projectId    the project's identifier. The project containing the experiment.
-   * @param experimentId the experiment's identifier
-   * @param body         the request body containing information on what was updated
-   * @param requestId    the request ID, needs to be provided by the client and will be referenced
-   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
-   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
-   * @since 1.9.0
-   */
-  record ExperimentUpdateRequest(String projectId, String experimentId,
-                                 ExperimentUpdateRequestBody body, String requestId) implements
-      CacheableRequest {
-
-    /**
-     * A service request to update an experiment
-     *
-     * @param projectId    the project's identifier. The project containing the experiment.
-     * @param experimentId the experiment's identifier
-     * @param body         the request body containing information on what was updated
-     * @since 1.9.0
-     */
-    public ExperimentUpdateRequest(String projectId, String experimentId,
-        ExperimentUpdateRequestBody body) {
-      this(projectId, experimentId, body, UUID.randomUUID().toString());
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentUpdateRequest}
-   *
-   * @param experimentId the experiment's identifier
-   * @param body         information about the update
-   * @param requestId    the identifier of the original request to which this is a response.
-   * @since 1.9.0
-   */
-  record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
-                                  String requestId) {
-
-  }
-
-  /**
-   * A service request to create a new experimental group.
-   *
-   * @param projectId    the project's identifier. The project containing the experiment.
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group to create
-   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
-   *                     in the response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupCreationRequest(String projectId, String experimentId,
-                                          ExperimentalGroup group, String requestId) implements
-      CacheableRequest {
-
-    public ExperimentalGroupCreationRequest(String projectId, String experimentId,
-        ExperimentalGroup group) {
-      this(projectId, experimentId, group, UUID.randomUUID().toString());
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentalGroupCreationRequest}.
-   *
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group created
-   * @param requestId    the identifier of the original request to which this is a response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupCreationResponse(String experimentId, ExperimentalGroup group,
-                                           String requestId) {
-
-  }
-
-  /**
-   * A service request to update an experimental group.
-   *
-   * @param projectId    the project's identifier. The project containing the experiment.
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group to update
-   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
-   *                     in the response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupUpdateRequest(String projectId, String experimentId,
-                                        ExperimentalGroup group, String requestId) implements
-      CacheableRequest {
-
-    public ExperimentalGroupUpdateRequest(String projectId, String experimentId,
-        ExperimentalGroup group) {
-      this(projectId, experimentId, group, UUID.randomUUID().toString());
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentalGroupUpdateRequest}.
-   *
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group updated
-   * @param requestId    the identifier of the original request to which this is a response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupUpdateResponse(String experimentId, ExperimentalGroup group,
-                                         String requestId) {
-
-  }
-
-  /**
-   * A service request to delete an experimental group.
-   *
-   * @param projectId         the project's identifier. The project containing the experiment.
-   * @param experimentId      the experiment's identifier'
-   * @param experimentGroupId the identifier of the experimental group to delete
-   * @param requestId         the request ID. Needs to be provided by the client and will be
-   *                          referenced in the response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-                                          Long experimentGroupId, String requestId) implements
-      CacheableRequest {
-
-    public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-        Long experimentGroupId) {
-      this(projectId, experimentId, experimentGroupId, UUID.randomUUID().toString());
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentalGroupDeletionRequest}.
-   *
-   * @param experimentId      the experiment's identifier
-   * @param experimentGroupId the identifier of the experimental group deleted
-   * @param requestId         the identifier of the original request to which this is a response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupDeletionResponse(String experimentId, Long experimentGroupId,
-                                           String requestId) {
-
-  }
-
-  /**
-   * A service request to create a project.
-   *
-   * @param design   the title and objective of a project
-   * @param contacts the different contact persons of a project
-   * @param funding  some funding information
-   * @since 1.9.0
-   */
-  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-                                FundingInformation funding) {
-
-  }
 
   /**
    * Represents an ontology term definition with a simple label that can be used to display the term
@@ -1114,6 +960,211 @@ public interface AsyncProjectService {
   }
 
   /**
+   * A service request to update an experiment
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param body         the request body containing information on what was updated
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
+   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
+   * @since 1.9.0
+   */
+  record ExperimentUpdateRequest(String projectId, String experimentId,
+                                 ExperimentUpdateRequestBody body, String requestId) implements
+      CacheableRequest {
+
+    /**
+     * A service request to update an experiment
+     *
+     * @param projectId    the project's identifier. The project containing the experiment.
+     * @param experimentId the experiment's identifier
+     * @param body         the request body containing information on what was updated
+     * @since 1.9.0
+     */
+    public ExperimentUpdateRequest(String projectId, String experimentId,
+        ExperimentUpdateRequestBody body) {
+      this(projectId, experimentId, body, UUID.randomUUID().toString());
+    }
+
+    public ExperimentUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentUpdateRequest}
+   *
+   * @param experimentId the experiment's identifier
+   * @param body         information about the update
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.9.0
+   */
+  record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
+                                  String requestId) {
+
+    public ExperimentUpdateResponse {
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to create a new experimental group.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group to create
+   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupCreationRequest(String projectId, String experimentId,
+                                          ExperimentalGroup group, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupCreationRequest(String projectId, String experimentId,
+        ExperimentalGroup group) {
+      this(projectId, experimentId, group, UUID.randomUUID().toString());
+    }
+
+    public ExperimentalGroupCreationRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupCreationRequest}.
+   *
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group created
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupCreationResponse(String experimentId, ExperimentalGroup group,
+                                           String requestId) {
+
+    public ExperimentalGroupCreationResponse {
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to update an experimental group.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group to update
+   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupUpdateRequest(String projectId, String experimentId,
+                                        ExperimentalGroup group, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupUpdateRequest(String projectId, String experimentId,
+        ExperimentalGroup group) {
+      this(projectId, experimentId, group, UUID.randomUUID().toString());
+    }
+
+    public ExperimentalGroupUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupUpdateRequest}.
+   *
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group updated
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupUpdateResponse(String experimentId, ExperimentalGroup group,
+                                         String requestId) {
+
+    public ExperimentalGroupUpdateResponse {
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to delete an experimental group.
+   *
+   * @param projectId         the project's identifier. The project containing the experiment.
+   * @param experimentId      the experiment's identifier'
+   * @param experimentGroupId the identifier of the experimental group to delete
+   * @param requestId         the request ID. Needs to be provided by the client and will be
+   *                          referenced in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
+                                          Long experimentGroupId, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
+        Long experimentGroupId) {
+      this(projectId, experimentId, experimentGroupId, UUID.randomUUID().toString());
+    }
+
+    public ExperimentalGroupDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(experimentGroupId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupDeletionRequest}.
+   *
+   * @param experimentId      the experiment's identifier
+   * @param experimentGroupId the identifier of the experimental group deleted
+   * @param requestId         the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupDeletionResponse(String experimentId, Long experimentGroupId,
+                                           String requestId) {
+
+    public ExperimentalGroupDeletionResponse {
+      requireNonNull(experimentId);
+      requireNonNull(experimentGroupId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to create a project.
+   *
+   * @param design   the title and objective of a project
+   * @param contacts the different contact persons of a project
+   * @param funding  some funding information
+   * @since 1.9.0
+   */
+  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
+                                FundingInformation funding, String requestId) {
+
+    public ProjectCreationRequest {
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+    }
+  }
+
+
+  /**
    * A service request to create one or more new samples for a project.
    *
    * @param projectId the project ID of the project the samples shall be created for
@@ -1121,12 +1172,14 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   record SampleRegistrationRequest(String projectId,
-                                   Collection<SampleRegistrationInformation> requests) {
+                                   Collection<SampleRegistrationInformation> requests,
+                                   String requestId) {
 
-    public SampleRegistrationRequest(String projectId,
-        Collection<SampleRegistrationInformation> requests) {
-      this.projectId = projectId;
-      this.requests = List.copyOf(requests);
+    public SampleRegistrationRequest {
+      requireNonNull(projectId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      requests = List.copyOf(requests);
     }
   }
 
@@ -1137,12 +1190,14 @@ public interface AsyncProjectService {
    * @param requests  a collection for {@link SampleRegistrationInformation} items
    * @since 1.10.0
    */
-  record SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests) {
+  record SampleUpdateRequest(String projectId, Collection<SampleRegistrationInformation> requests,
+                             String requestId) {
 
-    public SampleUpdateRequest(String projectId,
-        Collection<SampleRegistrationInformation> requests) {
-      this.projectId = projectId;
-      this.requests = List.copyOf(requests);
+    public SampleUpdateRequest {
+      requireNonNull(projectId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+      requests = List.copyOf(requests);
     }
   }
 
@@ -1301,8 +1356,12 @@ public interface AsyncProjectService {
    * @param projectId
    * @since 1.9, 0
    */
-  record ProjectCreationResponse(String projectId) {
+  record ProjectCreationResponse(String projectId, String requestId) {
 
+    public ProjectCreationResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
   }
 
   /**
@@ -1318,20 +1377,14 @@ public interface AsyncProjectService {
   record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
                               String requestId) implements CacheableRequest {
 
-    public ProjectUpdateRequest {
-      if (projectId == null) {
-        throw new IllegalArgumentException("Project ID cannot be null");
-      }
-      if (projectId.isBlank()) {
-        throw new IllegalArgumentException("Project ID cannot be blank");
-      }
-      if (requestId == null || requestId.isBlank()) {
-        requestId = UUID.randomUUID().toString();
-      }
-    }
-
     public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
       this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+
+    public ProjectUpdateRequest {
+      requireNonNull(projectId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
     }
 
   }
@@ -1340,15 +1393,9 @@ public interface AsyncProjectService {
                                 ProjectDeletionRequestBody body) {
 
     public ProjectDeletionRequest {
-      if (projectId == null) {
-        throw new IllegalArgumentException("Project ID cannot be null");
-      }
-      if (projectId.isBlank()) {
-        throw new IllegalArgumentException("Project ID cannot be blank");
-      }
-      if (requestId == null || requestId.isBlank()) {
-        requestId = UUID.randomUUID().toString();
-      }
+      requireNonNull(projectId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
     }
 
     public ProjectDeletionRequest(String projectId, ProjectDeletionRequestBody requestBody) {
@@ -1358,6 +1405,10 @@ public interface AsyncProjectService {
 
   record ProjectDeletionResponse(String projectId, String requestId) {
 
+    public ProjectDeletionResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
   }
 
   record FundingDeletion() implements ProjectDeletionRequestBody {
@@ -1374,37 +1425,15 @@ public interface AsyncProjectService {
    * @param projectId    the project's id
    * @param responseBody the information that was updated.
    * @param requestId    the request ID, needs to be provided by the client and will be referenced
-   *                     in the response. If <code>null</code> or {@link String#isBlank()} is true,
-   *                     then a random UUID is assigned with {@link UUID#randomUUID()}
+   *                     in the response.
    * @since 1.9.0
    */
   record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
                                String requestId) {
 
     public ProjectUpdateResponse {
-      if (projectId == null) {
-        throw new IllegalArgumentException("Project ID cannot be null");
-      }
-      if (projectId.isBlank()) {
-        throw new IllegalArgumentException("Project ID cannot be blank");
-      }
-      if (requestId == null || requestId.isBlank()) {
-        requestId = UUID.randomUUID().toString();
-      }
-    }
-
-    /**
-     * Retrieves the request id associated with this response. May be {@link Optional#empty()} but
-     * never null.
-     *
-     * @return an Optional with the requestId; {@link Optional#empty()} otherwise.
-     */
-    public Optional<String> retrieveRequestId() {
-      return Optional.ofNullable(requestId);
-    }
-
-    boolean hasRequestId() {
-      return nonNull(requestId);
+      requireNonNull(projectId);
+      requireNonNull(requestId);
     }
 
   }
@@ -1413,18 +1442,10 @@ public interface AsyncProjectService {
                                    ExperimentDeletionRequestBody body) {
 
     public ExperimentDeletionRequest {
-      if (projectId == null) {
-        throw new IllegalArgumentException("Project ID cannot be null");
-      }
-      if (projectId.isBlank()) {
-        throw new IllegalArgumentException("Project ID cannot be blank");
-      }
-      if (experimentId == null || experimentId.isBlank()) {
-        throw new IllegalArgumentException("Experiment ID cannot be empty");
-      }
-      if (requestId == null || requestId.isBlank()) {
-        requestId = UUID.randomUUID().toString();
-      }
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
     }
 
     public ExperimentDeletionRequest(String projectId, String experimentId,
@@ -1437,18 +1458,9 @@ public interface AsyncProjectService {
                                     ExperimentDeletionResponseBody body) {
 
     public ExperimentDeletionResponse {
-      if (projectId == null) {
-        throw new IllegalArgumentException("Project ID cannot be null");
-      }
-      if (projectId.isBlank()) {
-        throw new IllegalArgumentException("Project ID cannot be blank");
-      }
-      if (experimentId == null || experimentId.isBlank()) {
-        throw new IllegalArgumentException("Experiment ID cannot be empty");
-      }
-      if (requestId == null || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request information cannot be empty");
-      }
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
     }
   }
 
@@ -1469,15 +1481,9 @@ public interface AsyncProjectService {
                            String requestId) implements CacheableRequest {
 
     public ValidationRequest {
-      if (projectId == null) {
-        throw new IllegalArgumentException("Project ID cannot be null");
-      }
-      if (projectId.isBlank()) {
-        throw new IllegalArgumentException("Project ID cannot be blank");
-      }
-      if (requestId == null || requestId.isBlank()) {
-        requestId = UUID.randomUUID().toString();
-      }
+      requireNonNull(projectId);
+      requestId =
+          isNull(requestId) || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
     }
   }
 
@@ -1494,9 +1500,7 @@ public interface AsyncProjectService {
   record ValidationResponse(String requestId, ValidationResult result) {
 
     public ValidationResponse {
-      if (requestId == null || requestId.isBlank()) {
-        throw new IllegalArgumentException("Request ID cannot be null or blank");
-      }
+      requireNonNull(requestId);
     }
   }
 
