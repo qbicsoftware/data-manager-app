@@ -129,10 +129,33 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         term.getOntologyAbbreviation());
   }
 
+  private static ExperimentInformationService.VariableLevel convertFromApi(VariableLevel level) {
+    return new ExperimentInformationService.VariableLevel(level.variableName(), level.levelValue(),
+        level.unit());
+  }
 
   @Override
   public Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request) {
-    throw new RuntimeException("not implemented");
+    var call = Mono.fromCallable(() -> {
+      var group = request.group();
+      var createdGroup = experimentInformationService.createExperimentalGroup(request.projectId(),
+          ExperimentId.parse(request.experimentId()),
+          new ExperimentInformationService.ExperimentalGroup(0L, group.name(),
+              group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(),
+              group.sampleSize()));
+      return new ExperimentalGroupCreationResponse(request.experimentId(),
+          new ExperimentalGroup(createdGroup.id(), createdGroup.name(),
+              createdGroup.replicateCount(), createdGroup.levels().stream().map(this::convertLevelToApi).collect(
+              Collectors.toSet())), request.requestId());
+    });
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  private VariableLevel convertLevelToApi(ExperimentInformationService.VariableLevel level) {
+    return new VariableLevel(level.variableName(), level.variableName(), level.unit());
   }
 
   @Override

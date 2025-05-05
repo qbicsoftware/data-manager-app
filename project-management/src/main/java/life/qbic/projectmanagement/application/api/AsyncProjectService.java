@@ -197,7 +197,9 @@ public interface AsyncProjectService {
    */
   Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request);
 
-
+  /*
+  // TODO add JavaDocs!
+   */
   Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
 
   /**
@@ -751,13 +753,12 @@ public interface AsyncProjectService {
   /**
    * A level of an experimental variable
    *
-   * @param variableId   the identifier of the variable
    * @param variableName the name of the variable
    * @param levelValue   the value of the level
    * @param unit         the unit for the value of the level. Can be null if no unit is set
    * @since 1.9.0
    */
-  record VariableLevel(Long variableId, String variableName, String levelValue,
+  record VariableLevel(String variableName, String levelValue,
                        @Nullable String unit) {
 
   }
