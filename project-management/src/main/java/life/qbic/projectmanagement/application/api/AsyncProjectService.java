@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
@@ -41,8 +42,126 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   /*
-  API method section - start
+  Project related API requests
    */
+
+  /**
+   * A service request to create a project.
+   *
+   * @param design   the title and objective of a project
+   * @param contacts the different contact persons of a project
+   * @param funding  some funding information
+   * @since 1.9.0
+   */
+  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
+                                FundingInformation funding, String requestId) {
+
+    public ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
+        String requestId) {
+      this(design, contacts, null, requestId);
+    }
+
+    public ProjectCreationRequest {
+      requireNonNull(requestId);
+    }
+
+    /**
+     * {@inheritDoc} Please use {@link ProjectCreationRequest#optionalFundingInformation()} to
+     * access the funding information safely.
+     *
+     * @return the funding information. Might be null.
+     * @see ProjectCreationRequest#optionalFundingInformation()
+     * @since 1.10.0
+     */
+    @Override
+    public FundingInformation funding() {
+      return funding;
+    }
+
+    public Optional<FundingInformation> optionalFundingInformation() {
+      return Optional.ofNullable(funding);
+    }
+  }
+
+  /**
+   * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
+   * immediately.
+   * <p>
+   * This implementation must be non-blocking.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the request with information required for project creation.
+   * @return {@link Mono<ProjectCreationResponse>} object publishing an
+   * {@link ProjectCreationResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.9.0
+   */
+  Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
+      throws UnknownRequestException, RequestFailedException, AccessDeniedException;
+
+  /**
+   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
+   * object immediately.
+   * <p>
+   * The method implementation must be non-blocking.
+   * <p>
+   * The implementing class must ensure to be able to process all implementing classes of the
+   * {@link ProjectUpdateRequestBody} interface contained in the request.
+   * <p>
+   * The implementing class must also ensure to only return responses with classes implementing the
+   * {@link ProjectUpdateResponseBody} interface.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the request to update a project
+   * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
+   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.9.0
+   */
+  Mono<ProjectUpdateResponse> update(ProjectUpdateRequest request);
+
+  /**
+   * A service request to create funding information for a project.
+   *
+   * @param request the request with information required for funding information creation.
+   * @return a {@link Mono<FundingInformationCreationResponse>} object publishing an
+   * {@link FundingInformationCreationResponse}
+   * @since
+   */
+  Mono<FundingInformationCreationResponse> create(FundingInformationCreationRequest request);
+
+  /**
+   * Submits a {@link ProjectDeletionRequest} to remove information from a project.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the actual {@link ProjectDeletionRequest}
+   * @return a {@link Mono<ProjectDeletionResponse>} object publishing an
+   * {@link ProjectDeletionResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request);
 
   /**
    * Requests the creation of an experiment and returns a reactive
@@ -112,26 +231,6 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request);
 
-
-  /**
-   * Requests the creation of an experiment and returns a reactive
-   * {@link Mono<ExperimentCreationResponse>}.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param request the request containing information to create the experiment
-   * @return a {@link Mono<ExperimentCreationResponse>} object publishing a
-   * {@link ExperimentCreationResponse} on success.
-   * @throws UnknownRequestException if an unknown request has been used in the service call
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
-   * @since 1.10.0
-   */
-  Mono<ExperimentCreationResponse> create(ExperimentCreationRequest request);
-
   /**
    * Submits an experimental group update request and returns a reactive
    * {@link Mono<ExperimentalGroupUpdateResponse>}.
@@ -140,6 +239,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param request the request to update an experimental group for a project
    * @return a {@link Mono<ExperimentalGroupUpdateResponse>} object publishing a
    * {@link ExperimentalGroupUpdateResponse} on success.
@@ -158,6 +258,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param request the request to delete an experimental group for a project
    * @return a {@link Mono<ExperimentalGroupDeletionResponse>} object publishing a
    * {@link ExperimentalGroupDeletionResponse} on success.
@@ -176,6 +277,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param projectId    the project ID for the project the experimental groups shall be retrieved
    *                     for
    * @param experimentId the experiment ID for the experiment the experimental groups shall be
@@ -187,81 +289,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
-
-
-  /**
-   * Submits an experiment update request and returns a reactive
-   * {@link Mono<ExperimentUpdateResponse>} object immediately.
-   * <p>
-   * The method is non-blocking.
-   * <p>
-   * The implementing class must ensure to be able to process all implementing classes of the
-   * {@link ProjectUpdateRequestBody} interface contained in the request.
-   * <p>
-   * The implementing class must also ensure to only return responses with classes implementing the
-   * {@link ProjectUpdateResponseBody} interface.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param request the request to update a project
-   * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
-   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
-   * @throws UnknownRequestException if an unknown request has been used in the service call
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
-   * @since 1.9.0
-   */
-  Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
-
-  /**
-   * Submits a {@link ProjectDeletionRequest} to remove information from a project.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param request the actual {@link ProjectDeletionRequest}
-   * @return a {@link Mono<ProjectDeletionResponse>} object publishing an
-   * {@link ProjectDeletionResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}
-   * @throws UnknownRequestException if an unknown request has been used in the service call
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
-   * @since 1.10.0
-   */
-  Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request);
-
-
-  Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
-
-  /**
-   * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
-   * immediately.
-   * <p>
-   * This implementation must be non-blocking.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param request the request with information required for project creation.
-   * @return {@link Mono<ProjectCreationResponse>} object publishing an
-   * {@link ProjectCreationResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
-   * @throws UnknownRequestException if an unknown request has been used in the service call
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
-   * @since 1.9.0
-   */
-  Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
-      throws UnknownRequestException, RequestFailedException, AccessDeniedException;
-
 
   /**
    * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
@@ -428,6 +455,15 @@ public interface AsyncProjectService {
    */
   Mono<OntologyTerm> getTermWithCurie(Curie value);
 
+  /*
+  End project-related requests
+   */
+
+
+  /*
+  Experiment-related requests
+   */
+
   /**
    * Requests a {@link Flux} of {@link OntologyTerm} for a given search value.
    * <p>
@@ -544,16 +580,6 @@ public interface AsyncProjectService {
   Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType);
 
-
-  /*
-  API method section - end
-   */
-
-
-  /*
-  API concept section - start
-   */
-
   /**
    * Container of an update request for a service call and part of the
    * {@link ProjectUpdateRequest}.
@@ -605,7 +631,6 @@ public interface AsyncProjectService {
 
   }
 
-
   /**
    * Cacheable requests provide a unique identifier so cache implementations can unambiguously
    * manage the requests.
@@ -614,7 +639,8 @@ public interface AsyncProjectService {
    */
   sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentUpdateRequest,
       ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
-      ExperimentalGroupUpdateRequest, ProjectUpdateRequest, ValidationRequest {
+      ExperimentalGroupUpdateRequest, FundingInformationCreationRequest, ProjectUpdateRequest,
+      ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -635,9 +661,150 @@ public interface AsyncProjectService {
 
   }
 
-
   sealed interface ExperimentDeletionResponseBody permits ExperimentalVariables {
 
+  }
+
+  /**
+   * A service response from a project creation request
+   *
+   * @param projectId
+   * @since 1.9, 0
+   */
+  record ProjectCreationResponse(String projectId, String requestId) {
+
+    public ProjectCreationResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+  }
+
+
+
+  record FundingInformationCreationRequest(String requestId, String projectId,
+                                           FundingInformation information) implements
+      CacheableRequest {
+
+    public FundingInformationCreationRequest {
+      requireNonNull(requestId);
+      requireNonNull(projectId);
+    }
+
+    public FundingInformationCreationRequest(String requestId, String projectId) {
+      this(requestId, projectId, null);
+    }
+
+    @Override
+    public String requestId() {
+      return requestId;
+    }
+  }
+
+  /**
+   * A service request to update project information.
+   *
+   * @param projectId   the project's id
+   * @param requestBody the information to be updated.
+   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
+   *                    the response.
+   * @since 1.9.0
+   */
+  record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
+                              String requestId) implements CacheableRequest {
+
+    public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
+      this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+
+    public ProjectUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+  }
+
+  /**
+   * A service response from an update project information request.
+   *
+   * @param projectId    the project's id
+   * @param responseBody the information that was updated.
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.9.0
+   */
+  record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
+                               String requestId) {
+
+    public ProjectUpdateResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+  }
+
+  record FundingInformationCreationResponse(String requestId, String projectId) {
+
+    public FundingInformationCreationResponse {
+      requireNonNull(requestId);
+      requireNonNull(projectId);
+    }
+
+  }
+
+
+  /*
+  API method section - end
+   */
+
+
+  /*
+  API concept section - start
+   */
+
+  // deletion
+  record FundingInformationDeletionRequest(String projectId, String requestId) {
+
+    public FundingInformationDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+    public FundingInformationDeletionRequest(String projectId) {
+      this(projectId, UUID.randomUUID().toString());
+    }
+  }
+
+  record ProjectResponsibleDeletionRequest(String projectId, String requestId) {
+
+    public ProjectResponsibleDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+    public ProjectResponsibleDeletionRequest(String projectId) {
+      this(projectId, UUID.randomUUID().toString());
+    }
+
+  }
+
+  record ProjectDeletionRequest(String projectId, String requestId) {
+
+    public ProjectDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+    public ProjectDeletionRequest(String projectId) {
+      this(projectId, UUID.randomUUID().toString());
+    }
+  }
+
+  record ProjectDeletionResponse(String projectId, String requestId) {
+
+    public ProjectDeletionResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
   }
 
   /**
@@ -663,6 +830,25 @@ public interface AsyncProjectService {
    */
   record ProjectContacts(ProjectContact investigator, ProjectContact manager,
                          ProjectContact responsible) {
+
+    public ProjectContacts(ProjectContact investigator, ProjectContact manager) {
+      this(investigator, manager, null);
+    }
+
+    /**
+     * {@inheritDoc} Please use {@link #optionalResponsible} to access the responsible safely.
+     *
+     * @return the project responsible. Might be null.
+     * @since 1.10.0
+     */
+    @Override
+    public ProjectContact responsible() {
+      return responsible;
+    }
+
+    public Optional<ProjectContact> optionalResponsible() {
+      return Optional.ofNullable(responsible);
+    }
 
   }
 
