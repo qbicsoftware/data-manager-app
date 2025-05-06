@@ -31,7 +31,6 @@ import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroup;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -173,13 +172,19 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request) {
     var call = Mono.fromCallable(() -> {
-      var experiment = experimentInformationService.find(request.projectId(),
-          request.experimentId()).orElseThrow(
-          () -> new RequestFailedException("No experiment found for id " + request.experimentId()));
-    updateExperimentalGroup(experiment, request.group());
-    experimentInformationService.updateExperimentalGroupsOfExperiment();
+      if (!sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(request.projectId()), request.experimentId()).isEmpty()) {
+        throw new RequestFailedException("Cannot update experimental group, samples are registered for experiment " + request.experimentId());
+      }
+      experimentInformationService.updateExperimentalGroup(request.projectId(),
+          request.experimentId(), convertFromAPI(request.group()));
+      return new ExperimentalGroupUpdateResponse(request.experimentId(), request.group(), request.requestId());
     });
-    throw new RuntimeException("not implemented");
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .retryWhen(defaultRetryStrategy())
+        .doOnError(e -> log.error("Error updating experimental group", e))
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
   }
 
   private void updateExperimentalGroup(Experiment experiment, ExperimentalGroup experimentalGroup) {
@@ -187,7 +192,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
-    return new ExperimentInformationService.ExperimentalGroup(group.groupId(), group.name(), group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(), group.sampleSize());
+    return new ExperimentInformationService.ExperimentalGroup(group.groupId(), group.name(),
+        group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(),
+        group.sampleSize());
   }
 
   @Override
