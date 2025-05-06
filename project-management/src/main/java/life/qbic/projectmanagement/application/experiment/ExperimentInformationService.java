@@ -82,6 +82,20 @@ public class ExperimentInformationService {
         new VariableName(level.variableName()), value);
   }
 
+  private static ExperimentalGroup convertFromDomain(
+      life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup domainGroup) {
+    return new ExperimentalGroup(domainGroup.id(), domainGroup.name(),
+        domainGroup.condition().getVariableLevels().stream()
+            .map(ExperimentInformationService::convertFromDomain).toList(), domainGroup.sampleSize());
+  }
+
+  private static VariableLevel convertFromDomain(
+      life.qbic.projectmanagement.domain.model.experiment.VariableLevel domainLevel) {
+    return new VariableLevel(domainLevel.variableName().value(),
+        domainLevel.experimentalValue().value(),
+        domainLevel.experimentalValue().unit().orElse(null));
+  }
+
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Optional<Experiment> find(String projectId, ExperimentId experimentId) {
@@ -746,8 +760,11 @@ public class ExperimentInformationService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public List<ExperimentalGroup> fetchGroups(String projectId, ExperimentId experimentId) {
-    return experimentRepository.find(experimentId).map(Experiment::getExperimentalGroups).orElse(
-        Collections.emptyList());
+    return experimentRepository
+        .find(experimentId)
+        .map(Experiment::getExperimentalGroups).orElse(Collections.emptyList())
+        .stream().map(ExperimentInformationService::convertFromDomain)
+        .toList();
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {

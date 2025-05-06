@@ -172,12 +172,16 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request) {
     var call = Mono.fromCallable(() -> {
-      if (!sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(request.projectId()), request.experimentId()).isEmpty()) {
-        throw new RequestFailedException("Cannot update experimental group, samples are registered for experiment " + request.experimentId());
+      if (sampleInfoService.hasSamples(ProjectId.parse(request.projectId()),
+          request.experimentId())) {
+        throw new RequestFailedException(
+            "Cannot update experimental group, samples are registered for experiment "
+                + request.experimentId());
       }
       experimentInformationService.updateExperimentalGroup(request.projectId(),
           request.experimentId(), convertFromAPI(request.group()));
-      return new ExperimentalGroupUpdateResponse(request.experimentId(), request.group(), request.requestId());
+      return new ExperimentalGroupUpdateResponse(request.experimentId(), request.group(),
+          request.requestId());
     });
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
@@ -185,10 +189,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error updating experimental group", e))
         .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
-  }
-
-  private void updateExperimentalGroup(Experiment experiment, ExperimentalGroup experimentalGroup) {
-    throw new RuntimeException("not implemented");
   }
 
   private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
@@ -199,12 +199,47 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ExperimentalGroupDeletionResponse> delete(ExperimentalGroupDeletionRequest request) {
-    throw new RuntimeException("not implemented");
+    var call = Mono.fromCallable(() -> {
+      if (sampleInfoService.hasSamples(ProjectId.parse(request.projectId()), request.experimentId())) {
+        throw new RequestFailedException(
+            "Cannot delete experimental group, samples are registered for experiment "
+                + request.experimentId());
+      }
+      experimentInformationService.deleteExperimentalGroup(request.projectId(), request.experimentId(),
+          request.experimentGroupId());
+
+      return new ExperimentalGroupDeletionResponse(request.experimentId(), request.experimentGroupId(),
+          request.requestId());
+    });
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .retryWhen(defaultRetryStrategy())
+        .doOnError(e -> log.error("Error updating experimental group", e))
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
   }
 
   @Override
   public Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId) {
-    throw new RuntimeException("not implemented");
+    var call = Flux.fromStream(() ->
+      experimentInformationService.fetchGroups(projectId, ExperimentId.parse(experimentId))
+          .stream()
+          .map(AsyncProjectServiceImpl::convertToApi));
+    return applySecurityContextMany(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .retryWhen(defaultRetryStrategy())
+        .doOnError(e -> log.error("Error updating experimental group", e))
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+  }
+
+  private static ExperimentalGroup convertToApi(ExperimentInformationService.ExperimentalGroup group) {
+    return new ExperimentalGroup(group.id(), group.name(), group.replicateCount(),
+        group.levels().stream().map(AsyncProjectServiceImpl::convertToApi).collect(Collectors.toSet()));
+  }
+
+  private static VariableLevel convertToApi(ExperimentInformationService.VariableLevel level) {
+    return new VariableLevel(level.variableName(), level.variableName(), level.unit());
   }
 
   @Override

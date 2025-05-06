@@ -107,9 +107,9 @@ import reactor.core.publisher.Mono;
 @SpringComponent
 public class ExperimentDetailsComponent extends PageArea {
 
-  private static final Logger log = LoggerFactory.logger(ExperimentDetailsComponent.class);
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
+  private static final Logger log = LoggerFactory.logger(ExperimentDetailsComponent.class);
   @Serial
   private static final long serialVersionUID = -8992991642015281245L;
   private final transient ExperimentInformationService experimentInformationService;
@@ -140,12 +140,12 @@ public class ExperimentDetailsComponent extends PageArea {
   private Context context;
   private int experimentalGroupCount;
 
-
+  @Autowired
   public ExperimentDetailsComponent(
-      @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired SampleInformationService sampleInformationService,
-      @Autowired DeletionService deletionService,
-      @Autowired SpeciesLookupService ontologyTermInformationService,
+      ExperimentInformationService experimentInformationService,
+      SampleInformationService sampleInformationService,
+      DeletionService deletionService,
+      SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService,
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
@@ -186,6 +186,25 @@ public class ExperimentDetailsComponent extends PageArea {
       ontology.addClassName("ontology");
       return ontology;
     });
+  }
+
+  private static AppDialog createConfoundingVarsDeleteConfirmDialog(
+      List<ConfoundingVariable> deletedVars, DialogAction onConfirmAction) {
+    var confirmDialog = AppDialog.small();
+    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog,
+        "Delete confounding variables?",
+        IconFactory.warningIcon());
+    String deletedVariableNames = deletedVars.stream().map(ConfoundingVariable::name)
+        .collect(Collectors.joining(", "));
+    DialogBody.withoutUserInput(confirmDialog, new Div(
+        "Deleting a confounding variable will delete all levels of the confounding variable from annotated samples. "
+            + "Do you want to delete the following confounding variables: " + deletedVariableNames
+            + " ?"));
+    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
+        "Delete " + deletedVars.size() + " confounding variables");
+    confirmDialog.registerConfirmAction(onConfirmAction);
+    confirmDialog.registerCancelAction(confirmDialog::close);
+    return confirmDialog;
   }
 
   private Notification createSampleRegistrationPossibleNotification() {
@@ -411,26 +430,6 @@ public class ExperimentDetailsComponent extends PageArea {
         deletedVars, confirmAction);
     confirmDialog.open();
   }
-
-  private static AppDialog createConfoundingVarsDeleteConfirmDialog(
-      List<ConfoundingVariable> deletedVars, DialogAction onConfirmAction) {
-    var confirmDialog = AppDialog.small();
-    life.qbic.datamanager.views.general.dialog.DialogHeader.withIcon(confirmDialog,
-        "Delete confounding variables?",
-        IconFactory.warningIcon());
-    String deletedVariableNames = deletedVars.stream().map(ConfoundingVariable::name)
-        .collect(Collectors.joining(", "));
-    DialogBody.withoutUserInput(confirmDialog, new Div(
-        "Deleting a confounding variable will delete all levels of the confounding variable from annotated samples. "
-            + "Do you want to delete the following confounding variables: " + deletedVariableNames
-            + " ?"));
-    life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
-        "Delete " + deletedVars.size() + " confounding variables");
-    confirmDialog.registerConfirmAction(onConfirmAction);
-    confirmDialog.registerCancelAction(confirmDialog::close);
-    return confirmDialog;
-  }
-
 
   private void editConfoundingVariables(List<ConfoundingVariable> createdVars,
       List<ConfoundingVariable> renamedVars, List<ConfoundingVariable> deletedVars) {
@@ -821,6 +820,7 @@ public class ExperimentDetailsComponent extends PageArea {
     List<ExperimentalGroupDTO> experimentalGroupDTOS = experimentalGroupContents.stream()
         .map(this::toExperimentalGroupDTO).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
+
     experimentInformationService.updateExperimentalGroupsOfExperiment(
         context.projectId().orElseThrow().value(),
         experimentId, experimentalGroupDTOS);
