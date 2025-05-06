@@ -1029,33 +1029,6 @@ public interface AsyncProjectService {
   API concept section - start
    */
 
-  // deletion
-  record FundingInformationDeletionRequest(String projectId, String requestId) {
-
-    public FundingInformationDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-    public FundingInformationDeletionRequest(String projectId) {
-      this(projectId, UUID.randomUUID().toString());
-    }
-  }
-
-  record ProjectResponsibleDeletionRequest(String projectId, String requestId) {
-
-    public ProjectResponsibleDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-    public ProjectResponsibleDeletionRequest(String projectId) {
-      this(projectId, UUID.randomUUID().toString());
-    }
-
-  }
-
-
 
   /**
    * Container for passing information in an {@link ProjectUpdateRequestBody} or
