@@ -330,9 +330,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes(),
-        experimentDraft.getSpeciesIcon().getLabel(),
-        experimentDraft.getSpecimenIcon().getLabel());
+        experimentDraft.getAnalytes());
     reloadExperimentInfo(projectId, experimentId);
     event.getSource().close();
   }

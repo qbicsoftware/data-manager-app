@@ -523,10 +523,9 @@ public class ExperimentInformationService {
     handleLocalEventCache(domainEventsCache);
   }
 
-  @Transactional
   /**
    * Updates experimental groups in a given experiment.
-   *
+   * <p>
    * Compares the provided list of experimental groups of an experiment with the persistent state.
    * Removes groups from the experiment that are not in the new list, adds groups that are not in
    * the experiment yet and updates the other groups of the experiment.
@@ -536,6 +535,7 @@ public class ExperimentInformationService {
    * @param experimentalGroupDTOS  the new list of experimental groups including all updates
    * @since 1.0.0
    */
+  @Transactional
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void updateExperimentalGroupsOfExperiment(String projectId, ExperimentId experimentId,
@@ -591,8 +591,7 @@ public class ExperimentInformationService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void editExperimentInformation(String projectId, ExperimentId experimentId,
       String experimentName,
-      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
-      String speciesIconName, String specimenIconName) {
+      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
@@ -605,7 +604,6 @@ public class ExperimentInformationService {
     experiment.setSpecies(species);
     experiment.setSpecimens(specimens);
     experiment.setAnalytes(analytes);
-    experiment.setIconNames(speciesIconName, specimenIconName, "default");
     experimentRepository.update(experiment);
 
     handleLocalEventCache(domainEventsCache);
