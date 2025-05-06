@@ -24,37 +24,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariableAdditions;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariableDeletions;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariableUpdates;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.Curie;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDescription;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroups;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableAdditions;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableDeletions;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariables;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingDeletion;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCreationResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletion;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
 import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
@@ -608,29 +577,61 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request) {
-    Mono<ProjectDeletionResponse> responseMono = switch (request.body()) {
-      case ProjectResponsibleDeletion target ->
-          delete(request.projectId(), request.requestId(), target);
-      case FundingDeletion target -> delete(request.projectId(), request.requestId(), target);
-    };
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContext(responseMono)
-        .contextWrite(reactiveSecurity(securityContext))
-        .retryWhen(defaultRetryStrategy())
-        .subscribeOn(scheduler);
+//    Mono<ProjectDeletionResponse> responseMono = switch (request.body()) {
+//      case ProjectResponsibleDeletion target ->
+//          delete(request.projectId(), request.requestId(), target);
+//      case FundingDeletion target -> delete(request.projectId(), request.requestId(), target);
+//    };
+//    SecurityContext securityContext = SecurityContextHolder.getContext();
+//    return applySecurityContext(responseMono)
+//        .contextWrite(reactiveSecurity(securityContext))
+//        .retryWhen(defaultRetryStrategy())
+//        .subscribeOn(scheduler);
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public Mono<FundingInformationCreationResponse> create(
+      FundingInformationCreationRequest request) {
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public Mono<FundingInformationDeletionResponse> delete(
+      FundingInformationDeletionRequest request) {
+//TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public Mono<ProjectResponsibleCreationResponse> create(
+      ProjectResponsibleCreationRequest request) {
+//TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public Mono<ProjectResponsibleDeletionResponse> delete(
+      ProjectResponsibleDeletionRequest request) {
+//TODO implement
+    throw new RuntimeException("Not implemented");
   }
 
   @Override
   public Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request) {
-    Mono<ExperimentDeletionResponse> response = switch (request.body()) {
-      case ExperimentalVariableDeletions experimentalVariableDeletions ->
-          deleteExperimentalVariables(request, experimentalVariableDeletions);
-    };
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContext(response)
-        .contextWrite(reactiveSecurity(securityContext))
-        .retryWhen(defaultRetryStrategy())
-        .subscribeOn(scheduler);
+//    Mono<ExperimentDeletionResponse> response = switch (request.body()) {
+//      case ExperimentalVariableDeletions experimentalVariableDeletions ->
+//          deleteExperimentalVariables(request, experimentalVariableDeletions);
+//    };
+//    SecurityContext securityContext = SecurityContextHolder.getContext();
+//    return applySecurityContext(response)
+//        .contextWrite(reactiveSecurity(securityContext))
+//        .retryWhen(defaultRetryStrategy())
+//        .subscribeOn(scheduler);
+    //TODO implement
+    throw new RuntimeException("Not implemented");
   }
 
   private Mono<ExperimentDeletionResponse> deleteExperimentalVariables(
@@ -654,7 +655,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       }
 
       return new ExperimentDeletionResponse(request.projectId(), request.experimentId(),
-          request.requestId(), new ExperimentalVariables(removedVariables));
+          request.requestId()/*, new ExperimentalVariables(removedVariables) fixme*/);
     });
   }
 
