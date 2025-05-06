@@ -63,6 +63,8 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request);
 
+
+  Mono<ExperimentCreationResponse> create(ExperimentCreationRequest request);
   /**
    * Submits an experimental group update request and returns a reactive
    * {@link Mono<ExperimentalGroupUpdateResponse>}.
@@ -571,9 +573,9 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface CacheableRequest permits ExperimentalGroupCreationRequest,
-      ExperimentalGroupDeletionRequest, ExperimentalGroupUpdateRequest, ExperimentUpdateRequest,
-      ProjectUpdateRequest, ValidationRequest {
+  sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentUpdateRequest,
+      ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
+      ExperimentalGroupUpdateRequest, ProjectUpdateRequest, ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -957,6 +959,69 @@ public interface AsyncProjectService {
       return idSpace + ":" + localId;
     }
   }
+
+  /**
+   * A service request to create an experiment
+   *
+   * @param projectId             the project in which to create the experiment
+   * @param experimentDescription the minimal required information for the experiment
+   * @param requestId             the unique id of this request. If none exists use
+   *                              {@link ExperimentCreationRequest#ExperimentCreationRequest(String,
+   *                              ExperimentDescription)} for construction.
+   * @since 1.9.0
+   */
+  record ExperimentCreationRequest(String projectId, ExperimentDescription experimentDescription,
+                                   String requestId) implements CacheableRequest {
+
+    /**
+     * A service request to create an experiment
+     *
+     * @param projectId             the project in which to create the experiment
+     * @param experimentDescription the minimal required information for the experiment
+     * @param requestId             the unique id of this request. If none exists use
+     *                              {@link
+     *                              ExperimentCreationRequest#ExperimentCreationRequest(String,
+     *                              ExperimentDescription)} for construction.
+     * @since 1.9.0
+     */
+    public ExperimentCreationRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+    /**
+     * A service request to create an experiment. Generates a request id and assinges it to this
+     * request.
+     *
+     * @param projectId             the project in which to create the experiment
+     * @param experimentDescription the minimal required information for the experiment
+     * @since 1.9.0
+     */
+    public ExperimentCreationRequest(String projectId,
+        ExperimentDescription experimentDescription) {
+      this(projectId, experimentDescription, UUID.randomUUID().toString());
+    }
+  }
+
+  /**
+   * A service response for experiment creation.
+   *
+   * @param projectId             the project in which the experiment was created
+   * @param experimentId          the identifier of the created experiment
+   * @param experimentDescription information about the experiment
+   * @param requestId             the identifier of the original request
+   * @since 1.9.0
+   */
+  record ExperimentCreationResponse(String projectId, String experimentId,
+                                    ExperimentDescription experimentDescription,
+                                    String requestId) {
+
+    public ExperimentCreationResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+  }
+
 
   /**
    * A service request to update an experiment
