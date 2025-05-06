@@ -45,6 +45,55 @@ public interface AsyncProjectService {
    */
 
   /**
+   * Requests the creation of an experiment and returns a reactive
+   * {@link Mono<ExperimentCreationResponse>}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the request containing information to create the experiment
+   * @return a {@link Mono<ExperimentCreationResponse>} object publishing a
+   * {@link ExperimentCreationResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentCreationResponse> create(ExperimentCreationRequest request);
+
+  /**
+   * Submits an experiment update request and returns a reactive
+   * {@link Mono<ExperimentUpdateResponse>} object immediately.
+   * <p>
+   * The method is non-blocking.
+   * <p>
+   * The implementing class must ensure to be able to process all implementing classes of the
+   * {@link ProjectUpdateRequestBody} interface contained in the request.
+   * <p>
+   * The implementing class must also ensure to only return responses with classes implementing the
+   * {@link ProjectUpdateResponseBody} interface.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the request to update a project
+   * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
+   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.9.0
+   */
+  Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
+
+  Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
+
+  /**
    * Submits an experimental group creation request and returns a reactive
    * {@link Mono<ExperimentalGroupCreationResponse>}.
    * <p>
@@ -138,34 +187,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
-
-  /**
-   * Submits a project update request and returns a reactive {@link Mono<ProjectUpdateResponse>}
-   * object immediately.
-   * <p>
-   * The method implementation must be non-blocking.
-   * <p>
-   * The implementing class must ensure to be able to process all implementing classes of the
-   * {@link ProjectUpdateRequestBody} interface contained in the request.
-   * <p>
-   * The implementing class must also ensure to only return responses with classes implementing the
-   * {@link ProjectUpdateResponseBody} interface.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param request the request to update a project
-   * @return a {@link Mono<ProjectUpdateResponse>} object publishing an
-   * {@link ProjectUpdateResponse} on success. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
-   * @throws UnknownRequestException if an unknown request has been used in the service call
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
-   * @since 1.9.0
-   */
-  Mono<ProjectUpdateResponse> update(ProjectUpdateRequest request);
 
 
   /**
@@ -1223,22 +1244,6 @@ public interface AsyncProjectService {
     }
   }
 
-  /**
-   * A service request to create a project.
-   *
-   * @param design   the title and objective of a project
-   * @param contacts the different contact persons of a project
-   * @param funding  some funding information
-   * @since 1.9.0
-   */
-  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-                                FundingInformation funding, String requestId) {
-
-    public ProjectCreationRequest {
-      requireNonNull(requestId);
-    }
-  }
-
 
   /**
    * A service request to create one or more new samples for a project.
@@ -1424,64 +1429,6 @@ public interface AsyncProjectService {
   }
 
 
-  /**
-   * A service response from a project creation request
-   *
-   * @param projectId
-   * @since 1.9, 0
-   */
-  record ProjectCreationResponse(String projectId, String requestId) {
-
-    public ProjectCreationResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service request to update project information.
-   *
-   * @param projectId   the project's id
-   * @param requestBody the information to be updated.
-   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
-   *                    the response.
-   * @since 1.9.0
-   */
-  record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
-                              String requestId) implements CacheableRequest {
-
-    public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
-      this(projectId, requestBody, UUID.randomUUID().toString());
-    }
-
-    public ProjectUpdateRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-  }
-
-  record ProjectDeletionRequest(String projectId, String requestId,
-                                ProjectDeletionRequestBody body) {
-
-    public ProjectDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-    public ProjectDeletionRequest(String projectId, ProjectDeletionRequestBody requestBody) {
-      this(projectId, UUID.randomUUID().toString(), requestBody);
-    }
-  }
-
-  record ProjectDeletionResponse(String projectId, String requestId) {
-
-    public ProjectDeletionResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-  }
-
   record FundingDeletion() implements ProjectDeletionRequestBody {
 
   }
@@ -1490,24 +1437,6 @@ public interface AsyncProjectService {
 
   }
 
-  /**
-   * A service response from an update project information request.
-   *
-   * @param projectId    the project's id
-   * @param responseBody the information that was updated.
-   * @param requestId    the request ID, needs to be provided by the client and will be referenced
-   *                     in the response.
-   * @since 1.9.0
-   */
-  record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
-                               String requestId) {
-
-    public ProjectUpdateResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-  }
 
   record ExperimentDeletionRequest(String projectId, String experimentId, String requestId,
                                    ExperimentDeletionRequestBody body) {

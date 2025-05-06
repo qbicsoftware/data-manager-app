@@ -24,6 +24,37 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariableAdditions;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariableDeletions;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ConfoundingVariableUpdates;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.Curie;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDescription;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroups;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableAdditions;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableDeletions;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariables;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingDeletion;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCreationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectCreationResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletion;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
 import life.qbic.projectmanagement.application.api.fair.ContactPoint;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
@@ -202,10 +233,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
       FundingInformation fundingInformation) {
     return Mono.fromCallable(() -> {
-      projectService.setFunding(projectId, fundingInformation.grant(),
-          fundingInformation.grantId());
-      return new ProjectUpdateResponse(projectId.value(), fundingInformation, requestId);
-    });
+        projectService.setFunding(projectId, fundingInformation.grant(),
+            fundingInformation.grantId());
+        return new ProjectUpdateResponse(projectId.value(), fundingInformation, requestId);
+      });
   }
 
   @Override
