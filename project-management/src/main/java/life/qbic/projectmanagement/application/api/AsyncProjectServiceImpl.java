@@ -42,10 +42,12 @@ import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Contact;
+import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
@@ -594,29 +596,71 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<FundingInformationCreationResponse> create(
       FundingInformationCreationRequest request) {
-    //TODO implement
-    throw new RuntimeException("Not implemented");
+
+    var call = Mono.fromCallable(() -> {
+        projectService.setFunding(ProjectId.parse(request.projectId()),
+            request.information().grant(), request.information().grantId());
+        return new FundingInformationCreationResponse(request.requestId(), request.information(), request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not create funding information", e))
+        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
   }
+
 
   @Override
   public Mono<FundingInformationDeletionResponse> delete(
       FundingInformationDeletionRequest request) {
-//TODO implement
-    throw new RuntimeException("Not implemented");
+
+    var call = Mono.fromCallable(() -> {
+      projectService.removeFunding(ProjectId.parse(request.projectId()));
+      return new FundingInformationDeletionResponse(request.requestId(), request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not create funding information", e))
+        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
   public Mono<ProjectResponsibleCreationResponse> create(
       ProjectResponsibleCreationRequest request) {
-//TODO implement
-    throw new RuntimeException("Not implemented");
+
+    var call = Mono.fromCallable(() -> {
+      projectService.setResponsibility(ProjectId.parse(request.projectId()), request.projectResponsible());
+      return new ProjectResponsibleCreationResponse(request.requestId(), request.projectResponsible(), request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not create funding information", e))
+        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
   public Mono<ProjectResponsibleDeletionResponse> delete(
       ProjectResponsibleDeletionRequest request) {
-//TODO implement
-    throw new RuntimeException("Not implemented");
+
+    var call = Mono.fromCallable(() -> {
+      projectService.removeResponsibility(ProjectId.parse(request.projectId()));
+      return new ProjectResponsibleDeletionResponse(request.requestId(), request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not create funding information", e))
+        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
