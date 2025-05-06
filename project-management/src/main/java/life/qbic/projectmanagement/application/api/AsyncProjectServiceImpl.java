@@ -188,7 +188,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private void updateExperimentalGroup(Experiment experiment, ExperimentalGroup experimentalGroup) {
-    thrown new RuntimeException("not implemented");
+    throw new RuntimeException("not implemented");
   }
 
   private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
