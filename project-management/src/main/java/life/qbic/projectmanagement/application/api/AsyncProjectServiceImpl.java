@@ -31,6 +31,7 @@ import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroup;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
@@ -171,7 +172,22 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request) {
+    var call = Mono.fromCallable(() -> {
+      var experiment = experimentInformationService.find(request.projectId(),
+          request.experimentId()).orElseThrow(
+          () -> new RequestFailedException("No experiment found for id " + request.experimentId()));
+    updateExperimentalGroup(experiment, request.group());
+    experimentInformationService.updateExperimentalGroupsOfExperiment();
+    });
     throw new RuntimeException("not implemented");
+  }
+
+  private void updateExperimentalGroup(Experiment experiment, ExperimentalGroup experimentalGroup) {
+    thrown new RuntimeException("not implemented");
+  }
+
+  private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
+    return new ExperimentInformationService.ExperimentalGroup(group.groupId(), group.name(), group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(), group.sampleSize());
   }
 
   @Override
