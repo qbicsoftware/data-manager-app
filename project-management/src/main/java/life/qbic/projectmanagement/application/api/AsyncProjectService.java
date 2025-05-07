@@ -151,7 +151,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<ProjectResponsibleCreationResponse> create(ProjectResponsibleCreationRequest request);
-  //</editor-fold>
 
   /**
    * Submits a project-responsible person deletion request and returns a reactive
@@ -163,7 +162,9 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<ProjectResponsibleDeletionResponse> delete(ProjectResponsibleDeletionRequest request);
+  //</editor-fold>
 
+  //<editor-fold desc="Experiment resource creation">">
   /**
    * Requests the creation of an experiment and returns a reactive
    * {@link Mono<ExperimentCreationResponse>}.
@@ -210,7 +211,6 @@ public interface AsyncProjectService {
    * @since 1.9.0
    */
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
-  //</editor-fold>
 
   /**
    * Submits an experiment deletion request and returns a reactive {@link Mono<ExperimentDeletionResponse>}.
@@ -257,7 +257,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request);
-  //</editor-fold>
 
   /**
    * Submits an experimental group deletion request and returns a reactive
@@ -298,6 +297,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
+  //</editor-fold>
 
   /**
    * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
@@ -326,7 +326,6 @@ public interface AsyncProjectService {
    */
   Flux<ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
-  //</editor-fold>
 
   /**
    * Return a reactive stream of {@link ExperimentDescription} for a given project.
@@ -446,9 +445,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Flux<OntologyTerm> getTerms(String value, int offset, int limit);
-  //</editor-fold>
-
-  //<editor-fold desc="experiment resource creation">
 
   /**
    * Tries to find the exact matching {@link OntologyTerm} for a given {@link Curie}.
