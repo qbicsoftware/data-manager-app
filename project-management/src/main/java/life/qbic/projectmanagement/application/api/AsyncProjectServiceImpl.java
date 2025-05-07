@@ -615,7 +615,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<FundingInformationDeletionResponse> delete(
       FundingInformationDeletionRequest request) {
-
     var call = Mono.fromCallable(() -> {
       projectService.removeFunding(ProjectId.parse(request.projectId()));
       return new FundingInformationDeletionResponse(request.requestId(), request.projectId());

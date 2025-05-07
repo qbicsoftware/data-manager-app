@@ -13,13 +13,11 @@ import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ValidationResult;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableCreationRequest.ExperimentalGroupDeletionRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
@@ -167,6 +165,77 @@ public interface AsyncProjectService {
   //</editor-fold>
 
   //<editor-fold desc="Experiment resource creation">">
+
+  record ExperimentalVariablesCreationResponse(String projectId,
+                                               List<ExperimentalVariable> experimentalVariables,
+                                               String requestId) {
+
+  }
+
+  record ExperimentalVariablesCreationRequest(String projectId, String experimentId,
+                                              List<ExperimentalVariable> experimentalVariables,
+                                              String requestId) {
+
+    public ExperimentalVariablesCreationRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(experimentalVariables);
+      requireNonNull(requestId);
+    }
+
+    public ExperimentalVariablesCreationRequest(String projectId, String experimentId,
+        List<ExperimentalVariable> experimentalVariables) {
+      this(projectId, experimentId, experimentalVariables, UUID.randomUUID().toString());
+    }
+  }
+
+  record ExperimentalVariablesUpdateRequest(String projectId, String experimentId,
+                                            List<ExperimentalVariable> experimentalVariables,
+                                            String requestId) implements CacheableRequest {
+
+    public ExperimentalVariablesUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(experimentalVariables);
+      requireNonNull(requestId);
+    }
+
+    public ExperimentalVariablesUpdateRequest(String projectId, String experimentId,
+        List<ExperimentalVariable> experimentalVariables) {
+      this(projectId, experimentId, experimentalVariables, UUID.randomUUID().toString());
+    }
+  }
+
+  record ExperimentalVariablesUpdateResponse(String projectId,
+                                             List<ExperimentalVariable> experimentalVariables,
+                                             String requestId) {
+
+  }
+
+  record ExperimentalVariablesDeletionRequest(String projectId, String experimentId,
+                                              String requestId) implements CacheableRequest {
+
+    public ExperimentalVariablesDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+
+    public ExperimentalVariablesDeletionRequest(String projectId, String experimentId) {
+      this(projectId, experimentId, UUID.randomUUID().toString());
+    }
+  }
+
+  record ExperimentalVariablesDeletionResponse(String projectId, String experimentId,
+                                               String requestId) {
+
+    public ExperimentalVariablesDeletionResponse {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
   /**
    * Requests the creation of an experiment and returns a reactive
    * {@link Mono<ExperimentCreationResponse>}.
@@ -215,12 +284,94 @@ public interface AsyncProjectService {
   Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request);
 
   /**
-   * Submits an experiment deletion request and returns a reactive {@link Mono<ExperimentDeletionResponse>}.
+   * Submits an experiment deletion request and returns a reactive
+   * {@link Mono<ExperimentDeletionResponse>}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
    * @param request the request to delete an experiment for a project.
-   * @return a {@link Mono<ExperimentDeletionResponse>} object publishing a {@link ExperimentDeletionResponse}
+   * @return a {@link Mono<ExperimentDeletionResponse>} object publishing a
+   * {@link ExperimentDeletionResponse}
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.10.0
    */
   Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
+
+  /**
+   * Submits an experimental variable creation request and returns a reactive
+   * {@link Mono<ExperimentalVariablesCreationResponse>}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param request the request with information required for the experimental variable creation.
+   * @return a {@link Mono<ExperimentalVariablesCreationResponse>} object publishing a {@link ExperimentalVariablesCreationResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalVariablesCreationResponse> create(ExperimentalVariablesCreationRequest request);
+
+  /**
+   * Submits an experimental variable update request and returns a reactive
+   * {@link Mono<ExperimentalVariablesUpdateResponse>.}
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param request the request with information required for the experimental variable update
+   * @return a {@link Mono<ExperimentalVariablesUpdateResponse>} object publishing a
+   * {@link ExperimentalVariablesUpdateResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalVariablesUpdateResponse> update(ExperimentalVariablesUpdateRequest request);
+
+  /**
+   * Submits an experimental variable deletion request and returns a reactive
+   * {@link Mono<ExperimentalVariablesDeletionResponse>}.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param request the request with information required for the experimental variable deletion
+   * @return a {@link Mono<ExperimentalVariablesDeletionResponse>} object publishing a
+   * {@link ExperimentalVariablesDeletionResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalVariablesDeletionResponse> delete(ExperimentalVariablesDeletionRequest request);
+
+
+  /**
+   * Queries all available experimental variables for a given experiment.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   * @param projectId    the project identifier of the project to get the variables from
+   * @param experimentId the experiment identifier of the experiment to get the variables from
+   * @return a {@link Flux<ExperimentalVariable>} emitting {@link ExperimentalVariable}s for the
+   * experiment.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ExperimentalVariable> getExperimentalVariables(String projectId, String experimentId);
 
   /**
    * Submits an experimental group creation request and returns a reactive
@@ -300,24 +451,6 @@ public interface AsyncProjectService {
    */
   Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
 
-  record ExperimentalVariableCreationRequest(String projectId, String experimentId, ExperimentalVariable experimentalVariable, String requestId) {
-
-    public ExperimentalVariableCreationRequest {
-      requireNonNull(projectId);
-      requireNonNull(experimentId);
-      requireNonNull(experimentalVariable);
-      requireNonNull(requestId);
-    }
-
-    public ExperimentalVariableCreationRequest(String projectId, String experimentId, ExperimentalVariable experimentalVariable) {
-      this(projectId, experimentId, experimentalVariable, UUID.randomUUID().toString());
-    }
-  }
-
-
-
-  //</editor-fold>
-
   /**
    * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
    * <p>
@@ -345,6 +478,8 @@ public interface AsyncProjectService {
    */
   Flux<ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
+
+  //</editor-fold>
 
   /**
    * Return a reactive stream of {@link ExperimentDescription} for a given project.
@@ -623,12 +758,12 @@ public interface AsyncProjectService {
 
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription,
-      ExperimentalGroups, ExperimentalVariableAdditions {
+      ExperimentalGroups {
 
   }
 
   sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables, ExperimentDescription,
-      ExperimentalGroups, ExperimentalVariables {
+      ExperimentalGroups {
 
   }
 
@@ -658,7 +793,8 @@ public interface AsyncProjectService {
    */
   sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentUpdateRequest,
       ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
-      ExperimentalGroupUpdateRequest, FundingInformationCreationRequest, ProjectUpdateRequest,
+      ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
+      ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest, ProjectUpdateRequest,
       ValidationRequest {
 
     /**
@@ -673,14 +809,6 @@ public interface AsyncProjectService {
 
   sealed interface ProjectDeletionRequestBody permits FundingDeletion,
       ProjectResponsibleDeletion {
-
-  }
-
-  sealed interface ExperimentDeletionRequestBody permits ExperimentalVariableDeletions {
-
-  }
-
-  sealed interface ExperimentDeletionResponseBody permits ExperimentalVariables {
 
   }
 
@@ -1166,62 +1294,6 @@ public interface AsyncProjectService {
     }
   }
 
-  /**
-   * Information about variables that should be created
-   *
-   * @param experimentalVariables
-   * @since 1.9.2
-   */
-  record ExperimentalVariableAdditions(List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentUpdateRequestBody {
-
-    public ExperimentalVariableAdditions {
-      experimentalVariables = List.copyOf(experimentalVariables);
-    }
-
-    @Override
-    public List<ExperimentalVariable> experimentalVariables() {
-      return List.copyOf(experimentalVariables);
-    }
-  }
-
-  /**
-   * Information about variables that should be deleted
-   *
-   * @param experimentalVariables
-   */
-  record ExperimentalVariableDeletions(List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentDeletionRequestBody {
-
-    public ExperimentalVariableDeletions {
-      experimentalVariables = List.copyOf(experimentalVariables);
-    }
-
-    @Override
-    public List<ExperimentalVariable> experimentalVariables() {
-      return List.copyOf(experimentalVariables);
-    }
-  }
-
-  /**
-   * Container of experimental variables. Can be used in {@link #update(ExperimentUpdateRequest)}.
-   *
-   * @param experimentalVariables the list of experimental variables
-   * @since 1.9.0
-   */
-  record ExperimentalVariables(List<ExperimentalVariable> experimentalVariables) implements
-      ExperimentUpdateResponseBody, ExperimentDeletionResponseBody {
-
-
-    public ExperimentalVariables {
-      experimentalVariables = List.copyOf(experimentalVariables);
-    }
-
-    @Override
-    public List<ExperimentalVariable> experimentalVariables() {
-      return List.copyOf(experimentalVariables);
-    }
-  }
 
   /**
    * A level of an experimental variable
