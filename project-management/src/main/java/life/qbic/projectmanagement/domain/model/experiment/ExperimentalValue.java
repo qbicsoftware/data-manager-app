@@ -28,7 +28,7 @@ public class ExperimentalValue {
    * Creates a new instance of an experimental value object.
    *
    * @param value the value in textual representation
-   * @param unit  the unit of the value if present
+   * @param unit  the unit of the value if present.
    * @return a new experimental value
    * @since 1.0.0
    */
