@@ -13,11 +13,13 @@ import java.util.Set;
 import java.util.UUID;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableCreationRequest.ExperimentalGroupDeletionRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
@@ -297,6 +299,23 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
+
+  record ExperimentalVariableCreationRequest(String projectId, String experimentId, ExperimentalVariable experimentalVariable, String requestId) {
+
+    public ExperimentalVariableCreationRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(experimentalVariable);
+      requireNonNull(requestId);
+    }
+
+    public ExperimentalVariableCreationRequest(String projectId, String experimentId, ExperimentalVariable experimentalVariable) {
+      this(projectId, experimentId, experimentalVariable, UUID.randomUUID().toString());
+    }
+  }
+
+
+
   //</editor-fold>
 
   /**
@@ -383,7 +402,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Flux<Sample> getSamples(String projectId, String experimentId) throws RequestFailedException;
-  //</editor-fold>
 
   /**
    * Requests all {@link Sample} for a given batch
@@ -509,9 +527,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<OntologyTerm> getTaxonWithCurie(Curie value);
-  //</editor-fold>
-
-  //<editor-fold desc="experiment resource update">
 
   /**
    * Submits multiple validation requests in a single service call.
@@ -564,7 +579,6 @@ public interface AsyncProjectService {
    */
   Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
       String batchId, MimeType mimeType);
-  //</editor-fold>
 
   /**
    * Requests sample information in a desired {@link MimeType}.
@@ -606,8 +620,6 @@ public interface AsyncProjectService {
       PrincipalInvestigator, ProjectDesign, ProjectManager, ProjectResponsible {
 
   }
-  //</editor-fold>
-
 
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription,
