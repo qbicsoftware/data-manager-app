@@ -14,6 +14,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateResponse;
@@ -56,6 +57,8 @@ class AsyncProjectServiceImplTest {
       ExperimentInformationService.class);
   TerminologyService terminologyService = mock(TerminologyService.class);
   SpeciesLookupService taxaService = mock(SpeciesLookupService.class);
+  AddExperimentToProjectService addExperimentToProjectService = mock(
+      AddExperimentToProjectService.class);
 
   @BeforeEach
   void setUp() {
@@ -82,7 +85,8 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        addExperimentToProjectService
     );
 
     String projectId = UUID.randomUUID().toString();
@@ -122,7 +126,8 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        addExperimentToProjectService
     );
 
     String projectId = UUID.randomUUID().toString();
@@ -177,7 +182,8 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationService,
         terminologyService,
-        taxaService);
+        taxaService,
+        addExperimentToProjectService);
 
     String projectId = UUID.randomUUID().toString();
     String experimentId = UUID.randomUUID().toString();

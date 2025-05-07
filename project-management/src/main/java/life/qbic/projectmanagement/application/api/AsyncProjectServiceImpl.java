@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.AddExperimentToProjectService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
@@ -39,6 +40,7 @@ import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.application.sample.SampleValidationService;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Contact;
@@ -82,6 +84,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ExperimentInformationService experimentInformationService;
   private final TerminologyService terminologyService;
   private final SpeciesLookupService taxaService;
+  private final AddExperimentToProjectService addExperimentToProjectService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -93,7 +96,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired MeasurementValidationService measurementValidationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired TerminologyService termService,
-      @Autowired SpeciesLookupService taxaService) {
+      @Autowired SpeciesLookupService taxaService,
+      AddExperimentToProjectService addExperimentToProjectService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -104,6 +108,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.terminologyService = Objects.requireNonNull(termService);
     this.taxaService = Objects.requireNonNull(taxaService);
+    this.addExperimentToProjectService = Objects.requireNonNull(addExperimentToProjectService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -112,12 +117,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private static Set<OntologyTerm> convertToApi(
-      Collection<life.qbic.projectmanagement.domain.model.OntologyTerm> terms) {
+      Collection<OntologyTermV1> terms) {
     return terms.stream().map(AsyncProjectServiceImpl::convertToApi).collect(Collectors.toSet());
   }
 
   private static OntologyTerm convertToApi(
-      life.qbic.projectmanagement.domain.model.OntologyTerm term) {
+      OntologyTermV1 term) {
     return new OntologyTerm(term.getLabel(), term.getDescription(),
         Curie.parse(term.oboId().toString()),
         URI.create(term.getClassIri()), term.getOntologyAbbreviation());
@@ -132,12 +137,37 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ExperimentCreationResponse> create(ExperimentCreationRequest request) {
-    throw new RuntimeException("Not implemented");
+    var securityContext = SecurityContextHolder.getContext();
+    var call = Mono.fromSupplier(() -> {
+      Objects.requireNonNull(request.experimentDescription());
+      var species = request.experimentDescription().species().stream().map(
+          it -> new OntologyTermV1(it.label(), null, null,
+              null, null, null, null)).toList(); //todo replace with v2
+      var specimen = request.experimentDescription().specimen().stream().map(
+          it -> new OntologyTermV1(it.label(), null, null,
+              null, null, null, null)).toList(); //todo replace with v2
+      var analytes = request.experimentDescription().analytes().stream().map(
+          it -> new OntologyTermV1(it.label(), null, null,
+              null, null, null, null)).toList(); //todo replace with v2
+      ProjectId parse = ProjectId.parse(request.projectId());
+      String experimentName = request.experimentDescription().experimentName();
+
+      ExperimentId res = addExperimentToProjectService.addExperimentToProject(parse, experimentName,
+              species, specimen, analytes)
+          .valueOrElseThrow(e -> new RuntimeException(e));
+      return new ExperimentCreationResponse(request.projectId(), res.value(),
+          request.experimentDescription(), request.requestId());
+    });
+    return applySecurityContext(call)
+        .contextWrite(reactiveSecurity(securityContext))
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
   public Mono<ExperimentalGroupCreationResponse> create(ExperimentalGroupCreationRequest request) {
-    throw new RuntimeException("not implemented");
+//TODO implement
+    throw new RuntimeException("Not implemented");
   }
 
   @Override
