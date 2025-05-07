@@ -8,8 +8,7 @@ import life.qbic.application.commons.SortOrder;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.Ontology;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 /**
  * Connects the OntologyTermInformationService to a Combobox of variable type, setting up a user-
@@ -21,14 +20,14 @@ public class OntologyFilterConnector {
 
   }
 
-  public static Stream<OntologyTerm> loadOntologyTerms(Query<OntologyTerm, String> query,
+  public static Stream<OntologyTermV1> loadOntologyTerms(Query<OntologyTermV1, String> query,
       TerminologyService terminologyService) {
     return terminologyService.query(query.getFilter().orElse(""), query.getOffset(),
         query.getLimit()).stream().distinct();
   }
 
-  public static Stream<OntologyTerm> loadOntologyTerms(
-      Query<OntologyTerm, String> query,
+  public static Stream<OntologyTermV1> loadOntologyTerms(
+      Query<OntologyTermV1, String> query,
       SpeciesLookupService ontologyTermInformationService) {
     List<SortOrder> sortOrders = query.getSortOrders().stream()
         .map(querySortOrder -> new SortOrder(querySortOrder.getSorted(),
@@ -39,7 +38,7 @@ public class OntologyFilterConnector {
             query.getOffset(),
             query.getLimit(),
             sortOrders);
-    return ontologyClassEntities.stream().map(OntologyTerm::from).distinct();
+    return ontologyClassEntities.stream().map(OntologyTermV1::from).distinct();
   }
 
 }

@@ -10,7 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.batch.Batch;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
@@ -51,9 +51,9 @@ public class SamplePreview {
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "experimentalGroupId")
   private ExperimentalGroup experimentalGroup;
-  private OntologyTerm species;
-  private OntologyTerm specimen;
-  private OntologyTerm analyte;
+  private OntologyTermV1 species;
+  private OntologyTermV1 specimen;
+  private OntologyTermV1 analyte;
 
   protected SamplePreview() {
     //needed by JPA
@@ -61,8 +61,9 @@ public class SamplePreview {
 
   private SamplePreview(ExperimentId experimentId, SampleId sampleId, String sampleCode,
       String batchLabel, String sampleName, String biologicalReplicate,
-      ExperimentalGroup experimentalGroup, OntologyTerm species,
-      OntologyTerm specimen, OntologyTerm analyte, AnalysisMethod analysisMethod, String comment) {
+      ExperimentalGroup experimentalGroup, OntologyTermV1 species,
+      OntologyTermV1 specimen, OntologyTermV1 analyte, AnalysisMethod analysisMethod,
+      String comment) {
     Objects.requireNonNull(experimentId);
     Objects.requireNonNull(sampleId);
     Objects.requireNonNull(sampleCode);
@@ -101,11 +102,11 @@ public class SamplePreview {
    *                            was taken of. Used to group biological replicates
    * @param experimentalGroup   the {@link ExperimentalGroup} for the {@link Sample} associated with
    *                            this preview
-   * @param species             the {@link OntologyTerm} for the species of this {@link Sample}
+   * @param species             the {@link OntologyTermV1} for the species of this {@link Sample}
    *                            associated with this preview
-   * @param specimen            the {@link OntologyTerm} for the specimen of this {@link Sample}
+   * @param specimen            the {@link OntologyTermV1} for the specimen of this {@link Sample}
    *                            associated with this preview
-   * @param analyte             the {@link OntologyTerm} for the analyte of this {@link Sample}
+   * @param analyte             the {@link OntologyTermV1} for the analyte of this {@link Sample}
    *                            associated with this preview
    * @param analysisMethod      the analysis method to be performed for this {@link Sample}
    * @param comment             an optional comment pertaining to the associated {@link Sample}
@@ -115,7 +116,7 @@ public class SamplePreview {
       String sampleCode,
       String batchLabel,
       String sampleName, String biologicalReplicate, ExperimentalGroup experimentalGroup,
-      OntologyTerm species, OntologyTerm specimen, OntologyTerm analyte,
+      OntologyTermV1 species, OntologyTermV1 specimen, OntologyTermV1 analyte,
       AnalysisMethod analysisMethod, String comment) {
     return new SamplePreview(experimentId, sampleId, sampleCode, batchLabel,
         sampleName, biologicalReplicate, experimentalGroup, species, specimen, analyte, analysisMethod,
@@ -142,15 +143,15 @@ public class SamplePreview {
     return sampleName;
   }
 
-  public OntologyTerm species() {
+  public OntologyTermV1 species() {
     return species;
   }
 
-  public OntologyTerm specimen() {
+  public OntologyTermV1 specimen() {
     return specimen;
   }
 
-  public OntologyTerm analyte() {
+  public OntologyTermV1 analyte() {
     return analyte;
   }
 

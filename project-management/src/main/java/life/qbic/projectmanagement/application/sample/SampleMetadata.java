@@ -3,7 +3,7 @@ package life.qbic.projectmanagement.application.sample;
 import java.util.Map;
 import java.util.Optional;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.sample.AnalysisMethod;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 
@@ -21,9 +21,9 @@ public record SampleMetadata(
     AnalysisMethod analysisToBePerformed,
     String biologicalReplicate,
     long experimentalGroupId,
-    OntologyTerm species,
-    OntologyTerm specimen,
-    OntologyTerm analyte,
+    OntologyTermV1 species,
+    OntologyTermV1 specimen,
+    OntologyTermV1 analyte,
     String comment,
     Map<ConfoundingVariableInformation, String> confoundingVariables,
     String experimentId
@@ -33,9 +33,9 @@ public record SampleMetadata(
       AnalysisMethod analysisToBePerformed,
       String biologicalReplicate,
       long experimentalGroupId,
-      OntologyTerm species,
-      OntologyTerm specimen,
-      OntologyTerm analyte,
+      OntologyTermV1 species,
+      OntologyTermV1 specimen,
+      OntologyTermV1 analyte,
       String comment,
       Map<ConfoundingVariableInformation, String> confoundingVariables,
       String experimentId) {
@@ -50,9 +50,9 @@ public record SampleMetadata(
       AnalysisMethod analysisToBePerformed,
       String biologicalReplicate,
       long experimentalGroupId,
-      OntologyTerm species,
-      OntologyTerm specimen,
-      OntologyTerm analyte,
+      OntologyTermV1 species,
+      OntologyTermV1 specimen,
+      OntologyTermV1 analyte,
       String comment,
       Map<ConfoundingVariableInformation, String> confoundingVariables,
       String experimentId) {

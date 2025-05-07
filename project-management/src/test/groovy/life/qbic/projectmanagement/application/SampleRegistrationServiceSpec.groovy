@@ -4,7 +4,7 @@ import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.application.api.SampleCodeService
 import life.qbic.projectmanagement.application.communication.EmailService
 import life.qbic.projectmanagement.application.sample.SampleRegistrationService
-import life.qbic.projectmanagement.domain.model.OntologyTerm
+import life.qbic.projectmanagement.domain.model.OntologyTermV1
 import life.qbic.projectmanagement.domain.model.batch.BatchId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.project.*
@@ -38,7 +38,7 @@ class SampleRegistrationServiceSpec extends Specification {
 
     def "Invalid SampleRegistrationRequests returns a Result containing a SAMPLE_REGISTRATION_FAILED response code"() {
         given:
-        SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyTerm(), new OntologyTerm(), new OntologyTerm())
+        SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyTermV1(), new OntologyTermV1(), new OntologyTermV1())
         SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", "my patient", BatchId.create(), ExperimentId.create(), 5, sampleOrigin, AnalysisMethod.ATAC_SEQ, "no comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         sampleCodeService.generateFor(projectId) >> Result.fromValue(sampleCode)
@@ -59,7 +59,7 @@ class SampleRegistrationServiceSpec extends Specification {
 
     def "Valid SampleRegistrationRequests returns a Result with the list of registered Samples"() {
         given:
-        SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyTerm(), new OntologyTerm(), new OntologyTerm())
+        SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyTermV1(), new OntologyTermV1(), new OntologyTermV1())
         SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", "my patient", BatchId.create(), ExperimentId.create(), 4, sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)
@@ -82,7 +82,7 @@ class SampleRegistrationServiceSpec extends Specification {
 
     def "If project cannot be found, valid SampleRegistrationRequests returns a Result containing a SAMPLE_REGISTRATION_FAILED response code"() {
         given:
-        SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyTerm(), new OntologyTerm(), new OntologyTerm())
+        SampleOrigin sampleOrigin = SampleOrigin.create(new OntologyTermV1(), new OntologyTermV1(), new OntologyTermV1())
         SampleRegistrationRequest sampleRegistrationRequest = new SampleRegistrationRequest("my_label", "my patient", BatchId.create(), ExperimentId.create(), 4, sampleOrigin, AnalysisMethod.ATAC_SEQ, "a comment")
         SampleCode sampleCode = SampleCode.create("QABCDE")
         Sample sample = Sample.create(sampleCode, sampleRegistrationRequest)

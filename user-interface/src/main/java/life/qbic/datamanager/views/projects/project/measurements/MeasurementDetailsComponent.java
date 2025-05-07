@@ -52,7 +52,7 @@ import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.Organisation;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
@@ -465,7 +465,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return organisationAnchor;
   }
 
-  private ComponentRenderer<Span, OntologyTerm> renderInstrument() {
+  private ComponentRenderer<Span, OntologyTermV1> renderInstrument() {
     return new ComponentRenderer<>(instrument -> {
       Span instrumentLabel = new Span(instrument.getLabel());
       Span instrumentOntologyLink = new Span(instrument.getOboId().replace("_", ":"));

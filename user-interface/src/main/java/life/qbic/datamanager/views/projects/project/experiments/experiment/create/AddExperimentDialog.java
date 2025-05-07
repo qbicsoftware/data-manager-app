@@ -27,7 +27,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 /**
  * <b>AddExperimentDialog</b>
@@ -65,21 +65,21 @@ public class AddExperimentDialog extends DialogWindow {
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
 
-    MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
+    MultiSelectComboBox<OntologyTermV1> speciesBox = ontologyComboboxFactory.speciesBox();
     speciesBox.addClassName("box-flexgrow");
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecies()),
             ExperimentDraft::setSpecies);
 
-    MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
+    MultiSelectComboBox<OntologyTermV1> specimenBox = ontologyComboboxFactory.specimenBox();
     specimenBox.addClassName("box-flexgrow");
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getSpecimens()),
             ExperimentDraft::setSpecimens);
 
-    MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
+    MultiSelectComboBox<OntologyTermV1> analyteBox = ontologyComboboxFactory.analyteBox();
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
@@ -189,9 +189,9 @@ public class AddExperimentDialog extends DialogWindow {
     private static final long serialVersionUID = -2259332255266132217L;
 
     private String experimentName;
-    private final List<OntologyTerm> species;
-    private final List<OntologyTerm> specimen;
-    private final List<OntologyTerm> analytes;
+    private final List<OntologyTermV1> species;
+    private final List<OntologyTermV1> specimen;
+    private final List<OntologyTermV1> analytes;
     private String speciesIconName;
     private String specimenIconName;
 
@@ -209,29 +209,29 @@ public class AddExperimentDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public List<OntologyTerm> getSpecies() {
+    public List<OntologyTermV1> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<OntologyTerm> species) {
+    public void setSpecies(Collection<OntologyTermV1> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<OntologyTerm> getSpecimens() {
+    public List<OntologyTermV1> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<OntologyTerm> specimen) {
+    public void setSpecimens(Collection<OntologyTermV1> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<OntologyTerm> getAnalytes() {
+    public List<OntologyTermV1> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<OntologyTerm> analytes) {
+    public void setAnalytes(Collection<OntologyTermV1> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }

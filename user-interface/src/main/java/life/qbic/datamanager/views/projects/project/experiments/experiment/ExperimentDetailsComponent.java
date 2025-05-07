@@ -83,7 +83,7 @@ import life.qbic.projectmanagement.application.experiment.ExperimentInformationS
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign;
@@ -172,7 +172,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
 
-  private static ComponentRenderer<Span, OntologyTerm> createOntologyRenderer() {
+  private static ComponentRenderer<Span, OntologyTermV1> createOntologyRenderer() {
     return new ComponentRenderer<>(ontologyClassDTO -> {
       Span ontology = new Span();
       Span ontologyLabel = new Span(ontologyClassDTO.getLabel());
@@ -260,7 +260,7 @@ public class ExperimentDetailsComponent extends PageArea {
           "Experiment information could not be retrieved from service");
     }
 
-    Map<SampleOriginType, Set<OntologyTerm>> usedTerms = getOntologyTermsUsedInSamples(
+    Map<SampleOriginType, Set<OntologyTermV1>> usedTerms = getOntologyTermsUsedInSamples(
         experimentId);
 
     optionalExperiment.ifPresent(experiment -> {
@@ -296,23 +296,23 @@ public class ExperimentDetailsComponent extends PageArea {
         .open();
   }
 
-  private Map<SampleOriginType, Set<OntologyTerm>> getOntologyTermsUsedInSamples(
+  private Map<SampleOriginType, Set<OntologyTermV1>> getOntologyTermsUsedInSamples(
       ExperimentId experimentId) {
-    Map<SampleOriginType, Set<OntologyTerm>> result = new EnumMap<>(SampleOriginType.class);
+    Map<SampleOriginType, Set<OntologyTermV1>> result = new EnumMap<>(SampleOriginType.class);
     Collection<Sample> samples = sampleInformationService.retrieveSamplesForExperiment(experimentId)
         .valueOrElse(new ArrayList<>());
 
-    Set<OntologyTerm> speciesSet = samples.stream()
+    Set<OntologyTermV1> speciesSet = samples.stream()
         .map(sample -> sample.sampleOrigin().getSpecies())
         .collect(Collectors.toSet());
     result.put(SPECIES, speciesSet);
 
-    Set<OntologyTerm> specimenSet = samples.stream()
+    Set<OntologyTermV1> specimenSet = samples.stream()
         .map(sample -> sample.sampleOrigin().getSpecimen())
         .collect(Collectors.toSet());
     result.put(SPECIMEN, specimenSet);
 
-    Set<OntologyTerm> analyteSet = samples.stream()
+    Set<OntologyTermV1> analyteSet = samples.stream()
         .map(sample -> sample.sampleOrigin().getAnalyte())
         .collect(Collectors.toSet());
     result.put(ANALYTE, analyteSet);
@@ -690,7 +690,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Div createSampleSourceList(String titleText, AbstractIcon<?> icon,
-      List<OntologyTerm> ontologyClasses) {
+      List<OntologyTermV1> ontologyClasses) {
     icon.addClassName("primary");
     Div sampleSource = new Div();
     sampleSource.addClassName("sample-source");
@@ -707,9 +707,9 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void loadSampleSources(Experiment experiment) {
     sampleSourceComponent.removeAll();
-    List<OntologyTerm> speciesTags = new ArrayList<>(experiment.getSpecies());
-    List<OntologyTerm> specimenTags = new ArrayList<>(experiment.getSpecimens());
-    List<OntologyTerm> analyteTags = new ArrayList<>(experiment.getAnalytes());
+    List<OntologyTermV1> speciesTags = new ArrayList<>(experiment.getSpecies());
+    List<OntologyTermV1> specimenTags = new ArrayList<>(experiment.getSpecimens());
+    List<OntologyTermV1> analyteTags = new ArrayList<>(experiment.getAnalytes());
 
     BioIcon speciesIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIES).stream()
         .filter(icon -> icon.label.equals(experiment.getSpeciesIconName())).findFirst()

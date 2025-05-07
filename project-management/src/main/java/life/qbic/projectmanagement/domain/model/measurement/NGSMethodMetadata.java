@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 /**
  * <b>NGS Method Metadata</b>
@@ -9,7 +9,8 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  *
  * @since 1.0.0
  */
-public record NGSMethodMetadata(OntologyTerm instrument, String facility, String sequencingReadType,
+public record NGSMethodMetadata(OntologyTermV1 instrument, String facility,
+                                String sequencingReadType,
                                 String libraryKit,
                                 String flowCell, String sequencingRunProtocol) {
 

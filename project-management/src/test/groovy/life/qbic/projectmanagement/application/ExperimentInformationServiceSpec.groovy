@@ -4,7 +4,7 @@ import life.qbic.application.commons.Result
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalGroupDTO
 import life.qbic.projectmanagement.application.sample.SampleInformationService
-import life.qbic.projectmanagement.domain.model.OntologyTerm
+import life.qbic.projectmanagement.domain.model.OntologyTermV1
 import life.qbic.projectmanagement.domain.model.experiment.Experiment
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
@@ -31,8 +31,8 @@ class ExperimentInformationServiceSpec extends Specification {
         experimentRepository.find((ExperimentId) _) >> Optional.empty()
 
         when: "specimens are added to an experiment"
-        OntologyTerm specimen1 = new OntologyTerm();
-        OntologyTerm specimen2 = new OntologyTerm("ontology", "ontologyVersion",  "ontologyIri",
+        OntologyTermV1 specimen1 = new OntologyTermV1();
+        OntologyTermV1 specimen2 = new OntologyTermV1("ontology", "ontologyVersion", "ontologyIri",
                 "classLabel", "name", "description", "classIri");
 
         experimentInformationService.addSpecimenToExperiment("", experiment.experimentId(), specimen1, specimen2)
@@ -50,8 +50,8 @@ class ExperimentInformationServiceSpec extends Specification {
         experimentRepository.find((ExperimentId) _) >> Optional.empty()
 
         when: "analytes are added to an experiment"
-        OntologyTerm analyte2 = new OntologyTerm();
-        OntologyTerm analyte1 = new OntologyTerm("ontology", "ontologyVersion",  "ontologyIri",
+        OntologyTermV1 analyte2 = new OntologyTermV1();
+        OntologyTermV1 analyte1 = new OntologyTermV1("ontology", "ontologyVersion", "ontologyIri",
                 "classLabel", "name", "description", "classIri");
 
         experimentInformationService.addAnalyteToExperiment("", experiment.experimentId(), analyte1, analyte2)
@@ -69,10 +69,10 @@ class ExperimentInformationServiceSpec extends Specification {
         experimentRepository.find((ExperimentId) _) >> Optional.empty()
 
         when: "species are added to an experiment"
-        OntologyTerm species1 = new OntologyTerm();
-        OntologyTerm species2 = new OntologyTerm("ontology", "ontologyVersion",  "ontologyIri",
+        OntologyTermV1 species1 = new OntologyTermV1();
+        OntologyTermV1 species2 = new OntologyTermV1("ontology", "ontologyVersion", "ontologyIri",
                 "classLabel", "name", "description", "classIri");
-        OntologyTerm species3 = new OntologyTerm();
+        OntologyTermV1 species3 = new OntologyTermV1();
 
         experimentInformationService.addSpeciesToExperiment("", experiment.experimentId(), species1, species2, species3)
 

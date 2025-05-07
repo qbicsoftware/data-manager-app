@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application
 
-import life.qbic.projectmanagement.domain.model.OntologyTerm
+
+import life.qbic.projectmanagement.domain.model.OntologyTermV1
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
 import life.qbic.projectmanagement.domain.model.project.*
 import life.qbic.projectmanagement.domain.repository.ProjectRepository
@@ -23,9 +24,9 @@ class AddExperimentToProjectServiceSpec extends Specification {
         when: "an experiment is added to a project"
         def result = service.addExperimentToProject(project.id,
                 "Pilot",
-                [new OntologyTerm()],
-                [new OntologyTerm()],
-                [new OntologyTerm()],
+                [new OntologyTermV1()],
+                [new OntologyTermV1()],
+                [new OntologyTermV1()],
                 "default",
                 "default")
         ExperimentId experimentId = result.getValue()

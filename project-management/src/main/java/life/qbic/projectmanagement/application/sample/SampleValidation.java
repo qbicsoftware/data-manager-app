@@ -20,7 +20,7 @@ import life.qbic.projectmanagement.application.confounding.ConfoundingVariableSe
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
@@ -218,7 +218,7 @@ public class SampleValidation {
             null));
   }
 
-  private ValidationResultWithPayload<OntologyTerm> validateSpecies(String species) {
+  private ValidationResultWithPayload<OntologyTermV1> validateSpecies(String species) {
     if (isNull(species) || species.isBlank()) {
       return new ValidationResultWithPayload<>(
           ValidationResult.withFailures(List.of("Missing species")),
@@ -232,14 +232,14 @@ public class SampleValidation {
     }
     var speciesLookup = speciesLookupService.findByCURI(extractedTerm.get());
     return speciesLookup
-        .map(OntologyTerm::from)
+        .map(OntologyTermV1::from)
         .map(it ->
             new ValidationResultWithPayload<>(ValidationResult.successful(), it))
         .orElse(new ValidationResultWithPayload<>(
             ValidationResult.withFailures(List.of("Unknown species: '" + species + "'")), null));
   }
 
-  private ValidationResultWithPayload<OntologyTerm> validateSpecimen(String specimen) {
+  private ValidationResultWithPayload<OntologyTermV1> validateSpecimen(String specimen) {
     if (isNull(specimen) || specimen.isBlank()) {
       return new ValidationResultWithPayload<>(
           ValidationResult.withFailures(List.of("Missing specimen")),
@@ -259,7 +259,7 @@ public class SampleValidation {
             ValidationResult.withFailures(List.of("Unknown specimen: '" + specimen + "'")), null));
   }
 
-  private ValidationResultWithPayload<OntologyTerm> validateAnalyte(String analyte) {
+  private ValidationResultWithPayload<OntologyTermV1> validateAnalyte(String analyte) {
     if (isNull(analyte) || analyte.isBlank()) {
       return new ValidationResultWithPayload<>(
           ValidationResult.withFailures(List.of("Missing analyte")),

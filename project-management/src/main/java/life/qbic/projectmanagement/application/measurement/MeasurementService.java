@@ -25,7 +25,7 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
@@ -778,7 +778,7 @@ public class MeasurementService {
         .allMatch(measurementRepository::existsMeasurement);
   }
 
-  private Optional<OntologyTerm> resolveOntologyCURI(String ontologyCURI) {
+  private Optional<OntologyTermV1> resolveOntologyCURI(String ontologyCURI) {
     return terminologyService.findByCurie(ontologyCURI);
   }
 

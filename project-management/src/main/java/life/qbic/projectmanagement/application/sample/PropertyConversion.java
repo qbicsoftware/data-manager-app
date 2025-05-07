@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Condition;
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
 
@@ -82,7 +82,7 @@ public class PropertyConversion {
   }
 
   /**
-   * Transforms an {@link OntologyTerm} to its String representation.
+   * Transforms an {@link OntologyTermV1} to its String representation.
    * <p>
    * The String representation currently contains the term label and the OBO ID.
    * <p>
@@ -92,17 +92,17 @@ public class PropertyConversion {
    * <p>
    * So e.g. 'Homo sapiens [NCBITaxon:9606]'
    *
-   * @param ontologyTerm the ontology term to transform
+   * @param ontologyTermV1 the ontology term to transform
    * @return the String representation of the ontology term
    * @since 1.5.0
    */
-  public static String toString(OntologyTerm ontologyTerm) {
-    Objects.requireNonNull(ontologyTerm);
-    return ONTOLOGY_TERM.formatted(ontologyTerm.getLabel(), ontologyTerm.getOboId());
+  public static String toString(OntologyTermV1 ontologyTermV1) {
+    Objects.requireNonNull(ontologyTermV1);
+    return ONTOLOGY_TERM.formatted(ontologyTermV1.getLabel(), ontologyTermV1.getOboId());
   }
 
   /**
-   * Expects a String that has been created with {@link #toString(OntologyTerm)} and tries to
+   * Expects a String that has been created with {@link #toString(OntologyTermV1)} and tries to
    * extract the CURIE of the ontology term.
    * <p>
    * The CURIE is expected to be surrounded with <code>[...]</code> squared brackets.

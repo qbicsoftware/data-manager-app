@@ -1,6 +1,6 @@
 package life.qbic.datamanager.views.general;
 
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 /**
  * <b>Enforce harmonised CURIE formatting</b>
@@ -11,7 +11,7 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  */
 public class OboIdFormatter {
 
-  public static String render(OntologyTerm term) {
+  public static String render(OntologyTermV1 term) {
     return enforceColonSeparator(term.getOboId());
   }
 

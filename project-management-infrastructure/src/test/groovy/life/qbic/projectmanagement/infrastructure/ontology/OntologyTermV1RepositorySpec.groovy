@@ -7,7 +7,7 @@ import spock.lang.Specification
  *
  * @since 1.0.0
  */
-class OntologyTermRepositorySpec extends Specification{
+class OntologyTermV1RepositorySpec extends Specification {
 
     def "Given a one-word search, the correct ontology searchterm is created"() {
         given:

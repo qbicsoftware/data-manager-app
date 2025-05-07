@@ -36,7 +36,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Sampl
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventSampleOriginEdit;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 /**
  * <b>EditExperimentDialog</b>
@@ -52,7 +52,7 @@ public class EditExperimentDialog extends DialogWindow {
   @Serial
   private static final long serialVersionUID = 2142928219461555700L;
   private final Binder<ExperimentDraft> binder = new Binder<>();
-  private Map<SampleOriginType, Set<OntologyTerm>> usedSampleOrigins;
+  private Map<SampleOriginType, Set<OntologyTermV1>> usedSampleOrigins;
 
   public EditExperimentDialog(SpeciesLookupService ontologyTermInformationService,
       TerminologyService terminologyService) {
@@ -73,7 +73,7 @@ public class EditExperimentDialog extends DialogWindow {
         "Please specify the sample origin information of the samples. Multiple "
             + "values are allowed!");
 
-    MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
+    MultiSelectComboBox<OntologyTermV1> speciesBox = ontologyComboboxFactory.speciesBox();
     speciesBox.addClassName("box-flexgrow");
     binder.forField(speciesBox)
         .asRequired("Please select at least one species")
@@ -87,7 +87,7 @@ public class EditExperimentDialog extends DialogWindow {
         .bind(ExperimentDraft::getSpeciesIcon,
             ExperimentDraft::setSpeciesIcon);
 
-    MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
+    MultiSelectComboBox<OntologyTermV1> specimenBox = ontologyComboboxFactory.specimenBox();
     specimenBox.addClassName("box-flexgrow");
     binder.forField(specimenBox)
         .asRequired("Please select at least one specimen")
@@ -101,7 +101,7 @@ public class EditExperimentDialog extends DialogWindow {
         .bind(ExperimentDraft::getSpecimenIcon,
             ExperimentDraft::setSpecimenIcon);
 
-    MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
+    MultiSelectComboBox<OntologyTermV1> analyteBox = ontologyComboboxFactory.analyteBox();
     binder.forField(analyteBox)
         .asRequired("Please select at least one analyte")
         .bind(experimentDraft -> new HashSet<>(experimentDraft.getAnalytes()),
@@ -131,11 +131,11 @@ public class EditExperimentDialog extends DialogWindow {
   }
 
   private void initOriginEditListener(
-      MultiSelectComboBox<OntologyTerm> originBox, SampleOriginType originType) {
-    ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTerm>,
-        Set<OntologyTerm>>> valueChangeListener = valueChangeEvent -> {
-      Set<OntologyTerm> missing = new HashSet<>();
-      for (OntologyTerm term : usedSampleOrigins.get(originType)) {
+      MultiSelectComboBox<OntologyTermV1> originBox, SampleOriginType originType) {
+    ValueChangeListener<ComponentValueChangeEvent<MultiSelectComboBox<OntologyTermV1>,
+        Set<OntologyTermV1>>> valueChangeListener = valueChangeEvent -> {
+      Set<OntologyTermV1> missing = new HashSet<>();
+      for (OntologyTermV1 term : usedSampleOrigins.get(originType)) {
         if (!valueChangeEvent.getValue().contains(term)
             && valueChangeEvent.isFromClient()) {
           missing.add(term);
@@ -150,7 +150,7 @@ public class EditExperimentDialog extends DialogWindow {
     originBox.addValueChangeListener(valueChangeListener);
   }
 
-  private void showSamplesPreventOriginEdit(OntologyTerm species) {
+  private void showSamplesPreventOriginEdit(OntologyTermV1 species) {
     ExistingSamplesPreventSampleOriginEdit samplesPreventSampleOriginEdit = new ExistingSamplesPreventSampleOriginEdit(
         species.getLabel());
     samplesPreventSampleOriginEdit.addConfirmListener(
@@ -185,7 +185,7 @@ public class EditExperimentDialog extends DialogWindow {
   }
 
   public void setExperiment(ExperimentDraft experiment,
-      Map<SampleOriginType, Set<OntologyTerm>> usedTerms) {
+      Map<SampleOriginType, Set<OntologyTermV1>> usedTerms) {
     this.usedSampleOrigins = usedTerms;
     binder.setBean(experiment);
   }
@@ -245,9 +245,9 @@ public class EditExperimentDialog extends DialogWindow {
 
     @Serial
     private static final long serialVersionUID = 5584396740927480418L;
-    private final List<OntologyTerm> species;
-    private final List<OntologyTerm> specimen;
-    private final List<OntologyTerm> analytes;
+    private final List<OntologyTermV1> species;
+    private final List<OntologyTermV1> specimen;
+    private final List<OntologyTermV1> analytes;
     private String experimentName;
     private String speciesIconName;
     private String specimenIconName;
@@ -266,29 +266,29 @@ public class EditExperimentDialog extends DialogWindow {
       this.experimentName = experimentName;
     }
 
-    public List<OntologyTerm> getSpecies() {
+    public List<OntologyTermV1> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<OntologyTerm> species) {
+    public void setSpecies(Collection<OntologyTermV1> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<OntologyTerm> getSpecimens() {
+    public List<OntologyTermV1> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<OntologyTerm> specimen) {
+    public void setSpecimens(Collection<OntologyTermV1> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<OntologyTerm> getAnalytes() {
+    public List<OntologyTermV1> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<OntologyTerm> analytes) {
+    public void setAnalytes(Collection<OntologyTermV1> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }

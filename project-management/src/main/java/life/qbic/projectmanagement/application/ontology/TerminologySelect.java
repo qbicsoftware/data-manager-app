@@ -2,7 +2,7 @@ package life.qbic.projectmanagement.application.ontology;
 
 import java.util.List;
 import java.util.Optional;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 /**
  * <b>API for ontology term selection or lookup for autocomplete use cases</b>
@@ -18,7 +18,7 @@ public interface TerminologySelect {
    * <p>
    * <b>NOTE!</b>
    * <p>
-   * The resulting {@link OntologyTerm} objects are not guaranteed to contain values for properties
+   * The resulting {@link OntologyTermV1} objects are not guaranteed to contain values for properties
    * like "description". This depends highly on the implementation, use the
    * {@link TerminologySelect#search(String, int, int)} method for a rich search.
    *
@@ -44,7 +44,7 @@ public interface TerminologySelect {
   Optional<OntologyClass> searchByCurie(String curie) throws LookupException;
 
   /**
-   * Searches for possible matching ontology terms. This search returns rich {@link OntologyTerm}
+   * Searches for possible matching ontology terms. This search returns rich {@link OntologyTermV1}
    * objects, and should be used when information for properties like "description" needs to be
    * used.
    *
