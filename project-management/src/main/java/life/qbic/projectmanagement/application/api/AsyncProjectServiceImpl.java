@@ -624,7 +624,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
-        .doOnError(e -> log.error("Could not create funding information", e))
+        .doOnError(e -> log.error("Could not delete funding information", e))
         .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
   }
@@ -641,7 +641,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
-        .doOnError(e -> log.error("Could not create funding information", e))
+        .doOnError(e -> log.error("Could not set responsible person", e))
         .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
   }
@@ -658,7 +658,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
-        .doOnError(e -> log.error("Could not create funding information", e))
+        .doOnError(e -> log.error("Could not delete responsible person", e))
         .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
   }
