@@ -406,7 +406,7 @@ public interface AsyncProjectService {
     }
   }
 
-  record ExperimentDeletionRequest(String projectId, String experimentId, String requestId) {
+  record ExperimentDeletionRequest(String projectId, String experimentId, String requestId) implements CacheableRequest {
 
     public ExperimentDeletionRequest {
       requireNonNull(projectId);
@@ -1491,8 +1491,8 @@ public interface AsyncProjectService {
    *
    * @since 1.9.0
    */
-  sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentUpdateRequest,
-      ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
+  sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentDeletionRequest,
+      ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
       ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
       ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
       ProjectResponsibleCreationRequest, ProjectResponsibleDeletionRequest, ProjectUpdateRequest,
