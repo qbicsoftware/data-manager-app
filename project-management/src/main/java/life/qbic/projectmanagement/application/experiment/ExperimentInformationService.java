@@ -64,6 +64,15 @@ public class ExperimentInformationService {
     this.sampleInformationService = sampleInformationService;
   }
 
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Optional<Experiment> find(String projectId, String experimentId) {
+    Objects.requireNonNull(experimentId);
+    return experimentRepository.find(ExperimentId.parse(experimentId));
+  }
+
+
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Optional<Experiment> find(String projectId, ExperimentId experimentId) {
