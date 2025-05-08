@@ -47,6 +47,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -663,8 +664,28 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ExperimentalVariable> getExperimentalVariables(String projectId,
       String experimentId) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    var call = Flux.fromStream(() -> experimentInformationService.getVariablesOfExperiment(projectId,
+            ExperimentId.parse(experimentId))
+        .stream()
+        .map(this::convertToApi));
+
+    return applySecurityContextMany(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not load experimental variables", e))
+        .onErrorMap(org.springframework.security.access.AccessDeniedException.class, e -> new AccessDeniedException(ACCESS_DENIED))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  private ExperimentalVariable convertToApi(
+      life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
+    return new ExperimentalVariable(experimentalVariable.name().value(),
+        experimentalVariable.levels()
+            .stream().map(level -> level.variableName().value()).collect(
+                Collectors.toSet()),
+        experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(null));
   }
 
   @Override
