@@ -712,6 +712,7 @@ public interface AsyncProjectService {
                            Set<VariableLevel> levels) {
 
     public ExperimentalGroup {
+      requireNonNull(levels);
       levels = Set.copyOf(levels);
     }
   }
@@ -722,10 +723,10 @@ public interface AsyncProjectService {
    * @param experimentalGroups the list of experimental groups
    * @since 1.9.0
    */
-  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) implements
-      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
-
+  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups)
+      {
     public ExperimentalGroups {
+      requireNonNull(experimentalGroups);
       experimentalGroups = List.copyOf(experimentalGroups);
     }
   }
@@ -1458,13 +1459,11 @@ public interface AsyncProjectService {
       MimeType mimeType);
 
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
-      ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription,
-      ExperimentalGroups {
+      ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 
   }
 
-  sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables, ExperimentDescription,
-      ExperimentalGroups {
+  sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables, ExperimentDescription {
 
   }
 

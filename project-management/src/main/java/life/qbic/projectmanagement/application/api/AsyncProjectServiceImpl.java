@@ -211,6 +211,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Mono<ProjectInformation> getProject(String projectId) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     throw new RuntimeException("not implemented");
@@ -470,7 +476,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     };
   }
 
-
   /**
    * Ensures that the security context is applied in the correct order and written when it is
    * required.
@@ -557,18 +562,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ExperimentUpdateResponse> update(
       ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {
-
       case ExperimentDescription experimentDescription ->
           updateExperimentDescription(request.projectId(), request.experimentId(),
               experimentDescription);
-
-      case ExperimentalGroups experimentalGroups -> unknownRequest();
       case ConfoundingVariableAdditions confoundingVariableAdditions -> unknownRequest();
       case ConfoundingVariableDeletions confoundingVariableDeletions -> unknownRequest();
       case ConfoundingVariableUpdates confoundingVariableUpdates -> unknownRequest();
-      case ExperimentalVariableAdditions experimentalVariableAdditions ->
-          addExperimentalVariables(request.projectId(), experimentalVariableAdditions,
-              ExperimentId.parse(request.experimentId()), request.requestId());
     };
 
     SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -579,17 +578,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request) {
-//    Mono<ProjectDeletionResponse> responseMono = switch (request.body()) {
-//      case ProjectResponsibleDeletion target ->
-//          delete(request.projectId(), request.requestId(), target);
-//      case FundingDeletion target -> delete(request.projectId(), request.requestId(), target);
-//    };
-//    SecurityContext securityContext = SecurityContextHolder.getContext();
-//    return applySecurityContext(responseMono)
-//        .contextWrite(reactiveSecurity(securityContext))
-//        .retryWhen(defaultRetryStrategy())
-//        .subscribeOn(scheduler);
-    //fixme implement
     throw new RuntimeException("Not implemented");
   }
 
@@ -677,29 +665,32 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     throw new RuntimeException("Not implemented");
   }
 
-  private Mono<ExperimentDeletionResponse> deleteExperimentalVariables(
-      ExperimentDeletionRequest request,
-      ExperimentalVariableDeletions experimentalVariableDeletions) {
-    return Mono.fromSupplier(() -> {
-      ExperimentId experimentId = ExperimentId.parse(request.experimentId());
-      ProjectId projectId = ProjectId.parse(request.projectId());
-      Experiment experiment = experimentInformationService.find(
-              request.projectId(),
-              experimentId)
-          .orElseThrow(() -> new ExperimentNotFoundException("No experiment was found."));
+  @Override
+  public Flux<ExperimentalVariable> getExperimentalVariables(String projectId,
+      String experimentId) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
 
-      var removedVariables = new ArrayList<ExperimentalVariable>();
-      for (ExperimentalVariable experimentalVariable : experimentalVariableDeletions.experimentalVariables()) {
-        var wasRemoved = experimentInformationService.deleteExperimentalVariable(projectId,
-            experimentId, experimentalVariable.name());
-        if (wasRemoved) {
-          removedVariables.add(experimentalVariable);
-        }
-      }
+  @Override
+  public Mono<ExperimentalVariablesCreationResponse> create(
+      ExperimentalVariablesCreationRequest request) {
+   // TODO implement
+   throw new RuntimeException("Not yet implemented");
+  }
 
-      return new ExperimentDeletionResponse(request.projectId(), request.experimentId(),
-          request.requestId()/*, new ExperimentalVariables(removedVariables) fixme*/);
-    });
+  @Override
+  public Mono<ExperimentalVariablesUpdateResponse> update(
+      ExperimentalVariablesUpdateRequest request) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Mono<ExperimentalVariablesDeletionResponse> delete(
+      ExperimentalVariablesDeletionRequest request) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
@@ -743,33 +734,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
       String experimentId,
       ExperimentDescription experimentDescription) {
-    throw new RuntimeException("Not implemented");
-  }
-
-  private Mono<ExperimentUpdateResponse> addExperimentalVariables(
-      String projectId,
-      ExperimentalVariableAdditions experimentalVariableAdditions, ExperimentId experimentId,
-      String requestId) {
-
-    var variableAdditions = experimentalVariableAdditions.experimentalVariables().stream()
-        .map(experimentalVariable -> new ExperimentalVariableAddition(experimentalVariable.name(),
-            experimentalVariable.unit(), java.util.List.copyOf(experimentalVariable.levels())))
-        .toList();
-
-    return applySecurityContext(Mono.fromSupplier(
-        () -> experimentInformationService.addVariablesToExperiment(projectId, experimentId,
-            variableAdditions)
-    ))
-        .map(experimentalVariableInformation -> experimentalVariableInformation.stream()
-            .map(info -> new ExperimentalVariable(info.name(), new HashSet<>(info.levels()),
-                info.unit())
-            )
-            .toList())
-        .map(ExperimentalVariables::new)
-        .map(experimentalVariables ->
-            new ExperimentUpdateResponse(experimentId.value(), experimentalVariables,
-                requestId)
-        ).subscribeOn(scheduler);
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
@@ -790,12 +756,4 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             }
         );
   }
-
-  public static class ExperimentNotFoundException extends RuntimeException {
-
-    public ExperimentNotFoundException(String message) {
-      super(message);
-    }
-  }
-
 }
