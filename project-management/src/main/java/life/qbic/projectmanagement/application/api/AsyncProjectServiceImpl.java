@@ -10,7 +10,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -31,7 +30,6 @@ import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -42,7 +40,6 @@ import life.qbic.projectmanagement.application.sample.SampleValidationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Contact;
-import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
@@ -203,10 +200,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
       FundingInformation fundingInformation) {
     return Mono.fromCallable(() -> {
-        projectService.setFunding(projectId, fundingInformation.grant(),
-            fundingInformation.grantId());
-        return new ProjectUpdateResponse(projectId.value(), fundingInformation, requestId);
-      });
+      projectService.setFunding(projectId, fundingInformation.grant(),
+          fundingInformation.grantId());
+      return new ProjectUpdateResponse(projectId.value(), fundingInformation, requestId);
+    });
   }
 
   @Override
@@ -577,7 +574,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request) {
-    throw new RuntimeException("Not implemented");
+// TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
@@ -585,16 +583,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       FundingInformationCreationRequest request) {
 
     var call = Mono.fromCallable(() -> {
-        projectService.setFunding(ProjectId.parse(request.projectId()),
-            request.information().grant(), request.information().grantId());
-        return new FundingInformationCreationResponse(request.requestId(), request.information(), request.projectId());
+      projectService.setFunding(ProjectId.parse(request.projectId()),
+          request.information().grant(), request.information().grantId());
+      return new FundingInformationCreationResponse(request.requestId(), request.information(),
+          request.projectId());
     });
 
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not create funding information", e))
-        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -611,7 +611,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not delete funding information", e))
-        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -620,15 +621,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       ProjectResponsibleCreationRequest request) {
 
     var call = Mono.fromCallable(() -> {
-      projectService.setResponsibility(ProjectId.parse(request.projectId()), request.projectResponsible());
-      return new ProjectResponsibleCreationResponse(request.requestId(), request.projectResponsible(), request.projectId());
+      projectService.setResponsibility(ProjectId.parse(request.projectId()),
+          request.projectResponsible());
+      return new ProjectResponsibleCreationResponse(request.requestId(),
+          request.projectResponsible(), request.projectId());
     });
 
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not set responsible person", e))
-        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
   }
 
@@ -645,23 +649,15 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not delete responsible person", e))
-        .onErrorMap(ProjectNotFoundException.class, e -> new RequestFailedException("Project was not found"))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
   }
 
   @Override
   public Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request) {
-//    Mono<ExperimentDeletionResponse> response = switch (request.body()) {
-//      case ExperimentalVariableDeletions experimentalVariableDeletions ->
-//          deleteExperimentalVariables(request, experimentalVariableDeletions);
-//    };
-//    SecurityContext securityContext = SecurityContextHolder.getContext();
-//    return applySecurityContext(response)
-//        .contextWrite(reactiveSecurity(securityContext))
-//        .retryWhen(defaultRetryStrategy())
-//        .subscribeOn(scheduler);
-    //fixme implement
-    throw new RuntimeException("Not implemented");
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
@@ -674,8 +670,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentalVariablesCreationResponse> create(
       ExperimentalVariablesCreationRequest request) {
-   // TODO implement
-   throw new RuntimeException("Not yet implemented");
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
