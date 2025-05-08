@@ -18,6 +18,8 @@ import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleI
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
@@ -41,11 +43,505 @@ import reactor.core.publisher.Mono;
  */
 public interface AsyncProjectService {
 
-  /*
-  Project related API requests
+  //<editor-fold desc="project-related API">
+  /**
+   * A service request to create a project.
+   *
+   * @param design   the title and objective of a project
+   * @param contacts the different contact persons of a project
+   * @param funding  some funding information
+   * @since 1.9.0
    */
+  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
+                                FundingInformation funding, String requestId) {
 
-  //<editor-fold desc="project resource creation">
+    public ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
+        String requestId) {
+      this(design, contacts, null, requestId);
+    }
+
+    public ProjectCreationRequest {
+      requireNonNull(design);
+      requireNonNull(contacts);
+      requireNonNull(requestId);
+    }
+
+    /**
+     * {@inheritDoc} Please use {@link ProjectCreationRequest#optionalFundingInformation()} to
+     * access the funding information safely.
+     *
+     * @return the funding information. Might be null.
+     * @see ProjectCreationRequest#optionalFundingInformation()
+     * @since 1.10.0
+     */
+    @Override
+    public FundingInformation funding() {
+      return funding;
+    }
+
+    public Optional<FundingInformation> optionalFundingInformation() {
+      return Optional.ofNullable(funding);
+    }
+  }
+
+  /**
+   * A service response from a project creation request
+   *
+   * @param projectId
+   * @since 1.9, 0
+   */
+  record ProjectCreationResponse(String projectId, String requestId) {
+
+    public ProjectCreationResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to update project information.
+   *
+   * @param projectId   the project's id
+   * @param requestBody the information to be updated.
+   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
+   *                    the response.
+   * @since 1.9.0
+   */
+  record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
+                              String requestId) implements CacheableRequest {
+
+    public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
+      this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+
+    public ProjectUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      requireNonNull(requestBody);
+    }
+
+  }
+
+  /**
+   * A service response from an update project information request.
+   *
+   * @param projectId    the project's id
+   * @param responseBody the information that was updated.
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.9.0
+   */
+  record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
+                               String requestId) {
+
+    public ProjectUpdateResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      requireNonNull(responseBody);
+    }
+
+  }
+
+  /**
+   * Container of an update request for a service call and part of the
+   * {@link ProjectUpdateRequest}.
+   *
+   * @since 1.9.0
+   */
+  sealed interface ProjectUpdateRequestBody permits FundingInformation, PrincipalInvestigator,
+      ProjectDesign, ProjectManager, ProjectResponsible {
+
+  }
+
+  /**
+   * Container of an update response from a service call and part of the
+   * {@link ProjectUpdateResponse}.
+   *
+   * @since 1.9.0
+   */
+  sealed interface ProjectUpdateResponseBody permits FundingInformation,
+      PrincipalInvestigator, ProjectDesign, ProjectManager, ProjectResponsible {
+
+  }
+
+  record ProjectDeletionRequest(String projectId, String requestId) {
+
+    public ProjectDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+    public ProjectDeletionRequest(String projectId) {
+      this(projectId, UUID.randomUUID().toString());
+    }
+  }
+
+  record ProjectDeletionResponse(String projectId, String requestId) {
+
+    public ProjectDeletionResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+  }
+
+  sealed interface ProjectDeletionRequestBody permits FundingDeletion,
+      ProjectResponsibleDeletion {
+
+  }
+
+  record ProjectResponsibleDeletion() implements ProjectDeletionRequestBody {
+
+  }
+
+  record FundingInformationCreationRequest(String projectId,
+                                           FundingInformation information,
+                                           String requestId) implements
+      CacheableRequest {
+
+    public FundingInformationCreationRequest {
+      requireNonNull(requestId);
+      requireNonNull(projectId);
+      requireNonNull(information);
+    }
+
+    public FundingInformationCreationRequest(String projectId, FundingInformation information) {
+      this(projectId, information, UUID.randomUUID().toString());
+    }
+  }
+
+  record FundingInformationCreationResponse(String requestId, FundingInformation fundingInformation,
+                                            String projectId) {
+
+    public FundingInformationCreationResponse {
+      requireNonNull(requestId);
+      requireNonNull(projectId);
+      requireNonNull(fundingInformation);
+    }
+
+  }
+
+  record FundingDeletion() implements ProjectDeletionRequestBody {
+
+  }
+
+  record FundingInformationDeletionRequest(String projectId, String requestId) {
+
+    public FundingInformationDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+    public FundingInformationDeletionRequest(String projectId) {
+      this(projectId, UUID.randomUUID().toString());
+    }
+  }
+
+  record FundingInformationDeletionResponse(String projectId, String requestId) {
+
+    public FundingInformationDeletionResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+  }
+
+  record ProjectResponsibleCreationRequest(String projectId, ProjectContact projectResponsible,
+                                           String requestId) {
+
+    public ProjectResponsibleCreationRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      requireNonNull(projectResponsible);
+    }
+
+    public ProjectResponsibleCreationRequest(String projectId, ProjectContact projectResponsible) {
+      this(projectId, projectResponsible, UUID.randomUUID().toString());
+    }
+  }
+
+  record ProjectResponsibleCreationResponse(String projectId, ProjectContact projectResponsible,
+                                            String requestId) {
+
+    public ProjectResponsibleCreationResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      requireNonNull(projectResponsible);
+    }
+  }
+
+  record ProjectResponsibleDeletionRequest(String projectId, String requestId) {
+
+    public ProjectResponsibleDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+
+    public ProjectResponsibleDeletionRequest(String projectId) {
+      this(projectId, UUID.randomUUID().toString());
+    }
+  }
+
+  record ProjectResponsibleDeletionResponse(String projectId, String requestId) {
+
+    public ProjectResponsibleDeletionResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to create an experiment
+   *
+   * @param projectId             the project in which to create the experiment
+   * @param experimentDescription the minimal required information for the experiment
+   * @param requestId             the unique id of this request. If none exists use
+   *                              {@link ExperimentCreationRequest#ExperimentCreationRequest(String,
+   *                              ExperimentDescription)} for construction.
+   * @since 1.10.0
+   */
+  record ExperimentCreationRequest(String projectId, ExperimentDescription experimentDescription,
+                                   String requestId) implements CacheableRequest {
+
+    /**
+     * A service request to create an experiment
+     *
+     * @param projectId             the project in which to create the experiment
+     * @param experimentDescription the minimal required information for the experiment
+     * @param requestId             the unique id of this request. If none exists use
+     *                              {@link
+     *                              ExperimentCreationRequest#ExperimentCreationRequest(String,
+     *                              ExperimentDescription)} for construction.
+     * @since 1.10.0
+     */
+    public ExperimentCreationRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      requireNonNull(experimentDescription);
+    }
+
+    /**
+     * A service request to create an experiment. Generates a request id and assinges it to this
+     * request.
+     *
+     * @param projectId             the project in which to create the experiment
+     * @param experimentDescription the minimal required information for the experiment
+     * @since 1.10.0
+     */
+    public ExperimentCreationRequest(String projectId,
+        ExperimentDescription experimentDescription) {
+      this(projectId, experimentDescription, UUID.randomUUID().toString());
+    }
+  }
+
+  /**
+   * A service response for experiment creation.
+   *
+   * @param projectId             the project in which the experiment was created
+   * @param experimentId          the identifier of the created experiment
+   * @param experimentDescription information about the experiment
+   * @param requestId             the identifier of the original request
+   * @since 1.10.0
+   */
+  record ExperimentCreationResponse(String projectId, String experimentId,
+                                    ExperimentDescription experimentDescription,
+                                    String requestId) {
+
+    public ExperimentCreationResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      requireNonNull(experimentDescription);
+    }
+  }
+
+  /**
+   * A service request to update an experiment
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param body         the request body containing information on what was updated
+   * @param requestId    the request ID, needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.9.0
+   */
+  record ExperimentUpdateRequest(String projectId, String experimentId,
+                                 ExperimentUpdateRequestBody body, String requestId) implements
+      CacheableRequest {
+
+    /**
+     * A service request to update an experiment
+     *
+     * @param projectId    the project's identifier. The project containing the experiment.
+     * @param experimentId the experiment's identifier
+     * @param body         the request body containing information on what was updated
+     * @since 1.9.0
+     */
+    public ExperimentUpdateRequest(String projectId, String experimentId,
+        ExperimentUpdateRequestBody body) {
+      this(projectId, experimentId, body, UUID.randomUUID().toString());
+    }
+
+    public ExperimentUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+      requireNonNull(body);
+    }
+  }
+
+
+  /**
+   * A service response from a {@link ExperimentUpdateRequest}
+   *
+   * @param experimentId the experiment's identifier
+   * @param body         information about the update
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.9.0
+   */
+  record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
+                                  String requestId) {
+
+    public ExperimentUpdateResponse {
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+      requireNonNull(body);
+    }
+  }
+
+  record ExperimentDeletionRequest(String projectId, String experimentId, String requestId) {
+
+    public ExperimentDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+
+    public ExperimentDeletionRequest(String projectId, String experimentId) {
+      this(projectId, experimentId, UUID.randomUUID().toString());
+    }
+  }
+
+  record ExperimentDeletionResponse(String projectId, String experimentId, String requestId) {
+
+    public ExperimentDeletionResponse {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * Container for passing information in an {@link ProjectUpdateRequestBody} or
+   * {@link ProjectUpdateResponseBody}.
+   *
+   * @param title     the title of the project
+   * @param objective the objective of the project
+   * @since 1.9.0
+   */
+  record ProjectDesign(String title, String objective) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  /**
+   * Container for passing information about the different project contacts.
+   *
+   * @param investigator the principal investigator
+   * @param manager      the project manager
+   * @param responsible  the responsible person, can be <code>null</code>
+   * @since 1.9.0
+   */
+  record ProjectContacts(ProjectContact investigator, ProjectContact manager,
+                         ProjectContact responsible) {
+
+    public ProjectContacts(ProjectContact investigator, ProjectContact manager) {
+      this(investigator, manager, null);
+    }
+
+    /**
+     * {@inheritDoc} Please use {@link #optionalResponsible} to access the responsible safely.
+     *
+     * @return the project responsible. Might be null.
+     * @since 1.10.0
+     */
+    @Override
+    public ProjectContact responsible() {
+      return responsible;
+    }
+
+    public Optional<ProjectContact> optionalResponsible() {
+      return Optional.ofNullable(responsible);
+    }
+
+  }
+
+  /**
+   * A project contact.
+   *
+   * @param fullName   the full name of the person
+   * @param email      a valid email address for contact
+   * @param oidc       the UUID which identifies the contact within the oidcIssuer
+   * @param oidcIssuer the oidcIssuer providing the UUID to identify a user if registered
+   * @since 1.9.0
+   */
+  record ProjectContact(String fullName, String email, String oidc, String oidcIssuer) {
+
+  }
+
+  /**
+   * Container for funding information of a project.
+   *
+   * @param grant   the grant name
+   * @param grantId the grant ID
+   * @since 1.9.0
+   */
+  record FundingInformation(String grant, String grantId) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record ProjectResponsible(ProjectContact contact) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record ProjectManager(ProjectContact contact) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record PrincipalInvestigator(ProjectContact contact) implements ProjectUpdateRequestBody,
+      ProjectUpdateResponseBody {
+
+  }
+
+  record ProjectInformation(String projectId, ProjectDesign projectDesign, ProjectContacts contacts,
+                            FundingInformation fundingInformation, List<String> experimentIds) {
+
+    public ProjectInformation {
+      requireNonNull(projectId);
+      requireNonNull(projectDesign);
+      requireNonNull(contacts);
+      requireNonNull(fundingInformation);
+      requireNonNull(experimentIds);
+    }
+  }
+
+  /**
+   * Requests project information for a given project identifier.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId the project ID of the project the get the information for.
+   * @return a {@link Mono<ProjectInformation>} publishing a {@link ProjectInformation} object on
+   * success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ProjectInformation> getProject(String projectId);
 
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
@@ -116,9 +612,6 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request);
-  //</editor-fold>
-
-  //<editor-fold desc="project resource update">
 
   /**
    * A service request to create funding information for a project.
@@ -132,7 +625,8 @@ public interface AsyncProjectService {
 
   /**
    * Submits a funding information deletion request and returns a reactive
-   * {@link Mono<FundingInformationDeletionResponse>.
+   * {@link Mono<FundingInformationDeletionResponse>} publishing a
+   * {@link FundingInformationDeletionResponse}.
    *
    * @param request the request with information required for funding information deletion.
    * @return a {@link Mono<FundingInformationDeletionResponse>} object publishing a
@@ -164,7 +658,232 @@ public interface AsyncProjectService {
   Mono<ProjectResponsibleDeletionResponse> delete(ProjectResponsibleDeletionRequest request);
   //</editor-fold>
 
-  //<editor-fold desc="Experiment resource creation">">
+  //<editor-fold desc="experiment-related API">
+  /**
+   * Contains information on one experimental variables
+   *
+   * @param name   the name of the variable
+   * @param levels possible levels of the variable
+   * @param unit   the unit of the experimental variable. Can be null if no unit is set
+   * @since 1.9.0
+   */
+  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
+
+    public ExperimentalVariable(String name, Set<String> levels) {
+      this(name, levels, "");
+    }
+
+    public ExperimentalVariable {
+      levels = Set.copyOf(levels);
+    }
+
+    @Override
+    public Set<String> levels() {
+      return Set.copyOf(levels);
+    }
+  }
+
+  /**
+   * A level of an experimental variable
+   *
+   * @param variableId   the identifier of the variable
+   * @param variableName the name of the variable
+   * @param levelValue   the value of the level
+   * @param unit         the unit for the value of the level. Can be null if no unit is set
+   * @since 1.9.0
+   */
+  record VariableLevel(Long variableId, String variableName, String levelValue,
+                       @Nullable String unit) {
+
+  }
+
+  /**
+   * Information about an experimental group
+   *
+   * @param groupId    the identifier of the group
+   * @param name       the name of the eperimental group can be empty but is not expected to be
+   *                   null
+   * @param sampleSize the number of samples in this experimental group
+   * @param levels     the experimental variable levels making up the condition for the samples in
+   *                   this group.
+   * @since 1.9.0
+   */
+  record ExperimentalGroup(@Nullable Long groupId, String name, int sampleSize,
+                           Set<VariableLevel> levels) {
+
+    public ExperimentalGroup {
+      levels = Set.copyOf(levels);
+    }
+  }
+
+  /**
+   * A container for experimental groups. Can be used in {@link #update(ExperimentUpdateRequest)}
+   *
+   * @param experimentalGroups the list of experimental groups
+   * @since 1.9.0
+   */
+  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) implements
+      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
+
+    public ExperimentalGroups {
+      experimentalGroups = List.copyOf(experimentalGroups);
+    }
+  }
+
+  /**
+   * A container describing the experiment
+   *
+   * @param experimentName the name of the experiment
+   * @param species        a set of species for the experiment. Expected textual representations
+   *                       containing CURIEs.
+   * @param specimen       a set of specimen for the eperiment. Expected textual representations
+   *                       containing CURIEs.
+   * @param analytes       a set of analytes for the eperiment.Expected textual representations
+   *                       containing CURIEs.
+   * @since 1.9.0
+   */
+  record ExperimentDescription(String experimentName, Set<OntologyTerm> species,
+                               Set<OntologyTerm> specimen,
+                               Set<OntologyTerm> analytes) implements ExperimentUpdateRequestBody,
+      ExperimentUpdateResponseBody {
+
+    public ExperimentDescription {
+      species = Set.copyOf(species);
+      specimen = Set.copyOf(specimen);
+      analytes = Set.copyOf(analytes);
+    }
+  }
+
+  /**
+   * A service request to create a new experimental group.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group to create
+   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupCreationRequest(String projectId, String experimentId,
+                                          ExperimentalGroup group, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupCreationRequest(String projectId, String experimentId,
+        ExperimentalGroup group) {
+      this(projectId, experimentId, group, UUID.randomUUID().toString());
+    }
+
+    public ExperimentalGroupCreationRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupCreationRequest}.
+   *
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group created
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupCreationResponse(String experimentId, ExperimentalGroup group,
+                                           String requestId) {
+
+    public ExperimentalGroupCreationResponse {
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to update an experimental group.
+   *
+   * @param projectId    the project's identifier. The project containing the experiment.
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group to update
+   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
+   *                     in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupUpdateRequest(String projectId, String experimentId,
+                                        ExperimentalGroup group, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupUpdateRequest(String projectId, String experimentId,
+        ExperimentalGroup group) {
+      this(projectId, experimentId, group, UUID.randomUUID().toString());
+    }
+
+    public ExperimentalGroupUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupUpdateRequest}.
+   *
+   * @param experimentId the experiment's identifier
+   * @param group        the experimental group updated
+   * @param requestId    the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupUpdateResponse(String experimentId, ExperimentalGroup group,
+                                         String requestId) {
+
+    public ExperimentalGroupUpdateResponse {
+      requireNonNull(experimentId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service request to delete an experimental group.
+   *
+   * @param projectId         the project's identifier. The project containing the experiment.
+   * @param experimentId      the experiment's identifier'
+   * @param experimentGroupId the identifier of the experimental group to delete
+   * @param requestId         the request ID. Needs to be provided by the client and will be
+   *                          referenced in the response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
+                                          Long experimentGroupId, String requestId) implements
+      CacheableRequest {
+
+    public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
+        Long experimentGroupId) {
+      this(projectId, experimentId, experimentGroupId, UUID.randomUUID().toString());
+    }
+
+    public ExperimentalGroupDeletionRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(experimentGroupId);
+      requireNonNull(requestId);
+    }
+  }
+
+  /**
+   * A service response from a {@link ExperimentalGroupDeletionRequest}.
+   *
+   * @param experimentId      the experiment's identifier
+   * @param experimentGroupId the identifier of the experimental group deleted
+   * @param requestId         the identifier of the original request to which this is a response.
+   * @since 1.10.0
+   */
+  record ExperimentalGroupDeletionResponse(String experimentId, Long experimentGroupId,
+                                           String requestId) {
+
+    public ExperimentalGroupDeletionResponse {
+      requireNonNull(experimentId);
+      requireNonNull(experimentGroupId);
+      requireNonNull(requestId);
+    }
+  }
 
   record ExperimentalVariablesCreationResponse(String projectId,
                                                List<ExperimentalVariable> experimentalVariables,
@@ -237,6 +956,23 @@ public interface AsyncProjectService {
   }
 
   /**
+   * Return a reactive stream of {@link ExperimentDescription} for a given project.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId the identifier of the project to get the experiments for
+   * @return a {@link Flux} of {@link ExperimentDescription}. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException in case the request cannot be processed
+   * @throws AccessDeniedException  in case of insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ExperimentDescription> getExperiments(String projectId);
+
+  /**
    * Requests the creation of an experiment and returns a reactive
    * {@link Mono<ExperimentCreationResponse>}.
    * <p>
@@ -291,6 +1027,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param request the request to delete an experiment for a project.
    * @return a {@link Mono<ExperimentDeletionResponse>} object publishing a
    * {@link ExperimentDeletionResponse}
@@ -302,6 +1039,25 @@ public interface AsyncProjectService {
   Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request);
 
   /**
+   * Queries all available experimental variables for a given experiment.
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId    the project identifier of the project to get the variables from
+   * @param experimentId the experiment identifier of the experiment to get the variables from
+   * @return a {@link Flux<ExperimentalVariable>} emitting {@link ExperimentalVariable}s for the
+   * experiment.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Flux<ExperimentalVariable> getExperimentalVariables(String projectId, String experimentId);
+
+  /**
    * Submits an experimental variable creation request and returns a reactive
    * {@link Mono<ExperimentalVariablesCreationResponse>}.
    * <p>
@@ -309,8 +1065,10 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param request the request with information required for the experimental variable creation.
-   * @return a {@link Mono<ExperimentalVariablesCreationResponse>} object publishing a {@link ExperimentalVariablesCreationResponse} on success.
+   * @return a {@link Mono<ExperimentalVariablesCreationResponse>} object publishing a
+   * {@link ExperimentalVariablesCreationResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
@@ -326,6 +1084,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param request the request with information required for the experimental variable update
    * @return a {@link Mono<ExperimentalVariablesUpdateResponse>} object publishing a
    * {@link ExperimentalVariablesUpdateResponse} on success.
@@ -344,6 +1103,7 @@ public interface AsyncProjectService {
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
+   *
    * @param request the request with information required for the experimental variable deletion
    * @return a {@link Mono<ExperimentalVariablesDeletionResponse>} object publishing a
    * {@link ExperimentalVariablesDeletionResponse} on success.
@@ -354,24 +1114,26 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentalVariablesDeletionResponse> delete(ExperimentalVariablesDeletionRequest request);
 
-
   /**
-   * Queries all available experimental variables for a given experiment.
+   * Requests a {@link Flux} of all {@link ExperimentalGroup} for a given experiment in a given
+   * project.
    * <p>
    * <b>Exceptions</b>
    * <p>
    * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
    * the throw section below.
-   * @param projectId    the project identifier of the project to get the variables from
-   * @param experimentId the experiment identifier of the experiment to get the variables from
-   * @return a {@link Flux<ExperimentalVariable>} emitting {@link ExperimentalVariable}s for the
-   * experiment.
+   *
+   * @param projectId    the project ID for the project the experimental groups shall be retrieved
+   *                     for
+   * @param experimentId the experiment ID for the experiment the experimental groups shall be
+   *                     retrieved
+   * @return a {@link Flux} of {@link ExperimentalGroup} for the given project and experiment.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.10.0
    */
-  Flux<ExperimentalVariable> getExperimentalVariables(String projectId, String experimentId);
+  Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
 
   /**
    * Submits an experimental group creation request and returns a reactive
@@ -429,27 +1191,7 @@ public interface AsyncProjectService {
    * @since 1.10.0
    */
   Mono<ExperimentalGroupDeletionResponse> delete(ExperimentalGroupDeletionRequest request);
-
-  /**
-   * Requests a {@link Flux} of all {@link ExperimentalGroup} for a given experiment in a given
-   * project.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param projectId    the project ID for the project the experimental groups shall be retrieved
-   *                     for
-   * @param experimentId the experiment ID for the experiment the experimental groups shall be
-   *                     retrieved
-   * @return a {@link Flux} of {@link ExperimentalGroup} for the given project and experiment.
-   * @throws UnknownRequestException if an unknown request has been used in the service call
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
-   * @since 1.10.0
-   */
-  Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId);
+  //</editor-fold>
 
   /**
    * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
@@ -478,25 +1220,6 @@ public interface AsyncProjectService {
    */
   Flux<ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
-
-  //</editor-fold>
-
-  /**
-   * Return a reactive stream of {@link ExperimentDescription} for a given project.
-   * <p>
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param projectId the identifier of the project to get the experiments for
-   * @return a {@link Flux} of {@link ExperimentDescription}. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
-   * @throws RequestFailedException in case the request cannot be processed
-   * @throws AccessDeniedException  in case of insufficient rights
-   * @since 1.10.0
-   */
-  Flux<ExperimentDescription> getExperiments(String projectId);
 
   /**
    * Requests {@link SamplePreview} for a given experiment with pagination support.
@@ -734,28 +1457,6 @@ public interface AsyncProjectService {
   Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType);
 
-  /**
-   * Container of an update request for a service call and part of the
-   * {@link ProjectUpdateRequest}.
-   *
-   * @since 1.9.0
-   */
-  sealed interface ProjectUpdateRequestBody permits FundingInformation, PrincipalInvestigator,
-      ProjectDesign, ProjectManager, ProjectResponsible {
-
-  }
-
-  /**
-   * Container of an update response from a service call and part of the
-   * {@link ProjectUpdateResponse}.
-   *
-   * @since 1.9.0
-   */
-  sealed interface ProjectUpdateResponseBody permits FundingInformation,
-      PrincipalInvestigator, ProjectDesign, ProjectManager, ProjectResponsible {
-
-  }
-
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription,
       ExperimentalGroups {
@@ -805,565 +1506,6 @@ public interface AsyncProjectService {
      */
     String requestId();
 
-  }
-
-  sealed interface ProjectDeletionRequestBody permits FundingDeletion,
-      ProjectResponsibleDeletion {
-
-  }
-
-  /**
-   * A service request to create a project.
-   *
-   * @param design   the title and objective of a project
-   * @param contacts the different contact persons of a project
-   * @param funding  some funding information
-   * @since 1.9.0
-   */
-  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-                                FundingInformation funding, String requestId) {
-
-    public ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-        String requestId) {
-      this(design, contacts, null, requestId);
-    }
-
-    public ProjectCreationRequest {
-      requireNonNull(design);
-      requireNonNull(contacts);
-      requireNonNull(requestId);
-    }
-
-    /**
-     * {@inheritDoc} Please use {@link ProjectCreationRequest#optionalFundingInformation()} to
-     * access the funding information safely.
-     *
-     * @return the funding information. Might be null.
-     * @see ProjectCreationRequest#optionalFundingInformation()
-     * @since 1.10.0
-     */
-    @Override
-    public FundingInformation funding() {
-      return funding;
-    }
-
-    public Optional<FundingInformation> optionalFundingInformation() {
-      return Optional.ofNullable(funding);
-    }
-  }
-
-  /**
-   * A service response from a project creation request
-   *
-   * @param projectId
-   * @since 1.9, 0
-   */
-  record ProjectCreationResponse(String projectId, String requestId) {
-
-    public ProjectCreationResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service request to update project information.
-   *
-   * @param projectId   the project's id
-   * @param requestBody the information to be updated.
-   * @param requestId   the request ID, needs to be provided by the client and will be referenced in
-   *                    the response.
-   * @since 1.9.0
-   */
-  record ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody,
-                              String requestId) implements CacheableRequest {
-
-    public ProjectUpdateRequest(String projectId, ProjectUpdateRequestBody requestBody) {
-      this(projectId, requestBody, UUID.randomUUID().toString());
-    }
-
-    public ProjectUpdateRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-      requireNonNull(requestBody);
-    }
-
-  }
-
-  /**
-   * A service response from an update project information request.
-   *
-   * @param projectId    the project's id
-   * @param responseBody the information that was updated.
-   * @param requestId    the request ID, needs to be provided by the client and will be referenced
-   *                     in the response.
-   * @since 1.9.0
-   */
-  record ProjectUpdateResponse(String projectId, ProjectUpdateResponseBody responseBody,
-                               String requestId) {
-
-    public ProjectUpdateResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-      requireNonNull(responseBody);
-    }
-
-  }
-
-  //<editor-fold desc="project resource deletion">
-  record ProjectDeletionRequest(String projectId, String requestId) {
-
-    public ProjectDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-    public ProjectDeletionRequest(String projectId) {
-      this(projectId, UUID.randomUUID().toString());
-    }
-  }
-
-  /*
-  End project-related requests
-   */
-
-
-  /*
-  Experiment-related requests
-   */
-
-  record ProjectDeletionResponse(String projectId, String requestId) {
-
-    public ProjectDeletionResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-  }
-
-  //<editor-fold desc="funding information creation">
-  record FundingInformationCreationRequest(String projectId,
-                                           FundingInformation information,
-                                           String requestId) implements
-      CacheableRequest {
-
-    public FundingInformationCreationRequest {
-      requireNonNull(requestId);
-      requireNonNull(projectId);
-      requireNonNull(information);
-    }
-
-    public FundingInformationCreationRequest(String projectId, FundingInformation information) {
-      this(projectId, information, UUID.randomUUID().toString());
-    }
-  }
-
-  record FundingInformationCreationResponse(String requestId, FundingInformation fundingInformation,
-                                            String projectId) {
-
-    public FundingInformationCreationResponse {
-      requireNonNull(requestId);
-      requireNonNull(projectId);
-      requireNonNull(fundingInformation);
-    }
-
-  }
-
-  //<editor-fold desc="funding information deletion">
-  record FundingInformationDeletionRequest(String projectId, String requestId) {
-
-    public FundingInformationDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-    public FundingInformationDeletionRequest(String projectId) {
-      this(projectId, UUID.randomUUID().toString());
-    }
-  }
-
-  record FundingInformationDeletionResponse(String projectId, String requestId) {
-
-    public FundingInformationDeletionResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-  }
-
-  //<editor-fold desc="project responsible creation">
-  record ProjectResponsibleCreationRequest(String projectId, ProjectContact projectResponsible,
-                                           String requestId) {
-
-    public ProjectResponsibleCreationRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-      requireNonNull(projectResponsible);
-    }
-
-    public ProjectResponsibleCreationRequest(String projectId, ProjectContact projectResponsible) {
-      this(projectId, projectResponsible, UUID.randomUUID().toString());
-    }
-  }
-
-  record ProjectResponsibleCreationResponse(String projectId, ProjectContact projectResponsible,
-                                            String requestId) {
-
-    public ProjectResponsibleCreationResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-      requireNonNull(projectResponsible);
-    }
-  }
-
-  //<editor-fold desc="project responsible deletion">
-  record ProjectResponsibleDeletionRequest(String projectId, String requestId) {
-
-    public ProjectResponsibleDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-
-    public ProjectResponsibleDeletionRequest(String projectId) {
-      this(projectId, UUID.randomUUID().toString());
-    }
-  }
-
-  record ProjectResponsibleDeletionResponse(String projectId, String requestId) {
-
-    public ProjectResponsibleDeletionResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service request to create an experiment
-   *
-   * @param projectId             the project in which to create the experiment
-   * @param experimentDescription the minimal required information for the experiment
-   * @param requestId             the unique id of this request. If none exists use
-   *                              {@link ExperimentCreationRequest#ExperimentCreationRequest(String,
-   *                              ExperimentDescription)} for construction.
-   * @since 1.10.0
-   */
-  record ExperimentCreationRequest(String projectId, ExperimentDescription experimentDescription,
-                                   String requestId) implements CacheableRequest {
-
-    /**
-     * A service request to create an experiment
-     *
-     * @param projectId             the project in which to create the experiment
-     * @param experimentDescription the minimal required information for the experiment
-     * @param requestId             the unique id of this request. If none exists use
-     *                              {@link
-     *                              ExperimentCreationRequest#ExperimentCreationRequest(String,
-     *                              ExperimentDescription)} for construction.
-     * @since 1.10.0
-     */
-    public ExperimentCreationRequest {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-      requireNonNull(experimentDescription);
-    }
-
-    /**
-     * A service request to create an experiment. Generates a request id and assinges it to this
-     * request.
-     *
-     * @param projectId             the project in which to create the experiment
-     * @param experimentDescription the minimal required information for the experiment
-     * @since 1.10.0
-     */
-    public ExperimentCreationRequest(String projectId,
-        ExperimentDescription experimentDescription) {
-      this(projectId, experimentDescription, UUID.randomUUID().toString());
-    }
-  }
-
-  /**
-   * A service response for experiment creation.
-   *
-   * @param projectId             the project in which the experiment was created
-   * @param experimentId          the identifier of the created experiment
-   * @param experimentDescription information about the experiment
-   * @param requestId             the identifier of the original request
-   * @since 1.10.0
-   */
-  record ExperimentCreationResponse(String projectId, String experimentId,
-                                    ExperimentDescription experimentDescription,
-                                    String requestId) {
-
-    public ExperimentCreationResponse {
-      requireNonNull(projectId);
-      requireNonNull(requestId);
-      requireNonNull(experimentDescription);
-    }
-  }
-
-  /**
-   * A service request to update an experiment
-   *
-   * @param projectId    the project's identifier. The project containing the experiment.
-   * @param experimentId the experiment's identifier
-   * @param body         the request body containing information on what was updated
-   * @param requestId    the request ID, needs to be provided by the client and will be referenced
-   *                     in the response.
-   * @since 1.9.0
-   */
-  record ExperimentUpdateRequest(String projectId, String experimentId,
-                                 ExperimentUpdateRequestBody body, String requestId) implements
-      CacheableRequest {
-
-    /**
-     * A service request to update an experiment
-     *
-     * @param projectId    the project's identifier. The project containing the experiment.
-     * @param experimentId the experiment's identifier
-     * @param body         the request body containing information on what was updated
-     * @since 1.9.0
-     */
-    public ExperimentUpdateRequest(String projectId, String experimentId,
-        ExperimentUpdateRequestBody body) {
-      this(projectId, experimentId, body, UUID.randomUUID().toString());
-    }
-
-    public ExperimentUpdateRequest {
-      requireNonNull(projectId);
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-      requireNonNull(body);
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentUpdateRequest}
-   *
-   * @param experimentId the experiment's identifier
-   * @param body         information about the update
-   * @param requestId    the identifier of the original request to which this is a response.
-   * @since 1.9.0
-   */
-  record ExperimentUpdateResponse(String experimentId, ExperimentUpdateResponseBody body,
-                                  String requestId) {
-
-    public ExperimentUpdateResponse {
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-      requireNonNull(body);
-    }
-  }
-
-  //<editor-fold desc="experiment resource deletion">
-  record ExperimentDeletionRequest(String projectId, String experimentId, String requestId) {
-
-    public ExperimentDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-    }
-
-    public ExperimentDeletionRequest(String projectId, String experimentId) {
-      this(projectId, experimentId, UUID.randomUUID().toString());
-    }
-  }
-
-  record ExperimentDeletionResponse(String projectId, String experimentId, String requestId) {
-
-    public ExperimentDeletionResponse {
-      requireNonNull(projectId);
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-    }
-  }
-
-
-  /*
-  API method section - end
-   */
-
-
-  /*
-  API concept section - start
-   */
-
-  /**
-   * Container for passing information in an {@link ProjectUpdateRequestBody} or
-   * {@link ProjectUpdateResponseBody}.
-   *
-   * @param title     the title of the project
-   * @param objective the objective of the project
-   * @since 1.9.0
-   */
-  record ProjectDesign(String title, String objective) implements ProjectUpdateRequestBody,
-      ProjectUpdateResponseBody {
-
-  }
-
-  /**
-   * Container for passing information about the different project contacts.
-   *
-   * @param investigator the principal investigator
-   * @param manager      the project manager
-   * @param responsible  the responsible person, can be <code>null</code>
-   * @since 1.9.0
-   */
-  record ProjectContacts(ProjectContact investigator, ProjectContact manager,
-                         ProjectContact responsible) {
-
-    public ProjectContacts(ProjectContact investigator, ProjectContact manager) {
-      this(investigator, manager, null);
-    }
-
-    /**
-     * {@inheritDoc} Please use {@link #optionalResponsible} to access the responsible safely.
-     *
-     * @return the project responsible. Might be null.
-     * @since 1.10.0
-     */
-    @Override
-    public ProjectContact responsible() {
-      return responsible;
-    }
-
-    public Optional<ProjectContact> optionalResponsible() {
-      return Optional.ofNullable(responsible);
-    }
-
-  }
-
-  /**
-   * A project contact.
-   *
-   * @param fullName   the full name of the person
-   * @param email      a valid email address for contact
-   * @param oidc       the UUID which identifies the contact within the oidcIssuer
-   * @param oidcIssuer the oidcIssuer providing the UUID to identify a user if registered
-   * @since 1.9.0
-   */
-  record ProjectContact(String fullName, String email, String oidc, String oidcIssuer) {
-
-  }
-
-  /**
-   * Container for funding information of a project.
-   *
-   * @param grant   the grant name
-   * @param grantId the grant ID
-   * @since 1.9.0
-   */
-  record FundingInformation(String grant, String grantId) implements ProjectUpdateRequestBody,
-      ProjectUpdateResponseBody {
-
-  }
-
-  record ProjectResponsible(ProjectContact contact) implements ProjectUpdateRequestBody,
-      ProjectUpdateResponseBody {
-
-  }
-
-  record ProjectManager(ProjectContact contact) implements ProjectUpdateRequestBody,
-      ProjectUpdateResponseBody {
-
-  }
-
-  record PrincipalInvestigator(ProjectContact contact) implements ProjectUpdateRequestBody,
-      ProjectUpdateResponseBody {
-
-  }
-
-  /**
-   * Contains information on one experimental variables
-   *
-   * @param name   the name of the variable
-   * @param levels possible levels of the variable
-   * @param unit   the unit of the experimental variable. Can be null if no unit is set
-   * @since 1.9.0
-   */
-  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
-
-    public ExperimentalVariable(String name, Set<String> levels) {
-      this(name, levels, "");
-    }
-
-    public ExperimentalVariable {
-      levels = Set.copyOf(levels);
-    }
-
-    @Override
-    public Set<String> levels() {
-      return Set.copyOf(levels);
-    }
-  }
-
-
-  /**
-   * A level of an experimental variable
-   *
-   * @param variableId   the identifier of the variable
-   * @param variableName the name of the variable
-   * @param levelValue   the value of the level
-   * @param unit         the unit for the value of the level. Can be null if no unit is set
-   * @since 1.9.0
-   */
-  record VariableLevel(Long variableId, String variableName, String levelValue,
-                       @Nullable String unit) {
-
-  }
-
-  /**
-   * Information about an experimental group
-   *
-   * @param groupId    the identifier of the group
-   * @param name       the name of the eperimental group can be empty but is not expected to be
-   *                   null
-   * @param sampleSize the number of samples in this experimental group
-   * @param levels     the experimental variable levels making up the condition for the samples in
-   *                   this group.
-   * @since 1.9.0
-   */
-  record ExperimentalGroup(@Nullable Long groupId, String name, int sampleSize,
-                           Set<VariableLevel> levels) {
-
-    public ExperimentalGroup {
-      levels = Set.copyOf(levels);
-    }
-  }
-
-  /**
-   * A container for experimental groups. Can be used in {@link #update(ExperimentUpdateRequest)}
-   *
-   * @param experimentalGroups the list of experimental groups
-   * @since 1.9.0
-   */
-  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) implements
-      ExperimentUpdateRequestBody, ExperimentUpdateResponseBody {
-
-    public ExperimentalGroups {
-      experimentalGroups = List.copyOf(experimentalGroups);
-    }
-  }
-
-  /**
-   * A container describing the experiment
-   *
-   * @param experimentName the name of the experiment
-   * @param species        a set of species for the experiment. Expected textual representations
-   *                       containing CURIEs.
-   * @param specimen       a set of specimen for the eperiment. Expected textual representations
-   *                       containing CURIEs.
-   * @param analytes       a set of analytes for the eperiment.Expected textual representations
-   *                       containing CURIEs.
-   * @since 1.9.0
-   */
-  record ExperimentDescription(String experimentName, Set<OntologyTerm> species,
-                               Set<OntologyTerm> specimen,
-                               Set<OntologyTerm> analytes) implements ExperimentUpdateRequestBody,
-      ExperimentUpdateResponseBody {
-
-    public ExperimentDescription {
-      species = Set.copyOf(species);
-      specimen = Set.copyOf(specimen);
-      analytes = Set.copyOf(analytes);
-    }
   }
 
   /**
@@ -1504,137 +1646,6 @@ public interface AsyncProjectService {
 
     public String toString() {
       return idSpace + ":" + localId;
-    }
-  }
-
-  /**
-   * A service request to create a new experimental group.
-   *
-   * @param projectId    the project's identifier. The project containing the experiment.
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group to create
-   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
-   *                     in the response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupCreationRequest(String projectId, String experimentId,
-                                          ExperimentalGroup group, String requestId) implements
-      CacheableRequest {
-
-    public ExperimentalGroupCreationRequest(String projectId, String experimentId,
-        ExperimentalGroup group) {
-      this(projectId, experimentId, group, UUID.randomUUID().toString());
-    }
-
-    public ExperimentalGroupCreationRequest {
-      requireNonNull(projectId);
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentalGroupCreationRequest}.
-   *
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group created
-   * @param requestId    the identifier of the original request to which this is a response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupCreationResponse(String experimentId, ExperimentalGroup group,
-                                           String requestId) {
-
-    public ExperimentalGroupCreationResponse {
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service request to update an experimental group.
-   *
-   * @param projectId    the project's identifier. The project containing the experiment.
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group to update
-   * @param requestId    the request ID. Needs to be provided by the client and will be referenced
-   *                     in the response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupUpdateRequest(String projectId, String experimentId,
-                                        ExperimentalGroup group, String requestId) implements
-      CacheableRequest {
-
-    public ExperimentalGroupUpdateRequest(String projectId, String experimentId,
-        ExperimentalGroup group) {
-      this(projectId, experimentId, group, UUID.randomUUID().toString());
-    }
-
-    public ExperimentalGroupUpdateRequest {
-      requireNonNull(projectId);
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentalGroupUpdateRequest}.
-   *
-   * @param experimentId the experiment's identifier
-   * @param group        the experimental group updated
-   * @param requestId    the identifier of the original request to which this is a response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupUpdateResponse(String experimentId, ExperimentalGroup group,
-                                         String requestId) {
-
-    public ExperimentalGroupUpdateResponse {
-      requireNonNull(experimentId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service request to delete an experimental group.
-   *
-   * @param projectId         the project's identifier. The project containing the experiment.
-   * @param experimentId      the experiment's identifier'
-   * @param experimentGroupId the identifier of the experimental group to delete
-   * @param requestId         the request ID. Needs to be provided by the client and will be
-   *                          referenced in the response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-                                          Long experimentGroupId, String requestId) implements
-      CacheableRequest {
-
-    public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-        Long experimentGroupId) {
-      this(projectId, experimentId, experimentGroupId, UUID.randomUUID().toString());
-    }
-
-    public ExperimentalGroupDeletionRequest {
-      requireNonNull(projectId);
-      requireNonNull(experimentId);
-      requireNonNull(experimentGroupId);
-      requireNonNull(requestId);
-    }
-  }
-
-  /**
-   * A service response from a {@link ExperimentalGroupDeletionRequest}.
-   *
-   * @param experimentId      the experiment's identifier
-   * @param experimentGroupId the identifier of the experimental group deleted
-   * @param requestId         the identifier of the original request to which this is a response.
-   * @since 1.10.0
-   */
-  record ExperimentalGroupDeletionResponse(String experimentId, Long experimentGroupId,
-                                           String requestId) {
-
-    public ExperimentalGroupDeletionResponse {
-      requireNonNull(experimentId);
-      requireNonNull(experimentGroupId);
-      requireNonNull(requestId);
     }
   }
 
@@ -1822,14 +1833,6 @@ public interface AsyncProjectService {
 
   }
 
-
-  record FundingDeletion() implements ProjectDeletionRequestBody {
-
-  }
-
-  record ProjectResponsibleDeletion() implements ProjectDeletionRequestBody {
-
-  }
 
   /**
    * The actual request container for metadata validation.
