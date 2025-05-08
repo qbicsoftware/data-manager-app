@@ -670,7 +670,7 @@ public interface AsyncProjectService {
   record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
 
     public ExperimentalVariable(String name, Set<String> levels) {
-      this(name, levels, "");
+      this(name, levels, null);
     }
 
     public ExperimentalVariable {
@@ -680,6 +680,10 @@ public interface AsyncProjectService {
     @Override
     public Set<String> levels() {
       return Set.copyOf(levels);
+    }
+
+    public Optional<String> optionalUnit() {
+      return Optional.ofNullable(unit);
     }
   }
 
@@ -714,6 +718,10 @@ public interface AsyncProjectService {
     public ExperimentalGroup {
       requireNonNull(levels);
       levels = Set.copyOf(levels);
+    }
+
+    public Set<VariableLevel> levels() {
+      return Set.copyOf(levels);
     }
   }
 
@@ -901,6 +909,7 @@ public interface AsyncProjectService {
       requireNonNull(experimentId);
       requireNonNull(experimentalVariables);
       requireNonNull(requestId);
+      experimentalVariables = List.copyOf(experimentalVariables);
     }
 
     public ExperimentalVariablesCreationRequest(String projectId, String experimentId,
@@ -918,6 +927,7 @@ public interface AsyncProjectService {
       requireNonNull(experimentId);
       requireNonNull(experimentalVariables);
       requireNonNull(requestId);
+      experimentalVariables = List.copyOf(experimentalVariables);
     }
 
     public ExperimentalVariablesUpdateRequest(String projectId, String experimentId,
@@ -929,7 +939,12 @@ public interface AsyncProjectService {
   record ExperimentalVariablesUpdateResponse(String projectId,
                                              List<ExperimentalVariable> experimentalVariables,
                                              String requestId) {
-
+    public ExperimentalVariablesUpdateResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      requireNonNull(experimentalVariables);
+      experimentalVariables = List.copyOf(experimentalVariables);
+    }
   }
 
   record ExperimentalVariablesDeletionRequest(String projectId, String experimentId,
