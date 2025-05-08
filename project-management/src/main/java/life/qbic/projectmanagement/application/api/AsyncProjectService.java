@@ -245,7 +245,7 @@ public interface AsyncProjectService {
   }
 
   record ProjectResponsibleCreationRequest(String projectId, ProjectContact projectResponsible,
-                                           String requestId) {
+                                           String requestId) implements CacheableRequest {
 
     public ProjectResponsibleCreationRequest {
       requireNonNull(projectId);
@@ -268,7 +268,7 @@ public interface AsyncProjectService {
     }
   }
 
-  record ProjectResponsibleDeletionRequest(String projectId, String requestId) {
+  record ProjectResponsibleDeletionRequest(String projectId, String requestId) implements CacheableRequest {
 
     public ProjectResponsibleDeletionRequest {
       requireNonNull(projectId);
@@ -1494,7 +1494,8 @@ public interface AsyncProjectService {
   sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentUpdateRequest,
       ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
       ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
-      ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest, ProjectUpdateRequest,
+      ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
+      ProjectResponsibleCreationRequest, ProjectResponsibleDeletionRequest, ProjectUpdateRequest,
       ValidationRequest {
 
     /**
