@@ -26,7 +26,7 @@ public class AnnouncementComponent extends Div {
   private static final Log log = LogFactory.getLog(AnnouncementComponent.class);
   private final transient AnnouncementService announcementService;
   private static final Duration INITIAL_DELAY = Duration.ZERO;
-  private static final Duration REFRESH_INTERVAL = Duration.of(1, ChronoUnit.HOURS);
+  private static final Duration REFRESH_INTERVAL = Duration.of(1, ChronoUnit.SECONDS);
   private Disposable refreshRoutine;
 
 

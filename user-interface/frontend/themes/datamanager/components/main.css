@@ -4,6 +4,9 @@
 
 #announcements {
   grid-area: announcements;
+  background-color: var(--lumo-warning-color);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  text-align: center;
 }
 
 #main-layout {
