@@ -2,14 +2,19 @@
   grid-area: content-area;
 }
 
+#announcements {
+  grid-area: announcements;
+}
+
 #main-layout {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(max-content, 95%) minmax(min-content, 5%);
+  grid-template-rows:minmax(max-content, 5%) minmax(max-content, 95%) minmax(min-content, 5%);
   height: 100%;
   /*Default design of components is too big for smaller screens*/
   zoom: 90%;
   grid-template-areas:
+    "announcements"
     "content-area"
     "data-manager-footer";
 }

@@ -3,6 +3,7 @@ package life.qbic.datamanager.views;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import java.util.Objects;
+import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.DataManagerMenu;
@@ -23,8 +24,9 @@ public class UserMainLayout extends DataManagerLayout {
 
   public UserMainLayout(@Autowired LogoutService logoutService,
       UserInformationService userInformationService,
-      @Autowired FooterComponentFactory footerComponentFactory) {
-    super(Objects.requireNonNull(footerComponentFactory));
+      @Autowired FooterComponentFactory footerComponentFactory,
+      AnnouncementService announcementService) {
+    super(Objects.requireNonNull(footerComponentFactory), announcementService);
     Objects.requireNonNull(logoutService);
     Span navBarTitle = new Span("Data Manager");
     navBarTitle.setClassName("navbar-title");

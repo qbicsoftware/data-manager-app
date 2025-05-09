@@ -10,6 +10,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLayout;
 import java.io.Serial;
 import java.util.Objects;
+import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.LandingPageTitleAndLogo;
 import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
@@ -27,12 +28,12 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   private static final long serialVersionUID = 8899881833038660866L;
   private final Div landingPageContent = new Div();
   private final LandingPageTitleAndLogo landingPageTitleAndLogo = new LandingPageTitleAndLogo();
-  public Button register;
-  public Button login;
+  private Button register;
+  private Button login;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired
-  FooterComponentFactory footerComponentFactory) {
-    super(Objects.requireNonNull(footerComponentFactory));
+  FooterComponentFactory footerComponentFactory, AnnouncementService announcementService) {
+    super(Objects.requireNonNull(footerComponentFactory), announcementService);
     Objects.requireNonNull(handlerInterface);
     addClassName("landing-page-layout");
     //CSS class hosting the background image for all our landing pages
