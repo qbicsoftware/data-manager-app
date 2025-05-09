@@ -29,6 +29,7 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   private final Div landingPageContent = new Div();
   private final LandingPageTitleAndLogo landingPageTitleAndLogo = new LandingPageTitleAndLogo();
   private Button login;
+  private Button register;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired
   FooterComponentFactory footerComponentFactory, AnnouncementService announcementService) {
@@ -39,6 +40,14 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
     landingPageContent.addClassName("landing-page-content");
     createNavBarContent();
     registerToHandler(handlerInterface);
+  }
+
+  Button login() {
+    return login;
+  }
+
+  Button register() {
+    return register;
   }
 
   private void registerToHandler(LandingPageHandlerInterface handler) {
@@ -52,7 +61,7 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   }
 
   private HorizontalLayout createHeaderButtonLayout() {
-    Button register = new Button("Register");
+    register = new Button("Register");
     login = new Button("Login");
 
     HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
