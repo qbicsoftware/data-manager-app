@@ -28,7 +28,6 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   private static final long serialVersionUID = 8899881833038660866L;
   private final Div landingPageContent = new Div();
   private final LandingPageTitleAndLogo landingPageTitleAndLogo = new LandingPageTitleAndLogo();
-  private Button register;
   private Button login;
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface, @Autowired
@@ -53,19 +52,15 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
   }
 
   private HorizontalLayout createHeaderButtonLayout() {
-    register = new Button("Register");
+    Button register = new Button("Register");
     login = new Button("Login");
 
     HorizontalLayout loggedOutButtonLayout = new HorizontalLayout(register, login);
     loggedOutButtonLayout.addClassName("button-layout-spacing");
 
-    styleHeaderButtons();
+    login.addClassName("primary");
 
     return loggedOutButtonLayout;
-  }
-
-  private void styleHeaderButtons() {
-    login.addClassName("primary");
   }
 
   /**
