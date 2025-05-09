@@ -10,6 +10,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
+import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -60,8 +61,9 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    super(requireNonNull(footerComponentFactory));
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      AnnouncementService announcementService) {
+    super(requireNonNull(footerComponentFactory), announcementService);
     requireNonNull(logoutService);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);

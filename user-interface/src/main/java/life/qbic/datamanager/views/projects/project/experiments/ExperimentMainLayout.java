@@ -17,6 +17,7 @@ import com.vaadin.flow.router.RouteParam;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.announcements.AnnouncementService;
 import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
@@ -71,8 +72,9 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired FooterComponentFactory footerComponentFactory,
       @Autowired  TerminologyService terminologyService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    super(requireNonNull(footerComponentFactory));
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      AnnouncementService announcementService) {
+    super(requireNonNull(footerComponentFactory), announcementService);
     requireNonNull(logoutService);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);

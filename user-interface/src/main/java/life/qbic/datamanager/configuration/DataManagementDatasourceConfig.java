@@ -41,7 +41,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-    basePackages = {"life.qbic.projectmanagement", "life.qbic.identity"},
+    basePackages = {"life.qbic.projectmanagement", "life.qbic.identity",
+        "life.qbic.datamanager.announcements"},
     entityManagerFactoryRef = "dataManagementEntityManagerFactory",
     transactionManagerRef = "dataManagementTransactionManager")
 public class DataManagementDatasourceConfig {
@@ -72,7 +73,8 @@ public class DataManagementDatasourceConfig {
       @Qualifier("dataManagementDataSource") DataSource dataSource) {
     return builder
         .dataSource(dataSource)
-        .packages("life.qbic.projectmanagement", "life.qbic.identity")
+        .packages("life.qbic.projectmanagement", "life.qbic.identity",
+            "life.qbic.datamanager.announcements")
         .properties(Map.of(
             "hibernate.hbm2ddl.auto", hibernateDdlAuto
         ))
