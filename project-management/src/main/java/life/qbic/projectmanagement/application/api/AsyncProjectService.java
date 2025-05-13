@@ -18,8 +18,6 @@ import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleI
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
@@ -898,6 +896,11 @@ public interface AsyncProjectService {
                                                List<ExperimentalVariable> experimentalVariables,
                                                String requestId) {
 
+    public ExperimentalVariablesCreationResponse {
+      requireNonNull(projectId);
+      requireNonNull(requestId);
+      experimentalVariables = List.copyOf(experimentalVariables);
+    }
   }
 
   record ExperimentalVariablesCreationRequest(String projectId, String experimentId,
