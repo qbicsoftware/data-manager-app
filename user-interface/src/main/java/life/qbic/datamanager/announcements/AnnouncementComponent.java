@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService.Announcement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,7 +26,7 @@ public class AnnouncementComponent extends Div {
   private final transient AnnouncementService announcementService;
   private static final Duration INITIAL_DELAY = Duration.ZERO;
   private static final Duration REFRESH_INTERVAL = Duration.of(1, ChronoUnit.SECONDS);
-  private Disposable refreshRoutine;
+  private transient Disposable refreshRoutine;
 
 
   public AnnouncementComponent(AnnouncementService announcementService) {
@@ -50,7 +49,6 @@ public class AnnouncementComponent extends Div {
 
   private Mono<List<Announcement>> loadActiveAnnouncements(UI ui) {
     return announcementService.loadActiveAnnouncements(Instant.now())
-        .distinctUntilChanged(Objects::hashCode) //avoid unnecessary work
         .collectList()
         .doOnNext(announcements -> refreshAnnouncements(announcements, ui));
   }

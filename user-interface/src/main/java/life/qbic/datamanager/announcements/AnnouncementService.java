@@ -10,7 +10,7 @@ public interface AnnouncementService {
 
   /**
    * A {@link Flux} containing Announcements. Only publishes announcements that are valid given the
-   * provided time.
+   * provided time. Published announcements are distinct until changed.
    *
    * @param timePoint the timepoint at which the announcement is valid
    * @return a {@link Flux} publishing announcements
