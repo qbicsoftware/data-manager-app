@@ -2,14 +2,19 @@
   grid-area: content-area;
 }
 
+#banner-area {
+  grid-area: banner-area;
+}
+
 #main-layout {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(max-content, 95%) minmax(min-content, 5%);
+  grid-template-rows: auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
   height: 100%;
   /*Default design of components is too big for smaller screens*/
   zoom: 90%;
   grid-template-areas:
+    "banner-area"
     "content-area"
     "data-manager-footer";
 }
@@ -274,7 +279,7 @@
 
 .main.project-overview {
   grid-template-columns: minmax(min-content, 1fr);
-  grid-template-rows: minmax(min-content, 10%) minmax(min-content, 80%);
+  grid-template-rows: minmax(min-content, 0.1fr) minmax(min-content, 0.9fr);
   grid-template-areas:
     "."
     "projectcollection";
@@ -485,8 +490,8 @@
   }
 
   .main.project-overview {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-rows:  minmax(min-content, 10%) minmax(min-content, 80%);
+    grid-template-columns: 1fr;
+    grid-template-rows:  0.1fr 0.9fr;
     grid-template-areas:
     "."
     "projectcollection";

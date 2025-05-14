@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouterLayout;
 import java.util.Objects;
@@ -19,15 +20,18 @@ import life.qbic.datamanager.views.general.footer.FooterComponentFactory;
 public class DataManagerLayout extends AppLayout implements RouterLayout {
 
   private final Div contentArea;
+  private final Span bannerArea;
 
   protected DataManagerLayout(FooterComponentFactory footerComponentFactory) {
     Objects.requireNonNull(footerComponentFactory);
     setId("data-manager-layout");
     // Create content area
     contentArea = new Div();
+    bannerArea = new Span();
+    bannerArea.setId("banner-area");
     contentArea.setId("content-area");
     // Add content area and footer to the main layout
-    Div mainLayout = new Div(contentArea, footerComponentFactory.get());
+    Div mainLayout = new Div(bannerArea, contentArea, footerComponentFactory.get());
     mainLayout.setId("main-layout");
     setContent(mainLayout);
   }
