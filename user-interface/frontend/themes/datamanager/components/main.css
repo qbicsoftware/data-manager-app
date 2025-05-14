@@ -1,12 +1,27 @@
 #content-area {
   grid-area: content-area;
+  overflow: hidden;
+}
+
+.announcement {
+  margin: var(--lumo-space-s) 0;
+  display: flex;
+  gap: var(--lumo-space-s);
+}
+
+.announcement vaadin-icon {
+  min-width: var(--lumo-icon-size-m);
+}
+
+.announcement-text {
+  display: inline;
 }
 
 #announcements {
   grid-area: announcements;
   background-color: var(--lumo-warning-color);
   padding: var(--lumo-space-s) var(--lumo-space-m);
-  text-align: center;
+  text-align: left;
 }
 
 #main-layout {
