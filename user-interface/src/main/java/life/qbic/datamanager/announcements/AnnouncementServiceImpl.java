@@ -20,8 +20,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     return Flux.fromIterable(
             announcementRepository.getAnnouncementByDisplayStartTimeBeforeAndDisplayEndTimeAfterOrderByDisplayStartTimeAsc(
                 timePoint, timePoint))
-        .map(AnnouncementServiceImpl::toApiObject)
         .distinctUntilChanged(Objects::hashCode) //avoid unnecessary work
+        .map(AnnouncementServiceImpl::toApiObject)
         .subscribeOn(VirtualThreadScheduler.getScheduler());
   }
 
