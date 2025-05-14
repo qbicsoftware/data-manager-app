@@ -8,6 +8,7 @@ import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -17,15 +18,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
 
 public class AnnouncementComponent extends Div {
 
   private static final Log log = LogFactory.getLog(AnnouncementComponent.class);
   private final transient AnnouncementService announcementService;
   private static final Duration INITIAL_DELAY = Duration.ZERO;
-  private static final Duration REFRESH_INTERVAL = Duration.of(1, ChronoUnit.SECONDS);
+  private static final Duration REFRESH_INTERVAL = Duration.of(1, ChronoUnit.HOURS);
   private transient Disposable refreshRoutine;
 
 
@@ -39,18 +38,9 @@ public class AnnouncementComponent extends Div {
     UI ui = getUI().orElseThrow();
     refreshRoutine = Flux.interval(INITIAL_DELAY, REFRESH_INTERVAL)
         .doOnNext(it -> log.debug("Fetching announcements"))
-        .flatMap(it -> loadActiveAnnouncements(ui)
-        )
-        .retryWhen(Retry.backoff(5, Duration.of(2, ChronoUnit.SECONDS))
-            .doBeforeRetry(retrySignal -> log.warn("Operation failed (" + retrySignal + ")")))
-        .subscribe();
-
-  }
-
-  private Mono<List<Announcement>> loadActiveAnnouncements(UI ui) {
-    return announcementService.loadActiveAnnouncements(Instant.now())
-        .collectList()
-        .doOnNext(announcements -> refreshAnnouncements(announcements, ui));
+        .flatMap(it -> announcementService.loadActiveAnnouncements(Instant.now())
+            .collectList())
+        .subscribe(announcements -> refreshAnnouncements(announcements, ui));
   }
 
   private void unsubscribeFromAnnouncements() {
@@ -62,6 +52,7 @@ public class AnnouncementComponent extends Div {
   private void refreshAnnouncements(List<Announcement> announcements, UI ui) {
     ui.access(() -> {
       this.removeAll();
+      this.setVisible(!announcements.isEmpty());
       for (Announcement announcement : announcements) {
         add(renderAnnouncement(announcement));
       }
@@ -70,9 +61,10 @@ public class AnnouncementComponent extends Div {
 
   private Component renderAnnouncement(AnnouncementService.Announcement announcement) {
     Html html = new Html(
-        "<div style=\"display:contents\">%s</div>".formatted(announcement.message()));
-    html.addClassNames("announcement");
-    return new Div(html);
+        "<div class=\"announcement-text\">%s</div>".formatted(announcement.message()));
+    Div div = new Div(VaadinIcon.WRENCH.create(), html);
+    div.addClassNames("announcement");
+    return div;
   }
 
   @Override
