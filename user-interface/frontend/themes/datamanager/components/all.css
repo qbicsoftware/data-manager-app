@@ -475,7 +475,27 @@ Layout
 /****************************
 Older stuff -
 ****************************/
+#announcements {
+  background-color: var(--lumo-warning-color);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  text-align: left;
+}
 
+.announcement {
+  margin: var(--lumo-space-s) 0;
+  display: flex;
+  gap: var(--lumo-space-s);
+}
+
+.announcement vaadin-icon {
+  min-width: var(--icon-size-s);
+  max-width: var(--icon-size-s);
+  color: var(--icon-color-default);
+}
+
+.announcement-text {
+  display: inline;
+}
 
 .heading-with-icon {
   color: #878787;
