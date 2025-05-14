@@ -506,14 +506,6 @@
     grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
   }
 
-  .main.project-overview {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-rows:  minmax(min-content, 10%) minmax(min-content, 80%);
-    grid-template-areas:
-    "."
-    "projectcollection";
-  }
-
   .main.raw-data {
     grid-template-columns: minmax(min-content, 1fr);
     grid-template-areas:
