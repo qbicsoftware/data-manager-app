@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.application;
+package life.qbic.application.commons;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
