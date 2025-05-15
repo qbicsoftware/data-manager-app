@@ -2,14 +2,19 @@
   grid-area: content-area;
 }
 
+#announcements {
+  grid-area: announcements;
+}
+
 #main-layout {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(max-content, 95%) minmax(min-content, 5%);
+  grid-template-rows: auto minmax(max-content, 0.95fr) minmax(min-content, 0.05fr);
   height: 100%;
   /*Default design of components is too big for smaller screens*/
   zoom: 90%;
   grid-template-areas:
+    "announcements"
     "content-area"
     "data-manager-footer";
 }
@@ -273,8 +278,8 @@
 }
 
 .main.project-overview {
-  grid-template-columns: minmax(min-content, 1fr);
-  grid-template-rows: minmax(min-content, 10%) minmax(min-content, 80%);
+  grid-template-columns: 1fr;
+  grid-template-rows: 0.1fr 0.9fr;
   grid-template-areas:
     "."
     "projectcollection";
@@ -482,14 +487,6 @@
     "offerlist"
     "qualitycontrollist";
     grid-template-rows: minmax(min-content, 60%) minmax(min-content, 20%) minmax(min-content, 20%);
-  }
-
-  .main.project-overview {
-    grid-template-columns: minmax(min-content, 1fr);
-    grid-template-rows:  minmax(min-content, 10%) minmax(min-content, 80%);
-    grid-template-areas:
-    "."
-    "projectcollection";
   }
 
   .main.raw-data {
