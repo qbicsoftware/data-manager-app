@@ -584,6 +584,17 @@ CREATE TABLE IF NOT EXISTS `confounding_variable_levels`
   DEFAULT CHARSET = utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `announcements`
+(
+    `id`         bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `start_time` datetime(6)  NOT NULL,
+    `end_time`   datetime(6)  NOT NULL,
+    `message`    VARCHAR(255) NOT NULL
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
 
 
 DROP VIEW IF EXISTS data_management.project_measurements;

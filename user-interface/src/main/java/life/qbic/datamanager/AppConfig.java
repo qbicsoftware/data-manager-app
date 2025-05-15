@@ -86,7 +86,7 @@ import reactor.core.scheduler.Scheduler;
  * @since 1.0.0
  */
 @Configuration
-@ComponentScan({"life.qbic.identity.infrastructure"})
+@ComponentScan({"life.qbic.identity.infrastructure", "life.qbic.datamanager.announcements"})
 public class AppConfig {
   /*
   Wiring up identity application core and policies
