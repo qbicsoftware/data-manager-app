@@ -10,7 +10,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -32,7 +31,6 @@ import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentalVariableAddition;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -48,8 +46,10 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
+import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -133,7 +133,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         Curie.parse(term.oboId()), URI.create(term.getClassIri()),
         term.getOntologyAbbreviation());
   }
-
 
   @Override
   public Mono<ExperimentCreationResponse> create(ExperimentCreationRequest request) {
@@ -236,6 +235,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           fundingInformation.grantId());
       return new ProjectUpdateResponse(projectId.value(), fundingInformation, requestId);
     });
+  }
+
+  @Override
+  public Mono<ProjectInformation> getProject(String projectId) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
@@ -498,7 +503,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     };
   }
 
-
   /**
    * Ensures that the security context is applied in the correct order and written when it is
    * required.
@@ -585,18 +589,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   public Mono<ExperimentUpdateResponse> update(
       ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {
-
       case ExperimentDescription experimentDescription ->
           updateExperimentDescription(request.projectId(), request.experimentId(),
               experimentDescription);
-
-      case ExperimentalGroups experimentalGroups -> unknownRequest();
       case ConfoundingVariableAdditions confoundingVariableAdditions -> unknownRequest();
       case ConfoundingVariableDeletions confoundingVariableDeletions -> unknownRequest();
       case ConfoundingVariableUpdates confoundingVariableUpdates -> unknownRequest();
-      case ExperimentalVariableAdditions experimentalVariableAdditions ->
-          addExperimentalVariables(request.projectId(), experimentalVariableAdditions,
-              ExperimentId.parse(request.experimentId()), request.requestId());
     };
 
     SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -607,54 +605,138 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<ProjectDeletionResponse> delete(ProjectDeletionRequest request) {
-    Mono<ProjectDeletionResponse> responseMono = switch (request.body()) {
-      case ProjectResponsibleDeletion target ->
-          delete(request.projectId(), request.requestId(), target);
-      case FundingDeletion target -> delete(request.projectId(), request.requestId(), target);
-    };
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContext(responseMono)
-        .contextWrite(reactiveSecurity(securityContext))
-        .retryWhen(defaultRetryStrategy())
-        .subscribeOn(scheduler);
+// TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Mono<FundingInformationCreationResponse> create(
+      FundingInformationCreationRequest request) {
+
+    var call = Mono.fromCallable(() -> {
+      projectService.setFunding(ProjectId.parse(request.projectId()),
+          request.information().grant(), request.information().grantId());
+      return new FundingInformationCreationResponse(request.requestId(), request.information(),
+          request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not create funding information", e))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+
+  @Override
+  public Mono<FundingInformationDeletionResponse> delete(
+      FundingInformationDeletionRequest request) {
+    var call = Mono.fromCallable(() -> {
+      projectService.removeFunding(ProjectId.parse(request.projectId()));
+      return new FundingInformationDeletionResponse(request.requestId(), request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not delete funding information", e))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Mono<ProjectResponsibleCreationResponse> create(
+      ProjectResponsibleCreationRequest request) {
+
+    var call = Mono.fromCallable(() -> {
+      projectService.setResponsibility(ProjectId.parse(request.projectId()),
+          request.projectResponsible());
+      return new ProjectResponsibleCreationResponse(request.requestId(),
+          request.projectResponsible(), request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not set responsible person", e))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
+  public Mono<ProjectResponsibleDeletionResponse> delete(
+      ProjectResponsibleDeletionRequest request) {
+
+    var call = Mono.fromCallable(() -> {
+      projectService.removeResponsibility(ProjectId.parse(request.projectId()));
+      return new ProjectResponsibleDeletionResponse(request.requestId(), request.projectId());
+    });
+
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not delete responsible person", e))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override
   public Mono<ExperimentDeletionResponse> delete(ExperimentDeletionRequest request) {
-    Mono<ExperimentDeletionResponse> response = switch (request.body()) {
-      case ExperimentalVariableDeletions experimentalVariableDeletions ->
-          deleteExperimentalVariables(request, experimentalVariableDeletions);
-    };
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContext(response)
-        .contextWrite(reactiveSecurity(securityContext))
-        .retryWhen(defaultRetryStrategy())
-        .subscribeOn(scheduler);
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
-  private Mono<ExperimentDeletionResponse> deleteExperimentalVariables(
-      ExperimentDeletionRequest request,
-      ExperimentalVariableDeletions experimentalVariableDeletions) {
-    return Mono.fromSupplier(() -> {
-      ExperimentId experimentId = ExperimentId.parse(request.experimentId());
-      ProjectId projectId = ProjectId.parse(request.projectId());
-      Experiment experiment = experimentInformationService.find(
-              request.projectId(),
-              experimentId)
-          .orElseThrow(() -> new ExperimentNotFoundException("No experiment was found."));
+  @Override
+  public Flux<ExperimentalVariable> getExperimentalVariables(String projectId,
+      String experimentId) {
+    var call = Flux.fromStream(() -> experimentInformationService.getVariablesOfExperiment(projectId,
+            ExperimentId.parse(experimentId))
+        .stream()
+        .map(this::convertToApi));
 
-      var removedVariables = new ArrayList<ExperimentalVariable>();
-      for (ExperimentalVariable experimentalVariable : experimentalVariableDeletions.experimentalVariables()) {
-        var wasRemoved = experimentInformationService.deleteExperimentalVariable(projectId,
-            experimentId, experimentalVariable.name());
-        if (wasRemoved) {
-          removedVariables.add(experimentalVariable);
-        }
-      }
+    return applySecurityContextMany(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not load experimental variables", e))
+        .onErrorMap(org.springframework.security.access.AccessDeniedException.class, e -> new AccessDeniedException(ACCESS_DENIED))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
+  }
 
-      return new ExperimentDeletionResponse(request.projectId(), request.experimentId(),
-          request.requestId(), new ExperimentalVariables(removedVariables));
-    });
+  private ExperimentalVariable convertToApi(
+      life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
+    return new ExperimentalVariable(experimentalVariable.name().value(),
+        experimentalVariable.levels()
+            .stream().map(level -> level.variableName().value()).collect(
+                Collectors.toSet()),
+        experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(null));
+  }
+
+  @Override
+  public Mono<ExperimentalVariablesCreationResponse> create(
+      ExperimentalVariablesCreationRequest request) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Mono<ExperimentalVariablesUpdateResponse> update(
+      ExperimentalVariablesUpdateRequest request) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Mono<ExperimentalVariablesDeletionResponse> delete(
+      ExperimentalVariablesDeletionRequest request) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,
@@ -698,33 +780,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ExperimentUpdateResponse> updateExperimentDescription(String projectId,
       String experimentId,
       ExperimentDescription experimentDescription) {
-    throw new RuntimeException("Not implemented");
-  }
-
-  private Mono<ExperimentUpdateResponse> addExperimentalVariables(
-      String projectId,
-      ExperimentalVariableAdditions experimentalVariableAdditions, ExperimentId experimentId,
-      String requestId) {
-
-    var variableAdditions = experimentalVariableAdditions.experimentalVariables().stream()
-        .map(experimentalVariable -> new ExperimentalVariableAddition(experimentalVariable.name(),
-            experimentalVariable.unit(), java.util.List.copyOf(experimentalVariable.levels())))
-        .toList();
-
-    return applySecurityContext(Mono.fromSupplier(
-        () -> experimentInformationService.addVariablesToExperiment(projectId, experimentId,
-            variableAdditions)
-    ))
-        .map(experimentalVariableInformation -> experimentalVariableInformation.stream()
-            .map(info -> new ExperimentalVariable(info.name(), new HashSet<>(info.levels()),
-                info.unit())
-            )
-            .toList())
-        .map(ExperimentalVariables::new)
-        .map(experimentalVariables ->
-            new ExperimentUpdateResponse(experimentId.value(), experimentalVariables,
-                requestId)
-        ).subscribeOn(scheduler);
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
@@ -745,12 +802,4 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             }
         );
   }
-
-  public static class ExperimentNotFoundException extends RuntimeException {
-
-    public ExperimentNotFoundException(String message) {
-      super(message);
-    }
-  }
-
 }
