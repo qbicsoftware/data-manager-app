@@ -22,7 +22,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.Exper
 import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent.SampleSourceType;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 
 /**
@@ -45,11 +45,11 @@ public class ExperimentalInformationLayout extends Div implements
         ontologyTermInformationService, terminologyService);
     final BioIconComboboxFactory bioIconComboboxFactory = new BioIconComboboxFactory();
 
-    MultiSelectComboBox<OntologyTerm> speciesBox = ontologyComboboxFactory.speciesBox();
+    MultiSelectComboBox<OntologyTermV1> speciesBox = ontologyComboboxFactory.speciesBox();
     speciesBox.addClassName("box-flexgrow");
-    MultiSelectComboBox<OntologyTerm> specimenBox = ontologyComboboxFactory.specimenBox();
+    MultiSelectComboBox<OntologyTermV1> specimenBox = ontologyComboboxFactory.specimenBox();
     specimenBox.addClassName("box-flexgrow");
-    MultiSelectComboBox<OntologyTerm> analyteBox = ontologyComboboxFactory.analyteBox();
+    MultiSelectComboBox<OntologyTermV1> analyteBox = ontologyComboboxFactory.analyteBox();
     TextField nameField = nameField();
 
     experimentalInformationBinder = new Binder<>(ExperimentalInformation.class);
@@ -140,9 +140,9 @@ public class ExperimentalInformationLayout extends Div implements
     @Serial
     private static final long serialVersionUID = -2712521934990738542L;
     private String experimentName;
-    private final List<OntologyTerm> species;
-    private final List<OntologyTerm> specimen;
-    private final List<OntologyTerm> analytes;
+    private final List<OntologyTermV1> species;
+    private final List<OntologyTermV1> specimen;
+    private final List<OntologyTermV1> analytes;
     private String speciesIconName;
     private String specimenIconName;
 
@@ -160,29 +160,29 @@ public class ExperimentalInformationLayout extends Div implements
       this.experimentName = experimentName;
     }
 
-    public List<OntologyTerm> getSpecies() {
+    public List<OntologyTermV1> getSpecies() {
       return new ArrayList<>(species);
     }
 
-    public void setSpecies(Collection<OntologyTerm> species) {
+    public void setSpecies(Collection<OntologyTermV1> species) {
       this.species.clear();
       this.species.addAll(species);
     }
 
-    public List<OntologyTerm> getSpecimens() {
+    public List<OntologyTermV1> getSpecimens() {
       return new ArrayList<>(specimen);
     }
 
-    public void setSpecimens(Collection<OntologyTerm> specimen) {
+    public void setSpecimens(Collection<OntologyTermV1> specimen) {
       this.specimen.clear();
       this.specimen.addAll(specimen);
     }
 
-    public List<OntologyTerm> getAnalytes() {
+    public List<OntologyTermV1> getAnalytes() {
       return new ArrayList<>(analytes);
     }
 
-    public void setAnalytes(Collection<OntologyTerm> analytes) {
+    public void setAnalytes(Collection<OntologyTermV1> analytes) {
       this.analytes.clear();
       this.analytes.addAll(analytes);
     }

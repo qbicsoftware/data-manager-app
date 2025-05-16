@@ -366,9 +366,7 @@ private static void routeToProject(ProjectId projectId) {
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes(),
-        experimentDraft.getSpeciesIcon().getLabel(),
-        experimentDraft.getSpecimenIcon().getLabel());
+        experimentDraft.getAnalytes());
     if (result.isValue()) {
 
       return result.getValue();

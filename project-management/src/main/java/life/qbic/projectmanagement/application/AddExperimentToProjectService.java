@@ -13,7 +13,7 @@ import life.qbic.domain.concepts.DomainEvent;
 import life.qbic.domain.concepts.DomainEventDispatcher;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService.ExperimentCreatedDomainEventSubscriber;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -54,11 +54,9 @@ public class AddExperimentToProjectService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public Result<ExperimentId, RuntimeException> addExperimentToProject(ProjectId projectId,
       String experimentName,
-      List<OntologyTerm> species,
-      List<OntologyTerm> specimens,
-      List<OntologyTerm> analytes,
-      String speciesIconLabel,
-      String specimenIconLabel) {
+      List<OntologyTermV1> species,
+      List<OntologyTermV1> specimens,
+      List<OntologyTermV1> analytes) {
       requireNonNull(projectId, "project id must not be null during experiment creation");
       if (experimentName.isBlank()) {
         experimentName = "Unnamed Experiment";
@@ -91,7 +89,6 @@ public class AddExperimentToProjectService {
           .onValue(exp -> exp.addAnalytes(analytes))
           .onValue(exp -> exp.addSpecies(species))
           .onValue(exp -> exp.addSpecimens(specimens))
-          .onValue(exp -> exp.setIconNames(speciesIconLabel, specimenIconLabel, "default"))
           .onValue(experiment -> {
             project.addExperiment(experiment);
             projectRepository.update(project);

@@ -3,13 +3,13 @@ package life.qbic.projectmanagement.domain.model.sample;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 
 /**
  * <b>Sample Origin</b>
  * <p>
- * The sample origin contains the species, specimen and analyte as {@link OntologyTerm} that
+ * The sample origin contains the species, specimen and analyte as {@link OntologyTermV1} that
  * are associated with the {@link Sample}. They are a subset of the classes that have been selected
  * for the respective {@link Experiment}.
  * <p>
@@ -20,37 +20,37 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 public class SampleOrigin {
 
   @Column(name = "species", columnDefinition = "TEXT")
-  private OntologyTerm species;
+  private OntologyTermV1 species;
   @Column(name = "specimen", columnDefinition = "TEXT")
-  private OntologyTerm specimen;
+  private OntologyTermV1 specimen;
   @Column(name = "analyte", columnDefinition = "TEXT")
-  private OntologyTerm analyte;
+  private OntologyTermV1 analyte;
 
   protected SampleOrigin() {
     //needed for JPA
   }
 
-  private SampleOrigin(OntologyTerm species, OntologyTerm specimen,
-      OntologyTerm analyte) {
+  private SampleOrigin(OntologyTermV1 species, OntologyTermV1 specimen,
+      OntologyTermV1 analyte) {
     this.species = Objects.requireNonNull(species);
     this.specimen = Objects.requireNonNull(specimen);
     this.analyte = Objects.requireNonNull(analyte);
   }
 
-  public static SampleOrigin create(OntologyTerm species, OntologyTerm specimen,
-      OntologyTerm analytes) {
+  public static SampleOrigin create(OntologyTermV1 species, OntologyTermV1 specimen,
+      OntologyTermV1 analytes) {
     return new SampleOrigin(species, specimen, analytes);
   }
 
-  public OntologyTerm getSpecies() {
+  public OntologyTermV1 getSpecies() {
     return species;
   }
 
-  public OntologyTerm getSpecimen() {
+  public OntologyTermV1 getSpecimen() {
     return specimen;
   }
 
-  public OntologyTerm getAnalyte() {
+  public OntologyTermV1 getAnalyte() {
     return analyte;
   }
 

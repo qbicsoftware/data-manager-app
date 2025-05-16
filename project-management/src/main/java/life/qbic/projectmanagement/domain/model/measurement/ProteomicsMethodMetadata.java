@@ -1,6 +1,6 @@
 package life.qbic.projectmanagement.domain.model.measurement;
 
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 /**
  * <b>Proteomics Method Metadata</b>
@@ -10,7 +10,7 @@ import life.qbic.projectmanagement.domain.model.OntologyTerm;
  * @since 1.0.0
  */
 public record ProteomicsMethodMetadata(
-    OntologyTerm msDevice,
+    OntologyTermV1 msDevice,
     String technicalReplicate,
     String facility,
     String digestionMethod,

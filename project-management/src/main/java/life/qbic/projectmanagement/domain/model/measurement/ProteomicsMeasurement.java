@@ -21,7 +21,7 @@ import java.util.Set;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.domain.Organisation;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode.MeasurementCodeConverter;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
@@ -57,7 +57,7 @@ public class ProteomicsMeasurement {
   private MeasurementId measurementId;
 
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
-  private OntologyTerm msDevice;
+  private OntologyTermV1 msDevice;
 
   @Column(name = "technicalReplicateName")
   private String technicalReplicateName;
@@ -219,7 +219,7 @@ public class ProteomicsMeasurement {
         .toList();
   }
 
-  public OntologyTerm msDevice() {
+  public OntologyTermV1 msDevice() {
     return msDevice;
   }
 

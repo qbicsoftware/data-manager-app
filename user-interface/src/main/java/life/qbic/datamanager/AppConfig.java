@@ -1,5 +1,6 @@
 package life.qbic.datamanager;
 
+import life.qbic.application.commons.VirtualThreadScheduler;
 import life.qbic.broadcasting.Exchange;
 import life.qbic.broadcasting.MessageBusSubmission;
 import life.qbic.domain.concepts.SimpleEventStore;
@@ -28,7 +29,6 @@ import life.qbic.infrastructure.email.project.ProjectManagementEmailServiceProvi
 import life.qbic.projectmanagement.application.AppContextProvider;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.application.ProjectInformationService;
-import life.qbic.projectmanagement.application.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.api.SampleCodeService;
 import life.qbic.projectmanagement.application.authorization.acl.ProjectAccessService;
 import life.qbic.projectmanagement.application.authorization.authorities.AuthorityService;

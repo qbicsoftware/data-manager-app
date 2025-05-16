@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.projectmanagement.domain.Organisation;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementCreatedEvent;
 import life.qbic.projectmanagement.domain.model.measurement.event.MeasurementUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -60,7 +60,7 @@ public class NGSMeasurement {
   @Column(nullable = false)
   private ProjectId projectId;
   @Column(name = "instrument", columnDefinition = "longtext CHECK (json_valid(`instrument`))")
-  private OntologyTerm instrument;
+  private OntologyTermV1 instrument;
   @Column(name = "samplePool")
   private String samplePool = "";
   @Convert(converter = MeasurementCode.MeasurementCodeConverter.class)
@@ -225,7 +225,7 @@ public class NGSMeasurement {
     return projectId;
   }
 
-  public OntologyTerm instrument() {
+  public OntologyTermV1 instrument() {
     return instrument;
   }
 

@@ -23,7 +23,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
@@ -245,7 +245,7 @@ public class ExperimentInformationService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addSpeciesToExperiment(String projectId, ExperimentId experimentId,
-      OntologyTerm... species) {
+      OntologyTermV1... species) {
     Arrays.stream(species).forEach(Objects::requireNonNull);
     if (species.length < 1) {
       return;
@@ -274,7 +274,7 @@ public class ExperimentInformationService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addSpecimenToExperiment(String projectId, ExperimentId experimentId,
-      OntologyTerm... specimens) {
+      OntologyTermV1... specimens) {
     Arrays.stream(specimens).forEach(Objects::requireNonNull);
     if (specimens.length < 1) {
       return;
@@ -303,7 +303,7 @@ public class ExperimentInformationService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void addAnalyteToExperiment(String projectId, ExperimentId experimentId,
-      OntologyTerm... analytes) {
+      OntologyTermV1... analytes) {
     Arrays.stream(analytes).forEach(Objects::requireNonNull);
     if (analytes.length < 1) {
       return;
@@ -452,7 +452,7 @@ public class ExperimentInformationService {
    * @param experimentId the Id of the experiment for which the analytes should be retrieved
    * @return a collection of analytes in the active experiment.
    */
-  public Collection<OntologyTerm> getAnalytesOfExperiment(ExperimentId experimentId) {
+  public Collection<OntologyTermV1> getAnalytesOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getAnalytes();
   }
@@ -463,7 +463,7 @@ public class ExperimentInformationService {
    * @param experimentId the Id of the experiment for which the species should be retrieved
    * @return a collection of species in the active experiment.
    */
-  public Collection<OntologyTerm> getSpeciesOfExperiment(ExperimentId experimentId) {
+  public Collection<OntologyTermV1> getSpeciesOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getSpecies();
   }
@@ -474,7 +474,7 @@ public class ExperimentInformationService {
    * @param experimentId the Id of the experiment for which the specimen should be retrieved
    * @return a collection of specimen in the active experiment.
    */
-  public Collection<OntologyTerm> getSpecimensOfExperiment(ExperimentId experimentId) {
+  public Collection<OntologyTermV1> getSpecimensOfExperiment(ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getSpecimens();
   }
@@ -532,10 +532,9 @@ public class ExperimentInformationService {
     handleLocalEventCache(domainEventsCache);
   }
 
-  @Transactional
   /**
    * Updates experimental groups in a given experiment.
-   *
+   * <p>
    * Compares the provided list of experimental groups of an experiment with the persistent state.
    * Removes groups from the experiment that are not in the new list, adds groups that are not in
    * the experiment yet and updates the other groups of the experiment.
@@ -545,6 +544,7 @@ public class ExperimentInformationService {
    * @param experimentalGroupDTOS  the new list of experimental groups including all updates
    * @since 1.0.0
    */
+  @Transactional
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void updateExperimentalGroupsOfExperiment(String projectId, ExperimentId experimentId,
@@ -600,8 +600,7 @@ public class ExperimentInformationService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void editExperimentInformation(String projectId, ExperimentId experimentId,
       String experimentName,
-      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
-      String speciesIconName, String specimenIconName) {
+      List<OntologyTermV1> species, List<OntologyTermV1> specimens, List<OntologyTermV1> analytes) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
@@ -614,7 +613,6 @@ public class ExperimentInformationService {
     experiment.setSpecies(species);
     experiment.setSpecimens(specimens);
     experiment.setAnalytes(analytes);
-    experiment.setIconNames(speciesIconName, specimenIconName, "default");
     experimentRepository.update(experiment);
 
     handleLocalEventCache(domainEventsCache);

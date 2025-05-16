@@ -5,18 +5,18 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 
 @Converter(autoApply = true)
 
 public class OntologyClassAttributeConverter implements
-    AttributeConverter<OntologyTerm, String> {
+    AttributeConverter<OntologyTermV1, String> {
 
   private static final ObjectMapper objectMapper = new ObjectMapper().configure(
       DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   @Override
-  public String convertToDatabaseColumn(OntologyTerm attribute) {
+  public String convertToDatabaseColumn(OntologyTermV1 attribute) {
     try {
       return objectMapper.writeValueAsString(attribute);
     } catch (JsonProcessingException e) {
@@ -25,9 +25,9 @@ public class OntologyClassAttributeConverter implements
   }
 
   @Override
-  public OntologyTerm convertToEntityAttribute(String dbData) {
+  public OntologyTermV1 convertToEntityAttribute(String dbData) {
     try {
-      return objectMapper.readValue(dbData, OntologyTerm.class);
+      return objectMapper.readValue(dbData, OntologyTermV1.class);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

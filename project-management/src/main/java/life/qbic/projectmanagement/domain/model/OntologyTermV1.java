@@ -15,7 +15,7 @@ import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.Ontolo
  * are stored persistently with experiments and samples. Storage is facilitated by
  * {@link OntologyClassAttributeConverter}.
  */
-public class OntologyTerm implements Serializable {
+public class OntologyTermV1 implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 1459801951948902353L;
@@ -37,7 +37,7 @@ public class OntologyTerm implements Serializable {
   @JsonProperty("oboId")
   private OboId realOboId;
 
-  public OntologyTerm() {
+  public OntologyTermV1() {
   }
 
   /**
@@ -50,7 +50,7 @@ public class OntologyTerm implements Serializable {
    * @param description          - an optional description of the term
    * @param classIri             - the iri where this specific class is found/described
    */
-  public OntologyTerm(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
+  public OntologyTermV1(String ontologyAbbreviation, String ontologyVersion, String ontologyIri,
       String classLabel, String oboId, String description, String classIri) {
     this.ontologyAbbreviation = ontologyAbbreviation;
     this.ontologyVersion = ontologyVersion;
@@ -61,8 +61,8 @@ public class OntologyTerm implements Serializable {
     this.classIri = classIri;
   }
 
-  public static OntologyTerm from(OntologyClass lookupEntity) {
-    return new OntologyTerm(lookupEntity.getOntologyAbbreviation(),
+  public static OntologyTermV1 from(OntologyClass lookupEntity) {
+    return new OntologyTermV1(lookupEntity.getOntologyAbbreviation(),
         lookupEntity.getOntologyVersion(),
         lookupEntity.getOntologyIri(), lookupEntity.getClassLabel(), lookupEntity.getCurie(),
         lookupEntity.getDescription(), lookupEntity.getClassIri());
@@ -70,26 +70,6 @@ public class OntologyTerm implements Serializable {
 
   public String getOntologyAbbreviation() {
     return ontologyAbbreviation;
-  }
-
-  public void setOntologyAbbreviation(String ontologyAbbreviation) {
-    this.ontologyAbbreviation = ontologyAbbreviation;
-  }
-
-  public String getOntologyVersion() {
-    return ontologyVersion;
-  }
-
-  public void setOntologyVersion(String ontologyVersion) {
-    this.ontologyVersion = ontologyVersion;
-  }
-
-  public String getOntologyIri() {
-    return ontologyIri;
-  }
-
-  public void setOntologyIri(String ontologyIri) {
-    this.ontologyIri = ontologyIri;
   }
 
   public String getLabel() {
@@ -149,6 +129,15 @@ public class OntologyTerm implements Serializable {
         Ontology.findOntologyByAbbreviation(ontologyAbbreviation).getName());
   }
 
+  /**
+   * The abbreviated ontology term
+   *
+   * @return
+   */
+  public String ontologyIdentifyingName() {
+    return Ontology.findOntologyByAbbreviation(ontologyAbbreviation).getAbbreviation();
+  }
+
   @Override
   public boolean equals(Object other) {
     if (this == other) {
@@ -157,7 +146,7 @@ public class OntologyTerm implements Serializable {
     if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    OntologyTerm that = (OntologyTerm) other;
+    OntologyTermV1 that = (OntologyTermV1) other;
     return Objects.equals(classIri, that.classIri);
   }
 
@@ -168,11 +157,16 @@ public class OntologyTerm implements Serializable {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", OntologyTerm.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", OntologyTermV1.class.getSimpleName() + "[", "]")
         .add("ontologyAbbreviation='" + ontologyAbbreviation + "'")
+        .add("ontologyVersion='" + ontologyVersion + "'")
+        .add("ontologyIri='" + ontologyIri + "'")
         .add("classLabel='" + classLabel + "'")
         .add("oboId='" + oboId + "'")
+        .add("description='" + description + "'")
         .add("classIri='" + classIri + "'")
+        .add("realOboId=" + realOboId)
+        .add("ontologyIdentifyingName='" + ontologyIdentifyingName() + "'")
         .toString();
   }
 

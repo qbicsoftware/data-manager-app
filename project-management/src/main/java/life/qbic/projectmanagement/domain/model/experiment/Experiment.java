@@ -17,7 +17,7 @@ import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
 import life.qbic.domain.concepts.LocalDomainEventDispatcher;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
+import life.qbic.projectmanagement.domain.model.OntologyTermV1;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
@@ -50,16 +50,16 @@ public class Experiment {
   private String specimenIconName;
   @Column(name = "analyteIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
   private String analyteIconName;
-  
-  @ElementCollection(targetClass = OntologyTerm.class)
+
+  @ElementCollection(targetClass = OntologyTermV1.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
-  private List<OntologyTerm> analytes = new ArrayList<>();
-  @ElementCollection(targetClass = OntologyTerm.class)
+  private List<OntologyTermV1> analytes = new ArrayList<>();
+  @ElementCollection(targetClass = OntologyTermV1.class)
   @Column(name = "species", columnDefinition = "longtext CHECK (json_valid(`species`))")
-  private List<OntologyTerm> species = new ArrayList<>();
-  @ElementCollection(targetClass = OntologyTerm.class)
+  private List<OntologyTermV1> species = new ArrayList<>();
+  @ElementCollection(targetClass = OntologyTermV1.class)
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
-  private List<OntologyTerm> specimens = new ArrayList<>();
+  private List<OntologyTermV1> specimens = new ArrayList<>();
   private static final String DEFAULT_ICON_NAME = "default";
 
   /**
@@ -154,21 +154,21 @@ public class Experiment {
   /**
    * @return the collection of species in this experiment
    */
-  public Collection<OntologyTerm> getSpecies() {
+  public Collection<OntologyTermV1> getSpecies() {
     return species.stream().toList();
   }
 
   /**
    * @return the collection of specimens in this experiment
    */
-  public Collection<OntologyTerm> getSpecimens() {
+  public Collection<OntologyTermV1> getSpecimens() {
     return specimens.stream().toList();
   }
 
   /**
    * @return the collection of analytes in this experiment
    */
-  public Collection<OntologyTerm> getAnalytes() {
+  public Collection<OntologyTermV1> getAnalytes() {
     return analytes.stream().toList();
   }
 
@@ -177,11 +177,11 @@ public class Experiment {
    *
    * @param specimens The specimens to add to the experiment
    */
-  public void addSpecimens(Collection<OntologyTerm> specimens) {
+  public void addSpecimens(Collection<OntologyTermV1> specimens) {
     if (specimens.isEmpty()) {
       return;
     }
-    List<OntologyTerm> missingSpecimens = specimens.stream()
+    List<OntologyTermV1> missingSpecimens = specimens.stream()
         .filter(specimen -> !this.specimens.contains(specimen))
         .distinct()
         .toList();
@@ -258,13 +258,13 @@ public class Experiment {
    *
    * @param analytes The analytes to add to the experiment
    */
-  public void addAnalytes(Collection<OntologyTerm> analytes) {
+  public void addAnalytes(Collection<OntologyTermV1> analytes) {
     if (analytes.isEmpty()) {
       return;
     }
 
     // only add analytes that are not present already
-    List<OntologyTerm> missingAnalytes = analytes.stream()
+    List<OntologyTermV1> missingAnalytes = analytes.stream()
         .filter(analyte -> !this.analytes.contains(analyte))
         .distinct()
         .toList();
@@ -277,12 +277,12 @@ public class Experiment {
    *
    * @param species The species to add to the experiment
    */
-  public void addSpecies(Collection<OntologyTerm> species) {
+  public void addSpecies(Collection<OntologyTermV1> species) {
     if (species.isEmpty()) {
       return;
     }
     // only add species that are not present already
-    List<OntologyTerm> missingSpecies = species.stream()
+    List<OntologyTermV1> missingSpecies = species.stream()
         .filter(speci -> !this.species.contains(speci))
         .distinct()
         .toList();
@@ -380,7 +380,7 @@ public class Experiment {
    * Sets the list of species for an experiment.
    */
   public void setSpecies(
-      List<OntologyTerm> species) {
+      List<OntologyTermV1> species) {
     if (species == null || species.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIES_DEFINED,
           ErrorParameters.of(species));
@@ -393,7 +393,7 @@ public class Experiment {
    * Sets the list of specimen for an experiment.
    */
   public void setSpecimens(
-      List<OntologyTerm> specimens) {
+      List<OntologyTermV1> specimens) {
     if (specimens == null || specimens.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_SPECIMEN_DEFINED,
           ErrorParameters.of(specimens));
@@ -406,7 +406,7 @@ public class Experiment {
    * Sets the list of analytes for an experiment.
    */
   public void setAnalytes(
-      List<OntologyTerm> analytes) {
+      List<OntologyTermV1> analytes) {
     if (analytes == null || analytes.isEmpty()) {
       throw new ApplicationException(ErrorCode.NO_ANALYTE_DEFINED,
           ErrorParameters.of(analytes));
