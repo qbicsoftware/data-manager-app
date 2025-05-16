@@ -26,9 +26,7 @@ class AddExperimentToProjectServiceSpec extends Specification {
                 "Pilot",
                 [new OntologyTermV1()],
                 [new OntologyTermV1()],
-                [new OntologyTermV1()],
-                "default",
-                "default")
+                [new OntologyTermV1()])
         ExperimentId experimentId = result.getValue()
 
         then: "the project holds a reference to the created experiment"
