@@ -2,7 +2,7 @@ package life.qbic.datamanager.announcements;
 
 import java.time.Instant;
 import java.util.Objects;
-import life.qbic.datamanager.VirtualThreadScheduler;
+import life.qbic.projectmanagement.application.VirtualThreadScheduler;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
