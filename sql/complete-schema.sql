@@ -64,10 +64,10 @@ CREATE TABLE IF NOT EXISTS `acl_entry`
 
 CREATE TABLE IF NOT EXISTS `projects_datamanager`
 (
-    `projectId`                         varchar(255) NOT NULL,
+    `projectId`                       varchar(255)           NOT NULL,
     `grantLabel`                        varchar(255)  DEFAULT NULL,
     `grantId`                           varchar(255)  DEFAULT NULL,
-    `lastModified`                      datetime(6)  NOT NULL,
+    `lastModified`                    datetime(6)            NOT NULL,
     `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
     `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
     `principalInvestigatorOidc`       varchar(255) DEFAULT NULL,
@@ -81,9 +81,9 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `projectManagerOidcIssuer`        varchar(255) DEFAULT NULL,
     `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
-    `responsiblePersonOidc`       varchar(255) DEFAULT NULL,
-    `responsiblePersonOidcIssuer` varchar(255) DEFAULT NULL,
-    `version` int NOT NULL,
+    `responsiblePersonOidc`           varchar(255) DEFAULT NULL,
+    `responsiblePersonOidcIssuer`     varchar(255) DEFAULT NULL,
+    `version`                         int          DEFAULT 0 NOT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
