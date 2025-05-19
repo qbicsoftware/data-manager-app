@@ -92,6 +92,10 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingDeletion;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationCreationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationCreationResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.OntologyTerm;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.PrincipalInvestigator;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
@@ -100,6 +104,8 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDe
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectManager;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsible;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletion;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
@@ -379,8 +385,7 @@ public class ProjectSummaryComponent extends PageArea {
               new ProjectUpdateRequest(projectId,
                   new ProjectResponsible(responsible))));
     } else {
-      submitRequest(new ProjectDeletionRequest(projectId,
-          new ProjectResponsibleDeletion()));
+      submitRequest(new ProjectResponsibleDeletionRequest(projectId));
       submitMultiple(
           List.of(
               new ProjectUpdateRequest(projectId, new ProjectManager(manager)),
@@ -524,10 +529,10 @@ public class ProjectSummaryComponent extends PageArea {
 
   private void handleSubmission(String projectId, FundingInformation funding) {
     if (isEmpty(funding)) {
-      submitRequest(new ProjectDeletionRequest(projectId, new FundingDeletion()));
+      submitRequest(new FundingInformationDeletionRequest(projectId));
       return;
     }
-    submitRequest(new ProjectUpdateRequest(projectId, funding));
+    submitRequest(new FundingInformationCreationRequest(projectId, funding));
   }
 
   private void buildExperimentInformationSection() {
@@ -632,6 +637,18 @@ public class ProjectSummaryComponent extends PageArea {
         .subscribe(this::removeFromCache);
   }
 
+  private void submitRequest(FundingInformationCreationRequest request) {
+    asyncProjectService.create(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
+        .doOnCancel(() -> log.debug("Cancelled project delete request"))
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe();
+  }
+
   private void submitRequest(ProjectDeletionRequest request) {
     asyncProjectService.delete(request)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
@@ -639,6 +656,32 @@ public class ProjectSummaryComponent extends PageArea {
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
         .doOnSubscribe(subscription -> notifyUser(request.requestId()))
         .doOnCancel(() -> log.debug("Cancelled project delete request"))
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe();
+  }
+
+
+  private void submitRequest(FundingInformationDeletionRequest request) {
+    asyncProjectService.delete(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
+        .doOnCancel(() -> log.debug("Cancelled project delete request"))
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe();
+  }
+
+  private void submitRequest(ProjectResponsibleDeletionRequest request) {
+    asyncProjectService.delete(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(
+            subscription -> notifyUser(request.requestId()))
+        .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
         .doOnTerminate(() -> cleanPendingTask(request.requestId()))
         .doOnSuccess(this::handleSuccess)
         .subscribe();
@@ -712,7 +755,34 @@ public class ProjectSummaryComponent extends PageArea {
     }));
   }
 
-  private void handleSuccess(ProjectDeletionResponse projectDeletionResponse) {
+  private void handleSuccess(ProjectDeletionResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
+  }
+
+  private void handleSuccess(ProjectResponsibleDeletionResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
+  }
+
+  private void handleSuccess(FundingInformationCreationResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
+  }
+
+  private void handleSuccess(FundingInformationDeletionResponse response) {
     getUI().ifPresent(ui -> ui.access(() -> {
       var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
           new String[]{}, getLocale());

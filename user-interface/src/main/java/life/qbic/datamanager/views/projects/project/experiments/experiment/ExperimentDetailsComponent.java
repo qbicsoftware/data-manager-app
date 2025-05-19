@@ -71,10 +71,8 @@ import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentUpdateRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableAdditions;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariableDeletions;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariables;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesUpdateRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -498,28 +496,6 @@ public class ExperimentDetailsComponent extends PageArea {
     }
   }
 
-  private Mono<ExperimentDeletionResponse> deleteExistingExperimentalVariables() {
-    ExperimentId experimentId = context.experimentId().orElseThrow();
-    ProjectId projectId = context.projectId().orElseThrow();
-
-    List<AsyncProjectService.ExperimentalVariable> variablesOfExperiment = experimentInformationService.getVariablesOfExperiment(
-            projectId.value(), experimentId).stream()
-        .map(
-            variable -> {
-              Optional<String> unit = variable.levels().stream()
-                  .map(l -> l.experimentalValue()
-                      .unit())
-                  .findAny().flatMap(Function.identity());
-              return new AsyncProjectService.ExperimentalVariable(variable.name().value(),
-                  new HashSet(variable.levels()), unit.orElse(null));
-            })
-        .toList();
-
-    return asyncProjectService.delete(
-        new ExperimentDeletionRequest(projectId.value(), experimentId.value(),
-            new ExperimentalVariableDeletions(variablesOfExperiment)));
-  }
-
   private void reloadExperimentInfo(ProjectId projectId, ExperimentId experimentId) {
     loadExperimentInformation(projectId, experimentId);
   }
@@ -541,20 +517,16 @@ public class ExperimentDetailsComponent extends PageArea {
     List<ExperimentalVariableContent> variableContents = confirmEvent.getSource()
         .definedVariables();
     List<AsyncProjectService.ExperimentalVariable> variables = variableContents.stream()
-        .map(it -> new AsyncProjectService.ExperimentalVariable(it.name(),
-            new HashSet<>(it.levels()), it.unit()))
+        .map(this::convertToApi)
         .toList();
 
-    ExperimentalVariableAdditions body = new ExperimentalVariableAdditions(variables);
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var ui = UI.getCurrent();
 
-    ExperimentUpdateRequest request = new ExperimentUpdateRequest(
-        projectId.value(),
-        experimentId.value(), body);
+    ExperimentalVariablesCreationRequest request = new ExperimentalVariablesCreationRequest(projectId.value(), experimentId.value(), variables);
 
-    asyncProjectService.update(request)
+    asyncProjectService.create(request)
         .doOnNext(it -> ui.access(() -> {
           confirmEvent.getSource().close();
           reloadExperimentInfo(projectId,
@@ -564,6 +536,10 @@ public class ExperimentDetailsComponent extends PageArea {
           }
         }))
         .subscribe();
+  }
+
+  private AsyncProjectService.ExperimentalVariable convertToApi(ExperimentalVariableContent experimentalVariable) {
+    return new AsyncProjectService.ExperimentalVariable(experimentalVariable.name(), new HashSet<>(experimentalVariable.levels()), experimentalVariable.unit());
   }
 
   private void openExperimentalVariablesEditDialog() {
@@ -595,25 +571,20 @@ public class ExperimentDetailsComponent extends PageArea {
     List<ExperimentalVariableContent> variableContents = confirmEvent.getSource()
         .definedVariables();
     List<AsyncProjectService.ExperimentalVariable> variables = variableContents.stream()
-        .map(it -> new AsyncProjectService.ExperimentalVariable(it.name(),
-            new HashSet<>(it.levels()), it.unit()))
+        .map(this::convertToApi)
         .toList();
 
-    ExperimentalVariableAdditions body = new ExperimentalVariableAdditions(variables);
     ProjectId projectId = context.projectId().orElseThrow();
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var ui = UI.getCurrent();
 
-    ExperimentUpdateRequest request = new ExperimentUpdateRequest(
+    ExperimentalVariablesUpdateRequest request = new ExperimentalVariablesUpdateRequest(
         projectId.value(),
-        experimentId.value(), body);
+        experimentId.value(), variables);
 
-    deleteExistingExperimentalVariables()
-        .doOnNext(it -> log.info(
-            "Removed variables: " + ((ExperimentalVariables) it.body()).experimentalVariables()
-                .stream()
-                .map(AsyncProjectService.ExperimentalVariable::name)
-                .collect(Collectors.joining(", "))))
+    asyncProjectService.update(request)
+        .doOnNext(it -> log.debug(
+            "Removed variables for project" + projectId))
         .flatMap(it ->
             asyncProjectService.update(request))
         .doOnNext(it -> ui.access(() -> {
@@ -624,11 +595,6 @@ public class ExperimentDetailsComponent extends PageArea {
             showSampleRegistrationPossibleNotification();
           }
         }))
-        .doOnNext(it -> log.info(
-            "Added variables: " + ((ExperimentalVariables) it.body()).experimentalVariables()
-                .stream()
-                .map(AsyncProjectService.ExperimentalVariable::name)
-                .collect(Collectors.joining(", "))))
         .subscribe();
 
   }
