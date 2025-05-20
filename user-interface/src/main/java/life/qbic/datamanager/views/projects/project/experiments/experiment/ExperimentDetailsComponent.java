@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
@@ -71,6 +70,8 @@ import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesUpdateRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
@@ -524,7 +525,8 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var ui = UI.getCurrent();
 
-    ExperimentalVariablesCreationRequest request = new ExperimentalVariablesCreationRequest(projectId.value(), experimentId.value(), variables);
+    ExperimentalVariablesCreationRequest request = new ExperimentalVariablesCreationRequest(
+        projectId.value(), experimentId.value(), variables);
 
     asyncProjectService.create(request)
         .doOnNext(it -> ui.access(() -> {
@@ -538,8 +540,10 @@ public class ExperimentDetailsComponent extends PageArea {
         .subscribe();
   }
 
-  private AsyncProjectService.ExperimentalVariable convertToApi(ExperimentalVariableContent experimentalVariable) {
-    return new AsyncProjectService.ExperimentalVariable(experimentalVariable.name(), new HashSet<>(experimentalVariable.levels()), experimentalVariable.unit());
+  private AsyncProjectService.ExperimentalVariable convertToApi(
+      ExperimentalVariableContent experimentalVariable) {
+    return new AsyncProjectService.ExperimentalVariable(experimentalVariable.name(),
+        new HashSet<>(experimentalVariable.levels()), experimentalVariable.unit());
   }
 
   private void openExperimentalVariablesEditDialog() {
@@ -781,15 +785,52 @@ public class ExperimentDetailsComponent extends PageArea {
     }
   }
 
+  private AsyncProjectService.VariableLevel toApi(VariableLevel level) {
+    return new AsyncProjectService.VariableLevel(level.variableName().value(),
+        level.experimentalValue().value(), level.experimentalValue().unit().orElse(null));
+  }
+
+  private AsyncProjectService.ExperimentalGroup toApi(ExperimentalGroupContent experimentalGroup) {
+    return new AsyncProjectService.ExperimentalGroup(experimentalGroup.id(),
+        experimentalGroup.name(), experimentalGroup.size(),
+        experimentalGroup.variableLevels().stream().map(this::toApi).collect(Collectors.toSet()));
+  }
+
   private void addExperimentalGroups(
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
-    List<ExperimentalGroupDTO> experimentalGroupDTOS = experimentalGroupContents.stream()
-        .map(this::toExperimentalGroupDTO).toList();
+    var experimentalGroups = experimentalGroupContents.stream().map(this::toApi).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
+    var projectId = context.projectId().orElseThrow();
 
-    experimentInformationService.updateExperimentalGroupsOfExperiment(
-        context.projectId().orElseThrow().value(),
-        experimentId, experimentalGroupDTOS);
+    var serviceCalls = new ArrayList<Mono<ExperimentalGroupCreationResponse>>();
+
+    experimentalGroups.forEach(experimentalGroup -> {
+      serviceCalls.add(asyncProjectService.create(new ExperimentalGroupCreationRequest(projectId.value(),
+          experimentId.value(), experimentalGroup)));
+    });
+
+    Mono.when(serviceCalls).doOnSuccess(s -> {
+      displaySuccessfulExperimentalGroupCreation();
+    }).doOnError(e -> {
+      log.error("Error while creating experimental group", e);
+      displayFailedExperimentalGroupCreation();
+        })
+        .subscribe(it -> {
+      log.debug("Added experimental groups for project" + projectId);
+      reloadExperimentalGroups();
+    });
+  }
+
+  private void displayFailedExperimentalGroupCreation() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      messageSourceNotificationFactory.toast("experimental.groups.created.failed", new Object[]{}, getLocale() );
+    }));
+  }
+
+  private void displaySuccessfulExperimentalGroupCreation() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      messageSourceNotificationFactory.toast("experimental.groups.created.success", new Object[]{}, getLocale() );
+    }));
   }
 
   private ExperimentalGroupDTO toExperimentalGroupDTO(

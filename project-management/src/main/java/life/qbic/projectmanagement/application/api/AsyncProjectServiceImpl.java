@@ -47,7 +47,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -784,8 +783,20 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentalVariablesCreationResponse> create(
       ExperimentalVariablesCreationRequest request) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    var call = Mono.fromCallable(() -> {
+      experimentInformationService.addVariableToExperiment(request.projectId(),
+          request.experimentId(), request.experimentalVariables());
+      return new ExperimentalVariablesCreationResponse(request.projectId(), request.experimentalVariables(),
+        request.experimentId());
+    });
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not create experimental variables", e))
+        .onErrorMap(org.springframework.security.access.AccessDeniedException.class, e -> new AccessDeniedException(ACCESS_DENIED))
+        .onErrorMap(ProjectNotFoundException.class,
+            e -> new RequestFailedException("Project was not found"))
+        .retryWhen(defaultRetryStrategy());
   }
 
   @Override

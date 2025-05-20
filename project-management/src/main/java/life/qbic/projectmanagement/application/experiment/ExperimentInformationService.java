@@ -22,6 +22,7 @@ import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
@@ -402,6 +403,35 @@ public class ExperimentInformationService {
     experimentRepository.update(experiment);
     dispatchLocalEvents(domainEventsCache);
   }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addVariableToExperiment(String projectId, String experimentId, List<AsyncProjectService.ExperimentalVariable> experimentalVariables) {
+    Objects.requireNonNull(projectId);
+    Objects.requireNonNull(experimentId);
+    Objects.requireNonNull(experimentalVariables);
+    if (experimentalVariables.isEmpty()) {
+      return;
+    }
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+    Experiment experiment = loadExperimentById(ExperimentId.parse(experimentId));
+    for (AsyncProjectService.ExperimentalVariable experimentalVariable : experimentalVariables) {
+      List<ExperimentalValue> experimentalValues = new ArrayList<>();
+      for (String level : experimentalVariable.levels()) {
+        ExperimentalValue experimentalValue = experimentalVariable.optionalUnit().isPresent() ? ExperimentalValue.create(level)
+            : ExperimentalValue.create(level, experimentalVariable.unit());
+        experimentalValues.add(experimentalValue);
+      }
+      experiment.addVariableToDesign(experimentalVariable.name(), experimentalValues);
+    }
+    experimentRepository.update(experiment);
+    dispatchLocalEvents(domainEventsCache);
+  }
+
 
   /**
    * Adds {@link ExperimentalVariable} to an {@link Experiment}
