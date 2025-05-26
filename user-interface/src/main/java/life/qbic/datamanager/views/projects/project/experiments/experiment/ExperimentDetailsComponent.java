@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.views.Context;
@@ -69,8 +68,6 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesUpdateRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
@@ -92,7 +89,6 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
-import reactor.core.publisher.Mono;
 
 /**
  * <b>Experimental Details Component</b>
@@ -210,7 +206,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Disclaimer createNoConfoundingVariablesDisclaimer() {
-    var disclaimer = Disclaimer.createWithTitle("Define Confoungind Variables",
+    var disclaimer = Disclaimer.createWithTitle("Define Confounding Variables",
         "Add confounding variables to your experiment to use them during sample registration",
         "Add confounding variables");
     disclaimer.addDisclaimerConfirmedListener(confirmed -> openConfoundingVariablesAddDialog());
