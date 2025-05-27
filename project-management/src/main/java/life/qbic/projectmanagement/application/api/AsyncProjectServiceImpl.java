@@ -152,11 +152,11 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       var group = request.group();
       var createdGroup = experimentInformationService.createExperimentalGroup(request.projectId(),
           ExperimentId.parse(request.experimentId()),
-          new ExperimentInformationService.ExperimentalGroup(0L, group.name(),
+          new ExperimentInformationService.ExperimentalGroup(null, null, group.name(),
               group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(),
               group.sampleSize()));
       return new ExperimentalGroupCreationResponse(request.experimentId(),
-          new ExperimentalGroup(createdGroup.id(), createdGroup.name(),
+          new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(),
               createdGroup.replicateCount(),
               createdGroup.levels().stream().map(this::convertLevelToApi).collect(
                   Collectors.toSet())), request.requestId());
@@ -196,7 +196,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
-    return new ExperimentInformationService.ExperimentalGroup(group.groupId(), group.name(),
+    return new ExperimentInformationService.ExperimentalGroup(group.id(), group.groupId(), group.name(),
         group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(),
         group.sampleSize());
   }
@@ -238,7 +238,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private static ExperimentalGroup convertToApi(ExperimentInformationService.ExperimentalGroup group) {
-    return new ExperimentalGroup(group.id(), group.name(), group.replicateCount(),
+    return new ExperimentalGroup(group.id(), group.groupNumber(), group.name(), group.replicateCount(),
         group.levels().stream().map(AsyncProjectServiceImpl::convertToApi).collect(Collectors.toSet()));
   }
 

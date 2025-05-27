@@ -98,6 +98,20 @@ public class Experiment {
     int analyteCount = analytes.size();
     int specimenCount = specimens.size();
     int speciesCount = species.size();
+    if (experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() == null).findAny().isPresent()) {
+      assignExperimentalGroupNumbers();
+    }
+  }
+
+  private void assignExperimentalGroupNumbers() {
+    var maxId = experimentalDesign.experimentalGroups.stream().mapToInt(ExperimentalGroup::groupNumber).max().orElse(0);
+    var currentId = maxId + 1;
+    for (ExperimentalGroup group : experimentalDesign.experimentalGroups) {
+      if (group.groupNumber() == null) {
+        group.setGroupNumber(currentId);
+        currentId++;
+      }
+    }
   }
 
   /**

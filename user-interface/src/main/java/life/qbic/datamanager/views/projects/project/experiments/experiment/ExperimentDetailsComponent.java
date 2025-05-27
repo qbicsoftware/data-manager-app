@@ -791,7 +791,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private AsyncProjectService.ExperimentalGroup toApi(ExperimentalGroupContent experimentalGroup) {
-    return new AsyncProjectService.ExperimentalGroup(experimentalGroup.id(),
+    return new AsyncProjectService.ExperimentalGroup(experimentalGroup.id(), experimentalGroup.groupNumber(),
         experimentalGroup.name(), experimentalGroup.size(),
         experimentalGroup.variableLevels().stream().map(this::toApi).collect(Collectors.toSet()));
   }
@@ -840,7 +840,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
-    return new ExperimentalGroupContent(experimentalGroupDTO.id(), experimentalGroupDTO.name(),
+    return new ExperimentalGroupContent(experimentalGroupDTO.id(), -1, experimentalGroupDTO.name(),
         experimentalGroupDTO.replicateCount(), experimentalGroupDTO.levels());
   }
 

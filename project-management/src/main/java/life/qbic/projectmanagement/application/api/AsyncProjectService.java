@@ -42,6 +42,7 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   //<editor-fold desc="project-related API">
+
   /**
    * A service request to create a project.
    *
@@ -266,7 +267,8 @@ public interface AsyncProjectService {
     }
   }
 
-  record ProjectResponsibleDeletionRequest(String projectId, String requestId) implements CacheableRequest {
+  record ProjectResponsibleDeletionRequest(String projectId, String requestId) implements
+      CacheableRequest {
 
     public ProjectResponsibleDeletionRequest {
       requireNonNull(projectId);
@@ -404,7 +406,8 @@ public interface AsyncProjectService {
     }
   }
 
-  record ExperimentDeletionRequest(String projectId, String experimentId, String requestId) implements CacheableRequest {
+  record ExperimentDeletionRequest(String projectId, String experimentId,
+                                   String requestId) implements CacheableRequest {
 
     public ExperimentDeletionRequest {
       requireNonNull(projectId);
@@ -657,6 +660,7 @@ public interface AsyncProjectService {
   //</editor-fold>
 
   //<editor-fold desc="experiment-related API">
+
   /**
    * Contains information on one experimental variables
    *
@@ -701,15 +705,17 @@ public interface AsyncProjectService {
   /**
    * Information about an experimental group
    *
-   * @param groupId    the identifier of the group
-   * @param name       the name of the eperimental group can be empty but is not expected to be
+   * @param id         the technical identifier of the group
+   * @param groupId    the group id within the experiment
+   * @param name       the name of the experimental group can be empty but is not expected to be
    *                   null
    * @param sampleSize the number of samples in this experimental group
    * @param levels     the experimental variable levels making up the condition for the samples in
    *                   this group.
    * @since 1.9.0
    */
-  record ExperimentalGroup(@Nullable Long groupId, String name, int sampleSize,
+  record ExperimentalGroup(@Nullable Long id, @Nullable Integer groupId, String name,
+                           int sampleSize,
                            Set<VariableLevel> levels) {
 
     public ExperimentalGroup {
@@ -728,8 +734,8 @@ public interface AsyncProjectService {
    * @param experimentalGroups the list of experimental groups
    * @since 1.9.0
    */
-  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups)
-      {
+  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) {
+
     public ExperimentalGroups {
       requireNonNull(experimentalGroups);
       experimentalGroups = List.copyOf(experimentalGroups);
@@ -941,6 +947,7 @@ public interface AsyncProjectService {
   record ExperimentalVariablesUpdateResponse(String projectId,
                                              List<ExperimentalVariable> experimentalVariables,
                                              String requestId) {
+
     public ExperimentalVariablesUpdateResponse {
       requireNonNull(projectId);
       requireNonNull(requestId);
@@ -1480,7 +1487,8 @@ public interface AsyncProjectService {
 
   }
 
-  sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables, ExperimentDescription {
+  sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables,
+      ExperimentDescription {
 
   }
 

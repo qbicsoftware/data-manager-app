@@ -100,7 +100,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   }
 
   private static ExperimentalGroupContent convert(ExperimentalGroupInput experimentalGroupInput) {
-    return new ExperimentalGroupContent(experimentalGroupInput.getGroupId(), experimentalGroupInput.getName(), experimentalGroupInput.getReplicateCount(),
+    return new ExperimentalGroupContent(experimentalGroupInput.getGroupId(), experimentalGroupInput.groupNumber(), experimentalGroupInput.getName(), experimentalGroupInput.getReplicateCount(),
         experimentalGroupInput.getCondition());
   }
 
@@ -191,7 +191,7 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         .noneMatch(g -> ((ExperimentalGroupInput) g).isInvalid());
   }
 
-  public record ExperimentalGroupContent(long id, String name, int size, List<VariableLevel> variableLevels) {}
+  public record ExperimentalGroupContent(long id, int groupNumber, String name, int size, List<VariableLevel> variableLevels) {}
 
   public static class ConfirmEvent extends
       life.qbic.datamanager.views.general.ConfirmEvent<ExperimentalGroupsDialog> {

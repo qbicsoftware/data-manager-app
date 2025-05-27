@@ -85,7 +85,7 @@ public class ExperimentInformationService {
 
   private static ExperimentalGroup convertFromDomain(
       life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup domainGroup) {
-    return new ExperimentalGroup(domainGroup.id(), domainGroup.name(),
+    return new ExperimentalGroup(domainGroup.id(), domainGroup.groupNumber(), domainGroup.name(),
         domainGroup.condition().getVariableLevels().stream()
             .map(ExperimentInformationService::convertFromDomain).toList(), domainGroup.sampleSize());
   }
@@ -671,7 +671,7 @@ public class ExperimentInformationService {
     experimentRepository.update(experiment);
     dispatchLocalEvents(domainEventsCache);
     var createdGroup = result.getValue();
-    return new ExperimentalGroup(createdGroup.id(), createdGroup.name(), createdGroup.condition()
+    return new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(), createdGroup.condition()
         .getVariableLevels().stream().map(ExperimentInformationService::convertLevel).toList(),
         createdGroup.sampleSize());
   }
@@ -843,7 +843,7 @@ public class ExperimentInformationService {
 
   }
 
-  public record ExperimentalGroup(long id, String name, List<VariableLevel> levels,
+  public record ExperimentalGroup(@Nullable Long id, @Nullable Integer groupNumber, String name, List<VariableLevel> levels,
                                   int replicateCount) {
 
   }

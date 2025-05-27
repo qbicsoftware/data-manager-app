@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.util.Objects;
 import java.util.StringJoiner;
+import org.hibernate.annotations.NaturalId;
 
 /**
  * <b>Experimental Group</b>
@@ -26,10 +27,14 @@ public class ExperimentalGroup {
   private Long experimentalGroupId;
   private int sampleSize;
 
-  private ExperimentalGroup(String name, Condition condition, int sampleSize) {
+  @NaturalId
+  private Integer groupNumber;
+
+  private ExperimentalGroup(String name, Condition condition, int sampleSize, int groupNumber) {
     this.name = name;
     this.condition = condition;
     this.sampleSize = sampleSize;
+    this.groupNumber = groupNumber;
   }
 
   protected ExperimentalGroup() {
@@ -38,6 +43,8 @@ public class ExperimentalGroup {
 
   /**
    * Creates a new instance of an experimental group object.
+   * <p>
+   * The generated group number defaults to 1.
    *
    * @param name       an optional name of the experimental group
    * @param condition  the condition the experimental group represents
@@ -46,14 +53,39 @@ public class ExperimentalGroup {
    * @since 1.0.0
    */
   public static ExperimentalGroup create(String name, Condition condition, int sampleSize) {
+    return create(name, condition, sampleSize, 1);
+  }
+
+  /**
+   * Overrides the current group number.
+   *
+   * @param groupNumber the value of the new group number
+   * @since 1.10.0
+   */
+  public void setGroupNumber(int groupNumber) {
+    this.groupNumber = groupNumber;
+  }
+
+  /**
+   * Creates a new instance of an experimental group with a given group number.
+   *
+   * @param name        an optional name of the experimental group
+   * @param condition   the condition the experimental group represents
+   * @param sampleSize  the number of samples in this experimental group
+   * @param groupNumber the experiment-unique group number of the group
+   * @return the experimental group
+   * @since 1.10.0
+   */
+  public static ExperimentalGroup create(String name, Condition condition, int sampleSize,
+      int groupNumber) {
     Objects.requireNonNull(condition);
     if (sampleSize < 1) {
-      // Admitting not very meaningful to allow for sample size of 1 and 2
-      // However we leave it up to the project manager to make that decision
+      // Admitting not very meaningful to allow for sample size of 1 and 2,
+      // However, we leave it up to the project manager to make that decision
       throw new IllegalArgumentException(
           "The number of biological replicates must be at least one");
     }
-    return new ExperimentalGroup(name, condition, sampleSize);
+    return new ExperimentalGroup(name, condition, sampleSize, groupNumber);
   }
 
   public Condition condition() {
@@ -63,6 +95,7 @@ public class ExperimentalGroup {
   public int sampleSize() {
     return this.sampleSize;
   }
+
   public String name() {
     return name;
   }
@@ -78,8 +111,13 @@ public class ExperimentalGroup {
   public void setSampleSize(int sampleSize) {
     this.sampleSize = sampleSize;
   }
+
   public long id() {
     return this.experimentalGroupId;
+  }
+
+  public Integer groupNumber() {
+    return this.groupNumber;
   }
 
   @Override
