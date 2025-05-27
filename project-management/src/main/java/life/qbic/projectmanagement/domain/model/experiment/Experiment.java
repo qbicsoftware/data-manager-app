@@ -8,6 +8,7 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PostLoad;
+import jakarta.persistence.Version;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -50,6 +51,9 @@ public class Experiment {
   private String specimenIconName;
   @Column(name = "analyteIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
   private String analyteIconName;
+
+  @Version
+  private int version;
   
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
