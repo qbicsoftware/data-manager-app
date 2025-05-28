@@ -27,7 +27,7 @@ public class ExperimentalGroup {
   private Long experimentalGroupId;
   private int sampleSize;
 
-  @NaturalId
+  // TODO Add annotation `@NaturalId` as soon as no Null values exist anymore
   private Integer groupNumber;
 
   private ExperimentalGroup(String name, Condition condition, int sampleSize, int groupNumber) {
@@ -112,7 +112,7 @@ public class ExperimentalGroup {
     this.sampleSize = sampleSize;
   }
 
-  public long id() {
+  public Long id() {
     return this.experimentalGroupId;
   }
 

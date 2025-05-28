@@ -857,24 +857,24 @@ public interface AsyncProjectService {
    *
    * @param projectId         the project's identifier. The project containing the experiment.
    * @param experimentId      the experiment's identifier'
-   * @param experimentGroupId the identifier of the experimental group to delete
+   * @param experimentalGroupNumber the identifier of the experimental group to delete
    * @param requestId         the request ID. Needs to be provided by the client and will be
    *                          referenced in the response.
    * @since 1.10.0
    */
   record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-                                          Long experimentGroupId, String requestId) implements
+                                          Integer experimentalGroupNumber, String requestId) implements
       CacheableRequest {
 
     public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-        Long experimentGroupId) {
-      this(projectId, experimentId, experimentGroupId, UUID.randomUUID().toString());
+        Integer experimentGroupNumber) {
+      this(projectId, experimentId, experimentGroupNumber, UUID.randomUUID().toString());
     }
 
     public ExperimentalGroupDeletionRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requireNonNull(experimentGroupId);
+      requireNonNull(experimentalGroupNumber);
       requireNonNull(requestId);
     }
   }
@@ -887,7 +887,7 @@ public interface AsyncProjectService {
    * @param requestId         the identifier of the original request to which this is a response.
    * @since 1.10.0
    */
-  record ExperimentalGroupDeletionResponse(String experimentId, Long experimentGroupId,
+  record ExperimentalGroupDeletionResponse(String experimentId, Integer experimentGroupId,
                                            String requestId) {
 
     public ExperimentalGroupDeletionResponse {

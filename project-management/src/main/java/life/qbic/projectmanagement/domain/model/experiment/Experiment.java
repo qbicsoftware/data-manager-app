@@ -104,7 +104,7 @@ public class Experiment {
   }
 
   private void assignExperimentalGroupNumbers() {
-    var maxId = experimentalDesign.experimentalGroups.stream().mapToInt(ExperimentalGroup::groupNumber).max().orElse(0);
+    var maxId = experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() != null).mapToInt(ExperimentalGroup::groupNumber).max().orElse(0);
     var currentId = maxId + 1;
     for (ExperimentalGroup group : experimentalDesign.experimentalGroups) {
       if (group.groupNumber() == null) {
@@ -240,6 +240,10 @@ public class Experiment {
     experimentalDesign.removeExperimentalVariable(variable);
     emitExperimentUpdatedEvent();
     return true;
+  }
+
+  public void removeExperimentGroupByGroupNumber(int experimentalGroupNumber) {
+    experimentalDesign.removeExperimentalByGroupNumber(experimentalGroupNumber);
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {

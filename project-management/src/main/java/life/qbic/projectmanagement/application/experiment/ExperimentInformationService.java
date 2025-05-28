@@ -597,6 +597,24 @@ public class ExperimentInformationService {
     dispatchLocalEvents(domainEventsCache);
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void deleteExperimentalGroupByGroupNumber(String projectId, String experimentId,
+      int experimentalGroupNumber) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    find(projectId, experimentId).ifPresent(experiment -> {
+      experiment.removeExperimentGroupByGroupNumber(experimentalGroupNumber);
+      experimentRepository.update(experiment);
+    });
+
+    dispatchLocalEvents(domainEventsCache);
+  }
+
   /**
    * Deletes all experimental groups in a given experiment.
    *

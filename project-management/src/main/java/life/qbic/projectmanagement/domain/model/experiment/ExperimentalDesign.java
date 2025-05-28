@@ -288,7 +288,9 @@ public class ExperimentalDesign {
   }
 
   private int nextGroupId() {
-    return experimentalGroups.stream().mapToInt(ExperimentalGroup::groupNumber).max().orElse(0) + 1;
+    return experimentalGroups.stream()
+        .filter(group -> group.groupNumber() != null)
+        .mapToInt(ExperimentalGroup::groupNumber).max().orElse(0) + 1;
   }
 
   /**
@@ -341,6 +343,10 @@ public class ExperimentalDesign {
 
   public void removeExperimentalGroup(long groupId) {
     this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroup.id() == groupId);
+  }
+
+  public void removeExperimentalByGroupNumber(int experimentalGroupNumber) {
+    this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroupNumber == experimentalGroup.groupNumber());
   }
 
   public record AddExperimentalGroupResponse(ResponseCode responseCode) {

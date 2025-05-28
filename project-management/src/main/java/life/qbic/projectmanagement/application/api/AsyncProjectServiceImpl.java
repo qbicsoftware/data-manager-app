@@ -209,10 +209,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
             "Cannot delete experimental group, samples are registered for experiment "
                 + request.experimentId());
       }
-      experimentInformationService.deleteExperimentalGroup(request.projectId(), request.experimentId(),
-          request.experimentGroupId());
+      experimentInformationService.deleteExperimentalGroupByGroupNumber(request.projectId(), request.experimentId(),
+          request.experimentalGroupNumber());
 
-      return new ExperimentalGroupDeletionResponse(request.experimentId(), request.experimentGroupId(),
+      return new ExperimentalGroupDeletionResponse(request.experimentId(), request.experimentalGroupNumber(),
           request.requestId());
     });
     return applySecurityContext(call)
