@@ -55,12 +55,13 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     experimentalGroupContents.stream().map(group -> {
       var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, editMode);
       groupEntry.setGroupName(group.name());
+      groupEntry.setGroupNumber(group.groupNumber());
       groupEntry.setGroupId(group.id());
       groupEntry.setCondition(group.variableLevels());
       groupEntry.setReplicateCount(group.size());
       groupEntry.setEnabled(editMode);
       groupEntry.addRemoveEventListener(
-          listener -> experimentalGroupsCollection.remove(groupEntry));
+          listener -> removeExperimentalGroupEntry(groupEntry));
       return groupEntry;
     }).forEach(experimentalGroupsCollection::add);
   }
@@ -163,7 +164,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   private void addNewGroupEntry() {
     var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, true);
     experimentalGroupsCollection.add(groupEntry);
-    groupEntry.addRemoveEventListener(event -> removeExperimentalGroupEntry(event.getSource()));
+    groupEntry.addRemoveEventListener(event -> {
+      System.out.println("here");
+      removeExperimentalGroupEntry(event.getSource());
+    });
   }
 
   void removeExperimentalGroupEntry(ExperimentalGroupInput entry) {
@@ -171,7 +175,6 @@ public class ExperimentalGroupsDialog extends DialogWindow {
         .findAny().ifPresent(experimentalGroupsCollection::remove);
     groupsToDelete.add(entry.groupNumber());
     refreshGroupEntries();
-
   }
 
   private void refreshGroupEntries() {
@@ -185,14 +188,19 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   /**
    * Provides experimental groups defined by the user. Only group information in enabled components
    * is returned, as the list of existing groups cannot be changed in "add group" mode.
+   * <p>
+   * Note: {@link ExperimentalGroupInput} with no levels given will be ignored and do not result in
+   * an entry of the returned collection.
    *
    * @return a collection of {@link ExperimentalGroupContent}, describing the group size (biological
    * replicates) and the variable level combination.
-   * @since 1.0.0
+   * @since 1.10.0
    */
   public Collection<ExperimentalGroupContent> experimentalGroups() {
     return this.experimentalGroupsCollection.getChildren()
         .filter(component -> component.getClass().equals(ExperimentalGroupInput.class))
+        // the order of the filter statement matters, since we do not want to throw an exception due to type mismatch
+        .filter(groupInput -> !((ExperimentalGroupInput) groupInput).getCondition().isEmpty())
         .map(experimentalGroupEntry -> convert((ExperimentalGroupInput) experimentalGroupEntry))
         .toList();
   }

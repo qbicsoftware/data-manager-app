@@ -726,7 +726,7 @@ public class ExperimentDetailsComponent extends PageArea {
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream())
         .toList();
-    var groups = experimentInformationService.getExperimentalGroups(
+    var groups = experimentInformationService.experimentalGroupsFor(
             context.projectId().orElseThrow()
                 .value(), experimentId)
         .stream().map(this::toContent).toList();
@@ -764,7 +764,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentId);
     List<VariableLevel> levels = variables.stream()
         .flatMap(variable -> variable.levels().stream()).toList();
-    var groups = experimentInformationService.getExperimentalGroups(
+    var groups = experimentInformationService.experimentalGroupsFor(
             context.projectId().orElseThrow().value(), experimentId)
         .stream().map(this::toContent).toList();
     var dialog = ExperimentalGroupsDialog.editable(levels, groups);
@@ -924,6 +924,10 @@ public class ExperimentDetailsComponent extends PageArea {
       messageSourceNotificationFactory.toast("experimental.groups.created.success", new Object[]{},
           getLocale()).open();
     }));
+  }
+
+  private ExperimentalGroupContent toContent(ExperimentalGroup experimentalGroup) {
+    return new ExperimentalGroupContent(experimentalGroup.id(), experimentalGroup.groupNumber(), experimentalGroup.name(), experimentalGroup.sampleSize(), experimentalGroup.condition().getVariableLevels());
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {

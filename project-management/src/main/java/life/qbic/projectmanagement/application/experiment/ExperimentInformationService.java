@@ -570,32 +570,6 @@ public class ExperimentInformationService {
     dispatchLocalEvents(domainEventsCache);
   }
 
-  /**
-   * Deletes an {@link ExperimentalGroup} for a given experiment.
-   *
-   * @param projectId           the id of the project that is being changed.
-   * @param experimentId        the id of the experiment for which the experimental group is going
-   *                            to be deleted.
-   * @param experimentalGroupId the id of the experimental group to be deleted.
-   * @since 1.10.0
-   */
-  @PreAuthorize(
-      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  public void deleteExperimentalGroup(String projectId, String experimentId,
-      long experimentalGroupId) {
-    List<DomainEvent> domainEventsCache = new ArrayList<>();
-    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
-    localDomainEventDispatcher.reset();
-    localDomainEventDispatcher.subscribe(
-        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
-
-    find(projectId, experimentId).ifPresent(experiment -> {
-      experiment.removeExperimentGroup(experimentalGroupId);
-      experimentRepository.update(experiment);
-    });
-
-    dispatchLocalEvents(domainEventsCache);
-  }
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
