@@ -104,19 +104,20 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `experimental_group`
+
+CREATE TABLE IF NOT EXISTS experimental_group
 (
-    `experimentalGroupId` bigint(20) NOT NULL AUTO_INCREMENT,
-    `name`                varchar(255) DEFAULT NULL,
-    `sampleSize`          int(11)    NOT NULL,
-    `experimentId`        varchar(255) DEFAULT NULL,
-    PRIMARY KEY (`experimentalGroupId`),
-    KEY `FK25vvdiupupuwmehr3o97dh7fg` (`experimentId`),
-    CONSTRAINT `FK25vvdiupupuwmehr3o97dh7fg` FOREIGN KEY (`experimentId`) REFERENCES `experiments_datamanager` (`id`)
-) ENGINE = InnoDB
-  AUTO_INCREMENT = 1
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
+    experimentalGroupId bigint auto_increment
+        primary key,
+    groupNumber         int                          null,
+    name                varchar(255) charset utf8mb4 null,
+    sampleSize          int                          not null,
+    experimentId        varchar(255) charset utf8mb4 null,
+    constraint FK25vvdiupupuwmehr3o97dh7fg
+        foreign key (experimentId) references data_management.experiments_datamanager (id)
+)
+    collate = utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS `experimental_group_variableLevels`
 (
