@@ -198,9 +198,10 @@ public class ExperimentalGroupsDialog extends DialogWindow {
   public Collection<ExperimentalGroupContent> experimentalGroups() {
     return this.experimentalGroupsCollection.getChildren()
         .filter(component -> component.getClass().equals(ExperimentalGroupInput.class))
+        .map(groupInput -> (ExperimentalGroupInput) groupInput)
         // the order of the filter statement matters, since we do not want to throw an exception due to type mismatch
-        .filter(groupInput -> !((ExperimentalGroupInput) groupInput).getCondition().isEmpty())
-        .map(experimentalGroupEntry -> convert((ExperimentalGroupInput) experimentalGroupEntry))
+        .filter(groupInput ->  !groupInput.getCondition().isEmpty())
+        .map(experimentalGroupEntry -> convert(experimentalGroupEntry))
         .toList();
   }
 
