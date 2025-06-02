@@ -157,9 +157,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
               group.sampleSize()));
       return new ExperimentalGroupCreationResponse(request.experimentId(),
           new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(),
-              createdGroup.replicateCount(),
-              createdGroup.levels().stream().map(this::convertLevelToApi).collect(
-                  Collectors.toSet())), request.requestId());
+              createdGroup.replicateCount(), createdGroup.levels().stream()
+              .map(this::convertLevelToApi)
+              .collect(Collectors.toSet())), request.requestId());
     });
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
@@ -793,9 +793,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not create experimental variables", e))
-        .onErrorMap(org.springframework.security.access.AccessDeniedException.class, e -> new AccessDeniedException(ACCESS_DENIED))
-        .onErrorMap(ProjectNotFoundException.class,
-            e -> new RequestFailedException("Project was not found"))
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException)
         .retryWhen(defaultRetryStrategy());
   }
 

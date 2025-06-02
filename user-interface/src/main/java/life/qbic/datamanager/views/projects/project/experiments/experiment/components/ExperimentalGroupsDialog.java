@@ -165,7 +165,6 @@ public class ExperimentalGroupsDialog extends DialogWindow {
     var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, true);
     experimentalGroupsCollection.add(groupEntry);
     groupEntry.addRemoveEventListener(event -> {
-      System.out.println("here");
       removeExperimentalGroupEntry(event.getSource());
     });
   }

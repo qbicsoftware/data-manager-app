@@ -657,8 +657,7 @@ public class ExperimentInformationService {
         experimentalGroup.replicateCount());
     if (result.isError()) {
       log.error("Could not create experimental group, response code was " + result.getError());
-      throw new ApplicationException("Could not create experimental group.", ErrorCode.GENERAL,
-          ErrorParameters.empty());
+      throw new ApplicationException("Could not create experimental group.");
     }
     experimentRepository.update(experiment);
     dispatchLocalEvents(domainEventsCache);

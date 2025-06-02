@@ -103,9 +103,15 @@ public class Experiment {
     }
   }
 
+  /*
+  Temporary helper method to assign group numbers for existing experimental groups.
+
+  In the future, no experimental group without an assigned number should exist. Until the transition
+  is complete, this method shall be called when the aggregate is checked out from the database.
+   */
   private void assignExperimentalGroupNumbers() {
-    var maxId = experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() != null).mapToInt(ExperimentalGroup::groupNumber).max().orElse(0);
-    var currentId = maxId + 1;
+    var maxId = experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() != null).mapToInt(ExperimentalGroup::groupNumber).max().orElse(1);
+    var currentId =maxId;
     for (ExperimentalGroup group : experimentalDesign.experimentalGroups) {
       if (group.groupNumber() == null) {
         group.setGroupNumber(currentId);
@@ -243,7 +249,7 @@ public class Experiment {
   }
 
   public void removeExperimentGroupByGroupNumber(int experimentalGroupNumber) {
-    experimentalDesign.removeExperimentalByGroupNumber(experimentalGroupNumber);
+    experimentalDesign.removeExperimentalGroupByGroupNumber(experimentalGroupNumber);
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {

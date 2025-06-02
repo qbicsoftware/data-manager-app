@@ -345,7 +345,7 @@ public class ExperimentalDesign {
     this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroup.id() == groupId);
   }
 
-  public void removeExperimentalByGroupNumber(int experimentalGroupNumber) {
+  public void removeExperimentalGroupByGroupNumber(int experimentalGroupNumber) {
     this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroupNumber == experimentalGroup.groupNumber());
   }
 
