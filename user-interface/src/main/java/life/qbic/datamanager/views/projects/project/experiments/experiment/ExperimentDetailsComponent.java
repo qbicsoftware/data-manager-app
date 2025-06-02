@@ -747,7 +747,11 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
     if (dialog.isValid()) {
       var groupContents = dialog.experimentalGroups();
-      addExperimentalGroups(groupContents);
+      addExperimentalGroups(groupContents.stream()
+          // We don't want to add existing groups again. Since they
+          // are already having a dedicated group number, we can just filter for the ones without any.
+          .filter(experimentalGroupContent -> experimentalGroupContent.groupNumber() == -1)
+          .toList());
 
       reloadExperimentalGroups();
       dialog.close();
@@ -927,7 +931,9 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroup experimentalGroup) {
-    return new ExperimentalGroupContent(experimentalGroup.id(), experimentalGroup.groupNumber(), experimentalGroup.name(), experimentalGroup.sampleSize(), experimentalGroup.condition().getVariableLevels());
+    return new ExperimentalGroupContent(experimentalGroup.id(), experimentalGroup.groupNumber(),
+        experimentalGroup.name(), experimentalGroup.sampleSize(),
+        experimentalGroup.condition().getVariableLevels());
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroupDTO experimentalGroupDTO) {
