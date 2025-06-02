@@ -42,26 +42,31 @@ import reactor.core.publisher.Mono;
 public interface AsyncProjectService {
 
   //<editor-fold desc="project-related API">
+
   /**
    * A service request to create a project.
    *
-   * @param design   the title and objective of a project
-   * @param contacts the different contact persons of a project
-   * @param funding  some funding information
+   * @param offerId     the potentially linked offer Id.
+   * @param design      the title and objective of a project
+   * @param contacts    the different contact persons of a project
+   * @param funding     some funding information
+   * @param projectCode the desired project code for the project
+   * @param requestId   the unique identifier of the request
    * @since 1.9.0
    */
-  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-                                FundingInformation funding, String requestId) {
+  record ProjectCreationRequest(String offerId, ProjectDesign design, ProjectContacts contacts,
+                                FundingInformation funding, String projectCode, String requestId) {
 
     public ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-        String requestId) {
-      this(design, contacts, null, requestId);
+        String projectCode, String requestId) {
+      this(null, design, contacts, null, projectCode, requestId);
     }
 
     public ProjectCreationRequest {
       requireNonNull(design);
       requireNonNull(contacts);
       requireNonNull(requestId);
+      requireNonNull(projectCode);
     }
 
     /**
@@ -266,7 +271,8 @@ public interface AsyncProjectService {
     }
   }
 
-  record ProjectResponsibleDeletionRequest(String projectId, String requestId) implements CacheableRequest {
+  record ProjectResponsibleDeletionRequest(String projectId, String requestId) implements
+      CacheableRequest {
 
     public ProjectResponsibleDeletionRequest {
       requireNonNull(projectId);
@@ -404,7 +410,8 @@ public interface AsyncProjectService {
     }
   }
 
-  record ExperimentDeletionRequest(String projectId, String experimentId, String requestId) implements CacheableRequest {
+  record ExperimentDeletionRequest(String projectId, String experimentId,
+                                   String requestId) implements CacheableRequest {
 
     public ExperimentDeletionRequest {
       requireNonNull(projectId);
@@ -657,6 +664,7 @@ public interface AsyncProjectService {
   //</editor-fold>
 
   //<editor-fold desc="experiment-related API">
+
   /**
    * Contains information on one experimental variables
    *
@@ -729,8 +737,8 @@ public interface AsyncProjectService {
    * @param experimentalGroups the list of experimental groups
    * @since 1.9.0
    */
-  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups)
-      {
+  record ExperimentalGroups(List<ExperimentalGroup> experimentalGroups) {
+
     public ExperimentalGroups {
       requireNonNull(experimentalGroups);
       experimentalGroups = List.copyOf(experimentalGroups);
@@ -942,6 +950,7 @@ public interface AsyncProjectService {
   record ExperimentalVariablesUpdateResponse(String projectId,
                                              List<ExperimentalVariable> experimentalVariables,
                                              String requestId) {
+
     public ExperimentalVariablesUpdateResponse {
       requireNonNull(projectId);
       requireNonNull(requestId);
@@ -1481,7 +1490,8 @@ public interface AsyncProjectService {
 
   }
 
-  sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables, ExperimentDescription {
+  sealed interface ExperimentUpdateResponseBody permits ConfoundingVariables,
+      ExperimentDescription {
 
   }
 

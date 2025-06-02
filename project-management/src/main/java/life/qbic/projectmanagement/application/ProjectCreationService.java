@@ -8,6 +8,9 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
 import life.qbic.application.commons.Result;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContacts;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Funding;
 import life.qbic.projectmanagement.domain.model.project.OfferIdentifier;
@@ -36,11 +39,48 @@ public class ProjectCreationService {
    * Create a new project based on the information provided
    *
    * @param sourceOffer the offer from which information was taken
+   * @param code        the project's code
+   * @param title       the project title
+   * @param objective   the project objective
+   * @since 1.10.0
+   */
+  public Result<Project, ApplicationException> createProject(String sourceOffer,
+      String code,
+      String title,
+      String objective,
+      ProjectContacts contacts,
+      FundingInformation funding) {
+    requireNonNull(contacts);
+    requireNonNull(funding);
+
+    return createProject(sourceOffer, code, title, objective,
+        convertProjectContact(contacts.investigator()),
+        convertProjectContact(contacts.responsible()), convertProjectContact(contacts.manager()),
+        convertFundingInformation(funding));
+
+  }
+
+  private Contact convertProjectContact(ProjectContact contact) {
+    return new Contact(contact.fullName(), contact.email(), contact.oidc(), contact.oidcIssuer());
+  }
+
+  private Funding convertFundingInformation(FundingInformation funding) {
+    return Funding.of(funding.grantId(), funding.grant());
+  }
+
+  /**
+   * Create a new project based on the information provided
+   *
+   * @param sourceOffer the offer from which information was taken
    * @param code        the projects code
    * @param title       the project title
    * @param objective   the project objective
    * @return a result containing the project or an exception
+   * @deprecated please use
+   * {@link #createProject(String, String, String, String, ProjectContacts, FundingInformation)} to
+   * not expose domain objects to the clients
    */
+  @Deprecated(since = "1.1.0", forRemoval = true)
   public Result<Project, ApplicationException> createProject(String sourceOffer,
       String code,
       String title,

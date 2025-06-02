@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
@@ -47,7 +48,6 @@ import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -82,6 +82,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ExperimentInformationService experimentInformationService;
   private final TerminologyService terminologyService;
   private final SpeciesLookupService taxaService;
+  private final ProjectCreationService projectCreationService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -93,7 +94,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired MeasurementValidationService measurementValidationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired TerminologyService termService,
-      @Autowired SpeciesLookupService taxaService) {
+      @Autowired SpeciesLookupService taxaService, ProjectCreationService projectCreationService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -104,6 +105,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.terminologyService = Objects.requireNonNull(termService);
     this.taxaService = Objects.requireNonNull(taxaService);
+    this.projectCreationService = projectCreationService;
   }
 
   private static Retry defaultRetryStrategy() {
@@ -216,7 +218,24 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
-    throw new RuntimeException("not implemented");
+    var call = Mono.fromCallable(() -> {
+      var result = projectCreationService.createProject(
+          request.offerId(),
+          request.projectCode(),
+          request.design().title(),
+          request.design().objective(),
+          request.contacts(),
+          request.funding());
+      if (result.isError()) {
+        throw new RequestFailedException("Could not create project.", result.getError());
+      }
+      return new ProjectCreationResponse(result.getValue().getId().value(), request.requestId());
+    });
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(call)
+        .retryWhen(defaultRetryStrategy())
+        .contextWrite(reactiveSecurity(securityContext))
+        .subscribeOn(scheduler);
   }
 
   @Override
@@ -664,16 +683,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ExperimentalVariable> getExperimentalVariables(String projectId,
       String experimentId) {
-    var call = Flux.fromStream(() -> experimentInformationService.getVariablesOfExperiment(projectId,
-            ExperimentId.parse(experimentId))
-        .stream()
-        .map(this::convertToApi));
+    var call = Flux.fromStream(
+        () -> experimentInformationService.getVariablesOfExperiment(projectId,
+                ExperimentId.parse(experimentId))
+            .stream()
+            .map(this::convertToApi));
 
     return applySecurityContextMany(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not load experimental variables", e))
-        .onErrorMap(org.springframework.security.access.AccessDeniedException.class, e -> new AccessDeniedException(ACCESS_DENIED))
+        .onErrorMap(org.springframework.security.access.AccessDeniedException.class,
+            e -> new AccessDeniedException(ACCESS_DENIED))
         .onErrorMap(ProjectNotFoundException.class,
             e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
