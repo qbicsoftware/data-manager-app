@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Random;
 import java.util.UUID;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
@@ -41,6 +42,7 @@ class AsyncProjectServiceImplTest {
       ExperimentInformationService.class);
   TerminologyService terminologyService = mock(TerminologyService.class);
   SpeciesLookupService taxaService = mock(SpeciesLookupService.class);
+  ProjectCreationService projectCreationService = mock(ProjectCreationService.class);
 
   @BeforeEach
   void setUp() {
@@ -67,7 +69,8 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        projectCreationService
     );
 
     String projectId = UUID.randomUUID().toString();
@@ -107,7 +110,8 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        projectCreationService
     );
 
     String projectId = UUID.randomUUID().toString();
