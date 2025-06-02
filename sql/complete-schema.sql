@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager`
 CREATE TABLE IF NOT EXISTS `experimental_group`
 (
     `experimentalGroupId` bigint(20) NOT NULL AUTO_INCREMENT,
+    `groupNumber`         int          DEFAULT NULL,
     `name`                varchar(255) DEFAULT NULL,
     `sampleSize`          int(11)    NOT NULL,
     `experimentId`        varchar(255) DEFAULT NULL,
