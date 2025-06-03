@@ -70,9 +70,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       }
       return order;
     }).toList();
-    Specification<ProteomicsMeasurement> filterSpecification = generateProteomicsFilterSpecification(
-        sampleIds, filter);
-    return pxpMeasurementJpaRepo.findAll(filterSpecification,
+    //FIXME ignores the filter
+    return pxpMeasurementJpaRepo.findAll(ProteomicsMeasurementSpec.containsSampleId(sampleIds),
         new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
   }
 
@@ -156,9 +155,8 @@ public class MeasurementLookupImplementation implements MeasurementLookup {
       }
       return order;
     }).toList();
-    Specification<NGSMeasurement> filterSpecification = generateNGSFilterSpecification(
-        sampleIds, filter);
-    return ngsMeasurementJpaRepo.findAll(filterSpecification,
+    //FIXME ignores the filter
+    return ngsMeasurementJpaRepo.findAll(NgsMeasurementSpec.containsSampleId(sampleIds),
         new OffsetBasedRequest(offset, limit, Sort.by(orders))).getContent();
   }
 
