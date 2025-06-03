@@ -7,11 +7,12 @@ import life.qbic.datamanager.files.structure.measurement.NGSMeasurementRegisterC
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Measurement Registration Metadata Converter NGS
+ * <p>
+ * Converter that converts a {@link ParsingResult} into a list of
+ * {@link MeasurementRegistrationInformationNGS}}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.10.0
  */
 public class MeasurementRegistrationMetadataConverterNGS implements
     MetadataConverterV2<MeasurementRegistrationInformationNGS> {

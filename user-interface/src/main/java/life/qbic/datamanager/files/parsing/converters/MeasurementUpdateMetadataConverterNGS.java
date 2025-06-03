@@ -7,11 +7,12 @@ import life.qbic.datamanager.files.structure.measurement.NGSMeasurementEditColum
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Measurement Update Metadata Converter NGS
+ * <p>
+ * Converter that converts a {@link ParsingResult} into a list of
+ * {@link MeasurementUpdateInformationNGS}}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.10.0
  */
 public class MeasurementUpdateMetadataConverterNGS implements
     MetadataConverterV2<MeasurementUpdateInformationNGS> {

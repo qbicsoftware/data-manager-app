@@ -9,11 +9,12 @@ import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Measurement Registration Metadata Converter PxP
+ * <p>
+ * Converter that converts a {@link ParsingResult} into a list of
+ * {@link MeasurementRegistrationInformationPxP}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.10.0
  */
 public class MeasurementRegistrationMetadataConverterPxP implements
     MetadataConverterV2<MeasurementRegistrationInformationPxP> {

@@ -6,16 +6,15 @@ import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementEditColumn;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.measurement.Labeling;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
-import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Measurement Update Metadata Converter PxP
+ * <p>
+ * Converter that converts a {@link ParsingResult} into a list of
+ * {@link MeasurementUpdateInformationPxP}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.10.0
  */
 public class MeasurementUpdateMetadataConverterPxP implements
     MetadataConverterV2<MeasurementUpdateInformationPxP> {
