@@ -209,7 +209,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
     Span buttonBar = new Span(downloadButton, editButton, deleteButton, registerMeasurementButton);
     buttonBar.addClassName("button-bar");
-    Span buttonsAndSearch = new Span(measurementSearchField, buttonBar);
+    // measurementSearchField disabled as the search functionality is turned off due to efficiency reasons
+    Span buttonsAndSearch = new Span(/*measurementSearchField,*/ buttonBar);
     buttonsAndSearch.addClassName("buttonAndField");
     measurementsSelectedInfoBox.addClassName("info");
     setSelectedMeasurementsInfo(0);
