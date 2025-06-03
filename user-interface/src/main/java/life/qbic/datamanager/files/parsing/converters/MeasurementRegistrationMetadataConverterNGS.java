@@ -1,5 +1,6 @@
 package life.qbic.datamanager.files.parsing.converters;
 
+import java.util.List;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 
@@ -13,7 +14,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 public class MeasurementRegistrationMetadataConverterNGS implements MetadataConverterV2<MeasurementRegistrationInformationNGS>{
 
   @Override
-  public MeasurementRegistrationInformationNGS convert(ParsingResult result) {
+  public List<MeasurementRegistrationInformationNGS> convert(ParsingResult result) {
     // TODO implement
     throw new RuntimeException("Not yet implemented");
   }

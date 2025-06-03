@@ -1,5 +1,6 @@
 package life.qbic.datamanager.files.parsing.converters;
 
+import java.util.List;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 
 /**
@@ -11,6 +12,6 @@ import life.qbic.datamanager.files.parsing.ParsingResult;
  */
 public interface MetadataConverterV2<T> {
 
-  T convert(ParsingResult result);
+  List<T> convert(ParsingResult result);
 
 }

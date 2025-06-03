@@ -189,7 +189,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     }
 
     var registrations = sampleInformationForNewSamples.stream()
-        .map(info -> convertToRegistration(info, experimentId, projectId)).toList();
+        .map(info -> convertToRegistration(info)).toList();
 
     var responseStream = executeValidation(registrations, projectId, experimentId).doOnError(cause -> {
       log.error("Validation failed.", cause);
@@ -235,8 +235,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
 
   private SampleRegistrationInformation convertToRegistration(
-      SampleInformationForNewSample information,
-      String experimentId, String projectId) {
+      SampleInformationForNewSample information) {
     return new SampleRegistrationInformation(
         information.sampleName(),
         information.biologicalReplicate(),
@@ -246,9 +245,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
         information.analyte(),
         information.analysisMethod(),
         information.comment(),
-        information.confoundingVariables(),
-        experimentId,
-        projectId
+        information.confoundingVariables()
     );
   }
 

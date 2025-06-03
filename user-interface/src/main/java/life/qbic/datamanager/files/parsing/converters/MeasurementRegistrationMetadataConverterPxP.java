@@ -1,5 +1,6 @@
 package life.qbic.datamanager.files.parsing.converters;
 
+import java.util.List;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 
@@ -13,7 +14,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 public class MeasurementRegistrationMetadataConverterPxP implements MetadataConverterV2<MeasurementRegistrationInformationPxP>{
 
   @Override
-  public MeasurementRegistrationInformationPxP convert(ParsingResult result) {
+  public List<MeasurementRegistrationInformationPxP> convert(ParsingResult result) {
     // TODO implement
     throw new RuntimeException("Not yet implemented");
   }

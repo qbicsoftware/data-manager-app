@@ -454,10 +454,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return switch (request.requestBody()) {
       // Sample Registration
       case SampleRegistrationInformation req ->
-          validateSampleMetadata(req, request.requestId(), request.projectId());
+          validateSampleMetadata(req, request.requestId(), request.projectId(), request.experimentId());
       // Sample Update
       case SampleUpdateInformation req ->
-          validateSampleMetadataUpdate(req, request.requestId(), request.projectId());
+          validateSampleMetadataUpdate(req, request.requestId(), request.projectId(), request.experimentId());
       // Measurement Registration - NGS
       case MeasurementRegistrationInformationNGS req ->
           validateMeasurementMetadataNGS(req, request.requestId(), request.projectId());
@@ -536,10 +536,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ValidationResponse> validateSampleMetadataUpdate(SampleUpdateInformation update,
-      String requestId, String projectId) {
+      String requestId, String projectId, String experimentId) {
     var securityContext = SecurityContextHolder.getContext();
     return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
-        () -> sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId))
+        () -> sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId), experimentId)
             .validationResult(),
         result -> new ValidationResponse(requestId, result))
         .contextWrite(reactiveSecurity(securityContext));

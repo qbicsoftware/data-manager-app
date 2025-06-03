@@ -1,5 +1,6 @@
 package life.qbic.datamanager.files.parsing.converters;
 
+import java.util.List;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
 
@@ -13,7 +14,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpd
 public class SampleUpdateMetadataConverter implements MetadataConverterV2<SampleUpdateInformation>{
 
   @Override
-  public SampleUpdateInformation convert(ParsingResult result) {
+  public List<SampleUpdateInformation> convert(ParsingResult result) {
     // TODO implement
     throw new RuntimeException("Not yet implemented");
   }

@@ -1742,9 +1742,7 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables,
-      String experimentId,
-      String projectId
+      Map<String, String> confoundingVariables
   ) implements ValidationRequestBody {
 
   }
@@ -1763,9 +1761,6 @@ public interface AsyncProjectService {
    * @param comment              a users comment
    * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
    *                             representation
-   * @param experimentId         the experiment ID of the experiment the sample should be registered
-   *                             to
-   * @param projectId            the project ID of the project the experiment belongs to
    * @since 1.10.0
    */
   record SampleUpdateInformation(
@@ -1778,9 +1773,7 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables,
-      String experimentId,
-      String projectId
+      Map<String, String> confoundingVariables
   ) implements ValidationRequestBody {
 
   }

@@ -2,25 +2,26 @@ package life.qbic.datamanager.files.parsing.converters;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.files.parsing.ParsingResult;
-import life.qbic.datamanager.files.parsing.SampleInformationExtractor.SampleInformationForNewSample;
 import life.qbic.datamanager.files.parsing.Sanitizer;
 import life.qbic.datamanager.files.structure.sample.RegisterColumn;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Sample Registration Metadata Converter
+ * <p>
+ * Implementation of {@link MetadataConverterV2} for converting {@link ParsingResult} to a list of
+ * {@link SampleRegistrationInformation}.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.10.0
  */
-public class SampleRegistrationMetadataConverter implements MetadataConverterV2<SampleRegistrationInformation> {
+public class SampleRegistrationMetadataConverter implements
+    MetadataConverterV2<SampleRegistrationInformation> {
 
   @Override
-  public SampleRegistrationInformation convert(ParsingResult parsingResult) {
-    throw new RuntimeException("Not yet implemented");
+  public List<SampleRegistrationInformation> convert(ParsingResult parsingResult) {
     var result = new ArrayList<SampleRegistrationInformation>();
 
     for (int i = 0; i < parsingResult.rows().size(); i++) {
@@ -53,25 +54,13 @@ public class SampleRegistrationMetadataConverter implements MetadataConverterV2<
           .ifPresent(it -> confoundingVariables.put(key, it)));
 
       result.add(new SampleRegistrationInformation(
-         sampleName,
-         biologicalReplicate,
-         condition,
-         species,
-         specimen,
-         analyte,
-         analysisMethod,
-         comment,
-         confoundingVariables,
-      ));
-
-      result.add(new SampleInformationForNewSample(
           sampleName,
-          analysisMethod,
           biologicalReplicate,
           condition,
           species,
-          analyte,
           specimen,
+          analyte,
+          analysisMethod,
           comment,
           confoundingVariables
       ));
