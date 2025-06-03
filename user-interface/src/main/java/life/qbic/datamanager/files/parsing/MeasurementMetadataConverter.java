@@ -12,7 +12,11 @@ import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurement
  * convert them into known implementations of the {@link MeasurementMetadata} interface.
  *
  * @since 1.4.0
+ * @deprecated since 1.10.0, use
+ * {@link life.qbic.datamanager.files.parsing.converters.MetadataConverterV2} and
+ * {@link life.qbic.datamanager.files.parsing.converters.ConverterFactory} instead.
  */
+@Deprecated(since = "1.10.0", forRemoval = true)
 public interface MeasurementMetadataConverter {
 
   /**
@@ -26,7 +30,7 @@ public interface MeasurementMetadataConverter {
    *   <li>Proteomics Measurement Metadata {@link ProteomicsMeasurementMetadata}</li>
    * </ul>
    *
-   * @param parsingResult       the parsing result to take as input for the conversion.
+   * @param parsingResult the parsing result to take as input for the conversion.
    * @return a list of converted implementations of {@link MeasurementMetadata}.
    * @throws UnknownMetadataTypeException if no matching implementation of
    *                                      {@link MeasurementMetadata} can be associated from the
@@ -47,6 +51,7 @@ public interface MeasurementMetadataConverter {
   }
 
   class MissingSampleIdException extends RuntimeException {
+
     public MissingSampleIdException(String message) {
       super(message);
     }

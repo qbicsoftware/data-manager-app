@@ -1,7 +1,9 @@
 package life.qbic.datamanager.files.parsing.converters;
 
+import java.util.ArrayList;
 import java.util.List;
 import life.qbic.datamanager.files.parsing.ParsingResult;
+import life.qbic.datamanager.files.structure.measurement.NGSMeasurementEditColumn;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 
 /**
@@ -11,11 +13,59 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
  *
  * @since <version tag>
  */
-public class MeasurementUpdateMetadataConverterNGS implements MetadataConverterV2<MeasurementUpdateInformationNGS>{
+public class MeasurementUpdateMetadataConverterNGS implements
+    MetadataConverterV2<MeasurementUpdateInformationNGS> {
 
   @Override
-  public List<MeasurementUpdateInformationNGS> convert(ParsingResult result) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+  public List<MeasurementUpdateInformationNGS> convert(ParsingResult parsingResult) {
+    var convertedElements = new ArrayList<MeasurementUpdateInformationNGS>();
+
+    for (int i = 0; i < parsingResult.rows().size(); i++) {
+      var measurementId = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.MEASUREMENT_ID.headerName(), "");
+      var sampleCodes = List.of(
+          parsingResult.getValueOrDefault(i, NGSMeasurementEditColumn.SAMPLE_ID.headerName(),
+              "")
+      );
+      var organisationId = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.ORGANISATION_URL.headerName(), "");
+      var instrument = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.INSTRUMENT.headerName(), "");
+      var facility = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.FACILITY.headerName(), "");
+      var sequencingReadType = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.SEQUENCING_READ_TYPE.headerName(), "");
+      var libraryKit = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.LIBRARY_KIT.headerName(), "");
+      var flowCell = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.FLOW_CELL.headerName(), "");
+      var runProtocol = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.SEQUENCING_RUN_PROTOCOL.headerName(), "");
+      var poolGroup = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.POOL_GROUP.headerName(), "");
+      var indexI7 = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.INDEX_I7.headerName(), "");
+      var indexI5 = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.INDEX_I5.headerName(), "");
+      var comment = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.COMMENT.headerName(), "");
+      var metaDatum = new MeasurementUpdateInformationNGS(
+          measurementId,
+          sampleCodes,
+          organisationId,
+          instrument,
+          facility,
+          sequencingReadType,
+          libraryKit,
+          flowCell,
+          runProtocol,
+          poolGroup,
+          indexI7,
+          indexI5,
+          comment
+      );
+      convertedElements.add(metaDatum);
+    }
+    return convertedElements;
   }
 }
