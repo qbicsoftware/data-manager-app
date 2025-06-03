@@ -98,6 +98,26 @@ public class Experiment {
     int analyteCount = analytes.size();
     int specimenCount = specimens.size();
     int speciesCount = species.size();
+    if (experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() == null).findAny().isPresent()) {
+      assignExperimentalGroupNumbers();
+    }
+  }
+
+  /*
+  Temporary helper method to assign group numbers for existing experimental groups.
+
+  In the future, no experimental group without an assigned number should exist. Until the transition
+  is complete, this method shall be called when the aggregate is checked out from the database.
+   */
+  private void assignExperimentalGroupNumbers() {
+    var maxId = experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() != null).mapToInt(ExperimentalGroup::groupNumber).max().orElse(1);
+    var currentId =maxId;
+    for (ExperimentalGroup group : experimentalDesign.experimentalGroups) {
+      if (group.groupNumber() == null) {
+        group.setGroupNumber(currentId);
+        currentId++;
+      }
+    }
   }
 
   /**
@@ -226,6 +246,10 @@ public class Experiment {
     experimentalDesign.removeExperimentalVariable(variable);
     emitExperimentUpdatedEvent();
     return true;
+  }
+
+  public void removeExperimentGroupByGroupNumber(int experimentalGroupNumber) {
+    experimentalDesign.removeExperimentalGroupByGroupNumber(experimentalGroupNumber);
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {
