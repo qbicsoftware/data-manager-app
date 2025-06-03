@@ -154,8 +154,8 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
   private static ValidationRequest convertToRequest(SampleRegistrationInformation registration,
-      String projectId) {
-    return new ValidationRequest(projectId, registration, null);
+      String projectId, String experimentId) {
+    return new ValidationRequest(projectId, experimentId, registration);
   }
 
   private void setValidatedSampleMetadata(List<SampleRegistrationInformation> registrations) {
@@ -191,7 +191,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     var registrations = sampleInformationForNewSamples.stream()
         .map(info -> convertToRegistration(info, experimentId, projectId)).toList();
 
-    var responseStream = executeValidation(registrations, projectId).doOnError(cause -> {
+    var responseStream = executeValidation(registrations, projectId, experimentId).doOnError(cause -> {
       log.error("Validation failed.", cause);
       InvalidUploadDisplay invalidUploadDisplay = new InvalidUploadDisplay(
           uploadedData.fileName(), "Apologies, the validation failed. Please try again.");
@@ -254,9 +254,9 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private Flux<ValidationResponse> executeValidation(
       List<SampleRegistrationInformation> registrations,
-      String projectId) {
+      String projectId, String experimentId) {
     var requests = registrations.stream()
-        .map(registration -> convertToRequest(registration, projectId));
+        .map(registration -> convertToRequest(registration, projectId, experimentId));
     return service.validate(Flux.fromStream(requests));
   }
 

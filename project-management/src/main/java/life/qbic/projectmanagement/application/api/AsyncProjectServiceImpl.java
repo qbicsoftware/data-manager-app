@@ -546,10 +546,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ValidationResponse> validateSampleMetadata(
-      SampleRegistrationInformation registration, String requestId, String projectId) {
+      SampleRegistrationInformation registration, String requestId, String projectId, String experimentId) {
     var securityContext = SecurityContextHolder.getContext();
     return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
-        () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId))
+        () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId), experimentId)
             .validationResult(),
         result -> new ValidationResponse(requestId, result))
         .contextWrite(reactiveSecurity(securityContext));

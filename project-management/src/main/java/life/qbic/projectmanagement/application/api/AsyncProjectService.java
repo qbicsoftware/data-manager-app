@@ -1864,12 +1864,19 @@ public interface AsyncProjectService {
    *                    the response.
    * @since 1.10.0
    */
-  record ValidationRequest(String projectId, ValidationRequestBody requestBody,
+  record ValidationRequest(String projectId, String experimentId, ValidationRequestBody requestBody,
                            String requestId) implements CacheableRequest {
+
+    public ValidationRequest(String projectId, String experimentId,
+                             ValidationRequestBody requestBody) {
+      this(projectId, experimentId, requestBody, UUID.randomUUID().toString());
+    }
 
     public ValidationRequest {
       requireNonNull(projectId);
       requireNonNull(requestId);
+      requireNonNull(requestBody);
+      requireNonNull(experimentId);
     }
   }
 

@@ -31,7 +31,7 @@ public class SampleValidationService {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public ValidationResultWithPayload<SampleMetadata> validateNewSample(
-      SampleRegistrationInformation information, ProjectId projectId) {
+      SampleRegistrationInformation information, ProjectId projectId, String experimentId) {
     return validateNewSample(information.sampleName(),
         information.biologicalReplicate(),
         information.condition(),
@@ -41,8 +41,8 @@ public class SampleValidationService {
         information.analysisMethod(),
         information.comment(),
         information.confoundingVariables(),
-        information.experimentId(),
-        information.projectId());
+        experimentId,
+        projectId.toString());
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
