@@ -42,7 +42,7 @@ public class SampleValidationService {
         information.comment(),
         information.confoundingVariables(),
         experimentId,
-        projectId.toString());
+        projectId.value());
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")

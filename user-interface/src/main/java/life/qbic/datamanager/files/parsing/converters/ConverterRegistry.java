@@ -7,6 +7,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleRegistrationInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SampleUpdateInformation;
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.poi.ss.formula.functions.T;
 
 /**
  * Converter Factory for creating {@link MetadataConverterV2} instances.
@@ -27,7 +28,7 @@ import org.apache.commons.collections.map.HashedMap;
  *
  * @since 1.10.0
  */
-public class ConverterFactory {
+public class ConverterRegistry {
 
   // Registry with suppliers
   private static final Map<Class<?>, Supplier<? extends MetadataConverterV2<?>>> registry = new HashedMap();
@@ -49,20 +50,20 @@ public class ConverterFactory {
     // Add more mappings ...
   }
 
-  private ConverterFactory() {
+  private ConverterRegistry() {
   }
 
   /**
    * Creates a {@link MetadataConverterV2} for the given class.
    *
    * @param clazz the class for which a converter should be created. Must be registered in the
-   *              {@link ConverterFactory#registry} during compile time.
+   *              {@link ConverterRegistry#registry} during compile time.
    * @param <T>   the type of the class for which a converter should be created.
    * @return a converter for the given class.
    * @throws IllegalArgumentException if no converter is registered for the given class.
    * @since 1.10.0
    */
-  public static <T> MetadataConverterV2<T> create(Class<T> clazz)
+  public static <T> MetadataConverterV2<T> converterFor(Class<T> clazz)
       throws IllegalArgumentException {
     Supplier<? extends MetadataConverterV2<?>> supplier = registry.get(clazz);
 

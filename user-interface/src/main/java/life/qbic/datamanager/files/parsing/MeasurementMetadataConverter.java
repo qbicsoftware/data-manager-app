@@ -1,6 +1,7 @@
 package life.qbic.datamanager.files.parsing;
 
 import java.util.List;
+import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
@@ -14,7 +15,7 @@ import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurement
  * @since 1.4.0
  * @deprecated since 1.10.0, use
  * {@link life.qbic.datamanager.files.parsing.converters.MetadataConverterV2} and
- * {@link life.qbic.datamanager.files.parsing.converters.ConverterFactory} instead.
+ * {@link ConverterRegistry} instead.
  */
 @Deprecated(since = "1.10.0", forRemoval = true)
 public interface MeasurementMetadataConverter {
