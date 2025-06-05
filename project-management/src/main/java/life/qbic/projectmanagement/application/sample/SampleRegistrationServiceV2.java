@@ -90,9 +90,9 @@ public class SampleRegistrationServiceV2 {
         request.analysisMethod(),
         request.comment(),
         request.confoundingVariables(),
-        request.experimentId(),
-        request.projectId()
-    )).toList();
+        experimentReference.id(),
+        projectId.value())
+    ).toList();
 
     // In case there is at least one invalid request, the process can finish exceptionally right here
     validationResults.stream().filter(result -> result.validationResult().containsFailures())

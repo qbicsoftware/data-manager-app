@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -16,10 +17,8 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
-import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
@@ -855,15 +854,17 @@ public interface AsyncProjectService {
   /**
    * A service request to delete an experimental group.
    *
-   * @param projectId         the project's identifier. The project containing the experiment.
-   * @param experimentId      the experiment's identifier'
+   * @param projectId               the project's identifier. The project containing the
+   *                                experiment.
+   * @param experimentId            the experiment's identifier'
    * @param experimentalGroupNumber the identifier of the experimental group to delete
-   * @param requestId         the request ID. Needs to be provided by the client and will be
-   *                          referenced in the response.
+   * @param requestId               the request ID. Needs to be provided by the client and will be
+   *                                referenced in the response.
    * @since 1.10.0
    */
   record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-                                          Integer experimentalGroupNumber, String requestId) implements
+                                          Integer experimentalGroupNumber,
+                                          String requestId) implements
       CacheableRequest {
 
     public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
@@ -1735,9 +1736,6 @@ public interface AsyncProjectService {
    * @param comment              a users comment
    * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
    *                             representation
-   * @param experimentId         the experiment ID of the experiment the sample should be registered
-   *                             to
-   * @param projectId            the project ID of the project the experiment belongs to
    * @since 1.10.0
    */
   record SampleRegistrationInformation(
@@ -1749,9 +1747,7 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables,
-      String experimentId,
-      String projectId
+      Map<String, String> confoundingVariables
   ) implements ValidationRequestBody {
 
   }
@@ -1770,9 +1766,6 @@ public interface AsyncProjectService {
    * @param comment              a users comment
    * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
    *                             representation
-   * @param experimentId         the experiment ID of the experiment the sample should be registered
-   *                             to
-   * @param projectId            the project ID of the project the experiment belongs to
    * @since 1.10.0
    */
   record SampleUpdateInformation(
@@ -1785,40 +1778,137 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables,
-      String experimentId,
-      String projectId
+      Map<String, String> confoundingVariables
   ) implements ValidationRequestBody {
 
   }
 
-
+  /**
+   * Information container to register an NGS measurement.
+   *
+   * @param organisationId        the ROR ID of the organization that performed the measurement
+   * @param instrumentCURIE       the CURIE of the measurement device used
+   * @param facility              the facility within the organization that actually performed the
+   *                              measurement
+   * @param sequencingReadType    the sequencing read type used
+   * @param libraryKit            the library kit used
+   * @param flowCell              the flow cell used
+   * @param sequencingRunProtocol the sequencing run protocol
+   * @param samplePoolGroup       the name of the sample pool
+   * @param specificMetadata      specific metadata that differentiates pooled samples as a
+   *                              {@link HashMap}, with the sample ids as values and the
+   *                              sample-specific measurement annotations as. Will have only one
+   *                              entry if no pooling was done. {@link MeasurementSpecificNGS}
+   * @since 1.10.0
+   */
   record MeasurementRegistrationInformationNGS(
-      Collection<String> sampleCodes,
-      String organisationId, String instrumentCURI, String facility,
+      String organisationId, String instrumentCURIE, String facility,
       String sequencingReadType, String libraryKit, String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      String indexI7, String indexI5,
-      String comment
+      HashMap<String, MeasurementSpecificNGS> specificMetadata
   ) implements ValidationRequestBody {
+
+    public MeasurementRegistrationInformationNGS {
+      requireNonNull(organisationId);
+      requireNonNull(instrumentCURIE);
+      requireNonNull(facility);
+      requireNonNull(sequencingReadType);
+      requireNonNull(libraryKit);
+      requireNonNull(flowCell);
+      requireNonNull(sequencingRunProtocol);
+      requireNonNull(samplePoolGroup);
+      requireNonNull(specificMetadata);
+      specificMetadata = new HashMap<>(specificMetadata);
+    }
 
   }
 
+  /**
+   * Information container to update an NGS measurement.
+   *
+   * @param measurementId         the identifier of the measurement
+   * @param organisationId        the ROR ID of the organization that performed the measurement
+   * @param instrumentCURIE       the CURIE of the measurement device used
+   * @param facility              the facility within the organization that actually performed the
+   *                              measurement
+   * @param sequencingReadType    the sequencing read type used
+   * @param libraryKit            the library kit used
+   * @param flowCell              the flow cell used
+   * @param sequencingRunProtocol the sequencing run protocol
+   * @param samplePoolGroup       the name of the sample pool
+   * @param specificMetadata      specific metadata that differentiates pooled samples as a
+   *                              {@link HashMap}, with the sample ids as values and the
+   *                              sample-specific measurement annotations as. Will have only one
+   *                              entry if no pooling was done. {@link MeasurementSpecificNGS}
+   * @since 1.10.0
+   */
   record MeasurementUpdateInformationNGS(
-      String measurementCode,
-      Collection<String> sampleCodes,
-      String organisationId, String instrumentCURI,
+      String measurementId,
+      String organisationId, String instrumentCURIE,
       String facility,
       String sequencingReadType, String libraryKit,
       String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      String indexI7, String indexI5,
-      String comment) implements ValidationRequestBody {
+      HashMap<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody {
+
+    public MeasurementUpdateInformationNGS {
+      requireNonNull(measurementId);
+      requireNonNull(sampleCodes);
+      requireNonNull(organisationId);
+      requireNonNull(instrumentCURIE);
+      requireNonNull(facility);
+      requireNonNull(sequencingReadType);
+      requireNonNull(libraryKit);
+      requireNonNull(flowCell);
+      requireNonNull(sequencingRunProtocol);
+      requireNonNull(samplePoolGroup);
+      requireNonNull(specificMetadata);
+      specificMetadata = new HashMap<>(specificMetadata);
+    }
 
   }
 
+  /**
+   * Metadata that describes measurement properties, that are unique to the sample presented in the
+   * measurement (e.g., when pooling was done)
+   *
+   * @param indexI7 the i7 index used in the measurement to discriminate a sample
+   * @param indexI5 the i5 index used in the measurement to discriminate a sample
+   * @param comment some comment from the measuring lab
+   * @since 1.10.0
+   */
+  record MeasurementSpecificNGS(
+      String indexI7,
+      String indexI5,
+      String comment
+  ) {
+
+  }
+
+  /**
+   * Information container to register a proteomics measurement.
+   *
+   * @param technicalReplicateName the name of the technical replicate
+   * @param organisationId         the ROR ID of the organization that performed the measurement
+   * @param msDeviceCURIE          the CURIE of the mass spectrometry device used for the
+   *                               measurement
+   * @param samplePoolGroup        the name of the sample pool
+   * @param facility               the name of the facility that performed the measurement
+   * @param fractionName           the fraction name
+   * @param digestionEnzyme        the enzyme used for proteolytic digestion
+   * @param digestionMethod        the digestion method
+   * @param enrichmentMethod       the enrichment method used
+   * @param injectionVolume        the amount of the analyte injected for the measurement
+   * @param lcColumn               the liquid chromatography column used to separate compounds
+   * @param lcmsMethod             the method used
+   * @param labelingType           the type of the labeling used
+   * @param specificMetadata       specific metadata that differentiates pooled samples as a
+   *                               {@link HashMap}, with the sample ids as values and the
+   *                               sample-specific measurement annotations as. Will have only one
+   *                               entry if no pooling was done. {@link MeasurementSpecificPxP}
+   * @since 1.10.0
+   */
   record MeasurementRegistrationInformationPxP(
-      SampleCode sampleCode,
       String technicalReplicateName,
       String organisationId,
       String msDeviceCURIE,
@@ -1831,15 +1921,38 @@ public interface AsyncProjectService {
       String injectionVolume,
       String lcColumn,
       String lcmsMethod,
-      Labeling labeling,
-      String comment
+      String labelingType,
+      HashMap<String, MeasurementSpecificPxP> specificMetadata
   ) implements ValidationRequestBody {
 
   }
 
+  /**
+   * Information container to register a proteomics measurement.
+   *
+   * @param measurementId          the identifier of the measurement
+   * @param technicalReplicateName the name of the technical replicate
+   * @param organisationId         the ROR ID of the organization that performed the measurement
+   * @param msDeviceCURIE          the CURIE of the mass spectrometry device used for the
+   *                               measurement
+   * @param samplePoolGroup        the name of the sample pool
+   * @param facility               the name of the facility that performed the measurement
+   * @param fractionName           the fraction name
+   * @param digestionEnzyme        the enzyme used for proteolytic digestion
+   * @param digestionMethod        the digestion method
+   * @param enrichmentMethod       the enrichment method used
+   * @param injectionVolume        the amount of the analyte injected for the measurement
+   * @param lcColumn               the liquid chromatography column used to separate compounds
+   * @param lcmsMethod             the method used
+   * @param labelingType           the type of the labeling used
+   * @param specificMetadata       specific metadata that differentiates pooled samples as a
+   *                               {@link HashMap}, with the sample ids as values and the
+   *                               sample-specific measurement annotations as. Will have only one
+   *                               entry if no pooling was done. {@link MeasurementSpecificPxP}
+   * @since 1.10.0
+   */
   record MeasurementUpdateInformationPxP(
       String measurementId,
-      SampleCode sampleCode,
       String technicalReplicateName,
       String organisationId,
       String msDeviceCURIE,
@@ -1852,9 +1965,26 @@ public interface AsyncProjectService {
       String injectionVolume,
       String lcColumn,
       String lcmsMethod,
-      Labeling labeling,
-      String comment
+      String labelingType,
+      HashMap<String, MeasurementSpecificPxP> specificMetadata
   ) implements ValidationRequestBody {
+
+  }
+
+  /**
+   * Metadata that describes a measurement properties, that are unique to the sample presented in
+   * the measurement (e.g., when pooling was done)
+   *
+   * @param label        the label used to discriminate the sample
+   * @param fractionName the fraction name
+   * @param comment      some comment from the measuring lab
+   * @since 1.10.0
+   */
+  record MeasurementSpecificPxP(
+      String label,
+      String fractionName,
+      String comment
+  ) {
 
   }
 
@@ -1871,12 +2001,19 @@ public interface AsyncProjectService {
    *                    the response.
    * @since 1.10.0
    */
-  record ValidationRequest(String projectId, ValidationRequestBody requestBody,
+  record ValidationRequest(String projectId, String experimentId, ValidationRequestBody requestBody,
                            String requestId) implements CacheableRequest {
+
+    public ValidationRequest(String projectId, String experimentId,
+        ValidationRequestBody requestBody) {
+      this(projectId, experimentId, requestBody, UUID.randomUUID().toString());
+    }
 
     public ValidationRequest {
       requireNonNull(projectId);
       requireNonNull(requestId);
+      requireNonNull(requestBody);
+      requireNonNull(experimentId);
     }
   }
 

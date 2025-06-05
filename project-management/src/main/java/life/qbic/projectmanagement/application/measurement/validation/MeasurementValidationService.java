@@ -68,7 +68,7 @@ public class MeasurementValidationService {
         null,
         registration.sampleCodes().stream().map(SampleCode::create).toList(),
         registration.organisationId(),
-        registration.instrumentCURI(),
+        registration.instrumentCURIE(),
         registration.facility(),
         registration.sequencingReadType(),
         registration.libraryKit(),
@@ -85,10 +85,10 @@ public class MeasurementValidationService {
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validateNGS(MeasurementUpdateInformationNGS update, ProjectId projectId) {
     var metadata = new NGSMeasurementMetadata(
-        update.measurementCode(),
+        update.measurementId(),
         update.sampleCodes().stream().map(SampleCode::create).toList(),
         update.organisationId(),
-        update.instrumentCURI(),
+        update.instrumentCURIE(),
         update.facility(),
         update.sequencingReadType(),
         update.libraryKit(),
