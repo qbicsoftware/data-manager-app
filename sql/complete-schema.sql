@@ -97,12 +97,13 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager`
     `speciesIconName`  varchar(31)  NOT NULL DEFAULT 'default',
     `specimenIconName` varchar(31)  NOT NULL DEFAULT 'default',
     `project`          varchar(255)          DEFAULT NULL,
+    `version` varchar(255) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `FKgfrw5hlq3iy6ntf32wy0e8hr` (`project`),
     CONSTRAINT `FKgfrw5hlq3iy6ntf32wy0e8hr` FOREIGN KEY (`project`) REFERENCES `projects_datamanager` (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
+  COLLATE = utf8mb4_unicode_ci);
 
 CREATE TABLE IF NOT EXISTS `experimental_group`
 (
