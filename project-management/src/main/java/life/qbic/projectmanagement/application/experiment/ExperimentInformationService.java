@@ -22,15 +22,15 @@ import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
-import life.qbic.projectmanagement.domain.model.experiment.VariableLevel;
+import life.qbic.projectmanagement.domain.model.experiment.VariableName;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.repository.ExperimentRepository;
@@ -38,6 +38,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -64,12 +65,55 @@ public class ExperimentInformationService {
     this.sampleInformationService = sampleInformationService;
   }
 
+  private static VariableLevel convertLevel(
+      life.qbic.projectmanagement.domain.model.experiment.VariableLevel level) {
+    return new VariableLevel(level.variableName().value(), level.experimentalValue().value(),
+        level.experimentalValue().unit().orElse(null));
+  }
+
+  private static life.qbic.projectmanagement.domain.model.experiment.VariableLevel convertToDomain(
+      VariableLevel level) {
+    ExperimentalValue value;
+    if (level.unit() == null) {
+      value = ExperimentalValue.create(level.levelValue());
+    } else {
+      value = ExperimentalValue.create(level.levelValue(), level.unit());
+    }
+    return new life.qbic.projectmanagement.domain.model.experiment.VariableLevel(
+        new VariableName(level.variableName()), value);
+  }
+
+  private static ExperimentalGroup convertFromDomain(
+      life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup domainGroup) {
+    return new ExperimentalGroup(domainGroup.id(), domainGroup.groupNumber(), domainGroup.name(),
+        domainGroup.condition().getVariableLevels().stream()
+            .map(ExperimentInformationService::convertFromDomain).toList(), domainGroup.sampleSize());
+  }
+
+  private static VariableLevel convertFromDomain(
+      life.qbic.projectmanagement.domain.model.experiment.VariableLevel domainLevel) {
+    return new VariableLevel(domainLevel.variableName().value(),
+        domainLevel.experimentalValue().value(),
+        domainLevel.experimentalValue().unit().orElse(null));
+  }
+
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public Optional<Experiment> find(String projectId, ExperimentId experimentId) {
     Objects.requireNonNull(experimentId);
     log.debug("Search for experiment with id: " + experimentId.value());
     return experimentRepository.find(experimentId);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
+  public Optional<Experiment> find(String projectId, String experimentId) {
+    Objects.requireNonNull(experimentId);
+    Objects.requireNonNull(projectId);
+    if (!ExperimentId.isValid(experimentId)) {
+      return Optional.empty();
+    }
+    return find(projectId, ExperimentId.parse(experimentId));
   }
 
   private Experiment loadExperimentById(ExperimentId experimentId) {
@@ -92,7 +136,7 @@ public class ExperimentInformationService {
     Objects.requireNonNull(experimentalGroup, "experimental group must not be null");
     Objects.requireNonNull(experimentId, "experiment id must not be null");
 
-    List<VariableLevel> varLevels = experimentalGroup.levels;
+    List<life.qbic.projectmanagement.domain.model.experiment.VariableLevel> varLevels = experimentalGroup.levels();
     if (varLevels.isEmpty()) {
       throw new ApplicationException("No experimental variable was selected",
           ErrorCode.NO_CONDITION_SELECTED,
@@ -106,11 +150,11 @@ public class ExperimentInformationService {
         new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
-    Result<ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
+    Result<life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup, ResponseCode> result = experiment.addExperimentalGroup(
         experimentalGroup.name(), experimentalGroup.levels(), experimentalGroup.replicateCount());
     if (result.isValue()) {
       experimentRepository.update(experiment);
-      handleLocalEventCache(domainEventsCache);
+      dispatchLocalEvents(domainEventsCache);
     } else {
       ResponseCode responseCode = result.getError();
       if (responseCode.equals(ResponseCode.CONDITION_EXISTS)) {
@@ -126,6 +170,18 @@ public class ExperimentInformationService {
     }
   }
 
+  private life.qbic.projectmanagement.domain.model.experiment.VariableLevel convertToDomainVariableLevel(
+      VariableLevel level) {
+    ExperimentalValue value;
+    if (level.unit() == null) {
+      value = ExperimentalValue.create(level.levelValue());
+    } else {
+      value = ExperimentalValue.create(level.levelValue(), level.unit());
+    }
+    return new life.qbic.projectmanagement.domain.model.experiment.VariableLevel(
+        new VariableName(level.variableName()), value);
+  }
+
   /**
    * Retrieve all analytes of an experiment.
    *
@@ -139,13 +195,15 @@ public class ExperimentInformationService {
       ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream()
-        .map(it -> new ExperimentalGroupDTO(it.id(), it.name(), it.condition().getVariableLevels(), it.sampleSize()))
+        .map(it -> new ExperimentalGroupDTO(it.id(), it.name(), it.condition().getVariableLevels(),
+            it.sampleSize()))
         .toList();
   }
 
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public List<ExperimentalGroup> experimentalGroupsFor(String projectId,
+  public List<life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup> experimentalGroupsFor(
+      String projectId,
       ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
     return experiment.getExperimentalGroups().stream().toList();
@@ -156,9 +214,10 @@ public class ExperimentInformationService {
    * experimental groups in a give experiment!
    *
    * @param experimentId the experiment reference to delete the experimental variables from
-   * @param projectId the Id of the project that is being changed
+   * @param projectId    the Id of the project that is being changed
    * @since 1.0.0
    */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void deleteAllExperimentalVariables(ExperimentId experimentId, ProjectId projectId) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
@@ -171,7 +230,34 @@ public class ExperimentInformationService {
     experiment.removeAllExperimentalGroups();
     experiment.removeAllExperimentalVariables();
     experimentRepository.update(experiment);
-    handleLocalEventCache(domainEventsCache);
+    dispatchLocalEvents(domainEventsCache);
+  }
+
+  /**
+   * Will attemt to delete an experimental variable.
+   *
+   * @param projectId
+   * @param experimentId
+   * @return
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public boolean deleteExperimentalVariable(ProjectId projectId, ExperimentId experimentId,
+      String variableName) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = loadExperimentById(experimentId);
+    try {
+      var wasRemoved = experiment.removeExperimentalVariable(variableName);
+      experimentRepository.update(experiment);
+      dispatchLocalEvents(domainEventsCache);
+      return wasRemoved;
+    } catch (Experiment.GroupPreventingVariableDeletionException e) {
+      throw new GroupPreventingVariableDeletionException(e);
+    }
   }
 
   /**
@@ -194,7 +280,7 @@ public class ExperimentInformationService {
    * Adds species to an experiment.
    *
    * @param experimentId the Id of the experiment for which to add the species
-   * @param projectId the Id of the project that is being changed
+   * @param projectId    the Id of the project that is being changed
    * @param species      the species to add
    * @see Experiment#addSpecies(Collection)
    */
@@ -216,14 +302,14 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecies(List.of(species));
     experimentRepository.update(experiment);
-    handleLocalEventCache(domainEventsCache);
+    dispatchLocalEvents(domainEventsCache);
   }
 
   /**
    * Adds specimens to an experiment
    *
    * @param experimentId the Id of the experiment for which to add the specimen
-   * @param projectId the Id of the project that is being changed
+   * @param projectId    the Id of the project that is being changed
    * @param specimens    the specimens to add
    * @see Experiment#addSpecimens(Collection)
    */
@@ -245,14 +331,14 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addSpecimens(List.of(specimens));
     experimentRepository.update(experiment);
-    handleLocalEventCache(domainEventsCache);
+    dispatchLocalEvents(domainEventsCache);
   }
 
   /**
    * Adds analytes to an experiment
    *
    * @param experimentId the Id of the experiment for which to add the analyte
-   * @param projectId the Id of the project that is being changed
+   * @param projectId    the Id of the project that is being changed
    * @param analytes     the analytes to add
    * @see Experiment#addAnalytes(Collection)
    */
@@ -274,14 +360,14 @@ public class ExperimentInformationService {
     Experiment experiment = loadExperimentById(experimentId);
     experiment.addAnalytes(List.of(analytes));
     experimentRepository.update(experiment);
-    handleLocalEventCache(domainEventsCache);
+    dispatchLocalEvents(domainEventsCache);
   }
 
   /**
    * Adds {@link ExperimentalVariable} to an {@link Experiment}
    *
    * @param experimentId the Id of the experiment
-   * @param projectId the Id of the project that is being changed
+   * @param projectId    the Id of the project that is being changed
    * @param variableName the name of the variable to be added
    * @param unit         the optionally defined unit for the {@link ExperimentalValue} within the
    *                     {@link ExperimentalVariable}
@@ -315,7 +401,94 @@ public class ExperimentInformationService {
     }
     experiment.addVariableToDesign(variableName, experimentalValues);
     experimentRepository.update(experiment);
-    handleLocalEventCache(domainEventsCache);
+    dispatchLocalEvents(domainEventsCache);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void addVariableToExperiment(String projectId, String experimentId, List<AsyncProjectService.ExperimentalVariable> experimentalVariables) {
+    Objects.requireNonNull(projectId);
+    Objects.requireNonNull(experimentId);
+    Objects.requireNonNull(experimentalVariables);
+    if (experimentalVariables.isEmpty()) {
+      return;
+    }
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+    Experiment experiment = loadExperimentById(ExperimentId.parse(experimentId));
+    for (AsyncProjectService.ExperimentalVariable experimentalVariable : experimentalVariables) {
+      List<ExperimentalValue> experimentalValues = new ArrayList<>();
+      for (String level : experimentalVariable.levels()) {
+        ExperimentalValue experimentalValue = experimentalVariable.optionalUnit().isPresent() ? ExperimentalValue.create(level)
+            : ExperimentalValue.create(level, experimentalVariable.unit());
+        experimentalValues.add(experimentalValue);
+      }
+      experiment.addVariableToDesign(experimentalVariable.name(), experimentalValues);
+    }
+    experimentRepository.update(experiment);
+    dispatchLocalEvents(domainEventsCache);
+  }
+
+
+  /**
+   * Adds {@link ExperimentalVariable} to an {@link Experiment}
+   *
+   * @param experimentId the Id of the experiment
+   * @param projectId    the Id of the project that is being changed
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public List<ExperimentalVariableInformation> addVariablesToExperiment(String projectId,
+      ExperimentId experimentId,
+      List<ExperimentalVariableAddition> variableAdditions) {
+    if (variableAdditions.isEmpty()) {
+      return List.of();
+    }
+    Predicate<ExperimentalVariableAddition> noNameProvided = addition ->
+        addition.name() == null || addition.name().isBlank();
+
+    if (variableAdditions.stream().anyMatch(noNameProvided)) {
+      throw new IllegalArgumentException("All variables must have a name");
+    }
+
+    Predicate<ExperimentalVariableAddition> noLevelsProvided = addition ->
+        addition.levels().isEmpty();
+
+    if (variableAdditions.stream().anyMatch(noLevelsProvided)) {
+      throw new IllegalArgumentException("All variables must have a levels");
+    }
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = loadExperimentById(experimentId);
+    List<ExperimentalVariableInformation> addedVariables = new ArrayList<>();
+    try {
+      for (var variableAddition : variableAdditions) {
+        var levels = variableAddition.levels().stream()
+            .map(level -> ExperimentalValue.create(level, variableAddition.unit()))
+            .toList();
+        experiment.addVariableToDesign(variableAddition.name(), levels);
+        addedVariables.add(
+            new ExperimentalVariableInformation(experimentId.value(), variableAddition.name(),
+                variableAddition.unit(), variableAddition.levels()));
+      }
+      experimentRepository.update(experiment);
+      dispatchLocalEvents(domainEventsCache);
+    } catch (RuntimeException e) {
+      //remove all added variables again
+      addedVariables.stream()
+          .map(ExperimentalVariableInformation::name)
+          .forEach(experiment::removeExperimentalVariable);
+      throw e;
+    }
+    return addedVariables;
   }
 
   /**
@@ -368,17 +541,66 @@ public class ExperimentInformationService {
   }
 
   /**
+   * Updates an {@link ExperimentalGroup} for a given experiment.
+   *
+   * @param projectId    the id of the project that is being changed.
+   * @param experimentId the id of the experiment for which the experimental group is going to be
+   *                     updated.
+   * @param group        the information of the experimental group to be updated.
+   * @since 1.10.0
+   */
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void updateExperimentalGroup(String projectId, String experimentId,
+      ExperimentalGroup group) {
+    Objects.requireNonNull(group);
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+    // Update the experimental group
+    var experiment = loadExperimentById(ExperimentId.parse(experimentId));
+    experiment.updateExperimentalGroup(group.id(), group.name(),
+        group.levels().stream().map(ExperimentInformationService::convertToDomain).toList(),
+        group.replicateCount());
+    // Make the changes persistent
+    experimentRepository.update(experiment);
+    // Dispatch event
+    dispatchLocalEvents(domainEventsCache);
+  }
+
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void deleteExperimentalGroupByGroupNumber(String projectId, String experimentId,
+      int experimentalGroupNumber) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    find(projectId, experimentId).ifPresent(experiment -> {
+      experiment.removeExperimentGroupByGroupNumber(experimentalGroupNumber);
+      experimentRepository.update(experiment);
+    });
+
+    dispatchLocalEvents(domainEventsCache);
+  }
+
+  /**
    * Deletes all experimental groups in a given experiment.
    *
-   * @param id the experiment identifier of the experiment the experimental groups are going to be
-   *           deleted.
+   * @param id        the experiment identifier of the experiment the experimental groups are going
+   *                  to be deleted.
    * @param projectId the Id of the project that is being changed
    * @since 1.0.0
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
-  
-  public void deleteExperimentalGroupsWithIds(String projectId, ExperimentId id, List<Long> groupIds) {
+  public void deleteExperimentalGroupsWithIds(String projectId, ExperimentId id,
+      List<Long> groupIds) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
@@ -394,14 +616,55 @@ public class ExperimentInformationService {
           ErrorParameters.empty());
     }
     if (queryResult.isValue() && !queryResult.getValue().isEmpty()) {
-      throw new ApplicationException("Could not edit experimental groups because samples are already registered.",
+      throw new ApplicationException(
+          "Could not edit experimental groups because samples are already registered.",
           ErrorCode.SAMPLES_ATTACHED_TO_EXPERIMENT,
           ErrorParameters.empty());
     }
     Experiment experiment = loadExperimentById(id);
     experiment.removeExperimentalGroups(groupIds);
     experimentRepository.update(experiment);
-    handleLocalEventCache(domainEventsCache);
+    dispatchLocalEvents(domainEventsCache);
+  }
+
+  private void setUpDomainEventDispatcher(List<DomainEvent> domainEventsCache) {
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+  }
+
+  /**
+   * Creates a new experimental group for a given experiment.
+   *
+   * @param projectId         the id of the project that is being changed.
+   * @param experimentId      the id of the experiment for which the experimental group is going to
+   *                          be created.
+   * @param experimentalGroup the information of the experimental group to be created.
+   * @return the created experimental group.
+   * @since 1.10.0
+   */
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public ExperimentalGroup createExperimentalGroup(String projectId, ExperimentId experimentId,
+      ExperimentalGroup experimentalGroup) {
+    var domainEventsCache = new ArrayList<DomainEvent>();
+    setUpDomainEventDispatcher(domainEventsCache);
+
+    var experiment = loadExperimentById(experimentId);
+    var result = experiment.addExperimentalGroup(experimentalGroup.name(),
+        experimentalGroup.levels().stream().map(ExperimentInformationService::convertToDomain)
+            .toList(),
+        experimentalGroup.replicateCount());
+    if (result.isError()) {
+      log.error("Could not create experimental group, response code was " + result.getError());
+      throw new ApplicationException("Could not create experimental group.");
+    }
+    experimentRepository.update(experiment);
+    dispatchLocalEvents(domainEventsCache);
+    var createdGroup = result.getValue();
+    return new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(), createdGroup.condition()
+        .getVariableLevels().stream().map(ExperimentInformationService::convertLevel).toList(),
+        createdGroup.sampleSize());
   }
 
   @Transactional
@@ -423,7 +686,7 @@ public class ExperimentInformationService {
       List<ExperimentalGroupDTO> experimentalGroupDTOS) {
 
     // check for duplicates
-    List<List<VariableLevel>> distinctLevels = experimentalGroupDTOS.stream()
+    List<List<life.qbic.projectmanagement.domain.model.experiment.VariableLevel>> distinctLevels = experimentalGroupDTOS.stream()
         .map(ExperimentalGroupDTO::levels).distinct().toList();
     if (distinctLevels.size() < experimentalGroupDTOS.size()) {
       throw new ApplicationException("Duplicate experimental group was selected",
@@ -431,14 +694,15 @@ public class ExperimentInformationService {
           ErrorParameters.empty());
     }
 
-    List<ExperimentalGroup> existingGroups = experimentalGroupsFor(projectId, experimentId);
+    List<life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup> existingGroups = experimentalGroupsFor(
+        projectId, experimentId);
     List<Long> idsToDelete = getGroupIdsToDelete(existingGroups, experimentalGroupDTOS);
-    if(!idsToDelete.isEmpty()) {
+    if (!idsToDelete.isEmpty()) {
       deleteExperimentalGroupsWithIds(projectId, experimentId, idsToDelete);
     }
 
-    for(ExperimentalGroupDTO group : experimentalGroupDTOS) {
-      if(group.id() == -1) {
+    for (ExperimentalGroupDTO group : experimentalGroupDTOS) {
+      if (group.id() == -1) {
         addExperimentalGroupToExperiment(experimentId, group);
       } else {
         updateExperimentalGroupOfExperiment(experimentId, group);
@@ -446,7 +710,8 @@ public class ExperimentInformationService {
     }
   }
 
-  private void updateExperimentalGroupOfExperiment(ExperimentId experimentId, ExperimentalGroupDTO group) {
+  private void updateExperimentalGroupOfExperiment(ExperimentId experimentId,
+      ExperimentalGroupDTO group) {
     List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
@@ -454,16 +719,18 @@ public class ExperimentInformationService {
         new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
 
     Experiment experiment = loadExperimentById(experimentId);
-    Result<ExperimentalGroup, ResponseCode> result = experiment.updateExperimentalGroup(group.id(),
+    Result<life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup, ResponseCode> result = experiment.updateExperimentalGroup(
+        group.id(),
         group.name(), group.levels(), group.replicateCount());
-    result.onValue(ignore -> handleLocalEventCache(domainEventsCache));
+    result.onValue(ignore -> dispatchLocalEvents(domainEventsCache));
   }
 
-  private List<Long> getGroupIdsToDelete(List<ExperimentalGroup> existingGroups,
+  private List<Long> getGroupIdsToDelete(
+      List<life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup> existingGroups,
       List<ExperimentalGroupDTO> newGroups) {
     Set<Long> newIds = newGroups.stream().map(ExperimentalGroupDTO::id).collect(Collectors.toSet());
     return existingGroups.stream()
-        .map(ExperimentalGroup::id)
+        .map(life.qbic.projectmanagement.domain.model.experiment.ExperimentalGroup::id)
         .filter(Predicate.not(newIds::contains))
         .toList();
   }
@@ -474,8 +741,8 @@ public class ExperimentInformationService {
       String experimentName,
       List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
       String speciesIconName, String specimenIconName) {
-  
-   List<DomainEvent> domainEventsCache = new ArrayList<>();
+
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
     localDomainEventDispatcher.reset();
     localDomainEventDispatcher.subscribe(
@@ -489,15 +756,15 @@ public class ExperimentInformationService {
     experiment.setIconNames(speciesIconName, specimenIconName, "default");
     experimentRepository.update(experiment);
 
-    handleLocalEventCache(domainEventsCache);
+    dispatchLocalEvents(domainEventsCache);
   }
 
-  private void handleLocalEventCache(List<DomainEvent> domainEventsCache) {
+  private void dispatchLocalEvents(List<DomainEvent> domainEventsCache) {
     Set<ExperimentId> dispatchedIDs = new HashSet<>();
-    for(DomainEvent event : domainEventsCache) {
-      if(event instanceof ExperimentUpdatedEvent experimentUpdatedEvent) {
+    for (DomainEvent event : domainEventsCache) {
+      if (event instanceof ExperimentUpdatedEvent experimentUpdatedEvent) {
         ExperimentId id = experimentUpdatedEvent.experimentId();
-        if(dispatchedIDs.contains(id)) {
+        if (dispatchedIDs.contains(id)) {
           continue;
         }
         DomainEventDispatcher.instance().dispatch(event);
@@ -514,8 +781,43 @@ public class ExperimentInformationService {
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
   public List<ExperimentalGroup> fetchGroups(String projectId, ExperimentId experimentId) {
-   return experimentRepository.find(experimentId).map(Experiment::getExperimentalGroups).orElse(
-       Collections.emptyList());
+    return experimentRepository
+        .find(experimentId)
+        .map(Experiment::getExperimentalGroups).orElse(Collections.emptyList())
+        .stream().map(ExperimentInformationService::convertFromDomain)
+        .toList();
+  }
+
+  public static class GroupPreventingVariableDeletionException extends RuntimeException {
+
+    public GroupPreventingVariableDeletionException(Throwable cause) {
+      super(cause);
+    }
+  }
+
+  public record ExperimentalVariableAddition(String name, String unit, List<String> levels) {
+
+    public ExperimentalVariableAddition {
+      levels = List.copyOf(levels);
+    }
+
+    @Override
+    public List<String> levels() {
+      return List.copyOf(levels);
+    }
+  }
+
+  public record ExperimentalVariableInformation(String experimentId, String name, String unit,
+                                                List<String> levels) {
+
+    public ExperimentalVariableInformation {
+      levels = List.copyOf(levels);
+    }
+
+    @Override
+    public List<String> levels() {
+      return List.copyOf(levels);
+    }
   }
 
   /**
@@ -526,9 +828,21 @@ public class ExperimentInformationService {
    * @param levels         the levels in the condition of the group
    * @param replicateCount the number of biological replicates
    */
-  public record ExperimentalGroupDTO(long id, String name, List<VariableLevel> levels, int replicateCount) {
+  public record ExperimentalGroupDTO(long id, String name,
+                                     List<life.qbic.projectmanagement.domain.model.experiment.VariableLevel> levels,
+                                     int replicateCount) {
 
   }
+
+  public record ExperimentalGroup(@Nullable Long id, @Nullable Integer groupNumber, String name, List<VariableLevel> levels,
+                                  int replicateCount) {
+
+  }
+
+  public record VariableLevel(String variableName, String levelValue, @Nullable String unit) {
+
+  }
+
 
   public record ExperimentUpdatedDomainEventSubscriber(
       List<DomainEvent> domainEventsCache) implements

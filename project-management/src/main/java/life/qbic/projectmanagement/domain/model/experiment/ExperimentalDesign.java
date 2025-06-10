@@ -110,6 +110,24 @@ public class ExperimentalDesign {
   }
 
   /**
+   * Sets the experimental variables for the experiment.
+   *
+   * @param variables a {@link List} of {@link ExperimentalVariable}s} for the current experiment.
+   * @throws IllegalStateException if there are already {@link ExperimentalGroup}s defined for the
+   *                               experiment. They need to be deleted first.
+   * @since 1.10.0
+   */
+  public void setExperimentalVariables(List<ExperimentalVariable> variables)
+      throws IllegalStateException {
+    Objects.requireNonNull(variables);
+    if (!experimentalGroups.isEmpty()) {
+      throw new IllegalStateException("There are already experimental groups defined");
+    }
+    this.variables.clear();
+    this.variables.addAll(variables);
+  }
+
+  /**
    * Adds a level to an experimental variable with the given name. A successful operation is
    * indicated in the result, which can be verified via {@link Result#isValue()}.
    * <p>
@@ -123,7 +141,10 @@ public class ExperimentalDesign {
    * result will contain an {@link ExperimentalVariableNotDefinedException} if no variable with the
    * provided name is defined in this design.
    * @since 1.0.0
+   * @deprecated please use {@link #setExperimentalVariables(List)} to update the experimental
+   * variables.
    */
+  @Deprecated(since = "1.10.0", forRemoval = true)
   Result<VariableLevel, Exception> addLevelToVariable(String variableName,
       ExperimentalValue level) {
     Optional<ExperimentalVariable> experimentalVariableOptional = variableWithName(variableName);
@@ -177,7 +198,8 @@ public class ExperimentalDesign {
     return experimentalGroups.stream().anyMatch(it -> it.condition().equals(condition));
   }
 
-  Result<VariableName, Exception> addVariable(String variableName, List<ExperimentalValue> levels) {
+  Result<ExperimentalVariable, Exception> addVariable(String variableName,
+      List<ExperimentalValue> levels) {
     if (levels.isEmpty()) {
       return Result.fromError(new IllegalArgumentException(
           "No levels were defined for " + variableName));
@@ -191,26 +213,39 @@ public class ExperimentalDesign {
       ExperimentalVariable variable = ExperimentalVariable.create(variableName,
           levels.toArray(ExperimentalValue[]::new));
       variables.add(variable);
-      return Result.fromValue(variable.name());
+      return Result.fromValue(variable);
     } catch (IllegalArgumentException e) {
       return Result.fromError(e);
     }
   }
 
-    public void removeAllExperimentalVariables() throws IllegalStateException {
-      if (!experimentalGroups.isEmpty()) {
-        throw new IllegalStateException("Cannot delete experimental variables referenced by an experimental group.");
-      }
-      this.variables.clear();
+  public void removeAllExperimentalVariables() throws IllegalStateException {
+    if (!experimentalGroups.isEmpty()) {
+      throw new IllegalStateException(
+          "Cannot delete experimental variables referenced by an experimental group.");
     }
+    this.variables.clear();
+  }
 
-    public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+  /**
+   * Gets a variable from the design
+   *
+   * @param name the name of the variable
+   * @return the optional variable, {@link Optional#empty()} if no variable with that name exists.
+   */
+  public Optional<ExperimentalVariable> getVariable(String name) {
+    return variables.stream()
+        .filter(it -> it.name().value().equals(name))
+        .findAny();
+  }
 
-    public enum ResponseCode {
-      SUCCESS,
-      CONDITION_EXISTS,
-      EMPTY_VARIABLE
-    }
+  /**
+   * removes an experimental variable from the design
+   *
+   * @param variable the variable to be removed
+   */
+  public void removeExperimentalVariable(ExperimentalVariable variable) {
+    variables.remove(variable);
   }
 
   /**
@@ -228,7 +263,8 @@ public class ExperimentalDesign {
    *                       experiment
    * @param sampleSize     the number of samples that are expected for this experimental group
    */
-  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String name, Collection<VariableLevel> variableLevels,
+  public Result<ExperimentalGroup, ResponseCode> addExperimentalGroup(String name,
+      Collection<VariableLevel> variableLevels,
       int sampleSize) {
     variableLevels.forEach(Objects::requireNonNull);
     if (variableLevels.isEmpty()) {
@@ -246,9 +282,15 @@ public class ExperimentalDesign {
     if (isConditionDefined(condition)) {
       return Result.fromError(ResponseCode.CONDITION_EXISTS);
     }
-    var newExperimentalGroup = ExperimentalGroup.create(name, condition, sampleSize);
+    var newExperimentalGroup = ExperimentalGroup.create(name, condition, sampleSize, nextGroupId());
     experimentalGroups.add(newExperimentalGroup);
     return Result.fromValue(newExperimentalGroup);
+  }
+
+  private int nextGroupId() {
+    return experimentalGroups.stream()
+        .filter(group -> group.groupNumber() != null)
+        .mapToInt(ExperimentalGroup::groupNumber).max().orElse(0) + 1;
   }
 
   /**
@@ -286,7 +328,8 @@ public class ExperimentalDesign {
     ExperimentalGroup groupToUpdate = experimentalGroups.stream()
         .filter(group -> id == group.id())
         .findFirst()
-        .orElseThrow(() -> new ApplicationException("No group with id %s exists in experimental design.".formatted(id)));
+        .orElseThrow(() -> new ApplicationException(
+            "No group with id %s exists in experimental design.".formatted(id)));
     groupToUpdate.setCondition(condition);
     groupToUpdate.setName(name);
     groupToUpdate.setSampleSize(sampleSize);
@@ -300,5 +343,18 @@ public class ExperimentalDesign {
 
   public void removeExperimentalGroup(long groupId) {
     this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroup.id() == groupId);
+  }
+
+  public void removeExperimentalGroupByGroupNumber(int experimentalGroupNumber) {
+    this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroupNumber == experimentalGroup.groupNumber());
+  }
+
+  public record AddExperimentalGroupResponse(ResponseCode responseCode) {
+
+    public enum ResponseCode {
+      SUCCESS,
+      CONDITION_EXISTS,
+      EMPTY_VARIABLE
+    }
   }
 }

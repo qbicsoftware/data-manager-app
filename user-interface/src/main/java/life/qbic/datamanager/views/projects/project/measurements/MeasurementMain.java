@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
+import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.files.export.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
 import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks;
@@ -342,7 +342,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
                 String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
                 ui.access(() -> {
                   pendingToast.close();
-                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale()).open();
+                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale())
+                      .open();
                 });
               } else {
                 ui.access(() -> {

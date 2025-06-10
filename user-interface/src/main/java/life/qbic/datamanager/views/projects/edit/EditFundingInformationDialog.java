@@ -39,7 +39,7 @@ public class EditFundingInformationDialog extends DialogWindow {
     this.noChangesClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
     this.warningClosingStrategy = DefaultClosingStrategy.createDefaultStrategy(this);
 
-    addClassName("large-dialog");
+    addClassName("dialog-small");
     var content = new Div();
     content.addClassName("horizontal-list");
     setConfirmButtonLabel("Save");

@@ -70,13 +70,20 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `lastModified`                      datetime(6)  NOT NULL,
     `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
     `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
+    `principalInvestigatorOidc`       varchar(255) DEFAULT NULL,
+    `principalInvestigatorOidcIssuer` varchar(255) DEFAULT NULL,
     `projectCode`                       varchar(255)  DEFAULT NULL,
     `objective`                         varchar(2000) DEFAULT NULL,
     `projectTitle`                      varchar(255)  DEFAULT NULL,
     `projectManagerEmailAddress`        varchar(255)  DEFAULT NULL,
     `projectManagerFullName`            varchar(255)  DEFAULT NULL,
+    `projectManagerOidc`              varchar(255) DEFAULT NULL,
+    `projectManagerOidcIssuer`        varchar(255) DEFAULT NULL,
     `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
+    `responsiblePersonOidc`       varchar(255) DEFAULT NULL,
+    `responsiblePersonOidcIssuer` varchar(255) DEFAULT NULL,
+    `version` int NOT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -100,6 +107,7 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager`
 CREATE TABLE IF NOT EXISTS `experimental_group`
 (
     `experimentalGroupId` bigint(20) NOT NULL AUTO_INCREMENT,
+    `groupNumber`         int          DEFAULT NULL,
     `name`                varchar(255) DEFAULT NULL,
     `sampleSize`          int(11)    NOT NULL,
     `experimentId`        varchar(255) DEFAULT NULL,
@@ -150,7 +158,7 @@ CREATE TABLE IF NOT EXISTS `experimental_variables_levels`
 CREATE TABLE IF NOT EXISTS `experiments_datamanager_analytes`
 (
     `experiments_datamanager_id` varchar(255) NOT NULL,
-    `analytes`                   longtext DEFAULT NULL CHECK (json_valid(`analytes`)),
+    `analytes`                   longtext DEFAULT NULL CHECK ( json_valid(`analytes`)),
     KEY `FKenl95t4n6dn8c90mcc9bdi7d3` (`experiments_datamanager_id`),
     CONSTRAINT `FKenl95t4n6dn8c90mcc9bdi7d3` FOREIGN KEY (`experiments_datamanager_id`) REFERENCES `experiments_datamanager` (`id`)
 ) ENGINE = InnoDB
@@ -160,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager_analytes`
 CREATE TABLE IF NOT EXISTS `experiments_datamanager_species`
 (
     `experiments_datamanager_id` varchar(255) NOT NULL,
-    `species`                    longtext DEFAULT NULL CHECK (json_valid(`species`)),
+    `species`                    longtext DEFAULT NULL CHECK ( json_valid(`species`)),
     KEY `FK5jif824gfi7ho2dmk4lbp2cri` (`experiments_datamanager_id`),
     CONSTRAINT `FK5jif824gfi7ho2dmk4lbp2cri` FOREIGN KEY (`experiments_datamanager_id`) REFERENCES `experiments_datamanager` (`id`)
 ) ENGINE = InnoDB
@@ -170,7 +178,7 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager_species`
 CREATE TABLE IF NOT EXISTS `experiments_datamanager_specimens`
 (
     `experiments_datamanager_id` varchar(255) NOT NULL,
-    `specimens`                  longtext DEFAULT NULL CHECK (json_valid(`specimens`)),
+    `specimens`                  longtext DEFAULT NULL CHECK ( json_valid(`specimens`)),
     KEY `FKiebw7ho69dfx9osttd8sin73l` (`experiments_datamanager_id`),
     CONSTRAINT `FKiebw7ho69dfx9osttd8sin73l` FOREIGN KEY (`experiments_datamanager_id`) REFERENCES `experiments_datamanager` (`id`)
 ) ENGINE = InnoDB
@@ -264,7 +272,7 @@ CREATE TABLE IF NOT EXISTS `ngs_measurements`
     `measurement_id`   varchar(255) NOT NULL,
     `facility`         varchar(255) DEFAULT NULL,
     `flowcell`         varchar(255) DEFAULT NULL,
-    `instrument`       longtext     DEFAULT NULL CHECK (json_valid(`instrument`)),
+    `instrument`       longtext     DEFAULT NULL CHECK ( json_valid(`instrument`)),
     `libraryKit`       varchar(255) DEFAULT NULL,
     `measurementCode`  varchar(255) DEFAULT NULL,
     `IRI`              varchar(255) DEFAULT NULL,
@@ -348,7 +356,7 @@ CREATE TABLE IF NOT EXISTS `proteomics_measurement`
     `enrichmentMethod`       varchar(255) DEFAULT NULL,
     `facility`               varchar(255) DEFAULT NULL,
     `injectionVolume`        int(11)      DEFAULT NULL,
-    `instrument`             longtext     DEFAULT NULL CHECK (json_valid(`instrument`)),
+    `instrument`             longtext     DEFAULT NULL CHECK ( json_valid(`instrument`)),
     `labelType`              varchar(255) DEFAULT NULL,
     `lcColumn`               varchar(255) DEFAULT NULL,
     `lcmsMethod`             varchar(255) DEFAULT NULL,
@@ -594,8 +602,9 @@ DROP VIEW IF EXISTS data_management.project_measurements;
 
 CREATE view data_management.project_measurements as
 SELECT `projects`.`projectId`                            AS `projectId`,
-       COALESCE(`proteomics`.`amountPxpMeasurements`, 0) AS `amountPxpMeasurements`, /*do not allow null values*/
-       COALESCE(`ngs`.`amountNgsMeasurements`, 0)        AS `amountNgsMeasurements` /*do not allow null values*/
+
+       COALESCE(`proteomics`.`amountPxpMeasurements`, 0) AS `amountPxpMeasurements`, -- do not allow null values
+       COALESCE(`ngs`.`amountNgsMeasurements`, 0)        AS `amountNgsMeasurements`  -- do not allow null values
 FROM (projects_datamanager projects LEFT JOIN (SELECT ngs.`projectId`              AS `projectId`,
                                                       count(ngs.`measurementCode`) AS `amountNgsMeasurements`
                                                FROM ngs_measurements ngs
@@ -644,10 +653,7 @@ FROM projects_datamanager pd
          LEFT JOIN project_measurements m ON pd.projectId = m.projectId
          LEFT JOIN (SELECT project_userinfo.projectId,
                            GROUP_CONCAT(project_userinfo.userName SEPARATOR ', ') AS `usernames`,
-                           JSON_ARRAYAGG(
-                                   JSON_OBJECT(
-                                           'userId', project_userinfo.userId,
-                                           'userName', project_userinfo.userName
-                                   ))                                             AS `userInfos`
+                           JSON_ARRAYAGG(JSON_OBJECT('userId', project_userinfo.userId, 'userName',
+                                                     project_userinfo.userName)) AS `userInfos`
                     FROM project_userinfo
                     GROUP BY projectId) AS users ON users.projectId = pd.projectId;

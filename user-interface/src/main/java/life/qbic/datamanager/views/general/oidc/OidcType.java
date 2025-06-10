@@ -36,4 +36,8 @@ public enum OidcType {
   public String getName() {
     return name;
   }
+
+  public String getUrlFor(String oidc) {
+    return String.format("%s%s", url, oidc);
+  }
 }

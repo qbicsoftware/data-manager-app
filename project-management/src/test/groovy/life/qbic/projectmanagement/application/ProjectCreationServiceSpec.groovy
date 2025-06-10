@@ -27,7 +27,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_ as Project) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_ as ProjectId, _ as String as String, _ as List<Species> as List<Species>, _ as List<Specimen> as List<Specimen>, _ as List<Analyte>) >> {}
-    def personReference = new Contact("Mustermann", "some@notavailable.zxü")
+    def personReference = new Contact("Mustermann", "some@notavailable.zxü", "", "")
     when: "null input is provided"
 
 
@@ -47,7 +47,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_ as Project) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_ as ProjectId, _ as String as String, _ as List<Species> as List<Species>, _ as List<Specimen> as List<Specimen>, _ as List<Analyte>) >> {}
-    def contact = new Contact("Mustermann", "some@notavailable.zxü")
+    def contact = new Contact("Mustermann", "some@notavailable.zxü", "", "")
 
     when: "create is called without a project manager"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",
@@ -66,7 +66,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_ as Project) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_ as ProjectId, _ as String as String, _ as List<Species> as List<Species>, _ as List<Specimen> as List<Specimen>, _ as List<Analyte>) >> {}
-    def contact = new Contact("Mustermann", "some@notavailable.zxü")
+    def contact = new Contact("Mustermann", "some@notavailable.zxü", "", "")
 
     when: "create is called without a principal investigator"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "QABCD",
@@ -85,7 +85,7 @@ class ProjectCreationServiceSpec extends Specification {
     given:
     projectRepositoryStub.add(_ as Project) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_ as ProjectId, _ as String, _ as List<Species>, _ as List<Specimen>, _ as List<Analyte>) >> Result.fromValue(ExperimentId.create())
-    def contact = new Contact("Mustermann", "some@notavailable.zxü")
+    def contact = new Contact("Mustermann", "some@notavailable.zxü", "", "")
 
     when: "create is called without a project manager"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",
@@ -105,7 +105,7 @@ class ProjectCreationServiceSpec extends Specification {
     projectRepositoryStub.add(_ as Project) >> {}
     addExperimentToProjectServiceStub.addExperimentToProject(_ as ProjectId, _ as String, _ as List<Species>, _ as List<Specimen>, _ as List<Analyte>) >> Result.fromValue(ExperimentId.create())
 
-    def contact = new Contact("Mustermann", "some@notavailable.zxü")
+    def contact = new Contact("Mustermann", "some@notavailable.zxü", "", "")
 
     when: "a project is created with a non-empty title"
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",
@@ -123,7 +123,7 @@ class ProjectCreationServiceSpec extends Specification {
   def "expect unsuccessful save of a new project returns GENERAL error code"() {
     given:
     projectRepositoryStub.add(_ as Project) >> { throw new RuntimeException("expected exception") }
-    def contact = new Contact("Mustermann", "some@notavailable.zxü")
+    def contact = new Contact("Mustermann", "some@notavailable.zxü", "", "")
 
     when:
     Result<Project, ApplicationException> result = projectCreationServiceWithStubs.createProject("source offer", "Q2ABCD",

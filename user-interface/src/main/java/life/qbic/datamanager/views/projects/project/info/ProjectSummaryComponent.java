@@ -1,39 +1,50 @@
 package life.qbic.datamanager.views.projects.project.info;
 
+import static java.util.Objects.requireNonNull;
+import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
+import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.data.binder.Validator;
+import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
-import edu.kit.datamanager.ro_crate.writer.ZipWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.application.commons.ByteBufferIteratorInputStream;
+import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.RequestCache;
-import life.qbic.datamanager.files.TempDirectory;
-import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
-import life.qbic.datamanager.files.export.rocrate.ROCreateBuilder;
+import life.qbic.datamanager.RequestCache.CacheException;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
-import static life.qbic.datamanager.views.MeasurementType.GENOMICS;
-import static life.qbic.datamanager.views.MeasurementType.PROTEOMICS;
 import life.qbic.datamanager.views.TagFactory;
 import life.qbic.datamanager.views.account.UserAvatar.UserAvatarGroupItem;
-import life.qbic.datamanager.views.events.ProjectDesignUpdateEvent;
 import life.qbic.datamanager.views.general.CollapsibleDetails;
 import life.qbic.datamanager.views.general.DateTimeRendering;
 import life.qbic.datamanager.views.general.DetailBox;
@@ -43,8 +54,18 @@ import life.qbic.datamanager.views.general.IconLabel;
 import life.qbic.datamanager.views.general.OntologyTermDisplay;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.general.Tag;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
+import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
+import life.qbic.datamanager.views.general.funding.BoundFundingField;
 import life.qbic.datamanager.views.general.funding.FundingEntry;
+import life.qbic.datamanager.views.general.funding.FundingField;
+import life.qbic.datamanager.views.general.funding.FundingInputForm;
+import life.qbic.datamanager.views.general.oidc.OidcLogo;
+import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.general.section.ActionBar;
 import life.qbic.datamanager.views.general.section.Section;
 import life.qbic.datamanager.views.general.section.Section.SectionBuilder;
@@ -54,36 +75,50 @@ import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
 import life.qbic.datamanager.views.general.utils.Utility;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.ProjectInformation;
-import life.qbic.datamanager.views.projects.edit.EditContactDialog;
-import life.qbic.datamanager.views.projects.edit.EditFundingInformationDialog;
-import life.qbic.datamanager.views.projects.edit.EditProjectDesignDialog;
-import life.qbic.datamanager.views.strategy.dialog.ClosingWithWarningStrategy;
-import life.qbic.datamanager.views.strategy.dialog.ImmediateClosingStrategy;
+import life.qbic.datamanager.views.projects.edit.EditContactsComponent;
+import life.qbic.datamanager.views.projects.edit.ProjectDesignForm;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.ExperimentDetailsComponent;
 import life.qbic.datamanager.views.strategy.scope.ReadScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.UserScopeStrategy;
 import life.qbic.datamanager.views.strategy.scope.WriteScopeStrategy;
 import life.qbic.logging.api.Logger;
-import static life.qbic.logging.service.LoggerFactory.logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingDeletion;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationCreationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationCreationResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationDeletionResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.OntologyTerm;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.PrincipalInvestigator;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectContact;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectManager;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsible;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletion;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletionRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RequestFailedException;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.UnknownRequestException;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
-import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
 import life.qbic.projectmanagement.domain.model.project.Project;
+import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.publisher.Flux;
 
 /**
  * <b>Project Summary Component</b>
@@ -105,16 +140,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ProjectSummaryComponent extends PageArea {
 
   public static final String FIXED_MEDIUM_WIDTH_CSS = "fixed-medium-width";
-  public static final String PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE = "project.edit.cancel-confirmation.message";
   public static final String PROJECT_UPDATED_SUCCESS = "project.updated.success";
+  public static final String CANCEL_BUTTON_TEXT = "Cancel";
+  public static final String SAVE_BUTTON_TEXT = "Save";
   private static final Logger log = logger(ProjectSummaryComponent.class);
   private final transient ProjectInformationService projectInformationService;
-  private final transient ROCreateBuilder roCrateBuilder;
-  private final transient TempDirectory tempDirectory;
   private final transient ExperimentInformationService experimentInformationService;
+  private final transient PersonLookupService personLookupService;
   private final transient UserPermissions userPermissions;
   private final transient MessageSourceNotificationFactory notificationFactory;
-  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final Section headerSection;
   private final Section projectDesignSection;
   private final Section experimentInformationSection;
@@ -123,36 +157,40 @@ public class ProjectSummaryComponent extends PageArea {
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService asyncProjectService;
   private final RequestCache requestCache;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
+  private final Map<String, Toast> pendingTaskToasts = new HashMap<>();
+  private final ExperimentDetailsComponent experimentDetailsComponent;
+  private Toast taskInProgressToast;
   private Context context;
-  private EditProjectDesignDialog editProjectDesignDialog;
-  private EditFundingInformationDialog editFundingInfoDialog;
-  private EditContactDialog editContactsDialog;
   private transient List<? extends UserScopeStrategy> scopes;
+  private DetailBox speciesDetailBox;
+  private DetailBox specimenDetailBox;
+  private DetailBox analyteDetailBox;
 
   @Autowired
   public ProjectSummaryComponent(ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
+      PersonLookupService personLookupService,
       UserPermissions userPermissions,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
-      ROCreateBuilder rOCreateBuilder, TempDirectory tempDirectory,
       MessageSourceNotificationFactory notificationFactory,
       AsyncProjectService asyncProjectService,
-      RequestCache requestCache) {
+      RequestCache requestCache,
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      ExperimentDetailsComponent experimentDetailsComponent) {
     this.projectInformationService = Objects.requireNonNull(projectInformationService);
+    this.personLookupService = requireNonNull(personLookupService,
+        "person lookup service must not be null");
     this.headerSection = new SectionBuilder().build();
     this.projectDesignSection = new SectionBuilder().build();
     this.experimentInformationSection = new SectionBuilder().build();
     this.fundingInformationSection = new SectionBuilder().build();
     this.projectContactsSection = new SectionBuilder().build();
-    this.tempDirectory = Objects.requireNonNull(tempDirectory);
-    this.roCrateBuilder = Objects.requireNonNull(rOCreateBuilder);
     this.userPermissions = Objects.requireNonNull(userPermissions);
     this.notificationFactory = Objects.requireNonNull(notificationFactory);
-    this.cancelConfirmationDialogFactory = Objects.requireNonNull(cancelConfirmationDialogFactory);
     this.experimentInformationService = experimentInformationService;
     this.asyncProjectService = Objects.requireNonNull(asyncProjectService);
     this.requestCache = Objects.requireNonNull(requestCache);
-    downloadComponent = new DownloadComponent();
+    this.downloadComponent = new DownloadComponent();
 
     addClassName("project-details-component");
 
@@ -162,6 +200,8 @@ public class ProjectSummaryComponent extends PageArea {
     add(fundingInformationSection);
     add(projectContactsSection);
     add(downloadComponent);
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
+    this.experimentDetailsComponent = experimentDetailsComponent;
   }
 
   private static ProjectInformation convertToInfo(Project project) {
@@ -187,7 +227,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
     return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
-        contact.emailAddress());
+        contact.emailAddress(), contact.oidc(), contact.oidcIssuer());
   }
 
   private static Button createButtonWithListener(String label,
@@ -215,6 +255,33 @@ public class ProjectSummaryComponent extends PageArea {
     return Arrays.stream(sections).map(WriteScopeStrategy::new).toList();
   }
 
+  private static SerializablePredicate<FundingEntry> incompletePredicate() {
+    return (FundingEntry entry) ->
+        !((entry.getLabel().isBlank() && !entry.getReferenceId().isBlank()) ||
+            (!entry.getLabel().isBlank() && entry.getReferenceId().isBlank()));
+  }
+
+  private static boolean isEmpty(FundingInformation funding) {
+    if (funding == null) {
+      return true;
+    }
+    return funding.grant().isBlank() && funding.grantId().isBlank();
+  }
+
+  private static boolean isEmpty(ProjectContact contact) {
+    if (contact == null) {
+      return true;
+    }
+    return contact.email().isBlank() && contact.fullName().isBlank();
+  }
+
+  private static FundingInformation convertFrom(FundingEntry entry) {
+    if (entry == null) {
+      return new FundingInformation("", "");
+    }
+    return new FundingInformation(entry.getLabel(), entry.getReferenceId());
+  }
+
   public void setContext(Context context) {
     this.context = Objects.requireNonNull(context);
     var projectId = context.projectId()
@@ -230,8 +297,37 @@ public class ProjectSummaryComponent extends PageArea {
     this.scopes.forEach(UserScopeStrategy::execute);
     // The header section only contains the RO-Crate action, which we want to enable always
     loadScope(id -> true, projectId, headerSection).forEach(UserScopeStrategy::execute);
+    loadExperimentInfo(projectId.value());
   }
 
+  private void loadExperimentInfo(String projectId) {
+    asyncProjectService.getExperiments(projectId).collectList()
+        .doOnSuccess(experiments -> {
+          var species = new HashSet<OntologyTerm>();
+          var specimen = new HashSet<OntologyTerm>();
+          var analytes = new HashSet<OntologyTerm>();
+          experiments.stream().forEach(experiment -> {
+            species.addAll(experiment.species());
+            specimen.addAll(experiment.specimen());
+            analytes.addAll(experiment.analytes());
+          });
+          renderExperimentInfo(species, specimen, analytes);
+        })
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .subscribe();
+  }
+
+  private void renderExperimentInfo(Set<OntologyTerm> species,
+      Set<OntologyTerm> specimen,
+      Set<OntologyTerm> analytes) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      speciesDetailBox.setContent(buildOntologyInfo(species));
+      specimenDetailBox.setContent(buildOntologyInfo(specimen));
+      analyteDetailBox.setContent(buildOntologyInfo(analytes));
+    }));
+  }
 
   private void reloadInformation(Context context) {
     var projectId = context.projectId()
@@ -264,25 +360,67 @@ public class ProjectSummaryComponent extends PageArea {
     Objects.requireNonNull(projectOverview);
     buildHeaderSection(projectOverview);
     buildDesignSection(projectOverview, fullProject);
-    buildExperimentInformationSection(experiments);
+    buildExperimentInformationSection();
     buildFundingInformationSection(fullProject, convertToInfo(fullProject));
     buildProjectContactsInfoSection(fullProject);
+  }
+
+  private Optional<ProjectContact> toProjectContacts(
+      life.qbic.datamanager.views.general.contact.Contact contact) {
+    if (contact == null) {
+      return Optional.empty();
+    }
+    return Optional.of(new ProjectContact(contact.fullName(), contact.email(), contact.oidc(),
+        contact.oidcIssuer()));
+  }
+
+  private void handleSubmission(String projectId, ProjectContact manager,
+      ProjectContact investigator, ProjectContact responsible) {
+    if (responsible != null) {
+      submitMultiple(
+          List.of(
+              new ProjectUpdateRequest(projectId, new ProjectManager(manager)),
+              new ProjectUpdateRequest(projectId,
+                  new PrincipalInvestigator(investigator)),
+              new ProjectUpdateRequest(projectId,
+                  new ProjectResponsible(responsible))));
+    } else {
+      submitRequest(new ProjectResponsibleDeletionRequest(projectId));
+      submitMultiple(
+          List.of(
+              new ProjectUpdateRequest(projectId, new ProjectManager(manager)),
+              new ProjectUpdateRequest(projectId,
+                  new PrincipalInvestigator(investigator))));
+    }
   }
 
   private void buildProjectContactsInfoSection(Project project) {
     // set up the edit button, that opens the dialog for editing contacts
     var editButton = createButtonWithListener("Edit", listener -> {
-      editContactsDialog = buildAndWireEditContacts(convertToInfo(project));
-      editContactsDialog.open();
-      editContactsDialog.addUpdateEventListener(event -> {
-        updateContactInfo(context.projectId().orElseThrow(),
-            event.content().orElseThrow());
-        reloadInformation(context);
-        editContactsDialog.close();
-        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-            new String[]{project.getProjectCode().value()}, getLocale());
-        toast.open();
+      var editContacts = new EditContactsComponent(convertToInfo(project),
+          Utility.tryToLoadFromPrincipal().orElse(null), personLookupService);
+      AppDialog dialog = AppDialog.medium();
+      DialogHeader.with(dialog, "Edit Contacts");
+      DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
+      DialogBody.with(dialog, editContacts, editContacts);
+
+      dialog.registerCancelAction(dialog::close);
+      dialog.registerConfirmAction(() -> {
+        dialog.close();
+        var manager = toProjectContacts(
+            editContacts.getIfValidManager().orElseThrow()).orElseThrow();
+        var responsible = toProjectContacts(
+            editContacts.getIfValidProjectResponsible().orElseThrow()).orElseThrow();
+        var investigator = toProjectContacts(
+            editContacts.getIfValidInvestigator().orElseThrow()).orElseThrow();
+        if (isEmpty(responsible)) {
+          // we infer that the information has been removed for deletion
+          // which might be risky and I will the future me: I told you so.
+          responsible = null;
+        }
+        handleSubmission(project.getId().value(), manager, investigator, responsible);
       });
+      dialog.open();
     });
     // create the section with header and content
     projectContactsSection.setHeader(
@@ -318,48 +456,57 @@ public class ProjectSummaryComponent extends PageArea {
         "wrapping-flex-container");
   }
 
-  private void updateContactInfo(ProjectId projectId, ProjectInformation projectInformation) {
-    projectInformation.getResponsiblePerson().ifPresentOrElse(
-        contact -> projectInformationService.setResponsibility(projectId,
-            new Contact(contact.getFullName(), contact.getEmail())),
-        () -> projectInformationService.removeResponsibility(projectId));
-
-    projectInformationService.investigateProject(projectId,
-        new Contact(projectInformation.getPrincipalInvestigator().getFullName(),
-            projectInformation.getPrincipalInvestigator().getEmail()));
-
-    projectInformationService.manageProject(projectId,
-        new Contact(projectInformation.getProjectManager().getFullName(),
-            projectInformation.getProjectManager().getEmail()));
-  }
-
   private Div renderContactInfo(Contact contact) {
     var contactInfo = new Div();
     contactInfo.addClassName("vertical-list");
     var name = new Span(contact.fullName());
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
+    //Account for contacts without oidc or oidcissuer set
+    if (contact.oidc() == null || contact.oidcIssuer() == null) {
+      return contactInfo;
+    }
+    if (contact.oidcIssuer().isEmpty() || contact.oidc().isEmpty()) {
+      return contactInfo;
+    }
+    var oidcType = Arrays.stream(OidcType.values())
+        .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
+        .findFirst();
+    if (oidcType.isPresent()) {
+      String oidcUrl = oidcType.get().getUrlFor(contact.oidc());
+      Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
+      oidcLink.setTarget(AnchorTarget.BLANK);
+      OidcLogo oidcLogo = new OidcLogo(oidcType.get());
+      Span oidcSpan = new Span(oidcLogo, oidcLink);
+      oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
+      contactInfo.add(oidcSpan);
+    }
     return contactInfo;
   }
 
   private void buildFundingInformationSection(Project fullProject,
       ProjectInformation projectInformation) {
     var editButton = createButtonWithListener("Edit", listener -> {
-      editFundingInfoDialog = buildAndWireEditFinanceInfo(projectInformation);
-      editFundingInfoDialog.open();
-      editFundingInfoDialog.addUpdateEventListener(event -> {
-        var projectId = context.projectId().orElseThrow();
-        // If the funding entry is "null", we need to remove the funding from the project
-        // Otherwise we update it
-        event.content().orElseThrow().getFundingEntry()
-            .ifPresentOrElse(fundingEntry -> updateFundingInfo(projectId, fundingEntry),
-                () -> removeFunding(projectId));
-        reloadInformation(context);
-        editFundingInfoDialog.close();
-        var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-            new String[]{fullProject.getProjectCode().value()}, getLocale());
-        toast.open();
+      var dialog = AppDialog.small();
+      DialogHeader.with(dialog, "Edit funding information");
+      DialogFooter.with(dialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
+
+      var fundingField = FundingField.createHorizontal("Funding");
+      var form = FundingInputForm.create(new BoundFundingField(fundingField,
+          Validator.from(incompletePredicate(),
+              "Please provide complete information for both, grant and grand ID.")));
+      form.setContent(projectInformation.getFundingEntry().orElse(new FundingEntry("", "")));
+
+      dialog.registerConfirmAction(() -> {
+        dialog.close();
+        var funding = convertFrom(form.getIfValid().orElseThrow());
+        handleSubmission(fullProject.getId().value(), funding);
       });
+
+      dialog.registerCancelAction(dialog::close);
+
+      DialogBody.with(dialog, form, form);
+      dialog.open();
     });
 
     fundingInformationSection.setHeader(
@@ -380,113 +527,71 @@ public class ProjectSummaryComponent extends PageArea {
 
   }
 
-  private EditContactDialog buildAndWireEditContacts(ProjectInformation projectInformation) {
-    var dialog = new EditContactDialog(projectInformation,
-        Utility.tryToLoadFromPrincipal().orElse(null));
-    var defaultStrategy = new ImmediateClosingStrategy(dialog);
-    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
-    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
-    dialog.setDefaultCancelStrategy(defaultStrategy);
-    dialog.setCancelWithoutSaveStrategy(withWarning);
-    return dialog;
+  private void handleSubmission(String projectId, FundingInformation funding) {
+    if (isEmpty(funding)) {
+      submitRequest(new FundingInformationDeletionRequest(projectId));
+      return;
+    }
+    submitRequest(new FundingInformationCreationRequest(projectId, funding));
   }
 
-  private EditFundingInformationDialog buildAndWireEditFinanceInfo(
-      ProjectInformation projectInformation) {
-    var dialog = new EditFundingInformationDialog(projectInformation);
-    var defaultStrategy = new ImmediateClosingStrategy(dialog);
-    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
-    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
-    dialog.setDefaultCancelStrategy(defaultStrategy);
-    dialog.setCancelWithoutSaveStrategy(withWarning);
-    return dialog;
-  }
-
-  private void buildExperimentInformationSection(
-      List<Experiment> experiments) {
+  private void buildExperimentInformationSection() {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information")));
-    var speciesBox = new DetailBox();
+    speciesDetailBox = new DetailBox();
     var speciesHeader = new Header(VaadinIcon.MALE.create(), "Species");
-    speciesBox.setHeader(speciesHeader);
-    speciesBox.setContent(buildSpeciesInfo(experiments));
-    speciesBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
+    speciesDetailBox.setHeader(speciesHeader);
+    speciesDetailBox.setContent(new EmptyContent());
+    speciesDetailBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
 
-    var specimenBox = new DetailBox();
+    specimenDetailBox = new DetailBox();
     var specimenHeader = new Header(VaadinIcon.DROP.create(), "Specimen");
-    specimenBox.setHeader(specimenHeader);
-    specimenBox.setContent(buildSpecimenInfo(experiments));
-    specimenBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+    specimenDetailBox.setHeader(specimenHeader);
+    specimenDetailBox.setContent(new EmptyContent());
+    specimenDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
-    var analyteBox = new DetailBox();
+    analyteDetailBox = new DetailBox();
     var analyteHeader = new Header(VaadinIcon.CLUSTER.create(), "Analytes");
-    analyteBox.setHeader(analyteHeader);
-    analyteBox.setContent(buildAnalyteInfo(experiments));
-    analyteBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
+    analyteDetailBox.setHeader(analyteHeader);
+    analyteDetailBox.setContent(new EmptyContent());
+    analyteDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
     var sectionContent = new SectionContent();
-    sectionContent.add(speciesBox);
-    sectionContent.add(specimenBox);
-    sectionContent.add(analyteBox);
+    sectionContent.add(speciesDetailBox);
+    sectionContent.add(specimenDetailBox);
+    sectionContent.add(analyteDetailBox);
     sectionContent.addClassNames("horizontal-list", "gap-medium", "wrapping-flex-container");
     experimentInformationSection.setContent(sectionContent);
   }
 
-  private Div buildSpeciesInfo(List<Experiment> experiments) {
-    var ontologyTerms = extractSpecies(experiments);
-    return buildOntologyInfo(ontologyTerms);
-  }
-
-  private Div buildSpecimenInfo(List<Experiment> experiments) {
-    var ontologyTerms = extractSpecimen(experiments);
-    return buildOntologyInfo(ontologyTerms);
-  }
-
-  private Div buildAnalyteInfo(List<Experiment> experiments) {
-    var ontologyTerms = extractAnalyte(experiments);
-    return buildOntologyInfo(ontologyTerms);
-  }
-
-  private Div buildOntologyInfo(List<OntologyTerm> terms) {
+  private Div buildOntologyInfo(Set<OntologyTerm> terms) {
     var container = new Div();
     terms.stream().map(this::convert).forEach(container::add);
     container.addClassNames("vertical-list", "gap-small");
     return container;
   }
 
-  private OntologyTermDisplay convert(OntologyTerm ontologyTerm) {
-    return new OntologyTermDisplay(ontologyTerm.getLabel(), ontologyTerm.getOboId(),
-        ontologyTerm.getClassIri());
+  private OntologyTermDisplay convert(OntologyTerm term) {
+    return new OntologyTermDisplay(term.label(), term.oboId().toString(), term.id().toString());
   }
 
-  private List<OntologyTerm> extractSpecies(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecies().stream()).distinct()
-        .toList();
-  }
-
-  private List<OntologyTerm> extractSpecimen(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getSpecimens().stream()).distinct()
-        .toList();
-  }
-
-  private List<OntologyTerm> extractAnalyte(List<Experiment> experiments) {
-    return experiments.stream().flatMap(experiment -> experiment.getAnalytes().stream()).distinct()
-        .toList();
-  }
 
   private void buildDesignSection(ProjectOverview projectInformation, Project project) {
     var editButton = new Button("Edit");
     editButton.addClickListener(listener -> {
-      editProjectDesignDialog = buildAndWireEditProjectDesign(project);
-      editProjectDesignDialog.open();
-      editProjectDesignDialog.addUpdateEventListener(event -> {
-        handleUpdateEvent(event);
-        editProjectDesignDialog.close();
+      var form = new ProjectDesignForm();
+      form.setContent(convertToInfo(project));
+      AppDialog dialog = createEditDesignDialog(project.getId().value(), form, form);
+      dialog.registerCancelAction(dialog::close);
+      dialog.registerConfirmAction(() -> {
+        dialog.close();
+        submitRequest(
+            new ProjectUpdateRequest(project.getId().value(), form.getProjectDesign()));
       });
-
+      dialog.open();
+      add(dialog);
     });
+
     projectDesignSection.setHeader(
         new SectionHeader(new SectionTitle("Project Design"), new ActionBar(editButton)));
     var content = new SectionContent();
@@ -511,28 +616,76 @@ public class ProjectSummaryComponent extends PageArea {
     projectDesignSection.setContent(content);
   }
 
-  /*
-  Handler for project design update events.
-
-  Since the project id is not referenced in the event, we assume that
-  the UI scope was not left and the current context references the project
-  that is supposed to be updated.
+  /**
+   * Submits multiple {@link ProjectUpdateRequest} to the service.
+   *
+   * @param requests a {@link Collection} of {@link ProjectUpdateRequest}.
+   * @since 1.10.0
    */
-  private void handleUpdateEvent(ProjectDesignUpdateEvent event) {
-    if (event.content().isEmpty()) {
-      log.debug("No content to be updated");
-      // Nothing to be done
-      return;
-    }
-    var project = context.projectId().orElseThrow().value();
-    var info = event.content().orElseThrow();
-    // Build the request for the service call
-    var request = new ProjectUpdateRequest(project,
-        new ProjectDesign(info.getProjectTitle(), info.getProjectObjective()));
-
-    submitRequest(request);
+  private void submitMultiple(Collection<ProjectUpdateRequest> requests) {
+    var requestId = UUID.randomUUID().toString();
+    var publishers = requests.stream().map(asyncProjectService::update).toList();
+    Flux.merge(publishers)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(
+            subscription -> notifyUser(requestId))
+        .doOnCancel(() -> log.debug("Cancelled project update request"))
+        .doOnTerminate(() -> cleanPendingTask(requestId))
+        .doOnComplete(this::handleSuccess)
+        .subscribe(this::removeFromCache);
   }
 
+  private void submitRequest(FundingInformationCreationRequest request) {
+    asyncProjectService.create(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
+        .doOnCancel(() -> log.debug("Cancelled project delete request"))
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe();
+  }
+
+  private void submitRequest(ProjectDeletionRequest request) {
+    asyncProjectService.delete(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
+        .doOnCancel(() -> log.debug("Cancelled project delete request"))
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe();
+  }
+
+
+  private void submitRequest(FundingInformationDeletionRequest request) {
+    asyncProjectService.delete(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(subscription -> notifyUser(request.requestId()))
+        .doOnCancel(() -> log.debug("Cancelled project delete request"))
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe();
+  }
+
+  private void submitRequest(ProjectResponsibleDeletionRequest request) {
+    asyncProjectService.delete(request)
+        .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doOnError(RequestFailedException.class, this::handleRequestFailed)
+        .doOnError(AccessDeniedException.class, this::handleAccessDenied)
+        .doOnSubscribe(
+            subscription -> notifyUser(request.requestId()))
+        .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe();
+  }
 
   private void submitRequest(ProjectUpdateRequest request) {
     requestCache.store(request);
@@ -542,24 +695,107 @@ public class ProjectSummaryComponent extends PageArea {
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
         .doOnSubscribe(
-            subscription -> log.debug("Subscribed to project update request: " + request))
+            subscription -> notifyUser(request.requestId()))
         .doOnCancel(() -> log.debug("Cancelled project update request: " + request))
-        .subscribe(this::handleSuccess);
+        .doOnTerminate(() -> cleanPendingTask(request.requestId()))
+        .doOnSuccess(this::handleSuccess)
+        .subscribe(this::removeFromCache);
+  }
 
+  private void cleanPendingTask(String requestId) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      closePendingTaskToast(requestId);
+      removePendingTaskToast(requestId);
+    }));
+  }
+
+  private void notifyUser(String requestId) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      taskInProgressToast = messageSourceNotificationFactory.pendingTaskToast("task.in-progress",
+          new Object[]{"Updating project"}, getLocale());
+      taskInProgressToast.open();
+      addPendingTaskToast(requestId, taskInProgressToast);
+    }));
+  }
+
+  private void closePendingTaskToast(String requestId) {
+    if (pendingTaskToasts.containsKey(requestId)) {
+      pendingTaskToasts.get(requestId).close();
+    }
+  }
+
+  private void removePendingTaskToast(String requestId) {
+    pendingTaskToasts.remove(requestId);
+  }
+
+  private void addPendingTaskToast(String requestId, Toast toast) {
+    if (pendingTaskToasts.containsKey(requestId)) {
+      return;
+    }
+    pendingTaskToasts.put(requestId, toast);
+  }
+
+  private void removeFromCache(ProjectUpdateResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      try {
+        requestCache.remove(response.requestId());
+      } catch (CacheException e) {
+        log.error(e.getMessage());
+      }
+    }));
+  }
+
+  private void handleSuccess() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      ui.push();
+      reloadInformation(context);
+    }));
+  }
+
+  private void handleSuccess(ProjectDeletionResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
+  }
+
+  private void handleSuccess(ProjectResponsibleDeletionResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
+  }
+
+  private void handleSuccess(FundingInformationCreationResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
+  }
+
+  private void handleSuccess(FundingInformationDeletionResponse response) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
+          new String[]{}, getLocale());
+      toast.open();
+      reloadInformation(context);
+    }));
   }
 
   /*
   Handler for successful project updates
    */
   private void handleSuccess(ProjectUpdateResponse response) {
-    log.debug("Received project update response: " + response);
-    getUI().ifPresent(ui -> ui.access(() -> {
-      requestCache.remove(response.requestId());
-      var toast = notificationFactory.toast(PROJECT_UPDATED_SUCCESS,
-          new String[]{}, getLocale());
-      toast.open();
-      reloadInformation(context);
-    }));
+    handleSuccess();
   }
 
   /*
@@ -572,10 +808,8 @@ public class ProjectSummaryComponent extends PageArea {
     getUI().ifPresent(ui -> ui.access(() -> {
       requestCache.get(error.getRequestId()).ifPresentOrElse(request -> {
         // do sth with the cache
-        // TODO show button that enables user to resend the request
         var toast = notificationFactory.toast("project.updated.error.retry",
             new String[]{}, getLocale());
-        // Todo Implement retry with cached request
         toast.open();
       }, () -> {
         var toast = notificationFactory.toast("project.updated.error",
@@ -610,25 +844,13 @@ public class ProjectSummaryComponent extends PageArea {
     }));
   }
 
-  private void updateFundingInfo(ProjectId projectId, FundingEntry fundingEntry) {
-    projectInformationService.setFunding(projectId, fundingEntry.getLabel(),
-        fundingEntry.getReferenceId());
-  }
+  private AppDialog createEditDesignDialog(String projectId, Component body, UserInput input) {
+    var appDialog = AppDialog.medium();
+    DialogHeader.with(appDialog, "Edit Project Design");
+    DialogFooter.with(appDialog, CANCEL_BUTTON_TEXT, SAVE_BUTTON_TEXT);
 
-  private void removeFunding(ProjectId projectId) {
-    projectInformationService.removeFunding(projectId);
-  }
-
-  private EditProjectDesignDialog buildAndWireEditProjectDesign(Project project) {
-    var projectInfo = convertToInfo(project);
-    var dialog = new EditProjectDesignDialog(projectInfo);
-    var defaultStrategy = new ImmediateClosingStrategy(dialog);
-    var cancelDialog = cancelConfirmationDialogFactory.cancelConfirmationDialog(
-        PROJECT_EDIT_CANCEL_CONFIRMATION_MESSAGE, getLocale());
-    var withWarning = new ClosingWithWarningStrategy(dialog, cancelDialog);
-    dialog.setDefaultStrategy(defaultStrategy);
-    dialog.setWarningStrategy(withWarning);
-    return dialog;
+    DialogBody.with(appDialog, body, input);
+    return appDialog;
   }
 
   private void buildHeaderSection(ProjectOverview projectOverview) {
@@ -637,13 +859,9 @@ public class ProjectSummaryComponent extends PageArea {
         new SectionTitle("%s - %s".formatted(projectOverview.projectCode(),
             projectOverview.projectTitle()), Size.LARGE));
     var crateExportBtn = new Button("Export Project Summary");
-    crateExportBtn.addClickListener(event -> {
-      try {
-        triggerRoCrateDownload();
-      } catch (IOException e) {
-        throw new ApplicationException("An error occurred while exporting RO-Crate", e);
-      }
-    });
+
+    crateExportBtn.addClickListener(event -> triggerRoCrateDownload());
+
     ActionBar actionBar = new ActionBar(crateExportBtn);
     header.setActionBar(actionBar);
     header.setSmallTrailingMargin();
@@ -658,48 +876,31 @@ public class ProjectSummaryComponent extends PageArea {
     headerSection.setContent(sectionContent);
   }
 
-  private void triggerRoCrateDownload() throws IOException {
-    ProjectId projectId = context.projectId().orElseThrow();
-    Project project = projectInformationService.find(projectId).orElseThrow();
-    var tempBuildDir = tempDirectory.createDirectory();
-    var zippedRoCrateDir = tempDirectory.createDirectory();
-    try {
-      var roCrate = roCrateBuilder.projectSummary(project, tempBuildDir);
-      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
-      var zippedRoCrateFile = zippedRoCrateDir.resolve(
-          "%s-project-summary-ro-crate.zip".formatted(project.getProjectCode().value()));
-      roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
-      byte[] cachedContent = Files.readAllBytes(zippedRoCrateFile);
-      downloadComponent.trigger(new ByteArrayDownloadStreamProvider() {
-        @Override
-        public byte[] getBytes() {
-          return cachedContent;
-        }
-
-        @Override
-        public String getFilename() {
-          return zippedRoCrateFile.getFileName().toString();
-        }
-      });
-    } catch (RuntimeException e) {
-      throw new ApplicationException("Error exporting ro-crate.zip", e);
-    } finally {
-      deleteTempDir(tempBuildDir.toFile());
-      deleteTempDir(zippedRoCrateDir.toFile());
-    }
+  private InputStream forSummary(ProjectId projectId) {
+    var byteBufferIterator = asyncProjectService.roCrateSummary(projectId.value())
+        .timeout(Duration.ofSeconds(10)).toIterable()
+        .iterator();
+    return new ByteBufferIteratorInputStream(byteBufferIterator);
   }
 
-  private boolean deleteTempDir(File dir) {
-    File[] files = dir.listFiles(); //null if not a directory
-    // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
-    if (files != null) {
-      for (File file : files) {
-        if (!deleteTempDir(file)) {
-          return false;
-        }
+  private void triggerRoCrateDownload() {
+    var projectCode = projectInformationService.find(context.projectId().orElseThrow())
+        .map(Project::getProjectCode)
+        .map(ProjectCode::value)
+        .orElse("");
+    downloadComponent.trigger(new DownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+            "project summary", "zip");
       }
-    }
-    return dir.delete();
+
+      @Override
+      public InputStream getStream() {
+        return forSummary(context.projectId().orElseThrow());
+      }
+    });
+
   }
 
   public AvatarGroup createAvatarGroup(Collection<UserInfo> userInfo) {
@@ -727,4 +928,13 @@ public class ProjectSummaryComponent extends PageArea {
     }
     return tags;
   }
+
+  private static class EmptyContent extends Div {
+
+    EmptyContent() {
+      addClassNames("vertical-list", "gap-small");
+      add("No information available");
+    }
+  }
+
 }

@@ -9,8 +9,9 @@ import life.qbic.projectmanagement.domain.repository.ConfoundingVariableLevelRep
 import org.springframework.stereotype.Repository;
 
 /**
- * The implementation of the {@link ConfoundingVariableLevelRepository} interface.
- * Delegates method calls to the corresponding JPA repositories.
+ * The implementation of the {@link ConfoundingVariableLevelRepository} interface. Delegates method
+ * calls to the corresponding JPA repositories.
+ *
  * @since 1.6.0
  */
 @Repository

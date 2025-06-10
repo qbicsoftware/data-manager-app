@@ -29,7 +29,7 @@ class ExperimentalDesignSpec extends Specification {
 
         then:
         result.isValue()
-        result.getValue().value().equals("CBD Dosage")
+        result.getValue().name().value().equals("CBD Dosage")
         design.isVariableDefined("CBD Dosage")
     }
 

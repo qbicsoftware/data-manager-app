@@ -2,19 +2,13 @@ package life.qbic.datamanager.views.projects.create;
 
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
-import jakarta.validation.constraints.NotEmpty;
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
-import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.datamanager.views.general.HasBinderValidation;
-import life.qbic.datamanager.views.general.contact.AutocompleteContactField;
+import life.qbic.datamanager.views.general.contact.BoundContactField;
 import life.qbic.datamanager.views.general.contact.Contact;
-import life.qbic.datamanager.views.projects.create.CollaboratorsLayout.ProjectCollaborators;
-import org.springframework.stereotype.Component;
+import life.qbic.datamanager.views.general.contact.ContactField;
+import life.qbic.datamanager.views.general.utils.Utility;
+import life.qbic.projectmanagement.application.contact.PersonLookupService;
 
 /**
  * <b>Collaborators Layout</b>
@@ -22,46 +16,26 @@ import org.springframework.stereotype.Component;
  * <p>Layout which enables the user to input the information associated with the collaborators
  * within a project during project creation and validates the provided information</p>
  */
-@Component
-public class CollaboratorsLayout extends Div implements HasBinderValidation<ProjectCollaborators> {
 
-  private final AutocompleteContactField principalInvestigatorField;
-  private final AutocompleteContactField responsiblePersonField;
-  private final AutocompleteContactField projectManagerField;
-  private final Binder<ProjectCollaborators> collaboratorsBinder;
+public class CollaboratorsLayout extends Div {
 
-  public CollaboratorsLayout() {
+  protected transient BoundContactField managerBinding;
+  protected transient BoundContactField investigatorBinding;
+  protected transient BoundContactField responsibleBinding;
 
-    collaboratorsBinder = new Binder<>(ProjectCollaborators.class);
-    collaboratorsBinder.setValidatorsDisabled(true);
-    collaboratorsBinder.setBean(new ProjectCollaborators());
-    collaboratorsBinder.setFieldsValidationStatusChangeListenerEnabled(true);
+  public CollaboratorsLayout(PersonLookupService personLookupService) {
 
-    principalInvestigatorField = new AutocompleteContactField("Principal Investigator", "PI");
-    principalInvestigatorField.setRequired(true);
-    collaboratorsBinder.forField(principalInvestigatorField)
-        .withNullRepresentation(principalInvestigatorField.getEmptyValue())
-        .withValidator(it -> principalInvestigatorField.validate().isValid(), "")
-        .bind(ProjectCollaborators::getPrincipalInvestigator,
-            ProjectCollaborators::setPrincipalInvestigator);
-
-    responsiblePersonField = new AutocompleteContactField("Project Responsible/Co-Investigator (optional)", "Responsible");
-    responsiblePersonField.setRequired(false);
-    responsiblePersonField.setHelperText("Should be contacted about project-related questions");
-    collaboratorsBinder.forField(responsiblePersonField)
-        .withNullRepresentation(responsiblePersonField.getEmptyValue())
-        .withValidator(it -> responsiblePersonField.validate().isValid(), "")
-        .bind(bean -> bean.getResponsiblePerson().orElse(null),
-            ProjectCollaborators::setResponsiblePerson);
-
-    projectManagerField = new AutocompleteContactField("Project Manager", "Manager");
-    projectManagerField.setRequired(true);
-    collaboratorsBinder.forField(projectManagerField)
-        .withNullRepresentation(projectManagerField.getEmptyValue())
-        .withValidator(it -> projectManagerField.validate().isValid(), "")
-        .bind(ProjectCollaborators::getProjectManager,
-            ProjectCollaborators::setProjectManager);
-
+    var fieldPrincipalInvestigator = createRequired("Principal Investigator", personLookupService);
+    var fieldProjectResponsible = createOptional(
+        "Project Responsible / Co-Investigator (optional)", personLookupService);
+    var fieldProjectManager = createRequired("Project Manager", personLookupService);
+    var currentUser = Utility.tryToLoadFromPrincipal().orElseThrow();
+    fieldProjectManager.setMyself(currentUser, "Set myself as project manager");
+    fieldProjectResponsible.setMyself(currentUser, "Set myself as project responsible");
+    fieldPrincipalInvestigator.setMyself(currentUser, "Set myself as principal investigator");
+    this.responsibleBinding = BoundContactField.createOptional(fieldProjectResponsible);
+    this.investigatorBinding = BoundContactField.createMandatory(fieldPrincipalInvestigator);
+    this.managerBinding = BoundContactField.createMandatory(fieldProjectManager);
     Span projectContactsTitle = new Span("Project Collaborators");
     projectContactsTitle.addClassName("title");
     Span projectContactsDescription = new Span(
@@ -69,114 +43,55 @@ public class CollaboratorsLayout extends Div implements HasBinderValidation<Proj
     addClassName("collaborators-layout");
     add(projectContactsTitle,
         projectContactsDescription,
-        principalInvestigatorField,
-        responsiblePersonField,
-        projectManagerField);
-    collaboratorsBinder.setValidatorsDisabled(false);
+        fieldPrincipalInvestigator,
+        fieldProjectResponsible,
+        fieldProjectManager);
   }
 
-  @Override
-  public String getDefaultErrorMessage() {
-    return "Please complete the mandatory information. Some input seems to be invalid.";
+  private static ContactField createRequired(String label,
+      PersonLookupService personLookupService) {
+    var contact = ContactField.createSimple(label, personLookupService);
+    contact.setRequiredIndicatorVisible(true);
+    return contact;
   }
 
-  @Override
-  public boolean isInvalid() {
-    validate();
-    return HasBinderValidation.super.isInvalid();
-  }
-
-  @Override
-  public Binder<ProjectCollaborators> getBinder() {
-    return collaboratorsBinder;
+  private static ContactField createOptional(String label,
+      PersonLookupService personLookupService) {
+    return ContactField.createSimple(label, personLookupService);
   }
 
   /**
-   * Provides set project collaborators. Calling this method will lead to an exception if the
-   * current value is not valid.
+   * Returns the project collaborators. Fails for invalid collaborators with an exception.
    *
-   * @return a valid {@link ProjectCollaborators} object
+   * @return a valid project design
    */
   public ProjectCollaborators getProjectCollaborators() {
-    ProjectCollaborators projectCollaborators = new ProjectCollaborators();
     try {
-      collaboratorsBinder.writeBean(projectCollaborators);
+      //Necessary since otherwise an empty contact will be generated, which will fail during project creation in the application service
+      Contact responsiblePerson = Contact.empty();
+      if (responsibleBinding.getValue().hasMinimalInformation()) {
+        responsiblePerson = responsibleBinding.getValue();
+      }
+      return new ProjectCollaborators(investigatorBinding.getValue(), responsiblePerson,
+          managerBinding.getValue());
     } catch (ValidationException e) {
-      throw new ApplicationException("Tried to access invalid project collaborator information.", e);
+      throw new ApplicationException("Tried to access invalid project collaborators.", e);
     }
-    return projectCollaborators;
   }
 
-  public static final class ProjectCollaborators implements Serializable {
+  /**
+   * Checks if the contained fields within the collaborator layout are invalid.
+   * Necessary since the binding is now done on a field level and not on one binder for all fields
+   *
+   * @return true if the contained fields are invalid, false otherwise
+   */
+  public boolean isInvalid() {
+    return !(investigatorBinding.isValid() && managerBinding.isValid()
+        && responsibleBinding.isValid());
+  }
 
-    @Serial
-    private static final long serialVersionUID = 8403602920219892326L;
-    @NotEmpty
-    private Contact principalInvestigator;
-    private Contact responsiblePerson;
-    @NotEmpty
-    private Contact projectManager;
+  public record ProjectCollaborators(Contact principalInvestigator, Contact responsiblePerson,
+                                     Contact projectManager) {
 
-    public void setPrincipalInvestigator(
-        Contact principalInvestigator) {
-      this.principalInvestigator = principalInvestigator;
-    }
-
-    public void setResponsiblePerson(Contact responsiblePerson) {
-      this.responsiblePerson = responsiblePerson;
-    }
-
-    public void setProjectManager(Contact projectManager) {
-      this.projectManager = projectManager;
-    }
-
-    public Contact getPrincipalInvestigator() {
-      return principalInvestigator;
-    }
-
-    public Optional<Contact> getResponsiblePerson() {
-      return Optional.ofNullable(responsiblePerson);
-    }
-
-    public Contact getProjectManager() {
-      return projectManager;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      ProjectCollaborators that = (ProjectCollaborators) o;
-
-      if (!Objects.equals(principalInvestigator, that.principalInvestigator)) {
-        return false;
-      }
-      if (!Objects.equals(responsiblePerson, that.responsiblePerson)) {
-        return false;
-      }
-      return (!Objects.equals(projectManager, that.projectManager));
-    }
-
-    @Override
-    public int hashCode() {
-      int result = principalInvestigator.hashCode();
-      result = 31 * result + responsiblePerson.hashCode();
-      result = 31 * result + projectManager.hashCode();
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return "ProjectCollaborators{" +
-          "principalInvestigator=" + principalInvestigator +
-          ", responsiblePerson=" + responsiblePerson +
-          ", projectManager=" + projectManager +
-          '}';
-    }
   }
 }

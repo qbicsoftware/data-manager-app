@@ -182,6 +182,10 @@ Padding & gaps
   padding-right: var(--spacing-07);
 }
 
+.padding-top-03 {
+  padding-top: var(--spacing-03);
+}
+
 .padding-top-bottom-04 {
   padding-top: var(--spacing-04);
   padding-bottom: var(--spacing-04);
@@ -267,7 +271,9 @@ Dialog flavours
  */
 .dialog-app {}
 
-.dialog-app, .button-text, .button-text-primary {
+.dialog-app,
+.button-text,
+.button-text-primary {
   margin: 0;
 }
 
@@ -362,15 +368,6 @@ Buttons
   color: var(--lumo-primary-contrast-color);
   background-color: var(--lumo-primary-color);
 }
-
-.button-size-medium-dialog {
-  height: var(--lumo-size-m);
-}
-
-.button-size-large-dialog {
-  height: var(--lumo-size-l);
-}
-
 
 /***************************
 Icons
@@ -512,10 +509,6 @@ Older stuff -
 }
 
 .section {
-  width: 100%;
-}
-
-.full-width {
   width: 100%;
 }
 

@@ -8,9 +8,11 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PostLoad;
+import jakarta.persistence.Version;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.ApplicationException.ErrorParameters;
@@ -49,17 +51,18 @@ public class Experiment {
   private String specimenIconName;
   @Column(name = "analyteIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
   private String analyteIconName;
+
+  @Version
+  private int version;
   
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "analytes", columnDefinition = "longtext CHECK (json_valid(`analytes`))")
-  //FIXME should be `analyte`in the database and here
   private List<OntologyTerm> analytes = new ArrayList<>();
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "species", columnDefinition = "longtext CHECK (json_valid(`species`))")
   private List<OntologyTerm> species = new ArrayList<>();
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
-  //FIXME should be `specimen`in the database and here
   private List<OntologyTerm> specimens = new ArrayList<>();
   private static final String DEFAULT_ICON_NAME = "default";
 
@@ -95,6 +98,26 @@ public class Experiment {
     int analyteCount = analytes.size();
     int specimenCount = specimens.size();
     int speciesCount = species.size();
+    if (experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() == null).findAny().isPresent()) {
+      assignExperimentalGroupNumbers();
+    }
+  }
+
+  /*
+  Temporary helper method to assign group numbers for existing experimental groups.
+
+  In the future, no experimental group without an assigned number should exist. Until the transition
+  is complete, this method shall be called when the aggregate is checked out from the database.
+   */
+  private void assignExperimentalGroupNumbers() {
+    var maxId = experimentalDesign.experimentalGroups.stream().filter(group -> group.groupNumber() != null).mapToInt(ExperimentalGroup::groupNumber).max().orElse(1);
+    var currentId =maxId;
+    for (ExperimentalGroup group : experimentalDesign.experimentalGroups) {
+      if (group.groupNumber() == null) {
+        group.setGroupNumber(currentId);
+        currentId++;
+      }
+    }
   }
 
   /**
@@ -202,6 +225,41 @@ public class Experiment {
   }
 
   /**
+   * Removes an experimental variable if possible.
+   *
+   * @param name the name of the variable
+   * @return true if the variable was removed, falso if there was no need to remove it.
+   */
+  public boolean removeExperimentalVariable(String name) {
+
+    Optional<ExperimentalVariable> variableOptional = experimentalDesign.getVariable(name);
+    if (variableOptional.isEmpty()) {
+      return false;
+    }
+    ExperimentalVariable variable = variableOptional.get();
+    //check if any group contains this variable
+    if (!experimentalDesign.getExperimentalGroups().isEmpty()) {
+      throw new GroupPreventingVariableDeletionException(
+          "There are experimental groups in the experimental design. Cannot remove experimental variable "
+              + name);
+    }
+    experimentalDesign.removeExperimentalVariable(variable);
+    emitExperimentUpdatedEvent();
+    return true;
+  }
+
+  public void removeExperimentGroupByGroupNumber(int experimentalGroupNumber) {
+    experimentalDesign.removeExperimentalGroupByGroupNumber(experimentalGroupNumber);
+  }
+
+  public static class GroupPreventingVariableDeletionException extends RuntimeException {
+
+    public GroupPreventingVariableDeletionException(String message) {
+      super(message);
+    }
+  }
+
+  /**
    * Removes experimental groups with the provided ids from the experiment .
    *
    * @since 1.0.0
@@ -261,24 +319,27 @@ public class Experiment {
   }
 
   /**
-   * Creates a new experimental variable and adds it to the experimental design. A successful
-   * operation is indicated in the result, which can be verified via {@link Result#isValue()}.
+   * Creates a new experimental variable and adds it to the experimental design.
    * <p>
-   * <b>Note</b>: If a variable with the provided name already exists, the creation will fail with
-   * an {@link ExperimentalVariableExistsException} and no variable is added to the design. You can
-   * check via {@link Result#isError()} if this is the case.
+   * <b>Note</b>: If a variable with the provided name already exists, the creation will throw
+   * an {@link ExperimentalVariableExistsException} and no variable is added to the design.
    *
    * @param variableName a declarative and unique name for the variable
    * @param levels       a list containing at least one value for the variable
-   * @return a {@link Result} object containing the {@link VariableName} or contains declarative
-   * exceptions. The result will contain an {@link ExperimentalVariableExistsException} if the
-   * variable already exists or an {@link IllegalArgumentException} if no level has been provided.
-   * @since 1.0.0
+   * @return the {@link ExperimentalVariable} that was added to the design
+   * @since 1.10.0
    */
-  public Result<VariableName, Exception> addVariableToDesign(String variableName,
+  public ExperimentalVariable addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
     return experimentalDesign.addVariable(variableName, levels)
-    .onValue(x -> emitExperimentUpdatedEvent());
+        .onValue(ignored -> emitExperimentCreatedEvent())
+        .valueOrElseThrow(e -> new RuntimeException(e));
+  }
+
+
+  public void removeExperimentalVariables(List<String> addedNames) {
+    throw new RuntimeException("Not implemented");
+
   }
 
   /**
@@ -391,4 +452,5 @@ public class Experiment {
     var createdEvent = new ExperimentCreatedEvent(this.experimentId());
     LocalDomainEventDispatcher.instance().dispatch(createdEvent);
   }
+
 }

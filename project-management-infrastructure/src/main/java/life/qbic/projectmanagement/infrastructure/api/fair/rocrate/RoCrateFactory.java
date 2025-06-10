@@ -1,0 +1,106 @@
+package life.qbic.projectmanagement.infrastructure.api.fair.rocrate;
+
+import static life.qbic.logging.service.LoggerFactory.logger;
+
+import edu.kit.datamanager.ro_crate.writer.RoCrateWriter;
+import edu.kit.datamanager.ro_crate.writer.ZipWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
+import life.qbic.projectmanagement.application.api.fair.ResearchProject;
+import life.qbic.projectmanagement.infrastructure.TempDirectory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.util.MimeType;
+
+/**
+ * <b>RO-Crate Factory.</b>
+ * <p>
+ * Implementation for the {@link DigitalObjectFactory}, creating RO-Crates adhering to
+ * the <a href="https://www.researchobject.org/ro-crate/specification/1.1/index.html">RO-Crate specification 1.1</a>.
+ *
+ * @since 1.10.0
+ */
+@Component
+public class RoCrateFactory implements DigitalObjectFactory {
+
+  private static final Logger log = logger(RoCrateFactory.class);
+  private final TempDirectory workingDir;
+
+  @Autowired
+  public RoCrateFactory(TempDirectory directory) {
+    this.workingDir = Objects.requireNonNull(directory);
+  }
+
+  @Override
+  public DigitalObject summary(ResearchProject researchProject) throws BuildException {
+    Path buildDir;
+    Path zippedRoCrateDir;
+
+    try {
+      buildDir = workingDir.createDirectory();
+      zippedRoCrateDir = workingDir.createDirectory();
+    } catch (IOException e) {
+      log.error("Failed to create directory for ro-crate build", e);
+      throw new BuildException("Failed to create digital object");
+    }
+
+    try {
+      var roCrate = ROCreateBuilder.buildRoCrate(buildDir, researchProject);
+      var roCrateZipWriter = new RoCrateWriter(new ZipWriter());
+      var zippedRoCrateFile = zippedRoCrateDir.resolve(
+          "project-summary-ro-crate.zip");
+      roCrateZipWriter.save(roCrate, zippedRoCrateFile.toString());
+      byte[] cachedContent = Files.readAllBytes(zippedRoCrateFile);
+      return new DigitalObject() {
+        @Override
+        public InputStream content() {
+          return new ByteArrayInputStream(cachedContent);
+        }
+
+        @Override
+        public MimeType mimeType() {
+          return MimeType.valueOf("application/zip");
+        }
+
+        @Override
+        public Optional<String> name() {
+          return Optional.of(zippedRoCrateFile.getFileName().toString());
+        }
+
+        @Override
+        public Optional<String> id() {
+          return Optional.of(researchProject.identifier());
+        }
+      };
+    } catch (IOException e) {
+      log.error("Failed to create ro-crate zip file", e);
+      throw new BuildException("Failed to create digital object");
+    } finally {
+      deleteTempDir(buildDir.toFile());
+      deleteTempDir(zippedRoCrateDir.toFile());
+    }
+  }
+
+  private boolean deleteTempDir(File dir) {
+    File[] files = dir.listFiles(); //null if not a directory
+    // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#listFiles--
+    if (files != null) {
+      for (File file : files) {
+        if (!deleteTempDir(file)) {
+          return false;
+        }
+      }
+    }
+    return dir.delete();
+  }
+
+}
