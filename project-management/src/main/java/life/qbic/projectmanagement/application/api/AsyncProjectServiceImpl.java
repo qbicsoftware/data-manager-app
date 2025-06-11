@@ -775,8 +775,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
     return new ExperimentalVariable(experimentalVariable.name().value(),
         experimentalVariable.levels()
-            .stream().map(level -> level.variableName().value()).collect(
-                Collectors.toSet()),
+            .stream().map(level -> level.variableName().value()).toList(),
         experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(null));
   }
 

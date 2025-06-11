@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -545,7 +544,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private AsyncProjectService.ExperimentalVariable convertToApi(
       ExperimentalVariableContent experimentalVariable) {
     return new AsyncProjectService.ExperimentalVariable(experimentalVariable.name(),
-        new HashSet<>(experimentalVariable.levels()), experimentalVariable.unit());
+        experimentalVariable.levels(), experimentalVariable.unit());
   }
 
   private void openExperimentalVariablesEditDialog() {
