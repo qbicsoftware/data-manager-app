@@ -30,14 +30,14 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResultWithPayload<SampleRegistrationInformation> validateForRegistration(SampleRegistrationInformation registration, ProjectId projectId) {
-    var validationWithPayload = validateNewSample(registration, projectId);
+  public ValidationResultWithPayload<SampleRegistrationInformation> validateForRegistration(SampleRegistrationInformation registration, ProjectId projectId, String experimentId) {
+    var validationWithPayload = validateNewSample(registration, projectId, experimentId);
     return new ValidationResultWithPayload<>(validationWithPayload.validationResult(), registration);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
-  public ValidationResultWithPayload<SampleUpdateInformation> validateForUpdate(SampleUpdateInformation update, ProjectId projectId) {
-    var validationWithPayload = validateExistingSample(update, projectId);
+  public ValidationResultWithPayload<SampleUpdateInformation> validateForUpdate(SampleUpdateInformation update, ProjectId projectId, String experimentId) {
+    var validationWithPayload = validateExistingSample(update, projectId, experimentId);
     return new ValidationResultWithPayload<>(validationWithPayload.validationResult(), update);
   }
 
