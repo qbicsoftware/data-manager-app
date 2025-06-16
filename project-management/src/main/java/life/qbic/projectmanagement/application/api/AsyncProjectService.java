@@ -696,13 +696,12 @@ public interface AsyncProjectService {
   /**
    * A level of an experimental variable
    *
-   * @param variableId   the identifier of the variable
    * @param variableName the name of the variable
    * @param levelValue   the value of the level
    * @param unit         the unit for the value of the level. Can be null if no unit is set
    * @since 1.9.0
    */
-  record VariableLevel(Long variableId, String variableName, String levelValue,
+  record VariableLevel(String variableName, String levelValue,
                        @Nullable String unit) {
 
   }
@@ -710,15 +709,17 @@ public interface AsyncProjectService {
   /**
    * Information about an experimental group
    *
-   * @param groupId    the identifier of the group
-   * @param name       the name of the eperimental group can be empty but is not expected to be
+   * @param id         the technical identifier of the group
+   * @param groupId    the group id within the experiment
+   * @param name       the name of the experimental group can be empty but is not expected to be
    *                   null
    * @param sampleSize the number of samples in this experimental group
    * @param levels     the experimental variable levels making up the condition for the samples in
    *                   this group.
    * @since 1.9.0
    */
-  record ExperimentalGroup(@Nullable Long groupId, String name, int sampleSize,
+  record ExperimentalGroup(@Nullable Long id, @Nullable Integer groupId, String name,
+                           int sampleSize,
                            Set<VariableLevel> levels) {
 
     public ExperimentalGroup {
@@ -860,24 +861,24 @@ public interface AsyncProjectService {
    *
    * @param projectId         the project's identifier. The project containing the experiment.
    * @param experimentId      the experiment's identifier'
-   * @param experimentGroupId the identifier of the experimental group to delete
+   * @param experimentalGroupNumber the identifier of the experimental group to delete
    * @param requestId         the request ID. Needs to be provided by the client and will be
    *                          referenced in the response.
    * @since 1.10.0
    */
   record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-                                          Long experimentGroupId, String requestId) implements
+                                          Integer experimentalGroupNumber, String requestId) implements
       CacheableRequest {
 
     public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-        Long experimentGroupId) {
-      this(projectId, experimentId, experimentGroupId, UUID.randomUUID().toString());
+        Integer experimentGroupNumber) {
+      this(projectId, experimentId, experimentGroupNumber, UUID.randomUUID().toString());
     }
 
     public ExperimentalGroupDeletionRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requireNonNull(experimentGroupId);
+      requireNonNull(experimentalGroupNumber);
       requireNonNull(requestId);
     }
   }
@@ -890,7 +891,7 @@ public interface AsyncProjectService {
    * @param requestId         the identifier of the original request to which this is a response.
    * @since 1.10.0
    */
-  record ExperimentalGroupDeletionResponse(String experimentId, Long experimentGroupId,
+  record ExperimentalGroupDeletionResponse(String experimentId, Integer experimentGroupId,
                                            String requestId) {
 
     public ExperimentalGroupDeletionResponse {

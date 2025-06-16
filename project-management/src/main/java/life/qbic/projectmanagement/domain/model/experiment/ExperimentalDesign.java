@@ -282,9 +282,15 @@ public class ExperimentalDesign {
     if (isConditionDefined(condition)) {
       return Result.fromError(ResponseCode.CONDITION_EXISTS);
     }
-    var newExperimentalGroup = ExperimentalGroup.create(name, condition, sampleSize);
+    var newExperimentalGroup = ExperimentalGroup.create(name, condition, sampleSize, nextGroupId());
     experimentalGroups.add(newExperimentalGroup);
     return Result.fromValue(newExperimentalGroup);
+  }
+
+  private int nextGroupId() {
+    return experimentalGroups.stream()
+        .filter(group -> group.groupNumber() != null)
+        .mapToInt(ExperimentalGroup::groupNumber).max().orElse(0) + 1;
   }
 
   /**
@@ -337,6 +343,10 @@ public class ExperimentalDesign {
 
   public void removeExperimentalGroup(long groupId) {
     this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroup.id() == groupId);
+  }
+
+  public void removeExperimentalGroupByGroupNumber(int experimentalGroupNumber) {
+    this.experimentalGroups.removeIf(experimentalGroup -> experimentalGroupNumber == experimentalGroup.groupNumber());
   }
 
   public record AddExperimentalGroupResponse(ResponseCode responseCode) {

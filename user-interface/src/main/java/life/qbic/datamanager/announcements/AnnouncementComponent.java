@@ -31,6 +31,7 @@ public class AnnouncementComponent extends Div {
   public AnnouncementComponent(AnnouncementService announcementService) {
     this.announcementService = announcementService;
     this.setId("announcements");
+    this.setVisible(false); //without subscribing to announcements nothing is displayed
   }
 
   private void subscribeToAnnouncements() {

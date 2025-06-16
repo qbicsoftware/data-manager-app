@@ -77,7 +77,7 @@ public class RawDataDownloadInformationComponent extends PageArea implements Ser
 
   private Span generateAdditionalInformationSection() {
     Anchor downloadGuideLink = new Anchor(
-        "https://qbicsoftware.github.io/research-data-management/rawdata/raw_data_download/#download-raw-data",
+        "https://qbicsoftware.github.io/research-data-management/latest/rawdata/raw_data_download/#download-raw-data",
         "here", AnchorTarget.BLANK);
     Text additionalInformationText = new Text("Learn more about how to download the datasets ");
     return new Span(additionalInformationText, downloadGuideLink);
