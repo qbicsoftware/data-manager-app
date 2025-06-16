@@ -1827,7 +1827,7 @@ public interface AsyncProjectService {
      * @return the {@link List} of sample identifiers
      * @since 1.10.0
      */
-    public List<String> referencedSamples() {
+    public List<String> measuredSamples() {
       return List.copyOf(specificMetadata.keySet());
     }
 
@@ -1881,7 +1881,7 @@ public interface AsyncProjectService {
      * @return the {@link List} of sample identifiers
      * @since 1.10.0
      */
-    public List<String> referencedSamples() {
+    public List<String> measuredSamples() {
       return List.copyOf(specificMetadata.keySet());
     }
 
@@ -1948,7 +1948,7 @@ public interface AsyncProjectService {
      * @return the {@link List} of sample identifiers
      * @since 1.10.0
      */
-    public List<String> referencedSamples() {
+    public List<String> measuredSamples() {
       return List.copyOf(specificMetadata.keySet());
     }
 
@@ -2000,7 +2000,7 @@ public interface AsyncProjectService {
      * @return the {@link List} of sample identifiers
      * @since 1.10.0
      */
-    public List<String> referencedSamples() {
+    public List<String> measuredSamples() {
       return List.copyOf(specificMetadata.keySet());
     }
   }

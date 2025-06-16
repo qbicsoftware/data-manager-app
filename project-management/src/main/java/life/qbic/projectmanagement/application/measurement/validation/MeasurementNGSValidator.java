@@ -110,7 +110,7 @@ public class MeasurementNGSValidator implements
     if (mandatoryValidationResult.containsFailures()) {
       return mandatoryValidationResult;
     }
-    return validationPolicy.validateSampleIdsAsString(registration.referencedSamples())
+    return validationPolicy.validateSampleIdsAsString(registration.measuredSamples())
         .combine(validationPolicy.validateMandatoryDataRegistration(registration))
         .combine(validationPolicy.validateOrganisation(registration.organisationId()))
         .combine(validationPolicy.validateInstrument(registration.instrumentCURIE()));
@@ -139,7 +139,7 @@ public class MeasurementNGSValidator implements
   public ValidationResult validateUpdate(MeasurementUpdateInformationNGS metadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
-    for (String sampleId : metadata.referencedSamples()) {
+    for (String sampleId : metadata.measuredSamples()) {
       result.combine(validationPolicy.validationProjectRelation(SampleCode.create(sampleId), projectId));
     }
     return result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))
@@ -306,7 +306,7 @@ public class MeasurementNGSValidator implements
     ValidationResult validateMandatoryDataRegistration(
         MeasurementRegistrationInformationNGS metadata) {
       var validation = ValidationResult.successful();
-      if (metadata.referencedSamples().isEmpty()) {
+      if (metadata.measuredSamples().isEmpty()) {
         validation = validation.combine(
             ValidationResult.withFailures(
                 List.of("Sample id: missing sample id reference")));

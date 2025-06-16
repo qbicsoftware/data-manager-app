@@ -12,14 +12,12 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationException;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
-import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -120,7 +118,7 @@ public class MeasurementProteomicsValidator implements
       return mandatoryValidationResult;
     }
 
-    return validationPolicy.validateSampleIdsAsString(metadata.referencedSamples())
+    return validationPolicy.validateSampleIdsAsString(metadata.measuredSamples())
         .combine(validationPolicy.validateMandatoryDataProvided(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())));
@@ -153,10 +151,10 @@ public class MeasurementProteomicsValidator implements
   public ValidationResult validateUpdate(MeasurementUpdateInformationPxP metadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
-    for (String sampleId : metadata.referencedSamples()) {
+    for (String sampleId : metadata.measuredSamples()) {
       result.combine(validationPolicy.validationProjectRelation(SampleCode.create(sampleId), projectId));
     }
-    return result.combine(validationPolicy.validateSampleIdsAsString(metadata.referencedSamples()))
+    return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples()))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
@@ -418,7 +416,7 @@ public class MeasurementProteomicsValidator implements
 
     ValidationResult validateMandatoryDataProvided(MeasurementRegistrationInformationPxP metadata) {
       var validation = ValidationResult.successful();
-      if (metadata.referencedSamples().isEmpty()) {
+      if (metadata.measuredSamples().isEmpty()) {
         validation = validation.combine(
             ValidationResult.withFailures(
                 List.of("Sample id: missing sample id reference")));
