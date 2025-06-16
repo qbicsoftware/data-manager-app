@@ -49,6 +49,7 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
   private final List<ComponentEventListener<RemoveEvent>> removeEventListeners;
   private final TextField nameField;
   private long id = -1;
+  private int groupNumber = -1;
   private final MultiSelectComboBox<VariableLevel> variableLevelSelect;
   private final NumberField replicateCountField;
   int variableCount = 0;
@@ -150,6 +151,14 @@ public class ExperimentalGroupInput extends CustomField<ExperimentalGroupBean> {
 
   public long getGroupId() {
     return id;
+  }
+
+  public int groupNumber() {
+    return this.groupNumber;
+  }
+
+  public void setGroupNumber(int groupNumber) {
+    this.groupNumber = groupNumber;
   }
 
   public int getReplicateCount() {
