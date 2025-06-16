@@ -232,7 +232,7 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private Disclaimer createNoConfoundingVariablesDisclaimer() {
-    var disclaimer = Disclaimer.createWithTitle("Define Confoungind Variables",
+    var disclaimer = Disclaimer.createWithTitle("Define Confounding Variables",
         "Add confounding variables to your experiment to use them during sample registration",
         "Add confounding variables");
     disclaimer.addDisclaimerConfirmedListener(confirmed -> openConfoundingVariablesAddDialog());

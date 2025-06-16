@@ -12,7 +12,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 
 public class ProteomicsRegisterFactory implements WorkbookFactory {
 
-  private static final int DEFAULT_GENERATED_ROW_COUNT = 200;
+  private static final int DEFAULT_GENERATED_ROW_COUNT = 2000;
 
   @Override
   public int numberOfRowsToGenerate() {
