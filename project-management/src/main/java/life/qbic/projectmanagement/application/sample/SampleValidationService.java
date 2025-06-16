@@ -30,6 +30,19 @@ public class SampleValidationService {
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public ValidationResultWithPayload<SampleRegistrationInformation> validateForRegistration(SampleRegistrationInformation registration, ProjectId projectId) {
+    var validationWithPayload = validateNewSample(registration, projectId);
+    return new ValidationResultWithPayload<>(validationWithPayload.validationResult(), registration);
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public ValidationResultWithPayload<SampleUpdateInformation> validateForUpdate(SampleUpdateInformation update, ProjectId projectId) {
+    var validationWithPayload = validateExistingSample(update, projectId);
+    return new ValidationResultWithPayload<>(validationWithPayload.validationResult(), update);
+  }
+
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
   public ValidationResultWithPayload<SampleMetadata> validateNewSample(
       SampleRegistrationInformation information, ProjectId projectId) {
     return validateNewSample(information.sampleName(),
