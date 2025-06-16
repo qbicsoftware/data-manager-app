@@ -2,8 +2,10 @@ package life.qbic.datamanager.files.parsing.converters;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementEditColumn;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
@@ -25,8 +27,8 @@ public class MeasurementUpdateMetadataConverterPxP implements
     for (int i = 0; i < parsingResult.rows().size(); i++) {
       var measurementId = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementEditColumn.MEASUREMENT_ID.headerName(), "");
-      var sampleCode = SampleCode.create(parsingResult.getValueOrDefault(i,
-          ProteomicsMeasurementEditColumn.SAMPLE_ID.headerName(), ""));
+      var sampleId = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementEditColumn.SAMPLE_ID.headerName(), "");
       var technicalReplicateName = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementEditColumn.TECHNICAL_REPLICATE_NAME.headerName(), "");
       var organisationId = parsingResult.getValueOrDefault(i,
@@ -58,23 +60,23 @@ public class MeasurementUpdateMetadataConverterPxP implements
       var comment = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementEditColumn.COMMENT.headerName(), "");
 
+      var specificMetadata = new MeasurementSpecificPxP(label, fractionName, comment);
+
       var metaDatum = new MeasurementUpdateInformationPxP(
           measurementId,
-          sampleCode,
           technicalReplicateName,
           organisationId,
           msDevice,
           samplePoolGroup,
           facility,
-          fractionName,
           digestionEnzyme,
           digestionMethod,
           enrichmentMethod,
           injectionVolume,
           lcColumn,
           lcmsMethod,
-          new Labeling(labelingType, label),
-          comment
+          labelingType,
+          Map.of(sampleId, specificMetadata)
       );
       convertedElements.add(metaDatum);
     }

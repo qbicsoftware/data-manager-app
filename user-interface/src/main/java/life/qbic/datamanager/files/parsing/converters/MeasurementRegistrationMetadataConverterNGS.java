@@ -1,10 +1,13 @@
 package life.qbic.datamanager.files.parsing.converters;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.structure.measurement.NGSMeasurementRegisterColumn;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 
 /**
  * Measurement Registration Metadata Converter NGS
@@ -22,11 +25,7 @@ public class MeasurementRegistrationMetadataConverterNGS implements
     var convertedElements = new ArrayList<MeasurementRegistrationInformationNGS>();
 
     for (int i = 0; i < parsingResult.rows().size(); i++) {
-      var sampleCodes = List.of(
-          parsingResult.getValueOrDefault(i,
-              NGSMeasurementRegisterColumn.SAMPLE_ID.headerName(),
-              "")
-      );
+      var sampleId = parsingResult.getValueOrDefault(i,NGSMeasurementRegisterColumn.SAMPLE_ID.headerName(), "");
       var organisationId = parsingResult.getValueOrDefault(i,
           NGSMeasurementRegisterColumn.ORGANISATION_URL.headerName(), "");
       var instrument = parsingResult.getValueOrDefault(i,
@@ -50,8 +49,9 @@ public class MeasurementRegistrationMetadataConverterNGS implements
       var comment = parsingResult.getValueOrDefault(i,
           NGSMeasurementRegisterColumn.COMMENT.headerName(), "");
 
+      var specificMetadata = new MeasurementSpecificNGS(indexI7, indexI5, comment);
+
       var metadatum = new MeasurementRegistrationInformationNGS(
-          sampleCodes,
           organisationId,
           instrument,
           facility,
@@ -60,9 +60,7 @@ public class MeasurementRegistrationMetadataConverterNGS implements
           flowCell,
           runProtocol,
           poolGroup,
-          indexI7,
-          indexI5,
-          comment
+          Map.of(sampleId, specificMetadata)
       );
       convertedElements.add(metadatum);
     }

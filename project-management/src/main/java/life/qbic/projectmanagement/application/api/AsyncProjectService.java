@@ -1796,8 +1796,8 @@ public interface AsyncProjectService {
    * @param sequencingRunProtocol the sequencing run protocol
    * @param samplePoolGroup       the name of the sample pool
    * @param specificMetadata      specific metadata that differentiates pooled samples as a
-   *                              {@link HashMap}, with the sample ids as values and the
-   *                              sample-specific measurement annotations as. Will have only one
+   *                              {@link Map}, with the sample ids as keys and the
+   *                              sample-specific measurement annotations as values. Will have only one
    *                              entry if no pooling was done. {@link MeasurementSpecificNGS}
    * @since 1.10.0
    */
@@ -1805,7 +1805,7 @@ public interface AsyncProjectService {
       String organisationId, String instrumentCURIE, String facility,
       String sequencingReadType, String libraryKit, String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      HashMap<String, MeasurementSpecificNGS> specificMetadata
+      Map<String, MeasurementSpecificNGS> specificMetadata
   ) implements ValidationRequestBody {
 
     public MeasurementRegistrationInformationNGS {
@@ -1819,6 +1819,16 @@ public interface AsyncProjectService {
       requireNonNull(samplePoolGroup);
       requireNonNull(specificMetadata);
       specificMetadata = new HashMap<>(specificMetadata);
+    }
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
     }
 
   }
@@ -1837,8 +1847,8 @@ public interface AsyncProjectService {
    * @param sequencingRunProtocol the sequencing run protocol
    * @param samplePoolGroup       the name of the sample pool
    * @param specificMetadata      specific metadata that differentiates pooled samples as a
-   *                              {@link HashMap}, with the sample ids as values and the
-   *                              sample-specific measurement annotations as. Will have only one
+   *                              {@link Map}, with the sample ids as keys and the
+   *                              sample-specific measurement annotations as values. Will have only one
    *                              entry if no pooling was done. {@link MeasurementSpecificNGS}
    * @since 1.10.0
    */
@@ -1849,11 +1859,10 @@ public interface AsyncProjectService {
       String sequencingReadType, String libraryKit,
       String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      HashMap<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody {
+      Map<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody {
 
     public MeasurementUpdateInformationNGS {
       requireNonNull(measurementId);
-      requireNonNull(sampleCodes);
       requireNonNull(organisationId);
       requireNonNull(instrumentCURIE);
       requireNonNull(facility);
@@ -1864,6 +1873,16 @@ public interface AsyncProjectService {
       requireNonNull(samplePoolGroup);
       requireNonNull(specificMetadata);
       specificMetadata = new HashMap<>(specificMetadata);
+    }
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
     }
 
   }
@@ -1894,7 +1913,6 @@ public interface AsyncProjectService {
    *                               measurement
    * @param samplePoolGroup        the name of the sample pool
    * @param facility               the name of the facility that performed the measurement
-   * @param fractionName           the fraction name
    * @param digestionEnzyme        the enzyme used for proteolytic digestion
    * @param digestionMethod        the digestion method
    * @param enrichmentMethod       the enrichment method used
@@ -1903,8 +1921,8 @@ public interface AsyncProjectService {
    * @param lcmsMethod             the method used
    * @param labelingType           the type of the labeling used
    * @param specificMetadata       specific metadata that differentiates pooled samples as a
-   *                               {@link HashMap}, with the sample ids as values and the
-   *                               sample-specific measurement annotations as. Will have only one
+   *                               {@link Map}, with the sample ids as keys and the
+   *                               sample-specific measurement annotations as values. Will have only one
    *                               entry if no pooling was done. {@link MeasurementSpecificPxP}
    * @since 1.10.0
    */
@@ -1914,7 +1932,6 @@ public interface AsyncProjectService {
       String msDeviceCURIE,
       String samplePoolGroup,
       String facility,
-      String fractionName,
       String digestionEnzyme,
       String digestionMethod,
       String enrichmentMethod,
@@ -1922,8 +1939,18 @@ public interface AsyncProjectService {
       String lcColumn,
       String lcmsMethod,
       String labelingType,
-      HashMap<String, MeasurementSpecificPxP> specificMetadata
+      Map<String, MeasurementSpecificPxP> specificMetadata
   ) implements ValidationRequestBody {
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
 
   }
 
@@ -1937,7 +1964,6 @@ public interface AsyncProjectService {
    *                               measurement
    * @param samplePoolGroup        the name of the sample pool
    * @param facility               the name of the facility that performed the measurement
-   * @param fractionName           the fraction name
    * @param digestionEnzyme        the enzyme used for proteolytic digestion
    * @param digestionMethod        the digestion method
    * @param enrichmentMethod       the enrichment method used
@@ -1946,8 +1972,8 @@ public interface AsyncProjectService {
    * @param lcmsMethod             the method used
    * @param labelingType           the type of the labeling used
    * @param specificMetadata       specific metadata that differentiates pooled samples as a
-   *                               {@link HashMap}, with the sample ids as values and the
-   *                               sample-specific measurement annotations as. Will have only one
+   *                               {@link Map}, with the sample ids as keys and the
+   *                               sample-specific measurement annotations as values. Will have only one
    *                               entry if no pooling was done. {@link MeasurementSpecificPxP}
    * @since 1.10.0
    */
@@ -1958,7 +1984,6 @@ public interface AsyncProjectService {
       String msDeviceCURIE,
       String samplePoolGroup,
       String facility,
-      String fractionName,
       String digestionEnzyme,
       String digestionMethod,
       String enrichmentMethod,
@@ -1966,9 +1991,18 @@ public interface AsyncProjectService {
       String lcColumn,
       String lcmsMethod,
       String labelingType,
-      HashMap<String, MeasurementSpecificPxP> specificMetadata
+      Map<String, MeasurementSpecificPxP> specificMetadata
   ) implements ValidationRequestBody {
 
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
   }
 
   /**
