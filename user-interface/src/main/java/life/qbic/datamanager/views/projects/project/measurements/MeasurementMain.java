@@ -55,7 +55,7 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.measurements.registration.RegistrationUseCase;
+import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementRegistrationNGS;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
@@ -517,7 +517,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     DialogHeader.with(dialog, "Register your measurement metadata");
     DialogFooter.with(dialog, "Cancel", "Register");
 
-    var registrationUseCase = new RegistrationUseCase(asyncService, context);
+    var registrationUseCase = new MeasurementRegistrationNGS(asyncService, context);
     DialogBody.with(dialog, registrationUseCase, registrationUseCase);
 
     add(dialog);

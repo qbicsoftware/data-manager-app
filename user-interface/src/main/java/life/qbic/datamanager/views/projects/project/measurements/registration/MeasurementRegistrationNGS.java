@@ -16,7 +16,6 @@ import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
 import java.io.InputStream;
 import java.io.Serial;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,7 +49,7 @@ import reactor.core.publisher.Flux;
  *
  * @since <version tag>
  */
-public class RegistrationUseCase extends Div implements UserInput {
+public class MeasurementRegistrationNGS extends Div implements UserInput {
 
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   private final UploadItemsDisplay uploadItemsDisplay;
@@ -80,33 +79,29 @@ public class RegistrationUseCase extends Div implements UserInput {
   }
 
   private final EditableMultiFileMemoryBuffer uploadBuffer;
-  private final List<MeasurementMetadataUpload<MeasurementMetadata>> measurementMetadataUploads;
   private final List<MeasurementFileItem> measurementFileItems;
 
-  public RegistrationUseCase(AsyncProjectService service, Context context) {
+  public MeasurementRegistrationNGS(AsyncProjectService service, Context context) {
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
-    this.measurementMetadataUploads = new ArrayList<>();
     this.measurementFileItems = new ArrayList<>();
     this.service = service;
     this.context = context;
     this.validationProgress = new Div();
-    Upload upload = new Upload(uploadBuffer);
+    var upload = new Upload(uploadBuffer);
     upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
-    this.uploadItemsDisplay = new UploadItemsDisplay(upload);
-    this.uploadItemsDisplay.toggleFileSectionIfEmpty(true);
-    add(uploadItemsDisplay);
-    add(validationProgress);
     upload.addSucceededListener(this::onUploadSucceeded);
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
     upload.addFileRemovedListener(this::onFileRemoved);
+    this.uploadItemsDisplay = new UploadItemsDisplay(upload);
+    this.uploadItemsDisplay.toggleFileSectionIfEmpty(true);
+    add(validationProgress);
+    add(uploadItemsDisplay);
   }
 
   private void removeFile(String fileName) {
     uploadBuffer.remove(fileName);
-    measurementMetadataUploads.removeIf(
-        metadataUpload -> metadataUpload.fileName().equals(fileName));
     measurementFileItems.removeIf(
         measurementFileItem -> measurementFileItem.fileName().equals(fileName));
     uploadItemsDisplay.removeFileFromDisplay(fileName);
@@ -137,7 +132,6 @@ public class RegistrationUseCase extends Div implements UserInput {
     };
 
     var converter = ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class);
-
     var result = converter.convert(parsingResult);
 
     validationProgress.setVisible(true);
@@ -149,18 +143,25 @@ public class RegistrationUseCase extends Div implements UserInput {
           context.experimentId().orElseThrow().value(), registration);
       requests.add(request);
     }
+    runValidation(requests, itemsToValidate, fileName);
+  }
+
+  private void runValidation(ArrayList<ValidationRequest> requests, int itemsToValidate,
+      String fileName) {
     AtomicInteger counter = new AtomicInteger();
     counter.set(1);
+
     List<ValidationResponse> responses = new ArrayList<>();
     service.validate(Flux.fromIterable(requests))
-        .doFirst(() -> getUI().ifPresent(
-            ui -> ui.access(() -> validationProgress.setText("Starting validation ..."))))
-        .doOnNext(item -> getUI().ifPresent(ui -> ui.access(() ->
-            validationProgress.setText(
-                "Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))))
+        .doFirst(() -> setValidationProgressText("Starting validation ..."))
+        .doOnNext(item -> setValidationProgressText("Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
         .doOnNext(responses::add)
         .doOnComplete(() -> displayValidationResults(responses, itemsToValidate, fileName))
         .subscribe();
+  }
+
+  private void setValidationProgressText(String text) {
+    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setText(text)));
   }
 
   private void displayValidationResults(List<ValidationResponse> responses, int totalValidations,
@@ -169,14 +170,25 @@ public class RegistrationUseCase extends Div implements UserInput {
     var combinedResult = responses.stream().map(ValidationResponse::result)
         .reduce(result, ValidationResult::combine);
 
-    getUI().ifPresent(ui -> {
-      ui.access(() -> {
-        uploadItemsDisplay.setVisible(true);
-        uploadItemsDisplay.addFileToDisplay(new MeasurementFileDisplay(
-            new MeasurementFileItem(fileName,
-                new MeasurementValidationReport(totalValidations, combinedResult))));
-      });
-    });
+    getUI().ifPresent(ui -> ui.access(() -> {
+      uploadItemsDisplay.setVisible(true);
+      uploadItemsDisplay.addFileToDisplay(new MeasurementFileDisplay(
+          new MeasurementFileItem(fileName,
+              new MeasurementValidationReport(totalValidations, combinedResult))));
+    }));
+  }
+
+  private void showFile(MeasurementFileItem measurementFileItem) {
+    MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
+    uploadItemsDisplay.addFileToDisplay(measurementFileDisplay);
+    uploadItemsDisplay.toggleFileSectionIfEmpty(!measurementFileItems.isEmpty());
+  }
+
+
+  private void addFile(MeasurementFileItem measurementFileItem,
+      MeasurementMetadataUpload<MeasurementMetadata> metadataUpload) {
+    measurementFileItems.add(measurementFileItem);
+    showFile(measurementFileItem);
   }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
@@ -264,15 +276,12 @@ public class RegistrationUseCase extends Div implements UserInput {
     }
   }
 
-
   record MeasurementValidationReport(int validatedRows,
                                      ValidationResult validationResult) {
-
   }
 
   public record MeasurementFileItem(String fileName,
                                     MeasurementValidationReport measurementValidationReport) {
-
   }
 
   /**
