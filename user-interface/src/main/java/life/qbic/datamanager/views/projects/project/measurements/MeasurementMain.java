@@ -36,6 +36,7 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
 import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks;
+import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
@@ -55,11 +56,12 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
-import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementRegistrationNGS;
+import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
@@ -517,7 +519,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     DialogHeader.with(dialog, "Register your measurement metadata");
     DialogFooter.with(dialog, "Cancel", "Register");
 
-    var registrationUseCase = new MeasurementRegistrationNGS(asyncService, context);
+    var registrationUseCase = new MeasurementUpload(asyncService, context, ConverterRegistry.converterFor(
+        MeasurementRegistrationInformationNGS.class));
     DialogBody.with(dialog, registrationUseCase, registrationUseCase);
 
     add(dialog);

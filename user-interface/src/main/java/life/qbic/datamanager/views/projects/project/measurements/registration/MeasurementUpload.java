@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.files.parsing.ParsingResult;
-import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
+import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
 import life.qbic.datamanager.files.parsing.tsv.TSVParser;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.Context;
@@ -36,8 +36,8 @@ import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
 import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import reactor.core.publisher.Flux;
@@ -49,13 +49,14 @@ import reactor.core.publisher.Flux;
  *
  * @since <version tag>
  */
-public class MeasurementRegistrationNGS extends Div implements UserInput {
+public class MeasurementUpload extends Div implements UserInput {
 
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
   private final UploadItemsDisplay uploadItemsDisplay;
   private final AsyncProjectService service;
   private final Context context;
   private final Div validationProgress;
+  private final MetadataConverterV2<? extends ValidationRequestBody> converter;
 
   private enum AcceptedFileType {
     EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
@@ -81,12 +82,17 @@ public class MeasurementRegistrationNGS extends Div implements UserInput {
   private final EditableMultiFileMemoryBuffer uploadBuffer;
   private final List<MeasurementFileItem> measurementFileItems;
 
-  public MeasurementRegistrationNGS(AsyncProjectService service, Context context) {
+  public MeasurementUpload(
+      AsyncProjectService service,
+      Context context,
+      MetadataConverterV2<? extends ValidationRequestBody> converter
+      ) {
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementFileItems = new ArrayList<>();
     this.service = service;
     this.context = context;
     this.validationProgress = new Div();
+    this.converter = converter;
     var upload = new Upload(uploadBuffer);
     upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
@@ -131,7 +137,6 @@ public class MeasurementRegistrationNGS extends Div implements UserInput {
       case TSV -> parseTSV(uploadBuffer.inputStream(fileName).orElseThrow());
     };
 
-    var converter = ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class);
     var result = converter.convert(parsingResult);
 
     validationProgress.setVisible(true);
