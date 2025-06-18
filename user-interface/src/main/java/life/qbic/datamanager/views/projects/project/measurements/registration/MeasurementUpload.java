@@ -93,13 +93,17 @@ public class MeasurementUpload extends Div implements UserInput {
       Context context,
       MetadataConverterV2<? extends ValidationRequestBody> converter,
       MessageSourceNotificationFactory notificationFactory) {
-    this.uploadBuffer = new EditableMultiFileMemoryBuffer();
-    this.measurementFileItems = new ArrayList<>();
+    // Initial parameter validation of injected objects
     this.service = requireNonNull(service);
     this.context = requireNonNull(context);
-    this.validationProgress = new Div();
     this.converter = requireNonNull(converter);
     this.notificationFactory = requireNonNull(notificationFactory);
+    // Initial parameter instantiation of local objects
+    this.measurementFileItems = new ArrayList<>();
+    this.uploadBuffer = new EditableMultiFileMemoryBuffer();
+    this.validationProgress = new Div();
+
+    // Set up the upload section
     var upload = new Upload(uploadBuffer);
     upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
@@ -108,12 +112,19 @@ public class MeasurementUpload extends Div implements UserInput {
     upload.addFailedListener(this::onUploadFailed);
     upload.addFileRemovedListener(this::onFileRemoved);
     this.uploadItemsDisplay = new UploadItemsDisplay(upload);
-    refreshFileItemDisplay();
+
+    // Add components to the MeasurementUpload component
     add(uploadItemsDisplay);
     add(validationProgress);
+
+    // Trigger display refresh
+    refresh();
   }
 
-  private void refreshFileItemDisplay() {
+  /**
+   * Triggers a refresh of child components, e.g., visibility.
+   */
+  private void refresh() {
     if (measurementFileItems.isEmpty()) {
       uploadItemsDisplay.hide();
       return;
@@ -126,7 +137,7 @@ public class MeasurementUpload extends Div implements UserInput {
     measurementFileItems.removeIf(
         measurementFileItem -> measurementFileItem.fileName().equals(fileName));
     uploadItemsDisplay.removeFileFromDisplay(fileName);
-    refreshFileItemDisplay();
+    refresh();
   }
 
   private void onFileRemoved(FileRemovedEvent fileRemovedEvent) {
@@ -137,10 +148,10 @@ public class MeasurementUpload extends Div implements UserInput {
     displayError();
   }
 
-  private void displayError(String message) {
+  private void displayUnsupportedFileType() {
     getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = notificationFactory.toast("measurement.upload.failed.reason",
-          new Object[]{message}, getLocale());
+      var toast = notificationFactory.toast("measurement.upload.failed.unsupported-file-type",
+          new Object[]{}, getLocale());
       toast.open();
     }));
   }
@@ -158,7 +169,7 @@ public class MeasurementUpload extends Div implements UserInput {
     Optional<AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
         succeededEvent.getMIMEType());
     if (knownFileType.isEmpty()) {
-      displayError("Unsupported file type. Please make sure to upload a TSV or XLSX file.");
+      displayUnsupportedFileType();
       return;
     }
 
@@ -228,19 +239,13 @@ public class MeasurementUpload extends Div implements UserInput {
 
   private void addAndDisplayFile(MeasurementFileItem measurementFileItem) {
     measurementFileItems.add(measurementFileItem);
-    showFile(measurementFileItem);
-  }
-
-  private void showFile(MeasurementFileItem measurementFileItem) {
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
     uploadItemsDisplay.addFileToDisplay(measurementFileDisplay);
-    refreshFileItemDisplay();
+    refresh();
   }
 
-
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
-    String errorMessage = fileRejectedEvent.getErrorMessage();
-    displayError(errorMessage);
+    displayError();
   }
 
   private ParsingResult parseXLSX(InputStream inputStream) {
@@ -361,7 +366,7 @@ public class MeasurementUpload extends Div implements UserInput {
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
       fileNameLabel.addClassName("file-name");
       add(fileNameLabel);
-      createDisplayBox(measurementFileItem.measurementValidationReport());
+      setDisplayBoxContent(measurementFileItem.measurementValidationReport());
       displayBox.addClassName("validation-display-box");
       add(displayBox);
       addClassName("measurement-item");
@@ -371,7 +376,7 @@ public class MeasurementUpload extends Div implements UserInput {
       return measurementFileItem;
     }
 
-    private void createDisplayBox(MeasurementValidationReport measurementValidationReport) {
+    private void setDisplayBoxContent(MeasurementValidationReport measurementValidationReport) {
       displayBox.removeAll();
       if (measurementValidationReport.validationResult().allPassed()) {
         displayBox.add(createApprovedDisplayBox(measurementValidationReport.validatedRows()));
