@@ -116,6 +116,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private final transient MessageSourceNotificationFactory messageFactory;
   private final ExperimentInformationService experimentInformationService;
   private final AsyncProjectService asyncService;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private MeasurementMetadataUploadDialog dialog;
   private transient Context context;
 
@@ -130,7 +131,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageFactory,
-      ExperimentInformationService experimentInformationService) {
+      ExperimentInformationService experimentInformationService,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
@@ -172,6 +174,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         measurementTemplateListComponent.getClass().getSimpleName(),
         System.identityHashCode(measurementTemplateListComponent)));
     this.experimentInformationService = experimentInformationService;
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
@@ -520,7 +523,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     DialogFooter.with(dialog, "Cancel", "Register");
 
     var registrationUseCase = new MeasurementUpload(asyncService, context, ConverterRegistry.converterFor(
-        MeasurementRegistrationInformationNGS.class));
+        MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
     DialogBody.with(dialog, registrationUseCase, registrationUseCase);
 
     add(dialog);

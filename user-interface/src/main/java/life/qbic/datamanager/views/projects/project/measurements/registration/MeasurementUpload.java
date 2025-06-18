@@ -33,21 +33,24 @@ import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementMetadataUpload;
+import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
-import life.qbic.projectmanagement.application.measurement.MeasurementMetadata;
 import reactor.core.publisher.Flux;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>MeasurementUpload</b>
+ * <p>
+ * A data manager component that enables users to upload measurement files to register or update
+ * measurement metadata.
+ * <p>
+ * The component is created with a certain type of {@link MetadataConverterV2}, such that the
+ * content gets parsed and validated immediately after the upload.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 public class MeasurementUpload extends Div implements UserInput {
 
@@ -59,6 +62,7 @@ public class MeasurementUpload extends Div implements UserInput {
   private final MetadataConverterV2<? extends ValidationRequestBody> converter;
 
   private final List<? extends ValidationRequestBody> validationRequests = new ArrayList<>();
+  private final MessageSourceNotificationFactory notificationFactory;
 
   private enum AcceptedFileType {
     EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
@@ -87,14 +91,15 @@ public class MeasurementUpload extends Div implements UserInput {
   public MeasurementUpload(
       AsyncProjectService service,
       Context context,
-      MetadataConverterV2<? extends ValidationRequestBody> converter
-      ) {
+      MetadataConverterV2<? extends ValidationRequestBody> converter,
+      MessageSourceNotificationFactory notificationFactory) {
     this.uploadBuffer = new EditableMultiFileMemoryBuffer();
     this.measurementFileItems = new ArrayList<>();
-    this.service = service;
-    this.context = context;
+    this.service = requireNonNull(service);
+    this.context = requireNonNull(context);
     this.validationProgress = new Div();
-    this.converter = converter;
+    this.converter = requireNonNull(converter);
+    this.notificationFactory = requireNonNull(notificationFactory);
     var upload = new Upload(uploadBuffer);
     upload.setAcceptedFileTypes(AcceptedFileType.allMimeTypes().toArray(String[]::new));
     upload.setMaxFileSize(MAX_FILE_SIZE_BYTES);
@@ -129,8 +134,23 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   private void onUploadFailed(FailedEvent failedEvent) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    displayError();
+  }
+
+  private void displayError(String message) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast("measurement.upload.failed.reason",
+          new Object[]{message}, getLocale());
+      toast.open();
+    }));
+  }
+
+  private void displayError() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = notificationFactory.toast("measurement.upload.failed", new Object[]{},
+          getLocale());
+      toast.open();
+    }));
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
@@ -138,8 +158,7 @@ public class MeasurementUpload extends Div implements UserInput {
     Optional<AcceptedFileType> knownFileType = AcceptedFileType.forMimeType(
         succeededEvent.getMIMEType());
     if (knownFileType.isEmpty()) {
-      //displayError(succeededEvent.getFileName(),
-      //    "Unsupported file type. Please make sure to upload a TSV or XLSX file.");
+      displayError("Unsupported file type. Please make sure to upload a TSV or XLSX file.");
       return;
     }
 
@@ -172,7 +191,8 @@ public class MeasurementUpload extends Div implements UserInput {
           showValidationProgress();
           setValidationProgressText("Starting validation ...");
         })
-        .doOnNext(item -> setValidationProgressText("Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
+        .doOnNext(item -> setValidationProgressText(
+            "Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
         .doOnNext(responses::add)
         .doOnComplete(() -> {
           hideValidationProgress();
@@ -220,7 +240,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
     String errorMessage = fileRejectedEvent.getErrorMessage();
-    //showErrorNotification("File upload failed", errorMessage);
+    displayError(errorMessage);
   }
 
   private ParsingResult parseXLSX(InputStream inputStream) {
@@ -233,14 +253,18 @@ public class MeasurementUpload extends Div implements UserInput {
 
   @Override
   public InputValidation validate() {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    var inputWithFailureSearch = measurementFileItems.stream().map(MeasurementFileItem::measurementValidationReport)
+        .map(MeasurementValidationReport::validationResult)
+        .filter(ValidationResult::containsFailures).findAny();
+    if (inputWithFailureSearch.isEmpty()) {
+      return InputValidation.passed();
+    }
+    return InputValidation.failed();
   }
 
   @Override
   public boolean hasChanges() {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    return !measurementFileItems.isEmpty();
   }
 
   private static class UploadItemsDisplay extends Div {
@@ -309,10 +333,12 @@ public class MeasurementUpload extends Div implements UserInput {
 
   record MeasurementValidationReport(int validatedRows,
                                      ValidationResult validationResult) {
+
   }
 
   public record MeasurementFileItem(String fileName,
                                     MeasurementValidationReport measurementValidationReport) {
+
   }
 
   /**
