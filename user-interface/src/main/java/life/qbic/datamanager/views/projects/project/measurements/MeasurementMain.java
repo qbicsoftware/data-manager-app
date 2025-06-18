@@ -518,13 +518,20 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   private void openRegistrationDialog() {
     AppDialog dialog = AppDialog.large();
-    dialog.registerCancelAction(() -> dialog.close());
     DialogHeader.with(dialog, "Register your measurement metadata");
     DialogFooter.with(dialog, "Cancel", "Register");
 
     var registrationUseCase = new MeasurementUpload(asyncService, context, ConverterRegistry.converterFor(
         MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
     DialogBody.with(dialog, registrationUseCase, registrationUseCase);
+
+    dialog.registerCancelAction(() -> dialog.close());
+    dialog.registerConfirmAction(() -> {
+      var requestContent = registrationUseCase.getValidationRequestContent();
+      for (var entry : requestContent) {
+        log.info(String.valueOf(entry instanceof MeasurementRegistrationInformationNGS));
+      }
+    });
 
     add(dialog);
     dialog.open();

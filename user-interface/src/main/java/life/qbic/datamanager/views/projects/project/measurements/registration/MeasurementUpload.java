@@ -19,7 +19,9 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +63,7 @@ public class MeasurementUpload extends Div implements UserInput {
   private final Div validationProgress;
   private final MetadataConverterV2<? extends ValidationRequestBody> converter;
 
-  private final List<? extends ValidationRequestBody> validationRequests = new ArrayList<>();
+  private final Map<String, List<? extends ValidationRequestBody>> validationRequestsPerFile = new HashMap<>();
   private final MessageSourceNotificationFactory notificationFactory;
 
   private enum AcceptedFileType {
@@ -121,6 +123,10 @@ public class MeasurementUpload extends Div implements UserInput {
     refresh();
   }
 
+  public List<? extends ValidationRequestBody> getValidationRequestContent() {
+    return validationRequestsPerFile.values().stream().flatMap(List::stream).toList();
+  }
+
   /**
    * Triggers a refresh of child components, e.g., visibility.
    */
@@ -137,6 +143,7 @@ public class MeasurementUpload extends Div implements UserInput {
     measurementFileItems.removeIf(
         measurementFileItem -> measurementFileItem.fileName().equals(fileName));
     uploadItemsDisplay.removeFileFromDisplay(fileName);
+    validationRequestsPerFile.remove(fileName);
     refresh();
   }
 
@@ -181,8 +188,10 @@ public class MeasurementUpload extends Div implements UserInput {
     var result = converter.convert(parsingResult);
 
     var itemsToValidate = result.size();
-
     var requests = new ArrayList<ValidationRequest>();
+
+    validationRequestsPerFile.put(fileName, result);
+
     for (var registration : result) {
       var request = new ValidationRequest(context.projectId().orElseThrow().value(),
           context.experimentId().orElseThrow().value(), registration);
