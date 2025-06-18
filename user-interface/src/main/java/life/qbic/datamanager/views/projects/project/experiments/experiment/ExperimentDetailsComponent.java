@@ -74,7 +74,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Experimen
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesDeletionRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -583,15 +583,19 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var ui = UI.getCurrent();
 
-    ExperimentalVariablesUpdateRequest request = new ExperimentalVariablesUpdateRequest(
+    ExperimentalVariablesDeletionRequest deletionRequest = new ExperimentalVariablesDeletionRequest(
+        projectId.value(),
+        experimentId.value());
+
+    ExperimentalVariablesCreationRequest creationRequest = new ExperimentalVariablesCreationRequest(
         projectId.value(),
         experimentId.value(), variables);
 
-    asyncProjectService.update(request)
+    asyncProjectService.delete(deletionRequest)
         .doOnNext(it -> log.debug(
             "Removed variables for project" + projectId))
         .flatMap(it ->
-            asyncProjectService.update(request))
+            asyncProjectService.create(creationRequest))
         .doOnNext(it -> ui.access(() -> {
           confirmEvent.getSource().close();
           reloadExperimentInfo(projectId,
