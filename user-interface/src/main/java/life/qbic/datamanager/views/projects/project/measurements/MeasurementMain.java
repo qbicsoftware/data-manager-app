@@ -512,7 +512,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     registerMeasurements.addClassName("primary");
     noMeasurementDisclaimer.add(registerMeasurements);
     registerMeasurements.addClickListener(event -> openRegistrationDialog());
-    //registerMeasurements.addClickListener(event -> openRegisterMeasurementDialog());
     noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
     return noMeasurementDisclaimer;
   }
