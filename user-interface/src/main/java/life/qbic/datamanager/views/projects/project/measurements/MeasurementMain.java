@@ -36,11 +36,16 @@ import life.qbic.application.commons.Result;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
 import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks;
+import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
@@ -51,9 +56,12 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
+import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
@@ -107,6 +115,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient MessageSourceNotificationFactory messageFactory;
   private final ExperimentInformationService experimentInformationService;
+  private final AsyncProjectService asyncService;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private MeasurementMetadataUploadDialog dialog;
   private transient Context context;
 
@@ -117,14 +127,17 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService,
+      @Autowired AsyncProjectService asyncProjectService,
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageFactory,
-      ExperimentInformationService experimentInformationService) {
+      ExperimentInformationService experimentInformationService,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
+    Objects.requireNonNull(asyncProjectService);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementDetailsComponent = measurementDetailsComponent;
     this.measurementTemplateListComponent = measurementTemplateListComponent;
@@ -134,6 +147,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.projectInformationService = projectInformationService;
     this.cancelConfirmationDialogFactory = cancelConfirmationDialogFactory;
+    this.asyncService = asyncProjectService;
 
     downloadComponent = new DownloadComponent();
     measurementTemplateDownload = new DownloadComponent();
@@ -160,6 +174,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         measurementTemplateListComponent.getClass().getSimpleName(),
         System.identityHashCode(measurementTemplateListComponent)));
     this.experimentInformationService = experimentInformationService;
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
@@ -496,9 +511,23 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     Button registerMeasurements = new Button("Register Measurements");
     registerMeasurements.addClassName("primary");
     noMeasurementDisclaimer.add(registerMeasurements);
-    registerMeasurements.addClickListener(event -> openRegisterMeasurementDialog());
+    registerMeasurements.addClickListener(event -> openRegistrationDialog());
     noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
     return noMeasurementDisclaimer;
+  }
+
+  private void openRegistrationDialog() {
+    AppDialog dialog = AppDialog.large();
+    dialog.registerCancelAction(() -> dialog.close());
+    DialogHeader.with(dialog, "Register your measurement metadata");
+    DialogFooter.with(dialog, "Cancel", "Register");
+
+    var registrationUseCase = new MeasurementUpload(asyncService, context, ConverterRegistry.converterFor(
+        MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
+    DialogBody.with(dialog, registrationUseCase, registrationUseCase);
+
+    add(dialog);
+    dialog.open();
   }
 
   private void routeToSampleCreation(ComponentEvent<?> componentEvent) {
