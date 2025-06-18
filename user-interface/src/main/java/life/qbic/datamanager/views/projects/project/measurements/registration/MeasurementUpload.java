@@ -58,6 +58,8 @@ public class MeasurementUpload extends Div implements UserInput {
   private final Div validationProgress;
   private final MetadataConverterV2<? extends ValidationRequestBody> converter;
 
+  private final List<? extends ValidationRequestBody> validationRequests = new ArrayList<>();
+
   private enum AcceptedFileType {
     EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
     TSV("text/tab-separated-values", "text/plain");
@@ -101,9 +103,17 @@ public class MeasurementUpload extends Div implements UserInput {
     upload.addFailedListener(this::onUploadFailed);
     upload.addFileRemovedListener(this::onFileRemoved);
     this.uploadItemsDisplay = new UploadItemsDisplay(upload);
-    this.uploadItemsDisplay.toggleFileSectionIfEmpty(true);
-    add(validationProgress);
+    refreshFileItemDisplay();
     add(uploadItemsDisplay);
+    add(validationProgress);
+  }
+
+  private void refreshFileItemDisplay() {
+    if (measurementFileItems.isEmpty()) {
+      uploadItemsDisplay.hide();
+      return;
+    }
+    uploadItemsDisplay.show();
   }
 
   private void removeFile(String fileName) {
@@ -111,7 +121,7 @@ public class MeasurementUpload extends Div implements UserInput {
     measurementFileItems.removeIf(
         measurementFileItem -> measurementFileItem.fileName().equals(fileName));
     uploadItemsDisplay.removeFileFromDisplay(fileName);
-    uploadItemsDisplay.toggleFileSectionIfEmpty(!measurementFileItems.isEmpty());
+    refreshFileItemDisplay();
   }
 
   private void onFileRemoved(FileRemovedEvent fileRemovedEvent) {
@@ -119,7 +129,8 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   private void onUploadFailed(FailedEvent failedEvent) {
-    //showErrorNotification("File upload was interrupted", failedEvent.getReason().getMessage());
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   private void onUploadSucceeded(SucceededEvent succeededEvent) {
@@ -139,7 +150,6 @@ public class MeasurementUpload extends Div implements UserInput {
 
     var result = converter.convert(parsingResult);
 
-    validationProgress.setVisible(true);
     var itemsToValidate = result.size();
 
     var requests = new ArrayList<ValidationRequest>();
@@ -158,11 +168,25 @@ public class MeasurementUpload extends Div implements UserInput {
 
     List<ValidationResponse> responses = new ArrayList<>();
     service.validate(Flux.fromIterable(requests))
-        .doFirst(() -> setValidationProgressText("Starting validation ..."))
+        .doFirst(() -> {
+          showValidationProgress();
+          setValidationProgressText("Starting validation ...");
+        })
         .doOnNext(item -> setValidationProgressText("Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
         .doOnNext(responses::add)
-        .doOnComplete(() -> displayValidationResults(responses, itemsToValidate, fileName))
+        .doOnComplete(() -> {
+          hideValidationProgress();
+          displayValidationResults(responses, itemsToValidate, fileName);
+        })
         .subscribe();
+  }
+
+  private void hideValidationProgress() {
+    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(false)));
+  }
+
+  private void showValidationProgress() {
+    getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(true)));
   }
 
   private void setValidationProgressText(String text) {
@@ -176,25 +200,23 @@ public class MeasurementUpload extends Div implements UserInput {
         .reduce(result, ValidationResult::combine);
 
     getUI().ifPresent(ui -> ui.access(() -> {
-      uploadItemsDisplay.setVisible(true);
-      uploadItemsDisplay.addFileToDisplay(new MeasurementFileDisplay(
-          new MeasurementFileItem(fileName,
-              new MeasurementValidationReport(totalValidations, combinedResult))));
+      var measurementFileItem = new MeasurementFileItem(fileName,
+          new MeasurementValidationReport(totalValidations, combinedResult));
+      addAndDisplayFile(measurementFileItem);
     }));
+  }
+
+  private void addAndDisplayFile(MeasurementFileItem measurementFileItem) {
+    measurementFileItems.add(measurementFileItem);
+    showFile(measurementFileItem);
   }
 
   private void showFile(MeasurementFileItem measurementFileItem) {
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
     uploadItemsDisplay.addFileToDisplay(measurementFileDisplay);
-    uploadItemsDisplay.toggleFileSectionIfEmpty(!measurementFileItems.isEmpty());
+    refreshFileItemDisplay();
   }
 
-
-  private void addFile(MeasurementFileItem measurementFileItem,
-      MeasurementMetadataUpload<MeasurementMetadata> metadataUpload) {
-    measurementFileItems.add(measurementFileItem);
-    showFile(measurementFileItem);
-  }
 
   private void onFileRejected(FileRejectedEvent fileRejectedEvent) {
     String errorMessage = fileRejectedEvent.getErrorMessage();
@@ -276,8 +298,12 @@ public class MeasurementUpload extends Div implements UserInput {
           .toArray(MeasurementFileDisplay[]::new);
     }
 
-    private void toggleFileSectionIfEmpty(boolean isEmpty) {
-      uploadedItemsSection.setVisible(isEmpty);
+    public void hide() {
+      uploadedItemsDisplays.setVisible(false);
+    }
+
+    public void show() {
+      uploadedItemsDisplays.setVisible(true);
     }
   }
 
