@@ -159,8 +159,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(),
               createdGroup.replicateCount(), createdGroup.levels().stream()
               .map(this::convertLevelToApi)
-              .collect(Collectors.toSet())), request.requestId());
+              .toList()), request.requestId());
     });
+
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
@@ -238,8 +239,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private static ExperimentalGroup convertToApi(ExperimentInformationService.ExperimentalGroup group) {
-    return new ExperimentalGroup(group.id(), group.groupNumber(), group.name(), group.replicateCount(),
-        group.levels().stream().map(AsyncProjectServiceImpl::convertToApi).collect(Collectors.toSet()));
+    return new ExperimentalGroup(group.id(), group.groupNumber(), group.name(),
+        group.replicateCount(),
+        group.levels().stream().map(AsyncProjectServiceImpl::convertToApi).toList());
   }
 
   private static VariableLevel convertToApi(ExperimentInformationService.VariableLevel level) {
@@ -775,8 +777,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
     return new ExperimentalVariable(experimentalVariable.name().value(),
         experimentalVariable.levels()
-            .stream().map(level -> level.variableName().value()).collect(
-                Collectors.toSet()),
+            .stream().map(level -> level.variableName().value()).toList(),
         experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(null));
   }
 
