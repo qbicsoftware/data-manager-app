@@ -588,10 +588,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     }));
   }
 
-  private void displayToast(Toast toast) {
-    getUI().ifPresent(ui -> ui.access(() -> toast.open()));
-  }
-
   private void closeToast(Toast toast) {
     getUI().ifPresent(ui -> ui.access(() -> toast.close()));
   }
