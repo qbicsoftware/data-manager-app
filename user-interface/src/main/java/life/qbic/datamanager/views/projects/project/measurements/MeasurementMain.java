@@ -544,9 +544,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     dialog.open();
   }
 
-  private void submitRequest(String projectId,
-      List<MeasurementRegistrationInformationNGS> requestList) {
-    var requests = requestList.stream()
+  private void submitPreparedRequest(String projectId, List<MeasurementRegistrationInformationNGS> registrationRequests) {
+    var requests = registrationRequests.stream()
         .map(measurement -> new MeasurementCreationRequestNGS(projectId, measurement)).toList();
 
     AtomicInteger counter = new AtomicInteger(1);
@@ -560,8 +559,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
             "Processing %d of %d measurement registrations.".formatted(counter.getAndIncrement(),
                 requests.size())))
         .doOnComplete(() -> {
-            closeToast(registrationToast);
-            displayRegistrationSuccessful();
+          closeToast(registrationToast);
+          displayRegistrationSuccessful();
         })
         .doOnError(throwable -> {
           log.error("Measurement registration failed", throwable);
@@ -569,6 +568,17 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
           closeToast(registrationToast);
         })
         .subscribe();
+  }
+
+  private void submitRequest(String projectId,
+      List<MeasurementRegistrationInformationNGS> requestList) {
+    var preparedRequests = mergeByPool(requestList);
+    submitPreparedRequest(projectId, preparedRequests);
+  }
+
+  private static List<MeasurementRegistrationInformationNGS> mergeByPool(List<MeasurementRegistrationInformationNGS> requests) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   private void displayRegistrationSuccessful() {
