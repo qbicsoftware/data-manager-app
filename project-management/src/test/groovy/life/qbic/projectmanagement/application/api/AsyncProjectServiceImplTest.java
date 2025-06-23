@@ -14,6 +14,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUp
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -41,6 +42,7 @@ class AsyncProjectServiceImplTest {
       ExperimentInformationService.class);
   TerminologyService terminologyService = mock(TerminologyService.class);
   SpeciesLookupService taxaService = mock(SpeciesLookupService.class);
+  MeasurementService measurementService = mock(MeasurementService.class);
 
   @BeforeEach
   void setUp() {
@@ -67,7 +69,9 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        measurementService
+
     );
 
     String projectId = UUID.randomUUID().toString();
@@ -107,7 +111,8 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        measurementService
     );
 
     String projectId = UUID.randomUUID().toString();

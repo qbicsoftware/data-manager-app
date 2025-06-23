@@ -22,6 +22,8 @@ import life.qbic.domain.concepts.LocalDomainEventDispatcher;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationLookupService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -162,6 +164,109 @@ public class MeasurementService {
     return measurementLookupService.findNGSMeasurement(measurementCode);
   }
 
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public MeasurementRegistrationInformationNGS registerMeasurementNGS(ProjectId projectId,
+      MeasurementRegistrationInformationNGS measurement) {
+
+    // 1. Setup domain event cache and dispatcher to listen to domain events
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new MeasurementCreatedDomainEventSubscriber(domainEventsCache));
+
+    // 2. Perform actual registration
+    performRegistrationNGS(measurement, projectId.value());
+
+    // 3. Dispatch domain events
+    domainEventsCache.forEach(
+        domainEvent -> DomainEventDispatcher.instance().dispatch(domainEvent));
+
+    // 4. Return measurement information
+    return measurement;
+  }
+
+  private void performRegistrationNGS(MeasurementRegistrationInformationNGS measurement,
+      String project) {
+    var measurementWithSampleIdPair = process(measurement, project);
+    measurementDomainService.addNGSAll(measurementWithSampleIdPair);
+  }
+
+  private Map<NGSMeasurement, Collection<SampleIdCodeEntry>> process(
+      MeasurementRegistrationInformationNGS measurement, String project) {
+
+    var sampleIdCodeEntries = buildSampleIdCodeEntries(measurement);
+    var measurementDomain = toDomain(measurement, project, sampleIdCodeEntries);
+    return Map.of(measurementDomain, sampleIdCodeEntries);
+  }
+
+  private List<SampleIdCodeEntry> buildSampleIdCodeEntries(
+      MeasurementRegistrationInformationNGS measurement) {
+    var samples = measurement.measuredSamples();
+    var codeEntries = new ArrayList<SampleIdCodeEntry>();
+    for (String sample : samples) {
+      var codeEntry = sampleInformationService.findSampleId(SampleCode.create(sample));
+      codeEntries.add(codeEntry.orElseThrow(
+          () -> new MeasurementRegistrationException(ErrorCode.MISSING_ASSOCIATED_SAMPLE)));
+    }
+    return codeEntries;
+  }
+
+  private NGSMeasurement toDomain(MeasurementRegistrationInformationNGS measurement,
+      String projectId, List<SampleIdCodeEntry> sampleIdCodeEntries) {
+    var organisationQuery = organisationLookupService.organisation(measurement.organisationId());
+
+    if (organisationQuery.isEmpty()) {
+      log.error("No organisation found for organisation id " + measurement.organisationId());
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ORGANISATION_ROR_ID);
+    }
+
+    var instrumentQuery = resolveOntologyCURI(measurement.instrumentCURIE());
+    if (instrumentQuery.isEmpty()) {
+      throw new MeasurementRegistrationException(ErrorCode.UNKNOWN_ONTOLOGY_TERM);
+    }
+
+    var method = new NGSMethodMetadata(instrumentQuery.get(), measurement.facility(),
+        measurement.sequencingReadType(), measurement.libraryKit(), measurement.flowCell(),
+        measurement.sequencingRunProtocol());
+
+    var specificMetadata = convert(measurement.specificMetadata(), sampleIdCodeEntries);
+
+    if (measurement.samplePoolGroup().isBlank()) {
+      return NGSMeasurement.createSingleMeasurement(ProjectId.parse(projectId), MeasurementCode.createNGS(measurement.measuredSamples().getFirst()),
+          organisationQuery.get(),
+          method,
+          specificMetadata.getFirst());
+    } else {
+      return NGSMeasurement.createWithPool(
+          ProjectId.parse(projectId),
+          measurement.samplePoolGroup(),
+          MeasurementCode.createNGS(measurement.measuredSamples().getFirst()),
+          organisationQuery.get(),
+          method,
+          specificMetadata
+          );
+    }
+  }
+
+  private List<NGSSpecificMeasurementMetadata> convert(
+      Map<String, MeasurementSpecificNGS> stringMeasurementSpecificNGSMap,
+      List<SampleIdCodeEntry> sampleIdCodeEntries) {
+
+    var specificMetadata = new ArrayList<NGSSpecificMeasurementMetadata>();
+    for (Map.Entry<String, MeasurementSpecificNGS> entry : stringMeasurementSpecificNGSMap.entrySet()) {
+      var sampleId = entry.getKey();
+      var metadata = entry.getValue();
+      var convertedMetadata = NGSSpecificMeasurementMetadata.create(
+          sampleIdCodeEntries.stream()
+              .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny().get()
+              .sampleId(), metadata.indexI5(), metadata.indexI7(), metadata.comment());
+      specificMetadata.add(convertedMetadata);
+    }
+    return specificMetadata;
+  }
+
   /**
    * Registers a collection of {@link MeasurementMetadata} items.
    * <p>
@@ -199,7 +304,8 @@ public class MeasurementService {
       return CompletableFuture.completedFuture(List.of(Result.fromError(e.reason)));
     }
     try {
-      results = context.getBean(MeasurementService.class).performRegistration(measurementMetadataList, projectId).stream()
+      results = context.getBean(MeasurementService.class)
+          .performRegistration(measurementMetadataList, projectId).stream()
           .map(Result::<MeasurementId, ErrorCode>fromValue).toList();
     } catch (MeasurementRegistrationException e) {
       log.error("Failed to register measurement", e);
