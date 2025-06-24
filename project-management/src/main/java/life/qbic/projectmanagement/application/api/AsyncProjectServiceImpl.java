@@ -479,7 +479,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<Sample> getSamplesForBatch(String projectId, String batchId)
       throws RequestFailedException {
-    throw new RuntimeException("not implemented");
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
