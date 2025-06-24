@@ -106,7 +106,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.terminologyService = Objects.requireNonNull(termService);
     this.taxaService = Objects.requireNonNull(taxaService);
-    this.measurementService = measurementService;
+    this.measurementService = Objects.requireNonNull(measurementService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -257,8 +257,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     ))
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
-        .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error registering measurement", e))
+        .retryWhen(defaultRetryStrategy())
         .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
   }
 

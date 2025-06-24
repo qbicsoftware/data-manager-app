@@ -189,16 +189,9 @@ public class MeasurementService {
 
   private void performRegistrationNGS(MeasurementRegistrationInformationNGS measurement,
       String project) {
-    var measurementWithSampleIdPair = process(measurement, project);
-    measurementDomainService.addNGSAll(measurementWithSampleIdPair);
-  }
-
-  private Map<NGSMeasurement, Collection<SampleIdCodeEntry>> process(
-      MeasurementRegistrationInformationNGS measurement, String project) {
-
     var sampleIdCodeEntries = buildSampleIdCodeEntries(measurement);
     var measurementDomain = toDomain(measurement, project, sampleIdCodeEntries);
-    return Map.of(measurementDomain, sampleIdCodeEntries);
+    measurementDomainService.addNGSAll(Map.of(measurementDomain, sampleIdCodeEntries));
   }
 
   private List<SampleIdCodeEntry> buildSampleIdCodeEntries(
