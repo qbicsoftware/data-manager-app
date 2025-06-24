@@ -6,6 +6,7 @@ import static life.qbic.projectmanagement.infrastructure.template.provider.openx
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 import life.qbic.application.commons.ApplicationException;
@@ -65,7 +66,7 @@ class SampleUpdateFactory implements WorkbookFactory {
     for (Sample sample : samples) {
       Row row = getOrCreateRow(sheet, rowIndex);
       var experimentalGroup = experimentalGroups.stream()
-          .filter(group -> group.id() == sample.experimentalGroupId())
+          .filter(group -> Objects.equals(group.id(), sample.experimentalGroupId()))
           .findFirst().orElseThrow();
       fillRowWithSampleMetadata(row, sample, experimentalGroup.condition(),
           cellStyles.defaultCellStyle(),

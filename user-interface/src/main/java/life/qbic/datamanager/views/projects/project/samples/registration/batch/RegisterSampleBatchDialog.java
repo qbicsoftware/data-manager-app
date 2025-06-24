@@ -155,7 +155,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private static ValidationRequest convertToRequest(SampleRegistrationInformation registration,
       String projectId) {
-    return new ValidationRequest(projectId, registration, null);
+    return new ValidationRequest(projectId, registration);
   }
 
   private void setValidatedSampleMetadata(List<SampleRegistrationInformation> registrations) {
