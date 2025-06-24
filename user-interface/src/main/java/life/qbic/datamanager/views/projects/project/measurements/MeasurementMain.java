@@ -65,7 +65,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementCreationRequestNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -76,7 +76,6 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
-import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -551,7 +550,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private void submitPreparedRequest(String projectId,
       List<MeasurementRegistrationInformationNGS> registrationRequests) {
     var requests = registrationRequests.stream()
-        .map(measurement -> new MeasurementCreationRequestNGS(projectId, measurement)).toList();
+        .map(measurement -> new MeasurementRegistrationRequest(projectId, measurement)).toList();
 
     AtomicInteger counter = new AtomicInteger(1);
     var registrationToast = messageFactory.pendingTaskToast("measurement.registration.in-progress",

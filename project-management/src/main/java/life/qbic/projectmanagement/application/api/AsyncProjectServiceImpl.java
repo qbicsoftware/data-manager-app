@@ -232,17 +232,27 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<MeasurementCreationResponseNGS> create(
-      Flux<MeasurementCreationRequestNGS> requestStream) {
-    return requestStream.flatMap(this::registerMeasurementNGS);
+  public Flux<MeasurementRegistrationResponse> create(
+      Flux<MeasurementRegistrationRequest> requestStream) {
+    return requestStream.flatMap(this::registerMeasurement);
   }
 
-  private Mono<MeasurementCreationResponseNGS> registerMeasurementNGS(
-      MeasurementCreationRequestNGS measurement) {
+  private Mono<MeasurementRegistrationResponse> registerMeasurement(
+      MeasurementRegistrationRequest request) {
+    switch (request.measurement()) {
+      case MeasurementRegistrationInformationNGS m:
+        return registerMeasurementNGS(request.projectId(), request.requestId(), m);
+      default:
+        throw new UnknownRequestException("Unexpected value: " + request.measurement());
+    }
+  }
+
+  private Mono<MeasurementRegistrationResponse> registerMeasurementNGS(String projectId,
+      String requestId, MeasurementRegistrationInformationNGS measurement) {
     return applySecurityContext(Mono.fromCallable(() -> {
-          measurementService.registerMeasurementNGS(ProjectId.parse(measurement.projectId()),
-              measurement.measurement());
-          return new MeasurementCreationResponseNGS(measurement.requestId(), measurement.measurement());
+          measurementService.registerMeasurementNGS(ProjectId.parse(projectId),
+              measurement);
+          return new MeasurementRegistrationResponse(requestId, measurement);
         }
     ))
         .subscribeOn(VirtualThreadScheduler.getScheduler())

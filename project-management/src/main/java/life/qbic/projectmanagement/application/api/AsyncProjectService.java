@@ -1200,17 +1200,17 @@ public interface AsyncProjectService {
   Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request);
 
 
-  record MeasurementCreationRequestNGS(String projectId,
-                                       MeasurementRegistrationInformationNGS measurement,
-                                       String requestId) implements CacheableRequest {
+  record MeasurementRegistrationRequest(String projectId,
+                                        MeasurementRegistrationRequestBody measurement,
+                                        String requestId) implements CacheableRequest {
 
-    public MeasurementCreationRequestNGS {
+    public MeasurementRegistrationRequest {
       requireNonNull(projectId);
       requireNonNull(measurement);
       requireNonNull(requestId);
     }
 
-    public MeasurementCreationRequestNGS(String projectId,
+    public MeasurementRegistrationRequest(String projectId,
         MeasurementRegistrationInformationNGS measurement) {
       this(projectId, measurement, UUID.randomUUID().toString());
     }
@@ -1238,10 +1238,10 @@ public interface AsyncProjectService {
   //</editor-fold>
 
 
-  record MeasurementCreationResponseNGS(String requestId,
-                                        MeasurementRegistrationInformationNGS measurement) {
+  record MeasurementRegistrationResponse(String requestId,
+                                         MeasurementRegistrationRequestBody measurement) {
 
-    public MeasurementCreationResponseNGS {
+    public MeasurementRegistrationResponse {
       requireNonNull(requestId);
       requireNonNull(measurement);
     }
@@ -1259,12 +1259,12 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param requestStream the request with the measurement information as
-   *                {@link MeasurementRegistrationInformationNGS}.
+   *                      {@link MeasurementRegistrationInformationNGS}.
    * @return a {@link Flux<MeasurementRegistrationInformationNGS>} with the measurement information
    * as {@link MeasurementRegistrationInformationNGS}.
    * @since 1.11.0
    */
-  Flux<MeasurementCreationResponseNGS> create(Flux<MeasurementCreationRequestNGS> requestStream);
+  Flux<MeasurementRegistrationResponse> create(Flux<MeasurementRegistrationRequest> requestStream);
 
 
   /**
@@ -1570,7 +1570,7 @@ public interface AsyncProjectService {
       ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
       ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
       ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
-      MeasurementCreationRequestNGS, ProjectResponsibleCreationRequest,
+      MeasurementRegistrationRequest, ProjectResponsibleCreationRequest,
       ProjectResponsibleDeletionRequest, ProjectUpdateRequest, ValidationRequest {
 
     /**
@@ -1833,6 +1833,17 @@ public interface AsyncProjectService {
   }
 
   /**
+   * Type interface for the registration information of measurements
+   *
+   * @since 1.11.0
+   */
+  sealed interface MeasurementRegistrationRequestBody permits MeasurementRegistrationInformationNGS,
+      MeasurementRegistrationInformationPxP {
+
+  }
+
+
+  /**
    * Information container to register an NGS measurement.
    *
    * @param organisationId        the ROR ID of the organization that performed the measurement
@@ -1855,7 +1866,7 @@ public interface AsyncProjectService {
       String sequencingReadType, String libraryKit, String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
       Map<String, MeasurementSpecificNGS> specificMetadata
-  ) implements ValidationRequestBody {
+  ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
 
     public MeasurementRegistrationInformationNGS {
       requireNonNull(organisationId);
@@ -1869,7 +1880,6 @@ public interface AsyncProjectService {
       requireNonNull(specificMetadata);
       specificMetadata = new HashMap<>(specificMetadata);
     }
-
 
 
     /**
@@ -1991,7 +2001,7 @@ public interface AsyncProjectService {
       String lcmsMethod,
       String labelingType,
       Map<String, MeasurementSpecificPxP> specificMetadata
-  ) implements ValidationRequestBody {
+  ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
 
     /**
      * Returns the {@link List} of sample identifiers this measurement refers to.
