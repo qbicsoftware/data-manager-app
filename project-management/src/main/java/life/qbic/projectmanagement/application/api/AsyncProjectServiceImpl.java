@@ -484,7 +484,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<Sample> findSample(String projectId, String sampleId) {
-    return Mono.defer(() -> {
+    var call = Mono.defer(() -> {
       try {
         return Mono.justOrEmpty(
             sampleInfoService.findSample(ProjectId.parse(projectId), SampleId.parse(sampleId)));
@@ -496,7 +496,11 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         return Mono.error(
             new RequestFailedException("Error getting sample for sample " + sampleId));
       }
-    }).subscribeOn(scheduler);
+    });
+    return applySecurityContext(call)
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .retryWhen(defaultRetryStrategy())
+        .subscribeOn(scheduler);
   }
 
   @Override
