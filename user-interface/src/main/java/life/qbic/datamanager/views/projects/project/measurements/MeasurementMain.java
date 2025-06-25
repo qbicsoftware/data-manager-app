@@ -531,7 +531,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     var registrationUseCase = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
-    //DialogBody.with(dialog, registrationUseCase, registrationUseCase);
     var templateComponent = new MeasurementTemplateSelectionComponent(
         Map.ofEntries(
             Map.entry(Domain.Genomics, new WorkbookDownloadStreamProvider() {
