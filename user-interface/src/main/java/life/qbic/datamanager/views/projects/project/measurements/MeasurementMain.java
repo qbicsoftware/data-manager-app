@@ -60,6 +60,7 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -530,8 +531,37 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     var registrationUseCase = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
-    DialogBody.with(dialog, registrationUseCase, registrationUseCase);
+    //DialogBody.with(dialog, registrationUseCase, registrationUseCase);
+    var templateComponent = new MeasurementTemplateSelectionComponent(Map.of(Domain.Genomics, new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithVersion("ngs_measurement_registration_sheet", 1, "xlsx");
+      }
 
+      @Override
+      public Workbook getWorkbook() {
+        return NGSWorkbooks.createRegistrationWorkbook();
+      }
+    }, Domain.Proteomics, new WorkbookDownloadStreamProvider() {
+      @Override
+      public String getFilename() {
+        return FileNameFormatter.formatWithVersion("pxp_measurement_registration_sheet", 1, "xlsx");
+      }
+
+      @Override
+      public Workbook getWorkbook() {
+        return ProteomicsWorkbooks.createRegistrationWorkbook();
+      }
+    }));
+    templateComponent.addDomainSelectionListener(event -> {
+      var selectedDomain = templateComponent.selectedDomain();
+      log.info("Selected new domain: " +  selectedDomain);
+    });
+
+    var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent, registrationUseCase, Domain.Genomics);
+
+
+    DialogBody.with(dialog, measurementRegistrationComponent, measurementRegistrationComponent);
     var registrationRequestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {

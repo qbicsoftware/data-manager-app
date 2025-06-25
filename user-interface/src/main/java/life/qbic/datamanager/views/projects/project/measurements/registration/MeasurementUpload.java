@@ -61,7 +61,7 @@ public class MeasurementUpload extends Div implements UserInput {
   private final AsyncProjectService service;
   private final Context context;
   private final Div validationProgress;
-  private final MetadataConverterV2<? extends ValidationRequestBody> converter;
+  private MetadataConverterV2<? extends ValidationRequestBody> converter;
 
   private final Map<String, List<? extends ValidationRequestBody>> validationRequestsPerFile = new HashMap<>();
   private final MessageSourceNotificationFactory notificationFactory;
@@ -125,6 +125,10 @@ public class MeasurementUpload extends Div implements UserInput {
 
   public List<? extends ValidationRequestBody> getValidationRequestContent() {
     return validationRequestsPerFile.values().stream().flatMap(List::stream).toList();
+  }
+
+  public void setMetadataConverter(MetadataConverterV2<? extends ValidationRequestBody> converter) {
+    this.converter = requireNonNull(converter);
   }
 
   /**
