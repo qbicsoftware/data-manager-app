@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.views.general.DomainSelectionComponent;
-import life.qbic.datamanager.views.general.DomainSelectionEvent;
+import life.qbic.datamanager.views.general.DomainSelectionComponent.DomainSelectionEvent;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
 
 /**
@@ -66,7 +66,7 @@ public class MeasurementTemplateSelectionComponent extends Div implements
     // every time the user changes the domain, we update the state and fire an event to inform registered listeners
     domainOptions.addValueChangeListener(event -> {
       setSelectedDomainFromString(event.getValue());
-      fireEvent(new DomainSelectionEvent<>(this, true));
+      fireEvent(new DomainSelectionEvent<MeasurementTemplateSelectionComponent>(this, true));
     });
 
     add(domainOptions);
