@@ -1199,6 +1199,24 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request);
 
+
+  record MeasurementRegistrationRequest(String projectId,
+                                        MeasurementRegistrationRequestBody measurement,
+                                        String requestId) implements CacheableRequest {
+
+    public MeasurementRegistrationRequest {
+      requireNonNull(projectId);
+      requireNonNull(measurement);
+      requireNonNull(requestId);
+    }
+
+    public MeasurementRegistrationRequest(String projectId,
+        MeasurementRegistrationInformationNGS measurement) {
+      this(projectId, measurement, UUID.randomUUID().toString());
+    }
+
+  }
+
   /**
    * Submits an experimental group deletion request and returns a reactive
    * {@link Mono<ExperimentalGroupDeletionResponse>}.
@@ -1218,6 +1236,36 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentalGroupDeletionResponse> delete(ExperimentalGroupDeletionRequest request);
   //</editor-fold>
+
+
+  record MeasurementRegistrationResponse(String requestId,
+                                         MeasurementRegistrationRequestBody measurement) {
+
+    public MeasurementRegistrationResponse {
+      requireNonNull(requestId);
+      requireNonNull(measurement);
+    }
+  }
+
+  /**
+   * Submits a measurement registration request for NGS and returns a reactive
+   * {@link Flux<MeasurementRegistrationInformationNGS>} with the measurement information as
+   * {@link MeasurementRegistrationInformationNGS}.
+   *
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Flux#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param requestStream the request with the measurement information as
+   *                      {@link MeasurementRegistrationInformationNGS}.
+   * @return a {@link Flux<MeasurementRegistrationInformationNGS>} with the measurement information
+   * as {@link MeasurementRegistrationInformationNGS}.
+   * @since 1.11.0
+   */
+  Flux<MeasurementRegistrationResponse> create(Flux<MeasurementRegistrationRequest> requestStream);
+
 
   /**
    * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
@@ -1483,6 +1531,7 @@ public interface AsyncProjectService {
   Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType);
 
+
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 
@@ -1521,8 +1570,8 @@ public interface AsyncProjectService {
       ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
       ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
       ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
-      ProjectResponsibleCreationRequest, ProjectResponsibleDeletionRequest, ProjectUpdateRequest,
-      ValidationRequest {
+      MeasurementRegistrationRequest, ProjectResponsibleCreationRequest,
+      ProjectResponsibleDeletionRequest, ProjectUpdateRequest, ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -1784,6 +1833,17 @@ public interface AsyncProjectService {
   }
 
   /**
+   * Type interface for the registration information of measurements
+   *
+   * @since 1.11.0
+   */
+  sealed interface MeasurementRegistrationRequestBody permits MeasurementRegistrationInformationNGS,
+      MeasurementRegistrationInformationPxP {
+
+  }
+
+
+  /**
    * Information container to register an NGS measurement.
    *
    * @param organisationId        the ROR ID of the organization that performed the measurement
@@ -1796,9 +1856,9 @@ public interface AsyncProjectService {
    * @param sequencingRunProtocol the sequencing run protocol
    * @param samplePoolGroup       the name of the sample pool
    * @param specificMetadata      specific metadata that differentiates pooled samples as a
-   *                              {@link Map}, with the sample ids as keys and the
-   *                              sample-specific measurement annotations as values. Will have only one
-   *                              entry if no pooling was done. {@link MeasurementSpecificNGS}
+   *                              {@link Map}, with the sample ids as keys and the sample-specific
+   *                              measurement annotations as values. Will have only one entry if no
+   *                              pooling was done. {@link MeasurementSpecificNGS}
    * @since 1.10.0
    */
   record MeasurementRegistrationInformationNGS(
@@ -1806,7 +1866,7 @@ public interface AsyncProjectService {
       String sequencingReadType, String libraryKit, String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
       Map<String, MeasurementSpecificNGS> specificMetadata
-  ) implements ValidationRequestBody {
+  ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
 
     public MeasurementRegistrationInformationNGS {
       requireNonNull(organisationId);
@@ -1820,6 +1880,7 @@ public interface AsyncProjectService {
       requireNonNull(specificMetadata);
       specificMetadata = new HashMap<>(specificMetadata);
     }
+
 
     /**
      * Returns the {@link List} of sample identifiers this measurement refers to.
@@ -1847,9 +1908,9 @@ public interface AsyncProjectService {
    * @param sequencingRunProtocol the sequencing run protocol
    * @param samplePoolGroup       the name of the sample pool
    * @param specificMetadata      specific metadata that differentiates pooled samples as a
-   *                              {@link Map}, with the sample ids as keys and the
-   *                              sample-specific measurement annotations as values. Will have only one
-   *                              entry if no pooling was done. {@link MeasurementSpecificNGS}
+   *                              {@link Map}, with the sample ids as keys and the sample-specific
+   *                              measurement annotations as values. Will have only one entry if no
+   *                              pooling was done. {@link MeasurementSpecificNGS}
    * @since 1.10.0
    */
   record MeasurementUpdateInformationNGS(
@@ -1921,9 +1982,9 @@ public interface AsyncProjectService {
    * @param lcmsMethod             the method used
    * @param labelingType           the type of the labeling used
    * @param specificMetadata       specific metadata that differentiates pooled samples as a
-   *                               {@link Map}, with the sample ids as keys and the
-   *                               sample-specific measurement annotations as values. Will have only one
-   *                               entry if no pooling was done. {@link MeasurementSpecificPxP}
+   *                               {@link Map}, with the sample ids as keys and the sample-specific
+   *                               measurement annotations as values. Will have only one entry if no
+   *                               pooling was done. {@link MeasurementSpecificPxP}
    * @since 1.10.0
    */
   record MeasurementRegistrationInformationPxP(
@@ -1940,7 +2001,7 @@ public interface AsyncProjectService {
       String lcmsMethod,
       String labelingType,
       Map<String, MeasurementSpecificPxP> specificMetadata
-  ) implements ValidationRequestBody {
+  ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
 
     /**
      * Returns the {@link List} of sample identifiers this measurement refers to.
@@ -1972,9 +2033,9 @@ public interface AsyncProjectService {
    * @param lcmsMethod             the method used
    * @param labelingType           the type of the labeling used
    * @param specificMetadata       specific metadata that differentiates pooled samples as a
-   *                               {@link Map}, with the sample ids as keys and the
-   *                               sample-specific measurement annotations as values. Will have only one
-   *                               entry if no pooling was done. {@link MeasurementSpecificPxP}
+   *                               {@link Map}, with the sample ids as keys and the sample-specific
+   *                               measurement annotations as values. Will have only one entry if no
+   *                               pooling was done. {@link MeasurementSpecificPxP}
    * @since 1.10.0
    */
   record MeasurementUpdateInformationPxP(

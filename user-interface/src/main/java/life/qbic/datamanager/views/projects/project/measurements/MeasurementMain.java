@@ -24,11 +24,15 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.FileNameFormatter;
@@ -61,6 +65,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -76,6 +81,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.publisher.Flux;
 
 
 /**
@@ -214,7 +220,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
-        event -> openRegisterMeasurementDialog());
+        event -> openRegistrationDialog());
 
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> openEditMeasurementDialog());
@@ -518,16 +524,116 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   private void openRegistrationDialog() {
     AppDialog dialog = AppDialog.large();
-    dialog.registerCancelAction(() -> dialog.close());
     DialogHeader.with(dialog, "Register your measurement metadata");
     DialogFooter.with(dialog, "Cancel", "Register");
 
-    var registrationUseCase = new MeasurementUpload(asyncService, context, ConverterRegistry.converterFor(
-        MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
+    var registrationUseCase = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(
+            MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
     DialogBody.with(dialog, registrationUseCase, registrationUseCase);
+
+    var registrationRequestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      var requestContent = registrationUseCase.getValidationRequestContent();
+      for (var entry : requestContent) {
+        registrationRequestsNGS.add((MeasurementRegistrationInformationNGS) entry);
+      }
+      dialog.close();
+      submitRequest(context.projectId().orElseThrow().value(), registrationRequestsNGS);
+    });
 
     add(dialog);
     dialog.open();
+  }
+
+  private void submitPreparedRequest(String projectId,
+      List<MeasurementRegistrationInformationNGS> registrationRequests) {
+    var requests = registrationRequests.stream()
+        .map(measurement -> new MeasurementRegistrationRequest(projectId, measurement)).toList();
+
+    AtomicInteger counter = new AtomicInteger(1);
+    var registrationToast = messageFactory.pendingTaskToast("measurement.registration.in-progress",
+        new Object[]{}, getLocale());
+    registrationToast.open();
+    asyncService.create(Flux.fromIterable(requests))
+        .doFirst(() -> log.debug(
+            "Starting registration of %d measurement requests.".formatted(requests.size())))
+        .doOnEach(signal -> log.debug(
+            "Processing %d of %d measurement registrations.".formatted(counter.getAndIncrement(),
+                requests.size())))
+        .doOnComplete(() -> {
+          closeToast(registrationToast);
+          displayRegistrationSuccessful();
+        })
+        .doOnError(throwable -> {
+          log.error("Measurement registration failed", throwable);
+          displayRegistrationFailure();
+          closeToast(registrationToast);
+        })
+        .subscribe();
+  }
+
+  private void submitRequest(String projectId,
+      List<MeasurementRegistrationInformationNGS> requestList) {
+    var preparedRequests = mergeByPool(requestList);
+    submitPreparedRequest(projectId, preparedRequests);
+  }
+
+  private static List<MeasurementRegistrationInformationNGS> mergeByPool(
+      List<MeasurementRegistrationInformationNGS> requests) {
+    // 1. we want to aggregate measurement registration information that have the same sample pool name (we omit blank pool names)
+    var measurementsBySamplePool = new HashMap<String, List<MeasurementRegistrationInformationNGS>>();
+    var finalMeasurements = new ArrayList<MeasurementRegistrationInformationNGS>();
+    for (var measurement : requests) {
+      if (measurement.samplePoolGroup().isBlank()) {
+        finalMeasurements.add(measurement);
+      } else {
+        measurementsBySamplePool.computeIfAbsent(measurement.samplePoolGroup(),
+            k -> new ArrayList<>()).add(measurement);
+      }
+    }
+    // 2. now we need to merge sample-specific metadata of the pooled measurements
+    for (var entry : measurementsBySamplePool.entrySet()) {
+      // every entry has the same pool name and by definition are only distinct in their specific metadata
+      var specificMetadata = entry.getValue().stream()
+          .flatMap(m ->m.specificMetadata().entrySet().stream())
+          .collect(Collectors.toMap(Map.Entry::getKey,  Map.Entry::getValue));
+      var commonMetadata = entry.getValue().getFirst();
+      var pooledMeasurement = new MeasurementRegistrationInformationNGS(
+          commonMetadata.organisationId(),
+          commonMetadata.instrumentCURIE(),
+          commonMetadata.facility(),
+          commonMetadata.sequencingReadType(),
+          commonMetadata.libraryKit(),
+          commonMetadata.flowCell(),
+          commonMetadata.sequencingRunProtocol(),
+          commonMetadata.samplePoolGroup(),
+          specificMetadata);
+      finalMeasurements.add(pooledMeasurement);
+    }
+
+    return finalMeasurements;
+  }
+
+  private void displayRegistrationSuccessful() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      Toast toast = messageFactory.toast("measurement.registration.successful", new Object[]{},
+          getLocale());
+      toast.open();
+    }));
+  }
+
+  private void closeToast(Toast toast) {
+    getUI().ifPresent(ui -> ui.access(() -> toast.close()));
+  }
+
+  private void displayRegistrationFailure() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = messageFactory.toast("measurement.registration.failed", new Object[]{},
+          getLocale());
+      toast.open();
+    }));
   }
 
   private void routeToSampleCreation(ComponentEvent<?> componentEvent) {
