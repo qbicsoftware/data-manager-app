@@ -60,13 +60,14 @@ import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLa
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
@@ -530,8 +531,37 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     var registrationUseCase = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
-    DialogBody.with(dialog, registrationUseCase, registrationUseCase);
+    var templateComponent = new MeasurementTemplateSelectionComponent(
+        Map.ofEntries(
+            Map.entry(Domain.Genomics, new WorkbookDownloadStreamProvider() {
+              @Override
+              public String getFilename() {
+                return FileNameFormatter.formatWithVersion("ngs_measurement_registration_sheet", 1,
+                    "xlsx");
+              }
 
+              @Override
+              public Workbook getWorkbook() {
+                return NGSWorkbooks.createRegistrationWorkbook();
+              }
+            }),
+            Map.entry(Domain.Proteomics, new WorkbookDownloadStreamProvider() {
+              @Override
+              public String getFilename() {
+                return FileNameFormatter.formatWithVersion("pxp_measurement_registration_sheet", 1,
+                    "xlsx");
+              }
+
+              @Override
+              public Workbook getWorkbook() {
+                return ProteomicsWorkbooks.createRegistrationWorkbook();
+              }
+            })));
+
+    var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
+        registrationUseCase, Domain.Genomics);
+
+    DialogBody.with(dialog, measurementRegistrationComponent, measurementRegistrationComponent);
     var registrationRequestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
@@ -597,8 +627,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     for (var entry : measurementsBySamplePool.entrySet()) {
       // every entry has the same pool name and by definition are only distinct in their specific metadata
       var specificMetadata = entry.getValue().stream()
-          .flatMap(m ->m.specificMetadata().entrySet().stream())
-          .collect(Collectors.toMap(Map.Entry::getKey,  Map.Entry::getValue));
+          .flatMap(m -> m.specificMetadata().entrySet().stream())
+          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
       var commonMetadata = entry.getValue().getFirst();
       var pooledMeasurement = new MeasurementRegistrationInformationNGS(
           commonMetadata.organisationId(),
