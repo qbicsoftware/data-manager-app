@@ -13,11 +13,13 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b><Measurement Registration Component</b>
+ * <p>
+ * A component that orchestrates the selection of a user in a
+ * {@link MeasurementTemplateSelectionComponent} and sets the {@link MeasurementUpload} with the
+ * correct {@link MetadataConverterV2} based on the domain selection.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 public class MeasurementRegistrationComponent extends Div implements UserInput {
 
@@ -26,13 +28,21 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
 
   public MeasurementRegistrationComponent(
       MeasurementTemplateSelectionComponent templateSelectionComponent,
-      MeasurementUpload measurementUpload, Domain defaultDomain) {
+      MeasurementUpload measurementUpload,
+      Domain defaultDomain) {
     this.templateSelectionComponent = Objects.requireNonNull(templateSelectionComponent);
     this.measurementUpload = Objects.requireNonNull(measurementUpload);
-    syncComponents(defaultDomain);
+    // 1. We want to ensure that the correct metadata converter is set based on the domain selection
+    syncComponents(Objects.requireNonNull(defaultDomain));
+
+    // 2. Everytime the user changes the domain, the correct converter for the domain shall be set
+    // for the measurement upload component. Only then, the validation will be done in the correct
+    // domain context.
     templateSelectionComponent.addDomainSelectionListener(
         event -> measurementUpload.setMetadataConverter(
             getConverterForDomain(templateSelectionComponent.selectedDomain())));
+
+    // 3. We add the components as children to this component
     add(templateSelectionComponent);
     add(measurementUpload);
   }
@@ -46,8 +56,7 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
       Domain domain) {
     return switch (domain) {
       case Genomics -> ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class);
-      case Proteomics ->
-          ConverterRegistry.converterFor(MeasurementRegistrationInformationPxP.class);
+      case Proteomics -> ConverterRegistry.converterFor(MeasurementRegistrationInformationPxP.class);
     };
   }
 

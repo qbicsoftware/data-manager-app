@@ -4,11 +4,19 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * Domain Selection Event
+ * <p>
+ * Event type that can be used to indicate that the user intended to change the domain scope for a
+ * task.
+ * <p>
+ * Sometimes actions are very similar but not exactly the same, because they depend on the
+ * measurement domain. E.g., metadata validation needs to be different for proteomics measurements
+ * than for next generation sequencing measurements.
+ * <p>
+ * In case the application offers the user with multiple selection options for a domain, this event
+ * can be used to indicate a change in the selection.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 public class DomainSelectionEvent<T extends Component> extends ComponentEvent<T> {
 

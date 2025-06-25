@@ -61,14 +61,18 @@ public class MeasurementTemplateSelectionComponent extends Div implements
     templateDownloadButton.addClickListener(event -> {
       triggerDownloadBasedOnSelection(selectedDomain);
     });
-    this.domainOptions = createRadioButtonGroup(Arrays.stream(Domain.values()).map(Domain::name).toList());
+    this.domainOptions = createRadioButtonGroup(
+        Arrays.stream(Domain.values()).map(Domain::name).toList());
+    // every time the user changes the domain, we update the state and fire an event to inform registered listeners
     domainOptions.addValueChangeListener(event -> {
       setSelectedDomainFromString(event.getValue());
       fireEvent(new DomainSelectionEvent<>(this, true));
     });
+
     add(domainOptions);
     add(templateDownloadButton);
     add(downloadComponent);
+
     setDefaultSelection(Domain.Genomics);
   }
 
@@ -88,7 +92,7 @@ public class MeasurementTemplateSelectionComponent extends Div implements
   private static RadioButtonGroup<String> createRadioButtonGroup(List<String> options) {
     var radioButtonGroup = new RadioButtonGroup();
     radioButtonGroup.setItems(options);
-    radioButtonGroup.setLabel("Select a radio button");
+    radioButtonGroup.setLabel("Select a domain button");
     return radioButtonGroup;
   }
 
@@ -126,7 +130,8 @@ public class MeasurementTemplateSelectionComponent extends Div implements
   @Override
   public Registration addDomainSelectionListener(
       ComponentEventListener<DomainSelectionEvent<Div>> listener) {
-    return ComponentUtil.addListener(this, DomainSelectionEvent.class, (ComponentEventListener) listener);
+    return ComponentUtil.addListener(this, DomainSelectionEvent.class,
+        (ComponentEventListener) listener);
   }
 
 
