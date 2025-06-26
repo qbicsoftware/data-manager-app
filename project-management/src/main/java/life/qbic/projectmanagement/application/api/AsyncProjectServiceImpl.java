@@ -244,8 +244,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         return registerMeasurementNGS(request.projectId(), request.requestId(), m);
       case MeasurementRegistrationInformationPxP m:
         return registerMeasurementPxP(request.projectId(), request.requestId(), m);
-      default:
-        throw new UnknownRequestException("Unexpected value: " + request.measurement());
     }
   }
 

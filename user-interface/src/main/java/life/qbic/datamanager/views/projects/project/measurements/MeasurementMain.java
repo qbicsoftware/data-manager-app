@@ -71,7 +71,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequestBody;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -717,7 +716,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     return finalMeasurements;
   }
 
-
+  // To be called after all submitted requests completed by the service
   private void processRegistrationResults(int numberOfSuccesses, int numberOfRequests) {
     if (numberOfSuccesses > 0 && numberOfSuccesses == numberOfRequests) {
       // Only successful registrations

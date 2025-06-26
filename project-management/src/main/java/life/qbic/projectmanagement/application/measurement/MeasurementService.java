@@ -214,14 +214,14 @@ public class MeasurementService {
   private void performRegistrationPxP(MeasurementRegistrationInformationPxP measurement,
       String projectId) {
     var sampleIdCodeEntries = buildSampleIdCodeEntries(measurement.measuredSamples());
-    var measurementDomain = toDomainPxP(measurement, projectId, sampleIdCodeEntries);
+    var measurementDomain = toDomain(measurement, projectId, sampleIdCodeEntries);
     measurementDomainService.addProteomicsAll(Map.of(measurementDomain, sampleIdCodeEntries));
   }
 
   private void performRegistrationNGS(MeasurementRegistrationInformationNGS measurement,
       String projectId) {
     var sampleIdCodeEntries = buildSampleIdCodeEntries(measurement.measuredSamples());
-    var measurementDomain = toDomainNGS(measurement, projectId, sampleIdCodeEntries);
+    var measurementDomain = toDomain(measurement, projectId, sampleIdCodeEntries);
     measurementDomainService.addNGSAll(Map.of(measurementDomain, sampleIdCodeEntries));
   }
 
@@ -236,7 +236,7 @@ public class MeasurementService {
     return codeEntries;
   }
 
-  private ProteomicsMeasurement toDomainPxP(MeasurementRegistrationInformationPxP measurement,
+  private ProteomicsMeasurement toDomain(MeasurementRegistrationInformationPxP measurement,
       String projectId, List<SampleIdCodeEntry> sampleIdCodeEntries) {
     var organisationQuery = organisationLookupService.organisation(measurement.organisationId());
 
@@ -277,7 +277,7 @@ public class MeasurementService {
     return Integer.parseInt(value);
   }
 
-  private NGSMeasurement toDomainNGS(MeasurementRegistrationInformationNGS measurement,
+  private NGSMeasurement toDomain(MeasurementRegistrationInformationNGS measurement,
       String projectId, List<SampleIdCodeEntry> sampleIdCodeEntries) {
     var organisationQuery = organisationLookupService.organisation(measurement.organisationId());
 
