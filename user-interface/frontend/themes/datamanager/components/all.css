@@ -186,6 +186,10 @@ Padding & gaps
   padding-top: var(--spacing-03);
 }
 
+.padding-top-05 {
+  padding-top: var(--spacing-05);
+}
+
 .padding-top-bottom-04 {
   padding-top: var(--spacing-04);
   padding-bottom: var(--spacing-04);
@@ -467,7 +471,16 @@ Layout
   flex-direction: column;
 }
 
+/**************************
+Boxes
+****************************/
 
+.choice-box {
+  border-color: var(--lumo-contrast-20pct);
+  border-style: solid;
+  border-width: 1px;
+  border-radius: var(--spacing-03);
+}
 
 /****************************
 Older stuff -

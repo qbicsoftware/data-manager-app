@@ -52,6 +52,8 @@ public class MeasurementTemplateSelectionComponent extends Div implements
    */
   public MeasurementTemplateSelectionComponent(
       Map<Domain, DownloadStreamProvider> downloadProviders) {
+    addClassNames("padding-left-right-05", "padding-top-bottom-05", "choice-box", "flex-vertical", "gap-03");
+
     Objects.requireNonNull(downloadProviders);
     if (hasMissingDomains(downloadProviders.keySet())) {
       throw new IllegalArgumentException("Not all domains have a download provider");
@@ -69,8 +71,12 @@ public class MeasurementTemplateSelectionComponent extends Div implements
       fireEvent(new DomainSelectionEvent<MeasurementTemplateSelectionComponent>(this, true));
     });
 
+    var description = new Div("Download the template, fill in the data and upload the metadata sheet below to register the measurements.");
+    description.addClassNames("padding-top-05", "normal-body-text");
+
     add(domainOptions);
-    add(templateDownloadButton);
+    add(description);
+    add(new Div(templateDownloadButton)); // Without the wrapping div the button will be full-width
     add(downloadComponent);
 
     setDefaultSelection(Domain.Genomics);
@@ -92,7 +98,6 @@ public class MeasurementTemplateSelectionComponent extends Div implements
   private static RadioButtonGroup<String> createRadioButtonGroup(List<String> options) {
     var radioButtonGroup = new RadioButtonGroup();
     radioButtonGroup.setItems(options);
-    radioButtonGroup.setLabel("Select a domain button");
     return radioButtonGroup;
   }
 

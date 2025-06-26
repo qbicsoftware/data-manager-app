@@ -32,6 +32,7 @@ import life.qbic.datamanager.files.parsing.tsv.TSVParser;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.InfoBox;
+import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
@@ -115,8 +116,11 @@ public class MeasurementUpload extends Div implements UserInput {
     upload.addFileRemovedListener(this::onFileRemoved);
     this.uploadItemsDisplay = new UploadItemsDisplay(upload);
 
+    // Create the different sections
+    var sectionUpload = DialogSection.with("Upload the measurement metadata", "", uploadItemsDisplay);
+
     // Add components to the MeasurementUpload component
-    add(uploadItemsDisplay);
+    add(sectionUpload);
     add(validationProgress);
 
     // Trigger display refresh
