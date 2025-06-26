@@ -242,9 +242,26 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     switch (request.measurement()) {
       case MeasurementRegistrationInformationNGS m:
         return registerMeasurementNGS(request.projectId(), request.requestId(), m);
+      case MeasurementRegistrationInformationPxP m:
+        return registerMeasurementPxP(request.projectId(), request.requestId(), m);
       default:
         throw new UnknownRequestException("Unexpected value: " + request.measurement());
     }
+  }
+
+  private Mono<MeasurementRegistrationResponse> registerMeasurementPxP(String projectId,
+      String requestId, MeasurementRegistrationInformationPxP measurement ) {
+    return applySecurityContext(Mono.fromCallable(() -> {
+          measurementService.registerMeasurementPxP(ProjectId.parse(projectId),
+              measurement);
+          return new MeasurementRegistrationResponse(requestId, measurement);
+        }
+    ))
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Error registering measurement", e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
   }
 
   private Mono<MeasurementRegistrationResponse> registerMeasurementNGS(String projectId,

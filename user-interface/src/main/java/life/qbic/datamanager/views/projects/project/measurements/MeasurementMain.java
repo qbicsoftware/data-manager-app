@@ -71,6 +71,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequestBody;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -585,6 +586,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   private void submitRequestPxP(String projectId,
       List<MeasurementRegistrationInformationPxP> requestList) {
+    if (requestList.isEmpty()) {
+      return;
+    }
     var preparedRequests = mergeByPoolPxP(requestList);
     submitPreparedRequest(projectId, preparedRequests);
   }
@@ -649,30 +653,30 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     var requests = registrationRequests.stream()
         .map(measurement -> new MeasurementRegistrationRequest(projectId, measurement)).toList();
 
-    AtomicInteger counter = new AtomicInteger(1);
     var registrationToast = messageFactory.pendingTaskToast("measurement.registration.in-progress",
         new Object[]{}, getLocale());
     registrationToast.open();
+    var successfulCompletions = new AtomicInteger(0);
     asyncService.create(Flux.fromIterable(requests))
         .doFirst(() -> log.debug(
             "Starting registration of %d measurement requests.".formatted(requests.size())))
-        .doOnEach(signal -> log.debug(
-            "Processing %d of %d measurement registrations.".formatted(counter.getAndIncrement(),
-                requests.size())))
-        .doOnComplete(() -> {
-          closeToast(registrationToast);
-          displayRegistrationSuccessful();
+        .doOnEach(signal -> {
+          if (signal.isOnNext()) {
+            successfulCompletions.incrementAndGet();
+          }
         })
-        .doOnError(throwable -> {
-          log.error("Measurement registration failed", throwable);
-          displayRegistrationFailure();
+        .doOnTerminate(() -> {
           closeToast(registrationToast);
+          processRegistrationResults(successfulCompletions.get(), requests.size());
         })
         .subscribe();
   }
 
   private void submitRequestNGS(String projectId,
       List<MeasurementRegistrationInformationNGS> requestList) {
+    if (requestList.isEmpty()) {
+      return;
+    }
     var preparedRequests = mergeByPoolNGS(requestList);
     submitPreparedRequest(projectId, preparedRequests);
   }
@@ -713,9 +717,26 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     return finalMeasurements;
   }
 
-  private void displayRegistrationSuccessful() {
+
+  private void processRegistrationResults(int numberOfSuccesses, int numberOfRequests) {
+    if (numberOfSuccesses > 0 && numberOfSuccesses == numberOfRequests) {
+      // Only successful registrations
+      displayRegistrationSuccess(numberOfSuccesses);
+      return;
+    }
+    if (numberOfSuccesses > 0 && numberOfSuccesses < numberOfRequests) {
+      // We have successful registrations but also failures
+      displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+      displayRegistrationSuccess(numberOfSuccesses);
+      return;
+    }
+    // There were only failing requests, none succeeded
+    displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+  }
+
+  private void displayRegistrationSuccess(int numberOfSuccesses) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      Toast toast = messageFactory.toast("measurement.registration.successful", new Object[]{},
+      Toast toast = messageFactory.toast("measurement.registration.successful", new Object[]{numberOfSuccesses},
           getLocale());
       toast.open();
     }));
@@ -725,9 +746,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     getUI().ifPresent(ui -> ui.access(() -> toast.close()));
   }
 
-  private void displayRegistrationFailure() {
+  private void displayRegistrationFailure(int numberOfFailures) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = messageFactory.toast("measurement.registration.failed", new Object[]{},
+      var toast = messageFactory.toast("measurement.registration.failed", new Object[]{numberOfFailures},
           getLocale());
       toast.open();
     }));
