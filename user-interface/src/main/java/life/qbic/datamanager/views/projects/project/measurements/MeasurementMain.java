@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -67,7 +68,10 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequestBody;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
@@ -562,55 +566,121 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         registrationUseCase, Domain.Genomics);
 
     DialogBody.with(dialog, measurementRegistrationComponent, measurementRegistrationComponent);
-    var registrationRequestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
       var requestContent = registrationUseCase.getValidationRequestContent();
-      for (var entry : requestContent) {
-        registrationRequestsNGS.add((MeasurementRegistrationInformationNGS) entry);
-      }
+      submitRequest(context.projectId().orElseThrow().value(), createRegistrationRequestPackage(requestContent));
       dialog.close();
-      submitRequest(context.projectId().orElseThrow().value(), registrationRequestsNGS);
     });
 
     add(dialog);
     dialog.open();
   }
 
+  private void submitRequest(String projectId,
+      RegistrationRequestPackage registrationRequestPackage) {
+    submitRequestNGS(projectId, registrationRequestPackage.registrationInformationNGS());
+    submitRequestPxP(projectId, registrationRequestPackage.registrationInformationPxP());
+  }
+
+  private void submitRequestPxP(String projectId,
+      List<MeasurementRegistrationInformationPxP> requestList) {
+    if (requestList.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolPxP(requestList);
+    submitPreparedRequest(projectId, preparedRequests);
+  }
+
+  private List<MeasurementRegistrationInformationPxP> mergeByPoolPxP(
+      List<MeasurementRegistrationInformationPxP> requests) {
+    // 1. we want to aggregate measurement registration information that have the same sample pool name (we omit blank pool names)
+    var measurementsBySamplePool = new HashMap<String, List<MeasurementRegistrationInformationPxP>>();
+    var finalMeasurements = new ArrayList<MeasurementRegistrationInformationPxP>();
+    for (var measurement : requests) {
+      if (measurement.samplePoolGroup().isBlank()) {
+        finalMeasurements.add(measurement);
+      } else {
+        measurementsBySamplePool.computeIfAbsent(measurement.samplePoolGroup(),
+            k -> new ArrayList<>()).add(measurement);
+      }
+    }
+    // 2. now we need to merge sample-specific metadata of the pooled measurements
+    for (var entry : measurementsBySamplePool.entrySet()) {
+      // every entry has the same pool name and by definition are only distinct in their specific metadata
+      var specificMetadata = entry.getValue().stream()
+          .flatMap(m -> m.specificMetadata().entrySet().stream())
+          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      var commonMetadata = entry.getValue().getFirst();
+      var pooledMeasurement = new MeasurementRegistrationInformationPxP(
+          commonMetadata.technicalReplicateName(),
+          commonMetadata.organisationId(),
+          commonMetadata.msDeviceCURIE(),
+          commonMetadata.samplePoolGroup(),
+          commonMetadata.facility(),
+          commonMetadata.digestionEnzyme(),
+          commonMetadata.digestionMethod(),
+          commonMetadata.enrichmentMethod(),
+          commonMetadata.injectionVolume(),
+          commonMetadata.lcColumn(),
+          commonMetadata.lcmsMethod(),
+          commonMetadata.labelingType(),
+          specificMetadata);
+      finalMeasurements.add(pooledMeasurement);
+    }
+
+    return finalMeasurements;
+  }
+
+  private RegistrationRequestPackage createRegistrationRequestPackage(List<? extends ValidationRequestBody> validationRequestBodies) {
+    var requestsNGS  = new ArrayList<MeasurementRegistrationInformationNGS>();
+    var requestsPxP = new ArrayList<MeasurementRegistrationInformationPxP>();
+    
+    for  (var entry : validationRequestBodies) {
+      switch (entry) {
+        case MeasurementRegistrationInformationNGS info -> requestsNGS.add(info);
+        case MeasurementRegistrationInformationPxP info -> requestsPxP.add(info);
+        default -> throw new IllegalStateException("Unexpected request body of type: " + entry.getClass().getName());
+      }
+    }
+
+    return new RegistrationRequestPackage(requestsNGS, requestsPxP);
+  }
+
   private void submitPreparedRequest(String projectId,
-      List<MeasurementRegistrationInformationNGS> registrationRequests) {
+      List<? extends MeasurementRegistrationRequestBody> registrationRequests) {
     var requests = registrationRequests.stream()
         .map(measurement -> new MeasurementRegistrationRequest(projectId, measurement)).toList();
 
-    AtomicInteger counter = new AtomicInteger(1);
     var registrationToast = messageFactory.pendingTaskToast("measurement.registration.in-progress",
         new Object[]{}, getLocale());
     registrationToast.open();
+    var successfulCompletions = new AtomicInteger(0);
     asyncService.create(Flux.fromIterable(requests))
         .doFirst(() -> log.debug(
             "Starting registration of %d measurement requests.".formatted(requests.size())))
-        .doOnEach(signal -> log.debug(
-            "Processing %d of %d measurement registrations.".formatted(counter.getAndIncrement(),
-                requests.size())))
-        .doOnComplete(() -> {
-          closeToast(registrationToast);
-          displayRegistrationSuccessful();
+        .doOnEach(signal -> {
+          if (signal.isOnNext()) {
+            successfulCompletions.incrementAndGet();
+          }
         })
-        .doOnError(throwable -> {
-          log.error("Measurement registration failed", throwable);
-          displayRegistrationFailure();
+        .doOnTerminate(() -> {
           closeToast(registrationToast);
+          processRegistrationResults(successfulCompletions.get(), requests.size());
         })
         .subscribe();
   }
 
-  private void submitRequest(String projectId,
+  private void submitRequestNGS(String projectId,
       List<MeasurementRegistrationInformationNGS> requestList) {
-    var preparedRequests = mergeByPool(requestList);
+    if (requestList.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolNGS(requestList);
     submitPreparedRequest(projectId, preparedRequests);
   }
 
-  private static List<MeasurementRegistrationInformationNGS> mergeByPool(
+  private static List<MeasurementRegistrationInformationNGS> mergeByPoolNGS(
       List<MeasurementRegistrationInformationNGS> requests) {
     // 1. we want to aggregate measurement registration information that have the same sample pool name (we omit blank pool names)
     var measurementsBySamplePool = new HashMap<String, List<MeasurementRegistrationInformationNGS>>();
@@ -628,7 +698,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       // every entry has the same pool name and by definition are only distinct in their specific metadata
       var specificMetadata = entry.getValue().stream()
           .flatMap(m -> m.specificMetadata().entrySet().stream())
-          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
       var commonMetadata = entry.getValue().getFirst();
       var pooledMeasurement = new MeasurementRegistrationInformationNGS(
           commonMetadata.organisationId(),
@@ -646,9 +716,26 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     return finalMeasurements;
   }
 
-  private void displayRegistrationSuccessful() {
+  // To be called after all submitted requests completed by the service
+  private void processRegistrationResults(int numberOfSuccesses, int numberOfRequests) {
+    if (numberOfSuccesses > 0 && numberOfSuccesses == numberOfRequests) {
+      // Only successful registrations
+      displayRegistrationSuccess(numberOfSuccesses);
+      return;
+    }
+    if (numberOfSuccesses > 0 && numberOfSuccesses < numberOfRequests) {
+      // We have successful registrations but also failures
+      displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+      displayRegistrationSuccess(numberOfSuccesses);
+      return;
+    }
+    // There were only failing requests, none succeeded
+    displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+  }
+
+  private void displayRegistrationSuccess(int numberOfSuccesses) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      Toast toast = messageFactory.toast("measurement.registration.successful", new Object[]{},
+      Toast toast = messageFactory.toast("measurement.registration.successful", new Object[]{numberOfSuccesses},
           getLocale());
       toast.open();
     }));
@@ -658,9 +745,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     getUI().ifPresent(ui -> ui.access(() -> toast.close()));
   }
 
-  private void displayRegistrationFailure() {
+  private void displayRegistrationFailure(int numberOfFailures) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = messageFactory.toast("measurement.registration.failed", new Object[]{},
+      var toast = messageFactory.toast("measurement.registration.failed", new Object[]{numberOfFailures},
           getLocale());
       toast.open();
     }));
@@ -811,6 +898,17 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   @Override
   public void beforeLeave(BeforeLeaveEvent event) {
     Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
+  }
+
+  record RegistrationRequestPackage(
+      List<MeasurementRegistrationInformationNGS> registrationInformationNGS,
+      List<MeasurementRegistrationInformationPxP> registrationInformationPxP) {
+
+    public RegistrationRequestPackage {
+      List.copyOf(Objects.requireNonNull(registrationInformationNGS));
+      List.copyOf(Objects.requireNonNull(registrationInformationPxP));
+    }
+
   }
 
 }

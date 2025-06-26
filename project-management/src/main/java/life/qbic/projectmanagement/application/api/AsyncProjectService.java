@@ -1211,7 +1211,7 @@ public interface AsyncProjectService {
     }
 
     public MeasurementRegistrationRequest(String projectId,
-        MeasurementRegistrationInformationNGS measurement) {
+        MeasurementRegistrationRequestBody measurement) {
       this(projectId, measurement, UUID.randomUUID().toString());
     }
 
