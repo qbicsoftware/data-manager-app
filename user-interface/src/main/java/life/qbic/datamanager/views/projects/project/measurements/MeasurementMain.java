@@ -1,10 +1,8 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -13,8 +11,6 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.BeforeLeaveEvent;
-import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -31,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
@@ -58,8 +53,6 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
@@ -79,7 +72,6 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -186,19 +178,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(measurementTemplateListComponent)));
     this.experimentInformationService = experimentInformationService;
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
-  }
-
-  private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
-    return switch (errorCode) {
-      case FAILED -> "Registration failed";
-      case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
-      case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
-      case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-      case MISSING_ASSOCIATED_SAMPLE -> "Missing sample information for this measurement.";
-      case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
-      case SAMPLECODE_NOT_FROM_PROJECT -> "QBiC sample ID does not belong to this project";
-      case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
-    };
   }
 
   private void initContent() {
@@ -479,11 +458,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
         registrationUseCase, Domain.Genomics);
 
-    DialogBody.with(measurementDialog, measurementRegistrationComponent, measurementRegistrationComponent);
+    DialogBody.with(measurementDialog, measurementRegistrationComponent,
+        measurementRegistrationComponent);
     measurementDialog.registerCancelAction(measurementDialog::close);
     measurementDialog.registerConfirmAction(() -> {
       var requestContent = registrationUseCase.getValidationRequestContent();
-      submitRequest(context.projectId().orElseThrow().value(), createRegistrationRequestPackage(requestContent));
+      submitRequest(context.projectId().orElseThrow().value(),
+          createRegistrationRequestPackage(requestContent));
       measurementDialog.close();
     });
 
@@ -546,15 +527,17 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     return finalMeasurements;
   }
 
-  private RegistrationRequestPackage createRegistrationRequestPackage(List<? extends ValidationRequestBody> validationRequestBodies) {
-    var requestsNGS  = new ArrayList<MeasurementRegistrationInformationNGS>();
+  private RegistrationRequestPackage createRegistrationRequestPackage(
+      List<? extends ValidationRequestBody> validationRequestBodies) {
+    var requestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
     var requestsPxP = new ArrayList<MeasurementRegistrationInformationPxP>();
-    
-    for  (var entry : validationRequestBodies) {
+
+    for (var entry : validationRequestBodies) {
       switch (entry) {
         case MeasurementRegistrationInformationNGS info -> requestsNGS.add(info);
         case MeasurementRegistrationInformationPxP info -> requestsPxP.add(info);
-        default -> throw new IllegalStateException("Unexpected request body of type: " + entry.getClass().getName());
+        default -> throw new IllegalStateException(
+            "Unexpected request body of type: " + entry.getClass().getName());
       }
     }
 
@@ -639,17 +622,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     }
     if (numberOfSuccesses > 0 && numberOfSuccesses < numberOfRequests) {
       // We have successful registrations but also failures
-      displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+      displayRegistrationFailure(numberOfRequests - numberOfSuccesses);
       displayRegistrationSuccess(numberOfSuccesses);
       return;
     }
     // There were only failing requests, none succeeded
-    displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+    displayRegistrationFailure(numberOfRequests - numberOfSuccesses);
   }
 
   private void displayRegistrationSuccess(int numberOfSuccesses) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      Toast toast = messageFactory.toast("measurement.registration.successful", new Object[]{numberOfSuccesses},
+      Toast toast = messageFactory.toast("measurement.registration.successful",
+          new Object[]{numberOfSuccesses},
           getLocale());
       toast.open();
     }));
@@ -661,7 +645,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void displayRegistrationFailure(int numberOfFailures) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = messageFactory.toast("measurement.registration.failed", new Object[]{numberOfFailures},
+      var toast = messageFactory.toast("measurement.registration.failed",
+          new Object[]{numberOfFailures},
           getLocale());
       toast.open();
     }));
