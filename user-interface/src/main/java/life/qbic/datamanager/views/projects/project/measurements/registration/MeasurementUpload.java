@@ -385,8 +385,8 @@ public class MeasurementUpload extends Div implements UserInput {
     public MeasurementFileDisplay(MeasurementFileItem measurementFileItem) {
       this.measurementFileItem = requireNonNull(measurementFileItem,
           "measurementFileItem must not be null");
-      var fileIcon = VaadinIcon.FILE.create();
-      fileIcon.addClassName("file-icon");
+      var fileIcon = VaadinIcon.FILE_TABLE.create();
+      fileIcon.addClassName("icon-size-s");
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
       fileNameLabel.addClassName("file-name");
 
@@ -481,6 +481,7 @@ public class MeasurementUpload extends Div implements UserInput {
       Icon icon = isSuccess ? successIcon() : failureIcon();
       var iconContainer = new Div();
       iconContainer.add(icon);
+      iconContainer.addClassNames("flex-align-items-center", "flex-horizontal");
       var textContainer = new Div(message);
       textContainer.getStyle().set("font-weight", "bold");
 
@@ -491,13 +492,13 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private static Icon successIcon() {
       Icon icon = VaadinIcon.CHECK_CIRCLE.create();
-      icon.addClassName("icon-color-success");
+      icon.addClassNames("icon-color-success", "icon-size-xs");
       return icon;
     }
 
     private static Icon failureIcon() {
       Icon icon = VaadinIcon.CLOSE_CIRCLE.create();
-      icon.addClassName("icon-color-error");
+      icon.addClassNames("icon-color-error", "icon-size-xs");
       return icon;
     }
   }
@@ -550,23 +551,36 @@ public class MeasurementUpload extends Div implements UserInput {
       return content;
     }
 
+    static ValidationReportContent failure(Map<String, Long> reportedFailures) {
+      var summary = new Div();
+      summary.addClassNames("flex-vertical", "gap-02");
+
+      for (Entry<String, Long> entry : reportedFailures.entrySet()) {
+        var occurrences = new Span("%s x".formatted(entry.getValue()));
+        occurrences.getStyle().set("font-weight", "bold");
+
+        var finding = new Div();
+        finding.add(occurrences, new Div(entry.getKey()));
+        finding.addClassNames("flex-horizontal", "gap-02");
+        summary.add(finding);
+      }
+
+      var disclaimer = disclaimerForFailure();
+      var content = new ValidationReportContent();
+      content.add(summary, disclaimer);
+      return content;
+    }
+
     private static Div disclaimerForSuccess() {
       var textBox = new Div("Please click on Register to register the sample measurement metadata.");
       textBox.addClassNames("small-body-text", "color-secondary");
       return textBox;
     }
 
-    static ValidationReportContent failure(Map<String, Long> reportedFailures) {
-      var summary = new Div();
-      summary.addClassNames("flex-vertical", "gap-04");
-
-      for (Entry<String, Long> entry : reportedFailures.entrySet()) {
-        summary.add(new Text("%s times: %s".formatted(entry.getValue(), entry.getKey())));
-      }
-
-      var content = new ValidationReportContent();
-      content.add(summary);
-      return content;
+    private static Div disclaimerForFailure() {
+      var textBox = new Div("Please correct the entries in the uploaded excel sheet and re-upload.");
+      textBox.addClassNames("small-body-text", "color-secondary");
+      return textBox;
     }
 
   }

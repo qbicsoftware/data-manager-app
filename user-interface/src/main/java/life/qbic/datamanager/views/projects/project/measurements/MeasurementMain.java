@@ -101,7 +101,7 @@ import reactor.core.publisher.Flux;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
-public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
+public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -130,6 +130,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private MeasurementMetadataUploadDialog dialog;
   private transient Context context;
+  private AppDialog measurementDialog;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
@@ -394,7 +395,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         MODE.EDIT,
         context.projectId().orElse(null));
     setupDialog(dialog);
-    dialog.open();
+    measurementDialog.open();
   }
 
   private void downloadMetadataForSelectedTab() {
@@ -528,9 +529,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   }
 
   private void openRegistrationDialog() {
-    AppDialog dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Register your measurement metadata");
-    DialogFooter.with(dialog, "Cancel", "Register");
+    this.measurementDialog = AppDialog.medium();
+    DialogHeader.with(measurementDialog, "Register your measurement metadata");
+    DialogFooter.with(measurementDialog, "Cancel", "Register");
 
     var registrationUseCase = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
@@ -565,16 +566,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
         registrationUseCase, Domain.Genomics);
 
-    DialogBody.with(dialog, measurementRegistrationComponent, measurementRegistrationComponent);
-    dialog.registerCancelAction(dialog::close);
-    dialog.registerConfirmAction(() -> {
+    DialogBody.with(measurementDialog, measurementRegistrationComponent, measurementRegistrationComponent);
+    measurementDialog.registerCancelAction(measurementDialog::close);
+    measurementDialog.registerConfirmAction(() -> {
       var requestContent = registrationUseCase.getValidationRequestContent();
       submitRequest(context.projectId().orElseThrow().value(), createRegistrationRequestPackage(requestContent));
-      dialog.close();
+      measurementDialog.close();
     });
 
-    add(dialog);
-    dialog.open();
+    add(measurementDialog);
+    measurementDialog.open();
   }
 
   private void submitRequest(String projectId,
@@ -847,7 +848,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         MODE.ADD,
         context.projectId().orElse(null));
     setupDialog(dialog);
-    dialog.open();
+    measurementDialog.open();
   }
 
   private void initRawDataAvailableInfo() {
@@ -893,11 +894,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       super(cause);
     }
 
-  }
-
-  @Override
-  public void beforeLeave(BeforeLeaveEvent event) {
-    Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
   }
 
   record RegistrationRequestPackage(
