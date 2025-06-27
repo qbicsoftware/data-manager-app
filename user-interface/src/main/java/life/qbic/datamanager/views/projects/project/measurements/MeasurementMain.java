@@ -128,7 +128,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final ExperimentInformationService experimentInformationService;
   private final AsyncProjectService asyncService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private MeasurementMetadataUploadDialog dialog;
   private transient Context context;
   private AppDialog measurementDialog;
 
@@ -229,7 +228,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         event -> openRegistrationDialog());
 
     Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openEditMeasurementDialog());
 
     Button deleteButton = new Button("Delete");
     deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());
@@ -311,91 +309,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       showErrorNotification("Deletion failed", errorMessage);
     });
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
-  }
-
-  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(this::triggerMeasurementRegistration);
-    return dialog;
-  }
-
-  private void triggerMeasurementRegistration(
-      ConfirmEvent event) {
-    var uploads = new ArrayList<>(event.uploads());
-    var dialog = event.getSource();
-    var mode = dialog.getMode();
-    UI ui = event.getSource().getUI().orElseThrow();
-    for (var upload : uploads) {
-      var measurementData = upload.measurementMetadata();
-
-      //Necessary so the dialog window switches to show the upload progress
-      ui.push();
-      CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
-      Toast pendingToast;
-
-      // we can close the dialog, everything that comes now is executed concurrently and there is
-      // no need the user is blocked
-      event.getSource().close();
-
-      if (mode.equals(MODE.EDIT)) {
-        completableFuture = measurementService.updateAll(measurementData,
-            context.projectId().orElseThrow());
-        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Update of #%d measurements".formatted(measurementData.stream()
-                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
-                    .distinct().toList().size())},
-            getLocale());
-      } else {
-        completableFuture = measurementService.registerAll(upload.measurementMetadata(),
-            context.projectId().orElseThrow());
-        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Registration of #%d measurements".formatted(upload.measurementMetadata().size())},
-            getLocale());
-      }
-      ui.access(pendingToast::open);
-      try {
-        completableFuture.exceptionally(e -> {
-              log.error(e.getMessage(), e);
-              ui.access(() -> {
-                pendingToast.close();
-                messageFactory.toast("task.failed", new Object[]{"Registration failed"}, getLocale())
-                    .open();
-              });
-              throw new HandledException(e);
-            })
-            .thenAccept(results -> {
-              var errorResult = results.stream().filter(Result::isError).findAny();
-              if (errorResult.isPresent()) {
-                String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
-                ui.access(() -> {
-                  pendingToast.close();
-                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale())
-                      .open();
-                });
-              } else {
-                ui.access(() -> {
-                  pendingToast.close();
-                  messageFactory.toast("task.finished", new Object[]{"Measurement update"},
-                      getLocale()).open();
-                  setMeasurementInformation();
-                });
-              }
-            }).exceptionally(e -> {
-              throw new HandledException(e);
-            });
-      } catch (HandledException e) {
-        log.error(e.getMessage(), e);
-      }
-    }
-  }
-
-  private void openEditMeasurementDialog() {
-    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
-        cancelConfirmationDialogFactory,
-        MODE.EDIT,
-        context.projectId().orElse(null));
-    setupDialog(dialog);
-    measurementDialog.open();
   }
 
   private void downloadMetadataForSelectedTab() {
@@ -840,15 +753,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       DownloadMeasurementTemplateEvent downloadMeasurementTemplateEvent) {
     measurementTemplateDownload.trigger(
         downloadMeasurementTemplateEvent.getDownloadStreamProvider());
-  }
-
-  private void openRegisterMeasurementDialog() {
-    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
-        cancelConfirmationDialogFactory,
-        MODE.ADD,
-        context.projectId().orElse(null));
-    setupDialog(dialog);
-    measurementDialog.open();
   }
 
   private void initRawDataAvailableInfo() {

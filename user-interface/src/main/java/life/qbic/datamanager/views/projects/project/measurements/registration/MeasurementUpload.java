@@ -4,9 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.ListItem;
-import com.vaadin.flow.component.html.OrderedList;
-import com.vaadin.flow.component.html.OrderedList.NumberingType;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -19,7 +16,6 @@ import java.io.InputStream;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
@@ -46,7 +41,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
-import org.checkerframework.checker.units.qual.C;
 import reactor.core.publisher.Flux;
 
 /**
@@ -418,53 +412,13 @@ public class MeasurementUpload extends Div implements UserInput {
           ValidationHeader.successWithText("Your data has been approved"), reportContent);
     }
 
-//    private Div createApprovedDisplayBox(int validMeasurementCount) {
-//      Div box = new Div();
-//      Span approvedTitle = new Span("Your data has been approved");
-//      Icon validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
-//      validIcon.addClassName("success");
-//      Span header = new Span(validIcon, approvedTitle);
-//      header.addClassName("header");
-//      box.add(header);
-//      Span instruction = new Span("Please click on Register to record the sample measurement data");
-//      instruction.addClassName(SECONDARY);
-//      Div validationDetails = new Div();
-//      Span approvedMeasurements = new Span(String.format("%s measurements", validMeasurementCount));
-//      approvedMeasurements.addClassName("bold");
-//      validationDetails.add(new Span("Measurement data for "), approvedMeasurements,
-//          new Span(" is now ready to be registered"));
-//      box.add(header, validationDetails, instruction);
-//      box.addClassNames("flex-vertical", "padding-top-bottom-04",  "padding-left-right-04", "choice-box", "background-contrast-10pct");
-//      return box;
-//    }
-
     private Div createInvalidDisplayBox(ValidationResult result) {
-      var validationSummary = result.failures().stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+      var validationSummary = result.failures().stream()
+          .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
       var reportContent = ValidationReportContent.failure(validationSummary);
       return ValidationReportDisplay.withHeaderAndContent(
           ValidationHeader.failureWithText("Invalid measurement data"), reportContent);
     }
-
-//    private Div createInvalidDisplayBox(Collection<String> invalidMeasurements) {
-//      Div box = new Div();
-//      Span approvedTitle = new Span("Invalid measurement data");
-//      Icon invalidIcon = VaadinIcon.CLOSE_CIRCLE_O.create();
-//      invalidIcon.addClassName("error");
-//      Span header = new Span(invalidIcon, approvedTitle);
-//      header.addClassName("header");
-//      box.add(header);
-//      Span instruction = new Span("Please correct the entries and re-upload the excel sheet");
-//      instruction.addClassName(SECONDARY);
-//      Div validationDetails = new Div();
-//      OrderedList invalidMeasurementsList = new OrderedList(
-//          invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
-//      invalidMeasurementsList.addClassName("invalid-measurement-list");
-//      invalidMeasurementsList.setType(NumberingType.NUMBER);
-//      validationDetails.add(invalidMeasurementsList);
-//      box.add(header, validationDetails, instruction);
-//      return box;
-//    }
-
   }
 
   static class ValidationHeader extends Div {
@@ -519,8 +473,9 @@ public class MeasurementUpload extends Div implements UserInput {
       return new ValidationReportDisplay(header);
     }
 
-    static ValidationReportDisplay withHeaderAndContent(ValidationHeader header, ValidationReportContent content) {
-      var display = new  ValidationReportDisplay(header);
+    static ValidationReportDisplay withHeaderAndContent(ValidationHeader header,
+        ValidationReportContent content) {
+      var display = new ValidationReportDisplay(header);
       display.add(content);
       return display;
     }
@@ -572,13 +527,15 @@ public class MeasurementUpload extends Div implements UserInput {
     }
 
     private static Div disclaimerForSuccess() {
-      var textBox = new Div("Please click on Register to register the sample measurement metadata.");
+      var textBox = new Div(
+          "Please click on Register to register the sample measurement metadata.");
       textBox.addClassNames("small-body-text", "color-secondary");
       return textBox;
     }
 
     private static Div disclaimerForFailure() {
-      var textBox = new Div("Please correct the entries in the uploaded excel sheet and re-upload.");
+      var textBox = new Div(
+          "Please correct the entries in the uploaded excel sheet and re-upload.");
       textBox.addClassNames("small-body-text", "color-secondary");
       return textBox;
     }
