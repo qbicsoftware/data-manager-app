@@ -72,7 +72,7 @@ public class MeasurementTemplateSelectionComponent extends Div implements
     });
 
     var description = new Div("Download the template, fill in the data and upload the metadata sheet below to register the measurements.");
-    description.addClassNames("padding-top-05", "normal-body-text");
+    description.addClassNames("padding-top-04", "normal-body-text");
 
     add(domainOptions);
     add(description);

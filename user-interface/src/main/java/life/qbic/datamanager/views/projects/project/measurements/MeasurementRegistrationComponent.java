@@ -14,7 +14,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 
 /**
- * <b><Measurement Registration Component</b>
+ * <b>Measurement Registration Component</b>
  * <p>
  * A component that orchestrates the selection of a user in a
  * {@link MeasurementTemplateSelectionComponent} and sets the {@link MeasurementUpload} with the
@@ -49,6 +49,7 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
         templateSelectionComponent);
     add(templateSection);
     add(measurementUpload);
+    addClassNames("flex-vertical", "gap-05");
   }
 
   private void syncComponents(Domain domain) {
