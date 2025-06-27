@@ -236,7 +236,8 @@ public class AppDialog extends Dialog implements BeforeLeaveObserver {
 
   @Override
   public void beforeLeave(BeforeLeaveEvent event) {
-    if (hasChanges()) {
+    // If the dialog is opened and has changes, we want to trigger the cancel action first
+    if (isOpened() && hasChanges()) {
       event.postpone();
       cancel();
     } else {

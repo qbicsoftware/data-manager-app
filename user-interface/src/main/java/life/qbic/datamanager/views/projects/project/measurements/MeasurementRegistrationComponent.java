@@ -4,6 +4,7 @@ import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
+import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
@@ -13,7 +14,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 
 /**
- * <b><Measurement Registration Component</b>
+ * <b>Measurement Registration Component</b>
  * <p>
  * A component that orchestrates the selection of a user in a
  * {@link MeasurementTemplateSelectionComponent} and sets the {@link MeasurementUpload} with the
@@ -43,8 +44,12 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
             getConverterForDomain(templateSelectionComponent.selectedDomain())));
 
     // 3. We add the components as children to this component
-    add(templateSelectionComponent);
+    var templateSection = DialogSection.with("Select the domain and download the template",
+        "Please select the relevant domain to download the domain-specific measurement metadata template.",
+        templateSelectionComponent);
+    add(templateSection);
     add(measurementUpload);
+    addClassNames("flex-vertical", "gap-05");
   }
 
   private void syncComponents(Domain domain) {
@@ -56,7 +61,8 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
       Domain domain) {
     return switch (domain) {
       case Genomics -> ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class);
-      case Proteomics -> ConverterRegistry.converterFor(MeasurementRegistrationInformationPxP.class);
+      case Proteomics ->
+          ConverterRegistry.converterFor(MeasurementRegistrationInformationPxP.class);
     };
   }
 
