@@ -163,8 +163,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(),
               createdGroup.replicateCount(), createdGroup.levels().stream()
               .map(this::convertLevelToApi)
-              .collect(Collectors.toSet())), request.requestId());
+              .toList()), request.requestId());
     });
+
     return applySecurityContext(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
@@ -296,7 +297,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return new ExperimentalGroup(group.id(), group.groupNumber(), group.name(),
         group.replicateCount(),
         group.levels().stream().map(AsyncProjectServiceImpl::convertToApi)
-            .collect(Collectors.toSet()));
+            .toList());
   }
 
   private static VariableLevel convertToApi(ExperimentInformationService.VariableLevel level) {
@@ -844,8 +845,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
     return new ExperimentalVariable(experimentalVariable.name().value(),
         experimentalVariable.levels()
-            .stream().map(level -> level.variableName().value()).collect(
-                Collectors.toSet()),
+            .stream().map(level -> level.variableName().value()).toList(),
         experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(null));
   }
 
@@ -877,8 +877,21 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ExperimentalVariablesDeletionResponse> delete(
       ExperimentalVariablesDeletionRequest request) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    var call = Mono.fromCallable(() -> {
+
+      experimentInformationService.deleteAllExperimentalVariables(
+          ExperimentId.parse(request.experimentId()),
+          ProjectId.parse(request.projectId()));
+
+      return new ExperimentalVariablesDeletionResponse(request.projectId(), request.experimentId(),
+          request.requestId());
+    });
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not delete experimental variables", e))
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException)
+        .retryWhen(defaultRetryStrategy());
   }
 
   private Mono<ProjectDeletionResponse> delete(String projectId, String requestId,

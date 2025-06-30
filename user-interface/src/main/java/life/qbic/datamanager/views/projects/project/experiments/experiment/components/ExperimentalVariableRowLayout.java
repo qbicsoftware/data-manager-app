@@ -35,7 +35,7 @@ final class ExperimentalVariableRowLayout extends Span {
     final ExperimentalVariableRowLayout rowLayout = new ExperimentalVariableRowLayout();
     rowLayout.nameField.setValue(experimentalVariable.name().value());
     rowLayout.unitField.setValue(
-        experimentalVariable.levels().get(0).experimentalValue().unit().orElse(""));
+        experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(""));
     rowLayout.levelArea.setValue(
         experimentalVariable.levels().stream().map(it -> it.experimentalValue().value())
             .collect(Collectors.joining("\n")));
