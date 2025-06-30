@@ -2110,10 +2110,6 @@ public interface AsyncProjectService {
       requireNonNull(requestBody);
       requireNonNull(experimentId);
     }
-
-    public ValidationRequest(String projectId, SampleRegistrationInformation registration) {
-      this(projectId, registration, UUID.randomUUID().toString());
-    }
   }
 
   /**
