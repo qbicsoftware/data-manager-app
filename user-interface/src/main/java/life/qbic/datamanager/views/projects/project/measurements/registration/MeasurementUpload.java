@@ -57,7 +57,7 @@ import reactor.core.publisher.Flux;
 public class MeasurementUpload extends Div implements UserInput {
 
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
-  private final UploadItemsDisplay uploadedItemsDisplay;
+  private final UploadedItemsDisplay uploadedItemsDisplay;
   private final AsyncProjectService service;
   private final Context context;
   private final Div validationProgress;
@@ -113,7 +113,7 @@ public class MeasurementUpload extends Div implements UserInput {
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
     upload.addFileRemovedListener(this::onFileRemoved);
-    this.uploadedItemsDisplay = new UploadItemsDisplay(upload);
+    this.uploadedItemsDisplay = new UploadedItemsDisplay(upload);
 
     // Create the different sections
     var sectionUpload = DialogSection.with("Upload the measurement metadata", "",
@@ -296,12 +296,12 @@ public class MeasurementUpload extends Div implements UserInput {
     return !measurementFileItems.isEmpty();
   }
 
-  private static class UploadItemsDisplay extends Div {
+  private static class UploadedItemsDisplay extends Div {
 
     private final Div uploadSection;
     private final Div uploadedItemsDisplays;
 
-    public UploadItemsDisplay(Upload upload) {
+    public UploadedItemsDisplay(Upload upload) {
 
       var saveYourFileInfo = new InfoBox().setInfoText(
               "When uploading a tab-separated file, please save your Excel file as UTF-16 Unicode Text (*.txt) before uploading.")
@@ -322,7 +322,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
       uploadedItemsDisplays = new Div();
       uploadedItemsDisplays.addClassName("uploaded-measurement-items");
-      uploadedFilesSection.add(new Div(uploadSection, uploadedItemsDisplays));
+      uploadedFilesSection.add(new Div(uploadedItemsDisplays));
       add(uploadSection, uploadedFilesSection);
       addClassNames("upload-items-display", "flex-vertical", "gap-05");
     }
@@ -494,7 +494,7 @@ public class MeasurementUpload extends Div implements UserInput {
     static ValidationReportContent success(int successfulItems) {
       var content = new ValidationReportContent();
       var textContainer = new Div();
-      var items = new Span(successfulItems + " measurements ");
+      var items = new Span(successfulItems + " measurements");
       items.getStyle().set("font-weight", "bold");
       textContainer.add(
           new Text("Metadata for "),
