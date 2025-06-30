@@ -100,7 +100,10 @@ public class AppDialog extends Dialog implements BeforeLeaveObserver {
         "By aborting the editing process and closing the dialog, you will loose all information entered."));
     life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
         "Discard changes");
-    confirmDialog.registerConfirmAction(onConfirmAction);
+    confirmDialog.registerConfirmAction(() -> {
+      confirmDialog.close();
+      onConfirmAction.execute();
+    });
     confirmDialog.registerCancelAction(confirmDialog::close);
     return confirmDialog;
   }
