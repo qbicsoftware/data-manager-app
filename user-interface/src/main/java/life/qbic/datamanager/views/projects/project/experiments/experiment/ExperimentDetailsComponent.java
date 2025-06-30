@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,7 +74,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Experimen
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesDeletionRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -545,7 +544,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private AsyncProjectService.ExperimentalVariable convertToApi(
       ExperimentalVariableContent experimentalVariable) {
     return new AsyncProjectService.ExperimentalVariable(experimentalVariable.name(),
-        new HashSet<>(experimentalVariable.levels()), experimentalVariable.unit());
+        new ArrayList<>(experimentalVariable.levels()), experimentalVariable.unit());
   }
 
   private void openExperimentalVariablesEditDialog() {
@@ -584,15 +583,19 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var ui = UI.getCurrent();
 
-    ExperimentalVariablesUpdateRequest request = new ExperimentalVariablesUpdateRequest(
+    ExperimentalVariablesDeletionRequest deletionRequest = new ExperimentalVariablesDeletionRequest(
+        projectId.value(),
+        experimentId.value());
+
+    ExperimentalVariablesCreationRequest creationRequest = new ExperimentalVariablesCreationRequest(
         projectId.value(),
         experimentId.value(), variables);
 
-    asyncProjectService.update(request)
+    asyncProjectService.delete(deletionRequest)
         .doOnNext(it -> log.debug(
             "Removed variables for project" + projectId))
         .flatMap(it ->
-            asyncProjectService.update(request))
+            asyncProjectService.create(creationRequest))
         .doOnNext(it -> ui.access(() -> {
           confirmEvent.getSource().close();
           reloadExperimentInfo(projectId,
@@ -883,7 +886,7 @@ public class ExperimentDetailsComponent extends PageArea {
     return new AsyncProjectService.ExperimentalGroup(experimentalGroup.id(),
         experimentalGroup.groupNumber(),
         experimentalGroup.name(), experimentalGroup.size(),
-        experimentalGroup.variableLevels().stream().map(this::toApi).collect(Collectors.toSet()));
+        experimentalGroup.variableLevels().stream().map(this::toApi).toList());
   }
 
   private void addExperimentalGroups(
