@@ -36,6 +36,7 @@ import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementFileItem;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
@@ -114,6 +115,8 @@ public class MeasurementUpload extends Div implements UserInput {
     upload.addFailedListener(this::onUploadFailed);
     upload.addFileRemovedListener(this::onFileRemoved);
     this.uploadedItemsDisplay = new UploadedItemsDisplay(upload);
+    this.uploadedItemsDisplay.getElement().setAttribute("tabIndex", "0");
+    this.uploadedItemsDisplay.setId("myDiv");
 
     // Create the different sections
     var sectionUpload = DialogSection.with("Upload the measurement metadata", "",
@@ -300,6 +303,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private final Div uploadSection;
     private final Div uploadedItemsDisplays;
+    private final DialogSection uploadedFilesSection;
 
     public UploadedItemsDisplay(Upload upload) {
 
@@ -318,7 +322,7 @@ public class MeasurementUpload extends Div implements UserInput {
       uploadSection.add(saveYourFileInfo, upload, restrictions);
       uploadSection.addClassName("upload-section");
 
-      var uploadedFilesSection = DialogSection.with("Uploaded Files", "");
+      this.uploadedFilesSection = DialogSection.with("Uploaded Files", "");
 
       uploadedItemsDisplays = new Div();
       uploadedItemsDisplays.addClassName("uploaded-measurement-items");
@@ -329,6 +333,8 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private void addFileToDisplay(MeasurementFileDisplay measurementFileDisplay) {
       uploadedItemsDisplays.add(measurementFileDisplay);
+      measurementFileDisplay.getElement().setAttribute("tabindex", "0");
+      measurementFileDisplay.getElement().executeJs("this.focus();");
     }
 
     private void removeFileFromDisplay(String fileName) {
@@ -346,11 +352,11 @@ public class MeasurementUpload extends Div implements UserInput {
     }
 
     public void hide() {
-      uploadedItemsDisplays.setVisible(false);
+      uploadedFilesSection.setVisible(false);
     }
 
     public void show() {
-      uploadedItemsDisplays.setVisible(true);
+      uploadedFilesSection.setVisible(true);
     }
   }
 
