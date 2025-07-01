@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.projects.project.measurements.registration;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -334,7 +335,7 @@ public class MeasurementUpload extends Div implements UserInput {
     private void addFileToDisplay(MeasurementFileDisplay measurementFileDisplay) {
       uploadedItemsDisplays.add(measurementFileDisplay);
       measurementFileDisplay.getElement().setAttribute("tabindex", "0");
-      measurementFileDisplay.getElement().executeJs("this.focus();");
+      measurementFileDisplay.focus();
     }
 
     private void removeFileFromDisplay(String fileName) {
@@ -373,7 +374,7 @@ public class MeasurementUpload extends Div implements UserInput {
   /**
    * used to display an uploaded measurement file with validation information
    */
-  public static class MeasurementFileDisplay extends Div {
+  public static class MeasurementFileDisplay extends Div implements Focusable<Div> {
 
     public static final String SECONDARY = "secondary";
 
