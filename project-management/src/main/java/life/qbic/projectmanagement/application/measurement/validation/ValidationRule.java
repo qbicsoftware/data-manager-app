@@ -84,15 +84,17 @@ record MissingSpecificMetadataNGS(Supplier<MeasurementRegistrationInformationNGS
     var metadata = Objects.requireNonNull(metadataSupplier.get());
     var validationResult = ValidationResult.successful();
     for (var entry : metadata.specificMetadata().entrySet()) {
-      if (hasMissingIndices(entry.getValue())) {
-        validationResult = validationResult.combine(validationResult.withFailures(List.of("Missing indices i7 or i5 for " + entry.getKey())));
+      if (hasMissingIndexI7(entry.getValue())) {
+        validationResult = validationResult.combine(validationResult.withFailures(List.of("Missing indices i7 for " + entry.getKey())));
       }
     }
     return validationResult;
   }
 
-  private static boolean hasMissingIndices(MeasurementSpecificNGS specificMetadata) {
-    return specificMetadata.indexI5().isBlank() || specificMetadata.indexI5().isBlank();
+  private static boolean hasMissingIndexI7(MeasurementSpecificNGS specificMetadata) {
+    // Only i7 or i7 + i5 index combination is fine
+    // Missing i7 is considered a violation of the rule
+    return specificMetadata.indexI7().isBlank();
   }
 }
 

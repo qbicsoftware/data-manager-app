@@ -229,11 +229,11 @@ public class MeasurementUpload extends Div implements UserInput {
     }
     var firstEntry = Objects.requireNonNull(validationRequest.get(0));
     switch (firstEntry) {
-      case MeasurementRegistrationInformationNGS metadata: {
+      case MeasurementRegistrationInformationNGS ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
         return processor.process((List<MeasurementRegistrationInformationNGS>) validationRequest);
       }
-      case MeasurementRegistrationInformationPxP metadata: {
+      case MeasurementRegistrationInformationPxP ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
         return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
       }
