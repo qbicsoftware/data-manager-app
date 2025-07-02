@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,12 +38,15 @@ import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MeasurementFileItem;
+import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
+import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementProcessor;
 import reactor.core.publisher.Flux;
 
 /**
@@ -204,18 +208,38 @@ public class MeasurementUpload extends Div implements UserInput {
     };
 
     var result = converter.convert(parsingResult);
+    var processedResult = process(result);
 
     var itemsToValidate = result.size();
     var requests = new ArrayList<ValidationRequest>();
 
     validationRequestsPerFile.put(fileName, result);
 
-    for (var registration : result) {
+    for (var registration : processedResult) {
       var request = new ValidationRequest(context.projectId().orElseThrow().value(),
           context.experimentId().orElseThrow().value(), registration);
       requests.add(request);
     }
     runValidation(requests, itemsToValidate, fileName);
+  }
+
+  private static List<? extends ValidationRequestBody> process(List<? extends ValidationRequestBody> validationRequest) {
+    if (validationRequest.isEmpty()) {
+      return validationRequest;
+    }
+    var firstEntry = Objects.requireNonNull(validationRequest.get(0));
+    switch (firstEntry) {
+      case MeasurementRegistrationInformationNGS metadata: {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
+        return processor.process((List<MeasurementRegistrationInformationNGS>) validationRequest);
+      }
+      case MeasurementRegistrationInformationPxP metadata: {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
+        return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
+      }
+      default:
+        throw new IllegalStateException("Unknown validation request: " + validationRequest);
+    }
   }
 
   private void runValidation(ArrayList<ValidationRequest> requests, int itemsToValidate,
@@ -334,7 +358,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private void addFileToDisplay(MeasurementFileDisplay measurementFileDisplay) {
       uploadedItemsDisplays.add(measurementFileDisplay);
-      measurementFileDisplay.getElement().setAttribute("tabindex", "0");
+      measurementFileDisplay.setTabIndex(0);
       measurementFileDisplay.focus();
     }
 

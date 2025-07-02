@@ -8,6 +8,8 @@ import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
+import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementProcessor;
+import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
@@ -55,6 +57,13 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
   private void syncComponents(Domain domain) {
     templateSelectionComponent.setSelectedDomain(domain);
     measurementUpload.setMetadataConverter(getConverterForDomain(domain));
+  }
+
+  private MeasurementProcessor<? extends ValidationRequestBody> getProcessorForDomain(Domain domain) {
+    return switch(domain) {
+      case Genomics -> ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
+      case Proteomics -> ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
+    };
   }
 
   private MetadataConverterV2<? extends ValidationRequestBody> getConverterForDomain(
