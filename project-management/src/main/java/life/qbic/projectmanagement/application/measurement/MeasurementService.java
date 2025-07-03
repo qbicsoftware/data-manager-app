@@ -324,7 +324,7 @@ public class MeasurementService {
       var convertedMetadata = ProteomicsSpecificMeasurementMetadata.create(
           sampleIdCodeEntries.stream()
               .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny().get()
-              .sampleId(), metadata.label(), metadata.fractionName(), metadata.label());
+              .sampleId(), metadata.label(), metadata.fractionName(), metadata.comment());
       specificMetadata.add(convertedMetadata);
     }
     return specificMetadata;
