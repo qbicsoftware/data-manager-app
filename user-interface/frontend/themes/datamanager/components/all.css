@@ -491,18 +491,22 @@ Boxes
 ****************************/
 
 .choice-box {
-  border-color: var(--lumo-contrast-20pct);
+  border-color: var(--lumo-contrast-10pct);
   border-style: solid;
   border-width: 1px;
-  border-radius: var(--spacing-03);
+  border-radius: var(--spacing-02);
 }
 
 /****************************
 Backgrounds
 ****************************/
 
+.background-contrast-5pct {
+  background-color: var(--lumo-shade-5pct);
+}
+
 .background-contrast-10pct {
-  background-color: var(--lumo-contrast-10pct);
+  background-color: var(--lumo-shade-10pct);
 }
 
 /****************************

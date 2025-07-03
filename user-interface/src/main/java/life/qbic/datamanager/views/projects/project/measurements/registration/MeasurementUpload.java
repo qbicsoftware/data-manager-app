@@ -493,7 +493,7 @@ public class MeasurementUpload extends Div implements UserInput {
     private ValidationReportDisplay(ValidationHeader header) {
       add(header);
       addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
-          "padding-left-right-04", "background-contrast-10pct");
+          "padding-left-right-04", "background-contrast-5pct");
     }
 
     static ValidationReportDisplay empty() {

@@ -51,7 +51,7 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
         templateSelectionComponent);
     add(templateSection);
     add(measurementUpload);
-    addClassNames("flex-vertical", "gap-05");
+    addClassNames("flex-vertical", "gap-06");
   }
 
   private void syncComponents(Domain domain) {
