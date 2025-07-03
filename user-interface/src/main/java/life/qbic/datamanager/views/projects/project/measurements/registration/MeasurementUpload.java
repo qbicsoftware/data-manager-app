@@ -132,7 +132,7 @@ public class MeasurementUpload extends Div implements UserInput {
     add(validationProgress);
 
     // Apply layout styles
-    addClassNames("flex-vertical", "gap-05");
+    addClassNames("flex-vertical", "gap-06");
 
     // Trigger display refresh, to ensure the upload item display is only shown
     // if uploaded measurement files are present
@@ -345,7 +345,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
       this.uploadSection = new Div();
       uploadSection.add(saveYourFileInfo, upload, restrictions);
-      uploadSection.addClassName("upload-section");
+      uploadSection.addClassNames("upload-section", "flex-vertical", "gap-02");
 
       this.uploadedFilesSection = DialogSection.with("Uploaded Files", "");
 
