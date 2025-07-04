@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.measurement.validation;
 
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Supplier;
 import life.qbic.projectmanagement.application.ValidationResult;
@@ -11,41 +10,68 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>Validation Rule</b>
+ * <p>
+ * Validation rules represent a simple interface to execute on metadata, and provide a
+ * {@link ValidationResult} with a report of the finding in the metadata.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.0.0
  */
 @FunctionalInterface
 public interface ValidationRule {
 
+  /**
+   * Executes the rule and returns {@link ValidationResult} object with a description of the
+   * finding.
+   *
+   * @return {@link ValidationResult#successful()}, if the rule passed successfully without any
+   * violations, else {@link ValidationResult#failures()}
+   * @since 1.11.0
+   */
   ValidationResult execute();
 
+  final class Utils {
+
+    static boolean isPooled(MeasurementRegistrationInformationPxP measurement) {
+      return !measurement.samplePoolGroup().isBlank();
+    }
+  }
 }
 
-record MissingSpecificMetadataPxP(Supplier<MeasurementRegistrationInformationPxP> metadataSupplier) implements ValidationRule {
+record HasDistinctLabels(
+    Supplier<MeasurementRegistrationInformationPxP> metadataSupplier) implements ValidationRule {
 
-  public MissingSpecificMetadataPxP {
+  public HasDistinctLabels {
     Objects.requireNonNull(metadataSupplier);
   }
 
   @Override
   public ValidationResult execute() {
     var metadata = Objects.requireNonNull(metadataSupplier.get());
-    if (isPooled(metadata)) {
-      return new MissingSpecificMetadataPxP(() -> metadata).execute();
+    var validationResult = ValidationResult.successful();
+    if (Utils.isPooled(metadata)) {
+      // only applies for pooled measurements
+      var specificMetadata = metadata.specificMetadata().values().stream().toList();
+
+      var specificMetadataTotal = specificMetadata.size();
+
+      var distinctLabelsTotal = specificMetadata.stream()
+          .map(MeasurementSpecificPxP::label)
+          .distinct()
+          .toList()
+          .size();
+
+      if (distinctLabelsTotal < specificMetadataTotal) {
+        validationResult = validationResult.combine(ValidationResult.withFailures(
+            List.of("Missing distinct labels for pool " + metadata.samplePoolGroup())));
+      }
     }
-    return ValidationResult.successful();
+    return validationResult;
   }
-
-  private static boolean isPooled(MeasurementRegistrationInformationPxP measurement) {
-    return !measurement.samplePoolGroup().isBlank();
-  }
-
 }
 
-record MissingLabel(Supplier<MeasurementRegistrationInformationPxP> metadataSupplier) implements ValidationRule {
+record MissingLabel(Supplier<MeasurementRegistrationInformationPxP> metadataSupplier) implements
+    ValidationRule {
 
   public MissingLabel {
     Objects.requireNonNull(metadataSupplier);
@@ -55,25 +81,19 @@ record MissingLabel(Supplier<MeasurementRegistrationInformationPxP> metadataSupp
   public ValidationResult execute() {
     var validationResult = ValidationResult.successful();
     var metadata = Objects.requireNonNull(metadataSupplier.get());
-    var specificMetadata = metadata.specificMetadata().entrySet().stream().map(Entry::getValue).toList();
+    var specificMetadata = metadata.specificMetadata().values().stream().toList();
 
-    var specificMetadataTotal = specificMetadata.size();
-
-    var distinctLabelsTotal = specificMetadata.stream()
-        .map(MeasurementSpecificPxP::label)
-        .distinct()
-        .toList()
-        .size();
-
-    if (distinctLabelsTotal < specificMetadataTotal) {
-      validationResult = validationResult.combine(validationResult.withFailures(List.of("Missing distinct labels for pool " + metadata.samplePoolGroup())));
-      return validationResult;
+    if (specificMetadata.stream().anyMatch(data -> data.label().isBlank())) {
+      validationResult = validationResult.combine(ValidationResult.withFailures(
+          List.of("Missing at least one label for pool " + metadata.samplePoolGroup())));
     }
+
     return validationResult;
   }
 }
 
-record MissingSpecificMetadataNGS(Supplier<MeasurementRegistrationInformationNGS> metadataSupplier) implements ValidationRule {
+record MissingSpecificMetadataNGS(
+    Supplier<MeasurementRegistrationInformationNGS> metadataSupplier) implements ValidationRule {
 
   public MissingSpecificMetadataNGS {
     Objects.requireNonNull(metadataSupplier);
@@ -85,7 +105,8 @@ record MissingSpecificMetadataNGS(Supplier<MeasurementRegistrationInformationNGS
     var validationResult = ValidationResult.successful();
     for (var entry : metadata.specificMetadata().entrySet()) {
       if (hasMissingIndexI7(entry.getValue())) {
-        validationResult = validationResult.combine(validationResult.withFailures(List.of("Missing indices i7 for " + entry.getKey())));
+        validationResult = validationResult.combine(
+            ValidationResult.withFailures(List.of("Missing indices i7 for " + entry.getKey())));
       }
     }
     return validationResult;
@@ -98,7 +119,8 @@ record MissingSpecificMetadataNGS(Supplier<MeasurementRegistrationInformationNGS
   }
 }
 
-record MissingIndices(Supplier<MeasurementRegistrationInformationNGS> metadataSupplier) implements ValidationRule {
+record MissingIndices(Supplier<MeasurementRegistrationInformationNGS> metadataSupplier) implements
+    ValidationRule {
 
   public MissingIndices {
     Objects.requireNonNull(metadataSupplier);
@@ -118,3 +140,5 @@ record MissingIndices(Supplier<MeasurementRegistrationInformationNGS> metadataSu
   }
 
 }
+
+

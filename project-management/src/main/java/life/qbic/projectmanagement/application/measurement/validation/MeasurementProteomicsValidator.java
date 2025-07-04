@@ -123,9 +123,12 @@ public class MeasurementProteomicsValidator implements
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())));
 
+    // For the sample-specific metadata
     var missingLabelsValidation = new MissingLabel(() -> metadata).execute();
+    var distinctLabelsValidation = new HasDistinctLabels(() -> metadata).execute();
 
-    return validation.combine(missingLabelsValidation);
+    return validation.combine(missingLabelsValidation)
+        .combine(distinctLabelsValidation);
   }
 
   /**
