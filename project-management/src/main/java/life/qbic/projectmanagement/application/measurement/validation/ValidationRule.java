@@ -69,7 +69,7 @@ record HasDistinctLabels(
 
       if (distinctLabelsTotal < specificMetadataTotal) {
         validationResult = validationResult.combine(ValidationResult.withFailures(
-            List.of("Missing distinct labels for pool " + metadata.samplePoolGroup())));
+            List.of("Duplicate labels for pool " + metadata.samplePoolGroup())));
       }
     }
     return validationResult;
