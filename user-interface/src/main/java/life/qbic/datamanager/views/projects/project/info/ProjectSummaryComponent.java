@@ -90,7 +90,6 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.ProjectOverview.UserInfo;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingDeletion;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationCreationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.FundingInformationCreationResponse;
@@ -103,7 +102,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDe
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectManager;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsible;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletion;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletionRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectResponsibleDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
@@ -114,6 +112,7 @@ import life.qbic.projectmanagement.application.contact.PersonLookupService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.project.Contact;
+import life.qbic.projectmanagement.domain.model.project.Contact.OidcInformation;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
@@ -227,7 +226,8 @@ public class ProjectSummaryComponent extends PageArea {
 
   private static life.qbic.datamanager.views.general.contact.Contact convert(Contact contact) {
     return new life.qbic.datamanager.views.general.contact.Contact(contact.fullName(),
-        contact.emailAddress(), contact.oidc(), contact.oidcIssuer());
+        contact.emailAddress(), contact.oidcInformation().map(OidcInformation::oidcId).orElse(null),
+        contact.oidcInformation().map(OidcInformation::oidcIssuer).orElse(null));
   }
 
   private static Button createButtonWithListener(String label,
@@ -463,20 +463,19 @@ public class ProjectSummaryComponent extends PageArea {
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
     //Account for contacts without oidc or oidcissuer set
-    if (contact.oidc() == null || contact.oidcIssuer() == null) {
+    if (contact.oidcInformation().isEmpty()) {
       return contactInfo;
     }
-    if (contact.oidcIssuer().isEmpty() || contact.oidc().isEmpty()) {
-      return contactInfo;
-    }
-    var oidcType = Arrays.stream(OidcType.values())
-        .filter(ot -> ot.getIssuer().equals(contact.oidcIssuer()))
+    OidcInformation oidcInformation = contact.oidcInformation().orElseThrow();
+    var optionalOidcType = Arrays.stream(OidcType.values())
+        .filter(ot -> ot.getIssuer().equals(oidcInformation.oidcIssuer()))
         .findFirst();
-    if (oidcType.isPresent()) {
-      String oidcUrl = oidcType.get().getUrlFor(contact.oidc());
-      Anchor oidcLink = new Anchor(oidcUrl, contact.oidc());
+    if (optionalOidcType.isPresent()) {
+      OidcType oidcType = optionalOidcType.orElseThrow();
+      String oidcUrl = oidcType.getUrlFor(oidcInformation.oidcId());
+      Anchor oidcLink = new Anchor(oidcUrl, oidcInformation.oidcId());
       oidcLink.setTarget(AnchorTarget.BLANK);
-      OidcLogo oidcLogo = new OidcLogo(oidcType.get());
+      OidcLogo oidcLogo = new OidcLogo(oidcType);
       Span oidcSpan = new Span(oidcLogo, oidcLink);
       oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
       contactInfo.add(oidcSpan);
