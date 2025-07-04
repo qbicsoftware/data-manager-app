@@ -8,6 +8,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 
 /**
  * <b>Validation Rule</b>
@@ -34,6 +35,11 @@ public interface ValidationRule {
 
     static boolean isPooled(MeasurementRegistrationInformationPxP measurement) {
       return !measurement.samplePoolGroup().isBlank();
+    }
+
+    static boolean hasMissingLabels(MeasurementRegistrationInformationPxP measurement) {
+      var specificMetadata = measurement.specificMetadata().values().stream().toList();
+      return specificMetadata.stream().anyMatch(data -> data.label().isBlank());
     }
   }
 }
@@ -81,11 +87,10 @@ record MissingLabel(Supplier<MeasurementRegistrationInformationPxP> metadataSupp
   public ValidationResult execute() {
     var validationResult = ValidationResult.successful();
     var metadata = Objects.requireNonNull(metadataSupplier.get());
-    var specificMetadata = metadata.specificMetadata().values().stream().toList();
 
-    if (specificMetadata.stream().anyMatch(data -> data.label().isBlank())) {
-      validationResult = validationResult.combine(ValidationResult.withFailures(
-          List.of("Missing at least one label for pool " + metadata.samplePoolGroup())));
+    if (Utils.isPooled(metadata) && Utils.hasMissingLabels(metadata)) {
+        validationResult = validationResult.combine(ValidationResult.withFailures(
+            List.of("Missing at least one label for pool " + metadata.samplePoolGroup())));
     }
 
     return validationResult;
