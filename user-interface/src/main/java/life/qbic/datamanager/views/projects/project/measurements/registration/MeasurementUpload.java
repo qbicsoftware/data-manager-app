@@ -120,11 +120,9 @@ public class MeasurementUpload extends Div implements UserInput {
     upload.addFailedListener(this::onUploadFailed);
     upload.addFileRemovedListener(this::onFileRemoved);
     this.uploadedItemsDisplay = new UploadedItemsDisplay(upload);
-    this.uploadedItemsDisplay.getElement().setAttribute("tabIndex", "0");
-    this.uploadedItemsDisplay.setId("myDiv");
 
     // Create the different sections
-    var sectionUpload = DialogSection.with("Upload the measurement metadata", "",
+    var sectionUpload = DialogSection.with("Upload the measurement metadata",
         uploadedItemsDisplay);
 
     // Add components to the MeasurementUpload component
@@ -345,13 +343,12 @@ public class MeasurementUpload extends Div implements UserInput {
 
       this.uploadSection = new Div();
       uploadSection.add(saveYourFileInfo, upload, restrictions);
-      uploadSection.addClassNames("upload-section", "flex-vertical", "gap-02");
-
-      this.uploadedFilesSection = DialogSection.with("Uploaded Files", "");
+      uploadSection.addClassNames("upload-section", "flex-vertical", "gap-03");
 
       uploadedItemsDisplays = new Div();
       uploadedItemsDisplays.addClassName("uploaded-measurement-items");
-      uploadedFilesSection.add(new Div(uploadedItemsDisplays));
+      this.uploadedFilesSection = DialogSection.with("Uploaded Files", new Div(uploadedItemsDisplays));
+
       add(uploadSection, uploadedFilesSection);
       addClassNames("upload-items-display", "flex-vertical", "gap-05");
     }
