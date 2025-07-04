@@ -118,10 +118,17 @@ public class MeasurementProteomicsValidator implements
       return mandatoryValidationResult;
     }
 
-    return validationPolicy.validateSampleIdsAsString(metadata.measuredSamples())
+    var validation = validationPolicy.validateSampleIdsAsString(metadata.measuredSamples())
         .combine(validationPolicy.validateMandatoryDataProvided(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())));
+
+    // For the sample-specific metadata
+    var missingLabelsValidation = new MissingLabel(() -> metadata).execute();
+    var distinctLabelsValidation = new HasDistinctLabels(() -> metadata).execute();
+
+    return validation.combine(missingLabelsValidation)
+        .combine(distinctLabelsValidation);
   }
 
   /**
