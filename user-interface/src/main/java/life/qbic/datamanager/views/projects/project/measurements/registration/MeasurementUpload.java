@@ -356,9 +356,6 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private void addFileToDisplay(MeasurementFileDisplay measurementFileDisplay) {
       uploadedItemsDisplays.add(measurementFileDisplay);
-      // For some reason, it does not work when the tabindex is set to 0.
-      // Even though the dialog is open, the parent page has elements with a tabindex set to zero and this
-      // might cause issues.
     }
 
     private void removeFileFromDisplay(String fileName) {
