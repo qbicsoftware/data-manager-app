@@ -274,7 +274,13 @@ public class MeasurementService {
     if (value.isBlank()) {
       return 0;
     }
-    return Integer.parseInt(value);
+
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      // decimal values are not supported, so we take the integer value and ignore the fraction
+      return (int) Double.parseDouble(value);
+    }
   }
 
   private NGSMeasurement toDomain(MeasurementRegistrationInformationNGS measurement,
@@ -324,7 +330,7 @@ public class MeasurementService {
       var convertedMetadata = ProteomicsSpecificMeasurementMetadata.create(
           sampleIdCodeEntries.stream()
               .filter(pair -> pair.sampleCode().equals(SampleCode.create(sampleId))).findAny().get()
-              .sampleId(), metadata.label(), metadata.fractionName(), metadata.label());
+              .sampleId(), metadata.label(), metadata.fractionName(), metadata.comment());
       specificMetadata.add(convertedMetadata);
     }
     return specificMetadata;

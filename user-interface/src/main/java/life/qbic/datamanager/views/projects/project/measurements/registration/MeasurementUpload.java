@@ -2,10 +2,9 @@ package life.qbic.datamanager.views.projects.project.measurements.registration;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.Focusable;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.ListItem;
-import com.vaadin.flow.component.html.OrderedList;
-import com.vaadin.flow.component.html.OrderedList.NumberingType;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -18,13 +17,15 @@ import java.io.InputStream;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 import life.qbic.datamanager.files.parsing.converters.MetadataConverterV2;
@@ -32,12 +33,16 @@ import life.qbic.datamanager.files.parsing.tsv.TSVParser;
 import life.qbic.datamanager.files.parsing.xlsx.XLSXParser;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.InfoBox;
+import life.qbic.datamanager.views.general.dialog.DialogSection;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import life.qbic.datamanager.views.general.upload.EditableMultiFileMemoryBuffer;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
@@ -57,7 +62,7 @@ import reactor.core.publisher.Flux;
 public class MeasurementUpload extends Div implements UserInput {
 
   public static final int MAX_FILE_SIZE_BYTES = (int) (Math.pow(1024, 2) * 16);
-  private final UploadItemsDisplay uploadItemsDisplay;
+  private final UploadedItemsDisplay uploadedItemsDisplay;
   private final AsyncProjectService service;
   private final Context context;
   private final Div validationProgress;
@@ -113,13 +118,21 @@ public class MeasurementUpload extends Div implements UserInput {
     upload.addFileRejectedListener(this::onFileRejected);
     upload.addFailedListener(this::onUploadFailed);
     upload.addFileRemovedListener(this::onFileRemoved);
-    this.uploadItemsDisplay = new UploadItemsDisplay(upload);
+    this.uploadedItemsDisplay = new UploadedItemsDisplay(upload);
+
+    // Create the different sections
+    var sectionUpload = DialogSection.with("Upload filled template",
+        uploadedItemsDisplay);
 
     // Add components to the MeasurementUpload component
-    add(uploadItemsDisplay);
+    add(sectionUpload);
     add(validationProgress);
 
-    // Trigger display refresh
+    // Apply layout styles
+    addClassNames("flex-vertical", "gap-06");
+
+    // Trigger display refresh, to ensure the upload item display is only shown
+    // if uploaded measurement files are present
     refresh();
   }
 
@@ -132,21 +145,23 @@ public class MeasurementUpload extends Div implements UserInput {
   }
 
   /**
-   * Triggers a refresh of child components, e.g., visibility.
+   * Toggles the visibility of the upload items display, depending on present measurement file
+   * items. The uploaded items display can be hidden in case there is no uploaded measurement file
+   * present.
    */
   private void refresh() {
     if (measurementFileItems.isEmpty()) {
-      uploadItemsDisplay.hide();
+      uploadedItemsDisplay.hide();
       return;
     }
-    uploadItemsDisplay.show();
+    uploadedItemsDisplay.show();
   }
 
   private void removeFile(String fileName) {
     uploadBuffer.remove(fileName);
     measurementFileItems.removeIf(
         measurementFileItem -> measurementFileItem.fileName().equals(fileName));
-    uploadItemsDisplay.removeFileFromDisplay(fileName);
+    uploadedItemsDisplay.removeFileFromDisplay(fileName);
     validationRequestsPerFile.remove(fileName);
     refresh();
   }
@@ -190,18 +205,39 @@ public class MeasurementUpload extends Div implements UserInput {
     };
 
     var result = converter.convert(parsingResult);
+    var processedResult = process(result);
 
     var itemsToValidate = result.size();
     var requests = new ArrayList<ValidationRequest>();
 
     validationRequestsPerFile.put(fileName, result);
 
-    for (var registration : result) {
+    for (var registration : processedResult) {
       var request = new ValidationRequest(context.projectId().orElseThrow().value(),
           context.experimentId().orElseThrow().value(), registration);
       requests.add(request);
     }
     runValidation(requests, itemsToValidate, fileName);
+  }
+
+  private static List<? extends ValidationRequestBody> process(
+      List<? extends ValidationRequestBody> validationRequest) {
+    if (validationRequest.isEmpty()) {
+      return validationRequest;
+    }
+    var firstEntry = Objects.requireNonNull(validationRequest.get(0));
+    switch (firstEntry) {
+      case MeasurementRegistrationInformationNGS ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
+        return processor.process((List<MeasurementRegistrationInformationNGS>) validationRequest);
+      }
+      case MeasurementRegistrationInformationPxP ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
+        return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
+      }
+      default:
+        throw new IllegalStateException("Unknown validation request: " + validationRequest);
+    }
   }
 
   private void runValidation(ArrayList<ValidationRequest> requests, int itemsToValidate,
@@ -253,7 +289,7 @@ public class MeasurementUpload extends Div implements UserInput {
   private void addAndDisplayFile(MeasurementFileItem measurementFileItem) {
     measurementFileItems.add(measurementFileItem);
     MeasurementFileDisplay measurementFileDisplay = new MeasurementFileDisplay(measurementFileItem);
-    uploadItemsDisplay.addFileToDisplay(measurementFileDisplay);
+    uploadedItemsDisplay.addFileToDisplay(measurementFileDisplay);
     refresh();
   }
 
@@ -271,7 +307,8 @@ public class MeasurementUpload extends Div implements UserInput {
 
   @Override
   public InputValidation validate() {
-    var inputWithFailureSearch = measurementFileItems.stream().map(MeasurementFileItem::measurementValidationReport)
+    var inputWithFailureSearch = measurementFileItems.stream()
+        .map(MeasurementFileItem::measurementValidationReport)
         .map(MeasurementValidationReport::validationResult)
         .filter(ValidationResult::containsFailures).findAny();
     if (inputWithFailureSearch.isEmpty()) {
@@ -285,41 +322,36 @@ public class MeasurementUpload extends Div implements UserInput {
     return !measurementFileItems.isEmpty();
   }
 
-  private static class UploadItemsDisplay extends Div {
+  private static class UploadedItemsDisplay extends Div {
 
     private final Div uploadSection;
-    private final Div uploadedItemsSection;
     private final Div uploadedItemsDisplays;
+    private final DialogSection uploadedFilesSection;
 
-    public UploadItemsDisplay(Upload upload) {
-      var uploadSectionTitle = new Span("Upload the measurement data");
-      uploadSectionTitle.addClassName("section-title");
+    public UploadedItemsDisplay(Upload upload) {
 
       var saveYourFileInfo = new InfoBox().setInfoText(
               "When uploading a tab-separated file, please save your Excel file as UTF-16 Unicode Text (*.txt) before uploading.")
           .setClosable(false);
 
       var restrictions = new Div();
-      restrictions.addClassName("restrictions");
-      restrictions.add(new Span("Supported file formats: .txt, .tsv, .xlsx"));
-      restrictions.add(
-          "Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / Math.pow(1024, 2)));
+      restrictions.addClassNames("extra-small-body-text", "flex-horizontal", "color-secondary",
+          "justify-content-space-between");
+      restrictions.add(new Div("Supported file formats: .txt, .tsv, .xlsx"));
+      restrictions.add(new Div(
+          "Maximum file size: %s MB".formatted(MAX_FILE_SIZE_BYTES / Math.pow(1024, 2))));
 
       this.uploadSection = new Div();
-      uploadSection.add(uploadSectionTitle, saveYourFileInfo, upload, restrictions);
-      uploadSection.addClassName("upload-section");
-
-      uploadedItemsSection = new Div();
-      uploadedItemsSection.addClassName("uploaded-items-section");
-
-      var uploadedItemsSectionTitle = new Span("Uploaded files");
-      uploadedItemsSectionTitle.addClassName("section-title");
+      uploadSection.add(saveYourFileInfo, upload, restrictions);
+      uploadSection.addClassNames("upload-section", "flex-vertical", "gap-03");
 
       uploadedItemsDisplays = new Div();
       uploadedItemsDisplays.addClassName("uploaded-measurement-items");
-      uploadedItemsSection.add(uploadedItemsSectionTitle, uploadedItemsDisplays);
-      add(uploadSection, uploadedItemsSection);
-      addClassName("upload-items-display");
+      this.uploadedFilesSection = DialogSection.with("Review upload results",
+          new Div(uploadedItemsDisplays));
+
+      add(uploadSection, uploadedFilesSection);
+      addClassNames("upload-items-display", "flex-vertical", "gap-05");
     }
 
     private void addFileToDisplay(MeasurementFileDisplay measurementFileDisplay) {
@@ -341,11 +373,11 @@ public class MeasurementUpload extends Div implements UserInput {
     }
 
     public void hide() {
-      uploadedItemsDisplays.setVisible(false);
+      uploadedFilesSection.setVisible(false);
     }
 
     public void show() {
-      uploadedItemsDisplays.setVisible(true);
+      uploadedFilesSection.setVisible(true);
     }
   }
 
@@ -362,7 +394,7 @@ public class MeasurementUpload extends Div implements UserInput {
   /**
    * used to display an uploaded measurement file with validation information
    */
-  public static class MeasurementFileDisplay extends Div {
+  public static class MeasurementFileDisplay extends Div implements Focusable<Div> {
 
     public static final String SECONDARY = "secondary";
 
@@ -374,15 +406,18 @@ public class MeasurementUpload extends Div implements UserInput {
     public MeasurementFileDisplay(MeasurementFileItem measurementFileItem) {
       this.measurementFileItem = requireNonNull(measurementFileItem,
           "measurementFileItem must not be null");
-      var fileIcon = VaadinIcon.FILE.create();
-      fileIcon.addClassName("file-icon");
+      var fileIcon = VaadinIcon.FILE_TABLE.create();
+      fileIcon.addClassName("icon-size-s");
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
       fileNameLabel.addClassName("file-name");
-      add(fileNameLabel);
+
       setDisplayBoxContent(measurementFileItem.measurementValidationReport());
-      displayBox.addClassName("validation-display-box");
+      displayBox.addClassNames("flex-vertical", "padding-top-bottom-04");
+
+      add(fileNameLabel);
       add(displayBox);
-      addClassName("measurement-item");
+      addClassNames("flex-vertical", "gap-03", "choice-box", "padding-top-bottom-04",
+          "padding-left-right-04");
     }
 
     public MeasurementFileItem measurementFileItem() {
@@ -394,48 +429,142 @@ public class MeasurementUpload extends Div implements UserInput {
       if (measurementValidationReport.validationResult().allPassed()) {
         displayBox.add(createApprovedDisplayBox(measurementValidationReport.validatedRows()));
       } else {
-        displayBox.add(createInvalidDisplayBox(
-            measurementValidationReport.validationResult().failures()));
+        displayBox.add(createInvalidDisplayBox(measurementValidationReport.validationResult()));
       }
     }
 
-    private Div createApprovedDisplayBox(int validMeasurementCount) {
-      Div box = new Div();
-      Span approvedTitle = new Span("Your data has been approved");
-      Icon validIcon = VaadinIcon.CHECK_CIRCLE_O.create();
-      validIcon.addClassName("success");
-      Span header = new Span(validIcon, approvedTitle);
-      header.addClassName("header");
-      box.add(header);
-      Span instruction = new Span("Please click on Register to record the sample measurement data");
-      instruction.addClassName(SECONDARY);
-      Div validationDetails = new Div();
-      Span approvedMeasurements = new Span(String.format("%s measurements", validMeasurementCount));
-      approvedMeasurements.addClassName("bold");
-      validationDetails.add(new Span("Measurement data for "), approvedMeasurements,
-          new Span(" is now ready to be registered"));
-      box.add(header, validationDetails, instruction);
-      return box;
+    private Div createApprovedDisplayBox(int validatedEntriesTotal) {
+      var reportContent = ValidationReportContent.success(validatedEntriesTotal);
+      return ValidationReportDisplay.withHeaderAndContent(
+          ValidationHeader.successWithText("Your data has been approved"), reportContent);
     }
 
-    private Div createInvalidDisplayBox(Collection<String> invalidMeasurements) {
-      Div box = new Div();
-      Span approvedTitle = new Span("Invalid measurement data");
-      Icon invalidIcon = VaadinIcon.CLOSE_CIRCLE_O.create();
-      invalidIcon.addClassName("error");
-      Span header = new Span(invalidIcon, approvedTitle);
-      header.addClassName("header");
-      box.add(header);
-      Span instruction = new Span("Please correct the entries and re-upload the excel sheet");
-      instruction.addClassName(SECONDARY);
-      Div validationDetails = new Div();
-      OrderedList invalidMeasurementsList = new OrderedList(
-          invalidMeasurements.stream().map(ListItem::new).toArray(ListItem[]::new));
-      invalidMeasurementsList.addClassName("invalid-measurement-list");
-      invalidMeasurementsList.setType(NumberingType.NUMBER);
-      validationDetails.add(invalidMeasurementsList);
-      box.add(header, validationDetails, instruction);
-      return box;
+    private Div createInvalidDisplayBox(ValidationResult result) {
+      var validationSummary = result.failures().stream()
+          .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+      var reportContent = ValidationReportContent.failure(validationSummary);
+      return ValidationReportDisplay.withHeaderAndContent(
+          ValidationHeader.failureWithText("Invalid measurement data"), reportContent);
+    }
+  }
+
+  static class ValidationHeader extends Div {
+
+    static ValidationHeader successWithText(String text) {
+      return new ValidationHeader(text, true);
+    }
+
+    static ValidationHeader failureWithText(String text) {
+      return new ValidationHeader(text, false);
+    }
+
+    private ValidationHeader(String message, boolean isSuccess) {
+      Icon icon = isSuccess ? successIcon() : failureIcon();
+      var iconContainer = new Div();
+      iconContainer.add(icon);
+      iconContainer.addClassNames("flex-align-items-center", "flex-horizontal");
+      var textContainer = new Div(message);
+      textContainer.getStyle().set("font-weight", "bold");
+
+      add(iconContainer, textContainer);
+
+      addClassNames("flex-horizontal", "gap-04");
+    }
+
+    private static Icon successIcon() {
+      Icon icon = VaadinIcon.CHECK_CIRCLE.create();
+      icon.addClassNames("icon-color-success", "icon-size-xs");
+      return icon;
+    }
+
+    private static Icon failureIcon() {
+      Icon icon = VaadinIcon.CLOSE_CIRCLE.create();
+      icon.addClassNames("icon-color-error", "icon-size-xs");
+      return icon;
+    }
+  }
+
+  static class ValidationReportDisplay extends Div {
+
+    private ValidationReportDisplay(ValidationHeader header) {
+      add(header);
+      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
+          "padding-left-right-04", "background-contrast-5pct");
+    }
+
+    static ValidationReportDisplay empty() {
+      return new ValidationReportDisplay();
+    }
+
+    static ValidationReportDisplay withHeader(ValidationHeader header) {
+      return new ValidationReportDisplay(header);
+    }
+
+    static ValidationReportDisplay withHeaderAndContent(ValidationHeader header,
+        ValidationReportContent content) {
+      var display = new ValidationReportDisplay(header);
+      display.add(content);
+      return display;
+    }
+
+    private ValidationReportDisplay() {
+
+    }
+  }
+
+  static class ValidationReportContent extends Div {
+
+    private ValidationReportContent() {
+
+    }
+
+    static ValidationReportContent success(int successfulItems) {
+      var content = new ValidationReportContent();
+      var textContainer = new Div();
+      var items = new Span(successfulItems + " measurements");
+      items.getStyle().set("font-weight", "bold");
+      textContainer.add(
+          new Text("Metadata for "),
+          items,
+          new Text(" is now ready to be registered.")
+      );
+      var disclaimer = disclaimerForSuccess();
+      content.add(textContainer, disclaimer);
+      return content;
+    }
+
+    static ValidationReportContent failure(Map<String, Long> reportedFailures) {
+      var summary = new Div();
+      summary.addClassNames("flex-vertical", "gap-02");
+
+      for (Entry<String, Long> entry : reportedFailures.entrySet()) {
+        var occurrences = new Span("%s x".formatted(entry.getValue()));
+        occurrences.getStyle().set("font-weight", "bold");
+
+        var finding = new Div();
+        finding.add(occurrences, new Div(entry.getKey()));
+        finding.addClassNames("flex-horizontal", "gap-02");
+        summary.add(finding);
+      }
+
+      var disclaimer = disclaimerForFailure();
+      var content = new ValidationReportContent();
+      content.add(summary, disclaimer);
+      return content;
+    }
+
+    private static Div disclaimerForSuccess() {
+      var textBox = new Div(
+          "Please click on Register to register the sample measurement metadata.");
+      textBox.addClassNames("small-body-text", "color-secondary");
+      return textBox;
+    }
+
+    private static Div disclaimerForFailure() {
+      var textBox = new Div(
+          "Please correct the entries in the uploaded excel sheet and re-upload.");
+      textBox.addClassNames("small-body-text", "color-secondary");
+      return textBox;
     }
 
   }

@@ -341,6 +341,11 @@ public class MeasurementNGSValidator implements
       } else {
         validation = validation.combine(ValidationResult.successful());
       }
+
+      var missingIndices = new MissingIndices(() -> metadata);
+
+      validation = validation.combine(missingIndices.execute());
+
       return validation;
     }
 

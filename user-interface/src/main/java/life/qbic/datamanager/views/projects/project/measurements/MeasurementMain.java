@@ -1,10 +1,8 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -13,8 +11,6 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.BeforeLeaveEvent;
-import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -24,16 +20,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.FileNameFormatter;
@@ -58,10 +50,10 @@ import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactor
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
+import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementRegistrationProcessorNGS;
+import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementRegistrationProcessorPxP;
 import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -79,7 +71,6 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
-import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -101,7 +92,7 @@ import reactor.core.publisher.Flux;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
-public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
+public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
@@ -128,8 +119,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private final ExperimentInformationService experimentInformationService;
   private final AsyncProjectService asyncService;
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
-  private MeasurementMetadataUploadDialog dialog;
   private transient Context context;
+  private AppDialog measurementDialog;
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
@@ -188,19 +179,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
-  private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
-    return switch (errorCode) {
-      case FAILED -> "Registration failed";
-      case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
-      case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
-      case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-      case MISSING_ASSOCIATED_SAMPLE -> "Missing sample information for this measurement.";
-      case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
-      case SAMPLECODE_NOT_FROM_PROJECT -> "QBiC sample ID does not belong to this project";
-      case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
-    };
-  }
-
   private void initContent() {
     Span titleField = new Span();
     titleField.setText("Register Measurements");
@@ -228,7 +206,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         event -> openRegistrationDialog());
 
     Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openEditMeasurementDialog());
 
     Button deleteButton = new Button("Delete");
     deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());
@@ -310,91 +287,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       showErrorNotification("Deletion failed", errorMessage);
     });
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
-  }
-
-  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(this::triggerMeasurementRegistration);
-    return dialog;
-  }
-
-  private void triggerMeasurementRegistration(
-      ConfirmEvent event) {
-    var uploads = new ArrayList<>(event.uploads());
-    var dialog = event.getSource();
-    var mode = dialog.getMode();
-    UI ui = event.getSource().getUI().orElseThrow();
-    for (var upload : uploads) {
-      var measurementData = upload.measurementMetadata();
-
-      //Necessary so the dialog window switches to show the upload progress
-      ui.push();
-      CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
-      Toast pendingToast;
-
-      // we can close the dialog, everything that comes now is executed concurrently and there is
-      // no need the user is blocked
-      event.getSource().close();
-
-      if (mode.equals(MODE.EDIT)) {
-        completableFuture = measurementService.updateAll(measurementData,
-            context.projectId().orElseThrow());
-        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Update of #%d measurements".formatted(measurementData.stream()
-                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
-                    .distinct().toList().size())},
-            getLocale());
-      } else {
-        completableFuture = measurementService.registerAll(upload.measurementMetadata(),
-            context.projectId().orElseThrow());
-        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Registration of #%d measurements".formatted(upload.measurementMetadata().size())},
-            getLocale());
-      }
-      ui.access(pendingToast::open);
-      try {
-        completableFuture.exceptionally(e -> {
-              log.error(e.getMessage(), e);
-              ui.access(() -> {
-                pendingToast.close();
-                messageFactory.toast("task.failed", new Object[]{"Registration failed"}, getLocale())
-                    .open();
-              });
-              throw new HandledException(e);
-            })
-            .thenAccept(results -> {
-              var errorResult = results.stream().filter(Result::isError).findAny();
-              if (errorResult.isPresent()) {
-                String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
-                ui.access(() -> {
-                  pendingToast.close();
-                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale())
-                      .open();
-                });
-              } else {
-                ui.access(() -> {
-                  pendingToast.close();
-                  messageFactory.toast("task.finished", new Object[]{"Measurement update"},
-                      getLocale()).open();
-                  setMeasurementInformation();
-                });
-              }
-            }).exceptionally(e -> {
-              throw new HandledException(e);
-            });
-      } catch (HandledException e) {
-        log.error(e.getMessage(), e);
-      }
-    }
-  }
-
-  private void openEditMeasurementDialog() {
-    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
-        cancelConfirmationDialogFactory,
-        MODE.EDIT,
-        context.projectId().orElse(null));
-    setupDialog(dialog);
-    dialog.open();
   }
 
   private void downloadMetadataForSelectedTab() {
@@ -528,13 +420,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   }
 
   private void openRegistrationDialog() {
-    AppDialog dialog = AppDialog.large();
-    DialogHeader.with(dialog, "Register your measurement metadata");
-    DialogFooter.with(dialog, "Cancel", "Register");
+    this.measurementDialog = AppDialog.medium();
+    DialogHeader.with(measurementDialog, "Register measurements");
+    DialogFooter.with(measurementDialog, "Cancel", "Register");
 
     var registrationUseCase = new MeasurementUpload(asyncService, context,
-        ConverterRegistry.converterFor(
-            MeasurementRegistrationInformationNGS.class), messageSourceNotificationFactory);
+        ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class),
+        messageSourceNotificationFactory);
     var templateComponent = new MeasurementTemplateSelectionComponent(
         Map.ofEntries(
             Map.entry(Domain.Genomics, new WorkbookDownloadStreamProvider() {
@@ -565,16 +457,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
         registrationUseCase, Domain.Genomics);
 
-    DialogBody.with(dialog, measurementRegistrationComponent, measurementRegistrationComponent);
-    dialog.registerCancelAction(dialog::close);
-    dialog.registerConfirmAction(() -> {
+    DialogBody.with(measurementDialog, measurementRegistrationComponent,
+        measurementRegistrationComponent);
+    measurementDialog.registerCancelAction(measurementDialog::close);
+    measurementDialog.registerConfirmAction(() -> {
       var requestContent = registrationUseCase.getValidationRequestContent();
-      submitRequest(context.projectId().orElseThrow().value(), createRegistrationRequestPackage(requestContent));
-      dialog.close();
+      submitRequest(context.projectId().orElseThrow().value(),
+          createRegistrationRequestPackage(requestContent));
+      measurementDialog.close();
     });
 
-    add(dialog);
-    dialog.open();
+    add(measurementDialog);
+    measurementDialog.open();
   }
 
   private void submitRequest(String projectId,
@@ -594,53 +488,21 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   private List<MeasurementRegistrationInformationPxP> mergeByPoolPxP(
       List<MeasurementRegistrationInformationPxP> requests) {
-    // 1. we want to aggregate measurement registration information that have the same sample pool name (we omit blank pool names)
-    var measurementsBySamplePool = new HashMap<String, List<MeasurementRegistrationInformationPxP>>();
-    var finalMeasurements = new ArrayList<MeasurementRegistrationInformationPxP>();
-    for (var measurement : requests) {
-      if (measurement.samplePoolGroup().isBlank()) {
-        finalMeasurements.add(measurement);
-      } else {
-        measurementsBySamplePool.computeIfAbsent(measurement.samplePoolGroup(),
-            k -> new ArrayList<>()).add(measurement);
-      }
-    }
-    // 2. now we need to merge sample-specific metadata of the pooled measurements
-    for (var entry : measurementsBySamplePool.entrySet()) {
-      // every entry has the same pool name and by definition are only distinct in their specific metadata
-      var specificMetadata = entry.getValue().stream()
-          .flatMap(m -> m.specificMetadata().entrySet().stream())
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-      var commonMetadata = entry.getValue().getFirst();
-      var pooledMeasurement = new MeasurementRegistrationInformationPxP(
-          commonMetadata.technicalReplicateName(),
-          commonMetadata.organisationId(),
-          commonMetadata.msDeviceCURIE(),
-          commonMetadata.samplePoolGroup(),
-          commonMetadata.facility(),
-          commonMetadata.digestionEnzyme(),
-          commonMetadata.digestionMethod(),
-          commonMetadata.enrichmentMethod(),
-          commonMetadata.injectionVolume(),
-          commonMetadata.lcColumn(),
-          commonMetadata.lcmsMethod(),
-          commonMetadata.labelingType(),
-          specificMetadata);
-      finalMeasurements.add(pooledMeasurement);
-    }
-
-    return finalMeasurements;
+    var processor = new MeasurementRegistrationProcessorPxP();
+    return processor.process(requests);
   }
 
-  private RegistrationRequestPackage createRegistrationRequestPackage(List<? extends ValidationRequestBody> validationRequestBodies) {
-    var requestsNGS  = new ArrayList<MeasurementRegistrationInformationNGS>();
+  private RegistrationRequestPackage createRegistrationRequestPackage(
+      List<? extends ValidationRequestBody> validationRequestBodies) {
+    var requestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
     var requestsPxP = new ArrayList<MeasurementRegistrationInformationPxP>();
-    
-    for  (var entry : validationRequestBodies) {
+
+    for (var entry : validationRequestBodies) {
       switch (entry) {
         case MeasurementRegistrationInformationNGS info -> requestsNGS.add(info);
         case MeasurementRegistrationInformationPxP info -> requestsPxP.add(info);
-        default -> throw new IllegalStateException("Unexpected request body of type: " + entry.getClass().getName());
+        default -> throw new IllegalStateException(
+            "Unexpected request body of type: " + entry.getClass().getName());
       }
     }
 
@@ -682,38 +544,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   private static List<MeasurementRegistrationInformationNGS> mergeByPoolNGS(
       List<MeasurementRegistrationInformationNGS> requests) {
-    // 1. we want to aggregate measurement registration information that have the same sample pool name (we omit blank pool names)
-    var measurementsBySamplePool = new HashMap<String, List<MeasurementRegistrationInformationNGS>>();
-    var finalMeasurements = new ArrayList<MeasurementRegistrationInformationNGS>();
-    for (var measurement : requests) {
-      if (measurement.samplePoolGroup().isBlank()) {
-        finalMeasurements.add(measurement);
-      } else {
-        measurementsBySamplePool.computeIfAbsent(measurement.samplePoolGroup(),
-            k -> new ArrayList<>()).add(measurement);
-      }
-    }
-    // 2. now we need to merge sample-specific metadata of the pooled measurements
-    for (var entry : measurementsBySamplePool.entrySet()) {
-      // every entry has the same pool name and by definition are only distinct in their specific metadata
-      var specificMetadata = entry.getValue().stream()
-          .flatMap(m -> m.specificMetadata().entrySet().stream())
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-      var commonMetadata = entry.getValue().getFirst();
-      var pooledMeasurement = new MeasurementRegistrationInformationNGS(
-          commonMetadata.organisationId(),
-          commonMetadata.instrumentCURIE(),
-          commonMetadata.facility(),
-          commonMetadata.sequencingReadType(),
-          commonMetadata.libraryKit(),
-          commonMetadata.flowCell(),
-          commonMetadata.sequencingRunProtocol(),
-          commonMetadata.samplePoolGroup(),
-          specificMetadata);
-      finalMeasurements.add(pooledMeasurement);
-    }
-
-    return finalMeasurements;
+    var processor = new MeasurementRegistrationProcessorNGS();
+    return processor.process(requests);
   }
 
   // To be called after all submitted requests completed by the service
@@ -725,17 +557,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     }
     if (numberOfSuccesses > 0 && numberOfSuccesses < numberOfRequests) {
       // We have successful registrations but also failures
-      displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+      displayRegistrationFailure(numberOfRequests - numberOfSuccesses);
       displayRegistrationSuccess(numberOfSuccesses);
       return;
     }
     // There were only failing requests, none succeeded
-    displayRegistrationFailure(numberOfRequests -  numberOfSuccesses);
+    displayRegistrationFailure(numberOfRequests - numberOfSuccesses);
   }
 
   private void displayRegistrationSuccess(int numberOfSuccesses) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      Toast toast = messageFactory.toast("measurement.registration.successful", new Object[]{numberOfSuccesses},
+      Toast toast = messageFactory.toast("measurement.registration.successful",
+          new Object[]{numberOfSuccesses},
           getLocale());
       toast.open();
     }));
@@ -747,7 +580,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   private void displayRegistrationFailure(int numberOfFailures) {
     getUI().ifPresent(ui -> ui.access(() -> {
-      var toast = messageFactory.toast("measurement.registration.failed", new Object[]{numberOfFailures},
+      var toast = messageFactory.toast("measurement.registration.failed",
+          new Object[]{numberOfFailures},
           getLocale());
       toast.open();
     }));
@@ -841,15 +675,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
         downloadMeasurementTemplateEvent.getDownloadStreamProvider());
   }
 
-  private void openRegisterMeasurementDialog() {
-    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
-        cancelConfirmationDialogFactory,
-        MODE.ADD,
-        context.projectId().orElse(null));
-    setupDialog(dialog);
-    dialog.open();
-  }
-
   private void initRawDataAvailableInfo() {
     rawDataAvailableInfo.setInfoText(
         "Raw data results for your registered measurement are available now");
@@ -893,11 +718,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       super(cause);
     }
 
-  }
-
-  @Override
-  public void beforeLeave(BeforeLeaveEvent event) {
-    Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
   }
 
   record RegistrationRequestPackage(
