@@ -121,7 +121,7 @@ public class MeasurementUpload extends Div implements UserInput {
     this.uploadedItemsDisplay = new UploadedItemsDisplay(upload);
 
     // Create the different sections
-    var sectionUpload = DialogSection.with("Upload the measurement metadata",
+    var sectionUpload = DialogSection.with("Upload filled template",
         uploadedItemsDisplay);
 
     // Add components to the MeasurementUpload component
@@ -347,7 +347,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
       uploadedItemsDisplays = new Div();
       uploadedItemsDisplays.addClassName("uploaded-measurement-items");
-      this.uploadedFilesSection = DialogSection.with("Uploaded Files",
+      this.uploadedFilesSection = DialogSection.with("Review upload results",
           new Div(uploadedItemsDisplays));
 
       add(uploadSection, uploadedFilesSection);
@@ -359,8 +359,6 @@ public class MeasurementUpload extends Div implements UserInput {
       // For some reason, it does not work when the tabindex is set to 0.
       // Even though the dialog is open, the parent page has elements with a tabindex set to zero and this
       // might cause issues.
-      measurementFileDisplay.setTabIndex(1);
-      measurementFileDisplay.focus();
     }
 
     private void removeFileFromDisplay(String fileName) {

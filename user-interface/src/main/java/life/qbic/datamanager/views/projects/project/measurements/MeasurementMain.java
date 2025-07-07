@@ -421,7 +421,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private void openRegistrationDialog() {
     this.measurementDialog = AppDialog.medium();
-    DialogHeader.with(measurementDialog, "Register your measurement metadata");
+    DialogHeader.with(measurementDialog, "Register measurements");
     DialogFooter.with(measurementDialog, "Cancel", "Register");
 
     var registrationUseCase = new MeasurementUpload(asyncService, context,

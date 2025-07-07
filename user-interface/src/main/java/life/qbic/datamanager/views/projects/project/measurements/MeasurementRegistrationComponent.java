@@ -46,7 +46,7 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
             getConverterForDomain(templateSelectionComponent.selectedDomain())));
 
     // 3. We add the components as children to this component
-    var templateSection = DialogSection.with("Select the domain and download the template",
+    var templateSection = DialogSection.with("Download domain-specific template",
         "Please select the relevant domain to download the domain-specific measurement metadata template.",
         templateSelectionComponent);
     add(templateSection);
