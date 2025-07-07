@@ -46,7 +46,6 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
-import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementProcessor;
 import reactor.core.publisher.Flux;
 
 /**
@@ -221,7 +220,8 @@ public class MeasurementUpload extends Div implements UserInput {
     runValidation(requests, itemsToValidate, fileName);
   }
 
-  private static List<? extends ValidationRequestBody> process(List<? extends ValidationRequestBody> validationRequest) {
+  private static List<? extends ValidationRequestBody> process(
+      List<? extends ValidationRequestBody> validationRequest) {
     if (validationRequest.isEmpty()) {
       return validationRequest;
     }
@@ -347,7 +347,8 @@ public class MeasurementUpload extends Div implements UserInput {
 
       uploadedItemsDisplays = new Div();
       uploadedItemsDisplays.addClassName("uploaded-measurement-items");
-      this.uploadedFilesSection = DialogSection.with("Uploaded Files", new Div(uploadedItemsDisplays));
+      this.uploadedFilesSection = DialogSection.with("Uploaded Files",
+          new Div(uploadedItemsDisplays));
 
       add(uploadSection, uploadedFilesSection);
       addClassNames("upload-items-display", "flex-vertical", "gap-05");
@@ -355,7 +356,10 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private void addFileToDisplay(MeasurementFileDisplay measurementFileDisplay) {
       uploadedItemsDisplays.add(measurementFileDisplay);
-      measurementFileDisplay.setTabIndex(0);
+      // For some reason, it does not work when the tabindex is set to 0.
+      // Even though the dialog is open, the parent page has elements with a tabindex set to zero and this
+      // might cause issues.
+      measurementFileDisplay.setTabIndex(1);
       measurementFileDisplay.focus();
     }
 
