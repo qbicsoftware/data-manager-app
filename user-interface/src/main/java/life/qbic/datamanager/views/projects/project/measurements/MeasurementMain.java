@@ -206,6 +206,15 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         event -> openRegistrationDialog());
 
     Button editButton = new Button("Edit");
+    editButton.addClickListener(event -> {
+      measurementDetailsComponent.getSelectedMeasurements().ifPresentOrElse(selectedMeasurements -> {
+        log.info("Found selected measurements");
+        log.info("Domain: " + selectedMeasurements.domain());
+        log.info("IDs: " + measurementDetailsComponent.getSelectedMeasurements());
+      }, () -> {
+        log.error("Could not find any selected measurement");
+      });
+    });
 
     Button deleteButton = new Button("Delete");
     deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());

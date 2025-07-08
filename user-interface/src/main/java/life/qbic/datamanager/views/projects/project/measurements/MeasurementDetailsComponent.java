@@ -54,6 +54,7 @@ import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.Organisation;
 import life.qbic.projectmanagement.domain.model.OntologyTerm;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSIndex;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.NGSSpecificMeasurementMetadata;
@@ -94,6 +95,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final transient MessageSourceNotificationFactory notificationFactory;
   private transient Context context;
   private String searchTerm = "";
+  private transient Tab selectedTab = null;
 
   public MeasurementDetailsComponent(@Autowired MeasurementService measurementService,
       @Autowired SampleInformationService sampleInformationService,
@@ -105,14 +107,17 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
-    proteomicsTab = new MeasurementTechnologyTab("Proteomics", 0);
-    genomicsTab = new MeasurementTechnologyTab("Genomics", 0);
+    proteomicsTab = new MeasurementTechnologyTab(Domain.PROTEOMICS, 0);
+    genomicsTab = new MeasurementTechnologyTab(Domain.GENOMICS, 0);
     createProteomicsGrid();
     createNGSMeasurementGrid();
     add(registeredMeasurementsTabSheet);
     registeredMeasurementsTabSheet.addClassName("measurement-tabsheet");
     addClassName("measurement-details-component");
-    registeredMeasurementsTabSheet.addSelectedChangeListener(event -> resetSelectedMeasurements());
+    registeredMeasurementsTabSheet.addSelectedChangeListener(event -> {
+      resetSelectedMeasurements();
+      selectedTab = event.getSelectedTab();
+    });
   }
 
   /**
@@ -503,8 +508,68 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     return new HashSet<>(ngsMeasurementGrid.getSelectedItems());
   }
 
+  private List<String> selectedMeasurementsNGS() {
+    return ngsMeasurementGrid.getSelectedItems()
+        .stream()
+        .map(NGSMeasurement::measurementId)
+        .map(MeasurementId::value).toList();
+  }
+
+  private List<String> selectedMeasurementsPxP() {
+    return proteomicsMeasurementGrid.getSelectedItems()
+        .stream()
+        .map(ProteomicsMeasurement::measurementId)
+        .map(MeasurementId::value).toList();
+  }
+
   public Set<ProteomicsMeasurement> getSelectedProteomicsMeasurements() {
     return new HashSet<>(proteomicsMeasurementGrid.getSelectedItems());
+  }
+
+  public enum Domain {
+    GENOMICS("Genomics"), PROTEOMICS("Proteomics");
+
+    private final String value;
+
+    Domain(String value) {
+      this.value = value;
+    }
+
+    public String value() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return value;
+    }
+  }
+
+  public record SelectedMeasurements(Domain domain, List<String> measurementIds) {
+    public SelectedMeasurements {
+      Objects.requireNonNull(domain);
+      Objects.requireNonNull(measurementIds);
+      measurementIds = List.copyOf(measurementIds);
+    }
+  }
+
+  public Optional<SelectedMeasurements> getSelectedMeasurements() {
+    if (selectedTab == null) {
+      return Optional.empty();
+    }
+    if (selectedTab instanceof MeasurementTechnologyTab) {
+      return Optional.ofNullable(measurementsForTab((MeasurementTechnologyTab) selectedTab));
+    }
+    return Optional.empty();
+  }
+
+  private SelectedMeasurements measurementsForTab(MeasurementTechnologyTab tab) {
+    Objects.requireNonNull(tab);
+    switch (tab.domain) {
+      case Domain.GENOMICS: return new SelectedMeasurements(Domain.GENOMICS, selectedMeasurementsNGS());
+      case Domain.PROTEOMICS: return new SelectedMeasurements(Domain.PROTEOMICS, selectedMeasurementsPxP());
+      default: return null;
+    }
   }
 
   public void refreshGrids() {
@@ -554,16 +619,16 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
     private final Span countBadge;
     private final Span technologyNameComponent;
-    private final String technology;
+    private final Domain domain;
 
-    public MeasurementTechnologyTab(String technology, int measurementCount) {
-      this.technology = technology;
+    public MeasurementTechnologyTab(Domain domain, int measurementCount) {
+      this.domain = domain;
       technologyNameComponent = new Span();
       this.countBadge = createBadge();
       Span sampleCountComponent = new Span();
       sampleCountComponent.add(countBadge);
       this.add(technologyNameComponent, sampleCountComponent);
-      setTechnologyName(technology);
+      setTechnologyName(domain);
       setMeasurementCount(measurementCount);
       addClassName("tab-with-count");
     }
@@ -578,7 +643,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
 
     public String getTabLabel() {
-      return technology;
+      return domain.toString();
     }
 
     /**
@@ -592,8 +657,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       countBadge.setText(String.valueOf(measurementCount));
     }
 
-    public void setTechnologyName(String technologyName) {
-      this.technologyNameComponent.setText(technologyName);
+    public void setTechnologyName(Domain domain) {
+      this.technologyNameComponent.setText(domain.toString());
+    }
+
+    public Domain getDomain() {
+      return domain;
     }
 
   }
