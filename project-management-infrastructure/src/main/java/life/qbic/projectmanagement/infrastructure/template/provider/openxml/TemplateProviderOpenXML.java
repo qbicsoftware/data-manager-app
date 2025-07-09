@@ -6,10 +6,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.SampleTemplateFactory;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.stereotype.Component;
@@ -79,6 +82,34 @@ public class TemplateProviderOpenXML implements TemplateProvider {
 
   private Workbook forRequest(MeasurementInformationNGS req) {
     return templateFactory.forMeasurementNGS();
+  }
+
+  private static List<MeasurementEntryNGS> fromRequest(MeasurementInformationNGS req) {
+    var entries = new ArrayList<MeasurementEntryNGS>();
+    for (var specificMetadataEntry : req.specificMetadata().entrySet()) {
+      var sampleId = specificMetadataEntry.getKey();
+      var specificData = specificMetadataEntry.getValue();
+      var entry = new MeasurementEntryNGS(
+          req.measurementId(),
+          sampleId,
+          specificData.sampleName(),
+          req.samplePoolGroup(),
+          req.organisationIRI(),
+          req.organisationName(),
+          req.facility(),
+          req.instrumentIRI(),
+          req.instrumentName(),
+          req.sequencingReadType(),
+          req.libraryKit(),
+          req.flowCell(),
+          req.sequencingRunProtocol(),
+          specificData.indexI7(),
+          specificData.indexI5(),
+          specificData.comment()
+      );
+      entries.add(entry);
+    }
+    return entries;
   }
 
   private Workbook forRequest(SampleRegistration req) {

@@ -2,8 +2,8 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml.fac
 
 import java.util.Arrays;
 import java.util.List;
-import life.qbic.datamanager.views.projects.project.measurements.ProteomicsMeasurementEntry;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementProteomicsValidator;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 import org.apache.poi.ss.usermodel.Workbook;
 
 public class ProteomicsWorkbooks {
@@ -41,7 +41,7 @@ public class ProteomicsWorkbooks {
     return new ProteomicsRegisterFactory().createWorkbook();
   }
 
-  public static Workbook createEditWorkbook(List<ProteomicsMeasurementEntry> measurements) {
+  public static Workbook createEditWorkbook(List<MeasurementEntryPxP> measurements) {
     return new ProteomicsEditFactory(measurements).createWorkbook();
   }
 }

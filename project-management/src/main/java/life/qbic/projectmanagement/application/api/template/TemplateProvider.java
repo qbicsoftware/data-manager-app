@@ -109,12 +109,19 @@ public interface TemplateProvider {
 
   }
 
+  record MeasurementInformationCollectionNGS(List<MeasurementInformationNGS> measurements) {
+    public MeasurementInformationCollectionNGS {
+      requireNonNull(measurements);
+      measurements = List.copyOf(measurements);
+    }
+  }
+
   /**
    * Information container for an NGS measurement.
    *
    * @param measurementId         the identifier of the measurement
-   * @param organisationId        the ROR ID of the organization that performed the measurement
-   * @param instrumentCURIE       the CURIE of the measurement device used
+   * @param organisationIRI        the ROR ID of the organization that performed the measurement
+   * @param instrumentIRI       the CURIE of the measurement device used
    * @param facility              the facility within the organization that actually performed the
    *                              measurement
    * @param sequencingReadType    the sequencing read type used
@@ -128,8 +135,8 @@ public interface TemplateProvider {
    *                              pooling was done. {@link MeasurementSpecificNGS}
    * @since 1.11.0
    */
-  record MeasurementInformationNGS(String measurementId, String organisationId,
-                                   String instrumentCURIE, String facility,
+  record MeasurementInformationNGS(String measurementId, String organisationIRI, String organisationName,
+                                   String instrumentIRI, String instrumentName, String facility,
                                    String sequencingReadType, String libraryKit, String flowCell,
                                    String sequencingRunProtocol, String samplePoolGroup,
                                    Map<String, MeasurementSpecificNGS> specificMetadata) implements
@@ -137,8 +144,10 @@ public interface TemplateProvider {
 
     public MeasurementInformationNGS {
       requireNonNull(measurementId);
-      requireNonNull(organisationId);
-      requireNonNull(instrumentCURIE);
+      requireNonNull(organisationIRI);
+      requireNonNull(organisationName);
+      requireNonNull(instrumentIRI);
+      requireNonNull(instrumentName);
       requireNonNull(facility);
       requireNonNull(sequencingReadType);
       requireNonNull(libraryKit);
@@ -184,8 +193,8 @@ public interface TemplateProvider {
    *
    * @param measurementId          the identifier of the measurement
    * @param technicalReplicateName the name of the technical replicate
-   * @param organisationId         the ROR ID of the organization that performed the measurement
-   * @param msDeviceCURIE          the CURIE of the mass spectrometry device used for the
+   * @param organisationIRI         the ROR ID of the organization that performed the measurement
+   * @param msDeviceIRI          the CURIE of the mass spectrometry device used for the
    *                               measurement
    * @param samplePoolGroup        the name of the sample pool
    * @param facility               the name of the facility that performed the measurement
@@ -205,8 +214,10 @@ public interface TemplateProvider {
   record MeasurementInformationPxP(
       String measurementId,
       String technicalReplicateName,
-      String organisationId,
-      String msDeviceCURIE,
+      String organisationIRI,
+      String organisationName,
+      String msDeviceIRI,
+      String deviceName,
       String samplePoolGroup,
       String facility,
       String digestionEnzyme,
@@ -222,8 +233,10 @@ public interface TemplateProvider {
     public MeasurementInformationPxP {
       requireNonNull(measurementId);
       requireNonNull(technicalReplicateName);
-      requireNonNull(organisationId);
-      requireNonNull(msDeviceCURIE);
+      requireNonNull(organisationIRI);
+      requireNonNull(organisationName);
+      requireNonNull(msDeviceIRI);
+      requireNonNull(deviceName);
       requireNonNull(facility);
       requireNonNull(digestionEnzyme);
       requireNonNull(digestionMethod);
