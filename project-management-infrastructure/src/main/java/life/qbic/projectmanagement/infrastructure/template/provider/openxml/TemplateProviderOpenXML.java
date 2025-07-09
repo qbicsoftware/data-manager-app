@@ -46,6 +46,8 @@ public class TemplateProviderOpenXML implements TemplateProvider {
       case SampleRegistration req -> getTemplate(req);
       case SampleUpdate req -> getTemplate(req);
       case SampleInformation req -> getTemplate(req);
+      case MeasurementInformationNGS req -> getTemplate(req);
+      case MeasurementInformationPxP req -> getTemplate(req);
     };
   }
 
@@ -67,6 +69,16 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     var workbook = forRequest(req);
 
     return new TemplateContent(workbook, providedMimeType(), "sample information");
+  }
+
+  private DigitalObject getTemplate(MeasurementInformationNGS req) {
+    var workbook = forRequest(req);
+
+    return new TemplateContent(workbook, providedMimeType(), "measurement information");
+  }
+
+  private Workbook forRequest(MeasurementInformationNGS req) {
+    return templateFactory.forMeasurementNGS();
   }
 
   private Workbook forRequest(SampleRegistration req) {

@@ -15,8 +15,8 @@ import jakarta.annotation.security.PermitAll;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
-import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
-import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import life.qbic.datamanager.views.general.PageArea;
 import org.apache.poi.ss.usermodel.Workbook;
 
