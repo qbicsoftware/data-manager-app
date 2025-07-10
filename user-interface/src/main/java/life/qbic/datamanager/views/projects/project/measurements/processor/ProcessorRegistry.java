@@ -20,7 +20,7 @@ public class ProcessorRegistry {
 
 
   // Registry with suppliers
-  private static final Map<Class<?>, Supplier<? extends MeasurementProcessor<?>>> registry = new HashMap();
+  private static final Map<Class<?>, Supplier<? extends MeasurementProcessor<?>>> registry = new HashMap<>();
 
   static {
     // Registration of matching classes and suppliers (e.g., constructors)

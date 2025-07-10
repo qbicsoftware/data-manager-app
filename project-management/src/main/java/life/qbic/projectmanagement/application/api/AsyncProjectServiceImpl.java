@@ -46,6 +46,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
@@ -258,6 +259,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Error registering measurement", e))
         .retryWhen(defaultRetryStrategy()).onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+  }
+
+  @Override
+  public Flux<MeasurementUpdateResponse> update(Flux<MeasurementUpdateRequest> requestStream) {
+    return requestStream.flatMap(this::updateMeasurement);
+  }
+
+  private Publisher<? extends MeasurementUpdateResponse> updateMeasurement(
+      MeasurementUpdateRequest measurementUpdateRequest) {
+   // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
