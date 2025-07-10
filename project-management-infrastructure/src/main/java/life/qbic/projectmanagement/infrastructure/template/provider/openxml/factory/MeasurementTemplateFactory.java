@@ -1,9 +1,9 @@
 package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
 
 import java.util.List;
-import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationNGS;
-import life.qbic.projectmanagement.application.api.template.TemplateProvider.MeasurementInformationPxP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -14,14 +14,13 @@ import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Work
  */
 public class MeasurementTemplateFactory {
 
-  public WorkbookFactory forUpdateNGS(List<MeasurementInformationNGS> measurements) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+  public WorkbookFactory forUpdateNGS(List<MeasurementEntryNGS> measurements) {
+
+    return new NgsEditFactory(measurements);
   }
 
-  public WorkbookFactory forUpdatePxP(List<MeasurementInformationPxP> measurements) {
-// TODO implement
-    throw new RuntimeException("Not yet implemented");
-  }
+  public WorkbookFactory forUpdatePxP(List<MeasurementEntryPxP> measurements) {
+
+    return new ProteomicsEditFactory(measurements);  }
 
 }

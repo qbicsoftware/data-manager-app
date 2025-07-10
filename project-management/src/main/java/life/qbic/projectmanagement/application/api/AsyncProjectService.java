@@ -1532,6 +1532,26 @@ public interface AsyncProjectService {
       MimeType mimeType);
 
 
+  /**
+   *
+   * @param projectId
+   * @param measurementIds
+   * @param mimeType
+   * @return
+   * @since
+   */
+  Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds, MimeType mimeType);
+
+  /**
+   *
+   * @param projectId
+   * @param measurementIds
+   * @param mimeType
+   * @return
+   * @since
+   */
+  Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds, MimeType mimeType);
+
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 

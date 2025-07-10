@@ -12,7 +12,9 @@ import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.template.TemplateProvider;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.MeasurementTemplateFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.SampleTemplateFactory;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.stereotype.Component;
@@ -32,10 +34,12 @@ import org.springframework.util.MimeType;
 public class TemplateProviderOpenXML implements TemplateProvider {
 
   private static final Logger log = logger(TemplateProviderOpenXML.class);
-  private final SampleTemplateFactory templateFactory;
+  private final SampleTemplateFactory sampleTemplateFactory;
+  private final MeasurementTemplateFactory measurementTemplateFactory;
 
   public TemplateProviderOpenXML() {
-    this.templateFactory = new SampleTemplateFactory();
+    this.sampleTemplateFactory = new SampleTemplateFactory();
+    this.measurementTemplateFactory = new MeasurementTemplateFactory();
   }
 
   @Override
@@ -49,8 +53,8 @@ public class TemplateProviderOpenXML implements TemplateProvider {
       case SampleRegistration req -> getTemplate(req);
       case SampleUpdate req -> getTemplate(req);
       case SampleInformation req -> getTemplate(req);
-      case MeasurementInformationNGS req -> getTemplate(req);
-      case MeasurementInformationPxP req -> getTemplate(req);
+      case MeasurementInformationCollectionNGS req -> getTemplate(req);
+      case MeasurementInformationCollectionPxP req -> getTemplate(req);
     };
   }
 
@@ -74,24 +78,70 @@ public class TemplateProviderOpenXML implements TemplateProvider {
     return new TemplateContent(workbook, providedMimeType(), "sample information");
   }
 
-  private DigitalObject getTemplate(MeasurementInformationNGS req) {
+  private DigitalObject getTemplate(MeasurementInformationCollectionPxP req) {
+    var workbook = forRequest(req);
+
+    return new TemplateContent(workbook, providedMimeType(), "measurement update template");
+  }
+
+  private Workbook forRequest(MeasurementInformationCollectionPxP req) {
+    var entries = req.measurements().stream()
+        .flatMap(value -> fromRequest(value).stream())
+        .toList();
+    return measurementTemplateFactory.forUpdatePxP(entries).createWorkbook();
+  }
+
+  private DigitalObject getTemplate(MeasurementInformationCollectionNGS req) {
     var workbook = forRequest(req);
 
     return new TemplateContent(workbook, providedMimeType(), "measurement information");
   }
 
-  private Workbook forRequest(MeasurementInformationNGS req) {
-    return templateFactory.forMeasurementNGS();
+  private Workbook forRequest(MeasurementInformationCollectionNGS req) {
+    var entries = req.measurements().stream()
+        .flatMap(value -> fromRequest(value).stream())
+        .toList();
+    return measurementTemplateFactory.forUpdateNGS(entries).createWorkbook();
+  }
+
+  private static List<MeasurementEntryPxP> fromRequest(MeasurementInformationPxP req) {
+    var entries = new ArrayList<MeasurementEntryPxP>();
+    for (var specificMetadataEntry : req.specificMetadata().entrySet()) {
+      var specificData = specificMetadataEntry.getValue();
+      var entry = new MeasurementEntryPxP(
+          req.measurementId(),
+          specificData.sampleId(),
+          specificData.sampleName(),
+          req.samplePoolGroup(),
+          req.technicalReplicateName(),
+          req.organisationIRI(),
+          req.organisationName(),
+          req.facility(),
+          req.msDeviceIRI(),
+          req.deviceName(),
+          specificData.fractionName(),
+          req.digestionMethod(),
+          req.digestionEnzyme(),
+          req.enrichmentMethod(),
+          req.injectionVolume(),
+          req.lcColumn(),
+          req.lcmsMethod(),
+          req.labelingType(),
+          specificData.label(),
+          specificData.comment()
+      );
+      entries.add(entry);
+    }
+    return entries;
   }
 
   private static List<MeasurementEntryNGS> fromRequest(MeasurementInformationNGS req) {
     var entries = new ArrayList<MeasurementEntryNGS>();
     for (var specificMetadataEntry : req.specificMetadata().entrySet()) {
-      var sampleId = specificMetadataEntry.getKey();
       var specificData = specificMetadataEntry.getValue();
       var entry = new MeasurementEntryNGS(
           req.measurementId(),
-          sampleId,
+          specificData.sampleId(),
           specificData.sampleName(),
           req.samplePoolGroup(),
           req.organisationIRI(),
@@ -113,7 +163,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
   }
 
   private Workbook forRequest(SampleRegistration req) {
-    return templateFactory.forRegistration(
+    return sampleTemplateFactory.forRegistration(
         req.analysisMethods(),
         req.conditions(),
         req.analytes(),
@@ -123,7 +173,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
   }
 
   private Workbook forRequest(SampleInformation req) {
-    return templateFactory.forInformation(
+    return sampleTemplateFactory.forInformation(
         req.samples(),
         req.analysisMethods(),
         req.conditions(),
@@ -138,7 +188,7 @@ public class TemplateProviderOpenXML implements TemplateProvider {
 
   private Workbook forRequest(SampleUpdate req) {
     var info = req.information();
-    return templateFactory.forUpdate(
+    return sampleTemplateFactory.forUpdate(
         info.samples(),
         info.analysisMethods(),
         info.conditions(),

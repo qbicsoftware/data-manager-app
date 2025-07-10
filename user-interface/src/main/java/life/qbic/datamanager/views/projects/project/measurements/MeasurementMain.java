@@ -15,6 +15,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
+import java.io.InputStream;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,9 +31,8 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
@@ -75,8 +75,11 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 
 
@@ -121,6 +124,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
   private AppDialog measurementDialog;
+
+  private static final MimeType OPEN_XML = MimeType.valueOf(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
   public MeasurementMain(
       @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
@@ -207,13 +213,34 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     Button editButton = new Button("Edit");
     editButton.addClickListener(event -> {
-      measurementDetailsComponent.getSelectedMeasurements().ifPresentOrElse(selectedMeasurements -> {
-        log.info("Found selected measurements");
-        log.info("Domain: " + selectedMeasurements.domain());
-        log.info("IDs: " + measurementDetailsComponent.getSelectedMeasurements());
-      }, () -> {
-        log.error("Could not find any selected measurement");
-      });
+      measurementDetailsComponent.getSelectedMeasurements()
+          .ifPresentOrElse(selectedMeasurements -> {
+            log.info("Found selected measurements");
+            log.info("Domain: " + selectedMeasurements.domain());
+            log.info("IDs: " + measurementDetailsComponent.getSelectedMeasurements());
+            asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
+                    measurementDetailsComponent.getSelectedMeasurements().orElseThrow()
+                        .measurementIds(), OPEN_XML)
+                .doOnSuccess(result -> {
+                  log.info(result.toString());
+                  getUI().ifPresent(ui -> ui.access(() -> {
+                    downloadComponent.trigger(new DownloadStreamProvider() {
+                      @Override
+                      public String getFilename() {
+                        return "test.xlsx";
+                      }
+
+                      @Override
+                      public InputStream getStream() {
+                        return result.content();
+                      }
+                    });
+                  }));
+                })
+                .subscribe();
+          }, () -> {
+            log.error("Could not find any selected measurement");
+          });
     });
 
     Button deleteButton = new Button("Delete");
@@ -351,7 +378,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
       @Override
       public Workbook getWorkbook() {
-        return ProteomicsWorkbooks.createEditWorkbook(result);
+        //return ProteomicsWorkbooks.createEditWorkbook(result);
+        // TODO implement
+        throw new RuntimeException("Not yet implemented");
       }
     });
   }
@@ -385,7 +414,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
       @Override
       public Workbook getWorkbook() {
-        return NGSWorkbooks.createEditWorkbook(result);
+        // TODO implement
+        throw new RuntimeException("Not yet implemented");
+        //return NGSWorkbooks.createEditWorkbook(result);
       }
     });
 

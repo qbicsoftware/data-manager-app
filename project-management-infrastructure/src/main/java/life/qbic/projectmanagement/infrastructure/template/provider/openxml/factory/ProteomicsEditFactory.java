@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.function.BinaryOperator;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
-import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory.CellStyles;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.ProteomicsMeasurementEditColumn;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks.DigestionMethod;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.util.XLSXTemplateHelper;

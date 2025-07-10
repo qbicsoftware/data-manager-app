@@ -162,8 +162,21 @@ public class MeasurementService {
     return measurementLookupService.queryAllNGSMeasurement(samplesInExperiment);
   }
 
+  @Deprecated
   public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
     return measurementLookupService.findNGSMeasurement(measurementCode);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Optional<NGSMeasurement> findNGSMeasurementById(String projectId, String measurementId) {
+    return measurementLookupService.findNGSMeasurementById(measurementId);
+  }
+
+  @PreAuthorize(
+      "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Optional<ProteomicsMeasurement> findProteomicsMeasurementById(String projectId, String measurementId) {
+    return measurementLookupService.findProteomicsMeasurementById(measurementId);
   }
 
   @PreAuthorize(
@@ -1029,7 +1042,6 @@ public class MeasurementService {
     ProjectChanged projectChanged = ProjectChanged.create(projectId);
     DomainEventDispatcher.instance().dispatch(projectChanged);
   }
-
 
   public enum DeletionErrorCode {
     FAILED, DATA_ATTACHED
