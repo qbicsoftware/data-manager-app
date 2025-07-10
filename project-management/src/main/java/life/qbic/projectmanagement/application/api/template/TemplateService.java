@@ -213,7 +213,7 @@ public class TemplateService {
         measurement.technicalReplicateName().orElse(""),
         measurement.organisation().IRI(),
         measurement.organisation().label(),
-        measurement.msDevice().getClassIri(),
+        measurement.msDevice().oboId().toString(),
         measurement.msDevice().getLabel(),
         measurement.samplePoolGroup().orElse(""),
         measurement.facility(),
@@ -371,7 +371,6 @@ public class TemplateService {
         confoundingVariableLevels
     );
   }
-
 
   private SampleBasic querySampleBasicInfo(Experiment experiment, String projectId,
       String experimentId) {

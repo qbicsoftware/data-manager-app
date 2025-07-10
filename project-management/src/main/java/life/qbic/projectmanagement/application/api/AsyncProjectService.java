@@ -1533,24 +1533,30 @@ public interface AsyncProjectService {
 
 
   /**
+   * Provides information about selected NGS measurements for updating purposes in a requested
+   * {@link MimeType}.
    *
-   * @param projectId
-   * @param measurementIds
-   * @param mimeType
-   * @return
-   * @since
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
    */
-  Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds, MimeType mimeType);
+  Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds,
+      MimeType mimeType);
 
   /**
+   * Provides information about selected proteomics measurements for updating purposes in a requested
+   * {@link MimeType}.
    *
-   * @param projectId
-   * @param measurementIds
-   * @param mimeType
-   * @return
-   * @since
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
    */
-  Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds, MimeType mimeType);
+  Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds,
+      MimeType mimeType);
 
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {

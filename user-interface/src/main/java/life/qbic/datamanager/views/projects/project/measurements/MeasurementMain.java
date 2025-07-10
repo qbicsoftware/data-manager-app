@@ -15,7 +15,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
-import java.io.InputStream;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.Result;
-import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
@@ -63,6 +61,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequestBody;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
@@ -218,28 +217,13 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             log.info("Found selected measurements");
             log.info("Domain: " + selectedMeasurements.domain());
             log.info("IDs: " + measurementDetailsComponent.getSelectedMeasurements());
-            asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
-                    measurementDetailsComponent.getSelectedMeasurements().orElseThrow()
-                        .measurementIds(), OPEN_XML)
-                .doOnSuccess(result -> {
-                  log.info(result.toString());
-                  getUI().ifPresent(ui -> ui.access(() -> {
-                    downloadComponent.trigger(new DownloadStreamProvider() {
-                      @Override
-                      public String getFilename() {
-                        return "test.xlsx";
-                      }
-
-                      @Override
-                      public InputStream getStream() {
-                        return result.content();
-                      }
-                    });
-                  }));
-                })
-                .subscribe();
+            var domain = selectedMeasurements.domain();
+            var dialog = initDialogForDomain(domain, selectedMeasurements.measurementIds());
+            add(dialog);
+            dialog.open();
           }, () -> {
-            log.error("Could not find any selected measurement");
+            messageFactory.toast("measurement.no-measurements-selected", MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale()).open();
+            log.debug("Could not find any selected measurement");
           });
     });
 
@@ -256,6 +240,39 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
     interactionsAndInfo.addClassName("buttonsAndInfo");
     content.add(interactionsAndInfo);
+  }
+
+  private AppDialog initDialogForDomain(MeasurementDetailsComponent.Domain domain, List<String> selectedMeasurements) {
+    return switch (domain) {
+      case GENOMICS -> initDialogForUpdateNGS(selectedMeasurements);
+      case PROTEOMICS -> initDialogForUpdatePxP(selectedMeasurements);
+    };
+  }
+
+  private AppDialog initDialogForUpdatePxP(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Update Measurements");
+    DialogFooter.with(dialog, "Cancel", "Save");
+    var templateDownload = new MeasurementTemplateComponent("Do it", "Download", () -> {
+      return asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(), selectedMeasurementIds, OPEN_XML);
+    }, messageFactory);
+    var uploadComponent = new MeasurementUpload(asyncService, context, ConverterRegistry.converterFor(
+        MeasurementUpdateInformationPxP.class), messageFactory);
+    var box = new Div();
+    box.add(templateDownload, uploadComponent);
+    DialogBody.with(dialog, box, uploadComponent);
+    return dialog;
+  }
+
+  private AppDialog initDialogForUpdateNGS(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Update Measurements");
+    DialogFooter.with(dialog, "Cancel", "Save");
+    var templateDownload = new MeasurementTemplateComponent("Do it", "Download", () -> {
+      return asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(), selectedMeasurementIds, OPEN_XML);
+    }, messageFactory);
+    DialogBody.withoutUserInput(dialog,  templateDownload);
+    return dialog;
   }
 
   private void onDeleteMeasurementsClicked() {

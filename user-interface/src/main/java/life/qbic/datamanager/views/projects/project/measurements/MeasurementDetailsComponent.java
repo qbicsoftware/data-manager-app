@@ -557,8 +557,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     if (selectedTab == null) {
       return Optional.empty();
     }
-    if (selectedTab instanceof MeasurementTechnologyTab) {
-      return Optional.ofNullable(measurementsForTab((MeasurementTechnologyTab) selectedTab));
+    if (selectedTab instanceof MeasurementTechnologyTab tab) {
+      return Optional.ofNullable(measurementsForTab(tab));
     }
     return Optional.empty();
   }
@@ -566,10 +566,26 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private SelectedMeasurements measurementsForTab(MeasurementTechnologyTab tab) {
     Objects.requireNonNull(tab);
     switch (tab.domain) {
-      case Domain.GENOMICS: return new SelectedMeasurements(Domain.GENOMICS, selectedMeasurementsNGS());
-      case Domain.PROTEOMICS: return new SelectedMeasurements(Domain.PROTEOMICS, selectedMeasurementsPxP());
+      case Domain.GENOMICS: return selectionNGS();
+      case Domain.PROTEOMICS: return selectionPxP();
       default: return null;
     }
+  }
+
+  private SelectedMeasurements selectionNGS() {
+    var selections = selectedMeasurementsNGS();
+    if (selections.isEmpty()) {
+      return null;
+    }
+    return new SelectedMeasurements(Domain.GENOMICS, selections);
+  }
+
+  private SelectedMeasurements selectionPxP() {
+    var selections = selectedMeasurementsPxP();
+    if (selections.isEmpty()) {
+      return null;
+    }
+    return new SelectedMeasurements(Domain.PROTEOMICS, selections);
   }
 
   public void refreshGrids() {
