@@ -31,6 +31,7 @@ import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementUpdateException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -46,7 +47,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository.ProjectNotFoundException;
-import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContext;
@@ -138,8 +138,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     if (e instanceof org.springframework.security.access.AccessDeniedException) {
       return new AccessDeniedException(ACCESS_DENIED);
     }
-    return new RequestFailedException("Error creating experimental group", e);
-
+    if (e instanceof MeasurementUpdateException) {
+      return new RequestFailedException("Measurement update failed", e);
+    }
+    return new RequestFailedException("Request failed", e);
   }
 
   @Override
@@ -266,10 +268,42 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return requestStream.flatMap(this::updateMeasurement);
   }
 
-  private Publisher<? extends MeasurementUpdateResponse> updateMeasurement(
+  private Mono<MeasurementUpdateResponse> updateMeasurement(
       MeasurementUpdateRequest measurementUpdateRequest) {
-   // TODO implement
-    throw new RuntimeException("Not yet implemented");
+    switch (measurementUpdateRequest.requestBody()) {
+      case MeasurementUpdateInformationNGS m -> {
+        return updateMeasurementNGS(measurementUpdateRequest.projectId(),
+            measurementUpdateRequest.requestId(), m);
+      }
+      case MeasurementUpdateInformationPxP m -> {
+        return updateMeasurementPxP(measurementUpdateRequest.projectId(),
+            measurementUpdateRequest.requestId(), m);
+      }
+    }
+  }
+
+  private Mono<MeasurementUpdateResponse> updateMeasurementPxP(String projectId, String requestId,
+      MeasurementUpdateInformationPxP measurement) {
+    return applySecurityContext(Mono.fromCallable(() -> {
+      measurementService.updateMeasurementPxP(projectId, measurement);
+      return new MeasurementUpdateResponse(requestId, measurement);
+    })).subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Error updating measurement", e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+  }
+
+  private Mono<MeasurementUpdateResponse> updateMeasurementNGS(String projectId, String requestId,
+      MeasurementUpdateInformationNGS measurement) {
+    return applySecurityContext(Mono.fromCallable(() -> {
+      measurementService.updateMeasurementNGS(projectId, measurement);
+      return new MeasurementUpdateResponse(requestId, measurement);
+    })).subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Error updating measurement", e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
   }
 
   @Override

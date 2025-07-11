@@ -43,6 +43,7 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
@@ -208,7 +209,7 @@ public class MeasurementUpload extends Div implements UserInput {
     var result = converter.convert(parsingResult);
     var processedResult = process(result);
 
-    var itemsToValidate = result.size();
+    var itemsToValidate = processedResult.size();
     var requests = new ArrayList<ValidationRequest>();
 
     validationRequestsPerFile.put(fileName, result);
@@ -239,6 +240,10 @@ public class MeasurementUpload extends Div implements UserInput {
       case MeasurementUpdateInformationPxP ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);
         return processor.process((List<MeasurementUpdateInformationPxP>) validationRequest);
+      }
+      case MeasurementUpdateInformationNGS ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationNGS.class);
+        return processor.process((List<MeasurementUpdateInformationNGS>) validationRequest);
       }
       default:
         throw new IllegalStateException("Unknown validation request: " + validationRequest);

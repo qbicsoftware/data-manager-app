@@ -43,7 +43,6 @@ import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
@@ -101,6 +100,7 @@ import reactor.core.publisher.Flux;
 @PermitAll
 public class MeasurementMain extends Main implements BeforeEnterObserver {
 
+  public static final String UPDATE_MEASUREMENT_DESCRIPTION = "Please download your measurement metadata in order to edit it. You can modify the properties in the sheet and upload it below to save the changes.";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
@@ -108,7 +108,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
   private static Disclaimer registerSamplesDisclaimer;
   private final DownloadComponent measurementTemplateDownload;
-  private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final Span measurementsSelectedInfoBox = new Span();
   private final MeasurementDetailsComponent measurementDetailsComponent;
   private final transient MeasurementPresenter measurementPresenter;
@@ -131,7 +130,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
   public MeasurementMain(
-      @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
@@ -142,14 +140,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       MessageSourceNotificationFactory messageFactory,
       ExperimentInformationService experimentInformationService,
       MessageSourceNotificationFactory messageSourceNotificationFactory) {
-    Objects.requireNonNull(measurementTemplateListComponent);
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
     Objects.requireNonNull(asyncProjectService);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementDetailsComponent = measurementDetailsComponent;
-    this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
     this.measurementPresenter = measurementPresenter;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
@@ -158,14 +154,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     downloadComponent = new DownloadComponent();
     measurementTemplateDownload = new DownloadComponent();
-    measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
-        this::onDownloadMeasurementTemplateClicked);
     registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
     add(registerSamplesDisclaimer);
     noMeasurementDisclaimer = createNoMeasurementDisclaimer();
     add(noMeasurementDisclaimer);
     initContent();
-    add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
 
@@ -175,11 +168,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     add(downloadComponent);
     addClassName("measurement");
-    log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s)",
-        getClass().getSimpleName(), System.identityHashCode(this),
-        measurementTemplateListComponent.getClass().getSimpleName(),
-        System.identityHashCode(measurementTemplateListComponent)));
     this.experimentInformationService = experimentInformationService;
     this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
@@ -252,13 +240,40 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Update Measurements");
     DialogFooter.with(dialog, "Cancel", "Save");
-    var templateDownload = new MeasurementTemplateComponent("Do it", "Download", () -> {
+    var templateDownload = new MeasurementTemplateComponent(UPDATE_MEASUREMENT_DESCRIPTION, "Download metadata", () -> {
       return asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
+          selectedMeasurementIds, OPEN_XML);
+    }, messageFactory);
+    var upload = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(
+            MeasurementUpdateInformationPxP.class), messageFactory);
+    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+
+    DialogBody.with(dialog, uploadComponent, uploadComponent);
+
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      var validationRequests = upload.getValidationRequestContent();
+      submitUpdateRequest(context.projectId().orElseThrow().value(),
+          createUpdateRequestPackage(validationRequests));
+      dialog.close();
+    });
+    return dialog;
+  }
+
+  private AppDialog initDialogForUpdateNGS(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Update Measurements");
+    DialogFooter.with(dialog, "Cancel", "Save");
+    var templateDownload = new MeasurementTemplateComponent(
+        UPDATE_MEASUREMENT_DESCRIPTION,
+        "Download Metadata", () -> {
+      return asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
           selectedMeasurementIds, OPEN_XML);
     }, messageFactory);
     var uploadComponent = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
-            MeasurementUpdateInformationPxP.class), messageFactory);
+            MeasurementUpdateInformationNGS.class), messageFactory);
     var box = new Div();
     box.add(templateDownload, uploadComponent);
     DialogBody.with(dialog, box, uploadComponent);
@@ -268,19 +283,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
       var validationRequests = uploadComponent.getValidationRequestContent();
       submitUpdateRequest(context.projectId().orElseThrow().value(),
           createUpdateRequestPackage(validationRequests));
+      dialog.close();
     });
-    return dialog;
-  }
-
-  private AppDialog initDialogForUpdateNGS(List<String> selectedMeasurementIds) {
-    var dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Update Measurements");
-    DialogFooter.with(dialog, "Cancel", "Save");
-    var templateDownload = new MeasurementTemplateComponent("Do it", "Download", () -> {
-      return asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
-          selectedMeasurementIds, OPEN_XML);
-    }, messageFactory);
-    DialogBody.withoutUserInput(dialog, templateDownload);
     return dialog;
   }
 
@@ -816,13 +820,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     noMeasurementDisclaimer.setVisible(false);
     content.setVisible(false);
     measurementDetailsComponent.setVisible(false);
-    measurementTemplateListComponent.setVisible(false);
     registerSamplesDisclaimer.setVisible(true);
   }
 
   private void showRegisterMeasurementDisclaimer() {
     noMeasurementDisclaimer.setVisible(true);
-    measurementTemplateListComponent.setVisible(true);
     content.setVisible(false);
     measurementDetailsComponent.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
@@ -832,7 +834,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     noMeasurementDisclaimer.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
     content.setVisible(true);
-    measurementTemplateListComponent.setVisible(true);
     measurementDetailsComponent.setContext(context);
     measurementDetailsComponent.setVisible(true);
   }

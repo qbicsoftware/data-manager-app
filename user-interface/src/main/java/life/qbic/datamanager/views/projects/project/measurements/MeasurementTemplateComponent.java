@@ -50,7 +50,7 @@ public class MeasurementTemplateComponent extends Div {
     addClassNames("padding-left-right-05", "padding-top-bottom-05", "choice-box", "flex-vertical",
         "gap-03");
     var descriptionElement = new Div(description);
-    descriptionElement.addClassNames("small-body-text");
+    descriptionElement.addClassNames("normal-body-text");
 
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download", MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
     var downloadButton = new Button(buttonText, e -> { // TODO implement
