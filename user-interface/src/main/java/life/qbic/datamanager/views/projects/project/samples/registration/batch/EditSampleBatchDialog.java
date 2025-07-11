@@ -121,9 +121,12 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
         MAX_FILE_SIZE, new FileType[]{
         new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     });
-    uploadWithDisplay.addFailureListener(uploadFailed -> {
-      /* display of the error is handled by the uploadWithDisplay component. So nothing to do here.*/
-    });
+    uploadWithDisplay.addUnspecificFailureListener(
+        uploadFailed ->
+            /* display of the error is handled by the uploadWithDisplay component. However we do need to log with the context*/
+            log.error(
+                "Upload failed for project(" + projectId + ") experiment(" + experimentId + ")",
+                uploadFailed.getCause()));
     uploadWithDisplay.addSuccessListener(
         uploadSucceeded -> onUploadSucceeded(sampleValidationService, experimentId, projectId,
             uploadSucceeded)
@@ -257,15 +260,14 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
       String projectId, String projectCode) {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
-    downloadTemplate.addClickListener(buttonClickEvent -> {
-      service.sampleUpdateTemplate(projectId, experimentId, batchId,
-          OPEN_XML).doOnSuccess(resource ->
-          triggerDownload(resource,
-              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
-                  "sample metadata update template",
-                  "xlsx")
-          )).doOnError(this::handleError).subscribe();
-    });
+    downloadTemplate.addClickListener(
+        buttonClickEvent -> service.sampleUpdateTemplate(projectId, experimentId, batchId,
+            OPEN_XML).doOnSuccess(resource ->
+            triggerDownload(resource,
+                FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+                    "sample metadata update template",
+                    "xlsx")
+            )).doOnError(this::handleError).subscribe());
     Div text = new Div();
     text.addClassName("download-metadata-text");
     text.setText(
@@ -284,12 +286,10 @@ public class EditSampleBatchDialog extends WizardDialogWindow {
   }
 
   private void handleError(Throwable throwable) {
-    switch (throwable) {
-      case AccessDeniedException ignored:
-        handleAccessDeniedError();
-        return;
-      default:
-        handleUnexpectedError(throwable);
+    if (Objects.requireNonNull(throwable) instanceof AccessDeniedException) {
+      handleAccessDeniedError();
+    } else {
+      handleUnexpectedError(throwable);
     }
   }
 
