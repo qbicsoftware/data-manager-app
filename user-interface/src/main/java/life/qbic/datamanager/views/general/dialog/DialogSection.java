@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.charts.model.Dial;
 import com.vaadin.flow.component.html.Div;
 
 /**
@@ -24,7 +25,7 @@ public class DialogSection extends Div {
     this.title = new Div(title);
     this.title.addClassNames("heading-4", "text-margin-bottom-03");
     this.description = new Div(description);
-    this.description.addClassNames("normal-body-text", "text-margin-bottom-04");
+    this.description.addClassNames("normal-body-text", "text-margin-bottom-03");
     this.content = new Div();
     this.content.addClassName("dialog-content");
 
@@ -39,6 +40,17 @@ public class DialogSection extends Div {
     var dialogSection = new DialogSection(title, description);
     dialogSection.content(content);
     return dialogSection;
+  }
+
+  public static DialogSection with(String title, Component content) {
+    var dialogSection = new DialogSection(title, "");
+    dialogSection.content(content);
+    dialogSection.remove(dialogSection.description);
+    return dialogSection;
+  }
+
+  private void hideDescription() {
+    description.setVisible(false);
   }
 
   public void content(Component content) {

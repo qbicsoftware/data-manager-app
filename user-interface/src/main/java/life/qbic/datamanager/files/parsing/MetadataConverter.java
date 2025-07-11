@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.files.structure.measurement.NGSMeasurementEditColumn;
 import life.qbic.datamanager.files.structure.measurement.NGSMeasurementRegisterColumn;
 import life.qbic.datamanager.files.structure.measurement.ProteomicsMeasurementEditColumn;
@@ -35,7 +36,11 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  * </ul>
  *
  * @since 1.4.0
+ * @deprecated since 1.10.0, use
+ * {@link ConverterRegistry} and
+ * {@link life.qbic.datamanager.files.parsing.converters.MetadataConverterV2} instead.
  */
+@Deprecated(since = "1.10.0", forRemoval = true)
 public class MetadataConverter implements MeasurementMetadataConverter {
 
   private static final Logger log = logger(MetadataConverter.class);
