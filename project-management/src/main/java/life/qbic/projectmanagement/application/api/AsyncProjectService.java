@@ -1267,32 +1267,60 @@ public interface AsyncProjectService {
   Flux<MeasurementRegistrationResponse> create(Flux<MeasurementRegistrationRequest> requestStream);
 
 
-  /**
-   * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
-   * <p>
-   * The content represents a project summary with information about the research project.
-   * <p>
-   * Currently, the RO-Crate contains three files:
-   *
-   * <pre>
-   *    ro-crate-metadata.json // required by the RO-Crate specification
-   *    project-summary.docx // docx version of <a href="https://schema.org/ResearchProject">ResearchProject</a>
-   *    project-summary.yml // yaml encoding of <a href="https://schema.org/ResearchProject">ResearchProject</a>
-   *  </pre>
-   *
-   * <b>Exceptions</b>
-   * <p>
-   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-   * the throw section below.
-   *
-   * @param projectId the project ID for the project the RO-Crate
-   * @return a reactive stream of the zipped RO-Crate. Exceptions are provided as
-   * {@link Mono#error(Throwable)}.
-   * @throws RequestFailedException in case the request cannot be processed
-   * @throws AccessDeniedException  in case of insufficient rights
-   * @since 1.10.0
-   */
-  Flux<ByteBuffer> roCrateSummary(String projectId)
+  Flux<MeasurementUpdateResponse> update(Flux<MeasurementUpdateRequest> requestStream);
+
+  record MeasurementUpdateRequest(String projectId, MeasurementUpdateRequestBody requestBody,
+                                  String requestId) implements CacheableRequest {
+
+    public MeasurementUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestBody);
+      requireNonNull(requestId);
+    }
+
+    public MeasurementUpdateRequest(String projectId, MeasurementUpdateRequestBody requestBody) {
+      this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+  }
+
+  record MeasurementUpdateResponse(String requestId, MeasurementUpdateRequestBody requestBody) {
+    public MeasurementUpdateResponse {
+      requireNonNull(requestId);
+      requireNonNull(requestBody);
+    }
+  }
+
+  sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationNGS,
+      MeasurementUpdateInformationPxP {}
+
+      /**
+       * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
+       * <p>
+       * The content represents a project summary with information about the research project.
+       * <p>
+       * Currently, the RO-Crate contains three files:
+       *
+       * <pre>
+       *    ro-crate-metadata.json // required by the RO-Crate specification
+       *    project-summary.docx // docx version of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+       *    project-summary.yml // yaml encoding of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+       *  </pre>
+       *
+       * <b>Exceptions</b>
+       * <p>
+       * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+       * the throw section below.
+       *
+       * @param projectId the project ID for the project the RO-Crate
+       * @return a reactive stream of the zipped RO-Crate. Exceptions are provided as
+       * {@link Mono#error(Throwable)}.
+       * @throws RequestFailedException in case the request cannot be processed
+       * @throws AccessDeniedException  in case of insufficient rights
+       * @since 1.10.0
+       */
+  Flux
+
+  <ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
 
   /**
@@ -1532,6 +1560,32 @@ public interface AsyncProjectService {
       MimeType mimeType);
 
 
+  /**
+   * Provides information about selected NGS measurements for updating purposes in a requested
+   * {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
+  /**
+   * Provides information about selected proteomics measurements for updating purposes in a
+   * requested {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 
@@ -1550,6 +1604,10 @@ public interface AsyncProjectService {
    * <ul>
    *   <li>{@link SampleRegistrationInformation}</li>
    *   <li>{@link SampleUpdateInformation}</li>
+   *   <li>{@link MeasurementRegistrationInformationNGS}</li>
+   *   <li>{@link MeasurementRegistrationInformationPxP}</li>
+   *   <li>{@link MeasurementUpdateInformationNGS}</li>
+   *   <li>{@link MeasurementUpdateInformationPxP}</li>
    * </ul>
    *
    * @since 1.10.0
@@ -1570,7 +1628,7 @@ public interface AsyncProjectService {
       ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
       ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
       ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
-      MeasurementRegistrationRequest, ProjectResponsibleCreationRequest,
+      MeasurementRegistrationRequest, MeasurementUpdateRequest, ProjectResponsibleCreationRequest,
       ProjectResponsibleDeletionRequest, ProjectUpdateRequest, ValidationRequest {
 
     /**
@@ -1920,7 +1978,8 @@ public interface AsyncProjectService {
       String sequencingReadType, String libraryKit,
       String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      Map<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody {
+      Map<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody,
+      MeasurementUpdateRequestBody {
 
     public MeasurementUpdateInformationNGS {
       requireNonNull(measurementId);
@@ -2053,7 +2112,7 @@ public interface AsyncProjectService {
       String lcmsMethod,
       String labelingType,
       Map<String, MeasurementSpecificPxP> specificMetadata
-  ) implements ValidationRequestBody {
+  ) implements ValidationRequestBody, MeasurementUpdateRequestBody {
 
     /**
      * Returns the {@link List} of sample identifiers this measurement refers to.
