@@ -230,6 +230,30 @@ Padding & gaps
   gap: var(--spacing-07);
 }
 
+.column-gap-02 {
+  column-gap: var(--spacing-02);
+}
+
+.column-gap-03 {
+  column-gap: var(--spacing-03);
+}
+
+.column-gap-04 {
+  column-gap: var(--spacing-04);
+}
+
+.column-gap-05 {
+  column-gap: var(--spacing-05);
+}
+
+.column-gap-06 {
+  column-gap: var(--spacing-06);
+}
+
+.column-gap-07 {
+  column-gap: var(--spacing-07);
+}
+
 /***************************
 Colors
 ***************************/

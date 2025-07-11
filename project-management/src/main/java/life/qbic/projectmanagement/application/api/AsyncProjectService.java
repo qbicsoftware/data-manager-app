@@ -928,33 +928,62 @@ public interface AsyncProjectService {
     }
   }
 
-  record ExperimentalVariablesUpdateRequest(String projectId, String experimentId,
-                                            List<ExperimentalVariable> experimentalVariables,
-                                            String requestId) implements CacheableRequest {
+  record ExperimentalVariableUpdateRequest(String projectId, String experimentId,
+                                           ExperimentalVariable experimentalVariable,
+                                           String requestId) implements CacheableRequest {
 
-    public ExperimentalVariablesUpdateRequest {
+    public ExperimentalVariableUpdateRequest {
       requireNonNull(projectId);
       requireNonNull(experimentId);
-      requireNonNull(experimentalVariables);
+      requireNonNull(experimentalVariable);
       requireNonNull(requestId);
-      experimentalVariables = List.copyOf(experimentalVariables);
     }
 
-    public ExperimentalVariablesUpdateRequest(String projectId, String experimentId,
-        List<ExperimentalVariable> experimentalVariables) {
-      this(projectId, experimentId, experimentalVariables, UUID.randomUUID().toString());
+    public ExperimentalVariableUpdateRequest(String projectId, String experimentId,
+        ExperimentalVariable experimentalVariable) {
+      this(projectId, experimentId, experimentalVariable, UUID.randomUUID().toString());
     }
   }
 
-  record ExperimentalVariablesUpdateResponse(String projectId,
-                                             List<ExperimentalVariable> experimentalVariables,
-                                             String requestId) {
+  record ExperimentalVariableUpdateResponse(String projectId,
+                                            ExperimentalVariable experimentalVariable,
+                                            String requestId) {
 
-    public ExperimentalVariablesUpdateResponse {
+    public ExperimentalVariableUpdateResponse {
       requireNonNull(projectId);
       requireNonNull(requestId);
-      requireNonNull(experimentalVariables);
-      experimentalVariables = List.copyOf(experimentalVariables);
+      requireNonNull(experimentalVariable);
+    }
+  }
+
+  record ExperimentalVariableRenameRequest(String projectId, String experimentId,
+                                           String currentVariableName, String futureVariableName,
+                                           String requestId) implements CacheableRequest {
+
+    public ExperimentalVariableRenameRequest {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(currentVariableName);
+      requireNonNull(futureVariableName);
+      requireNonNull(requestId);
+    }
+
+    public ExperimentalVariableRenameRequest(String newVariableName, String oldVariableName,
+        String experimentId, String projectId) {
+      this(projectId, experimentId, oldVariableName, newVariableName, UUID.randomUUID().toString());
+    }
+  }
+
+  record ExperimentalVariableRenameResponse(String projectId, String experimentId,
+                                            String previousVariableName, String currentVariableName,
+                                            String requestId) {
+
+    public ExperimentalVariableRenameResponse {
+      requireNonNull(projectId);
+      requireNonNull(experimentId);
+      requireNonNull(previousVariableName);
+      requireNonNull(currentVariableName);
+      requireNonNull(requestId);
     }
   }
 
@@ -1105,7 +1134,7 @@ public interface AsyncProjectService {
 
   /**
    * Submits an experimental variable update request and returns a reactive
-   * {@link Mono<ExperimentalVariablesUpdateResponse>.}
+   * {@link Mono<ExperimentalVariableUpdateResponse>.}
    * <p>
    * <b>Exceptions</b>
    * <p>
@@ -1113,14 +1142,33 @@ public interface AsyncProjectService {
    * the throw section below.
    *
    * @param request the request with information required for the experimental variable update
-   * @return a {@link Mono<ExperimentalVariablesUpdateResponse>} object publishing a
-   * {@link ExperimentalVariablesUpdateResponse} on success.
+   * @return a {@link Mono<ExperimentalVariableUpdateResponse>} object publishing a
+   * {@link ExperimentalVariableUpdateResponse} on success.
    * @throws UnknownRequestException if an unknown request has been used in the service call
    * @throws RequestFailedException  if the request was not successfully executed
    * @throws AccessDeniedException   if the user has insufficient rights
    * @since 1.10.0
    */
-  Mono<ExperimentalVariablesUpdateResponse> update(ExperimentalVariablesUpdateRequest request);
+  Mono<ExperimentalVariableUpdateResponse> update(ExperimentalVariableUpdateRequest request);
+
+  /**
+   * Submits an experimental variable update request and returns a reactive
+   * {@link Mono<ExperimentalVariableUpdateResponse>.}
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param request the request with information required for the experimental variable update
+   * @return a {@link Mono<ExperimentalVariableUpdateResponse>} object publishing a
+   * {@link ExperimentalVariableUpdateResponse} on success.
+   * @throws UnknownRequestException if an unknown request has been used in the service call
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.10.0
+   */
+  Mono<ExperimentalVariableRenameResponse> update(ExperimentalVariableRenameRequest request);
 
   /**
    * Submits an experimental variable deletion request and returns a reactive
@@ -1520,10 +1568,10 @@ public interface AsyncProjectService {
    */
   sealed interface CacheableRequest permits ExperimentCreationRequest, ExperimentDeletionRequest,
       ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
-      ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
-      ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
-      ProjectResponsibleCreationRequest, ProjectResponsibleDeletionRequest, ProjectUpdateRequest,
-      ValidationRequest {
+      ExperimentalGroupUpdateRequest, ExperimentalVariableRenameRequest,
+      ExperimentalVariableUpdateRequest, ExperimentalVariablesDeletionRequest,
+      FundingInformationCreationRequest, ProjectResponsibleCreationRequest,
+      ProjectResponsibleDeletionRequest, ProjectUpdateRequest, ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.

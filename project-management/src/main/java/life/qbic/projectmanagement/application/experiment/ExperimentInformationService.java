@@ -29,7 +29,6 @@ import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalDesign.AddExperimentalGroupResponse.ResponseCode;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue;
-import life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable;
 import life.qbic.projectmanagement.domain.model.experiment.VariableName;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentCreatedEvent;
 import life.qbic.projectmanagement.domain.model.experiment.event.ExperimentUpdatedEvent;
@@ -95,6 +94,20 @@ public class ExperimentInformationService {
     return new VariableLevel(domainLevel.variableName().value(),
         domainLevel.experimentalValue().value(),
         domainLevel.experimentalValue().unit().orElse(null));
+  }
+
+  private static ExperimentalVariableInformation convertFromDomain(String experimentId,
+      life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
+    List<String> levels = experimentalVariable.levels().stream()
+        .map(life.qbic.projectmanagement.domain.model.experiment.VariableLevel::experimentalValue)
+        .map(ExperimentalValue::value)
+        .toList();
+
+    return new ExperimentalVariableInformation(
+        experimentId,
+        experimentalVariable.name().value(),
+        experimentalVariable.usedUnit().orElse(null),
+        levels);
   }
 
   @PreAuthorize(
@@ -534,10 +547,13 @@ public class ExperimentInformationService {
    */
   @PreAuthorize(
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ') ")
-  public List<ExperimentalVariable> getVariablesOfExperiment(String projectId,
+  public List<ExperimentalVariableInformation> getVariablesOfExperiment(String projectId,
       ExperimentId experimentId) {
     Experiment experiment = loadExperimentById(experimentId);
-    return experiment.variables();
+    return experiment.variables()
+        .stream()
+        .map(it -> convertFromDomain(experimentId.value(), it))
+        .toList();
   }
 
   /**
@@ -786,6 +802,24 @@ public class ExperimentInformationService {
         .map(Experiment::getExperimentalGroups).orElse(Collections.emptyList())
         .stream().map(ExperimentInformationService::convertFromDomain)
         .toList();
+  }
+
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
+  public void renameExperimentalVariable(String projectId, ExperimentId experimentId,
+      String currentName, String futureName) {
+    List<DomainEvent> domainEventsCache = new ArrayList<>();
+    var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
+    localDomainEventDispatcher.reset();
+    localDomainEventDispatcher.subscribe(
+        new ExperimentUpdatedDomainEventSubscriber(domainEventsCache));
+
+    Experiment experiment = experimentRepository.find(experimentId).
+        orElseThrow();
+    experiment.renameExperimentalVariable(currentName, futureName);
+
+    experimentRepository.update(experiment);
+    dispatchLocalEvents(domainEventsCache);
+
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {

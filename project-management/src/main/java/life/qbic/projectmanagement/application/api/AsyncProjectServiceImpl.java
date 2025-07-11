@@ -133,11 +133,11 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         level.unit());
   }
 
-  private static Throwable mapToAPIException(Throwable e) {
+  private static Throwable mapToAPIException(Throwable e, String message) {
     if (e instanceof org.springframework.security.access.AccessDeniedException) {
       return new AccessDeniedException(ACCESS_DENIED);
     }
-    return new RequestFailedException("Error creating experimental group", e);
+    return new RequestFailedException(message, e);
 
   }
 
@@ -166,7 +166,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error creating experimental group", e))
-        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+        .onErrorMap(e1 -> mapToAPIException(e1, "Error creating experimental group"));
   }
 
   private VariableLevel convertLevelToApi(ExperimentInformationService.VariableLevel level) {
@@ -192,7 +192,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error updating experimental group", e))
-        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+        .onErrorMap(e1 -> mapToAPIException(e1, "Error updating experimental group"));
   }
 
   private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
@@ -220,7 +220,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error updating experimental group", e))
-        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+        .onErrorMap(e1 -> mapToAPIException(e1, "Error creating experimental group"));
   }
 
   @Override
@@ -234,7 +234,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error updating experimental group", e))
-        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+        .onErrorMap(e1 -> mapToAPIException(e1, "Error creating experimental group"));
   }
 
   private static ExperimentalGroup convertToApi(ExperimentInformationService.ExperimentalGroup group) {
@@ -771,14 +771,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy());
   }
 
-  private ExperimentalVariable convertToApi(
-      life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
-    return new ExperimentalVariable(experimentalVariable.name().value(),
-        experimentalVariable.levels()
-            .stream().map(level -> level.variableName().value()).toList(),
-        experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(null));
-  }
-
   @Override
   public Mono<ExperimentalVariablesCreationResponse> create(
       ExperimentalVariablesCreationRequest request) {
@@ -792,15 +784,66 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not create experimental variables", e))
-        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException)
+        .onErrorMap(e1 -> mapToAPIException(e1, "Error creating experimental group"))
         .retryWhen(defaultRetryStrategy());
   }
 
   @Override
-  public Mono<ExperimentalVariablesUpdateResponse> update(
-      ExperimentalVariablesUpdateRequest request) {
-    // TODO implement
-    throw new RuntimeException("Not yet implemented");
+  public Mono<ExperimentalVariableUpdateResponse> update(
+      ExperimentalVariableUpdateRequest request) {
+//    var call = Mono.fromCallable(() -> {
+//      experimentInformationService.updateExperimentalVariable(request.projectId(),
+//          request.experimentId(),
+//          convertFromApi(request.experimentalVariable()));
+//
+//      return new ExperimentalVariableUpdateResponse(request.projectId(),
+//          request.experimentalVariable(), request.requestId());
+//    });
+//    return applySecurityContext(call)
+//        .subscribeOn(VirtualThreadScheduler.getScheduler())
+//        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+//        .doOnError(e -> log.error("Could not update experimental group", e))
+//        .retryWhen(defaultRetryStrategy())
+//        .onErrorMap(e1 -> mapToAPIException(e1,
+//            "Error updating experimental variable " + request.experimentalVariable().name()));
+    //TODO implement
+    throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public Mono<ExperimentalVariableRenameResponse> update(
+      ExperimentalVariableRenameRequest request) {
+    var call = Mono.fromCallable(() -> {
+      ExperimentId experimentId = ExperimentId.parse(request.experimentId());
+      experimentInformationService.renameExperimentalVariable(request.projectId(),
+          experimentId, request.currentVariableName(), request.futureVariableName());
+
+      return new ExperimentalVariableRenameResponse(request.projectId(),
+          experimentId.value(), request.currentVariableName(), request.futureVariableName(),
+          request.requestId());
+    });
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error("Could not update experimental group", e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e -> mapToAPIException(e,
+            "Error renaming experimental variable " + request.currentVariableName() + " to "
+                + request.futureVariableName()));
+  }
+
+  private ExperimentalVariable convertToApi(
+      ExperimentInformationService.ExperimentalVariableInformation experimentalVariable) {
+    return new ExperimentalVariable(experimentalVariable.name(), experimentalVariable.levels(),
+        experimentalVariable.unit());
+  }
+
+  private ExperimentInformationService.ExperimentalVariableInformation convertFromApi(
+      String experimentId, ExperimentalVariable experimentalVariable) {
+    return new ExperimentInformationService.ExperimentalVariableInformation(experimentId,
+        experimentalVariable.name(),
+        experimentalVariable.unit(),
+        experimentalVariable.levels());
   }
 
   @Override
@@ -819,7 +862,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not delete experimental variables", e))
-        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException)
+        .onErrorMap(e1 -> mapToAPIException(e1, "Error creating experimental group"))
         .retryWhen(defaultRetryStrategy());
   }
 

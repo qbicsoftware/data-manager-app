@@ -219,7 +219,12 @@ public class Experiment {
    * @since 1.0.0
    */
   public void removeAllExperimentalVariables() {
-    removeAllExperimentalGroups();
+    //check if any group contains this variable
+    if (!experimentalDesign.getExperimentalGroups().isEmpty()) {
+      throw new GroupPreventingVariableDeletionException(
+          "There are experimental groups in the experimental design. Cannot remove experimental variable "
+              + name);
+    }
     experimentalDesign.removeAllExperimentalVariables();
     emitExperimentUpdatedEvent();
   }
@@ -243,13 +248,19 @@ public class Experiment {
           "There are experimental groups in the experimental design. Cannot remove experimental variable "
               + name);
     }
-    experimentalDesign.removeExperimentalVariable(variable);
-    emitExperimentUpdatedEvent();
-    return true;
+    var changed = experimentalDesign.removeExperimentalVariable(variable);
+    if (changed) {
+      emitExperimentUpdatedEvent();
+    }
+    return changed;
   }
 
   public void removeExperimentGroupByGroupNumber(int experimentalGroupNumber) {
     experimentalDesign.removeExperimentalGroupByGroupNumber(experimentalGroupNumber);
+  }
+
+  public void renameExperimentalVariable(String currentName, String futureName) {
+    experimentalDesign.renameExperimentalVariable(currentName, futureName);
   }
 
   public static class GroupPreventingVariableDeletionException extends RuntimeException {
@@ -331,9 +342,13 @@ public class Experiment {
    */
   public ExperimentalVariable addVariableToDesign(String variableName,
       List<ExperimentalValue> levels) {
-    return experimentalDesign.addVariable(variableName, levels)
-        .onValue(ignored -> emitExperimentCreatedEvent())
-        .valueOrElseThrow(e -> new RuntimeException(e));
+    ExperimentalVariable experimentalVariable = ExperimentalVariable.create(variableName,
+        levels.toArray(new ExperimentalValue[0]));
+    boolean created = experimentalDesign.addExperimentalVariable(experimentalVariable);
+    if (created) {
+      emitExperimentUpdatedEvent();
+    }
+    return experimentalVariable;
   }
 
 

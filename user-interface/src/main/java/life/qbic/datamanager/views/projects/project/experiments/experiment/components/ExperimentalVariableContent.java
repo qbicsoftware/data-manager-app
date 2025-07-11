@@ -8,12 +8,11 @@ import java.util.List;
  * @param levels the variable levels that are assigned to the variable
  */
 public record ExperimentalVariableContent(String name, String unit, List<String> levels) {
-
-  static ExperimentalVariableContent from(final ExperimentalVariableRowLayout layout) {
-    final String variableName = layout.getVariableName();
-    final String unit = layout.getUnit();
-    final List<String> levels = layout.getLevels();
-    return new ExperimentalVariableContent(variableName, unit, levels);
-  }
+//
+//  static ExperimentalVariableContent from(final ExperimentalVariableRow layout) {
+//    var information = layout.getOptionalValue()
+//        .orElseThrow(() -> new IllegalArgumentException("No variable information present"));
+//    return new ExperimentalVariableContent(information.variableName(), information.unit(), information.levels());
+//  }
 
 }

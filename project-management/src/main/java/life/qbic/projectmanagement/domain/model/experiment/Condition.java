@@ -94,6 +94,10 @@ public class Condition {
         .map(VariableLevel::experimentalValue).findAny();
   }
 
+  public boolean contains(VariableLevel level) {
+    return variableLevels.contains(level);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -118,5 +122,31 @@ public class Condition {
     return new StringJoiner(", ", Condition.class.getSimpleName() + "[", "]")
         .add("variableLevels=" + variableLevels)
         .toString();
+  }
+
+  void renameVariable(String oldName, String newName) {
+    Objects.requireNonNull(newName, "New variable name cannot be null.");
+    Objects.requireNonNull(oldName, "Old variable name cannot be null.");
+    if (oldName.isBlank()) {
+      throw new IllegalArgumentException("Old variable name cannot be blank.");
+    }
+    if (newName.isBlank()) {
+      throw new IllegalArgumentException("New variable name cannot be blank.");
+    }
+    variableLevels.stream()
+        .filter(it -> it.variableName().value().equals(oldName))
+        .findAny()
+        .ifPresent(variableLevel -> {
+          VariableLevel replacement = new VariableLevel(VariableName.create(newName),
+              variableLevel.experimentalValue());
+
+          int index = variableLevels.indexOf(variableLevel);
+          variableLevels.remove(variableLevel);
+          variableLevels.add(index, replacement);
+        });
+  }
+
+  public void removeVariable(String variableName) {
+    variableLevels.removeIf(it -> it.variableName().value().equals(variableName));
   }
 }

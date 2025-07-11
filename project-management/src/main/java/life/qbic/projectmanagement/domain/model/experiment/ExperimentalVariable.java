@@ -12,9 +12,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import life.qbic.application.commons.Result;
+import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.experiment.repository.jpa.VariableNameAttributeConverter;
+import org.hibernate.annotations.NaturalId;
 
 /**
  * <b>Experimental Variable</b>
@@ -37,6 +37,7 @@ public class ExperimentalVariable {
 
   @Convert(converter = VariableNameAttributeConverter.class)
   @Column(name = "name")
+  @NaturalId(mutable = true)
   private VariableName name;
 
   @ElementCollection(fetch = FetchType.EAGER)
@@ -51,10 +52,6 @@ public class ExperimentalVariable {
     }
     this.name = VariableName.create(name);
     for (ExperimentalValue level : levels) {
-      if (hasDifferentUnitAsExistingLevels(level)) {
-        throw new IllegalArgumentException(
-            "experimental value not applicable. This variable has other levels without a unit or with a different unit.");
-      }
       addLevel(level);
     }
   }
@@ -75,25 +72,66 @@ public class ExperimentalVariable {
    * @throws IllegalArgumentException indicating that the unit of the provide level does not match
    *                                  with the unit of existing levels
    */
-  Result<VariableLevel, Exception> addLevel(ExperimentalValue experimentalValue) {
+  boolean addLevel(ExperimentalValue experimentalValue) {
     if (hasDifferentUnitAsExistingLevels(experimentalValue)) {
-      return Result.fromError(new IllegalArgumentException(
-          "experimental value not applicable. This variable has other levels without a unit or with a different unit."));
+      throw new IllegalArgumentException(
+          "experimental value not applicable. This variable has other levels without a unit or with a different unit.");
     }
     if (!levels.contains(experimentalValue)) {
       levels.add(experimentalValue);
+      return true;
     }
-    VariableLevel variableLevel = new VariableLevel(name(), experimentalValue);
-    return Result.fromValue(variableLevel);
+    return false;
+  }
+
+  /**
+   * Calling this method ensures that the experimental value is set as a level on the variable.
+   *
+   * @param variableLevel the variable level to remove
+   * @return true if the experimental variable was modified, false otherwise.
+   * @throws IllegalArgumentException indicating that the variable level does not belong to this
+   *                                  variable.
+   */
+  boolean removeLevel(VariableLevel variableLevel) {
+    if (!variableLevel.variableName().equals(name)) {
+      throw new IllegalArgumentException(
+          "Level is of different variable. Cannot remove it from variable "
+              + variableLevel.variableName().value() + ". Try removing it from  "
+              + variableLevel.variableName().value() + " instead.");
+    }
+    var usedUnit = usedUnit().orElse(null);
+
+    if (hasDifferentUnitAsExistingLevels(variableLevel.experimentalValue())) {
+      throw new IllegalArgumentException(
+          "Level has different unit as other levels in this variable. Expected " + usedUnit
+              + " but got " + variableLevel.experimentalValue().unit().orElse(null));
+    }
+    return levels.removeIf(it -> variableLevel.experimentalValue().equals(it));
+  }
+
+  void replaceLevels(List<VariableLevel> levels) {
+    this.levels.clear();
+    this.levels.addAll(levels.stream().map(VariableLevel::experimentalValue).toList());
+  }
+
+
+  void renameTo(String newName) {
+    this.name = new VariableName(newName);
   }
 
   private boolean hasDifferentUnitAsExistingLevels(ExperimentalValue experimentalValue) {
     if (levels.isEmpty()) {
       return false;
     }
+    return !usedUnit().equals(experimentalValue.unit());
+  }
 
-    return !levels.stream().map(ExperimentalValue::unit).collect(Collectors.toSet())
-        .contains(experimentalValue.unit());
+  public Optional<String> usedUnit() {
+    return levels.stream()
+        .map(ExperimentalValue::unit)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst();
   }
 
   public List<VariableLevel> levels() {
@@ -122,6 +160,6 @@ public class ExperimentalVariable {
 
   @Override
   public int hashCode() {
-    return (int) (variableId ^ (variableId >>> 32));
+    return Long.hashCode(variableId);
   }
 }
