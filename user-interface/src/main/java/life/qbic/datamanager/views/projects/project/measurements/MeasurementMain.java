@@ -125,6 +125,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
   private AppDialog measurementDialog;
+  private final ProjectContext projectContext;
+
+  static class ProjectContext {
+
+    private String projectId;
+    private static final String DEFAULT_VALUE = "unknown_project";
+
+    synchronized String projectId() {
+      if (projectId == null) {
+        return DEFAULT_VALUE;
+      }
+      return projectId;
+    }
+
+    synchronized void setProjectId(String projectId) {
+      this.projectId = projectId;
+    }
+
+  }
 
   private static final MimeType OPEN_XML = MimeType.valueOf(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -151,6 +170,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.projectInformationService = projectInformationService;
     this.asyncService = asyncProjectService;
+    this.projectContext = new ProjectContext();
 
     downloadComponent = new DownloadComponent();
     measurementTemplateDownload = new DownloadComponent();
@@ -240,10 +260,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     var dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Update Measurements");
     DialogFooter.with(dialog, "Cancel", "Save");
-    var templateDownload = new MeasurementTemplateComponent(UPDATE_MEASUREMENT_DESCRIPTION, "Download metadata", () -> {
+    var templateDownload = new MeasurementTemplateComponent(UPDATE_MEASUREMENT_DESCRIPTION,
+        "Download metadata", () -> {
       return asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
           selectedMeasurementIds, OPEN_XML);
-    }, messageFactory);
+    }, messageFactory, () -> projectContext.projectId());
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationPxP.class), messageFactory);
@@ -270,7 +291,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         "Download Metadata", () -> {
       return asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
           selectedMeasurementIds, OPEN_XML);
-    }, messageFactory);
+    }, messageFactory, () -> projectContext.projectId());
     var uploadComponent = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationNGS.class), messageFactory);
@@ -801,6 +822,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
     setMeasurementInformation();
+    asyncService.getProjectCode(context.projectId().orElseThrow().value())
+        .doOnSuccess(projectCode -> projectContext.setProjectId(projectCode.value()))
+        .subscribe();
   }
 
   private void setMeasurementInformation() {

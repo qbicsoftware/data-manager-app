@@ -543,6 +543,32 @@ public interface AsyncProjectService {
    */
   Mono<ProjectInformation> getProject(String projectId);
 
+
+  /**
+   * Tries to resolve the {@link ProjectCode} for a given project ID.
+   *
+   * @param projectId the technical id of the project
+   * @return the natural id of the project, the {@link ProjectCode} which is known to the user.
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.11.0
+   */
+  Mono<ProjectCode> getProjectCode(String projectId);
+
+  /**
+   * The natural id of the project known to the user. Follows the pattern starting with
+   * <code>^Q2[A-Z0-9]{4}$</code>.
+   *
+   * @param value
+   * @since 1.11.0
+   */
+  record ProjectCode(String value) {
+
+    public ProjectCode {
+      Objects.requireNonNull(value);
+    }
+  }
+
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
    * immediately.
@@ -1284,6 +1310,7 @@ public interface AsyncProjectService {
   }
 
   record MeasurementUpdateResponse(String requestId, MeasurementUpdateRequestBody requestBody) {
+
     public MeasurementUpdateResponse {
       requireNonNull(requestId);
       requireNonNull(requestBody);
@@ -1291,36 +1318,38 @@ public interface AsyncProjectService {
   }
 
   sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationNGS,
-      MeasurementUpdateInformationPxP {}
+      MeasurementUpdateInformationPxP {
 
-      /**
-       * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
-       * <p>
-       * The content represents a project summary with information about the research project.
-       * <p>
-       * Currently, the RO-Crate contains three files:
-       *
-       * <pre>
-       *    ro-crate-metadata.json // required by the RO-Crate specification
-       *    project-summary.docx // docx version of <a href="https://schema.org/ResearchProject">ResearchProject</a>
-       *    project-summary.yml // yaml encoding of <a href="https://schema.org/ResearchProject">ResearchProject</a>
-       *  </pre>
-       *
-       * <b>Exceptions</b>
-       * <p>
-       * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
-       * the throw section below.
-       *
-       * @param projectId the project ID for the project the RO-Crate
-       * @return a reactive stream of the zipped RO-Crate. Exceptions are provided as
-       * {@link Mono#error(Throwable)}.
-       * @throws RequestFailedException in case the request cannot be processed
-       * @throws AccessDeniedException  in case of insufficient rights
-       * @since 1.10.0
-       */
+  }
+
+  /**
+   * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
+   * <p>
+   * The content represents a project summary with information about the research project.
+   * <p>
+   * Currently, the RO-Crate contains three files:
+   *
+   * <pre>
+   *    ro-crate-metadata.json // required by the RO-Crate specification
+   *    project-summary.docx // docx version of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+   *    project-summary.yml // yaml encoding of <a href="https://schema.org/ResearchProject">ResearchProject</a>
+   *  </pre>
+   *
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Mono#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param projectId the project ID for the project the RO-Crate
+   * @return a reactive stream of the zipped RO-Crate. Exceptions are provided as
+   * {@link Mono#error(Throwable)}.
+   * @throws RequestFailedException in case the request cannot be processed
+   * @throws AccessDeniedException  in case of insufficient rights
+   * @since 1.10.0
+   */
   Flux
 
-  <ByteBuffer> roCrateSummary(String projectId)
+      <ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
 
   /**

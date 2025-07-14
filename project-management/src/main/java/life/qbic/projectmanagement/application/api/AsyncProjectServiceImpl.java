@@ -387,6 +387,21 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Mono<ProjectCode> getProjectCode(String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(() -> {
+      var query = projectService.find(projectId);
+      if (query.isPresent()) {
+        return query.get().getProjectCode().value();
+      }
+      return "";
+    }))
+        .flatMap(value -> value.isBlank() ? Mono.empty() : Mono.just(new ProjectCode(value)))
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     throw new RuntimeException("not implemented");
