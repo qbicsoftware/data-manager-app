@@ -159,7 +159,11 @@ public class MeasurementProteomicsValidator implements
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-      result.combine(validationPolicy.validationProjectRelation(SampleCode.create(sampleId), projectId));
+      if (sampleId.isBlank()) {
+        result = result.combine(ValidationResult.withFailures(List.of("Missing sample ID")));
+      } else {
+        result = result.combine(validationPolicy.validationProjectRelation(SampleCode.create(sampleId), projectId));
+      }
     }
     return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples()))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
