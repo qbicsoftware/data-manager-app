@@ -264,7 +264,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         "Download metadata", () -> {
       return asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
           selectedMeasurementIds, OPEN_XML);
-    }, messageFactory, () -> projectContext.projectId());
+    }, messageFactory, projectContext::projectId);
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationPxP.class), messageFactory);
@@ -291,17 +291,16 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
         "Download Metadata", () -> {
       return asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
           selectedMeasurementIds, OPEN_XML);
-    }, messageFactory, () -> projectContext.projectId());
-    var uploadComponent = new MeasurementUpload(asyncService, context,
+    }, messageFactory, projectContext::projectId);
+    var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationNGS.class), messageFactory);
-    var box = new Div();
-    box.add(templateDownload, uploadComponent);
-    DialogBody.with(dialog, box, uploadComponent);
+    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    DialogBody.with(dialog, uploadComponent, uploadComponent);
 
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
-      var validationRequests = uploadComponent.getValidationRequestContent();
+      var validationRequests = upload.getValidationRequestContent();
       submitUpdateRequest(context.projectId().orElseThrow().value(),
           createUpdateRequestPackage(validationRequests));
       dialog.close();
