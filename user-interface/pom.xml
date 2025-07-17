@@ -11,7 +11,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.10.7</version>
+    <version>1.10.8</version>
   </parent>
 
   <repositories>
@@ -186,31 +186,31 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>identity-infrastructure</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>broadcasting</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>logging</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -220,24 +220,24 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>project-management</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.logging</groupId>
       <artifactId>subscription-provider</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>domain-concept</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>finances-infrastructure</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
@@ -255,13 +255,13 @@
     <dependency>
       <groupId>life.qbic.identity</groupId>
       <artifactId>project-management-infrastructure</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>life.qbic.infrastructure</groupId>
       <artifactId>email-service-provider</artifactId>
-      <version>1.10.7</version>
+      <version>1.10.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
