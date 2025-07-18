@@ -259,7 +259,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private AppDialog initDialogForUpdatePxP(List<String> selectedMeasurementIds) {
     var dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Update Measurements");
-    DialogFooter.with(dialog, "Cancel", "Save");
+    DialogFooter.with(dialog, "Cancel", "Update");
     var templateDownload = new MeasurementTemplateComponent(UPDATE_MEASUREMENT_DESCRIPTION,
         "Download metadata", () -> {
       return asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
@@ -284,8 +284,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
   private AppDialog initDialogForUpdateNGS(List<String> selectedMeasurementIds) {
     var dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Update Measurements");
-    DialogFooter.with(dialog, "Cancel", "Save");
+    DialogHeader.with(dialog, "Edit Measurements");
+    DialogFooter.with(dialog, "Cancel", "Update");
     var templateDownload = new MeasurementTemplateComponent(
         UPDATE_MEASUREMENT_DESCRIPTION,
         "Download Metadata", () -> {
