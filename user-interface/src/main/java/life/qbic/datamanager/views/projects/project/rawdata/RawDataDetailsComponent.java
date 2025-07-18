@@ -23,6 +23,7 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.Domain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementTechnologyTab;
 import life.qbic.projectmanagement.application.dataset.RawDataService;
 import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
@@ -59,8 +60,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       ClientDetailsProvider clientDetailsProvider) {
     this.rawDataService = Objects.requireNonNull(rawDataService);
     this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
-    proteomicsTab = new MeasurementTechnologyTab("Proteomics", 0);
-    genomicsTab = new MeasurementTechnologyTab("Genomics", 0);
+    proteomicsTab = new MeasurementTechnologyTab(Domain.PROTEOMICS, 0);
+    genomicsTab = new MeasurementTechnologyTab(Domain.GENOMICS, 0);
     createProteomicsRawDataGrid();
     createNGSRawDataGrid();
     add(registeredRawDataTabSheet);

@@ -118,10 +118,11 @@ public class MeasurementProteomicsValidator implements
       return mandatoryValidationResult;
     }
 
-    var validation = validationPolicy.validateSampleIdsAsString(metadata.measuredSamples())
+    var validation = validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(),
+            projectId)
         .combine(validationPolicy.validateMandatoryDataProvided(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-        .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())));
+            .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())));
 
     // For the sample-specific metadata
     var missingLabelsValidation = new MissingLabel(() -> metadata).execute();
@@ -155,13 +156,15 @@ public class MeasurementProteomicsValidator implements
   }
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','WRITE')")
-  public ValidationResult validateUpdate(MeasurementUpdateInformationPxP metadata, ProjectId projectId) {
+  public ValidationResult validateUpdate(MeasurementUpdateInformationPxP metadata,
+      ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-      result.combine(validationPolicy.validationProjectRelation(SampleCode.create(sampleId), projectId));
+        result = result.combine(
+            validationPolicy.validationProjectRelation(sampleId, projectId));
     }
-    return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples()))
+    return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
@@ -265,6 +268,14 @@ public class MeasurementProteomicsValidator implements
           List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
     }
 
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
+      }
+      return validationProjectRelation(SampleCode.create(sampleId), projectId);
+    }
+
     ValidationResult validateSampleId(SampleCode sampleCode) {
       var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
       if (queriedSampleEntry.isPresent()) {
@@ -287,9 +298,30 @@ public class MeasurementProteomicsValidator implements
       return validationResult;
     }
 
-    ValidationResult validateSampleIdsAsString(Collection<String> sampleIds) {
-      var sampleCodes = sampleIds.stream().map(SampleCode::create).toList();
-      return validateSampleIds(sampleCodes);
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validateSampleIdsAsString(Collection<String> sampleIds, ProjectId projectId) {
+      if (sampleIds.isEmpty()) {
+        return ValidationResult.withFailures(
+            List.of("A measurement must contain at least one sample reference. Provided: none"));
+      }
+      ValidationResult validationResult = ValidationResult.successful(
+      );
+      for (var sampleId : sampleIds) {
+        validationResult = validationResult.combine(validateSampleIdAsString(sampleId, projectId));
+      }
+      return validationResult;
+    }
+
+    private ValidationResult validateSampleIdAsString(String sampleId, ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return  ValidationResult.withFailures(List.of("Missing Sample ID: Cannot lookup sample"));
+      }
+      var queriedSampleEntry = sampleInformationService.findSample(projectId, sampleId);
+      if (queriedSampleEntry.isPresent()) {
+        return ValidationResult.successful();
+      }
+      return ValidationResult.withFailures(
+          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleId)));
     }
 
     ValidationResult validateOrganisation(String organisationId) {
@@ -373,7 +405,8 @@ public class MeasurementProteomicsValidator implements
       return validation;
     }
 
-    ValidationResult validateMandatoryMetadataDataForUpdate(MeasurementUpdateInformationPxP metadata) {
+    ValidationResult validateMandatoryMetadataDataForUpdate(
+        MeasurementUpdateInformationPxP metadata) {
       var validation = ValidationResult.successful();
       if (metadata.measurementId().isEmpty()) {
         validation.combine(ValidationResult.withFailures(

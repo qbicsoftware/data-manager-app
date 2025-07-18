@@ -56,6 +56,11 @@ public class AppDialog extends Dialog implements BeforeLeaveObserver {
     setCloseOnEsc(false);
     // by default, the navigation is not visible.
     navigation.setVisible(false);
+
+    // We set default actions to not let null values float around
+    // The default actions are empty actions that don't do anything.
+    confirmDialogAction = () -> {};
+    cancelDialogAction = () -> {};
   }
 
   /**
@@ -135,7 +140,7 @@ public class AppDialog extends Dialog implements BeforeLeaveObserver {
   public void confirm() {
     if (userInput != null) {
       var validation = requireNonNull(userInput.validate());
-      validation.ifPassed(confirmDialogAction);
+      validation.ifPassed(requireNonNull(confirmDialogAction));
     } else {
       // no user input was defined, so nothing to validate
       Optional.ofNullable(confirmDialogAction).ifPresent(DialogAction::execute);

@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 
 /**
  * <b>Processor Registry</b>
@@ -18,7 +20,7 @@ public class ProcessorRegistry {
 
 
   // Registry with suppliers
-  private static final Map<Class<?>, Supplier<? extends MeasurementProcessor<?>>> registry = new HashMap();
+  private static final Map<Class<?>, Supplier<? extends MeasurementProcessor<?>>> registry = new HashMap<>();
 
   static {
     // Registration of matching classes and suppliers (e.g., constructors)
@@ -26,6 +28,10 @@ public class ProcessorRegistry {
         MeasurementRegistrationProcessorNGS::new);
     registry.put(MeasurementRegistrationInformationPxP.class,
         MeasurementRegistrationProcessorPxP::new);
+    registry.put(MeasurementUpdateInformationNGS.class,
+        MeasurementUpdateProcessorNGS::new);
+    registry.put(MeasurementUpdateInformationPxP.class,
+        MeasurementUpdateProcessorPxP::new);
     // Add more mappings ...
   }
 
