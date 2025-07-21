@@ -43,6 +43,8 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
@@ -207,7 +209,7 @@ public class MeasurementUpload extends Div implements UserInput {
     var result = converter.convert(parsingResult);
     var processedResult = process(result);
 
-    var itemsToValidate = result.size();
+    var itemsToValidate = processedResult.size();
     var requests = new ArrayList<ValidationRequest>();
 
     validationRequestsPerFile.put(fileName, result);
@@ -234,6 +236,14 @@ public class MeasurementUpload extends Div implements UserInput {
       case MeasurementRegistrationInformationPxP ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
         return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
+      }
+      case MeasurementUpdateInformationPxP ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);
+        return processor.process((List<MeasurementUpdateInformationPxP>) validationRequest);
+      }
+      case MeasurementUpdateInformationNGS ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationNGS.class);
+        return processor.process((List<MeasurementUpdateInformationNGS>) validationRequest);
       }
       default:
         throw new IllegalStateException("Unknown validation request: " + validationRequest);
@@ -409,14 +419,14 @@ public class MeasurementUpload extends Div implements UserInput {
       var fileIcon = VaadinIcon.FILE_TABLE.create();
       fileIcon.addClassName("icon-size-s");
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
-      fileNameLabel.addClassName("file-name");
+      fileNameLabel.addClassNames("file-name");
 
       setDisplayBoxContent(measurementFileItem.measurementValidationReport());
-      displayBox.addClassNames("flex-vertical", "padding-top-bottom-04");
+      displayBox.addClassNames("flex-vertical", "padding-top-bottom-02");
 
       add(fileNameLabel);
       add(displayBox);
-      addClassNames("flex-vertical", "gap-03", "choice-box", "padding-top-bottom-04",
+      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
           "padding-left-right-04");
     }
 

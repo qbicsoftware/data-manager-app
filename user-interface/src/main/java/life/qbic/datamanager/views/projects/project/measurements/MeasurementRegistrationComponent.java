@@ -59,13 +59,6 @@ public class MeasurementRegistrationComponent extends Div implements UserInput {
     measurementUpload.setMetadataConverter(getConverterForDomain(domain));
   }
 
-  private MeasurementProcessor<? extends ValidationRequestBody> getProcessorForDomain(Domain domain) {
-    return switch(domain) {
-      case Genomics -> ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
-      case Proteomics -> ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
-    };
-  }
-
   private MetadataConverterV2<? extends ValidationRequestBody> getConverterForDomain(
       Domain domain) {
     return switch (domain) {
