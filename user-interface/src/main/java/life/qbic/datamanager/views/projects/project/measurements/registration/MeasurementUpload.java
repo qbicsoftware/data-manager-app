@@ -419,14 +419,14 @@ public class MeasurementUpload extends Div implements UserInput {
       var fileIcon = VaadinIcon.FILE_TABLE.create();
       fileIcon.addClassName("icon-size-s");
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
-      fileNameLabel.addClassName("file-name");
+      fileNameLabel.addClassNames("file-name");
 
       setDisplayBoxContent(measurementFileItem.measurementValidationReport());
-      displayBox.addClassNames("flex-vertical", "padding-top-bottom-04");
+      displayBox.addClassNames("flex-vertical", "padding-top-bottom-02");
 
       add(fileNameLabel);
       add(displayBox);
-      addClassNames("flex-vertical", "gap-03", "choice-box", "padding-top-bottom-04",
+      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
           "padding-left-right-04");
     }
 
@@ -498,7 +498,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
     private ValidationReportDisplay(ValidationHeader header) {
       add(header);
-      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-03", "padding-bottom-02",
+      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
           "padding-left-right-04", "background-contrast-5pct");
     }
 
