@@ -435,8 +435,10 @@ public class ExperimentInformationService {
     for (AsyncProjectService.ExperimentalVariable experimentalVariable : experimentalVariables) {
       List<ExperimentalValue> experimentalValues = new ArrayList<>();
       for (String level : experimentalVariable.levels()) {
-        ExperimentalValue experimentalValue = experimentalVariable.optionalUnit().isPresent() ? ExperimentalValue.create(level)
-            : ExperimentalValue.create(level, experimentalVariable.unit());
+        ExperimentalValue experimentalValue =
+            experimentalVariable.optionalUnit()
+                .map(unit -> ExperimentalValue.create(level, unit))
+                .orElse(ExperimentalValue.create(level));
         experimentalValues.add(experimentalValue);
       }
       experiment.addVariableToDesign(experimentalVariable.name(), experimentalValues);

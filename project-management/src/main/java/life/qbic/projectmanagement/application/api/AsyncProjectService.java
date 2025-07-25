@@ -718,15 +718,15 @@ public interface AsyncProjectService {
    */
   record ExperimentalGroup(@Nullable Long id, @Nullable Integer groupId, String name,
                            int sampleSize,
-                           Set<VariableLevel> levels) {
+                           List<VariableLevel> levels) {
 
     public ExperimentalGroup {
       requireNonNull(levels);
-      levels = Set.copyOf(levels);
+      levels = List.copyOf(levels);
     }
 
-    public Set<VariableLevel> levels() {
-      return Set.copyOf(levels);
+    public List<VariableLevel> levels() {
+      return List.copyOf(levels);
     }
   }
 
@@ -1927,6 +1927,10 @@ public interface AsyncProjectService {
     public ValidationRequest {
       requireNonNull(projectId);
       requireNonNull(requestId);
+    }
+
+    public ValidationRequest(String projectId, SampleRegistrationInformation registration) {
+      this(projectId, registration, UUID.randomUUID().toString());
     }
   }
 

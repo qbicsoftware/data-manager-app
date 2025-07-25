@@ -223,8 +223,8 @@ public class ExperimentDetailsComponent extends PageArea {
   private Disclaimer createNoVariableDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Get started by adding experimental variables", "Add variables");
-//    disclaimer.addDisclaimerConfirmedListener(
-//        confirmedEvent -> openExperimentalVariablesAddDialog());
+    disclaimer.addDisclaimerConfirmedListener(
+        confirmedEvent -> openExperimentalVariablesAddDialog());
     return disclaimer;
   }
 
@@ -949,7 +949,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentalGroup.variableLevels().stream()
             .map(it -> new AsyncProjectService.VariableLevel(it.variableName(), it.value(),
                 it.unit()))
-            .collect(Collectors.toSet()));
+            .collect(Collectors.toList()));
   }
 
   private void addExperimentalGroups(

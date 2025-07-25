@@ -61,7 +61,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   private final Div failedView;
   private final Div succeededView;
   private final UploadWithDisplay uploadWithDisplay;
-  private transient final MessageSourceNotificationFactory messageFactory;
+  private final transient MessageSourceNotificationFactory messageFactory;
   private final DownloadComponent downloadComponent;
   private final transient AsyncProjectService service;
 
@@ -100,8 +100,12 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
     uploadWithDisplay = new UploadWithDisplay(MAX_FILE_SIZE, new FileType[]{
         new FileType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     });
-    uploadWithDisplay.addFailureListener(
-        uploadFailed -> {/* display of the error is handled by the uploadWithDisplay component. So nothing to do here.*/});
+    uploadWithDisplay.addUnspecificFailureListener(
+        uploadFailed ->
+            /* display of the error is handled by the uploadWithDisplay component. However we do need to log with the context*/
+            log.error(
+                "Upload failed for project(" + projectId + ") experiment(" + experimentId + ")",
+                uploadFailed.getCause()));
     uploadWithDisplay.addSuccessListener(
         uploadSucceeded -> onUploadSucceeded(experimentId, projectId,
             uploadSucceeded));
@@ -121,12 +125,10 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
   }
 
   private void handleError(Throwable throwable) {
-    switch (throwable) {
-      case AccessDeniedException ignored:
-        handleAccessDeniedError();
-        return;
-      default:
-        handleUnexpectedError(throwable);
+    if (Objects.requireNonNull(throwable) instanceof AccessDeniedException) {
+      handleAccessDeniedError();
+    } else {
+      handleUnexpectedError(throwable);
     }
   }
 
@@ -155,7 +157,7 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
 
   private static ValidationRequest convertToRequest(SampleRegistrationInformation registration,
       String projectId) {
-    return new ValidationRequest(projectId, registration, null);
+    return new ValidationRequest(projectId, registration);
   }
 
   private void setValidatedSampleMetadata(List<SampleRegistrationInformation> registrations) {
@@ -283,15 +285,14 @@ public class RegisterSampleBatchDialog extends WizardDialogWindow {
       String projectId, String projectCode) {
     Button downloadTemplate = new Button("Download metadata template");
     downloadTemplate.addClassName("download-metadata-button");
-    downloadTemplate.addClickListener(buttonClickEvent -> {
-      service.sampleRegistrationTemplate(projectId, experimentId,
-          OPEN_XML).doOnSuccess(resource ->
-          triggerDownload(resource,
-              FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
-                  "sample metadata template",
-                  "xlsx")
-          )).doOnError(this::handleError).subscribe();
-    });
+    downloadTemplate.addClickListener(
+        buttonClickEvent -> service.sampleRegistrationTemplate(projectId, experimentId,
+            OPEN_XML).doOnSuccess(resource ->
+            triggerDownload(resource,
+                FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectCode,
+                    "sample metadata template",
+                    "xlsx")
+            )).doOnError(this::handleError).subscribe());
     Div text = new Div();
     text.addClassName("download-metadata-text");
     text.setText(
