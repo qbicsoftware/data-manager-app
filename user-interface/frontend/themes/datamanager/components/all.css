@@ -748,3 +748,27 @@ Older stuff -
 .overflow-auto {
   overflow: auto;
 }
+
+.draggable:hover {
+  cursor: grab;
+}
+
+.drop-above.v-drag-over-target {
+  border-top: solid green 5px;
+}
+
+.drop-below.v-drag-over-target {
+  border-bottom: solid green 5px;
+}
+
+.drop-left.v-drag-over-target {
+  border-left: solid green 5px;
+}
+
+.drop-right.v-drag-over-target {
+  border-right: solid green 5px;
+}
+
+.dragging {
+  cursor: grabbing;
+}

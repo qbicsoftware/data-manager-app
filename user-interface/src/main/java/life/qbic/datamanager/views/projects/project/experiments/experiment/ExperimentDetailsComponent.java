@@ -57,8 +57,6 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesInput;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesInput.LockMode;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesInput.VariableInformationModification;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
@@ -223,8 +221,9 @@ public class ExperimentDetailsComponent extends PageArea {
   private Disclaimer createNoVariableDisclaimer() {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Get started by adding experimental variables", "Add variables");
-    disclaimer.addDisclaimerConfirmedListener(
-        confirmedEvent -> openExperimentalVariablesAddDialog());
+/*    disclaimer.addDisclaimerConfirmedListener(
+        confirmedEvent -> openExperimentalVariablesAddDialog()); //FIXME */
+    disclaimer.addDisclaimerConfirmedListener(it -> openExperimentalVariablesEditDialog());
     return disclaimer;
   }
 
@@ -570,15 +569,16 @@ public class ExperimentDetailsComponent extends PageArea {
         ))
         .toList();
 
-    ExperimentalVariablesInput variablesInputs = new ExperimentalVariablesInput(variables);
-    variables.forEach(
-        experimentalVariableInformation -> variablesInputs.lock(experimentalVariableInformation,
-            LockMode.RENAME_ONLY));
+    ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
+    variables.forEach(variablesInput::editUnusedVariable);
+    //TODO lock based on usage
+//    variables.forEach(
+//        experimentalVariableInformation -> variablesInput.);
     AppDialog dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Define Experiment Variable");
     DialogFooter.with(dialog, "Cancel", "Save");
-    DialogBody.with(dialog, variablesInputs, variablesInputs);
-    dialog.registerConfirmAction(() -> handleVariableEdit(variablesInputs));
+    DialogBody.with(dialog, variablesInput, variablesInput);
+    dialog.registerConfirmAction(() -> handleVariableEdit(variablesInput));
     dialog.registerCancelAction(dialog::close);
     dialog.open();
 /*    var editDialog = ExperimentalVariablesDialog.prefilled(
@@ -591,18 +591,20 @@ public class ExperimentDetailsComponent extends PageArea {
   }
 
   private void handleVariableEdit(ExperimentalVariablesInput variablesInputs) {
-    List<VariableInformationModification> changes = variablesInputs.getChanges();
-    for (VariableInformationModification change : changes) {
-      if (change.isRename()) {
-        System.out.println(
-            "renamed " + change.oldInformation().variableName() + " to " + change.newInformation()
-                .variableName());
-      } else if (change.isCreation()) {
-        System.out.println("created " + change.newInformation().variableName());
-      } else if (change.isDeletion()) {
-        System.out.println("deleted " + change.oldInformation().variableName());
-      }
-    }
+    //TODO implement
+
+    //    List<VariableInformationModification> changes = variablesInputs.getChanges();
+//    for (VariableInformationModification change : changes) {
+//      if (change.isRename()) {
+//        System.out.println(
+//            "renamed " + change.oldInformation().variableName() + " to " + change.newInformation()
+//                .variableName());
+//      } else if (change.isCreation()) {
+//        System.out.println("created " + change.newInformation().variableName());
+//      } else if (change.isDeletion()) {
+//        System.out.println("deleted " + change.oldInformation().variableName());
+//      }
+//    }
 
   }
 
