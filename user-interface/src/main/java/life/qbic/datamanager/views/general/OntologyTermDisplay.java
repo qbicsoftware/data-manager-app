@@ -25,7 +25,7 @@ public class OntologyTermDisplay extends Div {
     Anchor ontologyClassIri = new Anchor(reference, ontologyLink);
     ontologyClassIri.setTarget(AnchorTarget.BLANK);
     ontology.add(ontologyLabel, ontologyClassIri);
-    ontology.addClassNames("ontology-term", "gap-small");
+    ontology.addClassNames("ontology-term", "gap-03");
     add(ontology);
   }
 

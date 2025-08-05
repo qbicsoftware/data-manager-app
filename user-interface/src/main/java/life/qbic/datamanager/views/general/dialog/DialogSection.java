@@ -22,9 +22,9 @@ public class DialogSection extends Div {
   private DialogSection(String title, String description) {
     addClassName("dialog-section");
     this.title = new Div(title);
-    this.title.addClassNames("heading-4", "text-margin-bottom-03");
+    this.title.addClassNames("heading-4", "margin-bottom-03");
     this.description = new Div(description);
-    this.description.addClassNames("normal-body-text", "text-margin-bottom-04");
+    this.description.addClassNames("normal-body-text", "margin-bottom-04");
     this.content = new Div();
     this.content.addClassName("dialog-content");
 

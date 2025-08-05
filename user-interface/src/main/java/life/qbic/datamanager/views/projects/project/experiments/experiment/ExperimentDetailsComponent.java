@@ -161,7 +161,7 @@ public class ExperimentDetailsComponent extends PageArea {
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory);
     this.addClassName("experiment-details-component");
     confoundingVariablesContainer = new Div();
-    confoundingVariablesContainer.addClassNames("full-width", "full-height");
+    confoundingVariablesContainer.addClassNames("width-full", "height-full");
     layoutComponent();
     configureComponent();
     this.asyncProjectService = asyncProjectService;
@@ -1129,7 +1129,7 @@ public class ExperimentDetailsComponent extends PageArea {
     var cards = new ArrayList<Component>();
     for (ConfoundingVariableInformation confoundingVariable : confoundingVariables) {
       Card card = new Card();
-      card.addClassNames("padding-left-right-05", "padding-top-bottom-05");
+      card.addClassNames("padding-horizontal-05", "padding-vertical-05");
       card.add(new Div(confoundingVariable.variableName()));
       cards.add(card);
     }

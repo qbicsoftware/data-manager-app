@@ -452,7 +452,7 @@ public class ProjectSummaryComponent extends PageArea {
       projectContactsSection.content().add(prBox);
     }
 
-    projectContactsSection.content().addClassNames("horizontal-list", "gap-medium",
+    projectContactsSection.content().addClassNames("horizontal-list", "gap-04",
         "wrapping-flex-container");
   }
 
@@ -559,14 +559,14 @@ public class ProjectSummaryComponent extends PageArea {
     sectionContent.add(speciesDetailBox);
     sectionContent.add(specimenDetailBox);
     sectionContent.add(analyteDetailBox);
-    sectionContent.addClassNames("horizontal-list", "gap-medium", "wrapping-flex-container");
+    sectionContent.addClassNames("horizontal-list", "gap-04", "wrapping-flex-container");
     experimentInformationSection.setContent(sectionContent);
   }
 
   private Div buildOntologyInfo(Set<OntologyTerm> terms) {
     var container = new Div();
     terms.stream().map(this::convert).forEach(container::add);
-    container.addClassNames("vertical-list", "gap-small");
+    container.addClassNames("vertical-list", "gap-03");
     return container;
   }
 
@@ -605,7 +605,8 @@ public class ProjectSummaryComponent extends PageArea {
     var collapsibleDetails = new CollapsibleDetails(details);
     collapsibleDetails.collapse();
     collapsibleDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01",
-        "line-height-01", "max-width-55rem", "text-justify", "box-corner-radius-small");
+        "line-height-01", "max-width-55rem", "text-justify", "border", "border-bottom",
+        "rounded-03");
 
     content.add(
         Heading.withIconAndText(VaadinIcon.NOTEBOOK.create(), "Project ID and Title"));
@@ -912,7 +913,7 @@ public class ProjectSummaryComponent extends PageArea {
 
   private Div createTags(ProjectOverview projectOverview) {
     var tags = new Div();
-    tags.addClassNames("tag-list", "gap-small");
+    tags.addClassNames("tag-list", "gap-03");
     buildTags(projectOverview).forEach(tags::add);
     return tags;
   }
@@ -931,7 +932,7 @@ public class ProjectSummaryComponent extends PageArea {
   private static class EmptyContent extends Div {
 
     EmptyContent() {
-      addClassNames("vertical-list", "gap-small");
+      addClassNames("vertical-list", "gap-03");
       add("No information available");
     }
   }

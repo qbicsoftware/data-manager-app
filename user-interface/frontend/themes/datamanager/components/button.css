@@ -8,7 +8,7 @@
 
 .button-bar {
   display: inline-flex;
-  column-gap: var(--lumo-space-s);
+  column-gap: var(--spacing-03);
 }
 
 .navigation-button .button {

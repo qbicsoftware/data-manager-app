@@ -66,7 +66,7 @@ public class ComponentDemo extends Div {
   public ComponentDemo(MessageSourceNotificationFactory messageSourceNotificationFactory) {
     this.messageFactory = Objects.requireNonNull(messageSourceNotificationFactory);
     title.addClassName("heading-1");
-    addClassNames("padding-left-right-07", "padding-top-bottom-04");
+    addClassNames("padding-horizontal-07", "padding-vertical-04");
     add(title);
     add(headingShowcase());
     add(colorShowCase());
@@ -76,6 +76,56 @@ public class ComponentDemo extends Div {
     add(dialogShowCase());
     add(cardShowCase());
     add(toastShowCase());
+    add(borderShowcase());
+  }
+
+  private com.vaadin.flow.component.Component borderShowcase() {
+    var container = new Div();
+    var header = new Div();
+    header.addClassName(HEADING_2);
+    header.setText("Border styles");
+    container.add(header);
+    container.addClassNames("flex-vertical", "gap-04", "width-50-pct");
+
+    var border = new Div(".border");
+    border.addClassNames("border");
+    var borderComplete = new Div(".border .border-complete");
+    borderComplete.addClassNames("border", "border-complete");
+    var borderLeftRight = new Div(".border .border-left-right");
+    borderLeftRight.addClassNames("border", "border-left-right");
+    var borderTopBottom = new Div(".border .border-top-bottom");
+    borderTopBottom.addClassNames("border", "border-top-bottom");
+    var borderTop = new Div(".border .border-top");
+    borderTop.addClassNames("border", "border-top");
+    var borderRight = new Div(".border .border-right");
+    borderRight.addClassNames("border", "border-right");
+    var borderBottom = new Div(".border .border-bottom");
+    borderBottom.addClassNames("border", "border-bottom");
+    var borderLeft = new Div(".border .border-left");
+    borderLeft.addClassNames("border", "border-left");
+
+    var borderDashed = new Div(".border .border-complete .dashed");
+    borderDashed.addClassNames("border", "border-complete", "dashed");
+
+    var borderRounded02 = new Div(".border .border-complete .rounded-02");
+    borderRounded02.addClassNames("border", "border-complete", "rounded-02");
+    var borderRounded03 = new Div(".border .border-complete .rounded-03");
+    borderRounded03.addClassNames("border", "border-complete", "rounded-03");
+
+    container.add(
+        border,
+        borderComplete,
+        borderLeftRight,
+        borderTopBottom,
+        borderTop,
+        borderRight,
+        borderBottom,
+        borderLeft,
+        borderDashed,
+        borderRounded02,
+        borderRounded03
+    );
+    return container;
   }
 
   private static Div clickableShowCase() {

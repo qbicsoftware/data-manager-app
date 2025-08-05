@@ -30,7 +30,7 @@ import life.qbic.projectmanagement.application.contact.PersonLookupService;
 public class ContactField extends CustomField<Contact> implements HasClientValidation {
 
   public static final String GAP_02_CSS = "gap-02";
-  private static final String FULL_WIDTH_CSS = "full-width";
+  private static final String FULL_WIDTH_CSS = "width-full";
   private static final String FLEX_HORIZONTAL = "flex-horizontal";
   private static final Logger log = logger(ContactField.class);
 

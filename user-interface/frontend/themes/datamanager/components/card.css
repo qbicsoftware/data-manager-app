@@ -201,7 +201,7 @@
 
 .experiment-item .active-section {
   padding-left: 1rem;
-  padding-bottom: var(--lumo-space-s);
+  padding-bottom: var(--spacing-03);
   padding-top: var(--lumo-space-l);
 }
 
