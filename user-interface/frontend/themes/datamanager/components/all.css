@@ -26,6 +26,7 @@ First some general property definitions
   --font-weight-semi-bold: 600;
   --font-weight-bold: 700;
   --border-color-default: var(--lumo-contrast-30pct);
+  --border-color-dialog: rgba(26, 56, 96, 0.1);
   --icon-color-primary: var(--lumo-primary-color);
   --icon-color-info: rgba(22, 118, 243, 1);
   --icon-color-error: rgba(255, 66, 56, 1);
@@ -647,10 +648,6 @@ Colors
   color: var(--lumo-tertiary-text-color)
 }
 
-.border-color-default {
-  border-color: var(--border-color-default);
-}
-
 /*endregion*/
 
 /*region Behaviour*/
@@ -727,7 +724,7 @@ Colors
 .dialog-app::part(header)  {
   padding: 0;
   border-bottom-style: solid;
-  border-bottom-color: rgba(26, 56, 96, 0.1);
+  border-bottom-color: var(--border-color-dialog);
   border-bottom-width: 1px;
 }
 
@@ -757,7 +754,7 @@ Colors
   padding: 0;
   background-color: white;
   border-top-style: solid;
-  border-top-color: rgba(26, 56, 96, 0.1);
+  border-top-color: var(--border-color-dialog);
   border-top-width: 1px;
 }
 
@@ -871,11 +868,17 @@ Icons
 .flex-horizontal {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
 }
 
 .flex-vertical {
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
+}
+
+.white-space-nowrap {
+  white-space: nowrap;
 }
 
 .width-full {
@@ -930,6 +933,14 @@ Icons
 
 .border.border-left {
   border-left-width: 1px;
+}
+
+.border-color-default {
+  border-color: var(--border-color-default);
+}
+
+.border-color-dialog {
+  border-color: var(--border-color-dialog);
 }
 
 .border.solid {
@@ -1024,13 +1035,6 @@ Older stuff -
   width: 100%;
 }
 
-.section-content {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  row-gap: var(--lumo-space-m);
-}
-
 .section-title {
   font-weight: bold;
   color: var(--lumo-secondary-text-color);
@@ -1123,12 +1127,6 @@ Older stuff -
   width: 100%;
 }
 
-.horizontal-list {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-}
-
 .dynamic-growing-flex-item {
   flex-grow: 1;
 }
@@ -1149,15 +1147,6 @@ Older stuff -
 
 .overflow-scroll-height {
   overflow: auto;
-}
-
-.ontology-term {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  gap: var(--spacing-03);
-  white-space: nowrap;
-  flex-wrap: wrap;
 }
 
 .fixed-medium-width {

@@ -17,7 +17,6 @@ public class OntologyTermDisplay extends Div {
 
   public OntologyTermDisplay(String label, String curie, String reference) {
     Div ontology = new Div();
-    ontology.addClassName("vertical-list");
     Span ontologyLabel = new Span(label);
     ontologyLabel.addClassName("overflow-hidden-ellipsis");
     Span ontologyLink = new Span(OboIdFormatter.render(curie));
@@ -25,7 +24,8 @@ public class OntologyTermDisplay extends Div {
     Anchor ontologyClassIri = new Anchor(reference, ontologyLink);
     ontologyClassIri.setTarget(AnchorTarget.BLANK);
     ontology.add(ontologyLabel, ontologyClassIri);
-    ontology.addClassNames("ontology-term", "gap-03");
+    ontology.addClassNames("width-full", "flex-horizontal", "gap-03", "white-space-no-wrap",
+        "gap-03");
     add(ontology);
   }
 

@@ -452,13 +452,13 @@ public class ProjectSummaryComponent extends PageArea {
       projectContactsSection.content().add(prBox);
     }
 
-    projectContactsSection.content().addClassNames("horizontal-list", "gap-04",
-        "wrapping-flex-container");
+    projectContactsSection.content().removeClassName("flex-vertical");
+    projectContactsSection.content().addClassNames("flex-horizontal");
   }
 
   private Div renderContactInfo(Contact contact) {
     var contactInfo = new Div();
-    contactInfo.addClassName("vertical-list");
+    contactInfo.addClassNames("flex-vertical", "width-full");
     var name = new Span(contact.fullName());
     var email = new Anchor("mailto:" + contact.emailAddress(), contact.emailAddress());
     contactInfo.add(name, email);
@@ -559,14 +559,15 @@ public class ProjectSummaryComponent extends PageArea {
     sectionContent.add(speciesDetailBox);
     sectionContent.add(specimenDetailBox);
     sectionContent.add(analyteDetailBox);
-    sectionContent.addClassNames("horizontal-list", "gap-04", "wrapping-flex-container");
+    sectionContent.removeClassName("flex-vertical");
+    sectionContent.addClassName("flex-horizontal");
     experimentInformationSection.setContent(sectionContent);
   }
 
   private Div buildOntologyInfo(Set<OntologyTerm> terms) {
     var container = new Div();
     terms.stream().map(this::convert).forEach(container::add);
-    container.addClassNames("vertical-list", "gap-03");
+    container.addClassNames("flex-vertical", "width-full", "gap-03");
     return container;
   }
 
@@ -604,8 +605,8 @@ public class ProjectSummaryComponent extends PageArea {
     details.add(objective);
     var collapsibleDetails = new CollapsibleDetails(details);
     collapsibleDetails.collapse();
-    collapsibleDetails.addClassNames("background-color-grey", "padding-left-01", "padding-right-01",
-        "line-height-01", "max-width-55rem", "text-justify", "border", "border-bottom",
+    collapsibleDetails.addClassNames("background-color-grey", "padding-left-05", "padding-right-05",
+        "line-height-01", "max-width-55rem", "text-justify", "border",
         "rounded-03");
 
     content.add(
@@ -932,7 +933,7 @@ public class ProjectSummaryComponent extends PageArea {
   private static class EmptyContent extends Div {
 
     EmptyContent() {
-      addClassNames("vertical-list", "gap-03");
+      addClassNames("flex-vertical", "width-full", "gap-03");
       add("No information available");
     }
   }

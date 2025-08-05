@@ -29,7 +29,7 @@ public class AppDialog extends Dialog implements BeforeLeaveObserver {
   public static final String PADDING_LEFT_RIGHT_07 = "padding-horizontal-07";
   public static final String PADDING_TOP_BOTTOM_04 = "padding-vertical-04";
   public static final String PADDING_TOP_BOTTOM_05 = "padding-vertical-05";
-  public static final String BORDER_BOTTOM_SOLID = "border-bottom-solid";
+  public static final String BORDER_BOTTOM_SOLID = "border border-bottom border-color-dialog";
   public static final String FULL_WIDTH = "width-full";
   private final Div header;
   private final Div navigation;
