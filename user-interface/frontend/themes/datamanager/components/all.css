@@ -1019,11 +1019,11 @@ Older stuff -
 
 
 .trailing-margin-large {
-  margin-bottom: var(--lumo-space-xl);
+  margin-bottom: var(--lumo-space-xl); /*spacing-07*/
 }
 
 .trailing-margin-normal {
-  margin-bottom: var(--lumo-space-l);
+  margin-bottom: var(--lumo-space-l); /*spacing05*/
 }
 
 .trailing-margin-small {
@@ -1119,12 +1119,6 @@ Older stuff -
 
 .icon-label-container vaadin-icon {
   height: auto;
-}
-
-.vertical-list {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
 }
 
 .dynamic-growing-flex-item {

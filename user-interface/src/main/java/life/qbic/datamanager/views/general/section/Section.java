@@ -39,7 +39,7 @@ public class Section extends Div implements Controllable {
 
   private Section() {
     addClassName("section");
-    addClassName("trailing-margin-large");
+    addClassName("margin-bottom-07");
     sectionHeader = new SectionHeader();
     content = new SectionContent();
     rebuild();

@@ -85,8 +85,10 @@ public class ComponentDemo extends Div {
     header.addClassName(HEADING_2);
     header.setText("Border styles");
     container.add(header);
-    container.addClassNames("flex-vertical", "gap-04", "width-50-pct");
-
+    container.addClassNames(FLEX_VERTICAL, GAP_04, "width-50-pct");
+    var headerBorderVisibility = new Div();
+    headerBorderVisibility.setText("Border Visibility");
+    headerBorderVisibility.addClassNames(HEADING_3);
     var border = new Div(".border");
     border.addClassNames("border");
     var borderComplete = new Div(".border .border-complete");
@@ -103,17 +105,22 @@ public class ComponentDemo extends Div {
     borderBottom.addClassNames("border", "border-bottom");
     var borderLeft = new Div(".border .border-left");
     borderLeft.addClassNames("border", "border-left");
-
+    var headerBorderStyles = new Div();
+    headerBorderStyles.setText("Border Styles");
+    headerBorderStyles.addClassNames(HEADING_3);
     var borderDashed = new Div(".border .border-complete .dashed");
     borderDashed.addClassNames("border", "border-complete", "dashed");
-
+    var borderRound = new Div(".border .border-complete .round");
+    borderRound.addClassNames("border .border-complete round");
     var borderRounded02 = new Div(".border .border-complete .rounded-02");
     borderRounded02.addClassNames("border", "border-complete", "rounded-02");
     var borderRounded03 = new Div(".border .border-complete .rounded-03");
     borderRounded03.addClassNames("border", "border-complete", "rounded-03");
 
+
     container.add(
         border,
+        headerBorderVisibility,
         borderComplete,
         borderLeftRight,
         borderTopBottom,
@@ -121,7 +128,9 @@ public class ComponentDemo extends Div {
         borderRight,
         borderBottom,
         borderLeft,
+        headerBorderStyles,
         borderDashed,
+        borderRound,
         borderRounded02,
         borderRounded03
     );
