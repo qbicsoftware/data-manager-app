@@ -51,6 +51,7 @@ import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentInformationMain;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.CardCollection;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingGroupsPreventVariableEdit;
@@ -67,12 +68,8 @@ import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionResponse;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateResponse;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupsCreationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupsDeletionRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesDeletionRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
@@ -801,16 +798,14 @@ public class ExperimentDetailsComponent extends PageArea {
     }
     var projectId = context.projectId().orElseThrow();
     var experimentId = context.experimentId().orElseThrow();
-    var requests = new ArrayList<Mono<ExperimentalGroupDeletionResponse>>();
-
-    for (Integer groupNumber : groupsToDelete) {
-      requests.add(asyncProjectService.delete(
-          new ExperimentalGroupDeletionRequest(projectId.value(), experimentId.value(),
-              groupNumber)));
-    }
-
-    Mono.when(requests)
+    var serviceCall = asyncProjectService.delete(
+        new ExperimentalGroupsDeletionRequest(projectId.value(), experimentId.value(),
+            groupsToDelete));
+    var toast = createExperimentalGroupProcessStartToast("Deletion", groupsToDelete.size());
+    Mono.when(serviceCall)
+        .doFirst(toast::open)
         .doOnSuccess(s -> {
+          getUI().orElseThrow().access(toast::close);
           displaySuccessfulDeletionNotification();
           reloadExperimentalGroups();
         })
@@ -843,24 +838,21 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var projectId = context.projectId().orElseThrow();
 
-    var serviceCalls = new ArrayList<Mono<ExperimentalGroupUpdateResponse>>();
-
-    experimentalGroups.forEach(experimentalGroup -> {
-      serviceCalls.add(
-          asyncProjectService.update(new ExperimentalGroupUpdateRequest(projectId.value(),
-              experimentId.value(), experimentalGroup)));
-    });
-
-    Mono.when(serviceCalls).doOnSuccess(s -> {
+    var serviceCall = asyncProjectService.update(
+        new AsyncProjectService.ExperimentalGroupsUpdateRequest(projectId.value(),
+            experimentId.value(), experimentalGroups));
+    var toast = createExperimentalGroupProcessStartToast("Update", experimentalGroups.size());
+    Mono.when(serviceCall)
+        .doFirst(toast::open)
+        .doOnSuccess(s -> {
+          getUI().orElseThrow().access(toast::close);
           displaySuccessfulExperimentalGroupUpdate();
           reloadExperimentalGroups();
         }).doOnError(e -> {
           log.error("Error while updating experimental group", e);
           displayFailedExperimentalGroupUpdate();
         })
-        .subscribe(it -> {
-          log.debug("Updated experimental groups for project" + projectId);
-        });
+        .subscribe(it -> log.debug("Updated experimental groups for project" + projectId));
   }
 
   private void displayFailedExperimentalGroupUpdate() {
@@ -898,15 +890,14 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var projectId = context.projectId().orElseThrow();
 
-    var serviceCalls = new ArrayList<Mono<ExperimentalGroupCreationResponse>>();
-
-    experimentalGroups.forEach(experimentalGroup -> {
-      serviceCalls.add(
-          asyncProjectService.create(new ExperimentalGroupCreationRequest(projectId.value(),
-              experimentId.value(), experimentalGroup)));
-    });
-
-    Mono.when(serviceCalls).doOnSuccess(s -> {
+    var serviceCall = asyncProjectService.create(
+        new ExperimentalGroupsCreationRequest(projectId.value(),
+            experimentId.value(), experimentalGroups));
+    var toast = createExperimentalGroupProcessStartToast("Creation", experimentalGroups.size());
+    Mono.when(serviceCall)
+        .doFirst(toast::open)
+        .doOnSuccess(s -> {
+          getUI().orElseThrow().access(toast::close);
           displaySuccessfulExperimentalGroupCreation();
           reloadExperimentalGroups();
           showSampleRegistrationPossibleNotification();
@@ -914,9 +905,7 @@ public class ExperimentDetailsComponent extends PageArea {
           log.error("Error while creating experimental group", e);
           displayFailedExperimentalGroupCreation();
         })
-        .subscribe(it -> {
-          log.debug("Added experimental groups for project" + projectId);
-        });
+        .subscribe(it -> log.debug("Added experimental groups for project" + projectId));
   }
 
   private void displayFailedExperimentalGroupCreation() {
@@ -931,6 +920,12 @@ public class ExperimentDetailsComponent extends PageArea {
       messageSourceNotificationFactory.toast("experimental.groups.created.success", new Object[]{},
           getLocale()).open();
     }));
+  }
+
+  private Toast createExperimentalGroupProcessStartToast(String process, int groupNumber) {
+    return messageSourceNotificationFactory.pendingTaskToast("task.in-progress", new Object[]{
+            "%s of %d experimental groups".formatted(process, groupNumber)},
+        getLocale());
   }
 
   private ExperimentalGroupContent toContent(ExperimentalGroup experimentalGroup) {
