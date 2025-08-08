@@ -747,13 +747,12 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentalGroupsDialog dialog = confirmEvent.getSource();
     if (dialog.isValid()) {
       var groupContents = dialog.experimentalGroups();
-      addExperimentalGroups(groupContents.stream()
+      var creationReport = addExperimentalGroups(groupContents.stream()
           // We don't want to add existing groups again. Since they
           // are already having a dedicated group number, we can just filter for the ones without any.
           .filter(experimentalGroupContent -> experimentalGroupContent.groupNumber() == -1)
           .toList());
-
-      reloadExperimentalGroups();
+      Mono.when(creationReport).doFinally(it -> reloadExperimentalGroups()).subscribe();
       dialog.close();
     }
   }
@@ -785,16 +784,18 @@ public class ExperimentDetailsComponent extends PageArea {
       var groupsToCreate = groups.stream().filter(group -> group.id() == -1L).toList();
       var groupsToUpdate = groups.stream().filter(group -> group.id() != -1L).toList();
       var groupsToDelete = dialog.groupsToDelete();
-      addExperimentalGroups(groupsToCreate);
-      updateExperimentalGroups(groupsToUpdate);
-      deleteExperimentalGroups(groupsToDelete);
+      var successfulCreation = addExperimentalGroups(groupsToCreate);
+      var successfulUpdate = updateExperimentalGroups(groupsToUpdate);
+      var successfulDeletion = deleteExperimentalGroups(groupsToDelete);
+      Mono.when(successfulCreation, successfulUpdate, successfulDeletion)
+          .doFinally(it -> reloadExperimentalGroups()).subscribe();
       confirmEvent.getSource().close();
     }
   }
 
-  private void deleteExperimentalGroups(List<Integer> groupsToDelete) {
+  private Mono<Void> deleteExperimentalGroups(List<Integer> groupsToDelete) {
     if (groupsToDelete.isEmpty()) {
-      return;
+      return Mono.empty();
     }
     var projectId = context.projectId().orElseThrow();
     var experimentId = context.experimentId().orElseThrow();
@@ -802,18 +803,18 @@ public class ExperimentDetailsComponent extends PageArea {
         new ExperimentalGroupsDeletionRequest(projectId.value(), experimentId.value(),
             groupsToDelete));
     var toast = createExperimentalGroupProcessStartToast("Deletion", groupsToDelete.size());
-    Mono.when(serviceCall)
+    return Mono.when(serviceCall)
         .doFirst(toast::open)
         .doOnSuccess(s -> {
           getUI().orElseThrow().access(toast::close);
           displaySuccessfulDeletionNotification();
-          reloadExperimentalGroups();
         })
+        .doOnSuccess(s -> log.debug("Deleted experimental groups for project" + projectId))
         .doOnError(e -> {
           log.error("Failed to delete experimental groups", e);
           displayFailedExperimentalGroupDeletion();
         })
-        .subscribe();
+        .doFinally(it -> getUI().orElseThrow().access(toast::close));
   }
 
   private void displayFailedExperimentalGroupDeletion() {
@@ -830,9 +831,9 @@ public class ExperimentDetailsComponent extends PageArea {
     }));
   }
 
-  private void updateExperimentalGroups(List<ExperimentalGroupContent> groupsToUpdate) {
+  private Mono<Void> updateExperimentalGroups(List<ExperimentalGroupContent> groupsToUpdate) {
     if (groupsToUpdate.isEmpty()) {
-      return;
+      return Mono.empty();
     }
     var experimentalGroups = groupsToUpdate.stream().map(this::toApi).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
@@ -842,17 +843,15 @@ public class ExperimentDetailsComponent extends PageArea {
         new AsyncProjectService.ExperimentalGroupsUpdateRequest(projectId.value(),
             experimentId.value(), experimentalGroups));
     var toast = createExperimentalGroupProcessStartToast("Update", experimentalGroups.size());
-    Mono.when(serviceCall)
+    return Mono.when(serviceCall)
         .doFirst(toast::open)
-        .doOnSuccess(s -> {
-          getUI().orElseThrow().access(toast::close);
-          displaySuccessfulExperimentalGroupUpdate();
-          reloadExperimentalGroups();
-        }).doOnError(e -> {
+        .doOnSuccess(s -> displaySuccessfulExperimentalGroupUpdate())
+        .doOnError(e -> {
           log.error("Error while updating experimental group", e);
           displayFailedExperimentalGroupUpdate();
         })
-        .subscribe(it -> log.debug("Updated experimental groups for project" + projectId));
+        .doOnSuccess(it -> log.debug("Updated experimental groups for project" + projectId))
+        .doFinally(it -> getUI().orElseThrow().access(toast::close));
   }
 
   private void displayFailedExperimentalGroupUpdate() {
@@ -881,10 +880,10 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentalGroup.variableLevels().stream().map(this::toApi).toList());
   }
 
-  private void addExperimentalGroups(
+  private Mono<Void> addExperimentalGroups(
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
     if (experimentalGroupContents.isEmpty()) {
-      return;
+      return Mono.empty();
     }
     var experimentalGroups = experimentalGroupContents.stream().map(this::toApi).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
@@ -894,18 +893,18 @@ public class ExperimentDetailsComponent extends PageArea {
         new ExperimentalGroupsCreationRequest(projectId.value(),
             experimentId.value(), experimentalGroups));
     var toast = createExperimentalGroupProcessStartToast("Creation", experimentalGroups.size());
-    Mono.when(serviceCall)
+    return Mono.when(serviceCall)
         .doFirst(toast::open)
         .doOnSuccess(s -> {
-          getUI().orElseThrow().access(toast::close);
           displaySuccessfulExperimentalGroupCreation();
-          reloadExperimentalGroups();
           showSampleRegistrationPossibleNotification();
-        }).doOnError(e -> {
+        })
+        .doOnSuccess(it -> log.debug("Added experimental groups for project" + projectId))
+        .doOnError(e -> {
           log.error("Error while creating experimental group", e);
           displayFailedExperimentalGroupCreation();
         })
-        .subscribe(it -> log.debug("Added experimental groups for project" + projectId));
+        .doFinally(it -> getUI().orElseThrow().access(toast::close));
   }
 
   private void displayFailedExperimentalGroupCreation() {
