@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.icon.Icon;
 
 /**
  * <b><Button Factory</b>
@@ -14,6 +15,13 @@ public class ButtonFactory {
   private static Button createButton(String label, String[] classNames) {
     Button button = new Button(label);
     button.addClassNames(classNames);
+    return button;
+  }
+
+  public Button createTertirayButton(String label, Icon icon) {
+    var button = createButton(label, new String[]{"button-text padding-none"});
+    button.setThemeName("tertiary");
+    button.setIcon(icon);
     return button;
   }
 

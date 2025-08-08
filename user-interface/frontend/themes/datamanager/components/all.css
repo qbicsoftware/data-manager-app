@@ -3,53 +3,7 @@
 Data Manager custom CSS layout definition
 
 *****************************************/
-
-/*
-First some general property definitions
-*/
-:root {
-  --dialog-height-small: clamp(min-content, 50vh, 75vh);
-  --dialog-height-medium: clamp(min-content, 75vh, 100vh);
-  --dialog-height-large: 100vh;
-  --dialog-height-max-small: 500px;
-  --dialog-height-max-medium: 800px;
-  --dialog-height-max-large: 100vh;
-  --dialog-width-small: 50vw;
-  --dialog-width-medium: 75vw;
-  --dialog-width-large: 80vw;
-  --dialog-width-max-small: 600px;
-  --dialog-width-max-medium: 1000px;
-  --dialog-width-max-large: 1200px;
-  --font-weight-light: 300;
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semi-bold: 600;
-  --font-weight-bold: 700;
-  --border-color-default: var(--lumo-contrast-30pct);
-  --border-color-dialog: rgba(26, 56, 96, 0.1);
-  --icon-color-primary: var(--lumo-primary-color);
-  --icon-color-info: rgba(22, 118, 243, 1);
-  --icon-color-error: rgba(255, 66, 56, 1);
-  --icon-color-success: rgba(21, 193, 93, 1);
-  --icon-color-warning: rgba(254, 201, 1, 1);
-  --icon-color-default: rgba(28, 46, 69, 0.6);
-  --icon-size-xs: 1rem;
-  --icon-size-s: 1.25rem; /*--lumo-icon-size-s*/
-  --icon-size-m: 1.5rem; /*--lumo-icon-size-m*/
-  --icon-size-l: 2rem;
-  --spacing-01: 0.125rem;
-  --spacing-02: 0.25rem; /*lumo-space-xs*/
-  --spacing-03: 0.5rem; /*lumo-space-s*/
-  --spacing-04: 1rem; /*lumo-space-m*/
-  --spacing-05: 1.5rem; /*lumo-space-l*/
-  --spacing-06: 2rem;
-  --spacing-07: 2.5rem; /*lumo-space-xl*/
-  --spacing-08: 3rem;
-  --spacing-09: 3.5rem; /*--lumo-size-xl*/
-  --spacing-10: 4rem;
-  --spacing-11: 5rem;
-  --spacing-12: 6rem;
-}
+@import "variables.css";
 
 /*region Fonts*/
 
@@ -140,10 +94,26 @@ Heading
   font-weight: var(--font-weight-semi-bold);
 }
 
+.font-size-small {
+  font-size: var(--lumo-font-size-l); /*1.125rem*/
+}
+
+.font-size-medium {
+  font-size: var(--lumo-font-size-xl); /*1.375rem*/
+}
+
+.font-size-large {
+  font-size: var(--lumo-font-size-xxl); /*1.75rem*/
+}
+
 /*endregion*/
 
 /*region Padding*/
 /*region padding all*/
+.padding-none {
+  padding: 0;
+}
+
 .padding-01 {
   padding: var(--spacing-01);
 }
@@ -582,6 +552,9 @@ Heading
 /*endregion*/
 
 /*region Gaps*/
+.gap-none {
+  gap: 0;
+}
 .gap-02 {
   gap: var(--spacing-02);
 }
@@ -606,6 +579,9 @@ Heading
   gap: var(--spacing-07);
 }
 
+.column-gap-none {
+  column-gap: 0;
+}
 .column-gap-02 {
   column-gap: var(--spacing-02);
 }
@@ -853,6 +829,8 @@ Icons
 /*endregion*/
 
 /*region Layouts*/
+
+
 .flex-align-items-center {
   align-items: center;
 }
@@ -881,12 +859,24 @@ Icons
   white-space: nowrap;
 }
 
+.no-flex-wrap {
+  flex-wrap: nowrap;
+}
+
+.no-wrap {
+  text-wrap: nowrap;
+}
+
 .width-full {
   width: 100%;
 }
 
 .width-50-pct {
   width: 50%;
+}
+
+.width-max-content {
+  width: max-content;
 }
 
 .height-full {
@@ -897,42 +887,71 @@ Icons
   height: 50%;
 }
 
+.height-max-content {
+  height: max-content;
+}
+
+.height-min-content {
+  height: min-content;
+}
+
 /*endregion*/
 
-
 /*region Borders*/
-.border {
-  border: 0 solid var(--border-color-default);
+.border,
+.composite-border,
+.border-top,
+.border-right,
+.border-bottom,
+.border-left,
+.border-top-bottom,
+.border-left-right {
+  border: 1px solid var(--border-color-default);
+  box-sizing: border-box;
 }
 
-.border.border-left-right {
-  border-left-width: 1px;
+.composite-border {
+  border-width: 0;
+}
+
+.border-left-right {
+  border-width: 0 1px;
+}
+
+.border-top-bottom {
+  border-width: 1px 0;
+}
+
+.composite-border.border-top {
+  border-top-width: 1px;
+}
+
+.border-top {
+  border-width: 1px 0 0 0;
+}
+
+.composite-border.border-right {
   border-right-width: 1px;
 }
 
-.border.border-top-bottom {
-  border-top-width: 1px;
+.border-right {
+  border-width: 0 1px 0 0;
+}
+
+.composite-border.border-bottom {
   border-bottom-width: 1px;
 }
 
-.border.border-complete {
-  border-width: 1px;
+.border-bottom {
+  border-width: 0 0 1px 0;
 }
 
-.border.border-top {
-  border-top-width: 1px;
-}
-
-.border.border-right {
-  border-right-width: 1px;
-}
-
-.border.border-bottom {
-  border-bottom-width: 1px;
-}
-
-.border.border-left {
+.composite-border.border-left {
   border-left-width: 1px;
+}
+
+.border-left {
+  border-width: 0 0 0 1px;
 }
 
 .border-color-default {
@@ -965,9 +984,7 @@ Icons
 
 /*endregion*/
 
-/****************************
-Older stuff -
-****************************/
+/*region Single-Purpose Component Styles*/
 /*region Announcements*/
 #announcements {
   background-color: var(--icon-color-warning);
@@ -992,6 +1009,12 @@ Older stuff -
 }
 
 /*endregion*/
+/*endregion*/
+
+/****************************
+Older stuff -
+****************************/
+
 
 .heading-with-icon {
   color: #878787;
@@ -1042,17 +1065,7 @@ Older stuff -
   width: 100%;
 }
 
-.font-size-small {
-  font-size: var(--lumo-font-size-l);
-}
 
-.font-size-medium {
-  font-size: var(--lumo-font-size-xl);
-}
-
-.font-size-large {
-  font-size: var(--lumo-font-size-xxl);
-}
 
 .sub-header {
   font-size: var(--lumo-font-size-s);
@@ -1139,6 +1152,7 @@ Older stuff -
   flex-wrap: wrap;
 }
 
+
 .overflow-scroll-height {
   overflow: auto;
 }
@@ -1168,11 +1182,6 @@ Older stuff -
   max-width: 55rem;
 }
 
-
 .overflow-auto {
   overflow: auto;
-}
-
-.draggable:hover {
-  cursor: grab;
 }

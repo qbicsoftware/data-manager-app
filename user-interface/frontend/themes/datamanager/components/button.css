@@ -62,5 +62,5 @@ vaadin-button {
 
 vaadin-button[theme~="tertiary"] vaadin-icon,
 vaadin-button[theme~="tertiary-inline"] vaadin-icon {
-  color: var(--lumo-tertiary-text-color)
+  /*color: var(--lumo-tertiary-text-color)*/
 }

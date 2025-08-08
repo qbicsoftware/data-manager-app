@@ -20,6 +20,7 @@
 @import "vaadin-custom.css";
 @import "virtuallist.css";
 @import "toast.css";
+@import "grid-templates.css";
 
 vaadin-avatar-group vaadin-avatar,
 .user-avatar {

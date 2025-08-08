@@ -4,6 +4,9 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.NativeLabel;
+import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
@@ -22,6 +25,7 @@ import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.ButtonFactory;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
@@ -77,65 +81,73 @@ public class ComponentDemo extends Div {
     add(cardShowCase());
     add(toastShowCase());
     add(borderShowcase());
+    add(createTestComponent());
   }
 
-  private com.vaadin.flow.component.Component borderShowcase() {
-    var container = new Div();
-    var header = new Div();
-    header.addClassName(HEADING_2);
-    header.setText("Border styles");
-    container.add(header);
-    container.addClassNames(FLEX_VERTICAL, GAP_04, "width-50-pct");
-    var headerBorderVisibility = new Div();
-    headerBorderVisibility.setText("Border Visibility");
-    headerBorderVisibility.addClassNames(HEADING_3);
-    var border = new Div(".border");
-    border.addClassNames("border");
-    var borderComplete = new Div(".border .border-complete");
-    borderComplete.addClassNames("border", "border-complete");
-    var borderLeftRight = new Div(".border .border-left-right");
-    borderLeftRight.addClassNames("border", "border-left-right");
-    var borderTopBottom = new Div(".border .border-top-bottom");
-    borderTopBottom.addClassNames("border", "border-top-bottom");
-    var borderTop = new Div(".border .border-top");
-    borderTop.addClassNames("border", "border-top");
-    var borderRight = new Div(".border .border-right");
-    borderRight.addClassNames("border", "border-right");
-    var borderBottom = new Div(".border .border-bottom");
-    borderBottom.addClassNames("border", "border-bottom");
-    var borderLeft = new Div(".border .border-left");
-    borderLeft.addClassNames("border", "border-left");
-    var headerBorderStyles = new Div();
-    headerBorderStyles.setText("Border Styles");
-    headerBorderStyles.addClassNames(HEADING_3);
-    var borderDashed = new Div(".border .border-complete .dashed");
-    borderDashed.addClassNames("border", "border-complete", "dashed");
-    var borderRound = new Div(".border .border-complete .round");
-    borderRound.addClassNames("border .border-complete round");
-    var borderRounded02 = new Div(".border .border-complete .rounded-02");
-    borderRounded02.addClassNames("border", "border-complete", "rounded-02");
-    var borderRounded03 = new Div(".border .border-complete .rounded-03");
-    borderRounded03.addClassNames("border", "border-complete", "rounded-03");
-
-
-    container.add(
-        border,
-        headerBorderVisibility,
-        borderComplete,
-        borderLeftRight,
-        borderTopBottom,
-        borderTop,
-        borderRight,
-        borderBottom,
-        borderLeft,
-        headerBorderStyles,
-        borderDashed,
-        borderRound,
-        borderRounded02,
-        borderRounded03
-    );
-    return container;
+  private com.vaadin.flow.component.Component createTestComponent() {
+    var body = new Div();
+    body.addClassNames(
+        "dialog-section border dashed padding-vertical-05 padding-horizontal-07 margin-05");
+    var variablesInput = new Div();
+    variablesInput.addClassNames("flex-vertical gap-04");
+    for (int i = 0; i < 4; i++) {
+      variablesInput.add(variableRow());
+    }
+    var addVariableButton = new Button("Add Variable", VaadinIcon.PLUS.create());
+    addVariableButton.addClassNames("margin-bottom-04 margin-left-04 flex-vertical");
+    variablesInput.add(addVariableButton);
+    body.add(variablesInput);
+    return body;
   }
+
+  private com.vaadin.flow.component.Component variableRow() {
+    var root = new Div();
+    root.addClassNames(
+        "border rounded-02 padding-04 gap-04 column-gap-05 grid-experimental-variable-input");
+    var fields = new Div();
+    fields.getStyle().set("grid-area", "a");
+    fields.addClassNames("flex-horizontal gap-05");
+    TextField name = new TextField();
+    name.addClassNames("dynamic-growing-flex-item");
+    name.setLabel("Variable Name");
+    TextField unit = new TextField();
+    unit.addClassNames("dynamic-growing-flex-item");
+    unit.setLabel("Unit (optional)");
+    com.vaadin.flow.component.Component variableLevels = createVariableLevels();
+    variableLevels.getStyle().set("grid-area", "b");
+    var deleteVariable = new ButtonFactory().createTertirayButton("Delete Variable",
+        VaadinIcon.TRASH.create());
+    deleteVariable.getStyle().set("grid-area", "c");
+    deleteVariable.addClassNames("width-max-content");
+    fields.add(name, unit);
+    root.add(fields, variableLevels, deleteVariable);
+    return root;
+  }
+
+  private com.vaadin.flow.component.Component createVariableLevels() {
+    Div root = new Div();
+    root.addClassNames("border rounded-02 flex-vertical gap-none padding-04 padding-top-03");
+    var body = new Div();
+    body.addClassNames("flex-vertical gap-04");
+    var label = new NativeLabel("Levels");
+    root.getStyle().set("grid-area", "b");
+    var levelsContainer = new Div();
+    levelsContainer.addClassNames("flex-horizontal gap-03 column-gap-03 width-full");
+    var levelField = new Div();
+    levelField.addClassNames("flex-horizontal gap-03 width-full no-flex-wrap no-wrap");
+    var levelValue = new TextField();
+    levelValue.addClassNames("dynamic-growing-flex-item");
+    ButtonFactory buttonFactory = new ButtonFactory();
+    var deleteLevelButton = buttonFactory.createTertirayButton("", VaadinIcon.TRASH.create());
+    levelField.add(levelValue, deleteLevelButton);
+    var addLevelButton = buttonFactory.createTertirayButton("Add Level", VaadinIcon.PLUS.create());
+    levelsContainer.add(levelField);
+    body.add(levelsContainer, addLevelButton);
+    root.add(label, body);
+    return root;
+  }
+  // need to remove padding top of text field
+  //
 
   private static Div clickableShowCase() {
     Div container = new Div();
@@ -190,6 +202,7 @@ public class ComponentDemo extends Div {
     container.add(heading, headingPrimary, headingSecondary, headingTertiary);
     return container;
   }
+
   private static Div fontsShowCase() {
     Div container = new Div();
     Div header = new Div("Body Font Styles");
@@ -215,7 +228,6 @@ public class ComponentDemo extends Div {
 
     return container;
   }
-
   private static Div stepperDialogShowCase(List<Step> steps, String dialogTitle) {
     Div content = new Div();
     Div title = new Div("Stepper Dialog");
@@ -471,13 +483,103 @@ public class ComponentDemo extends Div {
     Div header = new Div();
     header.addClassName(HEADING_2);
     header.setText("Cards");
+    container.add(header);
 
     Card card = new Card();
+    card.addClassNames("padding-04");
     card.add(VaadinIcon.USER.create());
-    card.add(new SimpleParagraph("Some simple paragraph"));
+    card.add(new SimpleParagraph(
+        "Some simple paragraph. The card has the `.padding-04` class assigned."));
     container.add(card);
 
+    return container;
+  }
+
+  private com.vaadin.flow.component.Component borderShowcase() {
+    var container = new Div();
+    var header = new Div();
+    header.addClassName(HEADING_2);
+    header.setText("Border styles");
     container.add(header);
+    container.addClassNames(FLEX_VERTICAL, GAP_04, "width-50-pct");
+    var headerBorderVisibility = new Div();
+    headerBorderVisibility.setText("Border Visibility");
+    headerBorderVisibility.addClassNames(HEADING_3);
+    var borderVisibilityDescription = new Div(
+        "Border visibility is determined by the classes. You can choose to compose the border yourself using the .composite-border class."
+            + " This class changes the behaviour of the other border classes. When assigning .composite-border, instead of being mutually exclusive, the border classes combine to achieve the desired visibility.");
+    var borderPrecedence = new Div(
+        "When no .composite-border class is present the following borders will take precedence (top beats bottom)");
+    var borderPrecedenceList = new OrderedList();
+    borderPrecedenceList.add(new ListItem(".border-left"));
+    borderPrecedenceList.add(new ListItem(".border-bottom"));
+    borderPrecedenceList.add(new ListItem(".border-right"));
+    borderPrecedenceList.add(new ListItem(".border-top"));
+    borderPrecedenceList.add(new ListItem(".border-top-bottom"));
+    borderPrecedenceList.add(new ListItem(".border-left-right"));
+    borderPrecedenceList.add(new ListItem(".border"));
+    var border = new Div(".border");
+    border.addClassNames("border");
+    var borderClrDialog = new Div(".border .border-color-dialog");
+    borderClrDialog.addClassNames("border", "border-color-dialog");
+    var borderLeftRight = new Div(".border-left-right");
+    borderLeftRight.addClassNames("border-left-right");
+    var borderTopBottom = new Div(".border-top-bottom");
+    borderTopBottom.addClassNames("border-top-bottom");
+    var borderTop = new Div(".border-top");
+    borderTop.addClassNames("border-top");
+    var borderRight = new Div(".border-right");
+    borderRight.addClassNames("border-right");
+    var borderBottom = new Div(".border-bottom");
+    borderBottom.addClassNames("border-bottom");
+    var borderLeft = new Div(".border-left");
+    borderLeft.addClassNames("border-left");
+
+    var borderComposite = new Div(".composite-border");
+    borderComposite.addClassNames("composite-border");
+    var cbTop = new Div(".composite-border .border-top");
+    cbTop.addClassNames("composite-border", "border-top");
+    var cbTopRight = new Div(".composite-border .border-top .border-right");
+    cbTopRight.addClassNames("composite-border", "border-top", "border-right");
+    var cbTopRightBottom = new Div(".composite-border .border-top .border-right .border-bottom");
+    cbTopRightBottom.addClassNames("composite-border", "border-top", "border-right",
+        "border-bottom");
+
+    var headerBorderStyles = new Div();
+    headerBorderStyles.setText("Border Styles");
+    headerBorderStyles.addClassNames(HEADING_3);
+    var borderDashed = new Div(".border .dashed");
+    borderDashed.addClassNames("border", "dashed");
+    var borderRound = new Div(".border .round");
+    borderRound.addClassNames("border", "round");
+    var borderRounded02 = new Div(".border .rounded-02");
+    borderRounded02.addClassNames("border", "rounded-02");
+    var borderRounded03 = new Div(".border .rounded-03");
+    borderRounded03.addClassNames("border", "rounded-03");
+
+    container.add(
+        border,
+        borderClrDialog,
+        headerBorderVisibility,
+        borderLeftRight,
+        borderTopBottom,
+        borderTop,
+        borderRight,
+        borderBottom,
+        borderLeft,
+        borderVisibilityDescription,
+        borderPrecedence,
+        borderPrecedenceList,
+        borderComposite,
+        cbTop,
+        cbTopRight,
+        cbTopRightBottom,
+        headerBorderStyles,
+        borderDashed,
+        borderRound,
+        borderRounded02,
+        borderRounded03
+    );
     return container;
   }
 
