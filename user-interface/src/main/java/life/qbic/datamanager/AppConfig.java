@@ -107,7 +107,8 @@ public class AppConfig {
   }
 
   @Bean
-  public OrganisationRepository organisationRepository(@Value("") String clientId) {
+  public OrganisationRepository organisationRepository(
+      @Value("${qbic.external-service.organisation-search.ror.client-id}") String clientId) {
     return new CachedOrganisationRepository(clientId);
   }
 
