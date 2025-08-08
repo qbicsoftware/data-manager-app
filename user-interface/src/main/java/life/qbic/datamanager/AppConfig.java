@@ -107,8 +107,8 @@ public class AppConfig {
   }
 
   @Bean
-  public OrganisationRepository organisationRepository() {
-    return new CachedOrganisationRepository();
+  public OrganisationRepository organisationRepository(@Value("") String clientId) {
+    return new CachedOrganisationRepository(clientId);
   }
 
 
