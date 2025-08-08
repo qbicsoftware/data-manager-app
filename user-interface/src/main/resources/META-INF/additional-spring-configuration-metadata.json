@@ -184,6 +184,11 @@
       "name": "qbic.external-service.person-search.orcid.issuer",
       "type": "java.lang.String",
       "description": "The URL of the orcid issuer. Most probably https://orcid.org"
+    },
+    {
+      "name": "qbic.external-service.organisation-search.ror.client-id",
+      "type": "java.lang.String",
+      "description": "The client id for the ROR API to allow for a rate limit of 2000 requests/5 minutes. See https://ror.readme.io/docs/client-id for more detail."
     }
   ]
 }
