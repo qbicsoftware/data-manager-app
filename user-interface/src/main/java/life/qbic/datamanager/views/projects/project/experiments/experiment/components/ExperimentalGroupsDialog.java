@@ -10,6 +10,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.datamanager.views.general.DialogWindow;
@@ -52,7 +53,11 @@ public class ExperimentalGroupsDialog extends DialogWindow {
 
   private void addEntries(Collection<VariableLevel> experimentalVariableLevels,
       Collection<ExperimentalGroupContent> experimentalGroupContents) {
-    experimentalGroupContents.stream().map(group -> {
+    //Sort Entries by Group name
+    Comparator<String> natOrder = Comparator.naturalOrder();
+    var sortedList = experimentalGroupContents.stream()
+        .sorted((g1, g2) -> natOrder.compare(g1.name(), g2.name())).toList();
+    sortedList.stream().map(group -> {
       var groupEntry = new ExperimentalGroupInput(experimentalVariableLevels, editMode);
       groupEntry.setGroupName(group.name());
       groupEntry.setGroupNumber(group.groupNumber());
