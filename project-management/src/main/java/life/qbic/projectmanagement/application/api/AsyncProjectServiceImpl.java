@@ -86,13 +86,15 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final MeasurementService measurementService;
 
   public AsyncProjectServiceImpl(@Autowired ProjectInformationService projectService,
-      @Autowired SampleInformationService sampleInfoService, @Autowired Scheduler scheduler,
+      @Autowired SampleInformationService sampleInfoService,
+      @Autowired Scheduler scheduler,
       @Autowired DigitalObjectFactory digitalObjectFactory,
       @Autowired TemplateService templateService,
       @Autowired SampleValidationService sampleValidationService,
       @Autowired MeasurementValidationService measurementValidationService,
       @Autowired ExperimentInformationService experimentInformationService,
-      @Autowired TerminologyService termService, @Autowired SpeciesLookupService taxaService,
+      @Autowired TerminologyService termService,
+      @Autowired SpeciesLookupService taxaService,
       MeasurementService measurementService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
