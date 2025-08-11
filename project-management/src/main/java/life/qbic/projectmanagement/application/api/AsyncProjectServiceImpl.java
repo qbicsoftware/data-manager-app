@@ -161,11 +161,14 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       return new ExperimentalGroupCreationResponse(request.experimentId(),
           new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(),
               createdGroup.replicateCount(),
-              createdGroup.levels().stream().map(this::convertLevelToApi).toList()),
-          request.requestId());
+              createdGroup.levels()
+                  .stream()
+                  .map(this::convertLevelToApi)
+                  .toList()), request.requestId());
     });
 
-    return applySecurityContext(call).subscribeOn(VirtualThreadScheduler.getScheduler())
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error creating experimental group", e))
@@ -190,7 +193,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       return new ExperimentalGroupUpdateResponse(request.experimentId(), request.group(),
           request.requestId());
     });
-    return applySecurityContext(call).subscribeOn(VirtualThreadScheduler.getScheduler())
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error updating experimental group", e))
@@ -199,7 +203,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
     return new ExperimentInformationService.ExperimentalGroup(group.id(), group.groupId(),
-        group.name(), group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(),
+        group.name(), group.levels()
+        .stream()
+        .map(AsyncProjectServiceImpl::convertFromApi)
+        .toList(),
         group.sampleSize());
   }
 
@@ -218,7 +225,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       return new ExperimentalGroupDeletionResponse(request.experimentId(),
           request.experimentalGroupNumber(), request.requestId());
     });
-    return applySecurityContext(call).subscribeOn(VirtualThreadScheduler.getScheduler())
+    return applySecurityContext(call)
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error("Error updating experimental group", e))
@@ -322,7 +330,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       ExperimentInformationService.ExperimentalGroup group) {
     return new ExperimentalGroup(group.id(), group.groupNumber(), group.name(),
         group.replicateCount(),
-        group.levels().stream().map(AsyncProjectServiceImpl::convertToApi).toList());
+        group.levels()
+            .stream()
+            .map(AsyncProjectServiceImpl::convertToApi)
+            .toList());
   }
 
   private static VariableLevel convertToApi(ExperimentInformationService.VariableLevel level) {
@@ -343,8 +354,10 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       case ProjectDesign projectDesign -> update(projectId, requestId, projectDesign);
     };
     SecurityContext securityContext = SecurityContextHolder.getContext();
-    return applySecurityContext(response).subscribeOn(scheduler)
-        .contextWrite(reactiveSecurity(securityContext)).retryWhen(defaultRetryStrategy());
+    return applySecurityContext(response)
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy());
   }
 
   private Mono<ProjectUpdateResponse> update(ProjectId projectId, String requestId,
