@@ -6,11 +6,11 @@ import life.qbic.projectmanagement.infrastructure.template.provider.openxml.fact
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsEditFactory.MeasurementEntryPxP;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Measurement Template Factory</b>
+ * <p>
+ * Creates @{@link WorkbookFactory} instances for different metadata templates.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 public class MeasurementTemplateFactory {
 
@@ -21,6 +21,7 @@ public class MeasurementTemplateFactory {
 
   public WorkbookFactory forUpdatePxP(List<MeasurementEntryPxP> measurements) {
 
-    return new ProteomicsEditFactory(measurements);  }
+    return new ProteomicsEditFactory(measurements);
+  }
 
 }
