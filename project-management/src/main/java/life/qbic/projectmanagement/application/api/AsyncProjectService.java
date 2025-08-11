@@ -1347,9 +1347,7 @@ public interface AsyncProjectService {
    * @throws AccessDeniedException  in case of insufficient rights
    * @since 1.10.0
    */
-  Flux
-
-      <ByteBuffer> roCrateSummary(String projectId)
+  Flux<ByteBuffer> roCrateSummary(String projectId)
       throws RequestFailedException, AccessDeniedException;
 
   /**
