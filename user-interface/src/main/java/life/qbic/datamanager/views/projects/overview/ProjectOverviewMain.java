@@ -199,9 +199,7 @@ public class ProjectOverviewMain extends Main {
         experimentalInformation.getExperimentName(),
         experimentalInformation.getSpecies(),
         experimentalInformation.getSpecimens(),
-        experimentalInformation.getAnalytes(),
-        experimentalInformation.getSpeciesIcon().getLabel(),
-        experimentalInformation.getSpecimenIcon().getLabel());
+        experimentalInformation.getAnalytes());
     handleResultExperiment(experiment, confirmEvent);
     projectCollectionComponent.refresh();
     projectCollectionComponent.resetSearch();
