@@ -565,11 +565,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
 
   private SelectedMeasurements measurementsForTab(MeasurementTechnologyTab tab) {
     Objects.requireNonNull(tab);
-    switch (tab.domain) {
-      case Domain.GENOMICS: return selectionNGS();
-      case Domain.PROTEOMICS: return selectionPxP();
-      default: return null;
-    }
+    return switch (tab.domain) {
+      case Domain.GENOMICS -> selectionNGS();
+      case Domain.PROTEOMICS -> selectionPxP();
+    };
   }
 
   private SelectedMeasurements selectionNGS() {
