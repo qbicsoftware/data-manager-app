@@ -538,19 +538,19 @@ public class ProjectSummaryComponent extends PageArea {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information")));
     speciesDetailBox = new DetailBox();
-    var speciesHeader = new Header(VaadinIcon.MALE.create(), "Species");
+    var speciesHeader = new Header("Species");
     speciesDetailBox.setHeader(speciesHeader);
     speciesDetailBox.setContent(new EmptyContent());
     speciesDetailBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
 
     specimenDetailBox = new DetailBox();
-    var specimenHeader = new Header(VaadinIcon.DROP.create(), "Specimen");
+    var specimenHeader = new Header("Specimen");
     specimenDetailBox.setHeader(specimenHeader);
     specimenDetailBox.setContent(new EmptyContent());
     specimenDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
     analyteDetailBox = new DetailBox();
-    var analyteHeader = new Header(VaadinIcon.CLUSTER.create(), "Analytes");
+    var analyteHeader = new Header("Analytes");
     analyteDetailBox.setHeader(analyteHeader);
     analyteDetailBox.setContent(new EmptyContent());
     analyteDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);

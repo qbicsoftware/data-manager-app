@@ -291,10 +291,6 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentDraft.setSpecies(experiment.getSpecies());
       experimentDraft.setSpecimens(experiment.getSpecimens());
       experimentDraft.setAnalytes(experiment.getAnalytes());
-      experimentDraft.setSpeciesIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIES,
-          experiment.getSpeciesIconName()));
-      experimentDraft.setSpecimenIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN,
-          experiment.getSpecimenIconName()));
 
       editExperimentDialog.setExperiment(experimentDraft, usedTerms);
       editExperimentDialog.setConfirmButtonLabel("Save");
@@ -349,9 +345,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes(),
-        experimentDraft.getSpeciesIcon().getLabel(),
-        experimentDraft.getSpecimenIcon().getLabel());
+        experimentDraft.getAnalytes());
     reloadExperimentInfo(projectId, experimentId);
     event.getSource().close();
   }
@@ -665,13 +659,12 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(sampleSourceComponent);
   }
 
-  private Div createSampleSourceList(String titleText, AbstractIcon<?> icon,
+  private Div createSampleSourceList(String titleText,
       List<OntologyTerm> ontologyClasses) {
-    icon.addClassName("primary");
     Div sampleSource = new Div();
     sampleSource.addClassName("sample-source");
     Span title = new Span(titleText);
-    Span header = new Span(icon, title);
+    Span header = new Span(title);
     header.addClassName("header");
     Div ontologies = new Div();
     ontologies.addClassName("ontologies");
@@ -687,22 +680,12 @@ public class ExperimentDetailsComponent extends PageArea {
     List<OntologyTerm> specimenTags = new ArrayList<>(experiment.getSpecimens());
     List<OntologyTerm> analyteTags = new ArrayList<>(experiment.getAnalytes());
 
-    BioIcon speciesIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIES).stream()
-        .filter(icon -> icon.label.equals(experiment.getSpeciesIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_SPECIES);
-    BioIcon specimenIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIMEN).stream()
-        .filter(icon -> icon.label.equals(experiment.getSpecimenIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_SPECIMEN);
-    BioIcon analyteIcon = BioIcon.getOptionsForType(SampleSourceType.ANALYTE).stream()
-        .filter(icon -> icon.label.equals(experiment.getAnalyteIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_ANALYTE);
-
     sampleSourceComponent.add(
-        createSampleSourceList("Species", speciesIcon.iconResource.createIcon(), speciesTags));
+        createSampleSourceList("Species", speciesTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Specimen", specimenIcon.iconResource.createIcon(), specimenTags));
+        createSampleSourceList("Specimen", specimenTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Analytes", analyteIcon.iconResource.createIcon(), analyteTags));
+        createSampleSourceList("Analytes", analyteTags));
   }
 
   private void layoutTabSheet() {
