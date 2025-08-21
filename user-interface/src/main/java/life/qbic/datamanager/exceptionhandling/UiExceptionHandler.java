@@ -7,6 +7,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.server.ErrorEvent;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.exceptionhandling.ErrorMessageTranslationService.UserFriendlyErrorMessage;
 import life.qbic.datamanager.views.notifications.NotificationDialog;
@@ -46,7 +48,12 @@ public class UiExceptionHandler {
    */
   public void error(ErrorEvent errorEvent, UI ui) {
     var throwable = errorEvent.getThrowable();
-    log.error(throwable.getMessage(), throwable);
+    try {
+      String hostAddress = InetAddress.getLocalHost().getHostAddress();
+      log.error("[%s]".formatted(hostAddress) + throwable.getMessage(), throwable);
+    } catch (UnknownHostException ignored) {
+      log.error(throwable.getMessage(), throwable);
+    }
     ApplicationException applicationException = ApplicationException.wrapping(throwable);
     displayUserFriendlyMessage(ui, applicationException);
   }
