@@ -12,14 +12,14 @@ import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.Command;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
+import java.io.InputStream;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,9 +28,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
 import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
@@ -67,6 +67,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Measureme
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
@@ -74,6 +75,7 @@ import life.qbic.projectmanagement.application.measurement.validation.Measuremen
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
+import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
@@ -84,6 +86,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 /**
@@ -126,6 +129,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
   private transient Context context;
   private AppDialog measurementDialog;
   private final ProjectContext projectContext;
+  private Mono<DigitalObject> metadataDownloadMono;
 
   static class ProjectContext {
 
@@ -212,7 +216,40 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     measurementSearchField.addValueChangeListener(
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
     Button downloadButton = new Button("Download Metadata");
-    downloadButton.addClickListener(event -> downloadMetadataForSelectedTab());
+
+    //TODO if download metadata is in progress
+    downloadButton.addClickListener(event -> {
+      Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
+      if (tabLabel.isEmpty()) {
+        return;
+      }
+      switch (tabLabel.get()) {
+        case "Proteomics": {
+          var ids = measurementDetailsComponent.getSelectedProteomicsMeasurements()
+              .stream()
+              .map(ProteomicsMeasurement::measurementId)
+              .map(MeasurementId::value)
+              .toList();
+          downloadProteomicsMetadata(ids);
+          return;
+        }
+        case "Genomics": {
+          var ids = measurementDetailsComponent.getSelectedNGSMeasurements()
+              .stream()
+              .map(NGSMeasurement::measurementId)
+              .map(MeasurementId::value)
+              .toList();
+          downloadNGSMetadata(ids);
+          return;
+        }
+        default:
+          throw new ApplicationException(
+              "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
+      }
+    });
+
+
+
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
@@ -261,10 +298,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     DialogHeader.with(dialog, "Update Measurements");
     DialogFooter.with(dialog, "Cancel", "Update");
     var templateDownload = new MeasurementTemplateComponent(UPDATE_MEASUREMENT_DESCRIPTION,
-        "Download metadata", () -> {
-      return asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
-          selectedMeasurementIds, OPEN_XML);
-    }, messageFactory, projectContext::projectId);
+        "Download metadata",
+        asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
+            selectedMeasurementIds, OPEN_XML),
+        messageFactory,
+        projectContext::projectId);
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationPxP.class), messageFactory);
@@ -288,10 +326,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     DialogFooter.with(dialog, "Cancel", "Update");
     var templateDownload = new MeasurementTemplateComponent(
         UPDATE_MEASUREMENT_DESCRIPTION,
-        "Download Metadata", () -> {
-      return asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
-          selectedMeasurementIds, OPEN_XML);
-    }, messageFactory, projectContext::projectId);
+        "Download Metadata",
+        asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
+            selectedMeasurementIds, OPEN_XML),
+        messageFactory,
+        projectContext::projectId);
+
     var upload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(
             MeasurementUpdateInformationNGS.class), messageFactory);
@@ -375,101 +415,48 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
-  private void downloadMetadataForSelectedTab() {
-    Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
-    if (tabLabel.isEmpty()) {
-      return;
-    }
-    switch (tabLabel.get()) {
-      case "Proteomics": {
-        downloadProteomicsMetadata();
-        return;
-      }
-      case "Genomics": {
-        downloadNGSMetadata();
-        return;
-      }
-      default:
-        throw new ApplicationException(
-            "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
-    }
+  private void executeInUi(Command command) {
+    getUI().ifPresent(ui -> ui.access(command));
   }
 
-  private void downloadProteomicsMetadata() {
+  private void downloadProteomicsMetadata(List<String> selectedMeasurementIds) {
     ProjectId projectId = context.projectId().orElseThrow();
-    String projectCode = projectInformationService.find(projectId)
-        .orElseThrow()
-        .getProjectCode().value();
-
-    var experimentId = context.experimentId().orElseThrow();
-    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
-        .orElseThrow()
-        .getName();
-
-    var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
-        context.experimentId().orElseThrow(() -> new ApplicationException(
-            ErrorCode.GENERAL, null)),
-        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
-
-    Comparator<String> natOrder = Comparator.naturalOrder();
-
-    var result = proteomicsMeasurements.stream()
-        .map(measurementPresenter::expandProteomicsPools)
-        .flatMap(Collection::stream)
-        .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
-            .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
-    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
-      @Override
-      public String getFilename() {
-        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
-            experimentName,
-            "proteomics measurements", "xlsx");
-      }
-
-      @Override
-      public Workbook getWorkbook() {
-        //return ProteomicsWorkbooks.createEditWorkbook(result);
-        // TODO implement
-        throw new RuntimeException("Not yet implemented");
-      }
-    });
+    var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
+        MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+    asyncService.measurementUpdatePxP(projectId.value(), selectedMeasurementIds, OPEN_XML)
+        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open))
+        .doOnSuccess(this::triggerDownload)
+        .doFinally(it -> executeInUi(inProgressToast::close))
+        .subscribe();
   }
 
-  private void downloadNGSMetadata() {
+  private void downloadNGSMetadata(List<String> selectedMeasurementIds) {
     ProjectId projectId = context.projectId().orElseThrow();
-    String projectCode = projectInformationService.find(projectId)
-        .orElseThrow()
-        .getProjectCode().value();
+    var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
+        MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+    asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
+        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open))
+        .doOnSuccess(this::triggerDownload)
+        .doFinally(it -> executeInUi(inProgressToast::close))
+        .subscribe();
+  }
 
-    var experimentId = context.experimentId().orElseThrow();
-    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
-        .orElseThrow()
-        .getName();
-    var ngsMeasurements = measurementService.findNGSMeasurements(experimentId, projectId);
-
-    Comparator<String> natOrder = Comparator.naturalOrder();
-
-    var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
-        .flatMap(Collection::stream)
-        // sort by measurement codes first, then by sample codes
-        .sorted(Comparator.comparing(NGSMeasurementEntry::measurementCode, natOrder)
-            .thenComparing(ngs -> ngs.sampleInformation().sampleId(), natOrder)).toList();
-    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
+  private void triggerDownload(DigitalObject digitalObject) {
+    DownloadStreamProvider downloadStreamProvider = new DownloadStreamProvider() {
       @Override
       public String getFilename() {
-        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
-            experimentName,
-            "ngs measurements", "xlsx");
+        var projectId = projectContext.projectId();
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectId,
+            "measurements", "xlsx");
       }
 
       @Override
-      public Workbook getWorkbook() {
-        // TODO implement
-        throw new RuntimeException("Not yet implemented");
-        //return NGSWorkbooks.createEditWorkbook(result);
+      public InputStream getStream() {
+        return digitalObject.content();
       }
-    });
+    };
 
+    getUI().ifPresent(ui -> ui.access(() -> downloadComponent.trigger(downloadStreamProvider)));
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {

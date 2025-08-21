@@ -43,13 +43,13 @@ public class MeasurementTemplateComponent extends Div {
 
   public MeasurementTemplateComponent(
       String description, String buttonText,
-      Supplier<Mono<DigitalObject>> templateSupplier,
+      Mono<DigitalObject> templateMono,
       MessageSourceNotificationFactory messageFactory,
       Supplier<String> projectIdSupplier
       ) {
     requireNonNull(description);
     requireNonNull(buttonText);
-    requireNonNull(templateSupplier);
+    requireNonNull(templateMono);
     requireNonNull(messageFactory);
     requireNonNull(projectIdSupplier);
     this.messageFactory = messageFactory;
@@ -64,7 +64,7 @@ public class MeasurementTemplateComponent extends Div {
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
     var downloadButton = new Button(buttonText, e -> { // TODO implement
-      templateSupplier.get()
+      templateMono
           .doOnSubscribe(ignored -> openToast(inProgressToast))
           .doOnSuccess(this::triggerDownload).doOnTerminate(() -> closeToast(inProgressToast))
           .subscribe();
