@@ -3,6 +3,9 @@ package life.qbic.datamanager.views.general;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
+import java.time.Instant;
+import life.qbic.datamanager.views.general.DetailBox.DetailBoxSnapshot.State;
+import life.qbic.datamanager.views.general.utils.Restorable;
 
 /**
  * <b>Detail Box</b>
@@ -22,11 +25,39 @@ import com.vaadin.flow.component.icon.Icon;
  *
  * @since 1.6.0
  */
-public class DetailBox extends Div {
+public class DetailBox extends Div implements Restorable {
 
-  private Div headerSection;
+  record DetailBoxSnapshot(Instant timestamp, State state) implements Snapshot {
 
-  private Div contentSection;
+    record State(Header header, Component content) {
+
+    }
+
+    @Override
+    public Instant getTimestamp() {
+      return timestamp;
+    }
+  }
+
+  @Override
+  public Snapshot snapshot() {
+    return new DetailBoxSnapshot(Instant.now(), new State(this.header, this.content));
+  }
+
+  @Override
+  public void restore(Snapshot snapshot) {
+    if (snapshot instanceof DetailBoxSnapshot detailBoxSnapshot) {
+      this.header = detailBoxSnapshot.state().header();
+      this.content = detailBoxSnapshot.state().content();
+      rebuild();
+    } else {
+      throw new IllegalArgumentException("Cannot restore snapshot type");
+    }
+  }
+
+  private final Div headerSection;
+
+  private final Div contentSection;
 
   private Header header;
 
@@ -71,7 +102,7 @@ public class DetailBox extends Div {
 
     private Icon icon;
 
-    private Div heading;
+    private final Div heading;
 
     public Header() {
       addClassName("detail-box-header");
