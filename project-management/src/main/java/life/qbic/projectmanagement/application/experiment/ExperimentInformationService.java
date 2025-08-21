@@ -741,8 +741,7 @@ public class ExperimentInformationService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void editExperimentInformation(String projectId, ExperimentId experimentId,
       String experimentName,
-      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
-      String speciesIconName, String specimenIconName) {
+      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
@@ -755,7 +754,6 @@ public class ExperimentInformationService {
     experiment.setSpecies(species);
     experiment.setSpecimens(specimens);
     experiment.setAnalytes(analytes);
-    experiment.setIconNames(speciesIconName, specimenIconName, "default");
     experimentRepository.update(experiment);
 
     dispatchLocalEvents(domainEventsCache);

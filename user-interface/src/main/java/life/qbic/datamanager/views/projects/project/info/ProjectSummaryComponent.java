@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.ByteBufferIteratorInputStream;
@@ -74,6 +75,7 @@ import life.qbic.datamanager.views.general.section.SectionHeader;
 import life.qbic.datamanager.views.general.section.SectionNote;
 import life.qbic.datamanager.views.general.section.SectionTitle;
 import life.qbic.datamanager.views.general.section.SectionTitle.Size;
+import life.qbic.datamanager.views.general.utils.Restorable.Snapshot;
 import life.qbic.datamanager.views.general.utils.Utility;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.Toast;
@@ -301,7 +303,20 @@ public class ProjectSummaryComponent extends PageArea {
   }
 
   private void loadExperimentInfo(String projectId) {
-    asyncProjectService.getExperiments(projectId).collectList()
+    AtomicReference<Snapshot> speciesSnapshot = new AtomicReference<>();
+    AtomicReference<Snapshot> specimenSnapshot = new AtomicReference<>();
+    AtomicReference<Snapshot> analyteSnapshot = new AtomicReference<>();
+    asyncProjectService.getExperiments(projectId)
+        .doOnSubscribe(it -> {
+          speciesSnapshot.set(speciesDetailBox.snapshot());
+          specimenSnapshot.set(specimenDetailBox.snapshot());
+          analyteSnapshot.set(analyteDetailBox.snapshot());
+
+          speciesDetailBox.setContent(new LoadingContent());
+          specimenDetailBox.setContent(new LoadingContent());
+          analyteDetailBox.setContent(new LoadingContent());
+        })
+        .collectList()
         .doOnSuccess(experiments -> {
           var species = new HashSet<OntologyTerm>();
           var specimen = new HashSet<OntologyTerm>();
@@ -313,9 +328,19 @@ public class ProjectSummaryComponent extends PageArea {
           });
           renderExperimentInfo(species, specimen, analytes);
         })
+        .doOnError(error -> {
+          speciesDetailBox.restore(speciesSnapshot.get());
+          specimenDetailBox.restore(specimenSnapshot.get());
+          analyteDetailBox.restore(analyteSnapshot.get());
+        })
         .doOnError(AccessDeniedException.class, this::handleAccessDenied)
         .doOnError(RequestFailedException.class, this::handleRequestFailed)
         .doOnError(UnknownRequestException.class, this::handleUnknownRequest)
+        .doFinally(it -> {
+          speciesSnapshot.set(null);
+          specimenSnapshot.set(null);
+          analyteSnapshot.set(null);
+        })
         .subscribe();
   }
 
@@ -323,8 +348,11 @@ public class ProjectSummaryComponent extends PageArea {
       Set<OntologyTerm> specimen,
       Set<OntologyTerm> analytes) {
     getUI().ifPresent(ui -> ui.access(() -> {
+      speciesDetailBox.setContent(new LoadingContent());
       speciesDetailBox.setContent(buildOntologyInfo(species));
+      specimenDetailBox.setContent(new LoadingContent());
       specimenDetailBox.setContent(buildOntologyInfo(specimen));
+      analyteDetailBox.setContent(new LoadingContent());
       analyteDetailBox.setContent(buildOntologyInfo(analytes));
     }));
   }
@@ -538,19 +566,19 @@ public class ProjectSummaryComponent extends PageArea {
     experimentInformationSection.setHeader(
         new SectionHeader(new SectionTitle("Experiment Information")));
     speciesDetailBox = new DetailBox();
-    var speciesHeader = new Header(VaadinIcon.MALE.create(), "Species");
+    var speciesHeader = new Header("Species");
     speciesDetailBox.setHeader(speciesHeader);
     speciesDetailBox.setContent(new EmptyContent());
     speciesDetailBox.addClassNames(FIXED_MEDIUM_WIDTH_CSS);
 
     specimenDetailBox = new DetailBox();
-    var specimenHeader = new Header(VaadinIcon.DROP.create(), "Specimen");
+    var specimenHeader = new Header("Specimen");
     specimenDetailBox.setHeader(specimenHeader);
     specimenDetailBox.setContent(new EmptyContent());
     specimenDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
 
     analyteDetailBox = new DetailBox();
-    var analyteHeader = new Header(VaadinIcon.CLUSTER.create(), "Analytes");
+    var analyteHeader = new Header("Analytes");
     analyteDetailBox.setHeader(analyteHeader);
     analyteDetailBox.setContent(new EmptyContent());
     analyteDetailBox.addClassName(FIXED_MEDIUM_WIDTH_CSS);
@@ -928,6 +956,14 @@ public class ProjectSummaryComponent extends PageArea {
     return tags;
   }
 
+
+  private static class LoadingContent extends Div {
+
+    LoadingContent() {
+      addClassNames("vertical-list", "gap-small");
+      add("Loading information ...");
+    }
+  }
   private static class EmptyContent extends Div {
 
     EmptyContent() {
