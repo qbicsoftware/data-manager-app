@@ -17,7 +17,7 @@ public class CancelConfirmationDialogFactory {
 
   private static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.HTML; //set to html as text works with it too
   private static final String DEFAULT_TITLE = "Discard Changes?";
-  private static final String DEFAULT_CONTENT = "By aborting the editing process and closing the dialog, you will loose all information entered.";
+  private static final String DEFAULT_CONTENT = "By aborting the editing process and closing the dialog, you will lose all information entered.";
   private static final String DEFAULT_CONFIRM_TEXT = "Discard Changes";
   private static final Object[] EMPTY_PARAMETERS = new Object[]{};
   private static final Logger log = LoggerFactory.logger(CancelConfirmationDialogFactory.class);
