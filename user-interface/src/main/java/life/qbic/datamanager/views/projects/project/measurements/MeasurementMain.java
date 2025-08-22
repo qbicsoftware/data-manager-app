@@ -312,10 +312,12 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
 
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
-      var validationRequests = upload.getValidationRequestContent();
-      submitUpdateRequest(context.projectId().orElseThrow().value(),
-          createUpdateRequestPackage(validationRequests));
-      dialog.close();
+      if (upload.validate().hasPassed()) {
+        var validationRequests = upload.getValidationRequestContent();
+        submitUpdateRequest(context.projectId().orElseThrow().value(),
+            createUpdateRequestPackage(validationRequests));
+        dialog.close();
+      }
     });
     return dialog;
   }
@@ -337,13 +339,14 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             MeasurementUpdateInformationNGS.class), messageFactory);
     var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
     DialogBody.with(dialog, uploadComponent, uploadComponent);
-
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
-      var validationRequests = upload.getValidationRequestContent();
-      submitUpdateRequest(context.projectId().orElseThrow().value(),
-          createUpdateRequestPackage(validationRequests));
-      dialog.close();
+      if (upload.validate().hasPassed()) {
+        var validationRequests = upload.getValidationRequestContent();
+        submitUpdateRequest(context.projectId().orElseThrow().value(),
+            createUpdateRequestPackage(validationRequests));
+        dialog.close();
+      }
     });
     return dialog;
   }
@@ -501,7 +504,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
     DialogHeader.with(measurementDialog, "Register measurements");
     DialogFooter.with(measurementDialog, "Cancel", "Register");
 
-    var registrationUseCase = new MeasurementUpload(asyncService, context,
+    var registrationMeasurementUpload = new MeasurementUpload(asyncService, context,
         ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class),
         messageSourceNotificationFactory);
     var templateComponent = new MeasurementTemplateSelectionComponent(
@@ -532,16 +535,18 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
             })));
 
     var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
-        registrationUseCase, Domain.Genomics);
+        registrationMeasurementUpload, Domain.Genomics);
 
     DialogBody.with(measurementDialog, measurementRegistrationComponent,
         measurementRegistrationComponent);
     measurementDialog.registerCancelAction(measurementDialog::close);
     measurementDialog.registerConfirmAction(() -> {
-      var requestContent = registrationUseCase.getValidationRequestContent();
-      submitRequest(context.projectId().orElseThrow().value(),
-          createRegistrationRequestPackage(requestContent));
-      measurementDialog.close();
+      if (registrationMeasurementUpload.validate().hasPassed()) {
+        var requestContent = registrationMeasurementUpload.getValidationRequestContent();
+        submitRequest(context.projectId().orElseThrow().value(),
+            createRegistrationRequestPackage(requestContent));
+        measurementDialog.close();
+      }
     });
 
     add(measurementDialog);
