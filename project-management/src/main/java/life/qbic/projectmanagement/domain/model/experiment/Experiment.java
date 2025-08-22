@@ -43,11 +43,11 @@ public class Experiment {
   private String name;
   @Embedded
   private ExperimentalDesign experimentalDesign;
-  @Column(name = "speciesIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  @Column(name = "speciesIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
   private String speciesIconName;
-  @Column(name = "specimenIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  @Column(name = "specimenIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
   private String specimenIconName;
-  @Column(name = "analyteIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  @Column(name = "analyteIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
   private String analyteIconName;
 
   @Version
