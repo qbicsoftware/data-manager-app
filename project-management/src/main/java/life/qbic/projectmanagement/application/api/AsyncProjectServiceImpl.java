@@ -1,7 +1,6 @@
 package life.qbic.projectmanagement.application.api;
 
 import static java.util.Objects.nonNull;
-import static java.util.Objects.nonNull;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.reactiveSecurity;
@@ -33,7 +32,6 @@ import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
-import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementUpdateException;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -260,6 +258,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   private Mono<MeasurementRegistrationResponse> registerMeasurementPxP(String projectId,
       String requestId, MeasurementRegistrationInformationPxP measurement) {
+    String errorMessage = "Error registering measurement";
     return applySecurityContext(Mono.fromCallable(() -> {
           measurementService.registerMeasurementPxP(ProjectId.parse(projectId),
               measurement);
@@ -268,9 +267,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     ))
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
-        .doOnError(e -> log.error("Error registering measurement", e))
+        .doOnError(e -> log.error(errorMessage, e))
         .retryWhen(defaultRetryStrategy())
-        .onErrorMap(AsyncProjectServiceImpl::mapToAPIException);
+        .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
   }
 
   private Mono<MeasurementRegistrationResponse> registerMeasurementNGS(String projectId,
