@@ -21,9 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -69,6 +69,7 @@ public class MeasurementUpload extends Div implements UserInput {
   private final Context context;
   private final Div validationProgress;
   private MetadataConverterV2<? extends ValidationRequestBody> converter;
+  private final AtomicBoolean isValidationInProgress;
 
   private final Map<String, List<? extends ValidationRequestBody>> validationRequestsPerFile = new HashMap<>();
   private final MessageSourceNotificationFactory notificationFactory;
@@ -102,6 +103,7 @@ public class MeasurementUpload extends Div implements UserInput {
       Context context,
       MetadataConverterV2<? extends ValidationRequestBody> converter,
       MessageSourceNotificationFactory notificationFactory) {
+    isValidationInProgress = new AtomicBoolean(false);
     // Initial parameter validation of injected objects
     this.service = requireNonNull(service);
     this.context = requireNonNull(context);
@@ -227,7 +229,7 @@ public class MeasurementUpload extends Div implements UserInput {
     if (validationRequest.isEmpty()) {
       return validationRequest;
     }
-    var firstEntry = Objects.requireNonNull(validationRequest.get(0));
+    var firstEntry = requireNonNull(validationRequest.get(0));
     switch (firstEntry) {
       case MeasurementRegistrationInformationNGS ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
@@ -250,10 +252,6 @@ public class MeasurementUpload extends Div implements UserInput {
     }
   }
 
-  private boolean isValidationInProgress() {
-    return validationProgress.isVisible();
-  }
-
   private void runValidation(ArrayList<ValidationRequest> requests, int itemsToValidate,
       String fileName) {
     AtomicInteger counter = new AtomicInteger();
@@ -261,19 +259,26 @@ public class MeasurementUpload extends Div implements UserInput {
 
     List<ValidationResponse> responses = new ArrayList<>();
     service.validate(Flux.fromIterable(requests))
-        .doFirst(() -> {
-          showValidationProgress();
-          setValidationProgressText("Starting validation ...");
-        })
+        .doFirst(() -> validationStarted())
         .doOnNext(item -> setValidationProgressText(
             "Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
         .doOnNext(responses::add)
-        .doOnComplete(() -> {
-          hideValidationProgress();
-          displayValidationResults(responses, itemsToValidate, fileName);
-        })
+        .doOnComplete(() -> displayValidationResults(responses, itemsToValidate, fileName))
+        .doFinally(it -> validationFinished())
         .subscribe();
   }
+
+  private void validationStarted() {
+    showValidationProgress();
+    setValidationProgressText("Starting validation ...");
+    isValidationInProgress.set(true);
+  }
+
+  private void validationFinished() {
+    hideValidationProgress();
+    isValidationInProgress.set(false);
+  }
+
 
   private void hideValidationProgress() {
     getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(false)));
@@ -325,7 +330,7 @@ public class MeasurementUpload extends Div implements UserInput {
         .map(MeasurementFileItem::measurementValidationReport)
         .map(MeasurementValidationReport::validationResult)
         .filter(ValidationResult::containsFailures).findAny();
-    if (inputWithFailureSearch.isEmpty() && !isValidationInProgress()) {
+    if (inputWithFailureSearch.isEmpty() && !isValidationInProgress.get()) {
       return InputValidation.passed();
     }
     return InputValidation.failed();
@@ -333,7 +338,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
   @Override
   public boolean hasChanges() {
-    return !measurementFileItems.isEmpty() || isValidationInProgress();
+    return !measurementFileItems.isEmpty() || isValidationInProgress.get();
   }
 
   private static class UploadedItemsDisplay extends Div {
