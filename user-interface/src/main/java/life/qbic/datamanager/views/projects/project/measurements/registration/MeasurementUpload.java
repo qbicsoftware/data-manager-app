@@ -250,6 +250,10 @@ public class MeasurementUpload extends Div implements UserInput {
     }
   }
 
+  private boolean isValidationInProgress() {
+    return validationProgress.isVisible();
+  }
+
   private void runValidation(ArrayList<ValidationRequest> requests, int itemsToValidate,
       String fileName) {
     AtomicInteger counter = new AtomicInteger();
@@ -321,7 +325,7 @@ public class MeasurementUpload extends Div implements UserInput {
         .map(MeasurementFileItem::measurementValidationReport)
         .map(MeasurementValidationReport::validationResult)
         .filter(ValidationResult::containsFailures).findAny();
-    if (inputWithFailureSearch.isEmpty()) {
+    if (inputWithFailureSearch.isEmpty() && !isValidationInProgress()) {
       return InputValidation.passed();
     }
     return InputValidation.failed();
@@ -329,7 +333,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
   @Override
   public boolean hasChanges() {
-    return !measurementFileItems.isEmpty();
+    return !measurementFileItems.isEmpty() || isValidationInProgress();
   }
 
   private static class UploadedItemsDisplay extends Div {
