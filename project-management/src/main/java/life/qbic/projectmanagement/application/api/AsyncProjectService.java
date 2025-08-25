@@ -543,6 +543,32 @@ public interface AsyncProjectService {
    */
   Mono<ProjectInformation> getProject(String projectId);
 
+
+  /**
+   * Tries to resolve the {@link ProjectCode} for a given project ID.
+   *
+   * @param projectId the technical id of the project
+   * @return the natural id of the project, the {@link ProjectCode} which is known to the user.
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.11.0
+   */
+  Mono<ProjectCode> getProjectCode(String projectId);
+
+  /**
+   * The natural id of the project known to the user. Follows the pattern starting with
+   * <code>^Q2[A-Z0-9]{4}$</code>.
+   *
+   * @param value
+   * @since 1.11.0
+   */
+  record ProjectCode(String value) {
+
+    public ProjectCode {
+      Objects.requireNonNull(value);
+    }
+  }
+
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
    * immediately.
@@ -1267,6 +1293,35 @@ public interface AsyncProjectService {
   Flux<MeasurementRegistrationResponse> create(Flux<MeasurementRegistrationRequest> requestStream);
 
 
+  Flux<MeasurementUpdateResponse> update(Flux<MeasurementUpdateRequest> requestStream);
+
+  record MeasurementUpdateRequest(String projectId, MeasurementUpdateRequestBody requestBody,
+                                  String requestId) implements CacheableRequest {
+
+    public MeasurementUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestBody);
+      requireNonNull(requestId);
+    }
+
+    public MeasurementUpdateRequest(String projectId, MeasurementUpdateRequestBody requestBody) {
+      this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+  }
+
+  record MeasurementUpdateResponse(String requestId, MeasurementUpdateRequestBody requestBody) {
+
+    public MeasurementUpdateResponse {
+      requireNonNull(requestId);
+      requireNonNull(requestBody);
+    }
+  }
+
+  sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationNGS,
+      MeasurementUpdateInformationPxP {
+
+  }
+
   /**
    * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
    * <p>
@@ -1532,6 +1587,32 @@ public interface AsyncProjectService {
       MimeType mimeType);
 
 
+  /**
+   * Provides information about selected NGS measurements for updating purposes in a requested
+   * {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
+  /**
+   * Provides information about selected proteomics measurements for updating purposes in a
+   * requested {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 
@@ -1550,6 +1631,10 @@ public interface AsyncProjectService {
    * <ul>
    *   <li>{@link SampleRegistrationInformation}</li>
    *   <li>{@link SampleUpdateInformation}</li>
+   *   <li>{@link MeasurementRegistrationInformationNGS}</li>
+   *   <li>{@link MeasurementRegistrationInformationPxP}</li>
+   *   <li>{@link MeasurementUpdateInformationNGS}</li>
+   *   <li>{@link MeasurementUpdateInformationPxP}</li>
    * </ul>
    *
    * @since 1.10.0
@@ -1570,7 +1655,7 @@ public interface AsyncProjectService {
       ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
       ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
       ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
-      MeasurementRegistrationRequest, ProjectResponsibleCreationRequest,
+      MeasurementRegistrationRequest, MeasurementUpdateRequest, ProjectResponsibleCreationRequest,
       ProjectResponsibleDeletionRequest, ProjectUpdateRequest, ValidationRequest {
 
     /**
@@ -1920,7 +2005,8 @@ public interface AsyncProjectService {
       String sequencingReadType, String libraryKit,
       String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      Map<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody {
+      Map<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody,
+      MeasurementUpdateRequestBody {
 
     public MeasurementUpdateInformationNGS {
       requireNonNull(measurementId);
@@ -2053,7 +2139,7 @@ public interface AsyncProjectService {
       String lcmsMethod,
       String labelingType,
       Map<String, MeasurementSpecificPxP> specificMetadata
-  ) implements ValidationRequestBody {
+  ) implements ValidationRequestBody, MeasurementUpdateRequestBody {
 
     /**
      * Returns the {@link List} of sample identifiers this measurement refers to.

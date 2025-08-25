@@ -21,9 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,6 +43,8 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationResponse;
@@ -67,6 +69,7 @@ public class MeasurementUpload extends Div implements UserInput {
   private final Context context;
   private final Div validationProgress;
   private MetadataConverterV2<? extends ValidationRequestBody> converter;
+  private final AtomicBoolean isValidationInProgress;
 
   private final Map<String, List<? extends ValidationRequestBody>> validationRequestsPerFile = new HashMap<>();
   private final MessageSourceNotificationFactory notificationFactory;
@@ -100,6 +103,7 @@ public class MeasurementUpload extends Div implements UserInput {
       Context context,
       MetadataConverterV2<? extends ValidationRequestBody> converter,
       MessageSourceNotificationFactory notificationFactory) {
+    isValidationInProgress = new AtomicBoolean(false);
     // Initial parameter validation of injected objects
     this.service = requireNonNull(service);
     this.context = requireNonNull(context);
@@ -207,7 +211,7 @@ public class MeasurementUpload extends Div implements UserInput {
     var result = converter.convert(parsingResult);
     var processedResult = process(result);
 
-    var itemsToValidate = result.size();
+    var itemsToValidate = processedResult.size();
     var requests = new ArrayList<ValidationRequest>();
 
     validationRequestsPerFile.put(fileName, result);
@@ -225,7 +229,7 @@ public class MeasurementUpload extends Div implements UserInput {
     if (validationRequest.isEmpty()) {
       return validationRequest;
     }
-    var firstEntry = Objects.requireNonNull(validationRequest.get(0));
+    var firstEntry = requireNonNull(validationRequest.get(0));
     switch (firstEntry) {
       case MeasurementRegistrationInformationNGS ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationNGS.class);
@@ -234,6 +238,14 @@ public class MeasurementUpload extends Div implements UserInput {
       case MeasurementRegistrationInformationPxP ignored: {
         var processor = ProcessorRegistry.processorFor(MeasurementRegistrationInformationPxP.class);
         return processor.process((List<MeasurementRegistrationInformationPxP>) validationRequest);
+      }
+      case MeasurementUpdateInformationPxP ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);
+        return processor.process((List<MeasurementUpdateInformationPxP>) validationRequest);
+      }
+      case MeasurementUpdateInformationNGS ignored: {
+        var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationNGS.class);
+        return processor.process((List<MeasurementUpdateInformationNGS>) validationRequest);
       }
       default:
         throw new IllegalStateException("Unknown validation request: " + validationRequest);
@@ -247,19 +259,26 @@ public class MeasurementUpload extends Div implements UserInput {
 
     List<ValidationResponse> responses = new ArrayList<>();
     service.validate(Flux.fromIterable(requests))
-        .doFirst(() -> {
-          showValidationProgress();
-          setValidationProgressText("Starting validation ...");
-        })
+        .doFirst(() -> validationStarted())
         .doOnNext(item -> setValidationProgressText(
             "Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
         .doOnNext(responses::add)
-        .doOnComplete(() -> {
-          hideValidationProgress();
-          displayValidationResults(responses, itemsToValidate, fileName);
-        })
+        .doOnComplete(() -> displayValidationResults(responses, itemsToValidate, fileName))
+        .doFinally(it -> validationFinished())
         .subscribe();
   }
+
+  private void validationStarted() {
+    showValidationProgress();
+    setValidationProgressText("Starting validation ...");
+    isValidationInProgress.set(true);
+  }
+
+  private void validationFinished() {
+    hideValidationProgress();
+    isValidationInProgress.set(false);
+  }
+
 
   private void hideValidationProgress() {
     getUI().ifPresent(ui -> ui.access(() -> validationProgress.setVisible(false)));
@@ -311,7 +330,7 @@ public class MeasurementUpload extends Div implements UserInput {
         .map(MeasurementFileItem::measurementValidationReport)
         .map(MeasurementValidationReport::validationResult)
         .filter(ValidationResult::containsFailures).findAny();
-    if (inputWithFailureSearch.isEmpty()) {
+    if (inputWithFailureSearch.isEmpty() && !isValidationInProgress.get()) {
       return InputValidation.passed();
     }
     return InputValidation.failed();
@@ -319,7 +338,7 @@ public class MeasurementUpload extends Div implements UserInput {
 
   @Override
   public boolean hasChanges() {
-    return !measurementFileItems.isEmpty();
+    return !measurementFileItems.isEmpty() || isValidationInProgress.get();
   }
 
   private static class UploadedItemsDisplay extends Div {
@@ -409,14 +428,14 @@ public class MeasurementUpload extends Div implements UserInput {
       var fileIcon = VaadinIcon.FILE_TABLE.create();
       fileIcon.addClassName("icon-size-s");
       Span fileNameLabel = new Span(fileIcon, new Span(this.measurementFileItem.fileName()));
-      fileNameLabel.addClassName("file-name");
+      fileNameLabel.addClassNames("file-name");
 
       setDisplayBoxContent(measurementFileItem.measurementValidationReport());
-      displayBox.addClassNames("flex-vertical", "padding-top-bottom-04");
+      displayBox.addClassNames("flex-vertical", "padding-top-bottom-02");
 
       add(fileNameLabel);
       add(displayBox);
-      addClassNames("flex-vertical", "gap-03", "choice-box", "padding-top-bottom-04",
+      addClassNames("flex-vertical", "gap-04", "choice-box", "padding-top-bottom-04",
           "padding-left-right-04");
     }
 
