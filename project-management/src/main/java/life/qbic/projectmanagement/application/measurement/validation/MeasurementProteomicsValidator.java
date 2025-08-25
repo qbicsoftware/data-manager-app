@@ -453,10 +453,13 @@ public class MeasurementProteomicsValidator implements
       return validation;
     }
 
+    private static boolean anyEntryIsEmpty(List<String> strings) {
+      return strings.isEmpty() || strings.stream().anyMatch(String::isBlank);
+    }
 
     ValidationResult validateMandatoryDataProvided(MeasurementRegistrationInformationPxP metadata) {
       var validation = ValidationResult.successful();
-      if (metadata.measuredSamples().isEmpty()) {
+      if (anyEntryIsEmpty(metadata.measuredSamples())) {
         validation = validation.combine(
             ValidationResult.withFailures(
                 List.of("Sample id: missing sample id reference")));
