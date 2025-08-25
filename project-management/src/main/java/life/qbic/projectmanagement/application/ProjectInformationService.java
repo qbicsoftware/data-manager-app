@@ -2,7 +2,11 @@ package life.qbic.projectmanagement.application;
 
 import static java.util.function.Predicate.not;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -23,6 +27,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
+import org.hibernate.dialect.lock.OptimisticEntityLockException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -205,6 +210,35 @@ public class ProjectInformationService {
   }
 
   public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) {
+    // The update might fail due to an optimistic locking exception (concurrent access of other processes)
+    // To address this, the update is tried until it will eventually not throw the locking exception anymore.
+    // This approach naively assumes, that the locked resource will be released eventually again by the other process.
+    var attempt = 1;
+    while(true) {
+      try {
+        tryToUpdateModifiedDate(projectID, modifiedOn);
+        return;
+      } catch (OptimisticEntityLockException e) {
+        log.debug("Optimistic lock exception occurred while updating modified date for project " + projectID);
+      }
+      try {
+        Thread.sleep(calcBase2Duration(attempt));
+      } catch (InterruptedException e) {
+        log.error("Interrupted while updating modified date for project " + projectID);
+        // We try one last time
+        tryToUpdateModifiedDate(projectID, modifiedOn);
+        Thread.currentThread().interrupt();
+      }
+      attempt++;
+    }
+  }
+
+  private void tryToUpdateModifiedDate(ProjectId projectID, Instant modifiedOn) {
     projectRepository.unsafeUpdateLastModified(projectID, modifiedOn);
   }
+
+  private static Duration calcBase2Duration(int attempt) {
+    return Duration.of((long) Math.pow(2.0, attempt) * 100, ChronoUnit.MILLIS);
+  }
+
 }
