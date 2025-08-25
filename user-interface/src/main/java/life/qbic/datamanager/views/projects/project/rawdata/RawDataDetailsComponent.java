@@ -23,7 +23,8 @@ import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.GridDetailsItem;
 import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementTechnologyTab;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.Domain;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementDomainTab;
 import life.qbic.projectmanagement.application.dataset.RawDataService;
 import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
 import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataSampleInformation;
@@ -47,10 +48,10 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final MultiSelectLazyLoadingGrid<RawData> ngsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<RawData> proteomicsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
   private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
-  private final MeasurementTechnologyTab proteomicsTab;
-  private final MeasurementTechnologyTab genomicsTab;
+  private final MeasurementDomainTab proteomicsTab;
+  private final MeasurementDomainTab genomicsTab;
   private final transient RawDataService rawDataService;
-  private final List<MeasurementTechnologyTab> tabsInTabSheet = new ArrayList<>();
+  private final List<MeasurementDomainTab> tabsInTabSheet = new ArrayList<>();
   private final transient ClientDetailsProvider clientDetailsProvider;
   private String searchTerm = "";
   private transient Context context;
@@ -59,8 +60,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
       ClientDetailsProvider clientDetailsProvider) {
     this.rawDataService = Objects.requireNonNull(rawDataService);
     this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
-    proteomicsTab = new MeasurementTechnologyTab("Proteomics", 0);
-    genomicsTab = new MeasurementTechnologyTab("Genomics", 0);
+    proteomicsTab = new MeasurementDomainTab(Domain.PROTEOMICS, 0);
+    genomicsTab = new MeasurementDomainTab(Domain.GENOMICS, 0);
     createProteomicsRawDataGrid();
     createNGSRawDataGrid();
     add(registeredRawDataTabSheet);

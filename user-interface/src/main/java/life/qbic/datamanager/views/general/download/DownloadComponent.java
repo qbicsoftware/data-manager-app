@@ -22,7 +22,7 @@ public class DownloadComponent extends Anchor {
     getElement().setAttribute("download", true);
   }
 
-  public void trigger(DownloadStreamProvider downloadStreamProvider) {
+  public synchronized void trigger(DownloadStreamProvider downloadStreamProvider) {
     UI ui = getUI().orElseThrow(() -> new ApplicationException(
         this.getClass().getSimpleName() + "component triggered but not attached to any UI."));
     StreamResource resource = new StreamResource(downloadStreamProvider.getFilename(),

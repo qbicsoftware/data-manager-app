@@ -12,6 +12,8 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationException;
 import life.qbic.projectmanagement.application.ValidationResult;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -35,6 +37,7 @@ public class MeasurementNGSValidator implements
     MeasurementValidator<NGSMeasurementMetadata> {
 
   private static final Logger log = logger(MeasurementNGSValidator.class);
+  public static final String MISSING_SAMPLE_ID_REFERENCE = "Sample id: missing sample id reference";
   protected final MeasurementService measurementService;
   protected final TerminologyService terminologyService;
   protected final ProjectInformationService projectInformationService;
@@ -65,9 +68,9 @@ public class MeasurementNGSValidator implements
       return false;
     }
     if (properties.size() < NGS_PROPERTY.values().length) {
-      log.debug("Wrong length of property header: "+properties().size());
-      log.debug("Expected: "+ NGS_PROPERTY.values().length);
-      log.debug("Provided: "+ String.join(" - ", properties));
+      log.debug("Wrong length of property header: " + properties().size());
+      log.debug("Expected: " + NGS_PROPERTY.values().length);
+      log.debug("Provided: " + String.join(" - ", properties));
       return false;
     }
     var providedNGSProperties = properties.stream().map(String::toLowerCase).toList();
@@ -98,6 +101,22 @@ public class MeasurementNGSValidator implements
             .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
+  public ValidationResult validateRegistration(MeasurementRegistrationInformationNGS registration,
+      ProjectId projectId) {
+    var validationPolicy = new ValidationPolicy();
+
+    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataRegistration(
+        registration);
+    if (mandatoryValidationResult.containsFailures()) {
+      return mandatoryValidationResult;
+    }
+    return validationPolicy.validateSampleIdsAsString(registration.measuredSamples())
+        .combine(validationPolicy.validateMandatoryDataRegistration(registration))
+        .combine(validationPolicy.validateOrganisation(registration.organisationId()))
+        .combine(validationPolicy.validateInstrument(registration.instrumentCURIE()));
+  }
+
   /**
    * Ignores sample ids but validates measurement ids.
    *
@@ -110,10 +129,24 @@ public class MeasurementNGSValidator implements
   public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     return validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId)
-        .combine(validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
-            .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
-        .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-            .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()))));
+        .combine(
+            validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
+                .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
+                .combine(validationPolicy.validateOrganisation(metadata.organisationId())
+                    .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()))));
+  }
+
+  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+  public ValidationResult validateUpdate(MeasurementUpdateInformationNGS metadata, ProjectId projectId) {
+    var validationPolicy = new ValidationPolicy();
+    var result = ValidationResult.successful();
+    for (String sampleId : metadata.measuredSamples()) {
+        result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
+    }
+    return result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))
+        .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
+        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
+        .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()));
   }
 
 
@@ -159,7 +192,16 @@ public class MeasurementNGSValidator implements
       var queryMeasurement = measurementService.findNGSMeasurement(measurementCode);
       return queryMeasurement.map(measurement -> ValidationResult.successful()).orElse(
           ValidationResult.withFailures(
-              List.of("Measurement ID: Unknown measurement for id '%s'".formatted(measurementCode))));
+              List.of(
+                  "Measurement ID: Unknown measurement for id '%s'".formatted(measurementCode))));
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
+      }
+      return validationProjectRelation(SampleCode.create(sampleId), projectId);
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
@@ -197,6 +239,11 @@ public class MeasurementNGSValidator implements
       return validationResult;
     }
 
+    ValidationResult validateSampleIdsAsString(Collection<String> sampleIds) {
+      var sampleCodes = sampleIds.stream().map(SampleCode::create).toList();
+      return validateSampleIds(sampleCodes);
+    }
+
     ValidationResult validateSampleId(SampleCode sampleCode) {
       var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
       if (queriedSampleEntry.isPresent()) {
@@ -223,13 +270,14 @@ public class MeasurementNGSValidator implements
           List.of(UNKNOWN_INSTRUMENT_ID.formatted(instrument)));
     }
 
+    @Deprecated
     ValidationResult validateMandatoryDataProvided(
         NGSMeasurementMetadata measurementMetadata) {
       var validation = ValidationResult.successful();
       if (measurementMetadata.sampleCodes().isEmpty()) {
         validation = validation.combine(
             ValidationResult.withFailures(
-                List.of("Sample id: missing sample id reference")));
+                List.of(MISSING_SAMPLE_ID_REFERENCE)));
       } else {
         validation = validation.combine(ValidationResult.successful());
       }
@@ -264,7 +312,94 @@ public class MeasurementNGSValidator implements
       return validation;
     }
 
+    private static boolean anyEntryIsEmpty(List<String> strings) {
+      return strings.isEmpty() || strings.stream().anyMatch(String::isBlank);
+    }
 
+    ValidationResult validateMandatoryDataRegistration(
+        MeasurementRegistrationInformationNGS metadata) {
+      var validation = ValidationResult.successful();
+      if (anyEntryIsEmpty(metadata.measuredSamples())) {
+        validation = validation.combine(
+            ValidationResult.withFailures(
+                List.of(MISSING_SAMPLE_ID_REFERENCE)));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.organisationId().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(
+                List.of("Organisation: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.instrumentCURIE().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(
+                List.of("Instrument: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.facility().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(
+                List.of("Facility: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.sequencingReadType().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(
+                List.of("Read Type: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+
+      var missingIndices = new MissingIndices(() -> metadata);
+
+      validation = validation.combine(missingIndices.execute());
+
+      return validation;
+    }
+
+    ValidationResult validateMandatoryMetadataDataForUpdate(
+        MeasurementUpdateInformationNGS metadata) {
+      var validation = ValidationResult.successful();
+      if (metadata.measurementId().isEmpty()) {
+        validation.combine(ValidationResult.withFailures(
+            List.of("Measurement id: missing measurement id for update")));
+      } else {
+        validation.combine(ValidationResult.successful());
+      }
+      if (metadata.organisationId().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(List.of("Organisation: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.instrumentCURIE().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(List.of("Instrument: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.facility().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(List.of("Facility: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      if (metadata.sequencingReadType().isBlank()) {
+        validation = validation.combine(
+            ValidationResult.withFailures(
+                List.of("Read Type: missing mandatory metadata")));
+      } else {
+        validation = validation.combine(ValidationResult.successful());
+      }
+      return validation;
+    }
+
+    @Deprecated
     ValidationResult validateMandatoryDataForUpdate(NGSMeasurementMetadata metadata) {
       var validation = ValidationResult.successful();
       if (metadata.measurementIdentifier().isEmpty()) {
@@ -302,3 +437,4 @@ public class MeasurementNGSValidator implements
     }
   }
 }
+

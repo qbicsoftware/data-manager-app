@@ -167,6 +167,14 @@ public class SampleInformationService {
     return sampleRepository.findSample(sampleId);
   }
 
+  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'READ')")
+  public Optional<Sample> findSample(ProjectId projectId, String sampleId) {
+    if (sampleId == null || sampleId.isBlank()) {
+      return Optional.empty();
+    }
+    return sampleRepository.findSample(SampleCode.create(sampleId));
+  }
+
   public Optional<SampleIdCodeEntry> findSampleId(SampleCode sampleCode) {
     return sampleRepository.findSample(sampleCode)
         .map(sample -> new SampleIdCodeEntry(sample.sampleId(), sampleCode));

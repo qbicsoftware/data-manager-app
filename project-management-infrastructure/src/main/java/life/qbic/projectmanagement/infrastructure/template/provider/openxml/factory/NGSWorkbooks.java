@@ -1,9 +1,9 @@
-package life.qbic.datamanager.files.export.measurement;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
 
 
 import java.util.Arrays;
 import java.util.List;
-import life.qbic.datamanager.views.projects.project.measurements.NGSMeasurementEntry;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NgsEditFactory.MeasurementEntryNGS;
 import org.apache.poi.ss.usermodel.Workbook;
 
 public class NGSWorkbooks {
@@ -26,7 +26,7 @@ public class NGSWorkbooks {
     return new NgsRegisterFactory().createWorkbook();
   }
 
-  public static Workbook createEditWorkbook(List<NGSMeasurementEntry> measurements) {
+  public static Workbook createEditWorkbook(List<MeasurementEntryNGS> measurements) {
     return new NgsEditFactory(measurements).createWorkbook();
   }
 
