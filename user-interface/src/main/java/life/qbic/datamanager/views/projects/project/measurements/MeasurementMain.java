@@ -80,6 +80,7 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;

@@ -81,12 +81,12 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   private final TabSheet registeredMeasurementsTabSheet = new TabSheet();
   private final MultiSelectLazyLoadingGrid<NGSMeasurement> ngsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
   private final MultiSelectLazyLoadingGrid<ProteomicsMeasurement> proteomicsMeasurementGrid = new MultiSelectLazyLoadingGrid<>();
-  private final MeasurementTechnologyTab proteomicsTab;
-  private final MeasurementTechnologyTab genomicsTab;
+  private final MeasurementDomainTab proteomicsTab;
+  private final MeasurementDomainTab genomicsTab;
   private final Collection<GridLazyDataView<?>> measurementsGridDataViews = new ArrayList<>();
   private final transient MeasurementService measurementService;
   private final transient SampleInformationService sampleInformationService;
-  private final List<MeasurementTechnologyTab> tabsInTabSheet = new ArrayList<>();
+  private final List<MeasurementDomainTab> tabsInTabSheet = new ArrayList<>();
   private final StreamResource rorIconResource = new StreamResource("ROR_logo.svg",
       () -> getClass().getClassLoader().getResourceAsStream("icons/ROR_logo.svg"));
   private final transient ClientDetailsProvider clientDetailsProvider;
@@ -107,8 +107,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     this.measurementService = Objects.requireNonNull(measurementService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.clientDetailsProvider = clientDetailsProvider;
-    proteomicsTab = new MeasurementTechnologyTab(Domain.PROTEOMICS, 0);
-    genomicsTab = new MeasurementTechnologyTab(Domain.GENOMICS, 0);
+    proteomicsTab = new MeasurementDomainTab(Domain.PROTEOMICS, 0);
+    genomicsTab = new MeasurementDomainTab(Domain.GENOMICS, 0);
     createProteomicsGrid();
     createNGSMeasurementGrid();
     add(registeredMeasurementsTabSheet);
@@ -557,13 +557,13 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     if (selectedTab == null) {
       return Optional.empty();
     }
-    if (selectedTab instanceof MeasurementTechnologyTab tab) {
+    if (selectedTab instanceof MeasurementDomainTab tab) {
       return Optional.ofNullable(measurementsForTab(tab));
     }
     return Optional.empty();
   }
 
-  private SelectedMeasurements measurementsForTab(MeasurementTechnologyTab tab) {
+  private SelectedMeasurements measurementsForTab(MeasurementDomainTab tab) {
     Objects.requireNonNull(tab);
     return switch (tab.domain) {
       case Domain.GENOMICS -> selectionNGS();
@@ -607,7 +607,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       return Optional.empty();
     }
     return Optional.ofNullable(registeredMeasurementsTabSheet.getSelectedTab())
-        .map(tab -> ((MeasurementTechnologyTab) tab).getTabLabel());
+        .map(tab -> ((MeasurementDomainTab) tab).getTabLabel());
   }
 
   /**
@@ -630,20 +630,20 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
   }
 
-  public static class MeasurementTechnologyTab extends Tab {
+  public static class MeasurementDomainTab extends Tab {
 
     private final Span countBadge;
-    private final Span technologyNameComponent;
+    private final Span measurementDomainComponent;
     private final Domain domain;
 
-    public MeasurementTechnologyTab(Domain domain, int measurementCount) {
+    public MeasurementDomainTab(Domain domain, int measurementCount) {
       this.domain = domain;
-      technologyNameComponent = new Span();
+      measurementDomainComponent = new Span();
       this.countBadge = createBadge();
       Span sampleCountComponent = new Span();
       sampleCountComponent.add(countBadge);
-      this.add(technologyNameComponent, sampleCountComponent);
-      setTechnologyName(domain);
+      this.add(measurementDomainComponent, sampleCountComponent);
+      setMeasurementDomain(domain);
       setMeasurementCount(measurementCount);
       addClassName("tab-with-count");
     }
@@ -672,8 +672,8 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
       countBadge.setText(String.valueOf(measurementCount));
     }
 
-    public void setTechnologyName(Domain domain) {
-      this.technologyNameComponent.setText(domain.toString());
+    public void setMeasurementDomain(Domain domain) {
+      this.measurementDomainComponent.setText(domain.toString());
     }
 
     public Domain getDomain() {
