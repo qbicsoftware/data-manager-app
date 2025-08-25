@@ -102,7 +102,7 @@ public class AppDialog extends Dialog implements BeforeLeaveObserver {
         "Discard changes?",
         IconFactory.warningIcon());
     DialogBody.withoutUserInput(confirmDialog, new Div(
-        "By aborting the editing process and closing the dialog, you will loose all information entered."));
+        "By aborting the editing process and closing the dialog, you will lose all information entered."));
     life.qbic.datamanager.views.general.dialog.DialogFooter.with(confirmDialog, "Continue editing",
         "Discard changes");
     confirmDialog.registerConfirmAction(() -> {
