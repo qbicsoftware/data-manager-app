@@ -37,6 +37,7 @@ public class MeasurementNGSValidator implements
     MeasurementValidator<NGSMeasurementMetadata> {
 
   private static final Logger log = logger(MeasurementNGSValidator.class);
+  public static final String MISSING_SAMPLE_ID_REFERENCE = "Sample id: missing sample id reference";
   protected final MeasurementService measurementService;
   protected final TerminologyService terminologyService;
   protected final ProjectInformationService projectInformationService;
@@ -140,7 +141,7 @@ public class MeasurementNGSValidator implements
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-      result.combine(validationPolicy.validationProjectRelation(SampleCode.create(sampleId), projectId));
+        result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
     }
     return result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
@@ -193,6 +194,14 @@ public class MeasurementNGSValidator implements
           ValidationResult.withFailures(
               List.of(
                   "Measurement ID: Unknown measurement for id '%s'".formatted(measurementCode))));
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
+      }
+      return validationProjectRelation(SampleCode.create(sampleId), projectId);
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
@@ -268,7 +277,7 @@ public class MeasurementNGSValidator implements
       if (measurementMetadata.sampleCodes().isEmpty()) {
         validation = validation.combine(
             ValidationResult.withFailures(
-                List.of("Sample id: missing sample id reference")));
+                List.of(MISSING_SAMPLE_ID_REFERENCE)));
       } else {
         validation = validation.combine(ValidationResult.successful());
       }
@@ -313,7 +322,7 @@ public class MeasurementNGSValidator implements
       if (anyEntryIsEmpty(metadata.measuredSamples())) {
         validation = validation.combine(
             ValidationResult.withFailures(
-                List.of("Sample id: missing sample id reference")));
+                List.of(MISSING_SAMPLE_ID_REFERENCE)));
       } else {
         validation = validation.combine(ValidationResult.successful());
       }
@@ -353,8 +362,6 @@ public class MeasurementNGSValidator implements
       return validation;
     }
 
-
-
     ValidationResult validateMandatoryMetadataDataForUpdate(
         MeasurementUpdateInformationNGS metadata) {
       var validation = ValidationResult.successful();
@@ -378,7 +385,7 @@ public class MeasurementNGSValidator implements
       }
       if (metadata.facility().isBlank()) {
         validation = validation.combine(
-            ValidationResult.withFailures(List.of("Facility: missing mandatory meta;data")));
+            ValidationResult.withFailures(List.of("Facility: missing mandatory metadata")));
       } else {
         validation = validation.combine(ValidationResult.successful());
       }
