@@ -165,7 +165,14 @@ public class MeasurementService {
     return measurementLookupService.queryAllNGSMeasurement(samplesInExperiment);
   }
 
-  @Deprecated
+  /**
+   * Find a measurement for a given measurement code.
+   *
+   * @param measurementCode the measurement code (its natural ID known to the user)
+   * @return an {@link Optional} of {@link NGSMeasurement}. Is {@link Optional#empty()} if no matching measurement was found.
+   * @deprecated this method is unsafe, since it bypasses Spring security checks for access rights. Please use {@link #findNGSMeasurementById(String, String)} instead.
+   */
+  @Deprecated(since = "1.11.0", forRemoval = true)
   public Optional<NGSMeasurement> findNGSMeasurement(String measurementCode) {
     return measurementLookupService.findNGSMeasurement(measurementCode);
   }
