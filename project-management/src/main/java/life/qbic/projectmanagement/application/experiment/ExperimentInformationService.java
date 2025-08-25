@@ -422,8 +422,10 @@ public class ExperimentInformationService {
     for (AsyncProjectService.ExperimentalVariable experimentalVariable : experimentalVariables) {
       List<ExperimentalValue> experimentalValues = new ArrayList<>();
       for (String level : experimentalVariable.levels()) {
-        ExperimentalValue experimentalValue = experimentalVariable.optionalUnit().isPresent() ? ExperimentalValue.create(level)
-            : ExperimentalValue.create(level, experimentalVariable.unit());
+        ExperimentalValue experimentalValue =
+            experimentalVariable.optionalUnit()
+                .map(unit -> ExperimentalValue.create(level, unit))
+                .orElse(ExperimentalValue.create(level));
         experimentalValues.add(experimentalValue);
       }
       experiment.addVariableToDesign(experimentalVariable.name(), experimentalValues);
@@ -739,8 +741,7 @@ public class ExperimentInformationService {
       "hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE') ")
   public void editExperimentInformation(String projectId, ExperimentId experimentId,
       String experimentName,
-      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes,
-      String speciesIconName, String specimenIconName) {
+      List<OntologyTerm> species, List<OntologyTerm> specimens, List<OntologyTerm> analytes) {
 
     List<DomainEvent> domainEventsCache = new ArrayList<>();
     var localDomainEventDispatcher = LocalDomainEventDispatcher.instance();
@@ -753,7 +754,6 @@ public class ExperimentInformationService {
     experiment.setSpecies(species);
     experiment.setSpecimens(specimens);
     experiment.setAnalytes(analytes);
-    experiment.setIconNames(speciesIconName, specimenIconName, "default");
     experimentRepository.update(experiment);
 
     dispatchLocalEvents(domainEventsCache);

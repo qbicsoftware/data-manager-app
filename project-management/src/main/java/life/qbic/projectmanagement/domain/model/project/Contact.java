@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import jakarta.persistence.Embeddable;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Record representing a person reference with name and contact email address
@@ -24,8 +25,6 @@ public class Contact {
   public Contact(String fullName, String emailAddress, String oidc, String oidcIssuer) {
     requireNonNull(fullName, "fullName must not be null");
     requireNonNull(emailAddress, "emailAddress must not be null");
-    requireNonNull(oidc, "oidc must not be null");
-    requireNonNull(oidcIssuer, "oidcIssuer must not be null");
     if (fullName.isBlank()) {
       throw new IllegalArgumentException("A contacts name must not be empty");
     }
@@ -50,12 +49,15 @@ public class Contact {
     return emailAddress;
   }
 
-  public String oidc() {
-    return oidc;
+  public Optional<OidcInformation> oidcInformation() {
+    if (oidc == null || oidc.isBlank() || oidcIssuer == null || oidcIssuer.isBlank()) {
+      return Optional.empty();
+    }
+    return Optional.of(new OidcInformation(oidc, oidcIssuer));
   }
 
-  public String oidcIssuer() {
-    return oidcIssuer;
+  public record OidcInformation(String oidcId, String oidcIssuer) {
+
   }
 
   @Override

@@ -85,7 +85,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
    * @since 1.4.0
    */
   private static OntologyClass convert(TibTerm term) {
-    return new OntologyClass(term.ontologyPrefix, "", "", term.label, term.shortForm,
+    return new OntologyClass(term.ontologyName, "", "", term.label, term.shortForm,
         term.getDescription().orElse(""), term.iri);
   }
 

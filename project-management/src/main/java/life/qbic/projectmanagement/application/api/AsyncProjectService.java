@@ -673,19 +673,19 @@ public interface AsyncProjectService {
    * @param unit   the unit of the experimental variable. Can be null if no unit is set
    * @since 1.9.0
    */
-  record ExperimentalVariable(String name, Set<String> levels, @Nullable String unit) {
+  record ExperimentalVariable(String name, List<String> levels, @Nullable String unit) {
 
-    public ExperimentalVariable(String name, Set<String> levels) {
+    public ExperimentalVariable(String name, List<String> levels) {
       this(name, levels, null);
     }
 
     public ExperimentalVariable {
-      levels = Set.copyOf(levels);
+      levels = List.copyOf(levels);
     }
 
     @Override
-    public Set<String> levels() {
-      return Set.copyOf(levels);
+    public List<String> levels() {
+      return List.copyOf(levels);
     }
 
     public Optional<String> optionalUnit() {
@@ -720,15 +720,15 @@ public interface AsyncProjectService {
    */
   record ExperimentalGroup(@Nullable Long id, @Nullable Integer groupId, String name,
                            int sampleSize,
-                           Set<VariableLevel> levels) {
+                           List<VariableLevel> levels) {
 
     public ExperimentalGroup {
       requireNonNull(levels);
-      levels = Set.copyOf(levels);
+      levels = List.copyOf(levels);
     }
 
-    public Set<VariableLevel> levels() {
-      return Set.copyOf(levels);
+    public List<VariableLevel> levels() {
+      return List.copyOf(levels);
     }
   }
 
@@ -1881,6 +1881,10 @@ public interface AsyncProjectService {
     public ValidationRequest {
       requireNonNull(projectId);
       requireNonNull(requestId);
+    }
+
+    public ValidationRequest(String projectId, SampleRegistrationInformation registration) {
+      this(projectId, registration, UUID.randomUUID().toString());
     }
   }
 

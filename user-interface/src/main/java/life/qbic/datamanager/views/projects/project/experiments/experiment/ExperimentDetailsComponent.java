@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,7 +74,7 @@ import life.qbic.projectmanagement.application.api.AsyncProjectService.Experimen
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalVariablesDeletionRequest;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
@@ -292,10 +291,6 @@ public class ExperimentDetailsComponent extends PageArea {
       experimentDraft.setSpecies(experiment.getSpecies());
       experimentDraft.setSpecimens(experiment.getSpecimens());
       experimentDraft.setAnalytes(experiment.getAnalytes());
-      experimentDraft.setSpeciesIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIES,
-          experiment.getSpeciesIconName()));
-      experimentDraft.setSpecimenIcon(BioIcon.getTypeWithNameOrDefault(SampleSourceType.SPECIMEN,
-          experiment.getSpecimenIconName()));
 
       editExperimentDialog.setExperiment(experimentDraft, usedTerms);
       editExperimentDialog.setConfirmButtonLabel("Save");
@@ -350,9 +345,7 @@ public class ExperimentDetailsComponent extends PageArea {
         experimentDraft.getExperimentName(),
         experimentDraft.getSpecies(),
         experimentDraft.getSpecimens(),
-        experimentDraft.getAnalytes(),
-        experimentDraft.getSpeciesIcon().getLabel(),
-        experimentDraft.getSpecimenIcon().getLabel());
+        experimentDraft.getAnalytes());
     reloadExperimentInfo(projectId, experimentId);
     event.getSource().close();
   }
@@ -545,7 +538,7 @@ public class ExperimentDetailsComponent extends PageArea {
   private AsyncProjectService.ExperimentalVariable convertToApi(
       ExperimentalVariableContent experimentalVariable) {
     return new AsyncProjectService.ExperimentalVariable(experimentalVariable.name(),
-        new HashSet<>(experimentalVariable.levels()), experimentalVariable.unit());
+        new ArrayList<>(experimentalVariable.levels()), experimentalVariable.unit());
   }
 
   private void openExperimentalVariablesEditDialog() {
@@ -584,15 +577,19 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var ui = UI.getCurrent();
 
-    ExperimentalVariablesUpdateRequest request = new ExperimentalVariablesUpdateRequest(
+    ExperimentalVariablesDeletionRequest deletionRequest = new ExperimentalVariablesDeletionRequest(
+        projectId.value(),
+        experimentId.value());
+
+    ExperimentalVariablesCreationRequest creationRequest = new ExperimentalVariablesCreationRequest(
         projectId.value(),
         experimentId.value(), variables);
 
-    asyncProjectService.update(request)
+    asyncProjectService.delete(deletionRequest)
         .doOnNext(it -> log.debug(
             "Removed variables for project" + projectId))
         .flatMap(it ->
-            asyncProjectService.update(request))
+            asyncProjectService.create(creationRequest))
         .doOnNext(it -> ui.access(() -> {
           confirmEvent.getSource().close();
           reloadExperimentInfo(projectId,
@@ -662,13 +659,12 @@ public class ExperimentDetailsComponent extends PageArea {
     content.add(sampleSourceComponent);
   }
 
-  private Div createSampleSourceList(String titleText, AbstractIcon<?> icon,
+  private Div createSampleSourceList(String titleText,
       List<OntologyTerm> ontologyClasses) {
-    icon.addClassName("primary");
     Div sampleSource = new Div();
     sampleSource.addClassName("sample-source");
     Span title = new Span(titleText);
-    Span header = new Span(icon, title);
+    Span header = new Span(title);
     header.addClassName("header");
     Div ontologies = new Div();
     ontologies.addClassName("ontologies");
@@ -684,22 +680,12 @@ public class ExperimentDetailsComponent extends PageArea {
     List<OntologyTerm> specimenTags = new ArrayList<>(experiment.getSpecimens());
     List<OntologyTerm> analyteTags = new ArrayList<>(experiment.getAnalytes());
 
-    BioIcon speciesIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIES).stream()
-        .filter(icon -> icon.label.equals(experiment.getSpeciesIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_SPECIES);
-    BioIcon specimenIcon = BioIcon.getOptionsForType(SampleSourceType.SPECIMEN).stream()
-        .filter(icon -> icon.label.equals(experiment.getSpecimenIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_SPECIMEN);
-    BioIcon analyteIcon = BioIcon.getOptionsForType(SampleSourceType.ANALYTE).stream()
-        .filter(icon -> icon.label.equals(experiment.getAnalyteIconName())).findFirst()
-        .orElse(BioIcon.DEFAULT_ANALYTE);
-
     sampleSourceComponent.add(
-        createSampleSourceList("Species", speciesIcon.iconResource.createIcon(), speciesTags));
+        createSampleSourceList("Species", speciesTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Specimen", specimenIcon.iconResource.createIcon(), specimenTags));
+        createSampleSourceList("Specimen", specimenTags));
     sampleSourceComponent.add(
-        createSampleSourceList("Analytes", analyteIcon.iconResource.createIcon(), analyteTags));
+        createSampleSourceList("Analytes", analyteTags));
   }
 
   private void layoutTabSheet() {
@@ -883,7 +869,7 @@ public class ExperimentDetailsComponent extends PageArea {
     return new AsyncProjectService.ExperimentalGroup(experimentalGroup.id(),
         experimentalGroup.groupNumber(),
         experimentalGroup.name(), experimentalGroup.size(),
-        experimentalGroup.variableLevels().stream().map(this::toApi).collect(Collectors.toSet()));
+        experimentalGroup.variableLevels().stream().map(this::toApi).toList());
   }
 
   private void addExperimentalGroups(

@@ -92,7 +92,8 @@ public class UploadWithDisplay extends Div {
     upload.setI18n(uploadI18N);
 
     upload.addSucceededListener(it -> fireEvent(new SucceededEvent(this, it.isFromClient())));
-    upload.addFailedListener(it -> fireEvent(new FailedEvent(this, it.isFromClient())));
+    upload.addFailedListener(
+        it -> fireEvent(new UnspecificFailedEvent(this, it.isFromClient(), it.getReason())));
     upload.addFileRejectedListener(fileRejected -> {
       errorArea.setVisible(true);
       errorArea.setText(fileRejected.getErrorMessage());
@@ -118,8 +119,9 @@ public class UploadWithDisplay extends Div {
     return addListener(SucceededEvent.class, listener);
   }
 
-  public Registration addFailureListener(ComponentEventListener<FailedEvent> listener) {
-    return addListener(FailedEvent.class, listener);
+  public Registration addUnspecificFailureListener(
+      ComponentEventListener<UnspecificFailedEvent> listener) {
+    return addListener(UnspecificFailedEvent.class, listener);
   }
 
   public Registration addRemovedListener(ComponentEventListener<UploadRemovedEvent> listener) {
@@ -236,7 +238,9 @@ public class UploadWithDisplay extends Div {
     }
   }
 
-  public static class FailedEvent extends ComponentEvent<UploadWithDisplay> {
+  public static class UnspecificFailedEvent extends ComponentEvent<UploadWithDisplay> {
+
+    private final Exception cause;
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
@@ -246,8 +250,13 @@ public class UploadWithDisplay extends Div {
      * @param fromClient <code>true</code> if the event originated from the client
      *                   side, <code>false</code> otherwise
      */
-    public FailedEvent(UploadWithDisplay source, boolean fromClient) {
+    public UnspecificFailedEvent(UploadWithDisplay source, boolean fromClient, Exception cause) {
       super(source, fromClient);
+      this.cause = cause;
+    }
+
+    public Exception getCause() {
+      return cause;
     }
   }
 
