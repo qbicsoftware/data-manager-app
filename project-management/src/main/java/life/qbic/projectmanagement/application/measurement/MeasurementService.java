@@ -333,12 +333,9 @@ public class MeasurementService {
     if (measurementIdMissing(measurement)) {
       throw new MeasurementUpdateException(ErrorCode.MISSING_MEASUREMENT_ID);
     }
-    if (measurementUnknown(measurement)) {
-      throw new MeasurementUpdateException(ErrorCode.UNKNOWN_MEASUREMENT);
-    }
 
     var measurementDomain = measurementRepository.findProteomicsMeasurement(
-        measurement.measurementId()).orElseThrow();
+        measurement.measurementId()).orElseThrow(() -> new MeasurementUpdateException(ErrorCode.UNKNOWN_MEASUREMENT));
     measurementDomain.setSpecificMetadata(
         convertSpecificMetadataPxP(measurement.specificMetadata(), sampleCodeEntries));
     var organisationQuery = organisationLookupService.organisation(
