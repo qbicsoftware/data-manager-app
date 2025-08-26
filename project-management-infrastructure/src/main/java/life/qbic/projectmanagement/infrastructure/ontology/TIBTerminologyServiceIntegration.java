@@ -333,7 +333,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
-    log.debug("Received response code '%d' for term query".formatted(response.statusCode()));
+    log.debug("Received response code '%d' for term query %s".formatted(response.statusCode(), oboId));
     // If the HTTP status code is not 200, the
     if (response.statusCode() == 404) {
       return Optional.empty();
