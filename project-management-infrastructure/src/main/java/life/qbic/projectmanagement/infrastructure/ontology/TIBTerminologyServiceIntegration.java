@@ -341,7 +341,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     if (response.statusCode() == 200) {
       return parseResponse(response).stream().findFirst();
     }
-    log.error("Received response code '%d' for term query".formatted(response.statusCode()));
+    log.error("Received response code '%d' for term query %s".formatted(response.statusCode(), oboId));
     return Optional.empty();
   }
 
