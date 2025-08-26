@@ -671,6 +671,7 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           closeToast(registrationToast);
           processResults(successfulCompletions.get(), requests.size(),
               this::displayRegistrationSuccess, this::displayRegistrationFailure);
+          reloadMeasurements();
         })
         .subscribe();
   }
@@ -696,8 +697,15 @@ public class MeasurementMain extends Main implements BeforeEnterObserver {
           closeToast(registrationToast);
           processResults(successfulCompletions.get(), requests.size(),
               this::displayUpdateSuccess, this::displayUpdateFailure);
+          reloadMeasurements();
         })
         .subscribe();
+  }
+
+  private void reloadMeasurements() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+        measurementDetailsComponent.setContext(context);
+    }));
   }
 
   private void submitRequestNGS(String projectId,
