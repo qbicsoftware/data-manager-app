@@ -20,6 +20,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectIntent;
 import life.qbic.projectmanagement.domain.model.project.ProjectObjective;
 import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.service.ProjectDomainService;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -50,13 +51,22 @@ public class ProjectCreationService {
       String objective,
       ProjectContacts contacts,
       FundingInformation funding) {
+    requireNonNull(code);
+    requireNonNull(title);
+    requireNonNull(objective);
     requireNonNull(contacts);
-    requireNonNull(funding);
 
+    Funding fundingInformation = Optional.ofNullable(funding)
+        .map(this::convertFundingInformation)
+        .orElse(null);
+    Contact responsiblePerson = Optional.ofNullable(contacts.responsible())
+        .map(this::convertProjectContact)
+        .orElse(null);
     return createProject(sourceOffer, code, title, objective,
         convertProjectContact(contacts.investigator()),
-        convertProjectContact(contacts.responsible()), convertProjectContact(contacts.manager()),
-        convertFundingInformation(funding));
+        responsiblePerson,
+        convertProjectContact(contacts.manager()),
+        fundingInformation);
 
   }
 
@@ -86,9 +96,9 @@ public class ProjectCreationService {
       String title,
       String objective,
       Contact principalInvestigator,
-      Contact responsiblePerson,
+      @Nullable Contact responsiblePerson,
       Contact projectManager,
-      Funding funding) {
+      @Nullable Funding funding) {
     if (Objects.isNull(principalInvestigator)) {
       return Result.fromError(new ApplicationException("principal investigator is null"));
     }
@@ -109,7 +119,8 @@ public class ProjectCreationService {
 
   private Project createProject(String code, String title, String objective,
       Contact projectManager,
-      Contact principalInvestigator, Contact responsiblePerson, Funding funding) {
+      Contact principalInvestigator, @Nullable Contact responsiblePerson,
+      @Nullable Funding funding) {
     ProjectIntent intent = getProjectIntent(title, objective);
     ProjectCode projectCode;
     try {
