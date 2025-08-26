@@ -66,10 +66,12 @@ public class ProjectCreationService {
     try {
       var createdProject = createProject(code, title, objective,
           convertProjectContact(contacts.investigator()),
-          responsiblePerson,
           convertProjectContact(contacts.manager()),
+          responsiblePerson,
           fundingInformation);
-      Optional.ofNullable(sourceOffer).ifPresent(offerId -> createdProject.linkOffer(
+      Optional.ofNullable(sourceOffer)
+          .filter(it -> !it.isBlank())
+          .ifPresent(offerId -> createdProject.linkOffer(
           OfferIdentifier.of(offerId)));
       return Result.fromValue(createdProject);
     } catch (ApplicationException e) {
