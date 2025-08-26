@@ -1,6 +1,5 @@
 package life.qbic.projectmanagement.domain.repository;
 
-import java.time.Instant;
 import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectCode;
@@ -17,7 +16,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
 public interface ProjectRepository {
 
   /**
-   * Saves a {@link Project} entity permanently.
+   * Adds a {@link Project} entity permanently and sets access rights according to the logged in user.
    *
    * @param project the project to store
    * @since 1.0.0
@@ -33,6 +32,13 @@ public interface ProjectRepository {
   void update(Project project);
 
   /**
+   * Saves a project to the repository
+   * @param project the project to save
+   * @since 1.11.1
+   */
+  void save(Project project);
+
+  /**
    * Searches for a project that contain the provided project code
    *
    * @param projectCode the project code to search for in projects
@@ -42,8 +48,6 @@ public interface ProjectRepository {
   boolean existsProjectByProjectCode(ProjectCode projectCode);
 
   Optional<Project> find(ProjectId projectId);
-
-  void unsafeUpdateLastModified(ProjectId projectId, Instant modifiedOn);
 
   /**
    * Is thrown if a project that should be created already exists, as denoted by the project id
