@@ -1,11 +1,11 @@
-package life.qbic.datamanager.files.export.measurement;
+package life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory;
 
 import java.util.Optional;
 import java.util.function.BinaryOperator;
-import life.qbic.datamanager.files.export.WorkbookFactory;
-import life.qbic.datamanager.files.export.measurement.NGSWorkbooks.SequencingReadType;
-import life.qbic.datamanager.files.structure.Column;
-import life.qbic.datamanager.files.structure.measurement.NGSMeasurementRegisterColumn;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.column.NGSMeasurementRegisterColumn;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks.SequencingReadType;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;

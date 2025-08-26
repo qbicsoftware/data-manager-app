@@ -31,6 +31,7 @@ import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
@@ -82,6 +83,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ExperimentInformationService experimentInformationService;
   private final TerminologyService terminologyService;
   private final SpeciesLookupService taxaService;
+  private final MeasurementService measurementService;
 
   public AsyncProjectServiceImpl(
       @Autowired ProjectInformationService projectService,
@@ -93,7 +95,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired MeasurementValidationService measurementValidationService,
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired TerminologyService termService,
-      @Autowired SpeciesLookupService taxaService) {
+      @Autowired SpeciesLookupService taxaService,
+      @Autowired MeasurementService measurementService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -104,6 +107,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.terminologyService = Objects.requireNonNull(termService);
     this.taxaService = Objects.requireNonNull(taxaService);
+    this.measurementService = Objects.requireNonNull(measurementService);
   }
 
   private static Retry defaultRetryStrategy() {
@@ -119,8 +123,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private static OntologyTerm convertToApi(
       life.qbic.projectmanagement.domain.model.OntologyTerm term) {
     return new OntologyTerm(term.getLabel(), term.getDescription(),
-        Curie.parse(term.oboId().toString()),
-        URI.create(term.getClassIri()), term.getOntologyAbbreviation());
+        Curie.parse(term.oboId().toString()), URI.create(term.getClassIri()),
+        term.getOntologyAbbreviation());
   }
 
   private static OntologyTerm convertToApi(OntologyClass term) {
@@ -158,9 +162,11 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
               group.sampleSize()));
       return new ExperimentalGroupCreationResponse(request.experimentId(),
           new ExperimentalGroup(createdGroup.id(), createdGroup.groupNumber(), createdGroup.name(),
-              createdGroup.replicateCount(), createdGroup.levels().stream()
-              .map(this::convertLevelToApi)
-              .toList()), request.requestId());
+              createdGroup.replicateCount(),
+              createdGroup.levels()
+                  .stream()
+                  .map(this::convertLevelToApi)
+                  .toList()), request.requestId());
     });
 
     String errorMessage = "Error creating experimental group";
@@ -200,23 +206,29 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private ExperimentInformationService.ExperimentalGroup convertFromAPI(ExperimentalGroup group) {
-    return new ExperimentInformationService.ExperimentalGroup(group.id(), group.groupId(), group.name(),
-        group.levels().stream().map(AsyncProjectServiceImpl::convertFromApi).toList(),
+    return new ExperimentInformationService.ExperimentalGroup(group.id(), group.groupId(),
+        group.name(), group.levels()
+        .stream()
+        .map(AsyncProjectServiceImpl::convertFromApi)
+        .toList(),
         group.sampleSize());
   }
 
   @Override
   public Mono<ExperimentalGroupDeletionResponse> delete(ExperimentalGroupDeletionRequest request) {
     var call = Mono.fromCallable(() -> {
-      if (sampleInfoService.hasSamples(ProjectId.parse(request.projectId()), request.experimentId())) {
+      if (sampleInfoService.hasSamples(ProjectId.parse(request.projectId()),
+          request.experimentId())) {
         throw new RequestFailedException(
             "Cannot delete experimental group, samples are registered for experiment "
                 + request.experimentId());
       }
-      experimentInformationService.deleteExperimentalGroupByGroupNumber(request.projectId(), request.experimentId(),
+      experimentInformationService.deleteExperimentalGroupByGroupNumber(request.projectId(),
+          request.experimentId(),
           request.experimentalGroupNumber());
 
-      return new ExperimentalGroupDeletionResponse(request.experimentId(), request.experimentalGroupNumber(),
+      return new ExperimentalGroupDeletionResponse(request.experimentId(),
+          request.experimentalGroupNumber(),
           request.requestId());
     });
     String errorMessage = "Error deleting experimental group";
@@ -226,6 +238,98 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .retryWhen(defaultRetryStrategy())
         .doOnError(e -> log.error(errorMessage, e))
         .onErrorMap(e -> mapToAPIException(e, errorMessage));
+  }
+
+  @Override
+  public Flux<MeasurementRegistrationResponse> create(
+      Flux<MeasurementRegistrationRequest> requestStream) {
+    return requestStream.flatMap(this::registerMeasurement);
+  }
+
+  private Mono<MeasurementRegistrationResponse> registerMeasurement(
+      MeasurementRegistrationRequest request) {
+    switch (request.measurement()) {
+      case MeasurementRegistrationInformationNGS m:
+        return registerMeasurementNGS(request.projectId(), request.requestId(), m);
+      case MeasurementRegistrationInformationPxP m:
+        return registerMeasurementPxP(request.projectId(), request.requestId(), m);
+    }
+  }
+
+  private Mono<MeasurementRegistrationResponse> registerMeasurementPxP(String projectId,
+      String requestId, MeasurementRegistrationInformationPxP measurement) {
+    String errorMessage = "Error registering measurement";
+    return applySecurityContext(Mono.fromCallable(() -> {
+          measurementService.registerMeasurementPxP(ProjectId.parse(projectId),
+              measurement);
+          return new MeasurementRegistrationResponse(requestId, measurement);
+        }
+    ))
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error(errorMessage, e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
+  }
+
+  private Mono<MeasurementRegistrationResponse> registerMeasurementNGS(String projectId,
+      String requestId, MeasurementRegistrationInformationNGS measurement) {
+    var errorMessage = "Error registering measurement";
+    return applySecurityContext(Mono.fromCallable(() -> {
+      measurementService.registerMeasurementNGS(ProjectId.parse(projectId), measurement);
+      return new MeasurementRegistrationResponse(requestId, measurement);
+    }))
+        .subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error(errorMessage, e)).retryWhen(defaultRetryStrategy())
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
+  }
+
+
+  @Override
+  public Flux<MeasurementUpdateResponse> update(Flux<MeasurementUpdateRequest> requestStream) {
+    return requestStream.flatMap(this::updateMeasurement);
+  }
+
+  private Mono<MeasurementUpdateResponse> updateMeasurement(
+      MeasurementUpdateRequest measurementUpdateRequest) {
+    switch (measurementUpdateRequest.requestBody()) {
+      case MeasurementUpdateInformationNGS m -> {
+        return updateMeasurementNGS(measurementUpdateRequest.projectId(),
+            measurementUpdateRequest.requestId(), m);
+      }
+      case MeasurementUpdateInformationPxP m -> {
+        return updateMeasurementPxP(measurementUpdateRequest.projectId(),
+            measurementUpdateRequest.requestId(), m);
+      }
+    }
+  }
+
+  private Mono<MeasurementUpdateResponse> updateMeasurementPxP(String projectId, String requestId,
+      MeasurementUpdateInformationPxP measurement) {
+    var errorMessage = "Error updating measurement";
+    return applySecurityContext(Mono.fromCallable(() -> {
+      measurementService.updateMeasurementPxP(projectId, measurement);
+      return new MeasurementUpdateResponse(requestId, measurement);
+    })).subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error(errorMessage, e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
+  }
+
+  private Mono<MeasurementUpdateResponse> updateMeasurementNGS(String projectId, String requestId,
+      MeasurementUpdateInformationNGS measurement) {
+    var errorMessage = "Error updating measurement";
+    return applySecurityContext(Mono.fromCallable(() -> {
+      measurementService.updateMeasurementNGS(projectId, measurement);
+      return new MeasurementUpdateResponse(requestId, measurement);
+    })).subscribeOn(VirtualThreadScheduler.getScheduler())
+        .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
+        .doOnError(e -> log.error(errorMessage, e))
+        .retryWhen(defaultRetryStrategy())
+        .onErrorMap(e1 -> mapToAPIException(e1, errorMessage));
   }
 
   @Override
@@ -243,10 +347,14 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
         .onErrorMap(e -> mapToAPIException(e, errorMessage));
   }
 
-  private static ExperimentalGroup convertToApi(ExperimentInformationService.ExperimentalGroup group) {
+  private static ExperimentalGroup convertToApi(
+      ExperimentInformationService.ExperimentalGroup group) {
     return new ExperimentalGroup(group.id(), group.groupNumber(), group.name(),
         group.replicateCount(),
-        group.levels().stream().map(AsyncProjectServiceImpl::convertToApi).toList());
+        group.levels()
+            .stream()
+            .map(AsyncProjectServiceImpl::convertToApi)
+            .toList());
   }
 
   private static VariableLevel convertToApi(ExperimentInformationService.VariableLevel level) {
@@ -313,6 +421,21 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Mono<ProjectCode> getProjectCode(String projectId) {
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(() -> {
+      var query = projectService.find(projectId);
+      if (query.isPresent()) {
+        return query.get().getProjectCode().value();
+      }
+      return "";
+    }))
+        .flatMap(value -> value.isBlank() ? Mono.empty() : Mono.just(new ProjectCode(value)))
+        .contextWrite(reactiveSecurity(securityContext))
+        .retryWhen(defaultRetryStrategy());
+  }
+
+  @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
     throw new RuntimeException("not implemented");
@@ -330,7 +453,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContextMany(Flux.fromIterable(
             () -> experimentInformationService.findAllForProject(ProjectId.parse(projectId)).iterator())
-        .map(e -> e.experimentId())
+        .map(Experiment::experimentId)
         .flatMap(id -> {
           var analytes = experimentInformationService.getAnalytesOfExperiment(id);
           var specimen = experimentInformationService.getSpecimensOfExperiment(id);
@@ -439,8 +562,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Flux<Sample> fetchSamples(String projectId, String experimentId) {
     try {
       return Flux.fromIterable(
-          sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId),
-              experimentId));
+          sampleInfoService.retrieveSamplesForExperiment(ProjectId.parse(projectId), experimentId));
     } catch (org.springframework.security.access.AccessDeniedException e) {
       log.error("Error getting samples. Access Denied.", e);
       return Flux.error(new AccessDeniedException(ACCESS_DENIED));
@@ -454,7 +576,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<Sample> getSamplesForBatch(String projectId, String batchId)
       throws RequestFailedException {
-    throw new RuntimeException("not implemented");
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
@@ -527,13 +650,11 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Mono<DigitalObject> sampleUpdateTemplate(String projectId, String experimentId,
-      String batchId,
-      MimeType mimeType) {
+      String batchId, MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-        () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId, mimeType)))
-        .subscribeOn(scheduler)
-        .contextWrite(reactiveSecurity(securityContext));
+        () -> templateService.sampleUpdateTemplate(projectId, experimentId, batchId,
+            mimeType))).subscribeOn(scheduler).contextWrite(reactiveSecurity(securityContext));
   }
 
   @Override
@@ -541,7 +662,30 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       MimeType mimeType) {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-        () -> templateService.sampleInformationTemplate(projectId, experimentId, mimeType)))
+        () -> templateService.sampleInformationTemplate(projectId, experimentId,
+            mimeType)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext));
+  }
+
+  @Override
+  public Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds,
+      MimeType mimeType) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+        () -> templateService.measurementUpdateTemplateNGS(projectId, measurementIds,
+            mimeType)))
+        .subscribeOn(scheduler)
+        .contextWrite(reactiveSecurity(securityContext));
+  }
+
+  @Override
+  public Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds,
+      MimeType mimeType) {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(Mono.fromCallable(
+        () -> templateService.measurementUpdateTemplatePxP(projectId, measurementIds,
+            mimeType)))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext));
   }
@@ -556,10 +700,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return switch (request.requestBody()) {
       // Sample Registration
       case SampleRegistrationInformation req ->
-          validateSampleMetadata(req, request.requestId(), request.projectId());
+          validateSampleMetadata(req, request.requestId(), request.projectId(),
+              request.experimentId());
       // Sample Update
       case SampleUpdateInformation req ->
-          validateSampleMetadataUpdate(req, request.requestId(), request.projectId());
+          validateSampleMetadataUpdate(req, request.requestId(), request.projectId(),
+              request.experimentId());
       // Measurement Registration - NGS
       case MeasurementRegistrationInformationNGS req ->
           validateMeasurementMetadataNGS(req, request.requestId(), request.projectId());
@@ -596,8 +742,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ValidationResponse> validateMeasurementMetadataPxP(
-      MeasurementRegistrationInformationPxP registration, String requestId,
-      String projectId) {
+      MeasurementRegistrationInformationPxP registration, String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
             () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
@@ -607,8 +752,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ValidationResponse> validateMeasurementMetadataPxPUpdate(
-      MeasurementUpdateInformationPxP update, String requestId,
-      String projectId) {
+      MeasurementUpdateInformationPxP update, String requestId, String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
             () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
@@ -638,28 +782,29 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ValidationResponse> validateSampleMetadataUpdate(SampleUpdateInformation update,
-      String requestId, String projectId) {
+      String requestId, String projectId, String experimentId) {
     var securityContext = SecurityContextHolder.getContext();
     return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
-        () -> sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId))
-            .validationResult(),
+        () -> sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId),
+            experimentId).validationResult(),
         result -> new ValidationResponse(requestId, result))
         .contextWrite(reactiveSecurity(securityContext));
   }
 
   private Mono<ValidationResponse> validateSampleMetadata(
-      SampleRegistrationInformation registration, String requestId, String projectId) {
+      SampleRegistrationInformation registration, String requestId, String projectId,
+      String experimentId) {
     var securityContext = SecurityContextHolder.getContext();
     return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
-        () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId))
+        () -> sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId),
+                experimentId)
             .validationResult(),
         result -> new ValidationResponse(requestId, result))
         .contextWrite(reactiveSecurity(securityContext));
   }
 
   @Override
-  public Mono<ExperimentUpdateResponse> update(
-      ExperimentUpdateRequest request) {
+  public Mono<ExperimentUpdateResponse> update(ExperimentUpdateRequest request) {
     Mono<ExperimentUpdateResponse> response = switch (request.body()) {
       case ExperimentDescription experimentDescription ->
           updateExperimentDescription(request.projectId(), request.experimentId(),
@@ -766,16 +911,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ExperimentalVariable> getExperimentalVariables(String projectId,
       String experimentId) {
-    var call = Flux.fromStream(() -> experimentInformationService.getVariablesOfExperiment(projectId,
-            ExperimentId.parse(experimentId))
-        .stream()
-        .map(this::convertToApi));
+    var call = Flux.fromStream(
+        () -> experimentInformationService.getVariablesOfExperiment(projectId,
+                ExperimentId.parse(experimentId))
+            .stream()
+            .map(this::convertToApi));
 
     return applySecurityContextMany(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(SecurityContextHolder.getContext()))
         .doOnError(e -> log.error("Could not load experimental variables", e))
-        .onErrorMap(org.springframework.security.access.AccessDeniedException.class, e -> new AccessDeniedException(ACCESS_DENIED))
+        .onErrorMap(org.springframework.security.access.AccessDeniedException.class,
+            e -> new AccessDeniedException(ACCESS_DENIED))
         .onErrorMap(ProjectNotFoundException.class,
             e -> new RequestFailedException("Project was not found"))
         .retryWhen(defaultRetryStrategy());
@@ -785,8 +932,12 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       life.qbic.projectmanagement.domain.model.experiment.ExperimentalVariable experimentalVariable) {
     return new ExperimentalVariable(experimentalVariable.name().value(),
         experimentalVariable.levels()
-            .stream().map(level -> level.variableName().value()).toList(),
-        experimentalVariable.levels().getFirst().experimentalValue().unit().orElse(null));
+            .stream()
+            .map(level -> level.variableName().value())
+            .toList(),
+        experimentalVariable.levels()
+            .getFirst()
+            .experimentalValue().unit().orElse(null));
   }
 
   @Override
@@ -795,8 +946,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     var call = Mono.fromCallable(() -> {
       experimentInformationService.addVariableToExperiment(request.projectId(),
           request.experimentId(), request.experimentalVariables());
-      return new ExperimentalVariablesCreationResponse(request.projectId(), request.experimentalVariables(),
-        request.experimentId());
+      return new ExperimentalVariablesCreationResponse(request.projectId(),
+          request.experimentalVariables(),
+          request.experimentId());
     });
     String errorMessage = "Could not create experimental variables";
     return applySecurityContext(call)

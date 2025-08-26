@@ -1,10 +1,8 @@
 package life.qbic.datamanager.views.projects.project.measurements;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -13,47 +11,63 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style.Visibility;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.BeforeLeaveEvent;
-import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.Command;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
+import java.io.InputStream;
 import java.io.Serial;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
-import life.qbic.application.commons.ApplicationException.ErrorCode;
 import life.qbic.application.commons.FileNameFormatter;
 import life.qbic.application.commons.Result;
+import life.qbic.datamanager.files.export.download.DownloadStreamProvider;
 import life.qbic.datamanager.files.export.download.WorkbookDownloadStreamProvider;
-import life.qbic.datamanager.files.export.measurement.NGSWorkbooks;
-import life.qbic.datamanager.files.export.measurement.ProteomicsWorkbooks;
+import life.qbic.datamanager.files.parsing.converters.ConverterRegistry;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.general.Disclaimer;
 import life.qbic.datamanager.views.general.InfoBox;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.general.dialog.AppDialog;
+import life.qbic.datamanager.views.general.dialog.DialogBody;
+import life.qbic.datamanager.views.general.dialog.DialogFooter;
+import life.qbic.datamanager.views.general.dialog.DialogHeader;
 import life.qbic.datamanager.views.general.download.DownloadComponent;
-import life.qbic.datamanager.views.notifications.CancelConfirmationDialogFactory;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.notifications.StyledNotification;
 import life.qbic.datamanager.views.notifications.Toast;
 import life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.ConfirmEvent;
-import life.qbic.datamanager.views.projects.project.measurements.MeasurementMetadataUploadDialog.MODE;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateListComponent.DownloadMeasurementTemplateEvent;
+import life.qbic.datamanager.views.projects.project.measurements.MeasurementTemplateSelectionComponent.Domain;
+import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementRegistrationProcessorNGS;
+import life.qbic.datamanager.views.projects.project.measurements.processor.MeasurementRegistrationProcessorPxP;
+import life.qbic.datamanager.views.projects.project.measurements.processor.ProcessorRegistry;
+import life.qbic.datamanager.views.projects.project.measurements.registration.MeasurementUpload;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.ProjectInformationService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationRequestBody;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationNGS;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequest;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateRequestBody;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.ValidationRequestBody;
+import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService.MeasurementDeletionException;
@@ -66,8 +80,14 @@ import life.qbic.projectmanagement.domain.model.measurement.NGSMeasurement;
 import life.qbic.projectmanagement.domain.model.measurement.ProteomicsMeasurement;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.WorkbookFactory;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.NGSWorkbooks;
+import life.qbic.projectmanagement.infrastructure.template.provider.openxml.factory.ProteomicsWorkbooks;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.MimeType;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 /**
@@ -82,8 +102,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 @UIScope
 @Route(value = "projects/:projectId?/experiments/:experimentId?/measurements", layout = ExperimentMainLayout.class)
 @PermitAll
-public class MeasurementMain extends Main implements BeforeEnterObserver, BeforeLeaveObserver {
+public class MeasurementMain extends Main implements BeforeEnterObserver {
 
+  public static final String UPDATE_MEASUREMENT_DESCRIPTION = "Please download your measurement metadata in order to edit it. You can modify the properties in the sheet and upload it below to save the changes.";
   public static final String PROJECT_ID_ROUTE_PARAMETER = "projectId";
   public static final String EXPERIMENT_ID_ROUTE_PARAMETER = "experimentId";
   @Serial
@@ -91,60 +112,78 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
   private static final Logger log = LoggerFactory.logger(MeasurementMain.class);
   private static Disclaimer registerSamplesDisclaimer;
   private final DownloadComponent measurementTemplateDownload;
-  private final MeasurementTemplateListComponent measurementTemplateListComponent;
   private final Span measurementsSelectedInfoBox = new Span();
   private final MeasurementDetailsComponent measurementDetailsComponent;
   private final transient MeasurementPresenter measurementPresenter;
   private final TextField measurementSearchField = new TextField();
   private final transient SampleInformationService sampleInformationService;
   private final transient MeasurementService measurementService;
-  private final transient MeasurementValidationService measurementValidationService;
   private final Div content = new Div();
   private final InfoBox rawDataAvailableInfo = new InfoBox();
   private final Div noMeasurementDisclaimer;
   private final DownloadComponent downloadComponent;
   private final transient ProjectInformationService projectInformationService;
-  private final transient CancelConfirmationDialogFactory cancelConfirmationDialogFactory;
   private final transient MessageSourceNotificationFactory messageFactory;
   private final ExperimentInformationService experimentInformationService;
-  private MeasurementMetadataUploadDialog dialog;
+  private final AsyncProjectService asyncService;
+  private final MessageSourceNotificationFactory messageSourceNotificationFactory;
   private transient Context context;
+  private AppDialog measurementDialog;
+  private final ProjectContext projectContext;
+  private Mono<DigitalObject> metadataDownloadMono;
+
+  static class ProjectContext {
+
+    private String projectId;
+    private static final String DEFAULT_VALUE = "unknown_project";
+
+    synchronized String projectId() {
+      if (projectId == null) {
+        return DEFAULT_VALUE;
+      }
+      return projectId;
+    }
+
+    synchronized void setProjectId(String projectId) {
+      this.projectId = projectId;
+    }
+
+  }
+
+  private static final MimeType OPEN_XML = MimeType.valueOf(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
   public MeasurementMain(
-      @Autowired MeasurementTemplateListComponent measurementTemplateListComponent,
       @Autowired MeasurementDetailsComponent measurementDetailsComponent,
       @Autowired SampleInformationService sampleInformationService,
       @Autowired MeasurementService measurementService,
       @Autowired MeasurementPresenter measurementPresenter,
       @Autowired MeasurementValidationService measurementValidationService,
+      @Autowired AsyncProjectService asyncProjectService,
       ProjectInformationService projectInformationService,
-      CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory messageFactory,
-      ExperimentInformationService experimentInformationService) {
-    Objects.requireNonNull(measurementTemplateListComponent);
+      ExperimentInformationService experimentInformationService,
+      MessageSourceNotificationFactory messageSourceNotificationFactory) {
     Objects.requireNonNull(measurementDetailsComponent);
     Objects.requireNonNull(measurementService);
     Objects.requireNonNull(measurementValidationService);
+    Objects.requireNonNull(asyncProjectService);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.measurementDetailsComponent = measurementDetailsComponent;
-    this.measurementTemplateListComponent = measurementTemplateListComponent;
     this.measurementService = measurementService;
     this.measurementPresenter = measurementPresenter;
-    this.measurementValidationService = measurementValidationService;
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
     this.projectInformationService = projectInformationService;
-    this.cancelConfirmationDialogFactory = cancelConfirmationDialogFactory;
+    this.asyncService = asyncProjectService;
+    this.projectContext = new ProjectContext();
 
     downloadComponent = new DownloadComponent();
     measurementTemplateDownload = new DownloadComponent();
-    measurementTemplateListComponent.addDownloadMeasurementTemplateClickListener(
-        this::onDownloadMeasurementTemplateClicked);
     registerSamplesDisclaimer = createNoSamplesRegisteredDisclaimer();
     add(registerSamplesDisclaimer);
     noMeasurementDisclaimer = createNoMeasurementDisclaimer();
     add(noMeasurementDisclaimer);
     initContent();
-    add(measurementTemplateListComponent);
     add(measurementTemplateDownload);
     add(measurementDetailsComponent);
 
@@ -154,25 +193,8 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
     add(downloadComponent);
     addClassName("measurement");
-    log.debug(String.format(
-        "New instance for %s(#%s) created with %s(#%s)",
-        getClass().getSimpleName(), System.identityHashCode(this),
-        measurementTemplateListComponent.getClass().getSimpleName(),
-        System.identityHashCode(measurementTemplateListComponent)));
     this.experimentInformationService = experimentInformationService;
-  }
-
-  private static String convertErrorCodeToMessage(MeasurementService.ErrorCode errorCode) {
-    return switch (errorCode) {
-      case FAILED -> "Registration failed";
-      case UNKNOWN_ORGANISATION_ROR_ID -> "Could not resolve ROR identifier.";
-      case UNKNOWN_ONTOLOGY_TERM -> "Encountered unknown ontology term.";
-      case WRONG_EXPERIMENT -> "There are samples that do not belong to this experiment.";
-      case MISSING_ASSOCIATED_SAMPLE -> "Missing sample information for this measurement.";
-      case MISSING_MEASUREMENT_ID -> "Missing measurement identifier";
-      case SAMPLECODE_NOT_FROM_PROJECT -> "QBiC sample ID does not belong to this project";
-      case UNKNOWN_MEASUREMENT -> "Unknown measurements, please check the identifiers.";
-    };
+    this.messageSourceNotificationFactory = messageSourceNotificationFactory;
   }
 
   private void initContent() {
@@ -195,14 +217,59 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     measurementSearchField.addValueChangeListener(
         event -> measurementDetailsComponent.setSearchedMeasurementValue((event.getValue())));
     Button downloadButton = new Button("Download Metadata");
-    downloadButton.addClickListener(event -> downloadMetadataForSelectedTab());
+
+    //TODO if download metadata is in progress
+    downloadButton.addClickListener(event -> {
+      Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
+      if (tabLabel.isEmpty()) {
+        return;
+      }
+      switch (tabLabel.get()) {
+        case "Proteomics": {
+          var ids = measurementDetailsComponent.getSelectedProteomicsMeasurements()
+              .stream()
+              .map(ProteomicsMeasurement::measurementId)
+              .map(MeasurementId::value)
+              .toList();
+          downloadProteomicsMetadata(ids);
+          return;
+        }
+        case "Genomics": {
+          var ids = measurementDetailsComponent.getSelectedNGSMeasurements()
+              .stream()
+              .map(NGSMeasurement::measurementId)
+              .map(MeasurementId::value)
+              .toList();
+          downloadNGSMetadata(ids);
+          return;
+        }
+        default:
+          throw new ApplicationException(
+              "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
+      }
+    });
+
+
+
     Button registerMeasurementButton = new Button("Register Measurements");
     registerMeasurementButton.addClassName("primary");
     registerMeasurementButton.addClickListener(
-        event -> openRegisterMeasurementDialog());
+        event -> openRegistrationDialog());
 
     Button editButton = new Button("Edit");
-    editButton.addClickListener(event -> openEditMeasurementDialog());
+    editButton.addClickListener(event -> {
+      measurementDetailsComponent.getSelectedMeasurements()
+          .ifPresentOrElse(selectedMeasurements -> {
+            var domain = selectedMeasurements.domain();
+            var dialog = initDialogForDomain(domain, selectedMeasurements.measurementIds());
+            add(dialog);
+            dialog.open();
+          }, () -> {
+            messageFactory.toast("measurement.no-measurements-selected",
+                MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale()).open();
+            log.debug("Could not find any selected measurement");
+          });
+    });
 
     Button deleteButton = new Button("Delete");
     deleteButton.addClickListener(event -> onDeleteMeasurementsClicked());
@@ -217,6 +284,72 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     Div interactionsAndInfo = new Div(buttonsAndSearch, measurementsSelectedInfoBox);
     interactionsAndInfo.addClassName("buttonsAndInfo");
     content.add(interactionsAndInfo);
+  }
+
+  private AppDialog initDialogForDomain(MeasurementDetailsComponent.Domain domain,
+      List<String> selectedMeasurements) {
+    return switch (domain) {
+      case GENOMICS -> initDialogForUpdateNGS(selectedMeasurements);
+      case PROTEOMICS -> initDialogForUpdatePxP(selectedMeasurements);
+    };
+  }
+
+  private AppDialog initDialogForUpdatePxP(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Update Measurements");
+    DialogFooter.with(dialog, "Cancel", "Update");
+    var templateDownload = new MeasurementTemplateComponent(UPDATE_MEASUREMENT_DESCRIPTION,
+        "Download metadata",
+        asyncService.measurementUpdatePxP(context.projectId().orElseThrow().value(),
+            selectedMeasurementIds, OPEN_XML),
+        messageFactory,
+        projectContext::projectId);
+    var upload = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(
+            MeasurementUpdateInformationPxP.class), messageFactory);
+    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+
+    DialogBody.with(dialog, uploadComponent, uploadComponent);
+
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      if (upload.validate().hasPassed()) {
+        var validationRequests = upload.getValidationRequestContent();
+        submitUpdateRequest(context.projectId().orElseThrow().value(),
+            createUpdateRequestPackage(validationRequests));
+        dialog.close();
+      }
+    });
+    return dialog;
+  }
+
+  private AppDialog initDialogForUpdateNGS(List<String> selectedMeasurementIds) {
+    var dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Edit Measurements");
+    DialogFooter.with(dialog, "Cancel", "Update");
+    var templateDownload = new MeasurementTemplateComponent(
+        UPDATE_MEASUREMENT_DESCRIPTION,
+        "Download Metadata",
+        asyncService.measurementUpdateNGS(context.projectId().orElseThrow().value(),
+            selectedMeasurementIds, OPEN_XML),
+        messageFactory,
+        projectContext::projectId);
+
+    var upload = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(
+            MeasurementUpdateInformationNGS.class), messageFactory);
+    var uploadComponent = new MeasurementUpdateComponent(templateDownload, upload);
+    DialogBody.with(dialog, uploadComponent, uploadComponent);
+    dialog.registerCancelAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      if (upload.validate().hasPassed()) {
+        var validationRequests = upload.getValidationRequestContent();
+        submitUpdateRequest(context.projectId().orElseThrow().value(),
+            createUpdateRequestPackage(validationRequests));
+        dialog.close();
+      }
+    });
+    return dialog;
   }
 
   private void onDeleteMeasurementsClicked() {
@@ -286,182 +419,48 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     result.onValue(v -> measurementDetailsComponent.refreshGrids());
   }
 
-  private Dialog setupDialog(MeasurementMetadataUploadDialog dialog) {
-    dialog.addCancelListener(cancelEvent -> cancelEvent.getSource().close());
-    dialog.addConfirmListener(this::triggerMeasurementRegistration);
-    return dialog;
+  private void executeInUi(Command command) {
+    getUI().ifPresent(ui -> ui.access(command));
   }
 
-  private void triggerMeasurementRegistration(
-      ConfirmEvent event) {
-    var uploads = new ArrayList<>(event.uploads());
-    var dialog = event.getSource();
-    var mode = dialog.getMode();
-    UI ui = event.getSource().getUI().orElseThrow();
-    for (var upload : uploads) {
-      var measurementData = upload.measurementMetadata();
-
-      //Necessary so the dialog window switches to show the upload progress
-      ui.push();
-      CompletableFuture<List<Result<MeasurementId, MeasurementService.ErrorCode>>> completableFuture;
-      Toast pendingToast;
-
-      // we can close the dialog, everything that comes now is executed concurrently and there is
-      // no need the user is blocked
-      event.getSource().close();
-
-      if (mode.equals(MODE.EDIT)) {
-        completableFuture = measurementService.updateAll(measurementData,
-            context.projectId().orElseThrow());
-        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Update of #%d measurements".formatted(measurementData.stream()
-                    .map(measurementMetadata -> measurementMetadata.measurementIdentifier().orElse(""))
-                    .distinct().toList().size())},
-            getLocale());
-      } else {
-        completableFuture = measurementService.registerAll(upload.measurementMetadata(),
-            context.projectId().orElseThrow());
-        pendingToast = messageFactory.pendingTaskToast("task.in-progress", new Object[]{
-                "Registration of #%d measurements".formatted(upload.measurementMetadata().size())},
-            getLocale());
-      }
-      ui.access(pendingToast::open);
-      try {
-        completableFuture.exceptionally(e -> {
-              log.error(e.getMessage(), e);
-              ui.access(() -> {
-                pendingToast.close();
-                messageFactory.toast("task.failed", new Object[]{"Registration failed"}, getLocale())
-                    .open();
-              });
-              throw new HandledException(e);
-            })
-            .thenAccept(results -> {
-              var errorResult = results.stream().filter(Result::isError).findAny();
-              if (errorResult.isPresent()) {
-                String detailedMessage = convertErrorCodeToMessage(errorResult.get().getError());
-                ui.access(() -> {
-                  pendingToast.close();
-                  messageFactory.toast("task.failed", new Object[]{detailedMessage}, getLocale())
-                      .open();
-                });
-              } else {
-                ui.access(() -> {
-                  pendingToast.close();
-                  messageFactory.toast("task.finished", new Object[]{"Measurement update"},
-                      getLocale()).open();
-                  setMeasurementInformation();
-                });
-              }
-            }).exceptionally(e -> {
-              throw new HandledException(e);
-            });
-      } catch (HandledException e) {
-        log.error(e.getMessage(), e);
-      }
-    }
-  }
-
-  private void openEditMeasurementDialog() {
-    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
-        cancelConfirmationDialogFactory,
-        MODE.EDIT,
-        context.projectId().orElse(null));
-    setupDialog(dialog);
-    dialog.open();
-  }
-
-  private void downloadMetadataForSelectedTab() {
-    Optional<String> tabLabel = measurementDetailsComponent.getSelectedTabName();
-    if (tabLabel.isEmpty()) {
-      return;
-    }
-    switch (tabLabel.get()) {
-      case "Proteomics": {
-        downloadProteomicsMetadata();
-        return;
-      }
-      case "Genomics": {
-        downloadNGSMetadata();
-        return;
-      }
-      default:
-        throw new ApplicationException(
-            "Unknown tab: " + measurementDetailsComponent.getSelectedTabName());
-    }
-  }
-
-  private void downloadProteomicsMetadata() {
+  private void downloadProteomicsMetadata(List<String> selectedMeasurementIds) {
     ProjectId projectId = context.projectId().orElseThrow();
-    String projectCode = projectInformationService.find(projectId)
-        .orElseThrow()
-        .getProjectCode().value();
+    var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
+        MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+    asyncService.measurementUpdatePxP(projectId.value(), selectedMeasurementIds, OPEN_XML)
+        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open))
+        .doOnSuccess(this::triggerDownload)
+        .doFinally(it -> executeInUi(inProgressToast::close))
+        .subscribe();
+  }
 
-    var experimentId = context.experimentId().orElseThrow();
-    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
-        .orElseThrow()
-        .getName();
+  private void downloadNGSMetadata(List<String> selectedMeasurementIds) {
+    ProjectId projectId = context.projectId().orElseThrow();
+    var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
+        MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
+    asyncService.measurementUpdateNGS(projectId.value(), selectedMeasurementIds, OPEN_XML)
+        .doOnSubscribe(ignore -> executeInUi(inProgressToast::open))
+        .doOnSuccess(this::triggerDownload)
+        .doFinally(it -> executeInUi(inProgressToast::close))
+        .subscribe();
+  }
 
-    var proteomicsMeasurements = measurementService.findProteomicsMeasurements(
-        context.experimentId().orElseThrow(() -> new ApplicationException(
-            ErrorCode.GENERAL, null)),
-        context.projectId().orElseThrow(() -> new ApplicationException(ErrorCode.GENERAL, null)));
-
-    Comparator<String> natOrder = Comparator.naturalOrder();
-
-    var result = proteomicsMeasurements.stream()
-        .map(measurementPresenter::expandProteomicsPools)
-        .flatMap(Collection::stream)
-        .sorted(Comparator.comparing(ProteomicsMeasurementEntry::measurementCode, natOrder)
-            .thenComparing(ptx -> ptx.sampleInformation().sampleId(), natOrder)).toList();
-    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
+  private void triggerDownload(DigitalObject digitalObject) {
+    DownloadStreamProvider downloadStreamProvider = new DownloadStreamProvider() {
       @Override
       public String getFilename() {
-        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
-            experimentName,
-            "proteomics measurements", "xlsx");
+        var projectId = projectContext.projectId();
+        return FileNameFormatter.formatWithTimestampedSimple(LocalDate.now(), projectId,
+            "measurements", "xlsx");
       }
 
       @Override
-      public Workbook getWorkbook() {
-        return ProteomicsWorkbooks.createEditWorkbook(result);
+      public InputStream getStream() {
+        return digitalObject.content();
       }
-    });
-  }
+    };
 
-  private void downloadNGSMetadata() {
-    ProjectId projectId = context.projectId().orElseThrow();
-    String projectCode = projectInformationService.find(projectId)
-        .orElseThrow()
-        .getProjectCode().value();
-
-    var experimentId = context.experimentId().orElseThrow();
-    String experimentName = experimentInformationService.find(projectId.value(), experimentId)
-        .orElseThrow()
-        .getName();
-    var ngsMeasurements = measurementService.findNGSMeasurements(experimentId, projectId);
-
-    Comparator<String> natOrder = Comparator.naturalOrder();
-
-    var result = ngsMeasurements.stream().map(measurementPresenter::expandNGSPools)
-        .flatMap(Collection::stream)
-        // sort by measurement codes first, then by sample codes
-        .sorted(Comparator.comparing(NGSMeasurementEntry::measurementCode, natOrder)
-            .thenComparing(ngs -> ngs.sampleInformation().sampleId(), natOrder)).toList();
-    downloadComponent.trigger(new WorkbookDownloadStreamProvider() {
-      @Override
-      public String getFilename() {
-        return FileNameFormatter.formatWithTimestampedContext(LocalDate.now(), projectCode,
-            experimentName,
-            "ngs measurements", "xlsx");
-      }
-
-      @Override
-      public Workbook getWorkbook() {
-        return NGSWorkbooks.createEditWorkbook(result);
-      }
-    });
-
+    getUI().ifPresent(ui -> ui.access(() -> downloadComponent.trigger(downloadStreamProvider)));
   }
 
   private Disclaimer createNoSamplesRegisteredDisclaimer() {
@@ -496,9 +495,289 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     Button registerMeasurements = new Button("Register Measurements");
     registerMeasurements.addClassName("primary");
     noMeasurementDisclaimer.add(registerMeasurements);
-    registerMeasurements.addClickListener(event -> openRegisterMeasurementDialog());
+    registerMeasurements.addClickListener(event -> openRegistrationDialog());
     noMeasurementDisclaimer.addClassName("no-measurements-registered-disclaimer");
     return noMeasurementDisclaimer;
+  }
+
+  private void openRegistrationDialog() {
+    this.measurementDialog = AppDialog.medium();
+    DialogHeader.with(measurementDialog, "Register measurements");
+    DialogFooter.with(measurementDialog, "Cancel", "Register");
+
+    var registrationMeasurementUpload = new MeasurementUpload(asyncService, context,
+        ConverterRegistry.converterFor(MeasurementRegistrationInformationNGS.class),
+        messageSourceNotificationFactory);
+    var templateComponent = new MeasurementTemplateSelectionComponent(
+        Map.ofEntries(
+            Map.entry(Domain.Genomics, new WorkbookDownloadStreamProvider() {
+              @Override
+              public String getFilename() {
+                return FileNameFormatter.formatWithVersion("ngs_measurement_registration_sheet", 1,
+                    "xlsx");
+              }
+
+              @Override
+              public Workbook getWorkbook() {
+                return NGSWorkbooks.createRegistrationWorkbook();
+              }
+            }),
+            Map.entry(Domain.Proteomics, new WorkbookDownloadStreamProvider() {
+              @Override
+              public String getFilename() {
+                return FileNameFormatter.formatWithVersion("pxp_measurement_registration_sheet", 1,
+                    "xlsx");
+              }
+
+              @Override
+              public Workbook getWorkbook() {
+                return ProteomicsWorkbooks.createRegistrationWorkbook();
+              }
+            })));
+
+    var measurementRegistrationComponent = new MeasurementRegistrationComponent(templateComponent,
+        registrationMeasurementUpload, Domain.Genomics);
+
+    DialogBody.with(measurementDialog, measurementRegistrationComponent,
+        measurementRegistrationComponent);
+    measurementDialog.registerCancelAction(measurementDialog::close);
+    measurementDialog.registerConfirmAction(() -> {
+      if (registrationMeasurementUpload.validate().hasPassed()) {
+        var requestContent = registrationMeasurementUpload.getValidationRequestContent();
+        submitRequest(context.projectId().orElseThrow().value(),
+            createRegistrationRequestPackage(requestContent));
+        measurementDialog.close();
+      }
+    });
+
+    add(measurementDialog);
+    measurementDialog.open();
+  }
+
+  private void submitUpdateRequest(String projectId, UpdateRequestPackage updateRequestPackage) {
+    submitUpdateRequestNGS(projectId, updateRequestPackage.updateInformationNGS);
+    submitUpdateRequestPxP(projectId, updateRequestPackage.updateInformationPxP);
+  }
+
+  private void submitUpdateRequestPxP(String projectId,
+      List<MeasurementUpdateInformationPxP> updateInformationPxP) {
+    if (updateInformationPxP.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolUpdatePxP(updateInformationPxP);
+    submitPreparedUpdateRequest(projectId, preparedRequests);
+  }
+
+  private List<MeasurementUpdateInformationPxP> mergeByPoolUpdatePxP(
+      List<MeasurementUpdateInformationPxP> updateInformationPxP) {
+    var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationPxP.class);
+    if (processor == null) {
+      throw new IllegalStateException("No processor for MeasurementUpdateInformationPxP");
+    }
+    return processor.process(updateInformationPxP);
+  }
+
+  private List<MeasurementUpdateInformationNGS> mergeByPoolUpdateNGS(
+      List<MeasurementUpdateInformationNGS> updateInformationPxP) {
+    var processor = ProcessorRegistry.processorFor(MeasurementUpdateInformationNGS.class);
+    if (processor == null) {
+      throw new IllegalStateException("No processor for MeasurementUpdateInformationNGS");
+    }
+    return processor.process(updateInformationPxP);
+  }
+
+  private void submitUpdateRequestNGS(String projectId,
+      List<MeasurementUpdateInformationNGS> updateInformationNGS) {
+    if (updateInformationNGS.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolUpdateNGS(updateInformationNGS);
+    submitPreparedUpdateRequest(projectId, preparedRequests);
+  }
+
+  private void submitRequest(String projectId,
+      RegistrationRequestPackage registrationRequestPackage) {
+    submitRequestNGS(projectId, registrationRequestPackage.registrationInformationNGS());
+    submitRequestPxP(projectId, registrationRequestPackage.registrationInformationPxP());
+  }
+
+  private void submitRequestPxP(String projectId,
+      List<MeasurementRegistrationInformationPxP> requestList) {
+    if (requestList.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolPxP(requestList);
+    submitPreparedRequest(projectId, preparedRequests);
+  }
+
+  private List<MeasurementRegistrationInformationPxP> mergeByPoolPxP(
+      List<MeasurementRegistrationInformationPxP> requests) {
+    var processor = new MeasurementRegistrationProcessorPxP();
+    return processor.process(requests);
+  }
+
+
+  private UpdateRequestPackage createUpdateRequestPackage(
+      List<? extends ValidationRequestBody> validationRequests) {
+    var requestsNGS = new ArrayList<MeasurementUpdateInformationNGS>();
+    var requestsPxP = new ArrayList<MeasurementUpdateInformationPxP>();
+
+    for (var entry : validationRequests) {
+      switch (entry) {
+        case MeasurementUpdateInformationNGS info -> requestsNGS.add(info);
+        case MeasurementUpdateInformationPxP info -> requestsPxP.add(info);
+        default -> throw new IllegalStateException(
+            "Unexpected request body of type: " + entry.getClass().getName());
+      }
+    }
+    return new UpdateRequestPackage(requestsNGS, requestsPxP);
+  }
+
+  private RegistrationRequestPackage createRegistrationRequestPackage(
+      List<? extends ValidationRequestBody> validationRequestBodies) {
+    var requestsNGS = new ArrayList<MeasurementRegistrationInformationNGS>();
+    var requestsPxP = new ArrayList<MeasurementRegistrationInformationPxP>();
+
+    for (var entry : validationRequestBodies) {
+      switch (entry) {
+        case MeasurementRegistrationInformationNGS info -> requestsNGS.add(info);
+        case MeasurementRegistrationInformationPxP info -> requestsPxP.add(info);
+        default -> throw new IllegalStateException(
+            "Unexpected request body of type: " + entry.getClass().getName());
+      }
+    }
+
+    return new RegistrationRequestPackage(requestsNGS, requestsPxP);
+  }
+
+  private void submitPreparedRequest(String projectId,
+      List<? extends MeasurementRegistrationRequestBody> registrationRequests) {
+    var requests = registrationRequests.stream()
+        .map(measurement -> new MeasurementRegistrationRequest(projectId, measurement)).toList();
+
+    var registrationToast = messageFactory.pendingTaskToast("measurement.registration.in-progress",
+        new Object[]{}, getLocale());
+    registrationToast.open();
+    var successfulCompletions = new AtomicInteger(0);
+    asyncService.create(Flux.fromIterable(requests))
+        .doFirst(() -> log.debug(
+            "Starting registration of %d measurement requests.".formatted(requests.size())))
+        .doOnEach(signal -> {
+          if (signal.isOnNext()) {
+            successfulCompletions.incrementAndGet();
+          }
+        })
+        .doOnTerminate(() -> {
+          closeToast(registrationToast);
+          processResults(successfulCompletions.get(), requests.size(),
+              this::displayRegistrationSuccess, this::displayRegistrationFailure);
+          reloadMeasurements();
+        })
+        .subscribe();
+  }
+
+  private void submitPreparedUpdateRequest(String projectId,
+      List<? extends MeasurementUpdateRequestBody> preparedRequests) {
+    var requests = preparedRequests.stream()
+        .map(measurement -> new MeasurementUpdateRequest(projectId, measurement)).toList();
+
+    var registrationToast = messageFactory.pendingTaskToast("measurement.registration.in-progress",
+        new Object[]{}, getLocale());
+    registrationToast.open();
+    var successfulCompletions = new AtomicInteger(0);
+    asyncService.update(Flux.fromIterable(requests))
+        .doFirst(() -> log.debug(
+            "Starting updates of %d measurements.".formatted(requests.size())))
+        .doOnEach(signal -> {
+          if (signal.isOnNext()) {
+            successfulCompletions.incrementAndGet();
+          }
+        })
+        .doOnTerminate(() -> {
+          closeToast(registrationToast);
+          processResults(successfulCompletions.get(), requests.size(),
+              this::displayUpdateSuccess, this::displayUpdateFailure);
+          reloadMeasurements();
+        })
+        .subscribe();
+  }
+
+  private void reloadMeasurements() {
+    getUI().ifPresent(ui -> ui.access(() -> {
+        measurementDetailsComponent.setContext(context);
+    }));
+  }
+
+  private void submitRequestNGS(String projectId,
+      List<MeasurementRegistrationInformationNGS> requestList) {
+    if (requestList.isEmpty()) {
+      return;
+    }
+    var preparedRequests = mergeByPoolNGS(requestList);
+    submitPreparedRequest(projectId, preparedRequests);
+  }
+
+  private static List<MeasurementRegistrationInformationNGS> mergeByPoolNGS(
+      List<MeasurementRegistrationInformationNGS> requests) {
+    var processor = new MeasurementRegistrationProcessorNGS();
+    return processor.process(requests);
+  }
+
+  private void processResults(int numberOfSuccesses, int numberOfRequests,
+      Consumer<Integer> onSuccess, Consumer<Integer> onFailure) {
+    if (numberOfSuccesses > 0 && numberOfSuccesses == numberOfRequests) {
+      // Only successful registrations
+      onSuccess.accept(numberOfSuccesses);
+      return;
+    }
+    if (numberOfSuccesses > 0 && numberOfSuccesses < numberOfRequests) {
+      // We have successful registrations but also failures
+      onFailure.accept(numberOfRequests - numberOfSuccesses);
+      onSuccess.accept(numberOfSuccesses);
+      return;
+    }
+    // There were only failing requests, none succeeded
+    onFailure.accept(numberOfRequests - numberOfSuccesses);
+  }
+
+  private void displayRegistrationSuccess(int numberOfSuccesses) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      Toast toast = messageFactory.toast("measurement.registration.successful",
+          new Object[]{numberOfSuccesses},
+          getLocale());
+      toast.open();
+    }));
+  }
+
+  private void displayUpdateSuccess(int numberOfSuccesses) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      Toast toast = messageFactory.toast("measurement.update.successful",
+          new Object[]{numberOfSuccesses},
+          getLocale());
+      toast.open();
+    }));
+  }
+
+  private void displayUpdateFailure(int numberOfFailures) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = messageFactory.toast("measurement.update.failed",
+          new Object[]{numberOfFailures},
+          getLocale());
+      toast.open();
+    }));
+  }
+
+  private void closeToast(Toast toast) {
+    getUI().ifPresent(ui -> ui.access(() -> toast.close()));
+  }
+
+  private void displayRegistrationFailure(int numberOfFailures) {
+    getUI().ifPresent(ui -> ui.access(() -> {
+      var toast = messageFactory.toast("measurement.registration.failed",
+          new Object[]{numberOfFailures},
+          getLocale());
+      toast.open();
+    }));
   }
 
   private void routeToSampleCreation(ComponentEvent<?> componentEvent) {
@@ -543,6 +822,9 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     ExperimentId parsedExperimentId = ExperimentId.parse(experimentId);
     this.context = context.with(parsedExperimentId);
     setMeasurementInformation();
+    asyncService.getProjectCode(context.projectId().orElseThrow().value())
+        .doOnSuccess(projectCode -> projectContext.setProjectId(projectCode.value()))
+        .subscribe();
   }
 
   private void setMeasurementInformation() {
@@ -562,13 +844,11 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     noMeasurementDisclaimer.setVisible(false);
     content.setVisible(false);
     measurementDetailsComponent.setVisible(false);
-    measurementTemplateListComponent.setVisible(false);
     registerSamplesDisclaimer.setVisible(true);
   }
 
   private void showRegisterMeasurementDisclaimer() {
     noMeasurementDisclaimer.setVisible(true);
-    measurementTemplateListComponent.setVisible(true);
     content.setVisible(false);
     measurementDetailsComponent.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
@@ -578,7 +858,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
     noMeasurementDisclaimer.setVisible(false);
     registerSamplesDisclaimer.setVisible(false);
     content.setVisible(true);
-    measurementTemplateListComponent.setVisible(true);
     measurementDetailsComponent.setContext(context);
     measurementDetailsComponent.setVisible(true);
   }
@@ -587,15 +866,6 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
       DownloadMeasurementTemplateEvent downloadMeasurementTemplateEvent) {
     measurementTemplateDownload.trigger(
         downloadMeasurementTemplateEvent.getDownloadStreamProvider());
-  }
-
-  private void openRegisterMeasurementDialog() {
-    this.dialog = new MeasurementMetadataUploadDialog(measurementValidationService,
-        cancelConfirmationDialogFactory,
-        MODE.ADD,
-        context.projectId().orElse(null));
-    setupDialog(dialog);
-    dialog.open();
   }
 
   private void initRawDataAvailableInfo() {
@@ -643,9 +913,25 @@ public class MeasurementMain extends Main implements BeforeEnterObserver, Before
 
   }
 
-  @Override
-  public void beforeLeave(BeforeLeaveEvent event) {
-    Optional.ofNullable(this.dialog).ifPresent(Dialog::close);
+  record RegistrationRequestPackage(
+      List<MeasurementRegistrationInformationNGS> registrationInformationNGS,
+      List<MeasurementRegistrationInformationPxP> registrationInformationPxP) {
+
+    public RegistrationRequestPackage {
+      List.copyOf(Objects.requireNonNull(registrationInformationNGS));
+      List.copyOf(Objects.requireNonNull(registrationInformationPxP));
+    }
+
+  }
+
+  record UpdateRequestPackage(List<MeasurementUpdateInformationNGS> updateInformationNGS,
+                              List<MeasurementUpdateInformationPxP> updateInformationPxP) {
+
+    public UpdateRequestPackage {
+      List.copyOf(Objects.requireNonNull(updateInformationNGS));
+      List.copyOf(Objects.requireNonNull(updateInformationPxP));
+    }
+
   }
 
 }
