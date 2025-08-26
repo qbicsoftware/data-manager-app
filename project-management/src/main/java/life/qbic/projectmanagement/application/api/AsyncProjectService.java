@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -16,10 +17,8 @@ import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.batch.SampleUpdateRequest.SampleInformation;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ConfoundingVariableInformation;
-import life.qbic.projectmanagement.application.measurement.Labeling;
 import life.qbic.projectmanagement.application.sample.SamplePreview;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
-import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
@@ -548,6 +547,32 @@ public interface AsyncProjectService {
    */
   Mono<ProjectInformation> getProject(String projectId);
 
+
+  /**
+   * Tries to resolve the {@link ProjectCode} for a given project ID.
+   *
+   * @param projectId the technical id of the project
+   * @return the natural id of the project, the {@link ProjectCode} which is known to the user.
+   * @throws RequestFailedException  if the request was not successfully executed
+   * @throws AccessDeniedException   if the user has insufficient rights
+   * @since 1.11.0
+   */
+  Mono<ProjectCode> getProjectCode(String projectId);
+
+  /**
+   * The natural id of the project known to the user. Follows the pattern starting with
+   * <code>^Q2[A-Z0-9]{4}$</code>.
+   *
+   * @param value
+   * @since 1.11.0
+   */
+  record ProjectCode(String value) {
+
+    public ProjectCode {
+      Objects.requireNonNull(value);
+    }
+  }
+
   /**
    * Submits a project creation request and returns a {@link Mono<ProjectCreationResponse>}
    * immediately.
@@ -859,15 +884,17 @@ public interface AsyncProjectService {
   /**
    * A service request to delete an experimental group.
    *
-   * @param projectId         the project's identifier. The project containing the experiment.
-   * @param experimentId      the experiment's identifier'
+   * @param projectId               the project's identifier. The project containing the
+   *                                experiment.
+   * @param experimentId            the experiment's identifier'
    * @param experimentalGroupNumber the identifier of the experimental group to delete
-   * @param requestId         the request ID. Needs to be provided by the client and will be
-   *                          referenced in the response.
+   * @param requestId               the request ID. Needs to be provided by the client and will be
+   *                                referenced in the response.
    * @since 1.10.0
    */
   record ExperimentalGroupDeletionRequest(String projectId, String experimentId,
-                                          Integer experimentalGroupNumber, String requestId) implements
+                                          Integer experimentalGroupNumber,
+                                          String requestId) implements
       CacheableRequest {
 
     public ExperimentalGroupDeletionRequest(String projectId, String experimentId,
@@ -1202,6 +1229,24 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentalGroupUpdateResponse> update(ExperimentalGroupUpdateRequest request);
 
+
+  record MeasurementRegistrationRequest(String projectId,
+                                        MeasurementRegistrationRequestBody measurement,
+                                        String requestId) implements CacheableRequest {
+
+    public MeasurementRegistrationRequest {
+      requireNonNull(projectId);
+      requireNonNull(measurement);
+      requireNonNull(requestId);
+    }
+
+    public MeasurementRegistrationRequest(String projectId,
+        MeasurementRegistrationRequestBody measurement) {
+      this(projectId, measurement, UUID.randomUUID().toString());
+    }
+
+  }
+
   /**
    * Submits an experimental group deletion request and returns a reactive
    * {@link Mono<ExperimentalGroupDeletionResponse>}.
@@ -1221,6 +1266,65 @@ public interface AsyncProjectService {
    */
   Mono<ExperimentalGroupDeletionResponse> delete(ExperimentalGroupDeletionRequest request);
   //</editor-fold>
+
+
+  record MeasurementRegistrationResponse(String requestId,
+                                         MeasurementRegistrationRequestBody measurement) {
+
+    public MeasurementRegistrationResponse {
+      requireNonNull(requestId);
+      requireNonNull(measurement);
+    }
+  }
+
+  /**
+   * Submits a measurement registration request for NGS and returns a reactive
+   * {@link Flux<MeasurementRegistrationInformationNGS>} with the measurement information as
+   * {@link MeasurementRegistrationInformationNGS}.
+   *
+   * <p>
+   * <b>Exceptions</b>
+   * <p>
+   * Exceptions are wrapped as {@link Flux#error(Throwable)} and are one of the types described in
+   * the throw section below.
+   *
+   * @param requestStream the request with the measurement information as
+   *                      {@link MeasurementRegistrationInformationNGS}.
+   * @return a {@link Flux<MeasurementRegistrationInformationNGS>} with the measurement information
+   * as {@link MeasurementRegistrationInformationNGS}.
+   * @since 1.11.0
+   */
+  Flux<MeasurementRegistrationResponse> create(Flux<MeasurementRegistrationRequest> requestStream);
+
+
+  Flux<MeasurementUpdateResponse> update(Flux<MeasurementUpdateRequest> requestStream);
+
+  record MeasurementUpdateRequest(String projectId, MeasurementUpdateRequestBody requestBody,
+                                  String requestId) implements CacheableRequest {
+
+    public MeasurementUpdateRequest {
+      requireNonNull(projectId);
+      requireNonNull(requestBody);
+      requireNonNull(requestId);
+    }
+
+    public MeasurementUpdateRequest(String projectId, MeasurementUpdateRequestBody requestBody) {
+      this(projectId, requestBody, UUID.randomUUID().toString());
+    }
+  }
+
+  record MeasurementUpdateResponse(String requestId, MeasurementUpdateRequestBody requestBody) {
+
+    public MeasurementUpdateResponse {
+      requireNonNull(requestId);
+      requireNonNull(requestBody);
+    }
+  }
+
+  sealed interface MeasurementUpdateRequestBody permits MeasurementUpdateInformationNGS,
+      MeasurementUpdateInformationPxP {
+
+  }
 
   /**
    * Returns a reactive stream of a zipped RO-Crate encoded in UTF-8.
@@ -1486,6 +1590,33 @@ public interface AsyncProjectService {
   Mono<DigitalObject> sampleInformationTemplate(String projectId, String experimentId,
       MimeType mimeType);
 
+
+  /**
+   * Provides information about selected NGS measurements for updating purposes in a requested
+   * {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdateNGS(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
+  /**
+   * Provides information about selected proteomics measurements for updating purposes in a
+   * requested {@link MimeType}.
+   *
+   * @param projectId      the id of the project the measurements belong to
+   * @param measurementIds a {@link List} of ids of the measurements of interest
+   * @param mimeType       the desired {@link MimeType} of the {@link DigitalObject}
+   * @return a {@link DigitalObject} in the request {@link MimeType} format
+   * @since 1.11.0
+   */
+  Mono<DigitalObject> measurementUpdatePxP(String projectId, List<String> measurementIds,
+      MimeType mimeType);
+
   sealed interface ExperimentUpdateRequestBody permits ConfoundingVariableAdditions,
       ConfoundingVariableDeletions, ConfoundingVariableUpdates, ExperimentDescription {
 
@@ -1504,6 +1635,10 @@ public interface AsyncProjectService {
    * <ul>
    *   <li>{@link SampleRegistrationInformation}</li>
    *   <li>{@link SampleUpdateInformation}</li>
+   *   <li>{@link MeasurementRegistrationInformationNGS}</li>
+   *   <li>{@link MeasurementRegistrationInformationPxP}</li>
+   *   <li>{@link MeasurementUpdateInformationNGS}</li>
+   *   <li>{@link MeasurementUpdateInformationPxP}</li>
    * </ul>
    *
    * @since 1.10.0
@@ -1524,8 +1659,8 @@ public interface AsyncProjectService {
       ExperimentUpdateRequest, ExperimentalGroupCreationRequest, ExperimentalGroupDeletionRequest,
       ExperimentalGroupUpdateRequest, ExperimentalVariablesDeletionRequest,
       ExperimentalVariablesUpdateRequest, FundingInformationCreationRequest,
-      ProjectResponsibleCreationRequest, ProjectResponsibleDeletionRequest, ProjectUpdateRequest,
-      ValidationRequest {
+      MeasurementRegistrationRequest, MeasurementUpdateRequest, ProjectResponsibleCreationRequest,
+      ProjectResponsibleDeletionRequest, ProjectUpdateRequest, ValidationRequest {
 
     /**
      * Returns an ID that is unique to the request.
@@ -1739,9 +1874,6 @@ public interface AsyncProjectService {
    * @param comment              a users comment
    * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
    *                             representation
-   * @param experimentId         the experiment ID of the experiment the sample should be registered
-   *                             to
-   * @param projectId            the project ID of the project the experiment belongs to
    * @since 1.10.0
    */
   record SampleRegistrationInformation(
@@ -1753,9 +1885,7 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables,
-      String experimentId,
-      String projectId
+      Map<String, String> confoundingVariables
   ) implements ValidationRequestBody {
 
   }
@@ -1774,9 +1904,6 @@ public interface AsyncProjectService {
    * @param comment              a users comment
    * @param confoundingVariables confounding variables with as a {@link java.util.HashMap}
    *                             representation
-   * @param experimentId         the experiment ID of the experiment the sample should be registered
-   *                             to
-   * @param projectId            the project ID of the project the experiment belongs to
    * @since 1.10.0
    */
   record SampleUpdateInformation(
@@ -1789,76 +1916,260 @@ public interface AsyncProjectService {
       String analyte,
       String analysisMethod,
       String comment,
-      Map<String, String> confoundingVariables,
-      String experimentId,
-      String projectId
+      Map<String, String> confoundingVariables
   ) implements ValidationRequestBody {
 
   }
 
+  /**
+   * Type interface for the registration information of measurements
+   *
+   * @since 1.11.0
+   */
+  sealed interface MeasurementRegistrationRequestBody permits MeasurementRegistrationInformationNGS,
+      MeasurementRegistrationInformationPxP {
 
+  }
+
+
+  /**
+   * Information container to register an NGS measurement.
+   *
+   * @param organisationId        the ROR ID of the organization that performed the measurement
+   * @param instrumentCURIE       the CURIE of the measurement device used
+   * @param facility              the facility within the organization that actually performed the
+   *                              measurement
+   * @param sequencingReadType    the sequencing read type used
+   * @param libraryKit            the library kit used
+   * @param flowCell              the flow cell used
+   * @param sequencingRunProtocol the sequencing run protocol
+   * @param samplePoolGroup       the name of the sample pool
+   * @param specificMetadata      specific metadata that differentiates pooled samples as a
+   *                              {@link Map}, with the sample ids as keys and the sample-specific
+   *                              measurement annotations as values. Will have only one entry if no
+   *                              pooling was done. {@link MeasurementSpecificNGS}
+   * @since 1.10.0
+   */
   record MeasurementRegistrationInformationNGS(
-      Collection<String> sampleCodes,
-      String organisationId, String instrumentCURI, String facility,
+      String organisationId, String instrumentCURIE, String facility,
       String sequencingReadType, String libraryKit, String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      String indexI7, String indexI5,
-      String comment
-  ) implements ValidationRequestBody {
+      Map<String, MeasurementSpecificNGS> specificMetadata
+  ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
+
+    public MeasurementRegistrationInformationNGS {
+      requireNonNull(organisationId);
+      requireNonNull(instrumentCURIE);
+      requireNonNull(facility);
+      requireNonNull(sequencingReadType);
+      requireNonNull(libraryKit);
+      requireNonNull(flowCell);
+      requireNonNull(sequencingRunProtocol);
+      requireNonNull(samplePoolGroup);
+      requireNonNull(specificMetadata);
+      specificMetadata = new HashMap<>(specificMetadata);
+    }
+
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
 
   }
 
+  /**
+   * Information container to update an NGS measurement.
+   *
+   * @param measurementId         the identifier of the measurement
+   * @param organisationId        the ROR ID of the organization that performed the measurement
+   * @param instrumentCURIE       the CURIE of the measurement device used
+   * @param facility              the facility within the organization that actually performed the
+   *                              measurement
+   * @param sequencingReadType    the sequencing read type used
+   * @param libraryKit            the library kit used
+   * @param flowCell              the flow cell used
+   * @param sequencingRunProtocol the sequencing run protocol
+   * @param samplePoolGroup       the name of the sample pool
+   * @param specificMetadata      specific metadata that differentiates pooled samples as a
+   *                              {@link Map}, with the sample ids as keys and the sample-specific
+   *                              measurement annotations as values. Will have only one entry if no
+   *                              pooling was done. {@link MeasurementSpecificNGS}
+   * @since 1.10.0
+   */
   record MeasurementUpdateInformationNGS(
-      String measurementCode,
-      Collection<String> sampleCodes,
-      String organisationId, String instrumentCURI,
+      String measurementId,
+      String organisationId, String instrumentCURIE,
       String facility,
       String sequencingReadType, String libraryKit,
       String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      String indexI7, String indexI5,
-      String comment) implements ValidationRequestBody {
+      Map<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody,
+      MeasurementUpdateRequestBody {
+
+    public MeasurementUpdateInformationNGS {
+      requireNonNull(measurementId);
+      requireNonNull(organisationId);
+      requireNonNull(instrumentCURIE);
+      requireNonNull(facility);
+      requireNonNull(sequencingReadType);
+      requireNonNull(libraryKit);
+      requireNonNull(flowCell);
+      requireNonNull(sequencingRunProtocol);
+      requireNonNull(samplePoolGroup);
+      requireNonNull(specificMetadata);
+      specificMetadata = new HashMap<>(specificMetadata);
+    }
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
 
   }
 
+  /**
+   * Metadata that describes measurement properties, that are unique to the sample presented in the
+   * measurement (e.g., when pooling was done)
+   *
+   * @param indexI7 the i7 index used in the measurement to discriminate a sample
+   * @param indexI5 the i5 index used in the measurement to discriminate a sample
+   * @param comment some comment from the measuring lab
+   * @since 1.10.0
+   */
+  record MeasurementSpecificNGS(
+      String indexI7,
+      String indexI5,
+      String comment
+  ) {
+
+  }
+
+  /**
+   * Information container to register a proteomics measurement.
+   *
+   * @param technicalReplicateName the name of the technical replicate
+   * @param organisationId         the ROR ID of the organization that performed the measurement
+   * @param msDeviceCURIE          the CURIE of the mass spectrometry device used for the
+   *                               measurement
+   * @param samplePoolGroup        the name of the sample pool
+   * @param facility               the name of the facility that performed the measurement
+   * @param digestionEnzyme        the enzyme used for proteolytic digestion
+   * @param digestionMethod        the digestion method
+   * @param enrichmentMethod       the enrichment method used
+   * @param injectionVolume        the amount of the analyte injected for the measurement
+   * @param lcColumn               the liquid chromatography column used to separate compounds
+   * @param lcmsMethod             the method used
+   * @param labelingType           the type of the labeling used
+   * @param specificMetadata       specific metadata that differentiates pooled samples as a
+   *                               {@link Map}, with the sample ids as keys and the sample-specific
+   *                               measurement annotations as values. Will have only one entry if no
+   *                               pooling was done. {@link MeasurementSpecificPxP}
+   * @since 1.10.0
+   */
   record MeasurementRegistrationInformationPxP(
-      SampleCode sampleCode,
       String technicalReplicateName,
       String organisationId,
       String msDeviceCURIE,
       String samplePoolGroup,
       String facility,
-      String fractionName,
       String digestionEnzyme,
       String digestionMethod,
       String enrichmentMethod,
       String injectionVolume,
       String lcColumn,
       String lcmsMethod,
-      Labeling labeling,
-      String comment
-  ) implements ValidationRequestBody {
+      String labelingType,
+      Map<String, MeasurementSpecificPxP> specificMetadata
+  ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
 
   }
 
+  /**
+   * Information container to register a proteomics measurement.
+   *
+   * @param measurementId          the identifier of the measurement
+   * @param technicalReplicateName the name of the technical replicate
+   * @param organisationId         the ROR ID of the organization that performed the measurement
+   * @param msDeviceCURIE          the CURIE of the mass spectrometry device used for the
+   *                               measurement
+   * @param samplePoolGroup        the name of the sample pool
+   * @param facility               the name of the facility that performed the measurement
+   * @param digestionEnzyme        the enzyme used for proteolytic digestion
+   * @param digestionMethod        the digestion method
+   * @param enrichmentMethod       the enrichment method used
+   * @param injectionVolume        the amount of the analyte injected for the measurement
+   * @param lcColumn               the liquid chromatography column used to separate compounds
+   * @param lcmsMethod             the method used
+   * @param labelingType           the type of the labeling used
+   * @param specificMetadata       specific metadata that differentiates pooled samples as a
+   *                               {@link Map}, with the sample ids as keys and the sample-specific
+   *                               measurement annotations as values. Will have only one entry if no
+   *                               pooling was done. {@link MeasurementSpecificPxP}
+   * @since 1.10.0
+   */
   record MeasurementUpdateInformationPxP(
       String measurementId,
-      SampleCode sampleCode,
       String technicalReplicateName,
       String organisationId,
       String msDeviceCURIE,
       String samplePoolGroup,
       String facility,
-      String fractionName,
       String digestionEnzyme,
       String digestionMethod,
       String enrichmentMethod,
       String injectionVolume,
       String lcColumn,
       String lcmsMethod,
-      Labeling labeling,
+      String labelingType,
+      Map<String, MeasurementSpecificPxP> specificMetadata
+  ) implements ValidationRequestBody, MeasurementUpdateRequestBody {
+
+    /**
+     * Returns the {@link List} of sample identifiers this measurement refers to.
+     *
+     * @return the {@link List} of sample identifiers
+     * @since 1.10.0
+     */
+    public List<String> measuredSamples() {
+      return List.copyOf(specificMetadata.keySet());
+    }
+  }
+
+  /**
+   * Metadata that describes a measurement properties, that are unique to the sample presented in
+   * the measurement (e.g., when pooling was done)
+   *
+   * @param label        the label used to discriminate the sample
+   * @param fractionName the fraction name
+   * @param comment      some comment from the measuring lab
+   * @since 1.10.0
+   */
+  record MeasurementSpecificPxP(
+      String label,
+      String fractionName,
       String comment
-  ) implements ValidationRequestBody {
+  ) {
 
   }
 
@@ -1875,16 +2186,19 @@ public interface AsyncProjectService {
    *                    the response.
    * @since 1.10.0
    */
-  record ValidationRequest(String projectId, ValidationRequestBody requestBody,
+  record ValidationRequest(String projectId, String experimentId, ValidationRequestBody requestBody,
                            String requestId) implements CacheableRequest {
+
+    public ValidationRequest(String projectId, String experimentId,
+        ValidationRequestBody requestBody) {
+      this(projectId, experimentId, requestBody, UUID.randomUUID().toString());
+    }
 
     public ValidationRequest {
       requireNonNull(projectId);
       requireNonNull(requestId);
-    }
-
-    public ValidationRequest(String projectId, SampleRegistrationInformation registration) {
-      this(projectId, registration, UUID.randomUUID().toString());
+      requireNonNull(requestBody);
+      requireNonNull(experimentId);
     }
   }
 

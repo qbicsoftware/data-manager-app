@@ -186,6 +186,23 @@ Padding & gaps
   padding-top: var(--spacing-03);
 }
 
+.padding-top-04 {
+  padding-top: var(--spacing-04);
+}
+
+.padding-top-05 {
+  padding-top: var(--spacing-05);
+}
+
+.padding-bottom-02 {
+  padding-bottom: var(--spacing-02);
+}
+
+.padding-top-bottom-02 {
+  padding-top: var(--spacing-02);
+  padding-bottom: var(--spacing-02);
+}
+
 .padding-top-bottom-04 {
   padding-top: var(--spacing-04);
   padding-bottom: var(--spacing-04);
@@ -413,6 +430,13 @@ Icons
   color: var(--icon-color-default);
 }
 
+.icon-color-success {
+  color: var(--icon-color-success);
+}
+
+.icon-color-error {
+  color: var(--icon-color-error);
+}
 .icon-text-white {
   color: white;
 }
@@ -467,7 +491,32 @@ Layout
   flex-direction: column;
 }
 
+.justify-content-space-between {
+  justify-content: space-between;
+}
 
+/**************************
+Boxes
+****************************/
+
+.choice-box {
+  border-color: var(--lumo-contrast-10pct);
+  border-style: solid;
+  border-width: 1px;
+  border-radius: var(--spacing-02);
+}
+
+/****************************
+Backgrounds
+****************************/
+
+.background-contrast-5pct {
+  background-color: var(--lumo-shade-5pct);
+}
+
+.background-contrast-10pct {
+  background-color: var(--lumo-shade-10pct);
+}
 
 /****************************
 Older stuff -
