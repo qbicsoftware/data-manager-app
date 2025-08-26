@@ -187,7 +187,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
       return Optional.of(convert(cache.findByCurie(curie)
           .orElseThrow(() -> new LookupException("Term for curie '%s' not found in cache.".formatted(curie)))));
     } catch (LookupException e) {
-      log.error("Error searching by CURIE: " + curie, e);
+      log.debug("Error searching by CURIE: " + curie, e);
       try {
         return searchByOboIdExact(curie)
             .map(this::updateCache)
