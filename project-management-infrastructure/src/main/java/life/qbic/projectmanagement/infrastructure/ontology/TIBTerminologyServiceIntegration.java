@@ -28,6 +28,7 @@ import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ontology.LookupException;
 import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
+import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -184,18 +185,20 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
   @Override
   public Optional<OntologyClass> searchByCurie(String curie) throws LookupException {
     try {
-      return searchByOboIdExact(curie).map(this::updateCache)
-          .map(TIBTerminologyServiceIntegration::convert);
-    } catch (IOException e) {
-      // this happens on network interrupts or if the remote service is down
-      // we try to recover from the cache
+      return Optional.of(convert(cache.findByCurie(curie)
+          .orElseThrow(() -> new LookupException("Term for curie '%s' not found in cache.".formatted(curie)))));
+    } catch (LookupException e) {
       log.error("Error searching by CURIE: " + curie, e);
-      return cache.findByCurie(curie).map(TIBTerminologyServiceIntegration::convert);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw wrapInterrupted(e);
-    } catch (Exception e) {
-      throw wrapUnknown(e);
+      try {
+        return searchByOboIdExact(curie)
+            .map(this::updateCache)
+            .map(TIBTerminologyServiceIntegration::convert);
+      } catch (IOException ex) {
+        throw wrapIO(ex);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+        throw wrapInterrupted(ex);
+      }
     }
   }
 
@@ -331,7 +334,16 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
                 + "&ontology=" + createOntologyFilterQueryParameter()))
         .header("Content-Type", "application/json").GET().build();
     var response = HTTP_CLIENT.send(termSelectQuery, BodyHandlers.ofString());
-    return parseResponse(response).stream().findFirst();
+    log.debug("Received response code '%d' for term query".formatted(response.statusCode()));
+    // If the HTTP status code is not 200, the
+    if (response.statusCode() == 404) {
+      return Optional.empty();
+    }
+    if (response.statusCode() == 200) {
+      return parseResponse(response).stream().findFirst();
+    }
+    log.error("Received response code '%d' for term query".formatted(response.statusCode()));
+    return Optional.empty();
   }
 
   /**
