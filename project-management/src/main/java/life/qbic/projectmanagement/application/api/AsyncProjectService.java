@@ -45,23 +45,27 @@ public interface AsyncProjectService {
   /**
    * A service request to create a project.
    *
-   * @param design   the title and objective of a project
-   * @param contacts the different contact persons of a project
-   * @param funding  some funding information
+   * @param offerId     the potentially linked offer Id.
+   * @param design      the title and objective of a project
+   * @param contacts    the different contact persons of a project
+   * @param funding     some funding information
+   * @param projectCode the desired project code for the project
+   * @param requestId   the unique identifier of the request
    * @since 1.9.0
    */
-  record ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-                                FundingInformation funding, String requestId) {
+  record ProjectCreationRequest(String offerId, ProjectDesign design, ProjectContacts contacts,
+                                FundingInformation funding, String projectCode, String requestId) {
 
     public ProjectCreationRequest(ProjectDesign design, ProjectContacts contacts,
-        String requestId) {
-      this(design, contacts, null, requestId);
+        String projectCode, String requestId) {
+      this(null, design, contacts, null, projectCode, requestId);
     }
 
     public ProjectCreationRequest {
       requireNonNull(design);
       requireNonNull(contacts);
       requireNonNull(requestId);
+      requireNonNull(projectCode);
     }
 
     /**

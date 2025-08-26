@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.api;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContext;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.applySecurityContextMany;
 import static life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils.reactiveSecurity;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.VirtualThreadScheduler;
@@ -83,6 +85,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private final ExperimentInformationService experimentInformationService;
   private final TerminologyService terminologyService;
   private final SpeciesLookupService taxaService;
+  private final ProjectCreationService projectCreationService;
   private final MeasurementService measurementService;
 
   public AsyncProjectServiceImpl(
@@ -96,6 +99,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       @Autowired ExperimentInformationService experimentInformationService,
       @Autowired TerminologyService termService,
       @Autowired SpeciesLookupService taxaService,
+      @Autowired ProjectCreationService projectCreationService,
       @Autowired MeasurementService measurementService) {
     this.projectService = Objects.requireNonNull(projectService);
     this.sampleInfoService = Objects.requireNonNull(sampleInfoService);
@@ -107,6 +111,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     this.experimentInformationService = Objects.requireNonNull(experimentInformationService);
     this.terminologyService = Objects.requireNonNull(termService);
     this.taxaService = Objects.requireNonNull(taxaService);
+    this.projectCreationService = requireNonNull(projectCreationService);
     this.measurementService = Objects.requireNonNull(measurementService);
   }
 
@@ -123,8 +128,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private static OntologyTerm convertToApi(
       life.qbic.projectmanagement.domain.model.OntologyTerm term) {
     return new OntologyTerm(term.getLabel(), term.getDescription(),
-        Curie.parse(term.oboId().toString()), URI.create(term.getClassIri()),
-        term.getOntologyAbbreviation());
+        Curie.parse(term.oboId().toString()),
+        URI.create(term.getClassIri()), term.getOntologyAbbreviation());
   }
 
   private static OntologyTerm convertToApi(OntologyClass term) {
@@ -438,7 +443,24 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Mono<ProjectCreationResponse> create(ProjectCreationRequest request)
       throws UnknownRequestException, RequestFailedException, AccessDeniedException {
-    throw new RuntimeException("not implemented");
+    var call = Mono.fromCallable(() -> {
+      var result = projectCreationService.createProject(
+          request.offerId(),
+          request.projectCode(),
+          request.design().title(),
+          request.design().objective(),
+          request.contacts(),
+          request.funding());
+      if (result.isError()) {
+        throw new RequestFailedException("Could not create project.", result.getError());
+      }
+      return new ProjectCreationResponse(result.getValue().getId().value(), request.requestId());
+    });
+    var securityContext = SecurityContextHolder.getContext();
+    return applySecurityContext(call)
+        .retryWhen(defaultRetryStrategy())
+        .contextWrite(reactiveSecurity(securityContext))
+        .subscribeOn(scheduler);
   }
 
   @Override

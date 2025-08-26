@@ -25,6 +25,7 @@ import java.util.Optional;
 import life.qbic.projectmanagement.domain.model.experiment.Experiment;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.project.translation.OfferIdentifierConverter;
+import org.springframework.lang.Nullable;
 
 /**
  * A project planned and run at QBiC.
@@ -97,7 +98,7 @@ public class Project {
 
   private Project(ProjectId projectId, ProjectIntent projectIntent, ProjectCode projectCode,
       Contact projectManager, Contact principalInvestigator,
-      Contact responsiblePerson) {
+      @Nullable Contact responsiblePerson) {
     requireNonNull(principalInvestigator, "requires non-null principal investigator");
     requireNonNull(projectCode, "requires non-null project code");
     requireNonNull(projectId, "requires non-null project id");
@@ -148,6 +149,7 @@ public class Project {
   }
 
   public void setFunding(Funding funding) {
+    requireNonNull(funding);
     this.funding = funding;
     this.lastModified = Instant.now();
   }
@@ -238,7 +240,7 @@ public class Project {
    */
   public static Project create(ProjectIntent projectIntent, ProjectCode projectCode,
       Contact projectManager, Contact principalInvestigator,
-      Contact responsiblePerson) {
+      @Nullable Contact responsiblePerson) {
     return new Project(ProjectId.create(), projectIntent, projectCode, projectManager,
         principalInvestigator, responsiblePerson);
   }
@@ -255,7 +257,7 @@ public class Project {
    */
   public static Project of(ProjectId projectId, ProjectIntent projectIntent,
       ProjectCode projectCode, Contact projectManager,
-      Contact principalInvestigator, Contact responsiblePerson) {
+      Contact principalInvestigator, @Nullable Contact responsiblePerson) {
     return new Project(projectId, projectIntent, projectCode, projectManager,
         principalInvestigator, responsiblePerson);
   }
