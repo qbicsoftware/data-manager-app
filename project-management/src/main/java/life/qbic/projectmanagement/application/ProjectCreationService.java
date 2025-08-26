@@ -52,7 +52,10 @@ public class ProjectCreationService {
       ProjectContacts contacts,
       @Nullable FundingInformation funding) {
     requireNonNull(code);
-    requireNonNull(title);
+    if (title == null) {
+      return Result.fromError(
+          new ApplicationException(ErrorCode.INVALID_PROJECT_TITLE, ErrorParameters.of(title)));
+    }
     requireNonNull(objective);
     requireNonNull(contacts);
 
@@ -72,10 +75,12 @@ public class ProjectCreationService {
       Optional.ofNullable(sourceOffer)
           .filter(it -> !it.isBlank())
           .ifPresent(offerId -> createdProject.linkOffer(
-          OfferIdentifier.of(offerId)));
+              OfferIdentifier.of(offerId)));
       return Result.fromValue(createdProject);
     } catch (ApplicationException e) {
       return Result.fromError(e);
+    } catch (Exception exception) {
+      return Result.fromError(ApplicationException.wrapping(exception));
     }
 
   }
