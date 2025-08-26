@@ -99,17 +99,11 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   /**
-   * Updates the lastModified time of the project. Does not check credentials, as the jobrunner
-   * needs to call it. 
-   * <p>
-   * <b>Use with care!</b>
-   * @param projectId  the id of the project to update
-   * @param modifiedOn the Instant object denoting the time the project was updated
+   * Saves a project to the repository.
+   * @param project the project to save persistently
+   * @since 1.11.1
    */
-  @Override
-  public void unsafeUpdateLastModified(ProjectId projectId, Instant modifiedOn) {
-    var project = projectRepo.findById(projectId).orElseThrow(ProjectNotFoundException::new);
-    project.setLastModified(modifiedOn);
+  public void save(Project project) {
     projectRepo.save(project);
   }
 
