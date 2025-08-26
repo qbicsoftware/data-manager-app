@@ -5,8 +5,6 @@ import static java.util.function.Predicate.not;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -209,14 +207,15 @@ public class ProjectInformationService {
     projectRepository.update(project);
   }
 
-  public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) {
+  public void updateModifiedDate(ProjectId projectID, Instant modifiedOn) throws ProjectNotFoundException {
     // The update might fail due to an optimistic locking exception (concurrent access of other processes)
     // To address this, the update is tried until it will eventually not throw the locking exception anymore.
     // This approach naively assumes, that the locked resource will be released eventually again by the other process.
     var attempt = 1;
+    var project = projectRepository.find(projectID).orElseThrow(() -> new ProjectNotFoundException("Project with not found: %s".formatted(projectID)));
     while(true) {
       try {
-        tryToUpdateModifiedDate(projectID, modifiedOn);
+        tryToUpdateModifiedDate(project, modifiedOn);
         return;
       } catch (OptimisticEntityLockException e) {
         log.debug("Optimistic lock exception occurred while updating modified date for project " + projectID);
@@ -226,19 +225,36 @@ public class ProjectInformationService {
       } catch (InterruptedException e) {
         log.error("Interrupted while updating modified date for project " + projectID);
         // We try one last time
-        tryToUpdateModifiedDate(projectID, modifiedOn);
+        tryToUpdateModifiedDate(project, modifiedOn);
         Thread.currentThread().interrupt();
       }
       attempt++;
     }
   }
-
-  private void tryToUpdateModifiedDate(ProjectId projectID, Instant modifiedOn) {
-    projectRepository.unsafeUpdateLastModified(projectID, modifiedOn);
+  /*
+  Will only update the last modified date in case the passed instant is newer then the
+  the already stored one in the project.
+   */
+  private void tryToUpdateModifiedDate(Project project, Instant modifiedOn) throws OptimisticEntityLockException {
+    if (project.getLastModified() == null) {
+      project.setLastModified(modifiedOn);
+    }
+    if (project.getLastModified().isAfter(modifiedOn)) {
+      // Nothing to do if the passed instant is before the already stored one
+      return;
+    }
+    project.setLastModified(modifiedOn);
+    projectRepository.save(project);
   }
 
   private static Duration calcBase2Duration(int attempt) {
     return Duration.of((long) Math.pow(2.0, attempt) * 100, ChronoUnit.MILLIS);
+  }
+
+  public class ProjectNotFoundException extends RuntimeException {
+    public ProjectNotFoundException(String message) {
+      super(message);
+    }
   }
 
 }
