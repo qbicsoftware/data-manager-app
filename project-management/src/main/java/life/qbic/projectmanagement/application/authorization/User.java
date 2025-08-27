@@ -1,5 +1,7 @@
 package life.qbic.projectmanagement.application.authorization;
 
+import java.io.Serializable;
+
 /**
  * <b>User concept on application security level</b>
  *
@@ -7,6 +9,6 @@ package life.qbic.projectmanagement.application.authorization;
  */
 public record User(String id, String fullName, String platformUserName, String emailAddress,
                    String encryptedPassword,
-                   boolean isActive, String oidc, String oidcIssuer) {
+                   boolean isActive, String oidc, String oidcIssuer) implements Serializable {
 
 }

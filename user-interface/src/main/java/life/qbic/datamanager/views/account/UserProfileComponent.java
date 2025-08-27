@@ -15,9 +15,11 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -33,6 +35,7 @@ import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.authorization.User;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -54,6 +57,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
   private static final Logger log = logger(UserProfileComponent.class);
   private final transient IdentityService identityService;
   private UserDetailsCard userDetailsCard;
+  private static final String ORCID_LINK_ENDPOINT = "/link/orcid";
 
   @Autowired
   public UserProfileComponent(IdentityService identityService) {
@@ -71,7 +75,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
     if (nonNull(userDetailsCard)) {
       remove(userDetailsCard);
     }
-    userDetailsCard = new UserDetailsCard(userInfo);
+    userDetailsCard = new UserDetailsCard(userInfo, ORCID_LINK_ENDPOINT);
     add(userDetailsCard);
     this.setVisible(true);
   }
@@ -191,7 +195,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private final UserInfo userInfo;
 
-    public UserDetailsCard(UserInfo userInfo) {
+    private final String orcidLinkingEndpoint;
+
+    public UserDetailsCard(UserInfo userInfo, String orcidLinkingEndpoint) {
+      this.orcidLinkingEndpoint = orcidLinkingEndpoint;
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
       userAvatar.setUserId(userInfo.id());
@@ -256,9 +263,11 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private void setLinkedAccounts(Div userDetails) {
       if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null) {
+        userDetails.add(new UserDetail("Linked Accounts", linkWithOrcidCard()));
         return;
       }
       if (userInfo.oidcIssuer().isEmpty() || userInfo.oidcId().isEmpty()) {
+        userDetails.add(new UserDetail("Linked Accounts", linkWithOrcidCard()));
         return;
       }
       Arrays.stream(OidcType.values())
@@ -266,7 +275,16 @@ public class UserProfileComponent extends PageArea implements Serializable {
           .findFirst()
           .ifPresentOrElse(oidcType -> userDetails.add(
                   new UserDetail("Linked Accounts", generateLinkedAccountCard(userInfo))),
-              () -> log.warn("Unknown oidc Issuer %s".formatted(userInfo.oidcIssuer())));
+              () -> log.warn("No issuer was found for OIDC type " + userInfo.oidcIssuer()));
+    }
+
+    private Div linkWithOrcidCard() {
+      var linkAccountCard = new Div();
+      var contextPath = VaadinService.getCurrentRequest().getContextPath();
+      var linkAccount = new Anchor(contextPath + orcidLinkingEndpoint, "Link ORCiD account", AnchorTarget.SELF);
+      linkAccount.setRouterIgnore(true); // Important to exclude the Vaadin router and call the Spring controller
+      linkAccountCard.add(linkAccount);
+      return linkAccountCard;
     }
 
     private Div generateLinkedAccountCard(UserInfo userInfo) {
