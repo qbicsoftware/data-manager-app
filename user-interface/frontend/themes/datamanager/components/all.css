@@ -1167,6 +1167,39 @@ Older stuff -
   height: auto;
 }
 
+.input-with-label:first-child {
+  padding-top: 0;
+}
+
+.input-label {
+  align-self: flex-start;
+  color: var(--secondary-text-color);
+  font-weight: var(--font-weight-medium, 500);
+  font-size: var(--label-font-size, 0.875rem);
+  margin-left: calc(var(--spacing-02, 0.25em) / 4);
+  transition: color 0.2s;
+  line-height: 1;
+  padding-right: 1em;
+  padding-bottom: 0.5em;
+  padding-top: 0.25em;
+  margin-top: -0.25em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  position: relative;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+*:has(.input-with-label:hover) .input-label {
+  color: var(--lumo-contrast);
+}
+
+*:has(.input-with-label:focus-within):has(.input-label) .input-label {
+  color: var(--primary-text-color)
+}
+
+
 .dynamic-growing-flex-item {
   flex-grow: 1;
 }

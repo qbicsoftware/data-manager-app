@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.demo;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
@@ -7,6 +8,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.html.OrderedList;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
@@ -21,11 +23,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.StringBean;
+import life.qbic.datamanager.views.general.ButtonFactory;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
-import life.qbic.datamanager.views.general.dialog.ButtonFactory;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
 import life.qbic.datamanager.views.general.dialog.DialogHeader;
@@ -42,7 +44,6 @@ import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 
 /**
  * <b>Component Demo</b>
@@ -55,11 +56,12 @@ import org.springframework.stereotype.Component;
 @Route("test-view")
 @UIScope
 @AnonymousAllowed
-@Component
+@org.springframework.stereotype.Component
 public class ComponentDemo extends Div {
 
   public static final String HEADING_2 = "heading-2";
   public static final String HEADING_3 = "heading-3";
+  public static final String HEADING_4 = "heading-4";
   public static final String GAP_04 = "gap-04";
   public static final String FLEX_VERTICAL = "flex-vertical";
   public static final String NORMAL_BODY_TEXT = "normal-body-text";
@@ -76,6 +78,7 @@ public class ComponentDemo extends Div {
     add(colorShowCase());
     add(clickableShowCase());
     add(fontsShowCase());
+    add(layoutsShowCase());
     add(detailBoxShowCase());
     add(dialogShowCase());
     add(cardShowCase());
@@ -84,7 +87,82 @@ public class ComponentDemo extends Div {
     add(createTestComponent());
   }
 
-  private com.vaadin.flow.component.Component createTestComponent() {
+  private Component layoutsShowCase() {
+    var gaps = new String[]{
+        "gap-none",
+        "gap-01",
+        "gap-02",
+        "gap-03",
+        "gap-04",
+        "gap-05",
+        "gap-06",
+        "gap-07"
+    };
+    var root = new Div();
+    root.add(createHeading2("Layouts"));
+
+    var verticalShowcaseBody = new Div();
+    verticalShowcaseBody.addClassNames("flex-horizontal");
+    for (String gap : gaps) {
+      var vertLayout = new Div();
+      vertLayout.addClassNames("flex-vertical margin-03 height-min-content border " + gap);
+      for (int i = 0; i < 10; i++) {
+        Div placeholder = createPlaceholder("padding-03", "border");
+        placeholder.setText("placeholder " + (i + 1));
+        vertLayout.add(placeholder);
+      }
+      verticalShowcaseBody.add(createHeading4(gap), vertLayout);
+
+    }
+
+    var horizontalShowcaseBody = new Div();
+    horizontalShowcaseBody.addClassNames("flex-vertical");
+    for (String gap : gaps) {
+      var horizontalLayout = new Div();
+      horizontalLayout.addClassNames("flex-horizontal margin-03 border width-50-pct " + gap);
+      for (int i = 0; i < 10; i++) {
+        Div placeholder = createPlaceholder("padding-03", "border padding-02");
+        placeholder.setText("placeholder " + (i + 1));
+        horizontalLayout.add(placeholder);
+      }
+      horizontalShowcaseBody.add(createHeading4(gap), horizontalLayout);
+    }
+
+    var columnGapDescriptor = new Span(
+        "Sometimes it might be useful to differentiate between gap and column-gap. For this you can combine the gap classes with the column-gap classes.");
+    var columnGapExample1 = new Div();
+    columnGapExample1.addClassNames("border flex-horizontal width-50-pct gap-04 column-gap-none");
+    for (int i = 0; i < 10; i++) {
+      Div placeholder = createPlaceholder("padding-02", "background-color-grey", "border");
+      placeholder.setText("placeholder " + (i + 1));
+      columnGapExample1.add(placeholder);
+    }
+
+    var columnGapExample2 = new Div();
+    columnGapExample2.addClassNames("border flex-horizontal width-50-pct gap-none column-gap-04");
+    for (int i = 0; i < 10; i++) {
+      Div placeholder = createPlaceholder("padding-02", "background-color-grey", "border");
+      placeholder.setText("placeholder " + (i + 1));
+      columnGapExample2.add(placeholder);
+    }
+
+    root.add(createHeading3("flex-vertical"), verticalShowcaseBody,
+        createHeading3("flex-horizontal"), horizontalShowcaseBody,
+        columnGapDescriptor,
+        createHeading3("gap-04 column-gap-none"), columnGapExample1,
+        createHeading3("gap-none column-gap-04"), columnGapExample2);
+    return root;
+  }
+
+  private static Div createPlaceholder(String classNames, String... hiddenClassNames) {
+    var comp = new Div();
+    comp.addClassNames(classNames);
+    comp.addClassNames(hiddenClassNames);
+    comp.setText(classNames);
+    return comp;
+  }
+
+  private Component createTestComponent() {
     var body = new Div();
     body.addClassNames(
         "dialog-section border dashed padding-vertical-05 padding-horizontal-07 margin-05");
@@ -94,13 +172,14 @@ public class ComponentDemo extends Div {
       variablesInput.add(variableRow());
     }
     var addVariableButton = new Button("Add Variable", VaadinIcon.PLUS.create());
-    addVariableButton.addClassNames("margin-bottom-04 margin-left-04 flex-vertical");
+    addVariableButton.addClassNames(
+        "margin-bottom-04 flex-vertical width-max-content justify-self-start button-color-primary");
     variablesInput.add(addVariableButton);
     body.add(variablesInput);
     return body;
   }
 
-  private com.vaadin.flow.component.Component variableRow() {
+  private Component variableRow() {
     var root = new Div();
     root.addClassNames(
         "border rounded-02 padding-04 gap-04 column-gap-05 grid-experimental-variable-input");
@@ -113,7 +192,7 @@ public class ComponentDemo extends Div {
     TextField unit = new TextField();
     unit.addClassNames("dynamic-growing-flex-item");
     unit.setLabel("Unit (optional)");
-    com.vaadin.flow.component.Component variableLevels = createVariableLevels();
+    Component variableLevels = createVariableLevels();
     variableLevels.getStyle().set("grid-area", "b");
     var deleteVariable = new ButtonFactory().createTertirayButton("Delete Variable",
         VaadinIcon.TRASH.create());
@@ -124,30 +203,53 @@ public class ComponentDemo extends Div {
     return root;
   }
 
-  private com.vaadin.flow.component.Component createVariableLevels() {
+
+  private Component createVariableLevels() {
+    final String rootCssClasses = "border rounded-02 flex-vertical gap-none padding-04 padding-top-04";
+    final String bodyClassNames = "flex-vertical justify-start gap-04";
     Div root = new Div();
-    root.addClassNames("border rounded-02 flex-vertical gap-none padding-04 padding-top-03");
-    var body = new Div();
-    body.addClassNames("flex-vertical gap-04");
-    var label = new NativeLabel("Levels");
     root.getStyle().set("grid-area", "b");
+    root.addClassNames(rootCssClasses, "input-with-label-container");
+
+    var body = new Div();
+    body.addClassNames(bodyClassNames);
+
+    final String levelsContainerCss = "flex-horizontal gap-03 column-gap-03 width-full";
     var levelsContainer = new Div();
-    levelsContainer.addClassNames("flex-horizontal gap-03 column-gap-03 width-full");
-    var levelField = new Div();
-    levelField.addClassNames("flex-horizontal gap-03 width-full no-flex-wrap no-wrap");
-    var levelValue = new TextField();
-    levelValue.addClassNames("dynamic-growing-flex-item");
+    levelsContainer.setId("levels-container"); //needed for labelling
+    levelsContainer.addClassNames(levelsContainerCss);
     ButtonFactory buttonFactory = new ButtonFactory();
-    var deleteLevelButton = buttonFactory.createTertirayButton("", VaadinIcon.TRASH.create());
+
+    String labelCss = "form-label input-label";
+    var label = new NativeLabel("Levels");
+    label.setFor(levelsContainer);
+    label.addClassNames(labelCss);
+
+    final String levelFieldCss = "flex-horizontal gap-03 width-full no-flex-wrap no-wrap input-with-label";
+    final String levelValueCss = "dynamic-growing-flex-item";
+
+    var levelField = new Div();
+    levelField.addClassNames(levelFieldCss);
+    var levelValue = new TextField();
+    levelValue.addClassNames(levelValueCss);
+    var deleteLevelButton = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
     levelField.add(levelValue, deleteLevelButton);
+
+    var levelField2 = new Div();
+    levelField2.addClassNames(levelFieldCss);
+    var levelValue2 = new TextField();
+    levelValue2.addClassNames(levelValueCss);
+    var deleteLevelButton2 = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
+    levelField2.add(levelValue2, deleteLevelButton2);
+
+    levelsContainer.add(levelField, levelField2);
+
     var addLevelButton = buttonFactory.createTertirayButton("Add Level", VaadinIcon.PLUS.create());
-    levelsContainer.add(levelField);
     body.add(levelsContainer, addLevelButton);
+    addLevelButton.addClassNames("width-max-content justify-self-start");
     root.add(label, body);
     return root;
   }
-  // need to remove padding top of text field
-  //
 
   private static Div clickableShowCase() {
     Div container = new Div();
@@ -193,13 +295,15 @@ public class ComponentDemo extends Div {
   private static Div colorShowCase() {
     Div container = new Div();
     Div heading = createHeading2("Color Classes");
+    Div headingPrimaryText = createHeading3("color-primary-text");
+    headingPrimaryText.addClassNames("color-primary-text");
     Div headingPrimary = createHeading3("color-primary");
     headingPrimary.addClassName("color-primary");
     Div headingSecondary = createHeading3("color-secondary");
     headingSecondary.addClassName("color-secondary");
     Div headingTertiary = createHeading3("color-tertiary");
     headingTertiary.addClassName("color-tertiary");
-    container.add(heading, headingPrimary, headingSecondary, headingTertiary);
+    container.add(heading, headingPrimaryText, headingPrimary, headingSecondary, headingTertiary);
     return container;
   }
 
@@ -211,9 +315,7 @@ public class ComponentDemo extends Div {
     container.addClassNames(FLEX_VERTICAL, GAP_04);
 
     Arrays.stream(BodyFontStyles.fontStyles).forEach(fontStyle -> {
-      Div styleHeader = new Div();
-      styleHeader.addClassName("heading-4");
-      styleHeader.setText(fontStyle);
+      Div styleHeader = createHeading4(fontStyle);
       container.add(styleHeader);
       Div style = new Div();
       style.addClassName(fontStyle);
@@ -278,7 +380,7 @@ public class ComponentDemo extends Div {
         }
 
         @Override
-        public com.vaadin.flow.component.Component component() {
+        public Component component() {
           return userInput;
         }
 
@@ -409,7 +511,7 @@ public class ComponentDemo extends Div {
     container.add(emptyBox);
 
     DetailBox withHeader = new DetailBox();
-    withHeader.setHeader(new DetailBox.Header("What the details are about"));
+    withHeader.setHeader(new Header("What the details are about"));
     container.add(createHeading3("Empty Detail Box with Heading"));
     container.add(withHeader);
 
@@ -458,6 +560,13 @@ public class ComponentDemo extends Div {
     return heading;
   }
 
+  private static Div createHeading4(String text) {
+    var heading = new Div();
+    heading.setText(text);
+    heading.addClassName(HEADING_4);
+    return heading;
+  }
+
   private static Div dialogShowCase() {
     Div container = new Div();
     container.add(createHeading2("Dialogs"));
@@ -495,7 +604,7 @@ public class ComponentDemo extends Div {
     return container;
   }
 
-  private com.vaadin.flow.component.Component borderShowcase() {
+  private Component borderShowcase() {
     var container = new Div();
     var header = new Div();
     header.addClassName(HEADING_2);

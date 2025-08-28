@@ -63,3 +63,7 @@ vaadin-list-box.transparent-icons vaadin-item::part(checkmark)::before {
 vaadin-menu-bar-item.transparent-icon::part(checkmark)::before {
   color: transparent;
 }
+
+vaadin-text-field.input-with-label {
+  padding: 0 0;
+}
