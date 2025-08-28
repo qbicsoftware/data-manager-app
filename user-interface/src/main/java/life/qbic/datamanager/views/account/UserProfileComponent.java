@@ -15,13 +15,16 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.Location;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.shared.Registration;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import life.qbic.application.commons.ApplicationException;
+import life.qbic.datamanager.security.OidcLinkController;
 import life.qbic.datamanager.views.account.UserProfileComponent.ChangeUserDetailsDialog.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.PageArea;
@@ -33,7 +36,6 @@ import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.EmptyUserNameException;
 import life.qbic.identity.application.user.IdentityService.UserNameNotAvailableException;
 import life.qbic.logging.api.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * User Profile Component
@@ -44,8 +46,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * ability to copy it to the clipboard
  */
 
-@SpringComponent
-@UIScope
 public class UserProfileComponent extends PageArea implements Serializable {
 
   @Serial
@@ -53,25 +53,29 @@ public class UserProfileComponent extends PageArea implements Serializable {
   private static final String TITLE = "My Profile";
   private static final Logger log = logger(UserProfileComponent.class);
   private final transient IdentityService identityService;
+  private final Location currentLocation;
   private UserDetailsCard userDetailsCard;
 
-  @Autowired
-  public UserProfileComponent(IdentityService identityService) {
+  public UserProfileComponent(IdentityService identityService,
+      UserInfo userInfo,
+      Location currentLocation) {
     this.identityService = requireNonNull(identityService,
         "identity service cannot be null");
+    this.currentLocation = requireNonNull(currentLocation);
     Span title = new Span(TITLE);
     addComponentAsFirst(title);
     title.addClassName("title");
     addClassName("user-profile-component");
     this.setVisible(false);
+    this.showForUser(userInfo);
   }
 
-  public void showForUser(UserInfo userInfo) {
+  private void showForUser(UserInfo userInfo) {
     requireNonNull(userInfo, "userInfo must not be null");
     if (nonNull(userDetailsCard)) {
       remove(userDetailsCard);
     }
-    userDetailsCard = new UserDetailsCard(userInfo);
+    userDetailsCard = new UserDetailsCard(userInfo, OidcLinkController.ENDPOINT_LINK_ORCID);
     add(userDetailsCard);
     this.setVisible(true);
   }
@@ -191,7 +195,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private final UserInfo userInfo;
 
-    public UserDetailsCard(UserInfo userInfo) {
+    private final String orcidLinkingEndpoint;
+
+    public UserDetailsCard(UserInfo userInfo, String orcidLinkingEndpoint) {
+      this.orcidLinkingEndpoint = orcidLinkingEndpoint;
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
       userAvatar.setUserId(userInfo.id());
@@ -256,9 +263,11 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private void setLinkedAccounts(Div userDetails) {
       if (userInfo.oidcId() == null || userInfo.oidcIssuer() == null) {
+        userDetails.add(new UserDetail("Linked Accounts", linkWithOrcidCard()));
         return;
       }
       if (userInfo.oidcIssuer().isEmpty() || userInfo.oidcId().isEmpty()) {
+        userDetails.add(new UserDetail("Linked Accounts", linkWithOrcidCard()));
         return;
       }
       Arrays.stream(OidcType.values())
@@ -266,7 +275,24 @@ public class UserProfileComponent extends PageArea implements Serializable {
           .findFirst()
           .ifPresentOrElse(oidcType -> userDetails.add(
                   new UserDetail("Linked Accounts", generateLinkedAccountCard(userInfo))),
-              () -> log.warn("Unknown oidc Issuer %s".formatted(userInfo.oidcIssuer())));
+              () -> log.warn("No issuer was found for OIDC type " + userInfo.oidcIssuer()));
+    }
+
+    private Div linkWithOrcidCard() {
+      var linkAccountCard = new Div();
+      var contextPath = VaadinService.getCurrentRequest().getContextPath();
+
+      // Since we have an internal app flow only, the relative path is enough to send submit
+      var returnTo = URLEncoder.encode(currentLocation.getPath(), StandardCharsets.UTF_8);
+
+      var linkAccount = new Anchor("", "Link ORCiD account");
+      linkAccount.setTarget(AnchorTarget.SELF);
+      // Will call the endpoint that starts the OIDC link workflow
+      linkAccount.setHref(contextPath + orcidLinkingEndpoint + "?return=" + returnTo);
+      // Important to exclude the Vaadin router and call the Spring controller
+      linkAccount.setRouterIgnore(true);
+      linkAccountCard.add(linkAccount);
+      return linkAccountCard;
     }
 
     private Div generateLinkedAccountCard(UserInfo userInfo) {

@@ -102,6 +102,17 @@ public class User implements Serializable {
     return user;
   }
 
+  /**
+   * Sets the OIDC issue and identifier for the user. Overwrites existing entries.
+   * @param oidcIssuer the issuer of the OIDC principal
+   * @param oidcId the identifier of the OIDC principal
+   * @since 1.11.0
+   */
+  public void setOidcEntry(String oidcIssuer, String oidcId) {
+    this.oidcIssuer = oidcIssuer;
+    this.oidcId = oidcId;
+  }
+
   public static User createOidc(String fullName, String emailAddress,
       String userName, String oidcIssuer, String oidcId) {
     if (isNull(oidcIssuer) && nonNull(oidcId)) {
