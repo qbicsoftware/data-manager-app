@@ -32,7 +32,7 @@ Heading
 }
 
 .heading-5 {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   font-weight: var(--font-weight-semi-bold);
 }
 
@@ -45,7 +45,7 @@ Heading
 
 /*region body text*/
 .normal-body-text {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   line-height: var(--lumo-line-height-m);
   font-weight: var(--font-weight-regular);
 }
@@ -71,25 +71,25 @@ Heading
 }
 
 .input-field-text {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   line-height: var(--lumo-line-height-s);
   font-weight: var(--font-weight-medium);
 }
 
 .list-item-text {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   line-height: var(--spacing-07);
   font-weight: var(--font-weight-regular);
 }
 
 .button-text {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   line-height: var(--lumo-line-height-xs);
   font-weight: var(--font-weight-medium);
 }
 
 .button-text-primary {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   line-height: var(--lumo-line-height-xs);
   font-weight: var(--font-weight-semi-bold);
 }
@@ -613,15 +613,19 @@ Heading
 Colors
 ***************************/
 .color-primary {
-  color: var(--lumo-primary-text-color)
+  color: var(--primary-color)
+}
+
+.color-primary-text {
+  color: var(--primary-text-color);
 }
 
 .color-secondary {
-  color: var(--lumo-secondary-text-color)
+  color: var(--secondary-text-color)
 }
 
 .color-tertiary {
-  color: var(--lumo-tertiary-text-color)
+  color: var(--tertiary-text-color)
 }
 
 /*endregion*/
@@ -641,19 +645,19 @@ Colors
 
 /*the class .v-drag-over-target is assigned by vaadin if a drop event is active and the dragged element hovers over the drag target*/
 .drop-above.v-drag-over-target {
-  border-top: solid var(--lumo-primary-color) var(--spacing-02);
+  border-top: solid var(--primary-color) var(--spacing-02);
 }
 
 .drop-below.v-drag-over-target {
-  border-bottom: solid var(--lumo-primary-color) var(--spacing-02);
+  border-bottom: solid var(--primary-color) var(--spacing-02);
 }
 
 .drop-left.v-drag-over-target {
-  border-left: solid var(--lumo-primary-color) var(--spacing-02);
+  border-left: solid var(--primary-color) var(--spacing-02);
 }
 
 .drop-right.v-drag-over-target {
-  border-right: solid var(--lumo-primary-color) var(--spacing-02);
+  border-right: solid var(--primary-color) var(--spacing-02);
 }
 
 /*endregion*/
@@ -705,7 +709,7 @@ Colors
 }
 
 .dialog-header-text-color {
-  color: var(--lumo-header-text-color);
+  color: hsl(214, 35%, 15%);
 }
 
 /*endregion*/
@@ -715,7 +719,7 @@ Colors
 }
 
 .dialog-step-name-text {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   font-weight: var(--font-weight-medium);
   line-height: var(--lumo-line-height-xs);
 }
@@ -748,8 +752,12 @@ Colors
 
 /*region Buttons*/
 .button-color-primary {
-  color: var(--lumo-primary-contrast-color);
-  background-color: var(--lumo-primary-color);
+  color: var(--primary-contrast-color);
+  background-color: var(--primary-color);
+}
+
+.button-icon-only {
+  color: var(--tertiary-text-color);
 }
 
 /*endregion*/
@@ -842,6 +850,31 @@ Icons
 .flex-align-items-bottom {
   align-items: self-end;
 }
+
+.justify-self-start {
+  justify-self: flex-start;
+}
+
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-self-center {
+  justify-self: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-self-end {
+  justify-self: flex-end;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
 
 .flex-horizontal {
   display: flex;
@@ -1023,7 +1056,7 @@ Older stuff -
   flex-direction: row;
   font-weight: bold;
   line-height: 1;
-  font-size: var(--lumo-space-m);
+  font-size: var(--spacing-04);
 }
 
 .heading-with-icon vaadin-icon {
@@ -1042,11 +1075,11 @@ Older stuff -
 
 
 .trailing-margin-large {
-  margin-bottom: var(--lumo-space-xl); /*spacing-07*/
+  margin-bottom: var(--spacing-07); /*spacing-07*/
 }
 
 .trailing-margin-normal {
-  margin-bottom: var(--lumo-space-l); /*spacing05*/
+  margin-bottom: var(--spacing-05); /*spacing05*/
 }
 
 .trailing-margin-small {
@@ -1060,7 +1093,7 @@ Older stuff -
 
 .section-title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--secondary-text-color);
   margin-bottom: 0.5rem;
   width: 100%;
 }
@@ -1068,7 +1101,7 @@ Older stuff -
 
 
 .sub-header {
-  font-size: var(--lumo-font-size-s);
+  font-size: 0.875rem;
   color: #878787;
   margin-bottom: 0.5rem;
 }
@@ -1091,7 +1124,7 @@ Older stuff -
   flex-direction: row;
   width: 100%;
   gap: var(--spacing-03);
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   font-weight: bold;
   color: #878787;
   line-height: 1;
@@ -1104,7 +1137,7 @@ Older stuff -
 .detail-box-child {
   border-width: 1px 1px 1px 1px;
   border-color: lightgray;
-  padding: var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-m);
+  padding: var(--spacing-04) var(--spacing-04) var(--spacing-04);
 }
 
 .detail-box-child:first-child {
@@ -1114,17 +1147,17 @@ Older stuff -
 }
 
 .icon-label {
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   line-height: 1;
   display: flex;
   flex-direction: row;
-  gap: var(--lumo-space-l);
+  gap: var(--spacing-05);
 }
 
 .icon-label-container {
   display: flex;
   flex-direction: row;
-  font-size: var(--lumo-font-size-m);
+  font-size: var(--spacing-04);
   color: #878787;
   font-weight: bold;
   gap: var(--spacing-03);
@@ -1162,8 +1195,8 @@ Older stuff -
 }
 
 .simple-paragraph {
-  font-size: var(--lumo-font-size-m);
-  margin-bottom: var(--lumo-space-m);
+  font-size: var(--spacing-04);
+  margin-bottom: var(--spacing-04);
 }
 
 .background-color-grey {

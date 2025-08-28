@@ -56,10 +56,10 @@ public class ExperimentalVariablesInput extends Div implements UserInput {
     variableInformationContainer.addClassNames("flex-vertical");
     add(variableInformationContainer);
     var addVariableIcon = VaadinIcon.PLUS.create();
-    addVariableIcon.addClassNames("color-primary clickable");
+    addVariableIcon.addClassNames("color-primary-text clickable");
     addVariableIcon.addClickListener(it -> addNewVariableInput());
     Span addVariableText = new Span("Add Experimental Variable");
-    addVariableText.addClassNames("color-primary clickable");
+    addVariableText.addClassNames("color-primary-text clickable");
     addVariableText.addClickListener(it -> addNewVariableInput());
     var addVariableControl = new Div(addVariableIcon, addVariableText);
     addVariableControl.addClassNames("flex-horizontal", "gap-04");
@@ -535,7 +535,7 @@ public class ExperimentalVariablesInput extends Div implements UserInput {
 //          42
 //          68
 //          """); TODO needed?
-      deleteIcon.addClassNames("color-primary");
+      deleteIcon.addClassNames("color-primary-text");
       /*Span around Icon is necessary otherwise icon size will be scaled down if a scrollbar appears*/
       fieldsContainer.add(nameField, unitField, levelArea, new Span(deleteIcon));
       add(fieldsContainer);

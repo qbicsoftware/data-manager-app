@@ -56,7 +56,7 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
     addVariableIcon.addClassName(CSS_CLICKABLE);
     container = new Div();
     container.setId("add-action-container");
-    container.addClassNames("flex-horizontal", "width-full", "color-primary", "gap-02");
+    container.addClassNames("flex-horizontal", "width-full", "color-primary-text", "gap-02");
     container.add(addVariableIcon, addVariableText);
     addVariableIcon.addClickListener(e -> addVariable(new ConfoundingVariable(null, "")));
     addVariableText.addClickListener(e -> addVariable(new ConfoundingVariable(null, "")));
@@ -246,7 +246,7 @@ public class ConfoundingVariablesUserInput extends Div implements UserInput {
       variableName.setLabel("Confounding Variable");
       variableName.addValueChangeListener(it -> updateValue());
       Icon deleteIcon = new Icon(VaadinIcon.CLOSE_SMALL);
-      deleteIcon.addClassNames("color-primary", CSS_CLICKABLE);
+      deleteIcon.addClassNames("color-primary-text", CSS_CLICKABLE);
       deleteIcon.addClickListener(clicked -> deleteAction.accept(this));
       layout.add(variableName, new Span(deleteIcon));
       this.deleteAction = ignored -> {

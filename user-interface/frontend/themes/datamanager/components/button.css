@@ -59,8 +59,3 @@ vaadin-button.tertiary {
 vaadin-button {
   cursor: pointer;
 }
-
-vaadin-button[theme~="tertiary"] vaadin-icon,
-vaadin-button[theme~="tertiary-inline"] vaadin-icon {
-  /*color: var(--lumo-tertiary-text-color)*/
-}
