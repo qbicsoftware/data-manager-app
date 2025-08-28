@@ -25,6 +25,13 @@ public class ButtonFactory {
     return button;
   }
 
+  public Button createIconButton(Icon icon) {
+    var button = createButton(null, new String[]{"button-text padding-none button-icon-only"});
+    button.setThemeName("tertiary");
+    button.setIcon(icon);
+    return button;
+  }
+
   public Button createConfirmButton(String label) {
     return createButton(label,
         new String[]{"button-text-primary", "button-color-primary"});
