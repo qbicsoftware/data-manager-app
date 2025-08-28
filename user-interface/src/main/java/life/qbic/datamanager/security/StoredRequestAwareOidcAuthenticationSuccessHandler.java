@@ -2,7 +2,6 @@ package life.qbic.datamanager.security;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSuccessHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.IssueOidcException;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -50,10 +50,11 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       Authentication authentication) throws ServletException, IOException {
     var currentSession = request.getSession();
     var authFromLinkRequest = currentSession.getAttribute(OidcLinkController.LINK_AUTH_SESSION_KEY);
+    // Check for the OIDC link use case (using the OpenID to authenticate for the Data Manager account)
     if (authFromLinkRequest != null) {
-      var returnTo = (String) currentSession.getAttribute(OidcLinkController.RETURN_TO);
+      // the user was already authenticated and wants to link their OpenID account
+      var returnTo = (String) Optional.ofNullable(currentSession.getAttribute(OidcLinkController.RETURN_TO)).orElse("");
       var convertedAuth = (Authentication) authFromLinkRequest;
-      // this means the user was already authenticated and triggered the linking of an oidc account
       var originalUserDetails = (QbicUserDetails) convertedAuth.getPrincipal();
       var qbicOidcUser = (QbicOidcUser) authentication.getPrincipal();
       try {
@@ -61,14 +62,19 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
         SecurityContextHolder.getContext().setAuthentication(convertedAuth);
         response.sendRedirect(returnTo + "?success=1");
       } catch (IssueOidcException e) {
-        logger.error("Error while setting up Oidc Authentication", e);
+        logger.error("Error while setting up OIDC Authentication", e);
         SecurityContextHolder.getContext().setAuthentication(convertedAuth);
         response.sendRedirect(returnTo + "?error=" + URLEncoder.encode(e.getMessage(),
             StandardCharsets.UTF_8));
+      } finally {
+        // Clean-up of the session to free the use case flags for linking an Open ID
+        currentSession.removeAttribute(OidcLinkController.LINK_AUTH_SESSION_KEY);
+        currentSession.removeAttribute(OidcLinkController.RETURN_TO);
       }
       return;
     }
 
+    // Legacy authentication flow of the application
     if (authentication.getPrincipal() instanceof QbicOidcUser qbicOidcUser) {
       if (!qbicOidcUser.isActive()) {
         getRedirectStrategy().sendRedirect(request, response, emailConfirmationEndpoint);
