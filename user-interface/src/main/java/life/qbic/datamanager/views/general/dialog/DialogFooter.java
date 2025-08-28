@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.html.Div;
 import java.util.Objects;
+import life.qbic.datamanager.views.general.ButtonFactory;
 
 /**
  * <b>Dialog Footer</b>
