@@ -1,3 +1,33 @@
+CREATE TABLE IF NOT EXISTS shedlock
+(
+    name       VARCHAR(64)  NOT NULL PRIMARY KEY,
+    lock_until TIMESTAMP(3) NOT NULL,
+    locked_at  TIMESTAMP(3) NOT NULL,
+    locked_by  VARCHAR(255) NOT NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sync_control
+(
+    job_name        VARCHAR(64) PRIMARY KEY,
+    sync_offset     BIGINT(20) UNSIGNED,
+    last_updated_at DATETIME(3) NULL,
+    last_success_at DATETIME(3) NOT NULL
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS remote_measurement_data
+(
+    id             BIGINT PRIMARY KEY,
+    measurement_id VARCHAR(255) NOT NULL,
+    name           VARCHAR(255),
+    status         VARCHAR(32),
+    updated_at     DATETIME(3)  NOT NULL,
+    deleted        BOOLEAN      NOT NULL DEFAULT FALSE,
+    last_sync_at   DATETIME(3)  NOT NULL,
+    KEY (updated_at)
+);
+
 CREATE TABLE IF NOT EXISTS `acl_class`
 (
     `id`            bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -70,20 +100,20 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `lastModified`                      datetime(6)  NOT NULL,
     `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
     `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
-    `principalInvestigatorOidc`       varchar(255) DEFAULT NULL,
-    `principalInvestigatorOidcIssuer` varchar(255) DEFAULT NULL,
+    `principalInvestigatorOidc`         varchar(255)  DEFAULT NULL,
+    `principalInvestigatorOidcIssuer`   varchar(255)  DEFAULT NULL,
     `projectCode`                       varchar(255)  DEFAULT NULL,
     `objective`                         varchar(2000) DEFAULT NULL,
     `projectTitle`                      varchar(255)  DEFAULT NULL,
     `projectManagerEmailAddress`        varchar(255)  DEFAULT NULL,
     `projectManagerFullName`            varchar(255)  DEFAULT NULL,
-    `projectManagerOidc`              varchar(255) DEFAULT NULL,
-    `projectManagerOidcIssuer`        varchar(255) DEFAULT NULL,
+    `projectManagerOidc`                varchar(255)  DEFAULT NULL,
+    `projectManagerOidcIssuer`          varchar(255)  DEFAULT NULL,
     `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
-    `responsiblePersonOidc`       varchar(255) DEFAULT NULL,
-    `responsiblePersonOidcIssuer` varchar(255) DEFAULT NULL,
-    `version` int NOT NULL,
+    `responsiblePersonOidc`             varchar(255)  DEFAULT NULL,
+    `responsiblePersonOidcIssuer`       varchar(255)  DEFAULT NULL,
+    `version`                           int          NOT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -97,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager`
     `speciesIconName`  varchar(31)  NOT NULL DEFAULT 'default',
     `specimenIconName` varchar(31)  NOT NULL DEFAULT 'default',
     `project`          varchar(255)          DEFAULT NULL,
-    `version` varchar(255) NOT NULL,
+    `version`          varchar(255) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `FKgfrw5hlq3iy6ntf32wy0e8hr` (`project`),
     CONSTRAINT `FKgfrw5hlq3iy6ntf32wy0e8hr` FOREIGN KEY (`project`) REFERENCES `projects_datamanager` (`projectId`)
@@ -655,6 +685,6 @@ FROM projects_datamanager pd
          LEFT JOIN (SELECT project_userinfo.projectId,
                            GROUP_CONCAT(project_userinfo.userName SEPARATOR ', ') AS `usernames`,
                            JSON_ARRAYAGG(JSON_OBJECT('userId', project_userinfo.userId, 'userName',
-                                                     project_userinfo.userName)) AS `userInfos`
+                                                     project_userinfo.userName))  AS `userInfos`
                     FROM project_userinfo
                     GROUP BY projectId) AS users ON users.projectId = pd.projectId;
