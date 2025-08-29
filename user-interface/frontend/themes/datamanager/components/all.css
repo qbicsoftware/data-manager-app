@@ -1191,12 +1191,19 @@ Older stuff -
   box-sizing: border-box;
 }
 
-*:has(.input-with-label:hover) .input-label {
+/*Make sure to define the hover before the focus as the focus properties would be overwritten by the
+ hover properties otherwise.*/
+
+.input-label:has(~ .input-with-label:hover) /*the label is before the input*/,
+.input-with-label:hover ~ .input-label /*the label is after the input*/
+{
   color: var(--lumo-contrast);
 }
 
-*:has(.input-with-label:focus-within):has(.input-label) .input-label {
-  color: var(--primary-text-color)
+.input-label:has(~ .input-with-label:focus-within) /*the label is before the input*/,
+.input-with-label:focus-within ~ .input-label /*the label is after the input*/
+{
+  color: var(--primary-text-color);
 }
 
 
