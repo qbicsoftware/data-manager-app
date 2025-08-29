@@ -38,14 +38,14 @@ public class AnnouncementComponent extends Div {
     unsubscribeFromAnnouncements();
     UI ui = getUI().orElseThrow();
     refreshRoutine = Flux.interval(INITIAL_DELAY, REFRESH_INTERVAL)
-        .doOnNext(
-            it -> {
-              ui.getSession().lock();
-              log.debug("Fetching announcements for ui[%s] vaadin[%s] http[%s] ".formatted(
-                  ui.getUIId(), ui.getSession().getPushId(),
-                  ui.getSession().getSession().getId()));
-              ui.getSession().unlock();
-            })
+        .doOnNext(it -> ui.access(() -> {
+          int uiId = ui.getUIId();
+          String pushId = ui.getSession().getPushId();
+          String sessionId = ui.getSession().getSession().getId();
+          log.debug(
+              "Fetching announcements for ui[%s] vaadin[%s] http[%s] ".formatted(uiId, pushId,
+                  sessionId));
+        }))
         .flatMap(it -> announcementService.loadActiveAnnouncements(Instant.now())
             .collectList())
         .subscribe(announcements -> refreshAnnouncements(announcements, ui));
