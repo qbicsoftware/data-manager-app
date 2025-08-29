@@ -41,6 +41,7 @@ import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.fetchoptions.DataSe
 import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.search.DataSetFileSearchCriteria;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -87,6 +88,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class OpenbisConnector implements QbicProjectDataRepo, SampleDataRepository,
     MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester, DisposableBean {
+
+  private static final Instant DATE_MIN = Instant.EPOCH; // lower bound for date conversion
 
   private static final Logger log = logger(OpenbisConnector.class);
 
@@ -575,16 +578,22 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
   public List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
       Collection<MeasurementCode> measurementCodes, int offset, int limit,
       List<SortOrder> sortOrders) {
-
-    List<RawDataDatasetInformation> result = new ArrayList<>();
-    DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
-    fetchOptions.from(offset);
-    fetchOptions.count(limit);
-    fetchOptions.withSample();
     DataSetSearchCriteria searchCriteria = new DataSetSearchCriteria();
     List<String> codes = new ArrayList<>(measurementCodes.stream().map(MeasurementCode::value)
         .toList());
     searchCriteria.withSample().withCodes().thatIn(codes);
+    DataSetFetchOptions fetchOptions = new DataSetFetchOptions();
+    fetchOptions.from(offset);
+    fetchOptions.count(limit);
+    fetchOptions.withSample();
+    return getRawDataDatasetInformations(filter, searchCriteria, fetchOptions);
+  }
+
+  private List<RawDataDatasetInformation> getRawDataDatasetInformations(
+      String filter,
+      DataSetSearchCriteria searchCriteria,
+      DataSetFetchOptions fetchOptions) {
+    List<RawDataDatasetInformation> result = new ArrayList<>();
 
     if (!filter.isBlank()) {
       searchCriteria.withAndOperator();
@@ -632,6 +641,31 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     return applicationServer.searchDataSets(
         openBisSession.getToken(), searchCriteria,
         fetchOptions).getObjects().size();
+  }
+
+  private static Instant instantWithinBoundaries(Instant instant) {
+    if (instant.isBefore(DATE_MIN)) {
+      return DATE_MIN;
+    }
+    if (instant.isAfter(Instant.now())) {
+      return Instant.now();
+    }
+    return instant;
+  }
+
+  @Override
+  public List<RawDataDatasetInformation> queryRawDataSince(Instant registeredSince, int offset,
+      int limit) {
+    var datasetSearchCriteria = new DataSetSearchCriteria();
+    datasetSearchCriteria.withRegistrationDate()
+        .thatIsLaterThanOrEqualTo(Date.from(instantWithinBoundaries(registeredSince)));
+
+    var datasetFetchOptions = new DataSetFetchOptions();
+    datasetFetchOptions.from(offset);
+    datasetFetchOptions.count(limit);
+    datasetFetchOptions.withSample();
+
+    return getRawDataDatasetInformations("", datasetSearchCriteria, datasetFetchOptions);
   }
 
   private Map<String, List<DataSetFile>> fetchFileInformationForDatasets(OpenbisSession session,

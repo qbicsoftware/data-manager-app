@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.dataset;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.SortOrder;
@@ -27,4 +28,5 @@ public interface RawDataLookup {
 
   int countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes);
 
+  List<RawDataDatasetInformation> queryRawDataSince(Instant instant, int offset, int limit);
 }
