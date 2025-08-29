@@ -1,6 +1,7 @@
 package life.qbic.datamanager.views.demo;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Focusable;
@@ -18,6 +19,7 @@ import com.vaadin.flow.shared.Registration;
 import java.util.Optional;
 import java.util.function.Consumer;
 import life.qbic.datamanager.views.general.ButtonFactory;
+import org.springframework.lang.NonNull;
 
 public class ExperimentalVariablesInput extends Composite<Div> {
 
@@ -113,14 +115,18 @@ public class ExperimentalVariablesInput extends Composite<Div> {
 
   private static class LevelField extends Composite<Div> implements Focusable<Component> {
 
-    final static String LEVEL_FIELD_CSS = "flex-horizontal gap-03 width-full no-flex-wrap no-wrap input-with-label";
-    final static String LEVEL_VALUE_CSS = "dynamic-growing-flex-item";
+    static final String LEVEL_CLASS = "level";
+    static final String LEVEL_FIELD_CSS = "flex-horizontal gap-03 width-full no-flex-wrap no-wrap input-with-label";
+    static final String LEVEL_VALUE_CSS = "dynamic-growing-flex-item";
 
-    private final ButtonFactory buttonFactory;
     private final TextField levelValue = new TextField();
+    private final Button deleteLevelButton;
 
-    private LevelField(ButtonFactory buttonFactory) {
-      this.buttonFactory = buttonFactory;
+    private LevelField(@NonNull ButtonFactory buttonFactory) {
+      this.deleteLevelButton = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
+      deleteLevelButton.addClickListener(clickEvent -> {
+        fireEvent(new DeleteLevelEvent(this, clickEvent.isFromClient()));
+      });
     }
 
 
@@ -129,9 +135,8 @@ public class ExperimentalVariablesInput extends Composite<Div> {
       var levelField = new Div();
       levelField.addClassNames(LEVEL_FIELD_CSS);
       levelValue.addClassNames(LEVEL_VALUE_CSS);
-      var deleteLevelButton = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
-      deleteLevelButton.addClickListener(clickEvent -> levelField.removeFromParent());
       levelField.add(levelValue, deleteLevelButton);
+      levelField.addClassNames(LEVEL_CLASS);
       return levelField;
     }
 
@@ -177,18 +182,17 @@ public class ExperimentalVariablesInput extends Composite<Div> {
     public Optional<String> getValue() {
       return levelValue.getOptionalValue();
     }
-  }
 
-  private static Div createLevelField(String levelFieldCss, String levelValueCss,
-      ButtonFactory buttonFactory) {
-    var levelField = new Div();
-    levelField.addClassNames(levelFieldCss);
-    var levelValue = new TextField();
-    levelValue.addClassNames(levelValueCss);
-    var deleteLevelButton = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
-    deleteLevelButton.addClickListener(clickEvent -> levelField.removeFromParent());
-    levelField.add(levelValue, deleteLevelButton);
-    return levelField;
+    Registration addDeleteListener(ComponentEventListener<DeleteLevelEvent> listener) {
+      return addListener(DeleteLevelEvent.class, listener);
+    }
+
+    static class DeleteLevelEvent extends ComponentEvent<LevelField> {
+
+      public DeleteLevelEvent(LevelField source, boolean fromClient) {
+        super(source, fromClient);
+      }
+    }
   }
 
   private static class PasteSupport {
