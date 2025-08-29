@@ -163,20 +163,7 @@ public class ComponentDemo extends Div {
   }
 
   private Component createTestComponent() {
-    var body = new Div();
-    body.addClassNames(
-        "dialog-section border dashed padding-vertical-05 padding-horizontal-07 margin-05");
-    var variablesInput = new Div();
-    variablesInput.addClassNames("flex-vertical gap-04");
-    for (int i = 0; i < 4; i++) {
-      variablesInput.add(variableRow());
-    }
-    var addVariableButton = new Button("Add Variable", VaadinIcon.PLUS.create());
-    addVariableButton.addClassNames(
-        "margin-bottom-04 flex-vertical width-max-content justify-self-start button-color-primary");
-    variablesInput.add(addVariableButton);
-    body.add(variablesInput);
-    return body;
+    return new ExperimentalVariablesInput();
   }
 
   private Component variableRow() {
