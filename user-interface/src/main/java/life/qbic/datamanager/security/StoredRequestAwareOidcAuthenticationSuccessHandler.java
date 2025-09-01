@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import javax.swing.text.html.Option;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.IssueOidcException;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -34,6 +33,7 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
     VaadinSavedRequestAwareAuthenticationSuccessHandler {
 
+  public static final String GENERAL_AUTHENTICATION_FAILURE = "Something went wrong during authentication.";
   private final String openIdRegistrationEndpoint;
   private final String emailConfirmationEndpoint;
   private final IdentityService identityService;
@@ -59,16 +59,20 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       // the user was already authenticated and wants to link their OpenID account
       var returnTo = (String) Optional.ofNullable(
           currentSession.getAttribute(OidcLinkController.RETURN_TO)).orElse("");
-      var previousAuth = (Authentication) authFromLinkRequest;
-      QbicUserDetails originalUserDetails;
-      if (!(previousAuth.getPrincipal() instanceof QbicUserDetails)) {
+      if (!(authFromLinkRequest instanceof Authentication previousAuth)){
+        logger.error("Unknown authentication type: %s".formatted(authFromLinkRequest.getClass()));
+        cleanUpSession(currentSession);
+        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode(
+            GENERAL_AUTHENTICATION_FAILURE, StandardCharsets.UTF_8));
+        return;
+      }
+
+      if (!(previousAuth.getPrincipal() instanceof QbicUserDetails originalUserDetails)) {
         var actualInstance = previousAuth.getPrincipal().getClass();
         throw new IllegalStateException(
             "Provided principal did not meet requirements. Expected %s but received %s".formatted(
                 QbicUserDetails.class, actualInstance));
       }
-      // We can now safely cast
-      originalUserDetails = (QbicUserDetails) previousAuth.getPrincipal();
       // We can only process in the OIDC flow, if the authentication principal is of type DefaultOidcUser
       // Every other principal cannot be processed here and is caught here as fail-safe.
       if (!(authentication.getPrincipal() instanceof QbicUserDetails)) {
@@ -76,7 +80,7 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
         SecurityContextHolder.getContext().setAuthentication(previousAuth);
         cleanUpSession(currentSession);
         response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode(
-            "Something went wrong during authentication.", StandardCharsets.UTF_8));
+            GENERAL_AUTHENTICATION_FAILURE, StandardCharsets.UTF_8));
         return;
       }
 
@@ -101,7 +105,7 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
         logger.error("Error while setting up OIDC Authentication", e);
         SecurityContextHolder.getContext().setAuthentication(previousAuth);
         response.sendRedirect(returnTo + "?error=" + URLEncoder.encode(
-            "Something went wrong during authentication.", StandardCharsets.UTF_8));
+            GENERAL_AUTHENTICATION_FAILURE, StandardCharsets.UTF_8));
       } finally {
         cleanUpSession(currentSession);
       }
