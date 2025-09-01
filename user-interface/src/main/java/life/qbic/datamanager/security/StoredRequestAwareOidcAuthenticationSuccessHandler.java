@@ -62,7 +62,7 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       if (!(authFromLinkRequest instanceof Authentication previousAuth)){
         logger.error("Unknown authentication type: %s".formatted(authFromLinkRequest.getClass()));
         cleanUpSession(currentSession);
-        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode(
+        response.sendRedirect( "/login?error=" + URLEncoder.encode(
             GENERAL_AUTHENTICATION_FAILURE, StandardCharsets.UTF_8));
         return;
       }
@@ -79,7 +79,7 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
         // Ensure the original authentication is set in the current context
         SecurityContextHolder.getContext().setAuthentication(previousAuth);
         cleanUpSession(currentSession);
-        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode(
+        response.sendRedirect("/login?error=" + URLEncoder.encode(
             GENERAL_AUTHENTICATION_FAILURE, StandardCharsets.UTF_8));
         return;
       }
