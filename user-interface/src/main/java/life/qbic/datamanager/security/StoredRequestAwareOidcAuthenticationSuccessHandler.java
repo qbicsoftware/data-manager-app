@@ -67,8 +67,8 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       } catch (ClassCastException e) {
         // Ensure the original authentication is set in the current context
         SecurityContextHolder.getContext().setAuthentication(convertedAuth);
-        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode("Something went wrong during authentication.", StandardCharsets.UTF_8));
         cleanUpSession(currentSession);
+        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode("Something went wrong during authentication.", StandardCharsets.UTF_8));
         return;
       }
       // Only if we have a DefaultOidcUser principal the flow can continue
