@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import javax.swing.text.html.Option;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.IssueOidcException;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -79,13 +80,18 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
             "Something went wrong during authentication.", StandardCharsets.UTF_8));
         return;
       }
-      // We can safely cast now
-      oidcUser = (DefaultOidcUser) authentication.getPrincipal();
+
+      OidcInfo oidcInfo = switch (authentication.getPrincipal()) {
+        case QbicOidcUser user -> fromQbicOidc(user);
+        case DefaultOidcUser user -> fromDefaultOidc(user);
+        default -> null;
+      };
 
       // Only if we have a DefaultOidcUser principal the flow can continue
       try {
-        identityService.setOidc(originalUserDetails.getUserId(), oidcUser.getName(),
-            oidcUser.getIssuer().toString());
+        Optional.ofNullable(oidcInfo).orElseThrow(() -> new IllegalArgumentException("OidcInfo is null"));
+        identityService.setOidc(originalUserDetails.getUserId(), oidcInfo.id(),
+            oidcInfo.oidcIssuer());
         SecurityContextHolder.getContext().setAuthentication(previousAuth);
         response.sendRedirect(returnTo + "?success=1");
       } catch (IssueOidcException e) {
@@ -93,6 +99,11 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
         SecurityContextHolder.getContext().setAuthentication(previousAuth);
         response.sendRedirect(returnTo + "?error=" + URLEncoder.encode(e.getMessage(),
             StandardCharsets.UTF_8));
+      } catch (IllegalArgumentException e) {
+        logger.error("Error while setting up OIDC Authentication", e);
+        SecurityContextHolder.getContext().setAuthentication(previousAuth);
+        response.sendRedirect(returnTo + "?error=" + URLEncoder.encode(
+            "Something went wrong during authentication.", StandardCharsets.UTF_8));
       } finally {
         cleanUpSession(currentSession);
       }
@@ -118,6 +129,7 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
 
   /**
    * Cleans the session from outdated attributes
+   *
    * @param session the session to clean up
    * @since 1.11.0
    */
@@ -125,5 +137,17 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
     requireNonNull(session);
     session.removeAttribute(OidcLinkController.LINK_AUTH_SESSION_KEY);
     session.removeAttribute(OidcLinkController.RETURN_TO);
+  }
+
+  record OidcInfo(String id, String oidcIssuer) {
+
+  }
+
+  private static OidcInfo fromDefaultOidc(DefaultOidcUser user) {
+    return new OidcInfo(user.getName(), user.getIssuer().toString());
+  }
+
+  private static OidcInfo fromQbicOidc(QbicOidcUser user) {
+    return new OidcInfo(user.getOidcId(), user.getOidcIssuer());
   }
 }
