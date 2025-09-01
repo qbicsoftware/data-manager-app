@@ -2174,6 +2174,10 @@ public interface AsyncProjectService {
   }
 
 
+  record RawData(String measurementCode) {}
+
+
+
   /**
    * The actual request container for metadata validation.
    * <p>
