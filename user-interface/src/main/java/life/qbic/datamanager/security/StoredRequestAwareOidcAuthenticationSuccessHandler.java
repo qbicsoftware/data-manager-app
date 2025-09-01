@@ -56,33 +56,44 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
     // Check for the OIDC link use case (using the OpenID to authenticate for the Data Manager account)
     if (authFromLinkRequest != null) {
       // the user was already authenticated and wants to link their OpenID account
-      var returnTo = (String) Optional.ofNullable(currentSession.getAttribute(OidcLinkController.RETURN_TO)).orElse("");
-      var convertedAuth = (Authentication) authFromLinkRequest;
-      var originalUserDetails = (QbicUserDetails) convertedAuth.getPrincipal();
+      var returnTo = (String) Optional.ofNullable(
+          currentSession.getAttribute(OidcLinkController.RETURN_TO)).orElse("");
+      var previousAuth = (Authentication) authFromLinkRequest;
+      QbicUserDetails originalUserDetails;
+      if (!(previousAuth.getPrincipal() instanceof QbicUserDetails)) {
+        var actualInstance = previousAuth.getPrincipal().getClass();
+        throw new IllegalStateException(
+            "Provided principal did not meet requirements. Expected %s but received %s".formatted(
+                QbicUserDetails.class, actualInstance));
+      }
+      // We can now safely cast
+      originalUserDetails = (QbicUserDetails) previousAuth.getPrincipal();
       DefaultOidcUser oidcUser;
       // We can only process in the OIDC flow, if the authentication principal is of type DefaultOidcUser
       // Every other principal cannot be processed here and is caught here as fail-safe.
-      try {
-        oidcUser = (DefaultOidcUser) authentication.getPrincipal();
-      } catch (ClassCastException e) {
+      if (!(authentication.getPrincipal() instanceof QbicUserDetails)) {
         // Ensure the original authentication is set in the current context
-        SecurityContextHolder.getContext().setAuthentication(convertedAuth);
+        SecurityContextHolder.getContext().setAuthentication(previousAuth);
         cleanUpSession(currentSession);
-        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode("Something went wrong during authentication.", StandardCharsets.UTF_8));
+        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode(
+            "Something went wrong during authentication.", StandardCharsets.UTF_8));
         return;
       }
+      // We can safely cast now
+      oidcUser = (DefaultOidcUser) authentication.getPrincipal();
+
       // Only if we have a DefaultOidcUser principal the flow can continue
       try {
-        identityService.setOidc(originalUserDetails.getUserId(), oidcUser.getName(), oidcUser.getIssuer().toString());
-        SecurityContextHolder.getContext().setAuthentication(convertedAuth);
+        identityService.setOidc(originalUserDetails.getUserId(), oidcUser.getName(),
+            oidcUser.getIssuer().toString());
+        SecurityContextHolder.getContext().setAuthentication(previousAuth);
         response.sendRedirect(returnTo + "?success=1");
       } catch (IssueOidcException e) {
         logger.error("Error while setting up OIDC Authentication", e);
-        SecurityContextHolder.getContext().setAuthentication(convertedAuth);
+        SecurityContextHolder.getContext().setAuthentication(previousAuth);
         response.sendRedirect(returnTo + "?error=" + URLEncoder.encode(e.getMessage(),
             StandardCharsets.UTF_8));
       } finally {
-        // Clean-up of the session to free the use case flags for linking an Open ID
         cleanUpSession(currentSession);
       }
       return;
@@ -105,9 +116,13 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
     }
   }
 
+  /**
+   * Cleans the session from outdated attributes
+   * @param session the session to clean up
+   * @since 1.11.0
+   */
   private static void cleanUpSession(@NonNull HttpSession session) {
     requireNonNull(session);
-    // Clean-up of the session to free the use case flags for linking an Open ID
     session.removeAttribute(OidcLinkController.LINK_AUTH_SESSION_KEY);
     session.removeAttribute(OidcLinkController.RETURN_TO);
   }
