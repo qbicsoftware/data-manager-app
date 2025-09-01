@@ -6,6 +6,7 @@ import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSucc
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +15,7 @@ import life.qbic.identity.application.user.IdentityService;
 import life.qbic.identity.application.user.IdentityService.IssueOidcException;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
@@ -57,14 +59,19 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       var returnTo = (String) Optional.ofNullable(currentSession.getAttribute(OidcLinkController.RETURN_TO)).orElse("");
       var convertedAuth = (Authentication) authFromLinkRequest;
       var originalUserDetails = (QbicUserDetails) convertedAuth.getPrincipal();
-      DefaultOidcUser oidcUser = null;
+      DefaultOidcUser oidcUser;
+      // We can only process in the OIDC flow, if the authentication principal is of type DefaultOidcUser
+      // Every other principal cannot be processed here and is caught here as fail-safe.
       try {
         oidcUser = (DefaultOidcUser) authentication.getPrincipal();
       } catch (ClassCastException e) {
         // Ensure the original authentication is set in the current context
         SecurityContextHolder.getContext().setAuthentication(convertedAuth);
         response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode("Something went wrong during authentication.", StandardCharsets.UTF_8));
+        cleanUpSession(currentSession);
+        return;
       }
+      // Only if we have a DefaultOidcUser principal the flow can continue
       try {
         identityService.setOidc(originalUserDetails.getUserId(), oidcUser.getName(), oidcUser.getIssuer().toString());
         SecurityContextHolder.getContext().setAuthentication(convertedAuth);
@@ -76,8 +83,7 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
             StandardCharsets.UTF_8));
       } finally {
         // Clean-up of the session to free the use case flags for linking an Open ID
-        currentSession.removeAttribute(OidcLinkController.LINK_AUTH_SESSION_KEY);
-        currentSession.removeAttribute(OidcLinkController.RETURN_TO);
+        cleanUpSession(currentSession);
       }
       return;
     }
@@ -97,5 +103,12 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
           "Authentication failure. Unsupported principal type: " + authentication.getPrincipal()
               .getClass());
     }
+  }
+
+  private static void cleanUpSession(@NonNull HttpSession session) {
+    requireNonNull(session);
+    // Clean-up of the session to free the use case flags for linking an Open ID
+    session.removeAttribute(OidcLinkController.LINK_AUTH_SESSION_KEY);
+    session.removeAttribute(OidcLinkController.RETURN_TO);
   }
 }
