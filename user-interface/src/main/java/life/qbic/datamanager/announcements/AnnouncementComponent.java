@@ -9,10 +9,12 @@ import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.server.VaadinSession;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import life.qbic.datamanager.announcements.AnnouncementService.Announcement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,14 +40,19 @@ public class AnnouncementComponent extends Div {
     unsubscribeFromAnnouncements();
     UI ui = getUI().orElseThrow();
     refreshRoutine = Flux.interval(INITIAL_DELAY, REFRESH_INTERVAL)
-        .doOnNext(
-            it -> {
-              ui.getSession().lock();
-              log.debug("Fetching announcements for ui[%s] vaadin[%s] http[%s] ".formatted(
-                  ui.getUIId(), ui.getSession().getPushId(),
-                  ui.getSession().getSession().getId()));
-              ui.getSession().unlock();
-            })
+        .doOnNext(it -> ui.access(() -> {
+          int uiId = ui.getUIId();
+          String pushId = Optional.ofNullable(ui.getSession())
+              .map(VaadinSession::getPushId)
+              .orElse(
+                  "N/A");
+          String sessionId = Optional.ofNullable(ui.getSession())
+              .map(s -> s.getSession().getId())
+              .orElse("N/A");
+          log.debug(
+              "Fetching announcements for ui[%s] vaadin[%s] http[%s] ".formatted(uiId, pushId,
+                  sessionId));
+        }))
         .flatMap(it -> announcementService.loadActiveAnnouncements(Instant.now())
             .collectList())
         .subscribe(announcements -> refreshAnnouncements(announcements, ui));
