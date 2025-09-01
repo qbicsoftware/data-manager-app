@@ -14,6 +14,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
@@ -41,17 +42,19 @@ public class CachedOrganisationRepository implements OrganisationRepository {
   private static final String ROR_API_URL = "https://api.ror.org/v1/organizations/%s";
   private static final String ROR_ID_PATTERN = "0[a-z|0-9]{6}[0-9]{2}$";
   private final Map<String, String> iriToOrganisation = new HashMap<>();
+  private final String apiClientId;
   private final int configuredCacheSize;
 
   private boolean cacheUsedForLastRequest = false;
 
 
-
-  public CachedOrganisationRepository(int cacheSize) {
+  public CachedOrganisationRepository(String apiClientId, int cacheSize) {
+    this.apiClientId = Objects.requireNonNull(apiClientId);
     this.configuredCacheSize = cacheSize;
   }
 
-  public CachedOrganisationRepository() {
+  public CachedOrganisationRepository(String apiClientId) {
+    this.apiClientId = Objects.requireNonNull(apiClientId);
     this.configuredCacheSize = DEFAULT_CACHE_SIZE;
   }
 
@@ -85,6 +88,7 @@ public class CachedOrganisationRepository implements OrganisationRepository {
           .followRedirects(Redirect.NORMAL).connectTimeout(
               Duration.ofSeconds(10)).build();
       HttpRequest rorQuery = HttpRequest.newBuilder().uri(URI.create(ROR_API_URL.formatted(rorId)))
+          .header("Client-Id", apiClientId)
           .header("Content-Type", "application/json").GET().build();
       var result = client.send(rorQuery, BodyHandlers.ofString());
       //If a valid RoRId was provided but the ID does not exist we fail
