@@ -52,7 +52,8 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
   @Override
   public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
       Authentication authentication) throws ServletException, IOException {
-    var currentSession = request.getSession();
+    throw new AuthorizationException(GENERAL_AUTHENTICATION_FAILURE);
+    /*var currentSession = request.getSession();
     var authFromLinkRequest = currentSession.getAttribute(OidcLinkController.LINK_AUTH_SESSION_KEY);
     // Check for the OIDC link use case (using the OpenID to authenticate for the Data Manager account)
     if (authFromLinkRequest != null) {
@@ -118,6 +119,8 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
           "Authentication failure. Unsupported principal type: " + authentication.getPrincipal()
               .getClass());
     }
+
+     */
   }
 
   /**
