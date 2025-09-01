@@ -16,6 +16,7 @@ import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
@@ -56,9 +57,16 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       var returnTo = (String) Optional.ofNullable(currentSession.getAttribute(OidcLinkController.RETURN_TO)).orElse("");
       var convertedAuth = (Authentication) authFromLinkRequest;
       var originalUserDetails = (QbicUserDetails) convertedAuth.getPrincipal();
-      var qbicOidcUser = (QbicOidcUser) authentication.getPrincipal();
+      DefaultOidcUser oidcUser = null;
       try {
-        identityService.setOidc(originalUserDetails.getUserId(), qbicOidcUser.getOidcId(), qbicOidcUser.getOidcIssuer());
+        oidcUser = (DefaultOidcUser) authentication.getPrincipal();
+      } catch (ClassCastException e) {
+        // Ensure the original authentication is set in the current context
+        SecurityContextHolder.getContext().setAuthentication(convertedAuth);
+        response.sendRedirect(returnTo + "/login?error=" + URLEncoder.encode("Something went wrong during authentication.", StandardCharsets.UTF_8));
+      }
+      try {
+        identityService.setOidc(originalUserDetails.getUserId(), oidcUser.getName(), oidcUser.getIssuer().toString());
         SecurityContextHolder.getContext().setAuthentication(convertedAuth);
         response.sendRedirect(returnTo + "?success=1");
       } catch (IssueOidcException e) {
