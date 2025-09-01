@@ -59,10 +59,10 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       // the user was already authenticated and wants to link their OpenID account
       var returnTo = (String) Optional.ofNullable(
           currentSession.getAttribute(OidcLinkController.RETURN_TO)).orElse("");
-      if (!(authFromLinkRequest instanceof Authentication previousAuth)){
+      if (!(authFromLinkRequest instanceof Authentication previousAuth)) {
         logger.error("Unknown authentication type: %s".formatted(authFromLinkRequest.getClass()));
         cleanUpSession(currentSession);
-        response.sendRedirect( request.getContextPath() + "/login?error=" + URLEncoder.encode(
+        response.sendRedirect(request.getContextPath() + "/login?error=" + URLEncoder.encode(
             GENERAL_AUTHENTICATION_FAILURE, StandardCharsets.UTF_8));
         return;
       }
@@ -76,6 +76,8 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       // We can only process in the OIDC flow, if the authentication principal is of type DefaultOidcUser
       // Every other principal cannot be processed here and is caught here as fail-safe.
       if (!(authentication.getPrincipal() instanceof QbicUserDetails)) {
+        logger.error("Unknown authentication principal type: %s. Expected %s.".formatted(
+            authentication.getPrincipal(), QbicUserDetails.class.getName()));
         // Ensure the original authentication is set in the current context
         SecurityContextHolder.getContext().setAuthentication(previousAuth);
         cleanUpSession(currentSession);
@@ -91,7 +93,8 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       };
 
       try {
-        Optional.ofNullable(oidcInfo).orElseThrow(() -> new IllegalArgumentException("OidcInfo is null"));
+        Optional.ofNullable(oidcInfo)
+            .orElseThrow(() -> new IllegalArgumentException("OidcInfo is null"));
         identityService.setOidc(originalUserDetails.getUserId(), oidcInfo.id(),
             oidcInfo.oidcIssuer());
         SecurityContextHolder.getContext().setAuthentication(previousAuth);
