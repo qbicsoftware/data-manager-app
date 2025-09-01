@@ -69,7 +69,6 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
       }
       // We can now safely cast
       originalUserDetails = (QbicUserDetails) previousAuth.getPrincipal();
-      DefaultOidcUser oidcUser;
       // We can only process in the OIDC flow, if the authentication principal is of type DefaultOidcUser
       // Every other principal cannot be processed here and is caught here as fail-safe.
       if (!(authentication.getPrincipal() instanceof QbicUserDetails)) {
@@ -87,7 +86,6 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
         default -> null;
       };
 
-      // Only if we have a DefaultOidcUser principal the flow can continue
       try {
         Optional.ofNullable(oidcInfo).orElseThrow(() -> new IllegalArgumentException("OidcInfo is null"));
         identityService.setOidc(originalUserDetails.getUserId(), oidcInfo.id(),
