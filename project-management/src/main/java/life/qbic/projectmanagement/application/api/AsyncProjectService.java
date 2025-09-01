@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -553,8 +554,8 @@ public interface AsyncProjectService {
    *
    * @param projectId the technical id of the project
    * @return the natural id of the project, the {@link ProjectCode} which is known to the user.
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
+   * @throws RequestFailedException if the request was not successfully executed
+   * @throws AccessDeniedException  if the user has insufficient rights
    * @since 1.11.0
    */
   Mono<ProjectCode> getProjectCode(String projectId);
@@ -2174,8 +2175,21 @@ public interface AsyncProjectService {
   }
 
 
-  record RawData(String measurementCode) {}
+  /**
+   * A simple information container for raw data stored for a given measurement.
+   *
+   * @param measurementId    the measurement identifier for which the raw data is described
+   * @param totalSizeBytes   the total size of the raw dataset for a given measurement. The unit is
+   *                         in bytes.
+   * @param numberOfFiles    the number of files contained in the raw dataset
+   * @param fileTypes        the file types contained in the raw dataset
+   * @param registrationDate the date of registration
+   * @since 1.11.0
+   */
+  record RawDataset(String measurementId, long totalSizeBytes, int numberOfFiles,
+                    Set<String> fileTypes, Instant registrationDate) {
 
+  }
 
 
   /**

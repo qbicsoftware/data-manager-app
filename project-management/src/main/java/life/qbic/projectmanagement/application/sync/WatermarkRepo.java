@@ -12,7 +12,6 @@ import java.time.Instant;
 public interface WatermarkRepo {
 
 
-
   record Watermark(String jobName, Instant lastUpdatedAt, Instant lastSyncedAt) {
 
   }

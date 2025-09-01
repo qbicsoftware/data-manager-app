@@ -5,6 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.dataset.RawDataService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,12 +22,12 @@ import org.springframework.stereotype.Service;
 public class RawDataSyncService {
 
   private static final Logger log = logger(RawDataSyncService.class);
+  private final RawDataService rawDataService;
 
-  private final AsyncProjectService projectService;
 
   @Autowired
-  public RawDataSyncService(AsyncProjectService projectService) {
-    this.projectService = Objects.requireNonNull(projectService);
+  public RawDataSyncService(RawDataService rawDataService) {
+    this.rawDataService = Objects.requireNonNull(rawDataService);
   }
 
   // run every 2 minutes; add jitter to reduce thundering herd on restart
