@@ -73,18 +73,6 @@ public class StoredRequestAwareOidcAuthenticationSuccessHandler extends
             "Provided principal did not meet requirements. Expected %s but received %s".formatted(
                 QbicUserDetails.class, actualInstance));
       }
-      // We can only process in the OIDC flow, if the authentication principal is of type DefaultOidcUser
-      // Every other principal cannot be processed here and is caught here as fail-safe.
-      if (!(authentication.getPrincipal() instanceof QbicUserDetails)) {
-        logger.error("Unknown authentication principal type: %s. Expected %s.".formatted(
-            authentication.getPrincipal(), QbicUserDetails.class.getName()));
-        // Ensure the original authentication is set in the current context
-        SecurityContextHolder.getContext().setAuthentication(previousAuth);
-        cleanUpSession(currentSession);
-        response.sendRedirect(request.getContextPath() + "/login?error=" + URLEncoder.encode(
-            GENERAL_AUTHENTICATION_FAILURE, StandardCharsets.UTF_8));
-        return;
-      }
 
       OidcInfo oidcInfo = switch (authentication.getPrincipal()) {
         case QbicOidcUser user -> fromQbicOidc(user);
