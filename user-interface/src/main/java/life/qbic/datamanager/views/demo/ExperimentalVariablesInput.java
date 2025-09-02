@@ -1,40 +1,95 @@
 package life.qbic.datamanager.views.demo;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.Focusable;
+import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.ShortcutRegistration;
+import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.NativeLabel;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.dom.DomListenerRegistration;
 import com.vaadin.flow.shared.Registration;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import life.qbic.application.commons.CanSnapshot;
+import life.qbic.application.commons.Snapshot;
+import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableLevelsInput.LevelChange;
+import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableRow.InvalidChangesException;
+import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableRow.VariableChange;
+import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableRow.VariableDeleted;
 import life.qbic.datamanager.views.general.ButtonFactory;
+import life.qbic.datamanager.views.general.dialog.InputValidation;
+import life.qbic.datamanager.views.general.dialog.UserInput;
 import org.springframework.lang.NonNull;
 
-public class ExperimentalVariablesInput extends Composite<Div> {
+public class ExperimentalVariablesInput extends Composite<Div> implements UserInput {
 
+  private final Button addVariableButton = new Button("Add Variable", VaadinIcon.PLUS.create());
+  private final Div variablesInput = new Div();
+  private final List<VariableChange> deletedVariables = new ArrayList<>();
+
+
+  public ExperimentalVariablesInput() {
+    addVariableButton.addClickListener(
+        e -> addVariable());
+    getContent().add(new Button("Valid?", e -> System.out.println("valid = "
+        + this.validate())));
+    getContent().add(new Button("Has Changes?", e -> System.out.println("hasChanges? = "
+        + this.hasChanges())));
+    getContent().add(new Button("Print Changes", e -> System.out.println("changes = "
+        + Stream.concat(deletedVariables.stream(), this.getVariableRows().stream().flatMap(
+        (VariableRow variableRow) -> {
+          try {
+            List<VariableChange> changes = variableRow.getChanges();
+            return changes.stream();
+          } catch (InvalidChangesException ex) {
+            return Stream.of();
+          }
+        })).toList())));
+    getContent().add(new Button("Mark Initialized", e -> markInitialized()));
+  }
+
+  private void markInitialized() {
+    getVariableRows().forEach(VariableRow::markInitialized);
+    this.deletedVariables.clear();
+  }
+
+  @NonNull
+  private List<VariableRow> getVariableRows() {
+    return variablesInput.getChildren()
+        .filter(VariableRow.class::isInstance)
+        .map(VariableRow.class::cast)
+        .toList();
+  }
 
   @Override
+  @NonNull
   protected Div initContent() {
-    var body = super.initContent();
+    var body = new Div();
     body.addClassNames(
         "dialog-section border dashed padding-vertical-05 padding-horizontal-07 margin-05");
-    var variablesInput = new Div();
     variablesInput.addClassNames("flex-vertical gap-04");
-    for (int i = 0; i < 4; i++) {
-      variablesInput.add(variableRow());
-    }
-    var addVariableButton = new Button("Add Variable", VaadinIcon.PLUS.create());
+
+    addVariable();
+
     addVariableButton.addClassNames(
         "margin-bottom-04 flex-vertical width-max-content justify-self-start button-color-primary");
     variablesInput.add(addVariableButton);
@@ -42,46 +97,334 @@ public class ExperimentalVariablesInput extends Composite<Div> {
     return body;
   }
 
+  private void addVariable() {
+    VariableRow variableRow = new VariableRow();
+    variableRow.addDeleteVariableListener(it -> removeVariable(it.getSource()));
+    variablesInput.addComponentAtIndex(
+        Math.max(0, (int) (variablesInput.getChildren().count() - 1)), //second last component
+        variableRow);
+    variableRow.focus();
+  }
 
-  private Component variableRow() {
-    var root = new Div();
-    root.addClassNames(
-        "border rounded-02 padding-04 gap-04 column-gap-05 grid-experimental-variable-input");
-    var fields = new Div();
-    fields.getStyle().set("grid-area", "a");
-    fields.addClassNames("flex-horizontal gap-05");
-    TextField name = new TextField();
-    name.addClassNames("dynamic-growing-flex-item");
-    name.setLabel("Variable Name");
-    TextField unit = new TextField();
-    unit.addClassNames("dynamic-growing-flex-item");
-    unit.setLabel("Unit (optional)");
-    Component variableLevels = createVariableLevels();
-    variableLevels.getStyle().set("grid-area", "b");
-    var deleteVariable = new ButtonFactory().createTertirayButton("Delete Variable",
-        VaadinIcon.TRASH.create());
-    deleteVariable.getStyle().set("grid-area", "c");
-    deleteVariable.addClassNames("width-max-content");
-    fields.add(name, unit);
-    root.add(fields, variableLevels, deleteVariable);
-    return root;
+  @NonNull
+  private List<VariableRow> variableRows() {
+    return variablesInput.getChildren()
+        .filter(VariableRow.class::isInstance)
+        .map(VariableRow.class::cast)
+        .toList();
+  }
+
+  private void removeVariable(@NonNull VariableRow variableRow) {
+    variableRow.removeFromParent();
+    deletedVariables.add(new VariableDeleted(variableRow.getVariableName()));
+    if (variableRows().isEmpty()) {
+      addVariable();
+    }
+  }
+
+  @Override
+  @NonNull
+  public InputValidation validate() {
+    return getVariableRows().stream()
+        .map(VariableRow::validate)
+        .allMatch(InputValidation::hasPassed)
+        ? InputValidation.passed() : InputValidation.failed();
+  }
+
+  @Override
+  public boolean hasChanges() {
+    return !deletedVariables.isEmpty() || getVariableRows().stream()
+        .anyMatch(VariableRow::hasChanges);
+  }
+
+
+  static class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
+
+    private final TextField name = new TextField();
+    private final TextField unit = new TextField();
+    private final VariableLevelsInput variableLevels = new VariableLevelsInput();
+    private final Button deleteVariable = new ButtonFactory()
+        .createTertirayButton("Delete Variable", VaadinIcon.TRASH.create());
+    private Snapshot initialState;
+
+    public VariableRow() {
+      deleteVariable.addClickListener(
+          e -> fireEvent(new DeleteVariableEvent(this, e.isFromClient())));
+      markInitialized();
+    }
+
+    public void markInitialized() {
+      variableLevels.markInitialized();
+      this.initialState = snapshot();
+    }
+
+    public Registration addDeleteVariableListener(
+        ComponentEventListener<DeleteVariableEvent> listener) {
+      return addListener(DeleteVariableEvent.class, listener);
+    }
+
+
+    @Override
+    protected Div initContent() {
+      var root = new Div();
+      root.addClassNames(
+          "border rounded-02 padding-04 gap-04 column-gap-05 grid-experimental-variable-input");
+      var fields = new Div();
+      fields.getStyle().set("grid-area", "a");
+      fields.addClassNames("flex-horizontal gap-05");
+      name.addClassNames("dynamic-growing-flex-item");
+      name.setLabel("Variable Name");
+      name.setRequired(true);
+      unit.addClassNames("dynamic-growing-flex-item");
+      unit.setLabel("Unit (optional)");
+      unit.setRequired(false);
+      variableLevels.getStyle().set("grid-area", "b");
+      deleteVariable.getStyle().set("grid-area", "c");
+      deleteVariable.addClassNames("width-max-content");
+      fields.add(name, unit);
+      root.add(fields, variableLevels, deleteVariable,
+          new Button("Mark initialized", e -> markInitialized()));
+      return root;
+    }
+
+    @Override
+    @NonNull
+    public InputValidation validate() {
+      if (this.isEmpty()) {
+        return InputValidation.passed();
+      }
+      var variableLevelsValidation = variableLevels.validate();
+      if (name.isInvalid() || name.isEmpty() || unit.isInvalid()) {
+        return InputValidation.failed();
+      }
+      return variableLevelsValidation;
+    }
+
+    private boolean isEmpty() {
+      return name.isEmpty() && unit.isEmpty() && variableLevels.isEmpty();
+    }
+
+    private String getVariableName() {
+      return name.getValue();
+    }
+
+    private Optional<String> getUnit() {
+      return unit.getOptionalValue();
+    }
+
+    private List<LevelChange> getLevelChanges() {
+      return variableLevels.getChanges();
+    }
+
+    @Override
+    public boolean hasChanges() {
+      return variableLevels.hasChanges() ||
+          !initialState.holdsEqualState(snapshot());
+    }
+
+    public class InvalidChangesException extends RuntimeException {
+
+    }
+
+    /**
+     * Validates the component and returns all changes. Throws InvalidChangesException in case of
+     * invalid input.
+     *
+     * @return a list of variable changes
+     * @throws InvalidChangesException in case of invalid user input
+     */
+    public List<VariableChange> getChanges() throws InvalidChangesException {
+      if (!hasChanges()) {
+        return List.of(); //avoid unnecessary work
+      }
+      if (!validate().hasPassed()) {
+        throw new InvalidChangesException();
+      }
+      if (initialState instanceof ExperimentalVariableSnapshot experimentalVariableSnapshot) {
+        var previousRepresentation = new VariableRow();
+        previousRepresentation.restore(experimentalVariableSnapshot);
+        var changes = new ArrayList<VariableChange>();
+        if (previousRepresentation.getVariableName().isBlank() && !this.getVariableName()
+            .isBlank()) {
+          return Collections.singletonList(
+              new VariableAdded(getVariableName(), getUnit().orElse(null),
+                  variableLevels.getLevels()));
+        }
+        if (!previousRepresentation.getVariableName().equals(this.getVariableName())) {
+          changes.add(new VariableRenamed(previousRepresentation.getVariableName(),
+              this.getVariableName()));
+        }
+        if (!previousRepresentation.getUnit().equals(this.getUnit())) {
+          changes.add(new VariableUnitChanged(this.getVariableName(),
+              previousRepresentation.getUnit().orElse(null),
+              this.getUnit().orElse(null)));
+        }
+        if (!this.getLevelChanges().isEmpty()) {
+          changes.add(new VariableLevelsChanged(getVariableName(), this.getLevelChanges()));
+        }
+        return changes;
+      }
+      throw new IllegalStateException();
+    }
+
+    record ExperimentalVariableSnapshot(Instant timestamp, String name, String unit,
+                                        Snapshot levels) implements Snapshot, Serializable {
+
+      @Override
+      public Optional<String> getName() {
+        return Optional.empty();
+      }
+
+      @Override
+      public Instant getTimestamp() {
+        return timestamp();
+      }
+
+      @Override
+      public boolean holdsEqualState(Snapshot snapshot) {
+        if (snapshot instanceof ExperimentalVariableSnapshot(
+            Instant ignored,
+            String otherName, String otherUnit, Snapshot otherLevels
+        )) {
+          return name().equals(otherName)
+              && unit().equals(otherUnit)
+              && levels().holdsEqualState(otherLevels);
+        }
+        return false;
+      }
+    }
+
+    @Override
+    public Snapshot snapshot() {
+      return new ExperimentalVariableSnapshot(Instant.now(), name.getValue(), unit.getValue(),
+          variableLevels.snapshot());
+    }
+
+    @Override
+    public void restore(@NonNull Snapshot snapshot) throws SnapshotRestorationException {
+      if (snapshot instanceof ExperimentalVariableSnapshot experimentalVariableSnapshot) {
+//        variableLevels.restore(experimentalVariableSnapshot.levels());
+        name.setValue(experimentalVariableSnapshot.name());
+        unit.setValue(experimentalVariableSnapshot.unit());
+        return;
+      }
+      throw new SnapshotRestorationException("Cannot restore snapshot");
+    }
+
+    public void focus() {
+      name.focus();
+    }
+
+    interface VariableChange {
+
+    }
+
+    public record VariableAdded(String name, String unit, List<String> levels) implements
+        VariableChange {
+
+    }
+
+    public record VariableDeleted(String name) implements VariableChange {
+
+    }
+
+    public record VariableRenamed(String oldName, String newName) implements VariableChange {
+
+    }
+
+    public record VariableLevelsChanged(String name,
+                                        List<LevelChange> levelChanges) implements VariableChange {
+
+    }
+
+    public record VariableUnitChanged(String name, String oldUnit, String newUnit) implements
+        VariableChange {
+
+    }
+
+    static class DeleteVariableEvent extends ComponentEvent<VariableRow> {
+
+      /**
+       * Creates a new event using the given source and indicator whether the event originated from
+       * the client side or the server side.
+       *
+       * @param source     the source component
+       * @param fromClient <code>true</code> if the event originated from the client
+       *                   side, <code>false</code> otherwise
+       */
+      public DeleteVariableEvent(VariableRow source, boolean fromClient) {
+        super(source, fromClient);
+      }
+    }
   }
 
   @Tag("variable-levels-input")
-  private static class VariableLevelsInput extends Div {
+  static class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
+      HasValidationProperties {
+
+    private final List<LevelField> levelFields = new ArrayList<>();
+    private final Div levelsContainer = new Div();
+    private final Span errorMessage;
+    private Snapshot initialState;
+    LevelField focusedLevelField = null;
+
+    public List<String> getLevels() {
+      return filledLevels();
+    }
+
+
+    public interface LevelChange {
+
+    }
+
+    public record LevelAdded(int position, String value) implements LevelChange {
+
+    }
+
+    public record LevelDeleted(int position) implements LevelChange {
+
+    }
+
+    public record LevelMoved(int oldPosition, int newPosition) implements LevelChange {
+
+    }
+
+    private void addEmptyLevel() {
+      LevelField levelField = new LevelField();
+      addLevel(levelField);
+      levelField.focus();
+    }
+
+    private void addLevel(LevelField levelField) {
+      levelsContainer.add(levelField);
+      levelFields.add(levelField);
+      levelField.addDeleteListener(event -> removeLevelField(event.getSource()));
+      // when the value changes, the validation is outdated and removed.
+      levelField.addValueChangeListener(valueChangeEvent -> setInvalid(false));
+      // when an empty field is added, the validation is outdated and removed.
+      setInvalid(false);
+      levelField.addFocusListener(event -> this.focusedLevelField = levelField);
+      levelField.addBlurListener(event -> this.focusedLevelField = null);
+    }
+
+    public void removeLevelField(LevelField levelField) {
+      levelFields.remove(levelField);
+      levelField.removeFromParent();
+      if (levelFields.isEmpty()) {
+        addEmptyLevel();
+      }
+    }
 
     public VariableLevelsInput() {
-      final String rootCssClasses = "border rounded-02 flex-vertical gap-none padding-04 padding-top-04";
+      final String rootCssClasses = "border rounded-02 flex-vertical gap-none padding-04 padding-top-04 shows-validation";
       final String bodyClassNames = "flex-vertical justify-start gap-04 input-with-label";
-      Div root = new Div();
-      root.getStyle().set("grid-area", "b");
-      root.addClassNames(rootCssClasses);
+      this.getStyle().set("grid-area", "b");
+      this.addClassNames(rootCssClasses);
 
       var body = new Div();
       body.addClassNames(bodyClassNames);
 
       final String levelsContainerCss = "flex-horizontal gap-03 column-gap-03 width-full";
-      var levelsContainer = new Div();
       levelsContainer.setId("levels-container"); //needed for labelling
       levelsContainer.addClassNames(levelsContainerCss);
       ButtonFactory buttonFactory = new ButtonFactory();
@@ -91,29 +434,201 @@ public class ExperimentalVariablesInput extends Composite<Div> {
       label.setFor(levelsContainer);
       label.addClassNames(labelCss);
 
-      LevelField levelField = new LevelField(buttonFactory);
 
       var addLevelButton = buttonFactory.createTertirayButton("Add Level",
           VaadinIcon.PLUS.create());
-      addLevelButton.addClickListener(clickEvent -> {
-        LevelField levelField1 = new LevelField(buttonFactory);
-        levelsContainer.add(levelField1);
-        levelField1.focus();
-      });
-      levelsContainer.add(levelField);
+      addLevelButton.addClickListener(clickEvent -> addEmptyLevel());
+
       body.add(levelsContainer, addLevelButton);
       addLevelButton.addClassNames("width-max-content justify-self-start");
-      root.add(label, body);
+      errorMessage = new Span("Please provide at least one level.");
+      errorMessage.setVisible(false);
+      errorMessage.addClassNames("error-text");
+      this.add(label, body, errorMessage);
 
-      this.add(root);
+      addEmptyLevel();
+      markInitialized();
+      Shortcuts.addShortcutListener(this, it -> {
+        Integer focusIndex = Optional.ofNullable(focusedLevelField)
+            .map(levelFields::indexOf)
+            .orElse(-1);
+        int nextFocus = focusIndex + 1;
+        if (levelFields.size() > nextFocus) {
+          levelFields.get(nextFocus).focus();
+        } else {
+          addEmptyLevel();
+        }
+      }, Key.ENTER).listenOn(this);
+    }
+
+
+    @Override
+    public void setErrorMessage(String errorMessage) {
+      HasValidationProperties.super.setErrorMessage(errorMessage);
+      this.errorMessage.setText(errorMessage);
+    }
+
+    @Override
+    public void setInvalid(boolean invalid) {
+      HasValidationProperties.super.setInvalid(invalid);
+      getElement().setAttribute("invalid", invalid);
+      this.errorMessage.setVisible(invalid);
+    }
+
+    Function<List<LevelField>, List<String>> extractFilledLevels() {
+      return fields -> fields.stream()
+          .map(LevelField::getValue)
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .filter(s -> !s.isBlank())
+          .toList();
+    }
+
+    private List<String> filledLevels() {
+      return extractFilledLevels().apply(levelFields);
+    }
+
+    private boolean isEmpty() {
+      return filledLevels().isEmpty();
+    }
+
+    private record LevelsSnapshot(Instant timestamp, List<Snapshot> levels) implements Snapshot {
+
+      private LevelsSnapshot(List<Snapshot> levels) {
+        this(Instant.now(), levels);
+      }
+
+      private LevelsSnapshot {
+        Objects.requireNonNull(timestamp);
+        levels = levels.stream().toList(); //make it unmodifiable
+      }
+
+      @Override
+      public Optional<String> getName() {
+        return Optional.empty();
+      }
+
+      @Override
+      public Instant getTimestamp() {
+        return timestamp();
+      }
+
+      @Override
+      public boolean holdsEqualState(Snapshot snapshot) {
+        if (snapshot instanceof LevelsSnapshot levelsSnapshot) {
+          return levelsSnapshot.levels().size() == levels().size() &&
+              levelsSnapshot.levels().stream().allMatch(
+                  level -> levels().stream().anyMatch(it -> it.holdsEqualState(level)));
+        }
+        return false;
+      }
+
+    }
+
+    @Override
+    public InputValidation validate() {
+      //valid if at least one level is present
+      InputValidation validation =
+          isEmpty() ? InputValidation.failed() : InputValidation.passed();
+      setInvalid(!validation.hasPassed());
+      setErrorMessage("Please provide at least one level.");
+      getUI().ifPresent(
+          ui -> ui.access(() -> getElement().setProperty("invalid", !validation.hasPassed())));
+
+      return validation;
+    }
+
+    public List<LevelChange> getChanges() {
+      if (initialState instanceof LevelsSnapshot levelsSnapshot) {
+
+        var previousLevels = extractFilledLevels().apply(
+            levelsSnapshot.levels()
+                .stream()
+                .map(this::mapToRestoredLevelField)
+                .toList()
+        );
+        var currentLevels = extractFilledLevels().apply(levelFields);
+        //find all the deletions
+        List<LevelDeleted> levelDeletions = previousLevels.stream()
+            .filter(previousLevel -> !currentLevels.contains(previousLevel))
+            .map(removedLevel -> new LevelDeleted(previousLevels.indexOf(removedLevel)))
+            .toList();
+        // find all additions
+        List<LevelAdded> levelAdditions = currentLevels.stream()
+            .filter(currentLevel -> !previousLevels.contains(currentLevel))
+            .map(addedLevel -> new LevelAdded(currentLevels.indexOf(addedLevel), addedLevel))
+            .toList();
+        //find all moved levels
+        List<LevelMoved> levelMoves = previousLevels.stream()
+            .filter(currentLevels::contains)
+            .filter(previousLevel -> previousLevels.indexOf(previousLevel) != currentLevels.indexOf(
+                previousLevel))
+            .map(movedLevel -> new LevelMoved(previousLevels.indexOf(movedLevel),
+                currentLevels.indexOf(movedLevel)))
+            .toList();
+        var changes = new ArrayList<LevelChange>();
+        changes.addAll(levelDeletions);
+        changes.addAll(levelAdditions);
+        changes.addAll(levelMoves);
+        return changes;
+      }
+
+      throw new IllegalStateException();
+    }
+
+    private LevelField mapToRestoredLevelField(Snapshot snapshot) {
+      var dummy = new LevelField();
+      try {
+        dummy.restore(snapshot);
+        return dummy;
+      } catch (SnapshotRestorationException it) {
+        throw new IllegalStateException("Initial state not correctly set", it);
+      }
+    }
+
+    @Override
+    public boolean hasChanges() {
+      return levelFields.stream().anyMatch(LevelField::hasChanges);
+    }
+
+
+    public void markInitialized() {
+      levelFields.forEach(LevelField::markInitialized);
+      this.initialState = snapshot();
+    }
+
+    @Override
+    public Snapshot snapshot() {
+      return new LevelsSnapshot(levelFields.stream().map(LevelField::snapshot).toList());
+    }
+
+    @Override
+    public void restore(Snapshot snapshot) throws SnapshotRestorationException {
+      if (snapshot instanceof LevelsSnapshot levelsSnapshot) {
+        var previousChildren = levelsContainer.getChildren().toList();
+        var previousLevels = levelFields.stream().toList();
+        levelsContainer.removeAll();
+        levelFields.clear();
+        try {
+          levelsSnapshot.levels().stream()
+              .map(this::mapToRestoredLevelField)
+              .forEach(this::addLevel);
+        } catch (Exception e) {
+          levelsContainer.removeAll();
+          levelFields.clear();
+          levelsContainer.add(previousChildren);
+          levelFields.addAll(previousLevels);
+          throw e;
+        }
+      }
+
     }
   }
 
-  private Component createVariableLevels() {
-    return new VariableLevelsInput();
-  }
+  static class LevelField extends Composite<Div> implements Focusable<Component>,
+      CanSnapshot,
+      UserInput {
 
-  private static class LevelField extends Composite<Div> implements Focusable<Component> {
 
     static final String LEVEL_CLASS = "level";
     static final String LEVEL_FIELD_CSS = "flex-horizontal gap-03 width-full no-flex-wrap no-wrap input-with-label";
@@ -121,13 +636,21 @@ public class ExperimentalVariablesInput extends Composite<Div> {
 
     private final TextField levelValue = new TextField();
     private final Button deleteLevelButton;
+    private LevelSnapshot initialState;
 
-    private LevelField(@NonNull ButtonFactory buttonFactory) {
-      this.deleteLevelButton = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
-      deleteLevelButton.addClickListener(clickEvent -> {
-        fireEvent(new DeleteLevelEvent(this, clickEvent.isFromClient()));
-      });
+    private LevelField() {
+      var buttonFactory = new ButtonFactory();
+      this.deleteLevelButton = buttonFactory.createGreyIconButton(VaadinIcon.TRASH.create());
+      deleteLevelButton.addClickListener(
+          clickEvent -> fireEvent(new DeleteLevelEvent(this, clickEvent.isFromClient())));
+      initialState = (LevelSnapshot) this.snapshot();
     }
+
+    public Registration addValueChangeListener(
+        ValueChangeListener<? super ComponentValueChangeEvent<TextField, String>> listener) {
+      return levelValue.addValueChangeListener(listener);
+    }
+
 
 
     @Override
@@ -138,6 +661,14 @@ public class ExperimentalVariablesInput extends Composite<Div> {
       levelField.add(levelValue, deleteLevelButton);
       levelField.addClassNames(LEVEL_CLASS);
       return levelField;
+    }
+
+    /**
+     * After modification, this method should be used to inform the level field that its current
+     * value is to be seen as initial value of the field.
+     */
+    public void markInitialized() {
+      initialState = (LevelSnapshot) this.snapshot();
     }
 
     @Override
@@ -171,12 +702,16 @@ public class ExperimentalVariablesInput extends Composite<Div> {
           it -> listener.onComponentEvent(new FocusEvent<>(it.getSource(), it.isFromClient())));
     }
 
-    public void setValue(String value) {
-      levelValue.setValue(value);
-    }
-
     public boolean isEmpty() {
       return levelValue.isEmpty();
+    }
+
+    public boolean isDeletion() {
+      return isEmpty() && !initialState.levelValue().equals(levelValue.getEmptyValue());
+    }
+
+    public void setValue(String value) {
+      levelValue.setValue(value);
     }
 
     public Optional<String> getValue() {
@@ -187,6 +722,62 @@ public class ExperimentalVariablesInput extends Composite<Div> {
       return addListener(DeleteLevelEvent.class, listener);
     }
 
+    record LevelSnapshot(@NonNull Instant timestamp, @NonNull String levelValue) implements
+        Snapshot,
+        Serializable {
+
+      LevelSnapshot {
+        Objects.requireNonNull(timestamp);
+        Objects.requireNonNull(levelValue);
+      }
+
+      @Override
+      public Optional<String> getName() {
+        return Optional.empty();
+      }
+
+      @Override
+      public Instant getTimestamp() {
+        return timestamp();
+      }
+
+      @Override
+      public boolean holdsEqualState(Snapshot snapshot) {
+        if (snapshot instanceof LevelSnapshot other) {
+          return other.levelValue().equals(levelValue());
+        }
+        return false;
+      }
+    }
+
+    @Override
+    public Snapshot snapshot() {
+      return new LevelSnapshot(Instant.now(), levelValue.getValue());
+    }
+
+    @Override
+    public void restore(Snapshot snapshot) throws SnapshotRestorationException {
+      if (snapshot instanceof LevelSnapshot levelSnapshot) {
+        levelValue.setValue(levelSnapshot.levelValue());
+        return;
+      }
+      throw new SnapshotRestorationException(
+          "Unknown snapshot type. Expected %s but got %s".formatted(LevelSnapshot.class,
+              snapshot.getClass()));
+    }
+
+    @Override
+    @NonNull
+    public InputValidation validate() {
+      //always valid as empty values are valid as well
+      return InputValidation.passed();
+    }
+
+    @Override
+    public boolean hasChanges() {
+      return !initialState.levelValue().equals(levelValue.getValue());
+    }
+
     static class DeleteLevelEvent extends ComponentEvent<LevelField> {
 
       public DeleteLevelEvent(LevelField source, boolean fromClient) {
@@ -195,26 +786,6 @@ public class ExperimentalVariablesInput extends Composite<Div> {
     }
   }
 
-  private static class PasteSupport {
-
-    static void addPasteListener(Component component, Consumer<String> contentConsumer) {
-      String clipboardText = "event.clipboardData.getData(\"text/plain\")";
-      DomListenerRegistration listenerRegistration = component.getElement()
-          .addEventListener("paste", event -> {
-            try {
-              var pastedString = event.getEventData().getString(clipboardText);
-              contentConsumer.accept(pastedString);
-            } catch (Exception e) {
-              //TODO inform user that the paste is not accepted
-              System.err.println(e.getMessage());
-              e.printStackTrace();
-            }
-          })
-          .addEventData(clipboardText);
-      listenerRegistration.preventDefault();
-    }
-
-  }
 
 
 }

@@ -631,6 +631,15 @@ Colors
 /*endregion*/
 
 /*region Behaviour*/
+.shows-validation[invalid] {
+  border-color: var(--error-icon-color);
+  background-color: var(--error-background-color);
+}
+
+.shows-validation[invalid] .error-message {
+  color: var(--error-text-color);
+}
+
 .clickable {
   cursor: pointer;
 }
@@ -758,6 +767,12 @@ Colors
 
 .button-icon-only {
   color: var(--tertiary-text-color);
+  background-color: transparent;
+}
+
+.button-icon-only.primary {
+  color: var(--primary-text-color);
+  background-color: transparent;
 }
 
 /*endregion*/
@@ -768,7 +783,7 @@ Icons
 ****************************/
 
 .icon-color-warning {
-  color: var(--icon-color-warning)
+  color: var(--warning-icon-color)
 }
 
 .icon-size-xs {
@@ -796,15 +811,15 @@ Icons
 }
 
 .icon-background-color-default {
-  background-color: var(--icon-color-default);
+  background-color: var(--icon-color);
 }
 
 .icon-background-color-primary {
-  background-color: var(--icon-color-primary);
+  background-color: var(--primary-icon-color);
 }
 
 .icon-color-default {
-  color: var(--icon-color-default);
+  color: var(--icon-color);
 }
 
 .icon-text-white {
@@ -820,11 +835,11 @@ Icons
 }
 
 .icon-label-text-color-default {
-  color: var(--icon-color-default);
+  color: var(--icon-color);
 }
 
 .icon-label-text-color-primary {
-  color: var(--icon-color-primary);
+  color: var(--primary-icon-color);
 }
 
 .icon-content-center {
@@ -1020,7 +1035,7 @@ Icons
 /*region Single-Purpose Component Styles*/
 /*region Announcements*/
 #announcements {
-  background-color: var(--icon-color-warning);
+  background-color: var(--warning-icon-color);
   padding: var(--spacing-03) var(--spacing-04);
   text-align: left;
 }
@@ -1034,7 +1049,7 @@ Icons
 .announcement vaadin-icon {
   min-width: var(--icon-size-s);
   max-width: var(--icon-size-s);
-  color: var(--icon-color-default);
+  color: var(--icon-color);
 }
 
 .announcement-text {

@@ -12,33 +12,44 @@ import com.vaadin.flow.component.icon.Icon;
  */
 public class ButtonFactory {
 
-  private static Button createButton(String label, String[] classNames) {
+  private static final String TERTIARY_THEME_NAME = "tertiary";
+
+  private static Button createButton(String label, String...
+      classNames) {
     Button button = new Button(label);
-    button.addClassNames(classNames);
+    if (classNames != null && classNames.length > 0) {
+      button.addClassNames(classNames);
+    }
     return button;
   }
 
   public Button createTertirayButton(String label, Icon icon) {
-    var button = createButton(label, new String[]{"button-text padding-none"});
-    button.setThemeName("tertiary");
+    var button = createButton(label, "button-text padding-none");
+    button.setThemeName(TERTIARY_THEME_NAME);
     button.setIcon(icon);
     return button;
   }
 
   public Button createIconButton(Icon icon) {
-    var button = createButton(null, new String[]{"button-text padding-none button-icon-only"});
-    button.setThemeName("tertiary");
+    var button = createButton(null, "button-text padding-none button-icon-only primary");
+    button.setThemeName(TERTIARY_THEME_NAME);
+    button.setIcon(icon);
+    return button;
+  }
+
+  public Button createGreyIconButton(Icon icon) {
+    var button = createButton(null, "button-text padding-none button-icon-only");
+    button.setThemeName(TERTIARY_THEME_NAME);
     button.setIcon(icon);
     return button;
   }
 
   public Button createConfirmButton(String label) {
-    return createButton(label,
-        new String[]{"button-text-primary", "button-color-primary"});
+    return createButton(label, "button-text-primary", "button-color-primary");
   }
 
   public Button createCancelButton(String label) {
-    return createButton(label, new String[]{"button-text"});
+    return createButton(label, "button-text");
   }
 
   public Button createNavigationButton(String label) {

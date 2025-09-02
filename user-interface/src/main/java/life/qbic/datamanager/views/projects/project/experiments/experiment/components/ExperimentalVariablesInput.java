@@ -530,11 +530,6 @@ public class ExperimentalVariablesInput extends Div implements UserInput {
       levelArea.setRequired(true);
       levelArea.setHelperText(
           "Please enter each level on a new line. Comma separated values are treated as a single level.");
-//      levelArea.setPlaceholder("""
-//          32
-//          42
-//          68
-//          """); TODO needed?
       deleteIcon.addClassNames("color-primary-text");
       /*Span around Icon is necessary otherwise icon size will be scaled down if a scrollbar appears*/
       fieldsContainer.add(nameField, unitField, levelArea, new Span(deleteIcon));
