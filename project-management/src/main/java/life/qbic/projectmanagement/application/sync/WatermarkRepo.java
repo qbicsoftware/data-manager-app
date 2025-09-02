@@ -1,6 +1,7 @@
 package life.qbic.projectmanagement.application.sync;
 
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -11,8 +12,11 @@ import java.time.Instant;
  */
 public interface WatermarkRepo {
 
+  Optional<Watermark> fetch(String jobName);
 
-  record Watermark(String jobName, Instant lastUpdatedAt, Instant lastSyncedAt) {
+  void upsert(Watermark currentWatermark);
+
+  record Watermark(String jobName, int syncOffset, Instant updatedSince, Instant lastSuccessAt) {
 
   }
 }

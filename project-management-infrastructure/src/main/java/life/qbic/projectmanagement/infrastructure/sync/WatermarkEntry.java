@@ -6,6 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
+import org.springframework.lang.NonNull;
 
 /**
  * <b><class short description - 1 Line!></b>
@@ -18,6 +20,21 @@ import java.util.Date;
 @Table(name = "sync_control")
 class WatermarkEntry implements Serializable {
 
+  public WatermarkEntry() {
+
+  }
+
+  public static WatermarkEntry create(String id, int syncOffset, Date updatedSince, Date lastSuccessAt) {
+    return new WatermarkEntry(id, syncOffset, updatedSince, lastSuccessAt);
+  }
+
+  private WatermarkEntry(String jobName, int syncOffset, Date updatedSince, Date lastSuccessAt) {
+    this.jobName = jobName;
+    this.syncOffset = syncOffset;
+    this.updatedSince = Objects.requireNonNull(updatedSince);
+    this.lastSuccessAt = Objects.requireNonNull(lastSuccessAt);
+  }
+
   @Id
   @Column(name = "job_name")
   String jobName;
@@ -25,9 +42,11 @@ class WatermarkEntry implements Serializable {
   @Column(name = "sync_offset")
   Integer syncOffset;
 
-  @Column(name = "last_updated_at")
-  Date lastUpdatedAt;
+  @NonNull
+  @Column(name = "updated_since")
+  Date updatedSince;
 
+  @NonNull
   @Column(name = "last_success_at")
   Date lastSuccessAt;
 

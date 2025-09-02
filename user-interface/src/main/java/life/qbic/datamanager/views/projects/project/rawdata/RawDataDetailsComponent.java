@@ -25,9 +25,9 @@ import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.Domain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementDomainTab;
-import life.qbic.projectmanagement.application.dataset.RawDataService;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataSampleInformation;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawDataSampleInformation;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,15 +50,15 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
   private final MeasurementDomainTab proteomicsTab;
   private final MeasurementDomainTab genomicsTab;
-  private final transient RawDataService rawDataService;
+  private final transient RemoteRawDataService remoteRawDataService;
   private final List<MeasurementDomainTab> tabsInTabSheet = new ArrayList<>();
   private final transient ClientDetailsProvider clientDetailsProvider;
   private String searchTerm = "";
   private transient Context context;
 
-  public RawDataDetailsComponent(@Autowired RawDataService rawDataService,
+  public RawDataDetailsComponent(@Autowired RemoteRawDataService remoteRawDataService,
       ClientDetailsProvider clientDetailsProvider) {
-    this.rawDataService = Objects.requireNonNull(rawDataService);
+    this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     proteomicsTab = new MeasurementDomainTab(Domain.PROTEOMICS, 0);
     genomicsTab = new MeasurementDomainTab(Domain.GENOMICS, 0);
@@ -112,9 +112,9 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   }
 
 private void initializeTabCounts() {
-  genomicsTab.setMeasurementCount(rawDataService.countNGSDatasets(
+  genomicsTab.setMeasurementCount(remoteRawDataService.countNGSDatasets(
       context.experimentId().orElseThrow()));
-  proteomicsTab.setMeasurementCount(rawDataService.countProteomicsDatasets(
+  proteomicsTab.setMeasurementCount(remoteRawDataService.countProteomicsDatasets(
       context.experimentId().orElseThrow()));
 }
 
@@ -160,7 +160,7 @@ private void initializeTabCounts() {
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("measurementId").ascending());
-      return rawDataService.findNGSRawData(searchTerm,
+      return remoteRawDataService.findNGSRawData(searchTerm,
               context.experimentId().orElseThrow(),
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
@@ -199,7 +199,7 @@ private void initializeTabCounts() {
               .collect(Collectors.toList());
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementId").ascending());
-          return rawDataService.findProteomicsRawData(searchTerm,
+          return remoteRawDataService.findProteomicsRawData(searchTerm,
                   context.experimentId().orElseThrow(),
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();

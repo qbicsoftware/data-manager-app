@@ -60,9 +60,9 @@ import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.DataRepoConnectionTester;
-import life.qbic.projectmanagement.application.dataset.RawDataLookup;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataLookup;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.application.sample.SampleIdCodeEntry;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
@@ -87,7 +87,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class OpenbisConnector implements QbicProjectDataRepo, SampleDataRepository,
-    MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester, DisposableBean {
+    MeasurementDataRepo, RemoteRawDataLookup, DataRepoConnectionTester, DisposableBean {
 
   private static final Instant DATE_MIN = Instant.EPOCH; // lower bound for date conversion
 
@@ -594,6 +594,9 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
       DataSetSearchCriteria searchCriteria,
       DataSetFetchOptions fetchOptions) {
     List<RawDataDatasetInformation> result = new ArrayList<>();
+
+    // Ensures to query only in the assigned openBIS space
+    searchCriteria.withSample().withSpace().withPermId().thatEquals(DEFAULT_SPACE_CODE);
 
     if (!filter.isBlank()) {
       searchCriteria.withAndOperator();

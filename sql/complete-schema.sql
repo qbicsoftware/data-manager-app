@@ -11,22 +11,27 @@ CREATE TABLE IF NOT EXISTS shedlock
 CREATE TABLE IF NOT EXISTS sync_control
 (
     job_name        VARCHAR(64) PRIMARY KEY,
-    sync_offset     BIGINT(20) UNSIGNED,
-    last_updated_at DATETIME(3) NULL,
+    sync_offset     BIGINT UNSIGNED,
+    updated_since   DATETIME(3) NOT NULL,
     last_success_at DATETIME(3) NOT NULL
-) ENGINE = InnoDB;
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS remote_measurement_data
 (
-    id             BIGINT PRIMARY KEY,
-    measurement_id VARCHAR(255) NOT NULL,
-    name           VARCHAR(255),
-    status         VARCHAR(32),
-    updated_at     DATETIME(3)  NOT NULL,
-    deleted        BOOLEAN      NOT NULL DEFAULT FALSE,
-    last_sync_at   DATETIME(3)  NOT NULL,
+    measurement_id     VARCHAR(255) PRIMARY KEY,
+    file_count         BIGINT UNSIGNED,
+    file_types         TEXT,
+    registration_at    DATETIME(3)     NOT NULL,
+    totalFileSizeBytes BIGINT UNSIGNED NOT NULL,
+    updated_at         DATETIME(3)     NOT NULL,
+    deleted            BOOLEAN         NOT NULL DEFAULT FALSE,
+    last_sync_at       DATETIME(3)     NOT NULL,
     KEY (updated_at)
-);
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `acl_class`
 (

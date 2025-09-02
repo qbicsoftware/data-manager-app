@@ -32,21 +32,21 @@ import org.springframework.stereotype.Service;
  * Service that provides an API to manage and query raw Data information
  */
 @Service
-public class RawDataService {
+public class RemoteRawDataService {
 
   private final SampleInformationService sampleInformationService;
   private final MeasurementLookupService measurementLookupService;
-  private final RawDataLookupService rawDataLookupService;
-  private final RawDataLookup rawDataRepo;
+  private final RemoteRawDataLookupService remoteRawDataLookupService;
+  private final RemoteRawDataLookup remoteRawDataLookup;
 
   @Autowired
-  public RawDataService(SampleInformationService sampleInformationService,
+  public RemoteRawDataService(SampleInformationService sampleInformationService,
       MeasurementLookupService measurementLookupService,
-      RawDataLookupService rawDataLookupService, RawDataLookup rawDataRepo) {
+      RemoteRawDataLookupService remoteRawDataLookupService, RemoteRawDataLookup remoteRawDataLookup) {
     this.measurementLookupService = Objects.requireNonNull(measurementLookupService);
-    this.rawDataLookupService = Objects.requireNonNull(rawDataLookupService);
+    this.remoteRawDataLookupService = Objects.requireNonNull(remoteRawDataLookupService);
     this.sampleInformationService = Objects.requireNonNull(sampleInformationService);
-    this.rawDataRepo = Objects.requireNonNull(rawDataRepo);
+    this.remoteRawDataLookup = Objects.requireNonNull(remoteRawDataLookup);
   }
 
   /**
@@ -72,7 +72,7 @@ public class RawDataService {
         samplesInExperiment).stream().map(ProteomicsMeasurement::measurementCode);
     var codes = Stream.concat(ngsMeasurementCodes, pxpMeasurementCodes)
         .collect(Collectors.toList());
-    return rawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
+    return remoteRawDataLookupService.countRawDataByMeasurementCodes(codes) > 0;
   }
 
   @PostAuthorize(
@@ -85,7 +85,7 @@ public class RawDataService {
     var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
         .toList();
-    var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
+    var rawDataDatasetInformation = remoteRawDataLookupService.queryRawDataByMeasurementCodes(filter,
         measurementCodes,
         offset, limit, sortOrder);
     return rawDataDatasetInformation.stream()
@@ -113,7 +113,7 @@ public class RawDataService {
       List<SortOrder> sortOrder, ProjectId projectId) {
     var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
-    var rawDataDatasetInformation = rawDataLookupService.queryRawDataByMeasurementCodes(filter,
+    var rawDataDatasetInformation = remoteRawDataLookupService.queryRawDataByMeasurementCodes(filter,
         measurementCodes,
         offset, limit, sortOrder);
     return rawDataDatasetInformation.stream()
@@ -134,9 +134,10 @@ public class RawDataService {
   }
 
   public List<RawDataset> registeredSince(Instant registeredSince, int offset, int limit) {
-    var result = rawDataRepo.queryRawDataSince(registeredSince, offset, limit);
-    return result.stream().map(RawDataService::convert).toList();
+    var result = remoteRawDataLookup.queryRawDataSince(registeredSince, offset, limit);
+    return result.stream().map(RemoteRawDataService::convert).toList();
   }
+
 
   private static RawDataset convert(RawDataDatasetInformation datasetInformation) {
     return new RawDataset(
@@ -164,14 +165,14 @@ public class RawDataService {
   public int countNGSDatasets(ExperimentId experimentId) {
     var measurements = retrieveNGSMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(NGSMeasurement::measurementCode).toList();
-    return rawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
+    return remoteRawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
   }
 
   public int countProteomicsDatasets(ExperimentId experimentId) {
     var measurements = retrieveProteomicsMeasurementsForExperiment(experimentId);
     var measurementCodes = measurements.stream().map(ProteomicsMeasurement::measurementCode)
         .toList();
-    return rawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
+    return remoteRawDataLookupService.countRawDataByMeasurementCodes(measurementCodes);
   }
 
   /**
