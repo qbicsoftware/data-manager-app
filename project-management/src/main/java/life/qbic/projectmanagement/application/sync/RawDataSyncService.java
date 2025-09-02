@@ -5,6 +5,8 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.time.Instant;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.dataset.LocalRawDatasetRepository;
+import life.qbic.projectmanagement.application.dataset.LocalRawDatasetService;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.sync.WatermarkRepo.Watermark;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -31,15 +33,17 @@ public class RawDataSyncService {
   private static final int MAX_DURATION_JOB_MILLIS = 10_000;
 
   private final WatermarkRepo watermarkRepo;
+  private final LocalRawDatasetService localRawDataService;
 
   @Autowired
-  public RawDataSyncService(RemoteRawDataService remoteRawDataService, WatermarkRepo watermarkRepo) {
+  public RawDataSyncService(RemoteRawDataService remoteRawDataService, WatermarkRepo watermarkRepo, LocalRawDatasetService localRawDatasetService) {
     this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.watermarkRepo = Objects.requireNonNull(watermarkRepo);
+    this.localRawDataService = Objects.requireNonNull(localRawDatasetService);
   }
 
   // run every 2 minutes; add jitter to red@uce thundering herd on restart
-  @Scheduled(fixedDelayString = "#{10 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(0,1)}")
+  @Scheduled(fixedDelayString = "#{10 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(0,2)}")
   @SchedulerLock(name = "rawDataSyncJob", lockAtLeastFor = "PT10S",  // prevents instant re-acquire by another node
       lockAtMostFor = "PT30S")  // > worst-case runtime; forces unlock if node dies
   public void sync() {
@@ -51,6 +55,7 @@ public class RawDataSyncService {
         // update milliseconds passed since start of the job
         passedMillis = System.currentTimeMillis() - start;
       } else {
+        log.info("No more datasets available, stopping sync.");
         break;
       }
     }
@@ -74,8 +79,13 @@ public class RawDataSyncService {
     int newOffset =
         result.size() < MAX_QUERY_SIZE ? 0 : currentWatermark.syncOffset() + MAX_QUERY_SIZE;
 
-    // 3) persist the raw dataset information
 
+    // 3) persist the raw dataset information if available
+    if (!result.isEmpty()) {
+      log.info("Persisting %d found external raw datasets in local resource. Syncing them now...".formatted(result.size()));
+      localRawDataService.saveAll(result);
+      log.info("%d raw datasets synced.".formatted(result.size()));
+    }
 
     // 4) persist the new watermark state
     watermarkRepo.upsert(new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now()));
@@ -84,7 +94,7 @@ public class RawDataSyncService {
     // if there were fewer results than the max query size for the search, this means
     // there are no more datasets available.
     // We can signal the job is done (== true), else return false to continue
-    return result.size() < MAX_QUERY_SIZE;
+    return result.size() == MAX_QUERY_SIZE;
   }
 
 }

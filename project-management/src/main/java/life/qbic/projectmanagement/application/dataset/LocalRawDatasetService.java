@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.application.dataset;
 
+import java.util.List;
 import java.util.Objects;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,9 @@ public class LocalRawDatasetService {
     this.repository = Objects.requireNonNull(repository);
   }
 
-  void saveAll(RawDataset rawDataset) {
-
+  public void saveAll(List<RawDataset> rawDataset) {
+    Objects.requireNonNull(rawDataset);
+    repository.saveAll(rawDataset);
   }
 
 }
