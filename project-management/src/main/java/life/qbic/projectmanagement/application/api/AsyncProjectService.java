@@ -2174,6 +2174,37 @@ public interface AsyncProjectService {
 
   }
 
+  /**
+   * Requests all available {@link RawDatasetInformationPxP} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param sortOrders   configuration of the properties sort orders
+   * @param filter       a term used for filtering matching datasets containing the term
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationPxP}
+   * @since 1.11.0
+   */
+  Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String experimentId, int offset,
+      int limit, List<SortOrder> sortOrders, String filter);
+
+  /**
+   * Requests all available {@link RawDatasetInformationNgs} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param sortOrders   configuration of the properties sort orders
+   * @param filter       a term used for filtering matching datasets containing the term
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationNgs}
+   * @since 1.11.0
+   */
+  Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String experimentId, int offset,
+      int limit, List<SortOrder> sortOrders, String filter);
 
   /**
    * A simple information container for raw data stored for a given measurement.
@@ -2188,6 +2219,61 @@ public interface AsyncProjectService {
    */
   record RawDataset(String measurementId, long totalSizeBytes, int numberOfFiles,
                     Set<String> fileTypes, Instant registrationDate) {
+
+    public RawDataset {
+      requireNonNull(measurementId);
+      requireNonNull(fileTypes);
+      requireNonNull(registrationDate);
+    }
+  }
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the NGS domain. Currently
+   * consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @since 1.11.0
+   */
+  record RawDatasetInformationNgs(RawDataset dataset,
+                                  List<BasicSampleInformation> linkedSampleInformation) {
+
+    public RawDatasetInformationNgs {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the proteomics domain.
+   * Currently consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @since 1.11.0
+   */
+  record RawDatasetInformationPxP(RawDataset dataset,
+                                  List<BasicSampleInformation> linkedSampleInformation) {
+
+    public RawDatasetInformationPxP {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Basic sample information that can be used to enrich other information containers, e.g.
+   * {@link RawDatasetInformation}.
+   *
+   * @param sampleId   unique identifier for a sample
+   * @param sampleName the assigned sample name
+   * @since 1.11.0
+   */
+  record BasicSampleInformation(String sampleId, String sampleName) {
 
   }
 

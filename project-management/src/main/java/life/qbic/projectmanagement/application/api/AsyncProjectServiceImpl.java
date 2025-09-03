@@ -713,6 +713,20 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
+  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String experimentId, int offset,
+      int limit, List<SortOrder> sortOrders, String filter) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String experimentId, int offset,
+      int limit, List<SortOrder> sortOrders, String filter) {
+    // TODO implement
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
     return requests.flatMap(this::validateRequest);

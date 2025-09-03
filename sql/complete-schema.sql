@@ -694,86 +694,61 @@ FROM projects_datamanager pd
                     FROM project_userinfo
                     GROUP BY projectId) AS users ON users.projectId = pd.projectId;
 
-CREATE OR REPLACE VIEW v_ngs_measurement_sample AS
+CREATE OR REPLACE VIEW v_ngs_measurement_sample_json AS
 SELECT
     m.measurement_id,
     m.facility,
     m.flowcell,
-    m.instrument,            -- JSON stored as longtext (validated by CHECK)
+    m.instrument,
     m.libraryKit,
     m.measurementCode,
     m.IRI,
-    m.label            AS measurement_label,
+    m.label                AS measurement_label,
     m.projectId,
     m.registrationTime,
     m.samplePool,
     m.readType,
     m.runProtocol,
 
-    smm.comment        AS metadata_comment,
-    smm.indexI5,
-    smm.indexI7,
-    smm.sample_id,
+    /* Per-measurement JSON array of samples with their SMM fields */
+    IFNULL(
+            (
+                SELECT JSON_ARRAYAGG(
+                               JSON_OBJECT(
+                                       'sample_id', s.sample_id,
+                                       'code',      s.code,
+                                       'label',     s.label,
+                                       'indexI7',   smm2.indexI7,
+                                       'indexI5',   smm2.indexI5,
+                                       'comment',   smm2.comment
+                               )
+                               ORDER BY s.code
+                       )
+                FROM specific_measurement_metadata_ngs smm2
+                         LEFT JOIN sample s ON s.sample_id = smm2.sample_id
+                WHERE smm2.measurement_id = m.measurement_id
+            ),
+            JSON_ARRAY()
+    ) AS samples_json,
 
-    s.analysis_method,
-    s.assigned_batch_id,
-    s.comment          AS sample_comment,
-    s.experiment_id,
-    s.experimentalGroupId,
-    s.label            AS sample_label,
-    s.organism_id,
-    s.code             AS sample_code,
-    s.analyte,
-    s.species,
-    s.specimen
-FROM ngs_measurements m
-         LEFT JOIN specific_measurement_metadata_ngs smm
-                   ON smm.measurement_id = m.measurement_id
-         LEFT JOIN sample s
-                   ON s.sample_id = smm.sample_id;
+    /* Derive count from the JSON (optional; handy in UI) */
+    JSON_LENGTH(
+            IFNULL(
+                    (
+                        SELECT JSON_ARRAYAGG(
+                                       JSON_OBJECT(
+                                               'sample_id', s.sample_id
+                                       )
+                               )
+                        FROM specific_measurement_metadata_ngs smm2
+                                 LEFT JOIN sample s ON s.sample_id = smm2.sample_id
+                        WHERE smm2.measurement_id = m.measurement_id
+                    ),
+                    JSON_ARRAY()
+            )
+    ) AS sample_count,
 
-
-CREATE OR REPLACE VIEW v_pxp_measurement_sample AS
-SELECT
-    -- proteomics_measurement (p)
-    p.measurement_id,
-    p.digestionEnzyme,
-    p.digestionMethod,
-    p.enrichmentMethod,
-    p.facility,
-    p.injectionVolume,
-    p.instrument,                   -- JSON stored as longtext (validated by CHECK)
-    p.labelType,
-    p.lcColumn,
-    p.lcmsMethod,
-    p.measurementCode,
-    p.IRI,
-    p.label                AS measurement_label,
-    p.projectId,
-    p.registration,
-    p.samplePool,
-    p.technicalReplicateName,
-
-    -- specific_measurement_metadata_pxp (pxp)
-    pxp.comment            AS metadata_comment,
-    pxp.fractionName,
-    pxp.label              AS metadata_label,
-    pxp.sample_id,
-
-    -- sample (s)
-    s.analysis_method,
-    s.assigned_batch_id,
-    s.comment              AS sample_comment,
-    s.experiment_id,
-    s.experimentalGroupId,
-    s.label                AS sample_label,
-    s.organism_id,
-    s.code                 AS sample_code,
-    s.analyte,
-    s.species,
-    s.specimen,
-
-    -- remote_measurement_data (rmd) -- joined via measurementCode
+    /* remote_measurement_data joined via measurementCode */
     rmd.file_count,
     rmd.file_types,
     rmd.registration_at,
@@ -781,11 +756,72 @@ SELECT
     rmd.updated_at         AS rmd_updated_at,
     rmd.deleted            AS rmd_deleted,
     rmd.last_sync_at
+FROM ngs_measurements m
+         LEFT JOIN remote_measurement_data rmd
+                   ON rmd.measurement_id = m.measurementCode;
 
+
+CREATE OR REPLACE VIEW v_pxp_measurement_sample_json AS
+SELECT
+    p.measurement_id,
+    p.digestionEnzyme,
+    p.digestionMethod,
+    p.enrichmentMethod,
+    p.facility,
+    p.injectionVolume,
+    p.instrument,
+    p.labelType,
+    p.lcColumn,
+    p.lcmsMethod,
+    p.measurementCode,
+    p.IRI,
+    p.label                 AS measurement_label,
+    p.projectId,
+    p.registration,
+    p.samplePool,
+    p.technicalReplicateName,
+
+    /* Per-measurement JSON array of samples with PXP metadata */
+    IFNULL(
+            (
+                SELECT JSON_ARRAYAGG(
+                               JSON_OBJECT(
+                                       'sample_id',    s.sample_id,
+                                       'code',         s.code,
+                                       'label',        s.label,
+                                       'fractionName', pxp2.fractionName,
+                                       'metaLabel',    pxp2.label,
+                                       'comment',      pxp2.comment
+                               )
+                               ORDER BY s.code
+                       )
+                FROM specific_measurement_metadata_pxp pxp2
+                         LEFT JOIN sample s ON s.sample_id = pxp2.sample_id
+                WHERE pxp2.measurement_id = p.measurement_id
+            ),
+            JSON_ARRAY()
+    ) AS samples_json,
+
+    JSON_LENGTH(
+            IFNULL(
+                    (
+                        SELECT JSON_ARRAYAGG(JSON_OBJECT('sample_id', s.sample_id))
+                        FROM specific_measurement_metadata_pxp pxp2
+                                 LEFT JOIN sample s ON s.sample_id = pxp2.sample_id
+                        WHERE pxp2.measurement_id = p.measurement_id
+                    ),
+                    JSON_ARRAY()
+            )
+    ) AS sample_count,
+
+    /* remote_measurement_data joined via measurementCode */
+    rmd.file_count,
+    rmd.file_types,
+    rmd.registration_at,
+    rmd.totalFileSizeBytes,
+    rmd.updated_at         AS rmd_updated_at,
+    rmd.deleted            AS rmd_deleted,
+    rmd.last_sync_at
 FROM proteomics_measurement p
-         LEFT JOIN specific_measurement_metadata_pxp pxp
-                   ON pxp.measurement_id = p.measurement_id
-         LEFT JOIN sample s
-                   ON s.sample_id = pxp.sample_id
          LEFT JOIN remote_measurement_data rmd
                    ON rmd.measurement_id = p.measurementCode;
