@@ -693,3 +693,99 @@ FROM projects_datamanager pd
                                                      project_userinfo.userName))  AS `userInfos`
                     FROM project_userinfo
                     GROUP BY projectId) AS users ON users.projectId = pd.projectId;
+
+CREATE OR REPLACE VIEW v_ngs_measurement_sample AS
+SELECT
+    m.measurement_id,
+    m.facility,
+    m.flowcell,
+    m.instrument,            -- JSON stored as longtext (validated by CHECK)
+    m.libraryKit,
+    m.measurementCode,
+    m.IRI,
+    m.label            AS measurement_label,
+    m.projectId,
+    m.registrationTime,
+    m.samplePool,
+    m.readType,
+    m.runProtocol,
+
+    smm.comment        AS metadata_comment,
+    smm.indexI5,
+    smm.indexI7,
+    smm.sample_id,
+
+    s.analysis_method,
+    s.assigned_batch_id,
+    s.comment          AS sample_comment,
+    s.experiment_id,
+    s.experimentalGroupId,
+    s.label            AS sample_label,
+    s.organism_id,
+    s.code             AS sample_code,
+    s.analyte,
+    s.species,
+    s.specimen
+FROM ngs_measurements m
+         LEFT JOIN specific_measurement_metadata_ngs smm
+                   ON smm.measurement_id = m.measurement_id
+         LEFT JOIN sample s
+                   ON s.sample_id = smm.sample_id;
+
+
+CREATE OR REPLACE VIEW v_pxp_measurement_sample AS
+SELECT
+    -- proteomics_measurement (p)
+    p.measurement_id,
+    p.digestionEnzyme,
+    p.digestionMethod,
+    p.enrichmentMethod,
+    p.facility,
+    p.injectionVolume,
+    p.instrument,                   -- JSON stored as longtext (validated by CHECK)
+    p.labelType,
+    p.lcColumn,
+    p.lcmsMethod,
+    p.measurementCode,
+    p.IRI,
+    p.label                AS measurement_label,
+    p.projectId,
+    p.registration,
+    p.samplePool,
+    p.technicalReplicateName,
+
+    -- specific_measurement_metadata_pxp (pxp)
+    pxp.comment            AS metadata_comment,
+    pxp.fractionName,
+    pxp.label              AS metadata_label,
+    pxp.sample_id,
+
+    -- sample (s)
+    s.analysis_method,
+    s.assigned_batch_id,
+    s.comment              AS sample_comment,
+    s.experiment_id,
+    s.experimentalGroupId,
+    s.label                AS sample_label,
+    s.organism_id,
+    s.code                 AS sample_code,
+    s.analyte,
+    s.species,
+    s.specimen,
+
+    -- remote_measurement_data (rmd) -- joined via measurementCode
+    rmd.file_count,
+    rmd.file_types,
+    rmd.registration_at,
+    rmd.totalFileSizeBytes,
+    rmd.updated_at         AS rmd_updated_at,
+    rmd.deleted            AS rmd_deleted,
+    rmd.last_sync_at
+
+FROM proteomics_measurement p
+         LEFT JOIN specific_measurement_metadata_pxp pxp
+                   ON pxp.measurement_id = p.measurement_id
+         LEFT JOIN sample s
+                   ON s.sample_id = pxp.sample_id
+         LEFT JOIN remote_measurement_data rmd
+                   ON rmd.measurement_id = p.measurementCode;
