@@ -8,14 +8,13 @@ import jakarta.persistence.Table;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Set;
-import org.checkerframework.checker.units.qual.C;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Local Raw Dataset PxP Entry</b>
+ * <p>
+ * Database entity that represents the content of a detailed view of an proteomics raw dataset.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Entity
 @Table(name = "v_pxp_measurement_sample_json")

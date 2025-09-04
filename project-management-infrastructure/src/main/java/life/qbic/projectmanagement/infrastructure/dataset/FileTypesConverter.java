@@ -12,13 +12,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import life.qbic.logging.api.Logger;
 
-/**
- * <b><class short description - 1 Line!></b>
- *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
- */
+
 @Converter(autoApply = false)
 public class FileTypesConverter implements AttributeConverter<Set<String>, String> {
 

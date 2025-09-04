@@ -10,15 +10,16 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Local Raw Dataset Entry</b>
+ * <p>
+ * Database entity that represents the content.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Entity
 @Table(name = "remote_measurement_data")
 public class LocalRawDatasetEntry {
+
   @Id
   @Column(name = "measurement_id")
   private String measurementId;

@@ -10,15 +10,20 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Shed Lock Config</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Configuration for a simple lock provider for distributed locking of resources</p>
+ * <p>
+ * The application will acquire the lock for synchronisations with external resources and will
+ * guarantee seamless operation in case more than one instance of the application runs at the same
+ * time (e.g. in a high availability environment).
  *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Configuration
 @EnableScheduling
-@EnableSchedulerLock(defaultLockAtMostFor = "PT45S") // safety cap, in case a VM dies and no lock max was set
+@EnableSchedulerLock(defaultLockAtMostFor = "PT45S")
+// safety cap, in case a VM dies and no lock max was set
 public class ShedLockConfig {
 
   @Bean

@@ -92,7 +92,7 @@ public class RawDataSyncService {
     }
 
     // 4) persist the new watermark state
-    watermarkRepo.upsert(new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now()));
+    watermarkRepo.save(new Watermark(JOB_NAME, newOffset, Instant.now(), Instant.now()));
 
     // 5) signal job state
     // if there were fewer results than the max query size for the search, this means

@@ -24,11 +24,11 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Repository;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Local Raw Dataset Repository Impl</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link LocalRawDatasetRepository} interface.</p>
  *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Repository
 public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository {
@@ -92,7 +92,8 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   public List<RawDatasetInformationPxP> findAllPxP(String experimentId, int offset, int limit,
       SortRawData sorting, String filter) {
     var sortOrder = mapSorting(Objects.requireNonNull(sorting));
-    return pxpInfoRepository.findAllByExperimentId(experimentId, PageRequest.of(offset, limit, sortOrder))
+    return pxpInfoRepository.findAllByExperimentId(experimentId,
+            PageRequest.of(offset, limit, sortOrder))
         .stream()
         .map(LocalRawDatasetRepositoryImpl::convert)
         .toList();
@@ -102,7 +103,8 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   public List<RawDatasetInformationNgs> findAllNgs(String experimentId, int offset, int limit,
       SortRawData sorting, String filter) {
     var sortOrder = mapSorting(Objects.requireNonNull(sorting));
-    return ngsInfoRepository.findAllByExperimentId(experimentId, PageRequest.of(offset, limit, sortOrder))
+    return ngsInfoRepository.findAllByExperimentId(experimentId,
+            PageRequest.of(offset, limit, sortOrder))
         .stream()
         .map(LocalRawDatasetRepositoryImpl::convert)
         .toList();

@@ -7,11 +7,11 @@ import life.qbic.projectmanagement.application.sync.WatermarkRepo;
 import org.springframework.stereotype.Repository;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Watermark Repo Impl</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Implementation of the {@link WatermarkRepo}.</p>
  *
- * @since <version tag>
+ * @since 1.110.0
  */
 @Repository
 public class WatermarkRepoImpl implements WatermarkRepo {
@@ -33,13 +33,13 @@ public class WatermarkRepoImpl implements WatermarkRepo {
   }
 
   @Override
-  public void upsert(Watermark currentWatermark) {
-    WatermarkEntry entryForUpdate = findById(currentWatermark.jobName()).orElse(
-        WatermarkEntry.create(currentWatermark.jobName(), currentWatermark.syncOffset(),
-            Date.from(currentWatermark.updatedSince()), Date.from(currentWatermark.lastSuccessAt())));
-    entryForUpdate.syncOffset = currentWatermark.syncOffset();
-    entryForUpdate.updatedSince = Date.from(currentWatermark.updatedSince());
-    entryForUpdate.lastSuccessAt = Date.from(currentWatermark.lastSuccessAt());
+  public void save(Watermark latestWatermark) {
+    WatermarkEntry entryForUpdate = findById(latestWatermark.jobName()).orElse(
+        WatermarkEntry.create(latestWatermark.jobName(), latestWatermark.syncOffset(),
+            Date.from(latestWatermark.updatedSince()), Date.from(latestWatermark.lastSuccessAt())));
+    entryForUpdate.syncOffset = latestWatermark.syncOffset();
+    entryForUpdate.updatedSince = Date.from(latestWatermark.updatedSince());
+    entryForUpdate.lastSuccessAt = Date.from(latestWatermark.lastSuccessAt());
 
     jpaRepository.save(entryForUpdate);
   }

@@ -3,11 +3,12 @@ package life.qbic.projectmanagement.infrastructure.sync;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Watermark Jpa Repository</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Extension of the {@link JpaRepository} interface to support {@link WatermarkEntry}
+ * entities.</p>
  *
- * @since <version tag>
+ * @since 1.11.0
  */
 public interface WatermarkJpaRepository extends JpaRepository<WatermarkEntry, String> {
 

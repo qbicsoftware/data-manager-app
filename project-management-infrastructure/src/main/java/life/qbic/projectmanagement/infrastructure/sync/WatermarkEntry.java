@@ -10,11 +10,11 @@ import java.util.Objects;
 import org.springframework.lang.NonNull;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Watermark Entry</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Database entity for watermark of synchronisation jobs.</p>
  *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Entity
 @Table(name = "sync_control")
@@ -24,7 +24,8 @@ class WatermarkEntry implements Serializable {
 
   }
 
-  public static WatermarkEntry create(String id, int syncOffset, Date updatedSince, Date lastSuccessAt) {
+  public static WatermarkEntry create(String id, int syncOffset, Date updatedSince,
+      Date lastSuccessAt) {
     return new WatermarkEntry(id, syncOffset, updatedSince, lastSuccessAt);
   }
 
