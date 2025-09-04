@@ -586,10 +586,10 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     fetchOptions.from(offset);
     fetchOptions.count(limit);
     fetchOptions.withSample();
-    return getRawDataDatasetInformations(filter, searchCriteria, fetchOptions);
+    return getRawDataDatasetInformation(filter, searchCriteria, fetchOptions);
   }
 
-  private List<RawDataDatasetInformation> getRawDataDatasetInformations(
+  private List<RawDataDatasetInformation> getRawDataDatasetInformation(
       String filter,
       DataSetSearchCriteria searchCriteria,
       DataSetFetchOptions fetchOptions) {
@@ -669,7 +669,7 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     datasetFetchOptions.count(limit);
     datasetFetchOptions.withSample();
 
-    return getRawDataDatasetInformations("", datasetSearchCriteria, datasetFetchOptions);
+    return getRawDataDatasetInformation("", datasetSearchCriteria, datasetFetchOptions);
   }
 
   private Map<String, List<DataSetFile>> fetchFileInformationForDatasets(OpenbisSession session,

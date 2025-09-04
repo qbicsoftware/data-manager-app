@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.application.dataset;
 
 import java.util.List;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
 
@@ -19,4 +20,6 @@ public interface LocalRawDatasetRepository {
   List<RawDatasetInformationPxP> findAllPxP(String experimentId, int offset, int limit,
       SortRawData sorting, String filter);
 
+  List<RawDatasetInformationNgs> findAllNgs(String experimentId, int offset, int limit,
+      SortRawData sorting, String filter);
 }
