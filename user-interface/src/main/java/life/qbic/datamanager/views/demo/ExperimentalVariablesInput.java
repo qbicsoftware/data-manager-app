@@ -291,8 +291,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       deleteVariable.getStyle().set("grid-area", "c");
       deleteVariable.addClassNames("width-max-content");
       fields.add(name, unit);
-      root.add(fields, variableLevels, deleteVariable,
-          new Button("Mark initialized", e -> markInitialized()));
+      root.add(fields, variableLevels, deleteVariable);
       return root;
     }
 
