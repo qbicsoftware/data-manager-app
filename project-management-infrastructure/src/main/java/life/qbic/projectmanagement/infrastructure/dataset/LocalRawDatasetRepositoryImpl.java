@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.dataset.LocalRawDatasetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -63,6 +65,12 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
     }
 
     jpaRepository.saveAllAndFlush(entriesToSave);
+  }
+
+  @Override
+  public List<RawDatasetInformationPxP> findAllPxP(String experimentId, int offset, int limit,
+      List<SortOrder> sortOrders, String filter) {
+    return List.of();
   }
 
 

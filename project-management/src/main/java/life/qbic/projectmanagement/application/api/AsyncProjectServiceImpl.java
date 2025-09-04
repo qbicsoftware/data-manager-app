@@ -713,14 +713,15 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String experimentId, int offset,
+  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
     // TODO implement
+
     throw new RuntimeException("Not yet implemented");
   }
 
   @Override
-  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String experimentId, int offset,
+  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId, int offset,
       int limit, List<SortOrder> sortOrders, String filter) {
     // TODO implement
     throw new RuntimeException("Not yet implemented");

@@ -2179,6 +2179,7 @@ public interface AsyncProjectService {
    * <p>
    * The request supports pagination.
    *
+   * @param projectId    the identifier of the project the experiment belongs to
    * @param experimentId the identifier of the experiment to query the measurements for
    * @param offset       the offset value for the search to continue (pagination)
    * @param limit        the maximum number of results to return (pagination)
@@ -2187,7 +2188,8 @@ public interface AsyncProjectService {
    * @return a reactive {@link Flux} of {@link RawDatasetInformationPxP}
    * @since 1.11.0
    */
-  Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String experimentId, int offset,
+  Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId,
+      int offset,
       int limit, List<SortOrder> sortOrders, String filter);
 
   /**
@@ -2195,6 +2197,7 @@ public interface AsyncProjectService {
    * <p>
    * The request supports pagination.
    *
+   * @param projectId    the identifier of the project the experiment belongs to
    * @param experimentId the identifier of the experiment to query the measurements for
    * @param offset       the offset value for the search to continue (pagination)
    * @param limit        the maximum number of results to return (pagination)
@@ -2203,7 +2206,8 @@ public interface AsyncProjectService {
    * @return a reactive {@link Flux} of {@link RawDatasetInformationNgs}
    * @since 1.11.0
    */
-  Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String experimentId, int offset,
+  Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId,
+      int offset,
       int limit, List<SortOrder> sortOrders, String filter);
 
   /**
