@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 /**
  * <b>Raw Data Sync Service</b>
  *
- * <p></p>
+ * <p>Service that synchronises the application state with external resources of raw datasets.</p>
  *
  * @since 1.11.0
  */
