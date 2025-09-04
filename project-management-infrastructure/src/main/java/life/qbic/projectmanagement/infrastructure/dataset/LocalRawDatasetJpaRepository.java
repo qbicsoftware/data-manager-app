@@ -3,11 +3,11 @@ package life.qbic.projectmanagement.infrastructure.dataset;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * <b><interface short description - 1 Line!></b>
+ * <b>Local Raw Dataset Jpa Repository</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p>Extension of the {@link JpaRepository} to support {@link LocalRawDatasetEntry entities.}</p>
  *
- * @since <version tag>
+ * @since 1.11.0
  */
 public interface LocalRawDatasetJpaRepository extends JpaRepository<LocalRawDatasetEntry, String> {
 
