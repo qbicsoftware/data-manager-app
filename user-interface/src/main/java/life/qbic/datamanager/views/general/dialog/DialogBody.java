@@ -19,7 +19,7 @@ public class DialogBody {
     dialog.registerUserInput(Objects.requireNonNull(userInput));
   }
 
-  public DialogBody(AppDialog dialog, Component component) {
+  private DialogBody(AppDialog dialog, Component component) {
     Objects.requireNonNull(component);
     dialog.setBody(component);
   }
