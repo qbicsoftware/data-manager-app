@@ -819,7 +819,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
 
     public boolean isEmpty() {
-      return levelValue.isEmpty();
+      return levelValue.isEmpty() || levelValue.getValue().isBlank();
     }
 
     public boolean isDeletion() {
@@ -831,7 +831,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
 
     public Optional<String> getValue() {
-      return levelValue.getOptionalValue();
+      return levelValue.getOptionalValue().map(String::trim);
     }
 
     Registration addDeleteListener(ComponentEventListener<DeleteLevelEvent> listener) {
