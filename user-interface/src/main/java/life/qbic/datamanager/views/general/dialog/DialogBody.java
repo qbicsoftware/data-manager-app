@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.general.dialog;
 
 import com.vaadin.flow.component.Component;
 import java.util.Objects;
+import org.springframework.lang.NonNull;
 
 /**
  * <b>Dialog Body</b>
@@ -29,7 +30,8 @@ public class DialogBody {
     dialog.setBody(component);
   }
 
-  public static DialogBody with(AppDialog simpleDialog, Component component, UserInput userInput) {
+  public static DialogBody with(@NonNull AppDialog simpleDialog, @NonNull Component component,
+      @NonNull UserInput userInput) {
     return new DialogBody(simpleDialog, component, userInput);
   }
 
