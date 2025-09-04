@@ -7,6 +7,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.DomEvent;
+import com.vaadin.flow.component.EventData;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.Key;
@@ -21,6 +23,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.dom.DisabledUpdateMode;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serializable;
 import java.time.Instant;
@@ -501,15 +504,53 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     }
 
-    private void addEmptyLevel() {
+    @NonNull
+    private LevelField addEmptyLevel() {
       LevelField levelField = new LevelField();
       addLevel(levelField);
       levelField.focus();
+      return levelField;
     }
 
+    @NonNull
+    private LevelField addFilledLevel(@NonNull String value) {
+      LevelField levelField = new LevelField();
+      levelField.setValue(value);
+      addLevel(levelField);
+      levelField.focus();
+      return levelField;
+    }
+
+    @NonNull
+    private LevelField addFilledLevel(int index, @NonNull String value) {
+      LevelField levelField = new LevelField();
+      levelField.setValue(value);
+      addLevel(index, levelField);
+      levelField.focus();
+      return levelField;
+    }
+
+
     private void addLevel(LevelField levelField) {
-      levelsContainer.add(levelField);
-      levelFields.add(levelField);
+      addLevel((int) levelsContainer.getChildren().count(), levelField);
+    }
+
+    /**
+     * Tries to add the level at the specified index. If the index is smaller than or equal to 0,
+     * the level is added as first level. If the index is greater than the current number of levels,
+     * the level is added as the last level.
+     *
+     * @param index      the index where the level field should be added
+     * @param levelField the field to add
+     */
+    private void addLevel(int index, LevelField levelField) {
+      int componentIndex = Math.max(0, index);
+
+      if (levelsContainer.getChildren().count() < index) {
+        componentIndex = Math.toIntExact(levelsContainer.getChildren().count());
+      }
+      levelsContainer.addComponentAtIndex(componentIndex, levelField);
+      levelFields.add(componentIndex, levelField);
       levelField.addDeleteListener(event -> removeLevelField(event.getSource()));
       // when the value changes, the validation is outdated and removed.
       levelField.addValueChangeListener(valueChangeEvent -> setInvalid(false));
@@ -561,9 +602,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       addEmptyLevel();
       markInitialized();
       Shortcuts.addShortcutListener(this, it -> {
-        Integer focusIndex = Optional.ofNullable(focusedLevelField)
-            .map(levelFields::indexOf)
-            .orElse(-1);
+        var focusIndex = focusedLevelIndex();
         int nextFocus = focusIndex + 1;
         if (levelFields.size() > nextFocus) {
           levelFields.get(nextFocus).focus();
@@ -571,6 +610,36 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
           addEmptyLevel();
         }
       }, Key.ENTER).listenOn(this);
+
+      addListener(PasteEvent.class, pasteEvent -> {
+        List<String> pastedLines = pasteEvent.getClipboardText().lines()
+            .filter(Objects::nonNull)
+            .filter(line -> !line.isBlank())
+            .toList();
+        if (pastedLines.isEmpty()) {
+          return;
+        }
+        var startIndex = focusedLevelIndex();
+        if (Objects.nonNull(focusedLevelField) && focusedLevelField.isEmpty()) {
+          //fill the first item in the focused field
+          focusedLevelField.setValue(pastedLines.getFirst());
+        } else {
+          startIndex++;
+          //fill the first item in a new field after the focused field
+          addFilledLevel(startIndex, pastedLines.getFirst());
+        }
+        for (int lineIndex = 1; lineIndex < pastedLines.size(); lineIndex++) {
+          var line = pastedLines.get(lineIndex);
+          var insertIndex = startIndex + lineIndex;
+          addFilledLevel(insertIndex, line);
+        }
+      });
+    }
+
+    private int focusedLevelIndex() {
+      return Optional.ofNullable(focusedLevelField)
+          .map(levelFields::indexOf)
+          .orElse(-1); //null leads to same result as indexOf if not a child yet
     }
 
 
@@ -902,6 +971,32 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
   }
 
+  @DomEvent(value = "paste",
+      allowUpdates = DisabledUpdateMode.ONLY_WHEN_ENABLED,
+      preventDefault = true,
+      stopPropagation = true)
+  public static class PasteEvent extends ComponentEvent<Component> {
+
+    private final String clipboardText;
+
+    /**
+     * Creates a new event using the given source and indicator whether the event originated from
+     * the client side or the server side.
+     *
+     * @param source     the source component
+     * @param fromClient <code>true</code> if the event originated from the client
+     *                   side, <code>false</code> otherwise
+     */
+    public PasteEvent(Component source, boolean fromClient,
+        @EventData("event.clipboardData.getData(\"text\")") String clipboardText) {
+      super(source, fromClient);
+      this.clipboardText = clipboardText;
+    }
+
+    public String getClipboardText() {
+      return clipboardText;
+    }
+  }
 
 
 }
