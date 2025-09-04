@@ -13,20 +13,14 @@ import org.springframework.lang.NonNull;
  */
 public class DialogBody {
 
-  private final Component component;
-
-  private DialogBody() {
-    this.component = null;
-  }
-
   private DialogBody(AppDialog dialog, Component component, UserInput userInput) {
-    this.component = Objects.requireNonNull(component);
+    Objects.requireNonNull(component);
     dialog.setBody(component);
     dialog.registerUserInput(Objects.requireNonNull(userInput));
   }
 
   public DialogBody(AppDialog dialog, Component component) {
-    this.component = Objects.requireNonNull(component);
+    Objects.requireNonNull(component);
     dialog.setBody(component);
   }
 
