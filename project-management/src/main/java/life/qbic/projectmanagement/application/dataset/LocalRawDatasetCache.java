@@ -7,19 +7,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Local Raw Dataset Cache</b>
+ * <p>
+ * A simple cache that enables the application to persist metadata about raw dataset metadata from
+ * external resources associated with measurements from the application.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Service
-public class LocalRawDatasetService {
+public class LocalRawDatasetCache {
 
   private final LocalRawDatasetRepository repository;
 
   @Autowired
-  public LocalRawDatasetService(LocalRawDatasetRepository repository) {
+  public LocalRawDatasetCache(LocalRawDatasetRepository repository) {
     this.repository = Objects.requireNonNull(repository);
   }
 

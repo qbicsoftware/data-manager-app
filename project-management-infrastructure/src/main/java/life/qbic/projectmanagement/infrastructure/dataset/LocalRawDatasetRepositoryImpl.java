@@ -56,12 +56,12 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   }
 
   @Override
-  public void saveAll(List<RawDataset> rawDataset) {
+  public void saveAll(List<RawDataset> rawDatasets) {
     log.debug("Saving raw datasets to local repository");
 
     List<LocalRawDatasetEntry> entriesToSave = new ArrayList<>();
 
-    for (RawDataset dataset : rawDataset) {
+    for (RawDataset dataset : rawDatasets) {
       jpaRepository.findById(dataset.measurementId()).ifPresentOrElse(existingEntry -> {
         existingEntry.setDeleted(false);
         existingEntry.setFileCount(dataset.numberOfFiles());

@@ -5,8 +5,7 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 import java.time.Instant;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
-import life.qbic.projectmanagement.application.dataset.LocalRawDatasetRepository;
-import life.qbic.projectmanagement.application.dataset.LocalRawDatasetService;
+import life.qbic.projectmanagement.application.dataset.LocalRawDatasetCache;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.sync.WatermarkRepo.Watermark;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -15,11 +14,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Raw Data Sync Service</b>
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
+ * <p></p>
  *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Service
 public class RawDataSyncService {
@@ -28,18 +27,20 @@ public class RawDataSyncService {
   private final RemoteRawDataService remoteRawDataService;
 
   private static final String JOB_NAME = "RAW_DATA_SYNC_EXTERNAL";
-  private static final int MAX_QUERY_SIZE = 1000;
+  // Maximum number of entries queried from remote resource
+  private static final int MAX_QUERY_SIZE = 1_000;
   // Should be smaller than the lockAtMostFor duration of the scheduler lock
   private static final int MAX_DURATION_JOB_MILLIS = 10_000;
 
   private final WatermarkRepo watermarkRepo;
-  private final LocalRawDatasetService localRawDataService;
+  private final LocalRawDatasetCache localRawDataService;
 
   @Autowired
-  public RawDataSyncService(RemoteRawDataService remoteRawDataService, WatermarkRepo watermarkRepo, LocalRawDatasetService localRawDatasetService) {
+  public RawDataSyncService(RemoteRawDataService remoteRawDataService, WatermarkRepo watermarkRepo,
+      LocalRawDatasetCache localRawDatasetCache) {
     this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.watermarkRepo = Objects.requireNonNull(watermarkRepo);
-    this.localRawDataService = Objects.requireNonNull(localRawDatasetService);
+    this.localRawDataService = Objects.requireNonNull(localRawDatasetCache);
   }
 
   // run every 2 minutes; add jitter to red@uce thundering herd on restart
@@ -49,6 +50,8 @@ public class RawDataSyncService {
   public void sync() {
     long start = System.currentTimeMillis();
     long passedMillis = System.currentTimeMillis() - start;
+    // time box the job duration the guarantee job_duration < max_lock_duration
+    // due to the stored offset in the control table, the next scheduled job will pick up there
     while (passedMillis < MAX_DURATION_JOB_MILLIS) {
       // only stay continue the job, if there are still available results to query
       if (runSync()) {
@@ -65,7 +68,7 @@ public class RawDataSyncService {
     // 1) load watermark (offset/updatedSince) from control table
     var currentWatermark = watermarkRepo.fetch(JOB_NAME)
         .orElse(new Watermark(JOB_NAME, 0, Instant.EPOCH, Instant.EPOCH));
-    // 2) poll remote incrementally (time-box the loop, e.g. ≤ 25s)
+    // 2) poll remote resource
     var result = remoteRawDataService.registeredSince(currentWatermark.updatedSince(),
         currentWatermark.syncOffset(), MAX_QUERY_SIZE);
 
@@ -79,10 +82,11 @@ public class RawDataSyncService {
     int newOffset =
         result.size() < MAX_QUERY_SIZE ? 0 : currentWatermark.syncOffset() + MAX_QUERY_SIZE;
 
-
     // 3) persist the raw dataset information if available
     if (!result.isEmpty()) {
-      log.info("Persisting %d found external raw datasets in local resource. Syncing them now...".formatted(result.size()));
+      log.info(
+          "Persisting %d found external raw datasets in local resource. Syncing them now...".formatted(
+              result.size()));
       localRawDataService.saveAll(result);
       log.info("%d raw datasets synced.".formatted(result.size()));
     }

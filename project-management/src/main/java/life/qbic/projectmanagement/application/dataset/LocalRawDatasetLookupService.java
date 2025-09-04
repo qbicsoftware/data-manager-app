@@ -10,11 +10,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Local Raw Dataset Lookup Service</b>
+ * <p>
+ * Service that provides access to information about locally cached raw dataset metadata, where the
+ * actually raw dataset is hosted in an external resource.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 @Service
 public class LocalRawDatasetLookupService {
