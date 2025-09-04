@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.demo;
 
+import static java.util.Objects.nonNull;
+
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -34,18 +36,18 @@ import life.qbic.application.commons.Snapshot;
 import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableLevelsInput.LevelChange;
 import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableRow.InvalidChangesException;
 import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableRow.VariableChange;
-import life.qbic.datamanager.views.demo.ExperimentalVariablesInput.VariableRow.VariableDeleted;
 import life.qbic.datamanager.views.general.ButtonFactory;
 import life.qbic.datamanager.views.general.dialog.InputValidation;
 import life.qbic.datamanager.views.general.dialog.UserInput;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
-public class ExperimentalVariablesInput extends Composite<Div> implements UserInput {
+public class ExperimentalVariablesInput extends Composite<Div> implements UserInput, CanSnapshot {
 
   private final Button addVariableButton = new Button("Add Variable", VaadinIcon.PLUS.create());
   private final Div variablesInput = new Div();
-  private final List<VariableChange> deletedVariables = new ArrayList<>();
-
+  private final List<Snapshot> deletedVariables = new ArrayList<>();
+  private Snapshot initialState;
 
   public ExperimentalVariablesInput() {
     addVariableButton.addClickListener(
@@ -55,21 +57,36 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     getContent().add(new Button("Has Changes?", e -> System.out.println("hasChanges? = "
         + this.hasChanges())));
     getContent().add(new Button("Print Changes", e -> System.out.println("changes = "
-        + Stream.concat(deletedVariables.stream(), this.getVariableRows().stream().flatMap(
-        (VariableRow variableRow) -> {
-          try {
-            List<VariableChange> changes = variableRow.getChanges();
-            return changes.stream();
-          } catch (InvalidChangesException ex) {
-            return Stream.of();
-          }
-        })).toList())));
+        + Stream.concat(
+        deletedVariables.stream()
+            .map(this::toRestoredVariableRow)
+            .map(VariableRow::getVariableName),
+        this.getVariableRows().stream().flatMap(
+            (VariableRow variableRow) -> {
+              try {
+                List<VariableChange> changes = variableRow.getChanges();
+                return changes.stream();
+              } catch (InvalidChangesException ex) {
+                return Stream.of();
+              }
+            })).toList())));
     getContent().add(new Button("Mark Initialized", e -> markInitialized()));
+    getContent().add(new Button("Add all deleted variables", e -> {
+      var copy = List.copyOf(deletedVariables);
+
+      copy.reversed() //FIFO
+          .forEach(deletedVariable -> {
+            addRow(toRestoredVariableRow(deletedVariable));
+            deletedVariables.remove(deletedVariable);
+          });
+    }));
+    markInitialized();
   }
 
   private void markInitialized() {
     getVariableRows().forEach(VariableRow::markInitialized);
     this.deletedVariables.clear();
+    this.initialState = this.snapshot();
   }
 
   @NonNull
@@ -99,9 +116,13 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
   private void addVariable() {
     VariableRow variableRow = new VariableRow();
+    addRow(variableRow);
+  }
+
+  private void addRow(VariableRow variableRow) {
     variableRow.addDeleteVariableListener(it -> removeVariable(it.getSource()));
     variablesInput.addComponentAtIndex(
-        Math.max(0, (int) (variablesInput.getChildren().count() - 1)), //second last component
+        Math.max(0, (int) (variablesInput.getChildren().count() - 1)),
         variableRow);
     variableRow.focus();
   }
@@ -115,10 +136,27 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   }
 
   private void removeVariable(@NonNull VariableRow variableRow) {
+    var initialComponentState = toRestoredVariablesInput(this.initialState);
+    var initialRowInformation = toRestoredVariableRow(variableRow.initialState);
+    if (initialComponentState.variableRows().stream()
+        .anyMatch(row -> row.getVariableName().equals(initialRowInformation.getVariableName()))) {
+      //only record deletion of variable rows that were there initially
+      var snapshotOfVariableRow = variableRow.snapshot();
+      deletedVariables.add(snapshotOfVariableRow);
+    }
     variableRow.removeFromParent();
-    deletedVariables.add(new VariableDeleted(variableRow.getVariableName()));
     if (variableRows().isEmpty()) {
       addVariable();
+    }
+  }
+
+  private ExperimentalVariablesInput toRestoredVariablesInput(Snapshot snapshot) {
+    var dummy = new ExperimentalVariablesInput();
+    try {
+      dummy.restore(snapshot);
+      return dummy;
+    } catch (SnapshotRestorationException e) {
+      throw new IllegalStateException("Initial state not correctly set.", e);
     }
   }
 
@@ -135,6 +173,77 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   public boolean hasChanges() {
     return !deletedVariables.isEmpty() || getVariableRows().stream()
         .anyMatch(VariableRow::hasChanges);
+  }
+
+  record VariablesSnapshot(Instant timestamp, List<Snapshot> variableSnapshots,
+                           @Nullable Snapshot initialState) implements Snapshot {
+
+    public VariablesSnapshot {
+      variableSnapshots = variableSnapshots.stream().toList();
+    }
+
+    @Override
+    public Optional<String> getName() {
+      return Optional.empty();
+    }
+
+    @Override
+    public Instant getTimestamp() {
+      return timestamp();
+    }
+
+    @Override
+    public boolean holdsEqualState(Snapshot snapshot) {
+      if (snapshot instanceof VariablesSnapshot other) {
+        return other.variableSnapshots().size() == variableSnapshots().size()
+            && variableSnapshots().stream().allMatch(variable -> other.variableSnapshots().stream()
+            .anyMatch(it -> it.holdsEqualState(variable)));
+      }
+      return false;
+    }
+  }
+
+  @Override
+  public Snapshot snapshot() {
+    return new VariablesSnapshot(Instant.now(),
+        getVariableRows().stream().map(VariableRow::snapshot).toList(),
+        initialState);
+  }
+
+  private VariableRow toRestoredVariableRow(Snapshot snapshot) {
+    var dummy = new VariableRow();
+    try {
+      dummy.restore(snapshot);
+      return dummy;
+    } catch (SnapshotRestorationException e) {
+      throw new IllegalStateException("Initial state not correctly set.", e);
+    }
+  }
+
+  @Override
+  public void restore(Snapshot snapshot) throws SnapshotRestorationException {
+    if (snapshot instanceof VariablesSnapshot variablesSnapshot) {
+      if (nonNull(variablesSnapshot.initialState())
+          && variablesSnapshot.initialState() instanceof VariablesSnapshot) {
+        this.initialState = variablesSnapshot.initialState();
+      }
+      var previousChildren = getVariableRows();
+      previousChildren.forEach(Component::removeFromParent);
+      try {
+        variablesSnapshot.variableSnapshots()
+            .stream()
+            .map(this::toRestoredVariableRow)
+            .forEach(this::addRow);
+        return;
+      } catch (Exception e) {
+        variableRows().forEach(Component::removeFromParent);
+        previousChildren.forEach(this::addRow);
+        throw e;
+      }
+    }
+    throw new SnapshotRestorationException(
+        "Unknown snapshot type. Expected %s but got %s".formatted(VariablesSnapshot.class,
+            snapshot.getClass()));
   }
 
 
@@ -268,7 +377,8 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
 
     record ExperimentalVariableSnapshot(Instant timestamp, String name, String unit,
-                                        Snapshot levels) implements Snapshot, Serializable {
+                                        Snapshot levels, @Nullable Snapshot initialState) implements
+        Snapshot, Serializable {
 
       @Override
       public Optional<String> getName() {
@@ -283,8 +393,8 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       @Override
       public boolean holdsEqualState(Snapshot snapshot) {
         if (snapshot instanceof ExperimentalVariableSnapshot(
-            Instant ignored,
-            String otherName, String otherUnit, Snapshot otherLevels
+            Instant ignored, String otherName, String otherUnit, Snapshot otherLevels,
+            Snapshot ignoredInitialState
         )) {
           return name().equals(otherName)
               && unit().equals(otherUnit)
@@ -297,13 +407,16 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     @Override
     public Snapshot snapshot() {
       return new ExperimentalVariableSnapshot(Instant.now(), name.getValue(), unit.getValue(),
-          variableLevels.snapshot());
+          variableLevels.snapshot(), initialState);
     }
 
     @Override
     public void restore(@NonNull Snapshot snapshot) throws SnapshotRestorationException {
       if (snapshot instanceof ExperimentalVariableSnapshot experimentalVariableSnapshot) {
-//        variableLevels.restore(experimentalVariableSnapshot.levels());
+        if (nonNull((experimentalVariableSnapshot).initialState())) {
+          initialState = experimentalVariableSnapshot.initialState();
+        }
+        variableLevels.restore(experimentalVariableSnapshot.levels());
         name.setValue(experimentalVariableSnapshot.name());
         unit.setValue(experimentalVariableSnapshot.unit());
         return;
@@ -613,6 +726,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
           levelsSnapshot.levels().stream()
               .map(this::mapToRestoredLevelField)
               .forEach(this::addLevel);
+          return;
         } catch (Exception e) {
           levelsContainer.removeAll();
           levelFields.clear();
@@ -621,6 +735,9 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
           throw e;
         }
       }
+      throw new SnapshotRestorationException(
+          "Unknown snapshot type. Expected %s but got %s".formatted(LevelsSnapshot.class,
+              snapshot.getClass()));
 
     }
   }
