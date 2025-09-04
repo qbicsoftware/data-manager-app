@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import life.qbic.application.commons.SortOrder;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
 import life.qbic.projectmanagement.application.dataset.LocalRawDatasetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -28,10 +28,17 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
   private static final Logger log = logger(LocalRawDatasetRepositoryImpl.class);
 
   private final LocalRawDatasetJpaRepository jpaRepository;
+  private final LocalRawDatasetInformationPxPJpaRepository pxpInfoRepository;
+  private final LocalRawDatasetInformationNgsJpaRepository ngsInfoRepository;
 
   @Autowired
-  public LocalRawDatasetRepositoryImpl(LocalRawDatasetJpaRepository jpaRepository) {
+  public LocalRawDatasetRepositoryImpl(
+      LocalRawDatasetJpaRepository jpaRepository,
+      LocalRawDatasetInformationPxPJpaRepository infoPxpJpaRepository,
+      LocalRawDatasetInformationNgsJpaRepository infoNgsJpaRepository) {
     this.jpaRepository = Objects.requireNonNull(jpaRepository);
+    this.ngsInfoRepository = Objects.requireNonNull(infoNgsJpaRepository);
+    this.pxpInfoRepository = Objects.requireNonNull(infoPxpJpaRepository);
   }
 
   @Override
@@ -69,7 +76,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
 
   @Override
   public List<RawDatasetInformationPxP> findAllPxP(String experimentId, int offset, int limit,
-      List<SortOrder> sortOrders, String filter) {
+      SortRawData sortRawData, String filter) {
     return List.of();
   }
 

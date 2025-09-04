@@ -33,7 +33,7 @@ public class LocalRawDatasetEntry {
   @Column(name = "registration_at")
   private Date registrationDate;
 
-  @Column(name = "totalFileSizeBytes")
+  @Column(name = "total_filesize_bytes")
   private long totalFileSizeBytes;
 
   @Column(name = "updated_at")

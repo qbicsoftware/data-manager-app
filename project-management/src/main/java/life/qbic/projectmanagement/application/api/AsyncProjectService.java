@@ -2183,14 +2183,14 @@ public interface AsyncProjectService {
    * @param experimentId the identifier of the experiment to query the measurements for
    * @param offset       the offset value for the search to continue (pagination)
    * @param limit        the maximum number of results to return (pagination)
-   * @param sortOrders   configuration of the properties sort orders
+   * @param sorting      configuration of the property to sort by
    * @param filter       a term used for filtering matching datasets containing the term
    * @return a reactive {@link Flux} of {@link RawDatasetInformationPxP}
    * @since 1.11.0
    */
   Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId,
       int offset,
-      int limit, List<SortOrder> sortOrders, String filter);
+      int limit, SortRawData sorting, String filter);
 
   /**
    * Requests all available {@link RawDatasetInformationNgs} for a given experiment.
@@ -2201,14 +2201,14 @@ public interface AsyncProjectService {
    * @param experimentId the identifier of the experiment to query the measurements for
    * @param offset       the offset value for the search to continue (pagination)
    * @param limit        the maximum number of results to return (pagination)
-   * @param sortOrders   configuration of the properties sort orders
+   * @param sorting      configuration of the property to sort by
    * @param filter       a term used for filtering matching datasets containing the term
    * @return a reactive {@link Flux} of {@link RawDatasetInformationNgs}
    * @since 1.11.0
    */
   Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId,
       int offset,
-      int limit, List<SortOrder> sortOrders, String filter);
+      int limit, SortRawData sorting, String filter);
 
   /**
    * A simple information container for raw data stored for a given measurement.
@@ -2249,6 +2249,24 @@ public interface AsyncProjectService {
       linkedSampleInformation = List.copyOf(linkedSampleInformation);
     }
   }
+
+  /**
+   * Available properties to sort raw data queries.
+   *
+   * @since 1.11.0
+   */
+  enum SortFieldRawData {
+    REGISTRATION_DATE
+  }
+
+  enum SortDirection {
+    ASC, DESC
+  }
+
+  record SortRawData(SortFieldRawData sortField, SortDirection sortDirection) {
+
+  }
+
 
   /**
    * Aggregated information of a raw dataset derived from measurement of the proteomics domain.

@@ -340,9 +340,9 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ExperimentalGroup> getExperimentalGroups(String projectId, String experimentId) {
     var call = Flux.fromStream(() ->
-      experimentInformationService.fetchGroups(projectId, ExperimentId.parse(experimentId))
-          .stream()
-          .map(AsyncProjectServiceImpl::convertToApi));
+        experimentInformationService.fetchGroups(projectId, ExperimentId.parse(experimentId))
+            .stream()
+            .map(AsyncProjectServiceImpl::convertToApi));
     String errorMessage = "Error getting experimental group";
     return applySecurityContextMany(call)
         .subscribeOn(VirtualThreadScheduler.getScheduler())
@@ -713,16 +713,18 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   @Override
-  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter) {
+  public Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId,
+      String experimentId, int offset,
+      int limit, SortRawData sorting, String filter) {
     // TODO implement
 
     throw new RuntimeException("Not yet implemented");
   }
 
   @Override
-  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId, int offset,
-      int limit, List<SortOrder> sortOrders, String filter) {
+  public Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId,
+      String experimentId, int offset,
+      int limit, SortRawData sorting, String filter) {
     // TODO implement
     throw new RuntimeException("Not yet implemented");
   }
