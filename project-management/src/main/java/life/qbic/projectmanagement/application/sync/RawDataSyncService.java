@@ -64,6 +64,14 @@ public class RawDataSyncService {
     }
   }
 
+  /**
+   * Runs the actual synchronisation and queries the remote resource from the
+   * {@link RemoteRawDataService}.
+   *
+   * @return <code>true</code>, if there are still more datasets available to be
+   * synchronised</true>, <code>false</code> if the job is complete.
+   * @since 1.11.0
+   */
   private boolean runSync() {
     // 1) load watermark (offset/updatedSince) from control table
     var currentWatermark = watermarkRepo.fetch(JOB_NAME)
