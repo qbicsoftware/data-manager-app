@@ -70,6 +70,9 @@ public class NGSMeasurement {
   @Embedded
   private Organisation organisation;
 
+  @Column(name = "measurementName")
+  private String measurementName;
+
   @ElementCollection(targetClass = NGSSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "specific_measurement_metadata_ngs", joinColumns = @JoinColumn(name = "measurement_id"))
   private Set<NGSSpecificMeasurementMetadata> specificMetadata = new HashSet<>();
@@ -278,6 +281,14 @@ public class NGSMeasurement {
   private void emitCreatedEvent() {
     var measurementCreatedEvent = new MeasurementCreatedEvent(this.measurementId());
     LocalDomainEventDispatcher.instance().dispatch(measurementCreatedEvent);
+  }
+
+  private String measurementName() {
+    return this.measurementName;
+  }
+
+  private void setMeasurementName(String measurementName) {
+    this.measurementName = measurementName;
   }
 
   @Override
