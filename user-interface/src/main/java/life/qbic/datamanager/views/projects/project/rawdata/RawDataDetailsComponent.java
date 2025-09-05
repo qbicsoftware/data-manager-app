@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.projects.project.rawdata;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import com.vaadin.flow.component.grid.dataview.GridLazyDataView;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.data.provider.AbstractDataView;
@@ -25,9 +27,14 @@ import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.Domain;
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementDomainTab;
-import life.qbic.projectmanagement.application.dataset.RawDataService;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataSampleInformation;
+import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SortFieldRawData;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
+import life.qbic.projectmanagement.application.dataset.LocalRawDatasetLookupService;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawDataSampleInformation;
 import life.qbic.projectmanagement.domain.model.experiment.ExperimentId;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,15 +57,19 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
   private final MeasurementDomainTab proteomicsTab;
   private final MeasurementDomainTab genomicsTab;
-  private final transient RawDataService rawDataService;
+  private final transient RemoteRawDataService remoteRawDataService;
   private final List<MeasurementDomainTab> tabsInTabSheet = new ArrayList<>();
   private final transient ClientDetailsProvider clientDetailsProvider;
+  private final AsyncProjectService asyncProjectService;
   private String searchTerm = "";
   private transient Context context;
 
-  public RawDataDetailsComponent(@Autowired RawDataService rawDataService,
-      ClientDetailsProvider clientDetailsProvider) {
-    this.rawDataService = Objects.requireNonNull(rawDataService);
+  private static final Logger log = logger(RawDataDetailsComponent.class);
+
+  public RawDataDetailsComponent(@Autowired RemoteRawDataService remoteRawDataService,
+      ClientDetailsProvider clientDetailsProvider,
+      AsyncProjectService asyncProjectService) {
+    this.remoteRawDataService = Objects.requireNonNull(remoteRawDataService);
     this.clientDetailsProvider = Objects.requireNonNull(clientDetailsProvider);
     proteomicsTab = new MeasurementDomainTab(Domain.PROTEOMICS, 0);
     genomicsTab = new MeasurementDomainTab(Domain.GENOMICS, 0);
@@ -67,6 +78,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     add(registeredRawDataTabSheet);
     registeredRawDataTabSheet.addClassName("raw-data-tabsheet");
     addClassName("raw-data-details-component");
+    this.asyncProjectService = asyncProjectService;
   }
 
   /**
@@ -109,14 +121,18 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
     dataViewsWithItems.forEach(this::addRawDataTab);
     initializeTabCounts();
+    asyncProjectService.getRawDatasetInformationPxP(context.projectId().orElseThrow().value(),
+            context.experimentId().orElseThrow().value(), 0, 1000, new SortRawData(
+                SortFieldRawData.REGISTRATION_DATE, AsyncProjectService.SortDirection.DESC), "")
+        .doOnNext(info -> log.info(info.toString())).subscribe();
   }
 
-private void initializeTabCounts() {
-  genomicsTab.setMeasurementCount(rawDataService.countNGSDatasets(
-      context.experimentId().orElseThrow()));
-  proteomicsTab.setMeasurementCount(rawDataService.countProteomicsDatasets(
-      context.experimentId().orElseThrow()));
-}
+  private void initializeTabCounts() {
+    genomicsTab.setMeasurementCount(remoteRawDataService.countNGSDatasets(
+        context.experimentId().orElseThrow()));
+    proteomicsTab.setMeasurementCount(remoteRawDataService.countProteomicsDatasets(
+        context.experimentId().orElseThrow()));
+  }
 
   /*Vaadin provides no easy way to remove all tabs in a tabSheet*/
   private void resetTabsInTabsheet() {
@@ -160,13 +176,14 @@ private void initializeTabCounts() {
           .collect(Collectors.toList());
       // if no order is provided by the grid order by last modified (least priority)
       sortOrders.add(SortOrder.of("measurementId").ascending());
-      return rawDataService.findNGSRawData(searchTerm,
+      return remoteRawDataService.findNGSRawData(searchTerm,
               context.experimentId().orElseThrow(),
               query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
           .stream();
     });
     ngsRawDataGrid.getLazyDataView().addItemCountChangeListener(
-            countChangeEvent -> genomicsTab.setMeasurementCount((int) ngsGridDataView.getItems().count()));
+        countChangeEvent -> genomicsTab.setMeasurementCount(
+            (int) ngsGridDataView.getItems().count()));
     ngsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
     rawDataGridDataViews.add(ngsGridDataView);
   }
@@ -199,13 +216,14 @@ private void initializeTabCounts() {
               .collect(Collectors.toList());
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementId").ascending());
-          return rawDataService.findProteomicsRawData(searchTerm,
+          return remoteRawDataService.findProteomicsRawData(searchTerm,
                   context.experimentId().orElseThrow(),
                   query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
               .stream();
         });
     proteomicsRawDataGrid.getLazyDataView().addItemCountChangeListener(
-            countChangeEvent -> proteomicsTab.setMeasurementCount((int) proteomicsGridDataView.getItems().count()));
+        countChangeEvent -> proteomicsTab.setMeasurementCount(
+            (int) proteomicsGridDataView.getItems().count()));
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
 

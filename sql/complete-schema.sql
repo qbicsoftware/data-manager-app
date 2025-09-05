@@ -1,3 +1,38 @@
+CREATE TABLE IF NOT EXISTS shedlock
+(
+    name       VARCHAR(64)  NOT NULL PRIMARY KEY,
+    lock_until TIMESTAMP(3) NOT NULL,
+    locked_at  TIMESTAMP(3) NOT NULL,
+    locked_by  VARCHAR(255) NOT NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sync_control
+(
+    job_name        VARCHAR(64) PRIMARY KEY,
+    sync_offset     BIGINT UNSIGNED,
+    updated_since   DATETIME(3) NOT NULL,
+    last_success_at DATETIME(3) NOT NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS remote_measurement_data
+(
+    measurement_id       VARCHAR(255) PRIMARY KEY,
+    file_count           BIGINT UNSIGNED,
+    file_types           TEXT,
+    registration_at      DATETIME(3)     NOT NULL,
+    total_filesize_bytes BIGINT UNSIGNED NOT NULL,
+    updated_at           DATETIME(3)     NOT NULL,
+    deleted              BOOLEAN         NOT NULL DEFAULT FALSE,
+    last_sync_at         DATETIME(3)     NOT NULL,
+    KEY (updated_at)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `acl_class`
 (
     `id`            bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -70,20 +105,20 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `lastModified`                      datetime(6)  NOT NULL,
     `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
     `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
-    `principalInvestigatorOidc`       varchar(255) DEFAULT NULL,
-    `principalInvestigatorOidcIssuer` varchar(255) DEFAULT NULL,
+    `principalInvestigatorOidc`         varchar(255)  DEFAULT NULL,
+    `principalInvestigatorOidcIssuer`   varchar(255)  DEFAULT NULL,
     `projectCode`                       varchar(255)  DEFAULT NULL,
     `objective`                         varchar(2000) DEFAULT NULL,
     `projectTitle`                      varchar(255)  DEFAULT NULL,
     `projectManagerEmailAddress`        varchar(255)  DEFAULT NULL,
     `projectManagerFullName`            varchar(255)  DEFAULT NULL,
-    `projectManagerOidc`              varchar(255) DEFAULT NULL,
-    `projectManagerOidcIssuer`        varchar(255) DEFAULT NULL,
+    `projectManagerOidc`                varchar(255)  DEFAULT NULL,
+    `projectManagerOidcIssuer`          varchar(255)  DEFAULT NULL,
     `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
-    `responsiblePersonOidc`       varchar(255) DEFAULT NULL,
-    `responsiblePersonOidcIssuer` varchar(255) DEFAULT NULL,
-    `version` int NOT NULL,
+    `responsiblePersonOidc`             varchar(255)  DEFAULT NULL,
+    `responsiblePersonOidcIssuer`       varchar(255)  DEFAULT NULL,
+    `version`                           int          NOT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -97,7 +132,7 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager`
     `speciesIconName`  varchar(31)  NOT NULL DEFAULT 'default',
     `specimenIconName` varchar(31)  NOT NULL DEFAULT 'default',
     `project`          varchar(255)          DEFAULT NULL,
-    `version` varchar(255) NOT NULL,
+    `version`          varchar(255) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `FKgfrw5hlq3iy6ntf32wy0e8hr` (`project`),
     CONSTRAINT `FKgfrw5hlq3iy6ntf32wy0e8hr` FOREIGN KEY (`project`) REFERENCES `projects_datamanager` (`projectId`)
@@ -655,6 +690,142 @@ FROM projects_datamanager pd
          LEFT JOIN (SELECT project_userinfo.projectId,
                            GROUP_CONCAT(project_userinfo.userName SEPARATOR ', ') AS `usernames`,
                            JSON_ARRAYAGG(JSON_OBJECT('userId', project_userinfo.userId, 'userName',
-                                                     project_userinfo.userName)) AS `userInfos`
+                                                     project_userinfo.userName))  AS `userInfos`
                     FROM project_userinfo
                     GROUP BY projectId) AS users ON users.projectId = pd.projectId;
+
+CREATE OR REPLACE VIEW v_ngs_measurement_sample_json AS
+SELECT m.measurement_id,
+       m.facility,
+       m.flowcell,
+       m.instrument,
+       m.libraryKit,
+       m.measurementCode,
+       m.IRI,
+       m.label                                                                           AS measurement_label,
+       m.projectId,
+       m.registrationTime,
+       m.samplePool,
+       m.readType,
+       m.runProtocol,
+
+    /* Per-measurement JSON array of samples (keeps sample fields paired) */
+       IFNULL((SELECT JSON_ARRAYAGG(
+                              JSON_OBJECT(
+                                      'sample_id', s.sample_id,
+                                      'code', s.code,
+                                      'label', s.label,
+                                      'indexI7', smm2.indexI7,
+                                      'indexI5', smm2.indexI5,
+                                      'comment', smm2.comment
+                              )
+                              ORDER BY s.code
+                      )
+               FROM specific_measurement_metadata_ngs smm2
+                        LEFT JOIN sample s ON s.sample_id = smm2.sample_id
+               WHERE smm2.measurement_id = m.measurement_id),
+              JSON_ARRAY())                                                              AS samples_json,
+
+    /* Per-measurement distinct experiment IDs (top-level, not in JSON) */
+       (SELECT GROUP_CONCAT(DISTINCT s2.experiment_id ORDER BY s2.experiment_id SEPARATOR ',')
+        FROM specific_measurement_metadata_ngs smm2
+                 JOIN sample s2 ON s2.sample_id = smm2.sample_id
+        WHERE smm2.measurement_id = m.measurement_id)                                    AS experiment_ids,
+
+    /* Single experiment_id if unique; NULL if mixed or none */
+       (SELECT CASE
+                   WHEN COUNT(DISTINCT s2.experiment_id) = 1
+                       THEN MIN(s2.experiment_id)
+                   ELSE NULL END
+        FROM specific_measurement_metadata_ngs smm2
+                 JOIN sample s2 ON s2.sample_id = smm2.sample_id
+        WHERE smm2.measurement_id = m.measurement_id)                                    AS experiment_id,
+
+    /* Handy count */
+       JSON_LENGTH(IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT('sample_id', s.sample_id))
+                           FROM specific_measurement_metadata_ngs smm2
+                                    LEFT JOIN sample s ON s.sample_id = smm2.sample_id
+                           WHERE smm2.measurement_id = m.measurement_id),
+                          JSON_ARRAY()))                                                 AS sample_count,
+
+    /* remote_measurement_data via measurementCode */
+       rmd.file_count,
+       rmd.file_types,
+       rmd.registration_at,
+       rmd.total_filesize_bytes,
+       rmd.updated_at                                                                    AS rmd_updated_at,
+       rmd.deleted                                                                       AS rmd_deleted,
+       rmd.last_sync_at
+FROM ngs_measurements m
+         INNER JOIN remote_measurement_data rmd
+                    ON rmd.measurement_id = m.measurementCode;
+
+CREATE OR REPLACE VIEW v_pxp_measurement_sample_json AS
+SELECT p.measurement_id,
+       p.digestionEnzyme,
+       p.digestionMethod,
+       p.enrichmentMethod,
+       p.facility,
+       p.injectionVolume,
+       p.instrument,
+       p.labelType,
+       p.lcColumn,
+       p.lcmsMethod,
+       p.measurementCode,
+       p.IRI,
+       p.label                                                                           AS measurement_label,
+       p.projectId,
+       p.registration,
+       p.samplePool,
+       p.technicalReplicateName,
+
+    /* Per-measurement JSON array of samples (keeps sample fields paired) */
+       IFNULL((SELECT JSON_ARRAYAGG(
+                              JSON_OBJECT(
+                                      'sample_id', s.sample_id,
+                                      'code', s.code,
+                                      'label', s.label,
+                                      'fractionName', pxp2.fractionName,
+                                      'metaLabel', pxp2.label,
+                                      'comment', pxp2.comment
+                              )
+                              ORDER BY s.code
+                      )
+               FROM specific_measurement_metadata_pxp pxp2
+                        LEFT JOIN sample s ON s.sample_id = pxp2.sample_id
+               WHERE pxp2.measurement_id = p.measurement_id),
+              JSON_ARRAY())                                                              AS samples_json,
+
+    /* Per-measurement distinct experiment IDs (top-level, not in JSON) */
+       (SELECT GROUP_CONCAT(DISTINCT s2.experiment_id ORDER BY s2.experiment_id SEPARATOR ',')
+        FROM specific_measurement_metadata_pxp pxp2
+                 JOIN sample s2 ON s2.sample_id = pxp2.sample_id
+        WHERE pxp2.measurement_id = p.measurement_id)                                    AS experiment_ids,
+
+    /* Single experiment_id if unique; NULL if mixed or none */
+       (SELECT CASE
+                   WHEN COUNT(DISTINCT s2.experiment_id) = 1
+                       THEN MIN(s2.experiment_id)
+                   ELSE NULL END
+        FROM specific_measurement_metadata_pxp pxp2
+                 JOIN sample s2 ON s2.sample_id = pxp2.sample_id
+        WHERE pxp2.measurement_id = p.measurement_id)                                    AS experiment_id,
+
+    /* Handy count */
+       JSON_LENGTH(IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT('sample_id', s.sample_id))
+                           FROM specific_measurement_metadata_pxp pxp2
+                                    LEFT JOIN sample s ON s.sample_id = pxp2.sample_id
+                           WHERE pxp2.measurement_id = p.measurement_id),
+                          JSON_ARRAY()))                                                 AS sample_count,
+
+    /* remote_measurement_data via measurementCode */
+       rmd.file_count,
+       rmd.file_types,
+       rmd.registration_at,
+       rmd.total_filesize_bytes,
+       rmd.updated_at                                                                    AS rmd_updated_at,
+       rmd.deleted                                                                       AS rmd_deleted,
+       rmd.last_sync_at
+FROM proteomics_measurement p
+         INNER JOIN remote_measurement_data rmd
+                    ON rmd.measurement_id = p.measurementCode;
