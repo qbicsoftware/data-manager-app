@@ -26,7 +26,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.dom.DisabledUpdateMode;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -178,38 +177,18 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         .anyMatch(VariableRow::hasChanges);
   }
 
-  record VariablesSnapshot(Instant timestamp, List<Snapshot> variableSnapshots,
+  record VariablesSnapshot(List<Snapshot> variableSnapshots,
                            @Nullable Snapshot initialState) implements Snapshot {
 
     public VariablesSnapshot {
       variableSnapshots = variableSnapshots.stream().toList();
     }
 
-    @Override
-    public Optional<String> getName() {
-      return Optional.empty();
-    }
-
-    @Override
-    public Instant getTimestamp() {
-      return timestamp();
-    }
-
-    @Override
-    public boolean holdsEqualState(Snapshot snapshot) {
-      if (snapshot instanceof VariablesSnapshot other) {
-        return other.variableSnapshots().size() == variableSnapshots().size()
-            && variableSnapshots().stream().allMatch(variable -> other.variableSnapshots().stream()
-            .anyMatch(it -> it.holdsEqualState(variable)));
-      }
-      return false;
-    }
   }
 
   @Override
   public Snapshot snapshot() {
-    return new VariablesSnapshot(Instant.now(),
-        getVariableRows().stream().map(VariableRow::snapshot).toList(),
+    return new VariablesSnapshot(getVariableRows().stream().map(VariableRow::snapshot).toList(),
         initialState);
   }
 
@@ -330,7 +309,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     @Override
     public boolean hasChanges() {
       return variableLevels.hasChanges() ||
-          !initialState.holdsEqualState(snapshot());
+          !initialState.equals(snapshot());
     }
 
     public class InvalidChangesException extends RuntimeException {
@@ -378,37 +357,15 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       throw new IllegalStateException();
     }
 
-    record ExperimentalVariableSnapshot(Instant timestamp, String name, String unit,
+    record ExperimentalVariableSnapshot(String name, String unit,
                                         Snapshot levels, @Nullable Snapshot initialState) implements
         Snapshot, Serializable {
 
-      @Override
-      public Optional<String> getName() {
-        return Optional.empty();
-      }
-
-      @Override
-      public Instant getTimestamp() {
-        return timestamp();
-      }
-
-      @Override
-      public boolean holdsEqualState(Snapshot snapshot) {
-        if (snapshot instanceof ExperimentalVariableSnapshot(
-            Instant ignored, String otherName, String otherUnit, Snapshot otherLevels,
-            Snapshot ignoredInitialState
-        )) {
-          return name().equals(otherName)
-              && unit().equals(otherUnit)
-              && levels().holdsEqualState(otherLevels);
-        }
-        return false;
-      }
     }
 
     @Override
     public Snapshot snapshot() {
-      return new ExperimentalVariableSnapshot(Instant.now(), name.getValue(), unit.getValue(),
+      return new ExperimentalVariableSnapshot(name.getValue(), unit.getValue(),
           variableLevels.snapshot(), initialState);
     }
 
@@ -436,10 +393,6 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     public record VariableAdded(String name, String unit, List<String> levels) implements
         VariableChange {
-
-    }
-
-    public record VariableDeleted(String name) implements VariableChange {
 
     }
 
@@ -673,35 +626,10 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       return filledLevels().isEmpty();
     }
 
-    private record LevelsSnapshot(Instant timestamp, List<Snapshot> levels) implements Snapshot {
-
-      private LevelsSnapshot(List<Snapshot> levels) {
-        this(Instant.now(), levels);
-      }
+    private record LevelsSnapshot(List<Snapshot> levels) implements Snapshot {
 
       private LevelsSnapshot {
-        Objects.requireNonNull(timestamp);
         levels = levels.stream().toList(); //make it unmodifiable
-      }
-
-      @Override
-      public Optional<String> getName() {
-        return Optional.empty();
-      }
-
-      @Override
-      public Instant getTimestamp() {
-        return timestamp();
-      }
-
-      @Override
-      public boolean holdsEqualState(Snapshot snapshot) {
-        if (snapshot instanceof LevelsSnapshot levelsSnapshot) {
-          return levelsSnapshot.levels().size() == levels().size() &&
-              levelsSnapshot.levels().stream().allMatch(
-                  level -> levels().stream().anyMatch(it -> it.holdsEqualState(level)));
-        }
-        return false;
       }
 
     }
@@ -907,37 +835,19 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       return addListener(DeleteLevelEvent.class, listener);
     }
 
-    record LevelSnapshot(@NonNull Instant timestamp, @NonNull String levelValue) implements
+    record LevelSnapshot(@NonNull String levelValue) implements
         Snapshot,
         Serializable {
 
       LevelSnapshot {
-        Objects.requireNonNull(timestamp);
         Objects.requireNonNull(levelValue);
       }
 
-      @Override
-      public Optional<String> getName() {
-        return Optional.empty();
-      }
-
-      @Override
-      public Instant getTimestamp() {
-        return timestamp();
-      }
-
-      @Override
-      public boolean holdsEqualState(Snapshot snapshot) {
-        if (snapshot instanceof LevelSnapshot other) {
-          return other.levelValue().equals(levelValue());
-        }
-        return false;
-      }
     }
 
     @Override
     public Snapshot snapshot() {
-      return new LevelSnapshot(Instant.now(), levelValue.getValue());
+      return new LevelSnapshot(levelValue.getValue());
     }
 
     @Override
