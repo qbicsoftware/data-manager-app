@@ -49,7 +49,8 @@ public class MeasurementRegistrationProcessorNGS implements
           commonMetadata.flowCell(),
           commonMetadata.sequencingRunProtocol(),
           commonMetadata.samplePoolGroup(),
-          specificMetadata);
+          specificMetadata,
+          commonMetadata.measurementName());
       finalMeasurements.add(pooledMeasurement);
     }
 

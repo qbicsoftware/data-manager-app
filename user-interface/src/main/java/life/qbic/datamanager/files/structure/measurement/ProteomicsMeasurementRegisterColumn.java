@@ -33,8 +33,9 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
   LABELING_TYPE("Labeling Type", 13, false, false),
   LABEL("Label", 14, false, false),
   INJECTION_VOLUME("Injection Volume (µL)", 15, false, false),
-  COMMENT("Comment", 16, false, false),
-  ;
+  MEASUREMENT_NAME("Measurement Name", 16 , false , false ),
+  COMMENT("Comment", 17, false, false);
+
   private final String headerName;
   private final int columnIndex;
   private final boolean readOnly;
@@ -79,6 +80,7 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
             "The label type that has been used to label the sample for measurement.");
         case LABEL -> new Helper("Free text, e.g. Light, Medium, Heavy",
             "The label value for the label type that has been used.");
+        case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case COMMENT ->
             new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
       };

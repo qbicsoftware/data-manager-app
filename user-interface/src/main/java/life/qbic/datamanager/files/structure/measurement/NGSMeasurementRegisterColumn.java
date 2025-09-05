@@ -28,8 +28,9 @@ public enum NGSMeasurementRegisterColumn implements Column {
   SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 9, false, false),
   INDEX_I7("Index i7", 10, false, false),
   INDEX_I5("Index i5", 11, false, false),
-  COMMENT("Comment", 12, false, false),
-  ;
+  MEASUREMENT_NAME("Measurement Name", 12, false, false),
+  COMMENT("Comment", 13, false, false);
+
 
   private final String headerName;
   private final int columnIndex;
@@ -68,6 +69,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
             "Index used for multiplexing.");
         case INDEX_I5 -> new Helper("Free text, e.g. NEBNext UDI UMI Set 1 B12 S579",
             "Index used for multiplexing.");
+        case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case COMMENT ->
             new Helper("Free text", "Notes about the measurement. (Max 500 characters)");
       };

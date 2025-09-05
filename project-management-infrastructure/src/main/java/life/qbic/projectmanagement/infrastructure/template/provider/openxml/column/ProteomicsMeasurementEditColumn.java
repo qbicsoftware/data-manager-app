@@ -19,23 +19,24 @@ public enum ProteomicsMeasurementEditColumn implements Column {
   SAMPLE_ID("QBiC Sample Id", 1, true, true),
   SAMPLE_NAME(
       "Sample Name", 2, true, false),
-  POOL_GROUP("Sample Pool Group", 3, true, false),
-  TECHNICAL_REPLICATE_NAME("Technical Replicate", 4, false, false),
-  ORGANISATION_URL("Organisation URL", 5, false, true),
-  ORGANISATION_NAME("Organisation Name", 6, true, false),
-  FACILITY("Facility", 7, false, true),
-  MS_DEVICE("MS Device", 8, false, true),
-  MS_DEVICE_NAME("MS Device Name", 9, true, true),
-  CYCLE_FRACTION_NAME("Cycle/Fraction Name", 10, false, false),
-  DIGESTION_METHOD("Digestion Method", 11, false, true),
-  DIGESTION_ENZYME("Digestion Enzyme", 12, false, true),
-  ENRICHMENT_METHOD("Enrichment Method", 13, false, false),
-  INJECTION_VOLUME("Injection Volume (µL)", 14, false, false),
-  LC_COLUMN("LC Column", 15, false, true),
-  LCMS_METHOD("LCMS Method", 16, false, false),
-  LABELING_TYPE("Labeling Type", 17, false, false),
-  LABEL("Label", 18, false, false),
-  COMMENT("Comment", 19, false, false),
+  MEASUREMENT_NAME("Measurement Name", 3, true, false),
+  POOL_GROUP("Sample Pool Group", 4, true, false),
+  TECHNICAL_REPLICATE_NAME("Technical Replicate", 5, false, false),
+  ORGANISATION_URL("Organisation URL", 6, false, true),
+  ORGANISATION_NAME("Organisation Name", 7, true, false),
+  FACILITY("Facility", 8, false, true),
+  MS_DEVICE("MS Device", 9, false, true),
+  MS_DEVICE_NAME("MS Device Name", 10, true, true),
+  CYCLE_FRACTION_NAME("Cycle/Fraction Name", 11, false, false),
+  DIGESTION_METHOD("Digestion Method", 12, false, true),
+  DIGESTION_ENZYME("Digestion Enzyme", 13, false, true),
+  ENRICHMENT_METHOD("Enrichment Method", 14, false, false),
+  INJECTION_VOLUME("Injection Volume (µL)", 15, false, false),
+  LC_COLUMN("LC Column", 16, false, true),
+  LCMS_METHOD("LCMS Method", 17, false, false),
+  LABELING_TYPE("Labeling Type", 18, false, false),
+  LABEL("Label", 19, false, false),
+  COMMENT("Comment", 20, false, false),
   ;
   private final String headerName;
   private final int columnIndex;
@@ -51,6 +52,7 @@ public enum ProteomicsMeasurementEditColumn implements Column {
             "The sample(s) that will be linked to the measurement.");
         case SAMPLE_NAME -> new Helper("Free text, e.g. MySample 01",
             "A visual aid to simplify sample navigation for the person managing the metadata. Will be ignored after upload.");
+        case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
         case TECHNICAL_REPLICATE_NAME -> new Helper("Free text, e.g. Sample 1A, Sample 1B",

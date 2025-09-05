@@ -51,6 +51,8 @@ public class MeasurementUpdateMetadataConverterNGS implements
           NGSMeasurementEditColumn.INDEX_I5.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i,
           NGSMeasurementEditColumn.COMMENT.headerName(), "");
+      var measurementName = parsingResult.getValueOrDefault(i,
+          NGSMeasurementEditColumn.MEASUREMENT_NAME.headerName(), "");
 
       var specificMetadata = new MeasurementSpecificNGS(indexI7, indexI5, comment);
 
@@ -64,7 +66,8 @@ public class MeasurementUpdateMetadataConverterNGS implements
           flowCell,
           runProtocol,
           poolGroup,
-          Map.of(sampleId, specificMetadata)
+          Map.of(sampleId, specificMetadata),
+          measurementName
       );
       convertedElements.add(metaDatum);
     }

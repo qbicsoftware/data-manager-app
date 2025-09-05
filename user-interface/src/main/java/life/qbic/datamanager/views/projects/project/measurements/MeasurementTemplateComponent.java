@@ -60,13 +60,17 @@ public class MeasurementTemplateComponent extends Div {
         "gap-03");
     var descriptionElement = new Div(description);
     descriptionElement.addClassNames("normal-body-text");
-
+    var failureToast = messageFactory.toast("task.failed", new Object[]{"Template generation"}, getLocale());
     var inProgressToast = messageFactory.pendingTaskToast("measurement.preparing-download",
         MessageSourceNotificationFactory.EMPTY_PARAMETERS, getLocale());
-    var downloadButton = new Button(buttonText, e -> { // TODO implement
+    var downloadButton = new Button(buttonText, e -> {
       templateMono
           .doOnSubscribe(ignored -> openToast(inProgressToast))
           .doOnSuccess(this::triggerDownload).doOnTerminate(() -> closeToast(inProgressToast))
+          .doOnError(throwable -> {
+            closeToast(inProgressToast);
+            openToast(failureToast);
+          })
           .subscribe();
     });
     var buttonElement = new Div(downloadButton);

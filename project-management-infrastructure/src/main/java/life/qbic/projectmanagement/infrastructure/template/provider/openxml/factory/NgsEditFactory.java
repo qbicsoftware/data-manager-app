@@ -40,7 +40,8 @@ public class NgsEditFactory implements WorkbookFactory {
       String runProtocol,
       String indexI7,
       String indexI5,
-      String comment
+      String comment,
+      String measurementName
   ) {
     public MeasurementEntryNGS {
       Objects.requireNonNull(measurementId);
@@ -82,6 +83,7 @@ public class NgsEditFactory implements WorkbookFactory {
         case NGSMeasurementEditColumn.INDEX_I7 -> ngsMeasurementEntry.indexI7();
         case NGSMeasurementEditColumn.INDEX_I5 -> ngsMeasurementEntry.indexI5();
         case NGSMeasurementEditColumn.COMMENT -> ngsMeasurementEntry.comment();
+        case NGSMeasurementEditColumn.MEASUREMENT_NAME -> ngsMeasurementEntry.measurementName();
       };
       var cell = XLSXTemplateHelper.getOrCreateCell(entryRow, measurementColumn.index());
       cell.setCellValue(value);

@@ -151,7 +151,8 @@ public interface TemplateProvider {
                                    String instrumentIRI, String instrumentName, String facility,
                                    String sequencingReadType, String libraryKit, String flowCell,
                                    String sequencingRunProtocol, String samplePoolGroup,
-                                   Map<String, MeasurementSpecificNGS> specificMetadata) {
+                                   Map<String, MeasurementSpecificNGS> specificMetadata,
+                                   String measurementName) {
 
     public MeasurementInformationNGS {
       requireNonNull(measurementId);
@@ -167,6 +168,7 @@ public interface TemplateProvider {
       requireNonNull(samplePoolGroup);
       requireNonNull(specificMetadata);
       specificMetadata = new HashMap<>(specificMetadata);
+      requireNonNull(measurementName);
     }
 
     /**
@@ -240,7 +242,8 @@ public interface TemplateProvider {
       String lcColumn,
       String lcmsMethod,
       String labelingType,
-      Map<String, MeasurementSpecificPxP> specificMetadata
+      Map<String, MeasurementSpecificPxP> specificMetadata,
+      String measurementName
   ) {
 
     public MeasurementInformationPxP {
@@ -260,6 +263,7 @@ public interface TemplateProvider {
       requireNonNull(labelingType);
       requireNonNull(specificMetadata);
       specificMetadata = new HashMap<>(specificMetadata);
+      requireNonNull(measurementName);
     }
 
     /**

@@ -52,7 +52,8 @@ public class MeasurementRegistrationProcessorPxP implements MeasurementProcessor
           commonMetadata.lcColumn(),
           commonMetadata.lcmsMethod(),
           commonMetadata.labelingType(),
-          specificMetadata);
+          specificMetadata,
+          commonMetadata.measurementName());
       finalMeasurements.add(pooledMeasurement);
     }
 

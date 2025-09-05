@@ -44,7 +44,8 @@ public class ProteomicsEditFactory implements WorkbookFactory {
     String lcmsMethod,
     String labelingType,
     String label,
-    String comment) {
+    String comment,
+    String measurementName) {
   }
 
   @Override
@@ -132,6 +133,7 @@ public class ProteomicsEditFactory implements WorkbookFactory {
         case ProteomicsMeasurementEditColumn.LABELING_TYPE -> pxpEntry.labelingType();
         case ProteomicsMeasurementEditColumn.LABEL -> pxpEntry.label();
         case ProteomicsMeasurementEditColumn.COMMENT -> pxpEntry.comment();
+        case ProteomicsMeasurementEditColumn.MEASUREMENT_NAME -> pxpEntry.measurementName();
       };
       var cell = XLSXTemplateHelper.getOrCreateCell(entryRow, measurementColumn.index());
       cell.setCellValue(value);

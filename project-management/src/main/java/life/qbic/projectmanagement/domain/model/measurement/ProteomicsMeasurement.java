@@ -90,6 +90,9 @@ public class ProteomicsMeasurement {
   @Column(name = "lcColumn")
   private String lcColumn = "";
 
+  @Column(name = "measurementName")
+  private String measurementName;
+
   @ElementCollection(targetClass = ProteomicsSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
   @CollectionTable(name = "specific_measurement_metadata_pxp", joinColumns = @JoinColumn(name = "measurement_id"))
   private Set<ProteomicsSpecificMeasurementMetadata> specificMetadata;
@@ -302,6 +305,14 @@ public class ProteomicsMeasurement {
   public void setOrganisation(Organisation organisation) {
     this.organisation = organisation;
     emitUpdatedEvent();
+  }
+
+  public String measurementName() {
+    return measurementName;
+  }
+
+  public void setMeasurementName(String measurementName) {
+    this.measurementName = measurementName;
   }
 
   @Override

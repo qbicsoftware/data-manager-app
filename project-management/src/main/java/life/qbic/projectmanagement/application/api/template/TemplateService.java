@@ -225,7 +225,8 @@ public class TemplateService {
         measurement.lcmsMethod(),
         measurement.labelType(),
         convertSpecificMetadataPxP(measurement.specificMetadata().stream().toList(),
-            sampleNameById)
+            sampleNameById),
+        measurement.measurementName()
     );
   }
 
@@ -277,7 +278,8 @@ public class TemplateService {
         measurement.sequencingRunProtocol().orElse(""),
         measurement.samplePoolGroup().orElse(""),
         convertSpecificMetadataNGS(measurement.specificMeasurementMetadata().stream().toList(),
-            sampleNameById)
+            sampleNameById),
+        measurement.measurementName()
     );
   }
 

@@ -128,7 +128,8 @@ public class TemplateProviderOpenXML implements TemplateProvider {
           req.lcmsMethod(),
           req.labelingType(),
           specificData.label(),
-          specificData.comment()
+          specificData.comment(),
+          req.measurementName()
       );
       entries.add(entry);
     }
@@ -155,7 +156,8 @@ public class TemplateProviderOpenXML implements TemplateProvider {
           req.sequencingRunProtocol(),
           specificData.indexI7(),
           specificData.indexI5(),
-          specificData.comment()
+          specificData.comment(),
+          req.measurementName()
       );
       entries.add(entry);
     }

@@ -70,20 +70,20 @@ CREATE TABLE IF NOT EXISTS `projects_datamanager`
     `lastModified`                      datetime(6)  NOT NULL,
     `principalInvestigatorEmailAddress` varchar(255)  DEFAULT NULL,
     `principalInvestigatorFullName`     varchar(255)  DEFAULT NULL,
-    `principalInvestigatorOidc`       varchar(255) DEFAULT NULL,
-    `principalInvestigatorOidcIssuer` varchar(255) DEFAULT NULL,
+    `principalInvestigatorOidc`         varchar(255)  DEFAULT NULL,
+    `principalInvestigatorOidcIssuer`   varchar(255)  DEFAULT NULL,
     `projectCode`                       varchar(255)  DEFAULT NULL,
     `objective`                         varchar(2000) DEFAULT NULL,
     `projectTitle`                      varchar(255)  DEFAULT NULL,
     `projectManagerEmailAddress`        varchar(255)  DEFAULT NULL,
     `projectManagerFullName`            varchar(255)  DEFAULT NULL,
-    `projectManagerOidc`              varchar(255) DEFAULT NULL,
-    `projectManagerOidcIssuer`        varchar(255) DEFAULT NULL,
+    `projectManagerOidc`                varchar(255)  DEFAULT NULL,
+    `projectManagerOidcIssuer`          varchar(255)  DEFAULT NULL,
     `responsibePersonEmailAddress`      varchar(255)  DEFAULT NULL,
     `responsibePersonFullName`          varchar(255)  DEFAULT NULL,
-    `responsiblePersonOidc`       varchar(255) DEFAULT NULL,
-    `responsiblePersonOidcIssuer` varchar(255) DEFAULT NULL,
-    `version` int NOT NULL,
+    `responsiblePersonOidc`             varchar(255)  DEFAULT NULL,
+    `responsiblePersonOidcIssuer`       varchar(255)  DEFAULT NULL,
+    `version`                           int          NOT NULL,
     PRIMARY KEY (`projectId`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `experiments_datamanager`
     `speciesIconName`  varchar(31)  NOT NULL DEFAULT 'default',
     `specimenIconName` varchar(31)  NOT NULL DEFAULT 'default',
     `project`          varchar(255)          DEFAULT NULL,
-    `version` varchar(255) NOT NULL,
+    `version`          varchar(255) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `FKgfrw5hlq3iy6ntf32wy0e8hr` (`project`),
     CONSTRAINT `FKgfrw5hlq3iy6ntf32wy0e8hr` FOREIGN KEY (`project`) REFERENCES `projects_datamanager` (`projectId`)
@@ -283,6 +283,7 @@ CREATE TABLE IF NOT EXISTS `ngs_measurements`
     `samplePool`       varchar(255) DEFAULT NULL,
     `readType`         varchar(255) DEFAULT NULL,
     `runProtocol`      varchar(255) DEFAULT NULL,
+    `measurementName`  varchar(255) DEFAULT NULL,
     PRIMARY KEY (`measurement_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -368,6 +369,7 @@ CREATE TABLE IF NOT EXISTS `proteomics_measurement`
     `registration`           datetime(6)  DEFAULT NULL,
     `samplePool`             varchar(255) DEFAULT NULL,
     `technicalReplicateName` varchar(255) DEFAULT NULL,
+    `measurementName`        varchar(255) DEFAULT NULL,
     PRIMARY KEY (`measurement_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -655,6 +657,6 @@ FROM projects_datamanager pd
          LEFT JOIN (SELECT project_userinfo.projectId,
                            GROUP_CONCAT(project_userinfo.userName SEPARATOR ', ') AS `usernames`,
                            JSON_ARRAYAGG(JSON_OBJECT('userId', project_userinfo.userId, 'userName',
-                                                     project_userinfo.userName)) AS `userInfos`
+                                                     project_userinfo.userName))  AS `userInfos`
                     FROM project_userinfo
                     GROUP BY projectId) AS users ON users.projectId = pd.projectId;
