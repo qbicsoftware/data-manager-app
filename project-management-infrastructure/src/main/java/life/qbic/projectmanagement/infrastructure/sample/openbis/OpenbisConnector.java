@@ -112,7 +112,8 @@ public class OpenbisConnector implements QbicProjectDataRepo, SampleDataReposito
     final String openbisApplicationUrl = asUrl + IApplicationServerApi.SERVICE_URL;
     final String openbisDssUrl = dssUrl + IDataStoreServerApi.SERVICE_URL;
 
-    this.openBisSession = new OpenbisSession(vaultConfig.vault(), openbisApplicationUrl);
+    //this.openBisSession = new OpenbisSession(vaultConfig.vault(), openbisApplicationUrl);
+    this.openBisSession=null;
     this.applicationServer = ApiV3.applicationServer(openbisApplicationUrl);
     this.datastoreServer = ApiV3.dataStoreServer(openbisDssUrl);
   }

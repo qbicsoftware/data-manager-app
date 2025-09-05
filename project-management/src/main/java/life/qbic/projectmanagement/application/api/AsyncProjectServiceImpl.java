@@ -697,6 +697,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return applySecurityContext(Mono.fromCallable(
         () -> templateService.measurementUpdateTemplateNGS(projectId, measurementIds,
             mimeType)))
+        .doOnError(e -> log.error("Error updating measurement " + measurementIds, e))
+        .onErrorMap(e -> mapToAPIException(e, "Error updating measurement " + measurementIds))
         .subscribeOn(scheduler)
         .contextWrite(reactiveSecurity(securityContext));
   }

@@ -283,11 +283,11 @@ public class NGSMeasurement {
     LocalDomainEventDispatcher.instance().dispatch(measurementCreatedEvent);
   }
 
-  private String measurementName() {
+  public String measurementName() {
     return this.measurementName;
   }
 
-  private void setMeasurementName(String measurementName) {
+  public void setMeasurementName(String measurementName) {
     this.measurementName = measurementName;
   }
 
