@@ -18,7 +18,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
 
   SAMPLE_ID("QBiC Sample Id", 0, false, true),
   SAMPLE_NAME("Sample Name", 1, true, false),
-  MEASUREMENT_NAME("Measurement Name", 2, true, false),
+  MEASUREMENT_NAME("Measurement Name", 2, false, false),
   POOL_GROUP("Sample Pool Group", 3, false, false),
   ORGANISATION_URL("Organisation URL", 4, false, true),
   FACILITY("Facility", 5, false, true),
