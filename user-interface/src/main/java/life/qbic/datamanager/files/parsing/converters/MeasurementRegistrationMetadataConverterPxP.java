@@ -55,6 +55,8 @@ public class MeasurementRegistrationMetadataConverterPxP implements
           ProteomicsMeasurementRegisterColumn.LABEL.headerName(), "");
       var comment = parsingResult.getValueOrDefault(i,
           ProteomicsMeasurementRegisterColumn.COMMENT.headerName(), "");
+      var measurementName = parsingResult.getValueOrDefault(i,
+          ProteomicsMeasurementRegisterColumn.MEASUREMENT_NAME.headerName(), "");
 
       var specificMetadata = new MeasurementSpecificPxP(label, fractionName, comment);
 
@@ -71,7 +73,8 @@ public class MeasurementRegistrationMetadataConverterPxP implements
           lcColumn,
           lcmsMethod,
           labelingType,
-          Map.of(sampleId, specificMetadata)
+          Map.of(sampleId, specificMetadata),
+          measurementName
       );
       result.add(metaDatum);
     }

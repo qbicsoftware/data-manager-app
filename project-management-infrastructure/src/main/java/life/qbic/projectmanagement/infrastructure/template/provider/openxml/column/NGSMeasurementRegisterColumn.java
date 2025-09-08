@@ -18,17 +18,18 @@ public enum NGSMeasurementRegisterColumn implements Column {
 
   SAMPLE_ID("QBiC Sample Id", 0, false, true),
   SAMPLE_NAME("Sample Name", 1, true, false),
-  POOL_GROUP("Sample Pool Group", 2, false, false),
-  ORGANISATION_URL("Organisation URL", 3, false, true),
-  FACILITY("Facility", 4, false, true),
-  INSTRUMENT("Instrument", 5, false, true),
-  SEQUENCING_READ_TYPE("Sequencing Read Type", 6, false, true),
-  LIBRARY_KIT("Library Kit", 7, false, false),
-  FLOW_CELL("Flow Cell", 8, false, false),
-  SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 9, false, false),
-  INDEX_I7("Index i7", 10, false, false),
-  INDEX_I5("Index i5", 11, false, false),
-  COMMENT("Comment", 12, false, false),
+  MEASUREMENT_NAME("Measurement Name", 2, false, false),
+  POOL_GROUP("Sample Pool Group", 3, false, false),
+  ORGANISATION_URL("Organisation URL", 4, false, true),
+  FACILITY("Facility", 5, false, true),
+  INSTRUMENT("Instrument", 6, false, true),
+  SEQUENCING_READ_TYPE("Sequencing Read Type", 7, false, true),
+  LIBRARY_KIT("Library Kit", 8, false, false),
+  FLOW_CELL("Flow Cell", 9, false, false),
+  SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 10, false, false),
+  INDEX_I7("Index i7", 11, false, false),
+  INDEX_I5("Index i5", 12, false, false),
+  COMMENT("Comment", 13, false, false),
   ;
 
   private final String headerName;
@@ -43,6 +44,7 @@ public enum NGSMeasurementRegisterColumn implements Column {
             "The sample(s) that will be linked to the measurement.");
         case SAMPLE_NAME -> new Helper("Free text, e.g. RNA Sample 1, RNA Sample 2",
             "A visual aid to simplify sample navigation for the person managing the metadata. Is ignored after upload.");
+        case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
         case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """

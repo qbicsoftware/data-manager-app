@@ -553,8 +553,8 @@ public interface AsyncProjectService {
    *
    * @param projectId the technical id of the project
    * @return the natural id of the project, the {@link ProjectCode} which is known to the user.
-   * @throws RequestFailedException  if the request was not successfully executed
-   * @throws AccessDeniedException   if the user has insufficient rights
+   * @throws RequestFailedException if the request was not successfully executed
+   * @throws AccessDeniedException  if the user has insufficient rights
    * @since 1.11.0
    */
   Mono<ProjectCode> getProjectCode(String projectId);
@@ -1948,13 +1948,17 @@ public interface AsyncProjectService {
    *                              {@link Map}, with the sample ids as keys and the sample-specific
    *                              measurement annotations as values. Will have only one entry if no
    *                              pooling was done. {@link MeasurementSpecificNGS}
+   * @param measurementName       a given name for the measurement. For example a local ID or label
+   *                              that helps users to connect the created dataset with the
+   *                              registered metadata
    * @since 1.10.0
    */
   record MeasurementRegistrationInformationNGS(
       String organisationId, String instrumentCURIE, String facility,
       String sequencingReadType, String libraryKit, String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      Map<String, MeasurementSpecificNGS> specificMetadata
+      Map<String, MeasurementSpecificNGS> specificMetadata,
+      String measurementName
   ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
 
     public MeasurementRegistrationInformationNGS {
@@ -1967,7 +1971,9 @@ public interface AsyncProjectService {
       requireNonNull(sequencingRunProtocol);
       requireNonNull(samplePoolGroup);
       requireNonNull(specificMetadata);
+      requireNonNull(measurementName);
       specificMetadata = new HashMap<>(specificMetadata);
+      requireNonNull(measurementName);
     }
 
 
@@ -2000,6 +2006,9 @@ public interface AsyncProjectService {
    *                              {@link Map}, with the sample ids as keys and the sample-specific
    *                              measurement annotations as values. Will have only one entry if no
    *                              pooling was done. {@link MeasurementSpecificNGS}
+   * @param measurementName       a given name for the measurement. For example a local ID or label
+   *                              that helps users to connect the created dataset with the
+   *                              registered metadata
    * @since 1.10.0
    */
   record MeasurementUpdateInformationNGS(
@@ -2009,7 +2018,9 @@ public interface AsyncProjectService {
       String sequencingReadType, String libraryKit,
       String flowCell,
       String sequencingRunProtocol, String samplePoolGroup,
-      Map<String, MeasurementSpecificNGS> specificMetadata) implements ValidationRequestBody,
+      Map<String, MeasurementSpecificNGS> specificMetadata,
+      String measurementName
+  ) implements ValidationRequestBody,
       MeasurementUpdateRequestBody {
 
     public MeasurementUpdateInformationNGS {
@@ -2075,6 +2086,9 @@ public interface AsyncProjectService {
    *                               {@link Map}, with the sample ids as keys and the sample-specific
    *                               measurement annotations as values. Will have only one entry if no
    *                               pooling was done. {@link MeasurementSpecificPxP}
+   * @param measurementName        a given name for the measurement. For example a local ID or label
+   *                               that helps users to connect the created dataset with the
+   *                               registered metadata
    * @since 1.10.0
    */
   record MeasurementRegistrationInformationPxP(
@@ -2090,7 +2104,8 @@ public interface AsyncProjectService {
       String lcColumn,
       String lcmsMethod,
       String labelingType,
-      Map<String, MeasurementSpecificPxP> specificMetadata
+      Map<String, MeasurementSpecificPxP> specificMetadata,
+      String measurementName
   ) implements ValidationRequestBody, MeasurementRegistrationRequestBody {
 
     /**
@@ -2126,6 +2141,9 @@ public interface AsyncProjectService {
    *                               {@link Map}, with the sample ids as keys and the sample-specific
    *                               measurement annotations as values. Will have only one entry if no
    *                               pooling was done. {@link MeasurementSpecificPxP}
+   * @param measurementName        a given name for the measurement. For example a local ID or label
+   *                               that helps users to connect the created dataset with the
+   *                               registered metadata
    * @since 1.10.0
    */
   record MeasurementUpdateInformationPxP(
@@ -2142,7 +2160,8 @@ public interface AsyncProjectService {
       String lcColumn,
       String lcmsMethod,
       String labelingType,
-      Map<String, MeasurementSpecificPxP> specificMetadata
+      Map<String, MeasurementSpecificPxP> specificMetadata,
+      String measurementName
   ) implements ValidationRequestBody, MeasurementUpdateRequestBody {
 
     /**
