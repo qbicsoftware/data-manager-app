@@ -786,6 +786,14 @@ Icons
   color: var(--warning-icon-color)
 }
 
+.icon-color-success {
+  color: var(--icon-color-success);
+}
+
+.icon-color-error {
+  color: var(--icon-color-error);
+}
+
 .icon-size-xs {
   height: var(--icon-size-xs);
   width: var(--icon-size-xs);
@@ -821,6 +829,7 @@ Icons
 .icon-color-default {
   color: var(--icon-color);
 }
+
 
 .icon-text-white {
   color: white;
@@ -876,6 +885,11 @@ Icons
 
 .justify-self-center {
   justify-self: center;
+}
+
+.justify-content-space-between,
+.justify-space-between {
+  justify-content: space-between;
 }
 
 .justify-center {
@@ -1256,6 +1270,23 @@ Older stuff -
 
 .background-color-grey {
   background-color: #F9F9F9;
+}
+
+/*FIXME*/
+.background-contrast-5pct {
+  background-color: var(--lumo-shade-5pct);
+}
+
+.background-contrast-10pct {
+  background-color: var(--lumo-shade-10pct);
+}
+
+/*FIXME*/
+.choice-box {
+  border-color: var(--lumo-contrast-10pct);
+  border-style: solid;
+  border-width: 1px;
+  border-radius: var(--spacing-02);
 }
 
 .text-justify {

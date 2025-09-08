@@ -52,7 +52,7 @@ import org.springframework.lang.NonNull;
  *
  * @since 1.7.0
  */
-@Profile("test-ui") // This view will only be available when the "test-ui" profile is active
+@Profile("development") // This view will only be available when the "test-ui" profile is active
 @Route("test-view")
 @UIScope
 @AnonymousAllowed

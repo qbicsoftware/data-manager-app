@@ -1,7 +1,5 @@
 package life.qbic.projectmanagement.domain.model.experiment;
 
-import static java.util.Objects.requireNonNull;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
@@ -45,11 +43,11 @@ public class Experiment {
   private String name;
   @Embedded
   private ExperimentalDesign experimentalDesign;
-  @Column(name = "speciesIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  @Column(name = "speciesIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
   private String speciesIconName;
-  @Column(name = "specimenIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  @Column(name = "specimenIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
   private String specimenIconName;
-  @Column(name = "analyteIconName", nullable = false, columnDefinition = "varchar(31) default 'default'")
+  @Column(name = "analyteIconName", nullable = true, columnDefinition = "varchar(31) default 'default'")
   private String analyteIconName;
 
   @Version
@@ -64,7 +62,6 @@ public class Experiment {
   @ElementCollection(targetClass = OntologyTerm.class)
   @Column(name = "specimens", columnDefinition = "longtext CHECK (json_valid(`specimens`))")
   private List<OntologyTerm> specimens = new ArrayList<>();
-  private static final String DEFAULT_ICON_NAME = "default";
 
   /**
    * Please use {@link Experiment#create(String)} instead
@@ -85,10 +82,6 @@ public class Experiment {
   public static Experiment create(String name) {
     Experiment experiment = new Experiment(name);
     experiment.experimentalDesign = ExperimentalDesign.create();
-
-    experiment.speciesIconName = DEFAULT_ICON_NAME;
-    experiment.specimenIconName = DEFAULT_ICON_NAME;
-    experiment.analyteIconName = DEFAULT_ICON_NAME;
 
     return experiment;
   }
@@ -129,32 +122,6 @@ public class Experiment {
     return name;
   }
 
-  public String getSpeciesIconName() {
-    return speciesIconName;
-  }
-
-  public String getSpecimenIconName() {
-    return specimenIconName;
-  }
-
-  public String getAnalyteIconName() {
-    return analyteIconName;
-  }
-
-  public void setIconNames(String speciesIconName, String specimenIconName,
-      String analyteIconName) {
-    this.speciesIconName = validateIconName(speciesIconName);
-    this.specimenIconName = validateIconName(specimenIconName);
-    this.analyteIconName = validateIconName(analyteIconName);
-  }
-
-  private String validateIconName(String iconName) {
-    requireNonNull(iconName, "Icon names must not be null");
-    if (iconName.isBlank()) {
-      throw new ApplicationException("Icon names must not be blank");
-    }
-    return iconName;
-  }
 
   /**
    * Retrieves the list of experimental variables stored within the Experiment.

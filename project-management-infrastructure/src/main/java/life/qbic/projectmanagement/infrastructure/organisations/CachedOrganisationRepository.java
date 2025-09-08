@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure;
+package life.qbic.projectmanagement.infrastructure.organisations;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.domain.Organisation;
+import org.springframework.context.annotation.Profile;
 
 /**
  * <b>Cached Organisation Repository</b>
@@ -34,11 +35,12 @@ import life.qbic.projectmanagement.domain.Organisation;
  *
  * @since 1.0.0s
  */
+@Profile("production")
 public class CachedOrganisationRepository implements OrganisationRepository {
 
   private static final Logger log = logger(CachedOrganisationRepository.class);
   private static final int DEFAULT_CACHE_SIZE = 50;
-  private static final String ROR_API_URL = "https://api.ror.org/organizations/%s";
+  private static final String ROR_API_URL = "https://api.ror.org/v1/organizations/%s";
   private static final String ROR_ID_PATTERN = "0[a-z|0-9]{6}[0-9]{2}$";
   private final Map<String, String> iriToOrganisation = new HashMap<>();
   private final int configuredCacheSize;

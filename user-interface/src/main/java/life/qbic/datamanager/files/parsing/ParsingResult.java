@@ -89,7 +89,18 @@ public record ParsingResult(Map<String, Integer> columnMap, List<Row> rows) {
     return Optional.ofNullable(row.values().get(columnMap().get(key)));
   }
 
+  /**
+   * Returns the total number of parsed entries available in the {@link ParsingResult} object.
+   *
+   * @return the number of parsed entries
+   * @since 1.10.0
+   */
+  public int totalEntries() {
+    return rows.size();
+  }
+
   public record Row(List<String> values) {
+
     public Row(List<String> values) {
       this.values = List.copyOf(values);
     }

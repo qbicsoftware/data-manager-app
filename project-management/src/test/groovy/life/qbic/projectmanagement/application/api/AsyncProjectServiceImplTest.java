@@ -8,12 +8,14 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Random;
 import java.util.UUID;
+import life.qbic.projectmanagement.application.ProjectCreationService;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectDesign;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ProjectUpdateRequest;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
+import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
 import life.qbic.projectmanagement.application.ontology.SpeciesLookupService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
@@ -41,6 +43,8 @@ class AsyncProjectServiceImplTest {
       ExperimentInformationService.class);
   TerminologyService terminologyService = mock(TerminologyService.class);
   SpeciesLookupService taxaService = mock(SpeciesLookupService.class);
+  ProjectCreationService projectCreationService = mock(ProjectCreationService.class);
+  MeasurementService measurementService = mock(MeasurementService.class);
 
   @BeforeEach
   void setUp() {
@@ -67,7 +71,9 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        projectCreationService,
+        measurementService
     );
 
     String projectId = UUID.randomUUID().toString();
@@ -107,7 +113,9 @@ class AsyncProjectServiceImplTest {
         measurementValidationService,
         experimentInformationServiceMock,
         terminologyService,
-        taxaService
+        taxaService,
+        projectCreationService,
+        measurementService
     );
 
     String projectId = UUID.randomUUID().toString();
