@@ -69,7 +69,7 @@ import life.qbic.projectmanagement.application.purchase.ProjectPurchaseService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
 import life.qbic.projectmanagement.application.sample.qualitycontrol.QualityControlService;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
-import life.qbic.projectmanagement.infrastructure.CachedOrganisationRepository;
+import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
