@@ -23,7 +23,9 @@ import life.qbic.projectmanagement.infrastructure.project.QbicProjectDataRepo;
 import life.qbic.projectmanagement.infrastructure.sample.SampleDataRepository;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
+@Component
 @Profile("development")
 public class MockConnector implements QbicProjectDataRepo, SampleDataRepository,
     MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester, DisposableBean {
