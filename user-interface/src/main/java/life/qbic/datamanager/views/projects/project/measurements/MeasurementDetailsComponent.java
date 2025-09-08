@@ -216,6 +216,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
         })
         .setHeader("Samples")
         .setAutoWidth(true);
+    ngsMeasurementGrid.addColumn(NGSMeasurement::measurementName)
+        .setHeader("Measurement Name")
+        .setTooltipGenerator(NGSMeasurement::measurementName)
+        .setAutoWidth(true);
     ngsMeasurementGrid.addColumn(NGSMeasurement::facility)
         .setHeader("Facility")
         .setTooltipGenerator(NGSMeasurement::facility)
@@ -328,6 +332,10 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
           }
           return "";
         })
+        .setAutoWidth(true);
+    proteomicsMeasurementGrid.addColumn(ProteomicsMeasurement::measurementName)
+        .setHeader("Measurement Name")
+        .setTooltipGenerator(ProteomicsMeasurement::measurementName)
         .setAutoWidth(true);
     proteomicsMeasurementGrid.addComponentColumn(
             proteomicsMeasurement -> renderOrganisation(proteomicsMeasurement.organisation()))
@@ -546,6 +554,7 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
   }
 
   public record SelectedMeasurements(Domain domain, List<String> measurementIds) {
+
     public SelectedMeasurements {
       Objects.requireNonNull(domain);
       Objects.requireNonNull(measurementIds);
@@ -805,7 +814,9 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     }
 
     private void handleRequestException(RequestFailedException e) {
-      getUI().ifPresent(ui -> ui.access(() -> notificationFactory.toast("sample.query.failed", new Object[]{}, getLocale()).open()));
+      getUI().ifPresent(ui -> ui.access(
+          () -> notificationFactory.toast("sample.query.failed", new Object[]{}, getLocale())
+              .open()));
     }
 
     private void setDialogHeader() {

@@ -19,21 +19,22 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
   SAMPLE_ID("QBiC Sample Id", 0, false, true),
   SAMPLE_NAME(
       "Sample Name", 1, true, false),
-  POOL_GROUP("Sample Pool Group", 2, false, false),
-  TECHNICAL_REPLICATE_NAME("Technical Replicate", 3, false, false),
-  CYCLE_FRACTION_NAME("Cycle/Fraction Name", 4, false, false),
-  ORGANISATION_URL("Organisation URL", 5, false, true),
-  FACILITY("Facility", 6, false, true),
-  LC_COLUMN("LC Column", 7, false, true),
-  MS_DEVICE("MS Device", 8, false, true),
-  LCMS_METHOD("LCMS Method", 9, false, false),
-  DIGESTION_METHOD("Digestion Method", 10, false, true),
-  DIGESTION_ENZYME("Digestion Enzyme", 11, false, true),
-  ENRICHMENT_METHOD("Enrichment Method", 12, false, false),
-  LABELING_TYPE("Labeling Type", 13, false, false),
-  LABEL("Label", 14, false, false),
-  INJECTION_VOLUME("Injection Volume (µL)", 15, false, false),
-  COMMENT("Comment", 16, false, false),
+  MEASUREMENT_NAME("Measurement Name", 2, false, false),
+  POOL_GROUP("Sample Pool Group", 3, false, false),
+  TECHNICAL_REPLICATE_NAME("Technical Replicate", 4, false, false),
+  CYCLE_FRACTION_NAME("Cycle/Fraction Name", 5, false, false),
+  ORGANISATION_URL("Organisation URL", 6, false, true),
+  FACILITY("Facility", 7, false, true),
+  LC_COLUMN("LC Column", 8, false, true),
+  MS_DEVICE("MS Device", 9, false, true),
+  LCMS_METHOD("LCMS Method", 10, false, false),
+  DIGESTION_METHOD("Digestion Method", 11, false, true),
+  DIGESTION_ENZYME("Digestion Enzyme", 12, false, true),
+  ENRICHMENT_METHOD("Enrichment Method", 13, false, false),
+  LABELING_TYPE("Labeling Type", 14, false, false),
+  LABEL("Label", 15, false, false),
+  INJECTION_VOLUME("Injection Volume (µL)", 16, false, false),
+  COMMENT("Comment", 17, false, false),
   ;
   private final String headerName;
   private final int columnIndex;
@@ -46,6 +47,7 @@ public enum ProteomicsMeasurementRegisterColumn implements Column {
             "The sample(s) that will be linked to the measurement.");
         case SAMPLE_NAME -> new Helper("Free text, e.g. MySample 01",
             "A visual aid to simplify sample navigation for the person managing the metadata. Will be ignored after upload.");
+        case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
         case TECHNICAL_REPLICATE_NAME -> new Helper("Free text, e.g. Sample 1A, Sample 1B",

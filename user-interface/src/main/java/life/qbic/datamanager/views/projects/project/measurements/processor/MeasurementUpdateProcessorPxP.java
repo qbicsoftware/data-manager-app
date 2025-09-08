@@ -79,7 +79,8 @@ public class MeasurementUpdateProcessorPxP implements
           commonMetadata.lcColumn(),
           commonMetadata.lcmsMethod(),
           commonMetadata.labelingType(),
-          specificMetadata);
+          specificMetadata,
+          commonMetadata.measurementName());
       finalMeasurements.add(pooledMeasurement);
     }
     return finalMeasurements;

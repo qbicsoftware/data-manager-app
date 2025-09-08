@@ -75,7 +75,8 @@ public class MeasurementUpdateProcessorNGS implements MeasurementProcessor<Measu
           commonMetadata.flowCell(),
           commonMetadata.sequencingRunProtocol(),
           commonMetadata.samplePoolGroup(),
-          specificMetadata);
+          specificMetadata,
+          commonMetadata.measurementName());
       finalMeasurements.add(pooledMeasurement);
     }
     return finalMeasurements;

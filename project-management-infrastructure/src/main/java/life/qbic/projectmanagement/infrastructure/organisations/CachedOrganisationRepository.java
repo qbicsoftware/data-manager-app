@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure;
+package life.qbic.projectmanagement.infrastructure.organisations;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.OrganisationRepository;
 import life.qbic.projectmanagement.domain.Organisation;
+import org.springframework.context.annotation.Profile;
 
 /**
  * <b>Cached Organisation Repository</b>
@@ -34,6 +35,7 @@ import life.qbic.projectmanagement.domain.Organisation;
  *
  * @since 1.0.0s
  */
+@Profile("production")
 public class CachedOrganisationRepository implements OrganisationRepository {
 
   private static final Logger log = logger(CachedOrganisationRepository.class);
