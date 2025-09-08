@@ -70,6 +70,16 @@ ready to be deployed. The file can be found in the `target` folder after the bui
 Once the JAR file is built, you can run it using
 `java -jar target/datamanager-1.0-SNAPSHOT.jar`
 
+## Maven Profiles
+
+To have all beans available for running the datamanager, you need to set a profile during
+compilation.
+If you plan to deploy it in production or with external systems integrated, use the `production`
+profile.
+
+For local development you can use the `development` profile. This profile will disable and mock
+integration with the TIB service, OpenBis and the ROR repository.
+
 ### Configuration
 
 #### Java Version

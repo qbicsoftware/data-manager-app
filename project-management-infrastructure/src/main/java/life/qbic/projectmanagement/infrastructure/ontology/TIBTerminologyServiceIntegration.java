@@ -30,6 +30,7 @@ import life.qbic.projectmanagement.application.ontology.OntologyClass;
 import life.qbic.projectmanagement.application.ontology.TerminologySelect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 /**
@@ -40,6 +41,7 @@ import org.springframework.stereotype.Service;
  * @since 1.4.0
  */
 @Service
+@Profile("production")
 public class TIBTerminologyServiceIntegration implements TerminologySelect {
 
   private static final Logger log = logger(TIBTerminologyServiceIntegration.class);

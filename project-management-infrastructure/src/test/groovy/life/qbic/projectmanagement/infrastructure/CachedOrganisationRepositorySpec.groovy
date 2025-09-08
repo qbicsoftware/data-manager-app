@@ -1,5 +1,6 @@
 package life.qbic.projectmanagement.infrastructure
 
+import life.qbic.projectmanagement.infrastructure.organisations.CachedOrganisationRepository
 import spock.lang.Shared
 import spock.lang.Specification
 
