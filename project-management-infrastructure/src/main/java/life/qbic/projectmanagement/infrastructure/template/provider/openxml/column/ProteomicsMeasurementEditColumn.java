@@ -19,7 +19,7 @@ public enum ProteomicsMeasurementEditColumn implements Column {
   SAMPLE_ID("QBiC Sample Id", 1, true, true),
   SAMPLE_NAME(
       "Sample Name", 2, true, false),
-  MEASUREMENT_NAME("Measurement Name", 3, true, false),
+  MEASUREMENT_NAME("Measurement Name", 3, false, false),
   POOL_GROUP("Sample Pool Group", 4, true, false),
   TECHNICAL_REPLICATE_NAME("Technical Replicate", 5, false, false),
   ORGANISATION_URL("Organisation URL", 6, false, true),
