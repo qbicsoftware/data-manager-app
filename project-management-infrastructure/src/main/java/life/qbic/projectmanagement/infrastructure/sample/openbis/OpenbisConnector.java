@@ -77,6 +77,7 @@ import life.qbic.projectmanagement.infrastructure.sample.openbis.OpenbisSession.
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -85,6 +86,10 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
+@ConditionalOnProperty(
+    value = "testing.openbis.enabled",
+    havingValue = "false",
+    matchIfMissing = false)
 public class OpenbisConnector implements QbicProjectDataRepo, SampleDataRepository,
     MeasurementDataRepo, RawDataLookup, DataRepoConnectionTester, DisposableBean {
 
