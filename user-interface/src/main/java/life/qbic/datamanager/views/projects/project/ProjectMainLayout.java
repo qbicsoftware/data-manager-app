@@ -10,8 +10,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import life.qbic.datamanager.announcements.AnnouncementService;
-import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
@@ -51,7 +51,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
   private Context context = new Context();
   private final Span projectTitle = new Span();
 
-  public ProjectMainLayout(@Autowired LogoutService logoutService,
+  public ProjectMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired UserInformationService userInformationService,
       ProjectInformationService projectInformationService,
       ExperimentInformationService experimentInformationService,
@@ -64,7 +64,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       AnnouncementService announcementService) {
     super(requireNonNull(footerComponentFactory), announcementService);
-    requireNonNull(logoutService);
+    requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);
     requireNonNull(experimentInformationService);
@@ -79,7 +79,7 @@ public class ProjectMainLayout extends DataManagerLayout implements BeforeEnterO
         userPermissions, speciesLookupService, terminologyService,
         cancelConfirmationDialogFactory,
         messageSourceNotificationFactory);
-    dataManagerMenu = new DataManagerMenu(logoutService);
+    dataManagerMenu = new DataManagerMenu(authenticationContext);
     Span projectMainNavbar = new Span(createDrawerToggleAndTitleBar(), dataManagerMenu);
     projectMainNavbar.addClassName("project-main-layout-navbar");
     addToNavbar(projectMainNavbar);

@@ -14,11 +14,11 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.announcements.AnnouncementService;
-import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
@@ -62,7 +62,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
   private final Span navBarTitle = new Span();
   private Context context = new Context();
 
-  public ExperimentMainLayout(@Autowired LogoutService logoutService,
+  public ExperimentMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired UserInformationService userInformationService,
       @Autowired ProjectInformationService projectInformationService,
       @Autowired ExperimentInformationService experimentInformationService,
@@ -75,7 +75,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       MessageSourceNotificationFactory messageSourceNotificationFactory,
       AnnouncementService announcementService) {
     super(requireNonNull(footerComponentFactory), announcementService);
-    requireNonNull(logoutService);
+    requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);
     requireNonNull(experimentInformationService);
@@ -85,7 +85,7 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
     requireNonNull(messageSourceNotificationFactory,
         "messageSourceNotificationFactory must not be null");
 
-    this.dataManagerMenu = new DataManagerMenu(logoutService);
+    this.dataManagerMenu = new DataManagerMenu(authenticationContext);
     this.experimentInformationService = experimentInformationService;
     this.projectInformationService = projectInformationService;
     this.projectSideNavigationComponent = new ProjectSideNavigationComponent(

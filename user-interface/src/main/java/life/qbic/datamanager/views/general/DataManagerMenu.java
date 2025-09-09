@@ -7,15 +7,14 @@ import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.Objects;
-import life.qbic.datamanager.security.LogoutService;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.account.UserAvatar;
 import life.qbic.datamanager.views.account.UserProfileMain;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
@@ -27,14 +26,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public class DataManagerMenu extends Div {
 
-  private final transient LogoutService logoutService;
   MenuBar projectMenu = new MenuBar();
   UserAvatar userAvatar = new UserAvatar();
 
-  public DataManagerMenu(@Autowired LogoutService logoutService) {
-    this.logoutService = Objects.requireNonNull(logoutService);
+  public DataManagerMenu(AuthenticationContext authenticationContext) {
     initializeHomeMenuItem();
-    initializeUserSubMenuItems();
+    initializeUserSubMenuItems(Objects.requireNonNull(authenticationContext));
     add(projectMenu);
     projectMenu.addClassName("menubar");
     addClassName("data-manager-menu");
@@ -45,14 +42,14 @@ public class DataManagerMenu extends Div {
     projectMenu.addItem(new Button("Home"), event -> routeTo(ProjectOverviewMain.class));
   }
 
-  private void initializeUserSubMenuItems() {
+  private void initializeUserSubMenuItems(AuthenticationContext authenticationContext) {
     initializeAvatar();
     MenuItem userMenuItem = projectMenu.addItem(userAvatar);
     SubMenu userSubMenu = userMenuItem.getSubMenu();
     userSubMenu.addItem("Personal Access Tokens (PAT)", event -> routeTo(
         PersonalAccessTokenMain.class));
     userSubMenu.addItem("User Profile", event -> routeTo(UserProfileMain.class));
-    userSubMenu.addItem("Log Out", event -> logoutService.logout());
+    userSubMenu.addItem("Log Out", event -> authenticationContext.logout());
   }
 
   private void initializeAvatar() {
