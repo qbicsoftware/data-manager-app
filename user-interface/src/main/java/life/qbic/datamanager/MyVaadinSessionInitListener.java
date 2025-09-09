@@ -1,6 +1,7 @@
 package life.qbic.datamanager;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
@@ -8,15 +9,12 @@ import com.vaadin.flow.component.page.Page.ExtendedClientDetailsReceiver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.server.ServiceDestroyEvent;
 import com.vaadin.flow.server.ServiceInitEvent;
-import com.vaadin.flow.server.SessionDestroyEvent;
 import com.vaadin.flow.server.SessionInitEvent;
 import com.vaadin.flow.server.UIInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
-import com.vaadin.flow.server.WrappedSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;
-import life.qbic.datamanager.security.LogoutService;
-import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.register.RegistrationOrcIdMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -35,23 +33,22 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
   private static final Logger log = logger(MyVaadinSessionInitListener.class);
   private final ExtendedClientDetailsReceiver clientDetailsReceiver;
 
+  private final AuthenticationContext authenticationContext;
   private final transient UiExceptionHandler uiExceptionHandler;
-  private final LogoutService logoutService;
 
   public MyVaadinSessionInitListener(
       @Autowired ExtendedClientDetailsReceiver clientDetailsProvider,
       @Autowired UiExceptionHandler uiExceptionHandler,
-      @Autowired LogoutService logoutService) {
+      @Autowired AuthenticationContext authenticationContext) {
     this.clientDetailsReceiver = clientDetailsProvider;
     this.uiExceptionHandler = uiExceptionHandler;
-    this.logoutService = logoutService;
+    this.authenticationContext = requireNonNull(authenticationContext);
   }
 
   @Override
   public void serviceInit(ServiceInitEvent event) {
     event.getSource().addSessionInitListener(MyVaadinSessionInitListener::onSessionInit);
     event.getSource().addServiceDestroyListener(MyVaadinSessionInitListener::onServiceDestroyed);
-    event.getSource().addSessionDestroyListener(MyVaadinSessionInitListener::onSessionDestroy);
     event.getSource().addUIInitListener(this::onUiInit);
   }
 
@@ -74,19 +71,6 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
     log.debug("Destroying vaadin service [%s]".formatted(serviceDestroyEvent.getSource()));
   }
 
-  public static void onSessionDestroy(SessionDestroyEvent event) {
-    WrappedSession wrappedSession = event.getSession().getSession();
-    if (wrappedSession != null) {
-      wrappedSession.invalidate();
-      log.debug("Invalidated HTTP session " + wrappedSession.getId());
-    } else {
-      log.debug("Vaadin session [%s] does not wrap any HTTP session.".formatted(
-          event.getSession().getPushId()));
-    }
-    log.debug("Vaadin session destroyed [%s].".formatted(event.getSession().getPushId()));
-
-  }
-
   private void ensureCompleteOidcRegistration(BeforeEnterEvent it) {
     SecurityContext securityContext = SecurityContextHolder.getDeferredContext().get();
     Authentication authentication = securityContext.getAuthentication();
@@ -99,8 +83,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
         return;
       }
       log.warn("Incomplete OpenIdConnect registration. Logging out and forwarding to login.");
-      logoutService.logout();
-      it.forwardTo(AppRoutes.LOGIN);
+      requireNonNull(authenticationContext).logout();
     }
   }
 }
