@@ -215,6 +215,11 @@ Padding & gaps
   padding-right: var(--spacing-07);
 }
 
+.padding-left-right-10 {
+  padding-left: var(--spacing-10);
+  padding-right: var(--spacing-10);
+}
+
 .padding-top-03 {
   padding-top: var(--spacing-03);
 }
@@ -254,6 +259,11 @@ Padding & gaps
 .padding-top-bottom-07 {
   padding-top: var(--spacing-07);
   padding-bottom: var(--spacing-07);
+}
+
+.padding-top-bottom-10 {
+  padding-top: var(--spacing-10);
+  padding-bottom: var(--spacing-10);
 }
 
 .gap-02 {

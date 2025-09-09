@@ -85,6 +85,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
   static class UserDetail extends Div {
 
     public UserDetail(String title, Component... components) {
+      addClassName("gap-04");
       Span titleSpan = new Span(title);
       titleSpan.addClassName("bold");
       addClassName("detail");
@@ -202,7 +203,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
     public UserDetailsCard(UserInfo userInfo, String orcidLinkingEndpoint) {
       this.orcidLinkingEndpoint = requireNonNull(orcidLinkingEndpoint);
       this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
-      addClassNames("flex-horizontal", "gap-03", "fixed-width-1000px");
+      addClassNames("flex-horizontal", "gap-03", "fixed-width-1000px", "padding-top-bottom-10", "padding-left-right-10");
 
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
@@ -221,7 +222,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
       Div userDetails = new Div();
       userDetails.add(userNameDetail, userEmailDetail);
-      userDetails.addClassName("details");
+      userDetails.addClassNames("details", "gap-07");
       add(avatarWithName, userDetails);
       avatarWithName.addClassName("flex-01");
       userDetails.addClassNames("flex-03");
