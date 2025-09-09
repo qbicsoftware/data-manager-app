@@ -1,6 +1,7 @@
 package life.qbic.datamanager;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
 import com.vaadin.flow.component.UI;
@@ -14,9 +15,8 @@ import com.vaadin.flow.server.UIInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.WrappedSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import life.qbic.datamanager.exceptionhandling.UiExceptionHandler;
-import life.qbic.datamanager.security.LogoutService;
-import life.qbic.datamanager.views.AppRoutes;
 import life.qbic.datamanager.views.register.RegistrationOrcIdMain;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -35,16 +35,16 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
   private static final Logger log = logger(MyVaadinSessionInitListener.class);
   private final ExtendedClientDetailsReceiver clientDetailsReceiver;
 
+  private final AuthenticationContext authenticationContext;
   private final transient UiExceptionHandler uiExceptionHandler;
-  private final LogoutService logoutService;
 
   public MyVaadinSessionInitListener(
       @Autowired ExtendedClientDetailsReceiver clientDetailsProvider,
       @Autowired UiExceptionHandler uiExceptionHandler,
-      @Autowired LogoutService logoutService) {
+      @Autowired AuthenticationContext authenticationContext) {
     this.clientDetailsReceiver = clientDetailsProvider;
     this.uiExceptionHandler = uiExceptionHandler;
-    this.logoutService = logoutService;
+    this.authenticationContext = requireNonNull(authenticationContext);
   }
 
   @Override
@@ -99,8 +99,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
         return;
       }
       log.warn("Incomplete OpenIdConnect registration. Logging out and forwarding to login.");
-      logoutService.logout(); //FIXME logout?
-      it.forwardTo(AppRoutes.LOGIN);
+      requireNonNull(authenticationContext).logout();
     }
   }
 }
