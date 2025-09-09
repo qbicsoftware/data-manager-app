@@ -8,11 +8,11 @@ import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 
 /**
- * <b><class short description - 1 Line!></b>
+ * <b>Account Content Box</b>
+ * <p>
+ * Small container for OIDC Linked Account information.
  *
- * <p><More detailed description - When to use, what it solves, etc.></p>
- *
- * @since <version tag>
+ * @since 1.11.0
  */
 public class AccountContentBox extends Div {
 
