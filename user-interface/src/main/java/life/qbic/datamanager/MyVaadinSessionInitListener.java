@@ -99,7 +99,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
         return;
       }
       log.warn("Incomplete OpenIdConnect registration. Logging out and forwarding to login.");
-      logoutService.logout();
+      logoutService.logout(); //FIXME logout?
       it.forwardTo(AppRoutes.LOGIN);
     }
   }
