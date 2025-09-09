@@ -21,7 +21,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 @Configuration
 @Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
-//@Import({AclSecurityConfiguration.class}) // enable in case you need beans from the Acl config
 public class SecurityConfiguration extends VaadinWebSecurity {
 
   final VaadinDefaultRequestCache defaultRequestCache;
