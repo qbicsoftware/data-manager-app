@@ -2,6 +2,7 @@ package life.qbic.datamanager.security;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration;
 import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import life.qbic.datamanager.views.login.LoginLayout;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,7 +20,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
 @Configuration
-//@Import({AclSecurityConfiguration.class}) // enable in case you need beans from the Acl config
+@Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
 public class SecurityConfiguration extends VaadinWebSecurity {
 
   final VaadinDefaultRequestCache defaultRequestCache;
@@ -28,6 +30,9 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
   @Value("${routing.registration.error.pending-email-verification}")
   String emailConfirmationEndpoint;
+
+  @Value("${server.servlet.context-path}")
+  String contextPath;
 
   public SecurityConfiguration(
       @Autowired VaadinDefaultRequestCache defaultRequestCache) {
@@ -62,6 +67,6 @@ public class SecurityConfiguration extends VaadinWebSecurity {
       oAuth2Login.failureUrl("/login?errorOauth2=true&error");
     });
     super.configure(http);
-    setLoginView(http, LoginLayout.class);
+    setLoginView(http, LoginLayout.class, contextPath + "/login?logout=true");
   }
 }
