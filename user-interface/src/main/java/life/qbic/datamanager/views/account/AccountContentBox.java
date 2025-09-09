@@ -17,20 +17,30 @@ import life.qbic.datamanager.views.general.oidc.OidcType;
 public class AccountContentBox extends Div {
 
   public AccountContentBox(String orcidId, URI record) {
-    addClassNames("flex-horizontal", "flex-align-items-center");
+    addClassNames("flex-horizontal", "flex-align-items-center", "account-box", "gap-04",
+        "padding-left-right-04", "padding-top-bottom-04");
     var iconContainer = new Div();
-    iconContainer.add(new OidcLogo(OidcType.ORCID));
+    iconContainer.addClassNames("flex-vertical", "flex-align-items-center");
+    var orcidLogo = new OidcLogo(OidcType.ORCID);
+    orcidLogo.addClassName("icon-size-l");
+    iconContainer.add(orcidLogo);
 
     var accountInfo = new Div();
-    accountInfo.addClassNames("flex-vertical");
-    accountInfo.add(new Div("ORCiD Account"));
-    accountInfo.add(new Div(orcidId));
+    accountInfo.addClassNames("flex-vertical", "gap-01");
+
+    var accountLabel = new Div("ORCiD Account");
+    accountLabel.addClassNames("font-bold", "text-size-m", "line-height-m", "text-contrast-90pct");
+
+    var orcidIdLabel = new Div(orcidId);
+    orcidIdLabel.addClassNames("text-line-height-s", "text-contrast-70pct", "text-size-s");
+
+    accountInfo.add(accountLabel);
+    accountInfo.add(orcidIdLabel);
 
     var publicRecord = new Div();
     publicRecord.add(new Anchor(record.toString(), "View public record", AnchorTarget.BLANK));
 
     add(iconContainer, accountInfo, publicRecord);
-
   }
 
 }

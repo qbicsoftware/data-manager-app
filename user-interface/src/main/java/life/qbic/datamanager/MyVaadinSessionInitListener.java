@@ -78,6 +78,7 @@ public class MyVaadinSessionInitListener implements VaadinServiceInitListener {
     WrappedSession wrappedSession = event.getSession().getSession();
     if (wrappedSession != null) {
       wrappedSession.invalidate();
+      wrappedSession.invalidate();
       log.debug("Invalidated HTTP session " + wrappedSession.getId());
     } else {
       log.debug("Vaadin session [%s] does not wrap any HTTP session.".formatted(

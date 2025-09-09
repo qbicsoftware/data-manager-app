@@ -149,6 +149,39 @@ Body text
 
 
 /***************************
+Font classes that provide more flexibility
+***************************/
+
+.text-size-s {
+  font-size: var(--lumo-font-size-s);
+}
+
+.text-size-m {
+  font-size: var(--lumo-font-size-m);
+}
+
+.text-contrast-70pct {
+  color: var(--lumo-contrast-70pct)
+}
+
+.text-contrast-90pct {
+  color: var(--lumo-contrast-70pct)
+}
+
+.text-line-height-s {
+  line-height: var(--lumo-line-height-s);
+}
+
+.text-line-height-m {
+  line-height: var(--lumo-line-height-m);
+}
+
+.text-bold {
+  font-weight: bold;
+}
+
+
+/***************************
 Padding & gaps
 ***************************/
 
@@ -286,7 +319,8 @@ Sections
 /*
 Dialog flavours
  */
-.dialog-app {}
+.dialog-app {
+}
 
 .dialog-app,
 .button-text,
@@ -294,11 +328,14 @@ Dialog flavours
   margin: 0;
 }
 
-.dialog-small {}
+.dialog-small {
+}
 
-.dialog-medium {}
+.dialog-medium {
+}
 
-.dialog-large {}
+.dialog-large {
+}
 
 .dialog-small::part(overlay) {
   width: var(--dialog-width-small);
@@ -321,18 +358,18 @@ Dialog flavours
   max-height: var(--dialog-height-max-large);
 }
 
-.dialog-app::part(header)  {
+.dialog-app::part(header) {
   padding: 0;
   border-bottom-style: solid;
   border-bottom-color: rgba(26, 56, 96, 0.1);
   border-bottom-width: 1px;
 }
 
-.dialog-app::part(content)  {
+.dialog-app::part(content) {
   padding: 0;
 }
 
-.dialog-app::part(footer)  {
+.dialog-app::part(footer) {
   padding: 0;
   background-color: white;
   border-top-style: solid;
@@ -437,6 +474,7 @@ Icons
 .icon-color-error {
   color: var(--icon-color-error);
 }
+
 .icon-text-white {
   color: white;
 }
@@ -504,6 +542,13 @@ Boxes
   border-style: solid;
   border-width: 1px;
   border-radius: var(--spacing-02);
+}
+
+.account-box {
+  border-width: 1px;
+  border-color: var(--lumo-contrast-20pct);
+  border-radius: var(--spacing-02);
+  border-style: solid;
 }
 
 /****************************

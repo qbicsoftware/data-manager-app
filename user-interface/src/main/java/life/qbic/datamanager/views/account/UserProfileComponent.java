@@ -21,6 +21,7 @@ import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.URI;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -298,18 +299,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
 
     private Div generateLinkedAccountCard(UserInfo userInfo) {
       return new AccountContentBox(userInfo.oidcId(), URI.create(generateOidCRecordURL(
-          userDetailsCard.generateOidCRecordURL(userInfo.oidcId()))));
-      /*
-      //Should be extended once more than orcid is possible with a check which oidc is relevant
-      OidcLogo oidcLogo = new OidcLogo(OidcType.ORCID);
-      Span orcIdAccount = new Span(oidcLogo, new Span(userInfo.oidcId()));
-      orcIdAccount.addClassName("logo-with-text");
-      Anchor orcIdPublicRecordLink = new Anchor(generateOidCRecordURL(userInfo.oidcId()),
-          "View public record", AnchorTarget.BLANK);
-      Div linkedAccountCard = new Div(orcIdAccount, orcIdPublicRecordLink);
-      linkedAccountCard.addClassName("linked-account");
-      return linkedAccountCard;
-      */
+          userInfo.oidcId())));
     }
 
     private String generateOidCRecordURL(String oidcId) {

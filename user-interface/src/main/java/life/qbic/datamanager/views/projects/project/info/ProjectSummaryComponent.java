@@ -504,6 +504,7 @@ public class ProjectSummaryComponent extends PageArea {
       Anchor oidcLink = new Anchor(oidcUrl, oidcInformation.oidcId());
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
+      oidcLogo.addClassName("icon-size-m");
       Span oidcSpan = new Span(oidcLogo, oidcLink);
       oidcSpan.addClassNames("gap-02", "flex-align-items-center", "flex-horizontal");
       contactInfo.add(oidcSpan);
