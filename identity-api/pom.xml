@@ -6,7 +6,7 @@
   <parent>
     <groupId>life.qbic</groupId>
     <artifactId>datamanager</artifactId>
-    <version>1.10.12</version>
+    <version>1.10.13</version>
   </parent>
 
   <groupId>life.qbic.datamanager</groupId>
@@ -21,7 +21,7 @@
     <dependency>
       <groupId>life.qbic</groupId>
       <artifactId>application-commons</artifactId>
-      <version>1.10.12</version>
+      <version>1.10.13</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
