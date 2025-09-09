@@ -579,7 +579,6 @@
   text-overflow: ellipsis;
   padding: 5rem;
   min-width: fit-content;
-  width: 66%;
 }
 
 .user-profile-component .change-name {

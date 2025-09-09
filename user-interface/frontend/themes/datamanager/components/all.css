@@ -533,6 +533,25 @@ Layout
   justify-content: space-between;
 }
 
+.flex-01 {
+  flex: 1;
+}
+
+.flex-03 {
+  flex: 3;
+}
+
+.fixed-width-1000px{
+  width: 1000px;
+  min-width: 1000px;
+}
+
+.white-space-nowrap{
+  white-space: nowrap;
+}
+
+
+
 /**************************
 Boxes
 ****************************/

@@ -200,7 +200,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
     private final String orcidLinkingEndpoint;
 
     public UserDetailsCard(UserInfo userInfo, String orcidLinkingEndpoint) {
-      this.orcidLinkingEndpoint = orcidLinkingEndpoint;
+      this.orcidLinkingEndpoint = requireNonNull(orcidLinkingEndpoint);
+      this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
+      addClassNames("flex-horizontal", "gap-03", "fixed-width-1000px");
+
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
       userAvatar.setUserId(userInfo.id());
@@ -220,8 +223,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
       userDetails.add(userNameDetail, userEmailDetail);
       userDetails.addClassName("details");
       add(avatarWithName, userDetails);
+      avatarWithName.addClassName("flex-01");
+      userDetails.addClassNames("flex-03");
       addClassName("user-details-card");
-      this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
+
       platformUserName.setText(userInfo.platformUserName());
       userEmail.setText(this.userInfo.emailAddress());
       userAvatar.setName(this.userInfo.platformUserName());

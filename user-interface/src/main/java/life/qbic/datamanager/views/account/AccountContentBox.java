@@ -38,9 +38,13 @@ public class AccountContentBox extends Div {
     accountInfo.add(orcidIdLabel);
 
     var publicRecord = new Div();
+    publicRecord.addClassName("white-space-nowrap");
     publicRecord.add(new Anchor(record.toString(), "View public record", AnchorTarget.BLANK));
 
-    add(iconContainer, accountInfo, publicRecord);
+    var spacer = new Div();
+    spacer.setWidthFull();
+
+    add(iconContainer, accountInfo, spacer, publicRecord);
   }
 
 }
