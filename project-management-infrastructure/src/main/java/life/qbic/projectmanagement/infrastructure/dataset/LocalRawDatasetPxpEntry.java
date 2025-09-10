@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -40,6 +41,10 @@ public class LocalRawDatasetPxpEntry {
   @Column(name = "file_types")
   private Set<String> fileTypes;
 
+  @Convert(converter = MeasuredSamplesConverter.class)
+  @Column(name = "samples_json")
+  private List<MeasuredSample> measuredSamples;
+
   @Column(name = "experiment_id")
   private String experimentId;
 
@@ -67,6 +72,10 @@ public class LocalRawDatasetPxpEntry {
     return fileTypes;
   }
 
+  public List<MeasuredSample> getMeasuredSamples() {
+    return List.copyOf(measuredSamples);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (o == null || getClass() != o.getClass()) {
@@ -84,5 +93,4 @@ public class LocalRawDatasetPxpEntry {
     return Objects.hash(id, totalFileSizeBytes, measurementCode, registrationDate, numberOfFiles,
         fileTypes);
   }
-
 }

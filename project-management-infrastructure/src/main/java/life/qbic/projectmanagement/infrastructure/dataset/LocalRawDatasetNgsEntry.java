@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -45,6 +46,14 @@ public class LocalRawDatasetNgsEntry {
 
   @Column(name = "experiment_id")
   private String experimentId;
+
+  @Convert(converter = MeasuredSamplesConverter.class)
+  @Column(name = "samples_json")
+  private List<MeasuredSample> measuredSamples;
+
+  public List<MeasuredSample> getMeasuredSamples() {
+    return List.copyOf(measuredSamples);
+  }
 
   public String getId() {
     return id;

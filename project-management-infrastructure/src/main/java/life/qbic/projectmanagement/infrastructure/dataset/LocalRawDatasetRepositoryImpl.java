@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDataset;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
@@ -133,7 +134,7 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
             entry.getNumberOfFiles(),
             entry.getFileTypes(),
             entry.getRegistrationDate().toInstant()),
-        List.of());
+        entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList());
   }
 
   private static RawDatasetInformationPxP convert(LocalRawDatasetPxpEntry entry) {
@@ -143,7 +144,11 @@ public class LocalRawDatasetRepositoryImpl implements LocalRawDatasetRepository 
             entry.getNumberOfFiles(),
             entry.getFileTypes(),
             entry.getRegistrationDate().toInstant()),
-        List.of());
+        entry.getMeasuredSamples().stream().map(LocalRawDatasetRepositoryImpl::convert).toList());
+  }
+
+  private static BasicSampleInformation convert(MeasuredSample sample) {
+    return new BasicSampleInformation(sample.sampleId(), sample.sampleName());
   }
 
 

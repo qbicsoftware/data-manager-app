@@ -29,9 +29,11 @@ import life.qbic.datamanager.views.projects.project.measurements.MeasurementDeta
 import life.qbic.datamanager.views.projects.project.measurements.MeasurementDetailsComponent.MeasurementDomainTab;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.BasicSampleInformation;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationNgs;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.RawDatasetInformationPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortFieldRawData;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.SortRawData;
-import life.qbic.projectmanagement.application.dataset.LocalRawDatasetLookupService;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawData;
 import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawDataSampleInformation;
@@ -52,9 +54,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   private final TabSheet registeredRawDataTabSheet = new TabSheet();
-  private final MultiSelectLazyLoadingGrid<RawData> ngsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
-  private final MultiSelectLazyLoadingGrid<RawData> proteomicsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
-  private final Collection<GridLazyDataView<RawData>> rawDataGridDataViews = new ArrayList<>();
+  private final MultiSelectLazyLoadingGrid<RawDatasetInformationNgs> ngsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
+  private final MultiSelectLazyLoadingGrid<RawDatasetInformationPxP> proteomicsRawDataGrid = new MultiSelectLazyLoadingGrid<>();
+  private final Collection<GridLazyDataView<?>> rawDataGridDataViews = new ArrayList<>();
   private final MeasurementDomainTab proteomicsTab;
   private final MeasurementDomainTab genomicsTab;
   private final transient RemoteRawDataService remoteRawDataService;
@@ -79,6 +81,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     registeredRawDataTabSheet.addClassName("raw-data-tabsheet");
     addClassName("raw-data-details-component");
     this.asyncProjectService = asyncProjectService;
+    registeredRawDataTabSheet.add(genomicsTab, ngsRawDataGrid);
+    registeredRawDataTabSheet.add(proteomicsTab, proteomicsRawDataGrid);
   }
 
   /**
@@ -92,8 +96,8 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
    */
   public void setSearchedRawDataValue(String searchTerm) {
     if (!this.searchTerm.equals(searchTerm)) {
-      refreshGrids();
       this.searchTerm = searchTerm;
+      refreshGrids();
     }
   }
 
@@ -101,6 +105,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     proteomicsRawDataGrid.clearSelectedItems();
     ngsRawDataGrid.clearSelectedItems();
     rawDataGridDataViews.forEach(AbstractDataView::refreshAll);
+
   }
 
   /**
@@ -113,13 +118,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   public void setContext(Context context) {
     resetTabsInTabsheet();
     this.context = context;
-    List<GridLazyDataView<RawData>> dataViewsWithItems = rawDataGridDataViews.stream()
-        .filter(gridLazyDataView -> gridLazyDataView.getItems()
-            .findAny().isPresent()).toList();
-    if (dataViewsWithItems.isEmpty()) {
-      return;
-    }
-    dataViewsWithItems.forEach(this::addRawDataTab);
     initializeTabCounts();
     asyncProjectService.getRawDatasetInformationPxP(context.projectId().orElseThrow().value(),
             context.experimentId().orElseThrow().value(), 0, 1000, new SortRawData(
@@ -142,73 +140,23 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     }
   }
 
-  private void addRawDataTab(GridLazyDataView<RawData> gridLazyDataView) {
-    if (gridLazyDataView.getItems().allMatch(rawData -> rawData.measurementCode().isNGSDomain())) {
-      tabsInTabSheet.add(genomicsTab);
-      registeredRawDataTabSheet.add(genomicsTab, ngsRawDataGrid);
-    }
-    if (gridLazyDataView.getItems().allMatch(rawData -> rawData.measurementCode().isMSDomain())) {
-      tabsInTabSheet.add(proteomicsTab);
-      registeredRawDataTabSheet.add(proteomicsTab, proteomicsRawDataGrid);
-    }
-  }
-
   private void createNGSRawDataGrid() {
     ngsRawDataGrid.addClassName("raw-data-grid");
-    ngsRawDataGrid.addColumn(rawData -> rawData.measurementCode().value())
+    ngsRawDataGrid.addColumn(
+            rawData -> rawData.dataset().measurementId())
         .setKey("measurementId")
         .setHeader("Measurement Id");
     ngsRawDataGrid.addColumn(
-            rawData -> String.join(" ", groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())))
+            rawData -> rawData.linkedSampleInformation().stream().map(
+                BasicSampleInformation::sampleName).collect(Collectors.joining(",")))
         .setKey("sampleIds")
-        .setHeader("Sample Ids")
-        .setTooltipGenerator(rawData -> String.join(" ",
-            groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())));
+        .setHeader("Sample Name");
     ngsRawDataGrid.addColumn(
-            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
-        .setKey("uploadDate")
-        .setHeader("Upload Date")
-        .setTooltipGenerator(
-            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()));
-    GridLazyDataView<RawData> ngsGridDataView = ngsRawDataGrid.setItems(query -> {
-      List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-              it -> new SortOrder(it.getSorted(), it.getDirection().equals(SortDirection.ASCENDING)))
-          .collect(Collectors.toList());
-      // if no order is provided by the grid order by last modified (least priority)
-      sortOrders.add(SortOrder.of("measurementId").ascending());
-      return remoteRawDataService.findNGSRawData(searchTerm,
-              context.experimentId().orElseThrow(),
-              query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
-          .stream();
-    });
-    ngsRawDataGrid.getLazyDataView().addItemCountChangeListener(
-        countChangeEvent -> genomicsTab.setMeasurementCount(
-            (int) ngsGridDataView.getItems().count()));
-    ngsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
-    rawDataGridDataViews.add(ngsGridDataView);
-  }
-
-  private void createProteomicsRawDataGrid() {
-    proteomicsRawDataGrid.addClassName("raw-data-grid");
-    proteomicsRawDataGrid.addColumn(
-            rawData -> rawData.measurementCode().value())
-        .setKey("measurementId")
-        .setHeader("Measurement Id")
-        .setTooltipGenerator(rawData -> rawData.measurementCode().value());
-    proteomicsRawDataGrid.addColumn(
-            rawData -> String.join(" ", groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())))
-        .setKey("sampleIds")
-        .setHeader("Sample Ids")
-        .setTooltipGenerator(rawData -> String.join(" ",
-            groupSampleInfoIntoCodeAndLabel(rawData.sampleInformation())));
-    proteomicsRawDataGrid.addColumn(
-            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()))
+            rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
         .setKey("uploaddate")
-        .setHeader("Upload Date")
-        .setTooltipGenerator(
-            rawData -> convertToLocalDate(rawData.rawDataDatasetInformation().registrationDate()));
-    proteomicsRawDataGrid.setItemDetailsRenderer(renderRawDataItemDetails());
-    GridLazyDataView<RawData> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
+        .setHeader("Upload Date");
+    ngsRawDataGrid.setItemDetailsRenderer(renderRawDataNgs());
+    GridLazyDataView<RawDatasetInformationNgs> ngsGridDataView = ngsRawDataGrid.setItems(
         query -> {
           List<SortOrder> sortOrders = query.getSortOrders().stream().map(
                   it -> new SortOrder(it.getSorted(),
@@ -216,16 +164,85 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
               .collect(Collectors.toList());
           // if no order is provided by the grid order by last modified (least priority)
           sortOrders.add(SortOrder.of("measurementId").ascending());
-          return remoteRawDataService.findProteomicsRawData(searchTerm,
-                  context.experimentId().orElseThrow(),
-                  query.getOffset(), query.getLimit(), sortOrders, context.projectId().orElseThrow())
-              .stream();
+          return asyncProjectService.getRawDatasetInformationNgs(
+              context.projectId().orElseThrow().value(),
+              context.experimentId().orElseThrow().value(), query.getOffset(), query.getLimit(),
+              new SortRawData(SortFieldRawData.REGISTRATION_DATE,
+                  AsyncProjectService.SortDirection.DESC), searchTerm).toStream();
+
+        });
+
+    ngsRawDataGrid.getLazyDataView().addItemCountChangeListener(
+        countChangeEvent -> genomicsTab.setMeasurementCount(
+            (int) ngsGridDataView.getItems().count()));
+
+    rawDataGridDataViews.add(ngsGridDataView);
+  }
+
+  private void createProteomicsRawDataGrid() {
+    proteomicsRawDataGrid.addClassName("raw-data-grid");
+    proteomicsRawDataGrid.addColumn(
+            rawData -> rawData.dataset().measurementId())
+        .setKey("measurementId")
+        .setHeader("Measurement Id");
+    proteomicsRawDataGrid.addColumn(
+            rawData -> rawData.linkedSampleInformation().stream().map(
+                BasicSampleInformation::sampleName).collect(Collectors.joining(",")))
+        .setKey("sampleIds")
+        .setHeader("Sample Name");
+    proteomicsRawDataGrid.addColumn(
+            rawData -> convertToLocalDate(Date.from(rawData.dataset().registrationDate())))
+        .setKey("uploaddate")
+        .setHeader("Upload Date");
+    proteomicsRawDataGrid.setItemDetailsRenderer(renderRawDataPxp());
+    GridLazyDataView<RawDatasetInformationPxP> proteomicsGridDataView = proteomicsRawDataGrid.setItems(
+        query -> {
+          List<SortOrder> sortOrders = query.getSortOrders().stream().map(
+                  it -> new SortOrder(it.getSorted(),
+                      it.getDirection().equals(SortDirection.ASCENDING)))
+              .collect(Collectors.toList());
+          // if no order is provided by the grid order by last modified (least priority)
+          sortOrders.add(SortOrder.of("measurementId").ascending());
+          return asyncProjectService.getRawDatasetInformationPxP(
+              context.projectId().orElseThrow().value(),
+              context.experimentId().orElseThrow().value(), query.getOffset(), query.getLimit(),
+              new SortRawData(SortFieldRawData.REGISTRATION_DATE,
+                  AsyncProjectService.SortDirection.DESC), searchTerm).toStream();
+
         });
     proteomicsRawDataGrid.getLazyDataView().addItemCountChangeListener(
         countChangeEvent -> proteomicsTab.setMeasurementCount(
             (int) proteomicsGridDataView.getItems().count()));
+
     rawDataGridDataViews.add(proteomicsGridDataView);
   }
+
+  private ComponentRenderer<GridDetailsItem, RawDatasetInformationPxP> renderRawDataPxp() {
+    return new ComponentRenderer<>(rawData -> {
+      GridDetailsItem rawDataItem = new GridDetailsItem();
+      rawDataItem.addListEntry("Sample Ids", rawData.linkedSampleInformation().stream().map(
+          BasicSampleInformation::sampleName).toList());
+      rawDataItem.addEntry("Number of Files",
+          String.valueOf(rawData.dataset().numberOfFiles()));
+      rawDataItem.addEntry("File Size", String.valueOf(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
+      return rawDataItem;
+    });
+  }
+
+  private ComponentRenderer<GridDetailsItem, RawDatasetInformationNgs> renderRawDataNgs() {
+    return new ComponentRenderer<>(rawData -> {
+      GridDetailsItem rawDataItem = new GridDetailsItem();
+      rawDataItem.addListEntry("Sample Ids", rawData.linkedSampleInformation().stream().map(
+          BasicSampleInformation::sampleName).toList());
+      rawDataItem.addEntry("Number of Files",
+          String.valueOf(rawData.dataset().numberOfFiles()));
+      rawDataItem.addEntry("File Size", String.valueOf(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
+      return rawDataItem;
+    });
+  }
+
 
   private ComponentRenderer<GridDetailsItem, RawData> renderRawDataItemDetails() {
     return new ComponentRenderer<>(rawData -> {
@@ -258,12 +275,12 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 
   public Collection<MeasurementCode> getSelectedMeasurementUrls() {
     List<MeasurementCode> selectedMeasurements = new ArrayList<>();
-    selectedMeasurements.addAll(
-        proteomicsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
-            .toList());
-    selectedMeasurements.addAll(
-        ngsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
-            .toList());
+//    selectedMeasurements.addAll(
+//        proteomicsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
+//            .toList());
+//    selectedMeasurements.addAll(
+//        ngsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
+//            .toList());
     return selectedMeasurements;
   }
 }
