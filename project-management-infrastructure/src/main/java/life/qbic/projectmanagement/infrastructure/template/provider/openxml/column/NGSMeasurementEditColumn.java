@@ -21,18 +21,19 @@ public enum NGSMeasurementEditColumn implements Column {
   SAMPLE_ID("QBiC Sample Id", 1, true, true),
   SAMPLE_NAME("Sample Name", 2, true, false),
   POOL_GROUP("Sample Pool Group", 3, true, false),
-  ORGANISATION_URL("Organisation URL", 4, false, true),
-  ORGANISATION_NAME("Organisation Name", 5, true, false),
-  FACILITY("Facility", 6, false, true),
-  INSTRUMENT("Instrument", 7, false, true),
-  INSTRUMENT_NAME("Instrument Name", 8, true, false),
-  SEQUENCING_READ_TYPE("Sequencing Read Type", 9, false, true),
-  LIBRARY_KIT("Library Kit", 10, false, false),
-  FLOW_CELL("Flow Cell", 11, false, false),
-  SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 12, false, false),
-  INDEX_I7("Index i7", 13, false, false),
-  INDEX_I5("Index i5", 14, false, false),
-  COMMENT("Comment", 15, false, false),
+  MEASUREMENT_NAME("Measurement Name", 4, false, false),
+  ORGANISATION_URL("Organisation URL", 5, false, true),
+  ORGANISATION_NAME("Organisation Name", 6, true, false),
+  FACILITY("Facility", 7, false, true),
+  INSTRUMENT("Instrument", 8, false, true),
+  INSTRUMENT_NAME("Instrument Name", 9, true, false),
+  SEQUENCING_READ_TYPE("Sequencing Read Type", 10, false, true),
+  LIBRARY_KIT("Library Kit", 11, false, false),
+  FLOW_CELL("Flow Cell", 12, false, false),
+  SEQUENCING_RUN_PROTOCOL("Sequencing Run Protocol", 13, false, false),
+  INDEX_I7("Index i7", 14, false, false),
+  INDEX_I5("Index i5", 15, false, false),
+  COMMENT("Comment", 16, false, false),
   ;
 
 
@@ -48,6 +49,7 @@ public enum NGSMeasurementEditColumn implements Column {
             "A visual aid to simplify sample navigation for the person managing the metadata.");
         case POOL_GROUP -> new Helper("Free text, e.g. pool group 1",
             "A group of samples that are pooled together for a measurement. All samples in a pool group should have the same label.");
+        case MEASUREMENT_NAME -> new Helper("Free text, e.g. your local identifier for the measurement", "Name given for the measurement.");
         case ORGANISATION_URL -> new Helper("ROR URL, e.g. https://ror.org/03a1kwz48", """
             A unique identifier of the organisation where the measurement has been conducted.
             Tip: You can click on the column header (%s) to go to the ROR registry website where you can search your organisation and find its ROR URL.

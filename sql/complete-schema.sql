@@ -318,6 +318,7 @@ CREATE TABLE IF NOT EXISTS `ngs_measurements`
     `samplePool`       varchar(255) DEFAULT NULL,
     `readType`         varchar(255) DEFAULT NULL,
     `runProtocol`      varchar(255) DEFAULT NULL,
+    `measurementName`  varchar(255) DEFAULT NULL,
     PRIMARY KEY (`measurement_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -403,6 +404,7 @@ CREATE TABLE IF NOT EXISTS `proteomics_measurement`
     `registration`           datetime(6)  DEFAULT NULL,
     `samplePool`             varchar(255) DEFAULT NULL,
     `technicalReplicateName` varchar(255) DEFAULT NULL,
+    `measurementName`        varchar(255) DEFAULT NULL,
     PRIMARY KEY (`measurement_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4

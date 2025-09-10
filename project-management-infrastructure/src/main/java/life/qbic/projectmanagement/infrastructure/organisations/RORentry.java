@@ -1,4 +1,4 @@
-package life.qbic.projectmanagement.infrastructure;
+package life.qbic.projectmanagement.infrastructure.organisations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
