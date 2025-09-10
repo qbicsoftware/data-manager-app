@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -2189,6 +2190,131 @@ public interface AsyncProjectService {
       String fractionName,
       String comment
   ) {
+
+  }
+
+  /**
+   * Requests all available {@link RawDatasetInformationPxP} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param sorting      configuration of the property to sort by
+   * @param filter       a term used for filtering matching datasets containing the term
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationPxP}
+   * @since 1.11.0
+   */
+  Flux<RawDatasetInformationPxP> getRawDatasetInformationPxP(String projectId, String experimentId,
+      int offset,
+      int limit, SortRawData sorting, String filter);
+
+  /**
+   * Requests all available {@link RawDatasetInformationNgs} for a given experiment.
+   * <p>
+   * The request supports pagination.
+   *
+   * @param projectId    the identifier of the project the experiment belongs to
+   * @param experimentId the identifier of the experiment to query the measurements for
+   * @param offset       the offset value for the search to continue (pagination)
+   * @param limit        the maximum number of results to return (pagination)
+   * @param sorting      configuration of the property to sort by
+   * @param filter       a term used for filtering matching datasets containing the term
+   * @return a reactive {@link Flux} of {@link RawDatasetInformationNgs}
+   * @since 1.11.0
+   */
+  Flux<RawDatasetInformationNgs> getRawDatasetInformationNgs(String projectId, String experimentId,
+      int offset,
+      int limit, SortRawData sorting, String filter);
+
+  /**
+   * A simple information container for raw data stored for a given measurement.
+   *
+   * @param measurementId    the measurement identifier for which the raw data is described
+   * @param totalSizeBytes   the total size of the raw dataset for a given measurement. The unit is
+   *                         in bytes.
+   * @param numberOfFiles    the number of files contained in the raw dataset
+   * @param fileTypes        the file types contained in the raw dataset
+   * @param registrationDate the date of registration
+   * @since 1.11.0
+   */
+  record RawDataset(String measurementId, long totalSizeBytes, int numberOfFiles,
+                    Set<String> fileTypes, Instant registrationDate) {
+
+    public RawDataset {
+      requireNonNull(measurementId);
+      requireNonNull(fileTypes);
+      requireNonNull(registrationDate);
+    }
+  }
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the NGS domain. Currently
+   * consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @since 1.11.0
+   */
+  record RawDatasetInformationNgs(RawDataset dataset,
+                                  List<BasicSampleInformation> linkedSampleInformation) {
+
+    public RawDatasetInformationNgs {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Available properties to sort raw data queries.
+   *
+   * @since 1.11.0
+   */
+  enum SortFieldRawData {
+    REGISTRATION_DATE
+  }
+
+  enum SortDirection {
+    ASC, DESC
+  }
+
+  record SortRawData(SortFieldRawData sortField, SortDirection sortDirection) {
+
+  }
+
+
+  /**
+   * Aggregated information of a raw dataset derived from measurement of the proteomics domain.
+   * Currently consists of the core {@link RawDataset} and all {@link BasicSampleInformation}.
+   *
+   * @param dataset                 the actual {@link RawDataset}
+   * @param linkedSampleInformation further information about the linked samples as
+   *                                {@link BasicSampleInformation}.
+   * @since 1.11.0
+   */
+  record RawDatasetInformationPxP(RawDataset dataset,
+                                  List<BasicSampleInformation> linkedSampleInformation) {
+
+    public RawDatasetInformationPxP {
+      requireNonNull(dataset);
+      requireNonNull(linkedSampleInformation);
+      linkedSampleInformation = List.copyOf(linkedSampleInformation);
+    }
+  }
+
+  /**
+   * Basic sample information that can be used to enrich other information containers, e.g.
+   * {@link RawDatasetInformation}.
+   *
+   * @param sampleId   unique identifier for a sample
+   * @param sampleName the assigned sample name
+   * @since 1.11.0
+   */
+  record BasicSampleInformation(String sampleId, String sampleName) {
 
   }
 
