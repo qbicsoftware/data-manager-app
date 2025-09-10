@@ -54,6 +54,14 @@ public class InputValidation {
         .toString();
   }
 
+  public InputValidation and(InputValidation other) {
+    return other.hasPassed() && hasPassed() ? passed() : failed();
+  }
+
+  public InputValidation or(InputValidation other) {
+    return other.hasPassed() || hasPassed() ? passed() : failed();
+  }
+
   public void ifPassed(@NonNull DialogAction dialogAction) {
     if (hasPassed()) {
       dialogAction.execute();
