@@ -19,11 +19,11 @@ import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.NativeLabel;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.dom.DisabledUpdateMode;
+import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -229,7 +229,8 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   }
 
 
-  static class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
+  static class VariableRow extends Composite<Div> implements UserInput, CanSnapshot,
+      HasValidationProperties {
 
     private final TextField name = new TextField();
     private final TextField unit = new TextField();
@@ -265,6 +266,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       fields.addClassNames("flex-horizontal gap-05");
       name.addClassNames("dynamic-growing-flex-item");
       name.setLabel("Variable Name");
+      name.setErrorMessage("Please provide a name for the variable.");
       name.setRequired(true);
       unit.addClassNames("dynamic-growing-flex-item");
       unit.setLabel("Unit (optional)");
@@ -281,13 +283,25 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     @NonNull
     public InputValidation validate() {
       if (this.isEmpty()) {
+        setInvalid(false);
         return InputValidation.passed();
       }
-      var variableLevelsValidation = variableLevels.validate();
-      if (name.isInvalid() || name.isEmpty() || unit.isInvalid()) {
+      var valiableLevelsValidationFailed = !variableLevels.validate().hasPassed();
+      if (name.isInvalid() || name.isEmpty() || unit.isInvalid()
+          || valiableLevelsValidationFailed) {
+        setInvalid(true);
         return InputValidation.failed();
       }
-      return variableLevelsValidation;
+      setInvalid(false);
+      return InputValidation.passed();
+    }
+
+    @Override
+    public void setInvalid(boolean invalid) {
+      HasValidationProperties.super.setInvalid(invalid);
+      getElement().setAttribute("invalid", invalid);
+      name.setInvalid(invalid && name.isEmpty()); //make sure to check again
+      variableLevels.setInvalid(variableLevels.isInvalid());
     }
 
     private boolean isEmpty() {
@@ -432,7 +446,6 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     private final List<LevelField> levelFields = new ArrayList<>();
     private final Div levelsContainer = new Div();
-    private final Span errorMessage;
     private Snapshot initialState;
     LevelField focusedLevelField = null;
 
@@ -522,7 +535,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
 
     public VariableLevelsInput() {
-      final String rootCssClasses = "border rounded-02 flex-vertical gap-none padding-04 padding-top-04 shows-validation";
+      final String rootCssClasses = "border rounded-02 flex-vertical gap-none padding-04 padding-top-04";
       final String bodyClassNames = "flex-vertical justify-start gap-04 input-with-label";
       this.getStyle().set("grid-area", "b");
       this.addClassNames(rootCssClasses);
@@ -547,10 +560,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
       body.add(levelsContainer, addLevelButton);
       addLevelButton.addClassNames("width-max-content justify-self-start");
-      errorMessage = new Span("Please provide at least one level.");
-      errorMessage.setVisible(false);
-      errorMessage.addClassNames("error-text");
-      this.add(label, body, errorMessage);
+      this.add(label, body);
 
       addEmptyLevel();
       markInitialized();
@@ -597,16 +607,13 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
 
     @Override
-    public void setErrorMessage(String errorMessage) {
-      HasValidationProperties.super.setErrorMessage(errorMessage);
-      this.errorMessage.setText(errorMessage);
-    }
-
-    @Override
     public void setInvalid(boolean invalid) {
       HasValidationProperties.super.setInvalid(invalid);
       getElement().setAttribute("invalid", invalid);
-      this.errorMessage.setVisible(invalid);
+      levelFields.stream().findFirst().ifPresent(levelField -> {
+        levelField.setErrorMessage(getErrorMessage());
+        levelField.setInvalid(invalid);
+      });
     }
 
     Function<List<LevelField>, List<String>> extractFilledLevels() {
@@ -639,19 +646,16 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       //valid if at least one level is present
       InputValidation validation =
           isEmpty() ? InputValidation.failed() : InputValidation.passed();
-      setInvalid(!validation.hasPassed());
       setErrorMessage("Please provide at least one level.");
-      getUI().ifPresent(
-          ui -> ui.access(() -> getElement().setProperty("invalid", !validation.hasPassed())));
-
+      setInvalid(!validation.hasPassed());
       return validation;
     }
 
     public List<LevelChange> getChanges() {
-      if (initialState instanceof LevelsSnapshot levelsSnapshot) {
+      if (initialState instanceof LevelsSnapshot(List<Snapshot> levels)) {
 
         var previousLevels = extractFilledLevels().apply(
-            levelsSnapshot.levels()
+            levels
                 .stream()
                 .map(this::mapToRestoredLevelField)
                 .toList()
@@ -713,13 +717,13 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     @Override
     public void restore(Snapshot snapshot) throws SnapshotRestorationException {
-      if (snapshot instanceof LevelsSnapshot levelsSnapshot) {
+      if (snapshot instanceof LevelsSnapshot(List<Snapshot> levels)) {
         var previousChildren = levelsContainer.getChildren().toList();
         var previousLevels = levelFields.stream().toList();
         levelsContainer.removeAll();
         levelFields.clear();
         try {
-          levelsSnapshot.levels().stream()
+          levels.stream()
               .map(this::mapToRestoredLevelField)
               .forEach(this::addLevel);
           return;
@@ -740,7 +744,8 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
   static class LevelField extends Composite<Div> implements Focusable<Component>,
       CanSnapshot,
-      UserInput {
+      UserInput,
+      HasValidationProperties {
 
 
     static final String LEVEL_CLASS = "level";
@@ -750,6 +755,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     private final TextField levelValue = new TextField();
     private final Button deleteLevelButton;
     private LevelSnapshot initialState;
+    private final SerializablePredicate<String> levelValidator = String::isBlank;
 
     private LevelField() {
       var buttonFactory = new ButtonFactory();
@@ -757,13 +763,36 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       deleteLevelButton.addClickListener(
           clickEvent -> fireEvent(new DeleteLevelEvent(this, clickEvent.isFromClient())));
       initialState = (LevelSnapshot) this.snapshot();
+
+      levelValue.setManualValidation(true);
+      levelValue.addValueChangeListener(
+          event -> setInvalid(levelValidator.negate().test(event.getValue())));
+    }
+
+    @Override
+    public void setErrorMessage(String errorMessage) {
+      levelValue.setErrorMessage(errorMessage);
+    }
+
+    @Override
+    public String getErrorMessage() {
+      return levelValue.getErrorMessage();
+    }
+
+    @Override
+    public void setInvalid(boolean invalid) {
+      levelValue.setInvalid(invalid);
+    }
+
+    @Override
+    public boolean isInvalid() {
+      return levelValue.isInvalid();
     }
 
     public Registration addValueChangeListener(
         ValueChangeListener<? super ComponentValueChangeEvent<TextField, String>> listener) {
       return levelValue.addValueChangeListener(listener);
     }
-
 
 
     @Override
@@ -852,8 +881,8 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     @Override
     public void restore(Snapshot snapshot) throws SnapshotRestorationException {
-      if (snapshot instanceof LevelSnapshot levelSnapshot) {
-        levelValue.setValue(levelSnapshot.levelValue());
+      if (snapshot instanceof LevelSnapshot(String value)) {
+        levelValue.setValue(value);
         return;
       }
       throw new SnapshotRestorationException(
@@ -864,8 +893,10 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     @Override
     @NonNull
     public InputValidation validate() {
-      //always valid as empty values are valid as well
-      return InputValidation.passed();
+      if (!levelValue.isInvalid()) {
+        return InputValidation.passed();
+      }
+      return InputValidation.failed();
     }
 
     @Override

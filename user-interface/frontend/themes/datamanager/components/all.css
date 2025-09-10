@@ -631,14 +631,6 @@ Colors
 /*endregion*/
 
 /*region Behaviour*/
-.shows-validation[invalid] {
-  border-color: var(--error-icon-color);
-  background-color: var(--error-background-color);
-}
-
-.shows-validation[invalid] .error-message {
-  color: var(--error-text-color);
-}
 
 .clickable {
   cursor: pointer;
