@@ -29,9 +29,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import life.qbic.application.commons.CanSnapshot;
 import life.qbic.application.commons.Snapshot;
@@ -162,13 +164,54 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
   }
 
+
   @Override
   @NonNull
   public InputValidation validate() {
+    //the order of the calls matters as both methods display the error.
+    var individualRowValidations = validateIndividualRows();
+    var overallRulesValidation = validateOverallRules();
+    return individualRowValidations.and(overallRulesValidation);
+
+  }
+
+  /**
+   * Checks rules that cannot be checked on an individual row basis. Modifies the userinput to
+   * communicate the validation result.
+   *
+   * @return the resulting validation
+   */
+  private InputValidation validateOverallRules() {
+    return checkUniqueVariableNames();
+  }
+
+  private InputValidation checkUniqueVariableNames() {
+    List<VariableRow> variableRows = getVariableRows();
+    Map<String, Long> countsByName = variableRows.stream()
+        .collect(Collectors.groupingBy(VariableRow::getVariableName, Collectors.counting()));
+
+    List<VariableRow> rowsWithDuplicateName = variableRows.stream()
+        .filter(it -> !it.isEmpty())
+        .filter(it -> !it.getVariableName().isBlank())
+        .filter(row -> countsByName.getOrDefault(row.getVariableName(), 0L) > 1)
+        .toList();
+    rowsWithDuplicateName.forEach(row -> {
+      // be careful not to overwrite previously set invalid state as marking as valid is done on an individual level only.
+      row.setNameInvalid("This variable name already exists.");
+    });
+    return !rowsWithDuplicateName.isEmpty() ? InputValidation.failed() : InputValidation.passed();
+  }
+
+  /**
+   * Triggers the validation of all variable rows.
+   *
+   * @return the resulting validation
+   */
+  private InputValidation validateIndividualRows() {
+    //we cannot use Stream#allMatch as this will not guarantee a call to VariableRow#validate on each row.
     return getVariableRows().stream()
         .map(VariableRow::validate)
-        .allMatch(InputValidation::hasPassed)
-        ? InputValidation.passed() : InputValidation.failed();
+        .reduce(InputValidation.passed(), InputValidation::and);
   }
 
   @Override
@@ -229,8 +272,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   }
 
 
-  static class VariableRow extends Composite<Div> implements UserInput, CanSnapshot,
-      HasValidationProperties {
+  static class VariableRow extends Composite<Div> implements UserInput, CanSnapshot {
 
     private final TextField name = new TextField();
     private final TextField unit = new TextField();
@@ -266,7 +308,6 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       fields.addClassNames("flex-horizontal gap-05");
       name.addClassNames("dynamic-growing-flex-item");
       name.setLabel("Variable Name");
-      name.setErrorMessage("Please provide a name for the variable.");
       name.setRequired(true);
       unit.addClassNames("dynamic-growing-flex-item");
       unit.setLabel("Unit (optional)");
@@ -286,22 +327,59 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
         setInvalid(false);
         return InputValidation.passed();
       }
-      var valiableLevelsValidationFailed = !variableLevels.validate().hasPassed();
-      if (name.isInvalid() || name.isEmpty() || unit.isInvalid()
-          || valiableLevelsValidationFailed) {
-        setInvalid(true);
-        return InputValidation.failed();
+
+      InputValidation nameValidation;
+      if (name.getOptionalValue().map(String::isBlank).orElse(true)) {
+        setChildValid(name);
+        setNameInvalid("Please provide a variable name.");
+        nameValidation = InputValidation.failed();
+      } else {
+        setChildValid(name);
+        nameValidation = InputValidation.passed();
       }
-      setInvalid(false);
-      return InputValidation.passed();
+
+      InputValidation unitValidation = InputValidation.passed();
+      InputValidation variableLevelsValidation = variableLevels.validate();
+      return nameValidation
+          .and(unitValidation)
+          .and(variableLevelsValidation);
     }
 
-    @Override
     public void setInvalid(boolean invalid) {
-      HasValidationProperties.super.setInvalid(invalid);
+      getElement().setProperty("invalid", invalid);
       getElement().setAttribute("invalid", invalid);
-      name.setInvalid(invalid && name.isEmpty()); //make sure to check again
-      variableLevels.setInvalid(variableLevels.isInvalid());
+      if (!invalid) {
+        setChildrenValid();
+      }
+    }
+
+    private void setChildrenValid() {
+      setChildValid(name);
+      setChildValid(unit);
+      setChildValid(variableLevels);
+    }
+
+    private void setChildValid(HasValidationProperties name) {
+      name.setErrorMessage(null);
+      name.setInvalid(false);
+    }
+
+    public void setNameInvalid(@NonNull String errorMessage) {
+      this.setInvalid(true);
+      if (Optional.ofNullable(name.getErrorMessage()).map(it -> !it.contains(errorMessage)).orElse(
+          true)) {
+        String composedErrorMessage = Optional.ofNullable(name.getErrorMessage())
+            .map(m -> m + "\n" + errorMessage)
+            .orElse(errorMessage);
+        name.setErrorMessage(composedErrorMessage);
+      }
+      name.setInvalid(true);
+    }
+
+    public void setUnitInvalid(@NonNull String errorMessage) {
+      this.setInvalid(true);
+      unit.setErrorMessage(errorMessage);
+      unit.setInvalid(true);
     }
 
     private boolean isEmpty() {
@@ -326,7 +404,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
           !initialState.equals(snapshot());
     }
 
-    public class InvalidChangesException extends RuntimeException {
+    public static class InvalidChangesException extends RuntimeException {
 
     }
 
@@ -385,13 +463,15 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     @Override
     public void restore(@NonNull Snapshot snapshot) throws SnapshotRestorationException {
-      if (snapshot instanceof ExperimentalVariableSnapshot experimentalVariableSnapshot) {
-        if (nonNull((experimentalVariableSnapshot).initialState())) {
-          initialState = experimentalVariableSnapshot.initialState();
+      if (snapshot instanceof ExperimentalVariableSnapshot(
+          String name1, String unit1, Snapshot levels, Snapshot state
+      )) {
+        if (nonNull(state)) {
+          initialState = state;
         }
-        variableLevels.restore(experimentalVariableSnapshot.levels());
-        name.setValue(experimentalVariableSnapshot.name());
-        unit.setValue(experimentalVariableSnapshot.unit());
+        variableLevels.restore(levels);
+        name.setValue(name1);
+        unit.setValue(unit1);
         return;
       }
       throw new SnapshotRestorationException("Cannot restore snapshot");
@@ -646,7 +726,9 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       //valid if at least one level is present
       InputValidation validation =
           isEmpty() ? InputValidation.failed() : InputValidation.passed();
-      setErrorMessage("Please provide at least one level.");
+      if (!validation.hasPassed()) {
+        setErrorMessage("Please provide at least one level.");
+      }
       setInvalid(!validation.hasPassed());
       return validation;
     }
