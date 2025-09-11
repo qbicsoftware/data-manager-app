@@ -577,9 +577,6 @@
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 5rem;
-  min-width: fit-content;
-  width: 66%;
 }
 
 .user-profile-component .change-name {
@@ -591,13 +588,12 @@
 .user-profile-component .user-details-card .details {
   display: flex;
   flex-direction: column;
-  row-gap: var(--lumo-space-l);
 }
 
 .user-profile-component .user-details-card .detail {
   display: flex;
   flex-direction: column;
-  row-gap: var(--lumo-space-s);
+  row-gap: var(--lumo-space-m);
 }
 
 .user-profile-component .user-details-card .avatar-with-name {
