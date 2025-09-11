@@ -165,7 +165,7 @@ Font classes that provide more flexibility
 }
 
 .text-contrast-90pct {
-  color: var(--lumo-contrast-70pct)
+  color: var(--lumo-contrast-90pct)
 }
 
 .text-line-height-s {
