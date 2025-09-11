@@ -17,10 +17,13 @@ import com.vaadin.flow.component.ShortcutRegistration;
 import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dnd.DragSource;
+import com.vaadin.flow.component.dnd.DropTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.HasValidationProperties;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.dom.DisabledUpdateMode;
 import com.vaadin.flow.function.SerializablePredicate;
@@ -32,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -56,6 +60,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
   public ExperimentalVariablesInput() {
     addVariableButton.addClickListener(
         e -> addVariable());
+
     getContent().add(new Button("Valid?", e -> System.out.println("valid = "
         + this.validate())));
     getContent().add(new Button("Has Changes?", e -> System.out.println("hasChanges? = "
@@ -83,6 +88,19 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
             addRow(toRestoredVariableRow(deletedVariable));
             deletedVariables.remove(deletedVariable);
           });
+    }));
+    TextArea inputField = new TextArea();
+    getContent().add(inputField);
+    getContent().add(new Button("Lock Levels", e -> {
+      inputField.getOptionalValue()
+          .map(it -> it.lines().collect(Collectors.toSet()))
+          .ifPresent(lines -> getVariableRows().forEach(row -> row.lockLevels(lines)));
+    }));
+    getContent().add(new Button("Avoid Deletion", e -> {
+      inputField.getOptionalValue()
+          .map(it -> it.lines().collect(Collectors.toSet()))
+          .ifPresent(lines -> getVariableRows()
+              .forEach(row -> row.setDeletable(!lines.contains(row.getVariableName()))));
     }));
     markInitialized();
   }
@@ -320,6 +338,20 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       return root;
     }
 
+    public void setDeletable(boolean deletable) {
+      deleteVariable.setEnabled(deletable);
+      deleteVariable.setVisible(deletable);
+    }
+
+    /**
+     * locked levels can be reordered but not deleted or renamed
+     *
+     * @param levels
+     */
+    public void lockLevels(Set<String> levels) {
+      variableLevels.lockLevels(levels);
+    }
+
     @Override
     @NonNull
     public InputValidation validate() {
@@ -520,17 +552,184 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
   }
 
+
+  static class ListItemDropPosition extends Div implements DropTarget<Div> {
+
+    private ListItemDropPosition() {
+      this.addClassNames("list-item-drop-position");
+      getStyle().set("min-width", "100px");
+      getStyle().set("min-height", "20px");
+      getStyle().set("background-color", "green");
+      setActive(true);
+    }
+
+    @Override
+    public Div getDropTargetComponent() {
+      return DropTarget.super.getDropTargetComponent();
+    }
+  }
+
+  static class DragDropList<T extends Component> extends Composite<Div> {
+
+    private final Class<T> clazz;
+    private List<T> items = new ArrayList<>();
+
+    public DragDropList(Class<T> clazz) {
+      this.clazz = clazz;
+      ListItemDropPosition tListItemDropPosition = new ListItemDropPosition();
+      tListItemDropPosition.addDropListener(dropEvent -> {
+        if (dropEvent.getDragSourceComponent().isEmpty()) {
+          return;
+        }
+        var dragSourceComponent = dropEvent.getDragSourceComponent().orElseThrow();
+        if (clazz.isAssignableFrom(dragSourceComponent.getClass())) {
+          T dragSource = clazz.cast(dragSourceComponent);
+          int sourceIndex = items.indexOf(dragSource);
+          Div dropComponent = dropEvent.getComponent();
+
+          //szenario 1: drop before an element
+          //szenario 2: drop not before any element
+          int targetIndex = getContent().indexOf(dropComponent);
+          if (targetIndex >= getContent().getComponentCount() - 1) {
+            //the drop target is the last component there is no (T) afterwards
+            add(dragSource);
+          }
+          //getContent().getComponentAt(targetIndex + 1);
+        }
+
+      });
+
+      getContent().add(tListItemDropPosition);
+    }
+
+    public Stream<T> stream() {
+      return items.stream();
+    }
+
+    public void add(T item) {
+      add(items.size(), item);
+    }
+
+    public void add(int index, T item) {
+      if (index < 0 || index > items.size()) {
+        items.add(index, item);
+      }
+      var componentIndex = index * 2 + 1;
+      if (componentIndex > getContent().getComponentCount() || index < 0) {
+        System.out.println("componentIndex = " + componentIndex);
+        return;
+      }
+
+      ListItemDropPosition tListItemDropPosition = new ListItemDropPosition();
+      tListItemDropPosition.addDropListener(dropEvent -> {
+        if (dropEvent.getDragSourceComponent().isEmpty()) {
+          return;
+        }
+        var dragSourceComponent = dropEvent.getDragSourceComponent().orElseThrow();
+        if (clazz.isAssignableFrom(dragSourceComponent.getClass())) {
+          T dragSource = clazz.cast(dragSourceComponent);
+          System.out.println("what a drop of " + dragSource);
+          int sourceIndex = items.indexOf(dragSource);
+          Div dropComponent = dropEvent.getComponent();
+
+          //szenario 1: drop before an element
+          //szenario 2: drop not before any element
+          int targetIndex = (getContent().indexOf(dropComponent)) / 2;
+          if (targetIndex >= getContent().getComponentCount() - 1) {
+            //the drop target is the last component there is no (T) afterwards
+            add(getContent().getComponentCount(), dragSource);
+          }
+        }
+
+      });
+      getContent().addComponentAtIndex(componentIndex, item);
+      getContent().addComponentAtIndex(componentIndex + 1, tListItemDropPosition);
+
+      DragSource<T> tDragSource = DragSource.create(item);
+//      tDragSource.addDragStartListener(dragEvent -> {
+//        getContent().getChildren().filter(c -> c instanceof ListItemDropPosition)
+//            .map(ListItemDropPosition.class::cast)
+//            .forEach(dropPosition -> dropPosition.setActive(true));
+//      });
+//
+//      tDragSource.addDragEndListener(dragEvent -> {
+//        getContent().getChildren().filter(c -> c instanceof ListItemDropPosition)
+//            .map(ListItemDropPosition.class::cast)
+//            .forEach(dropPosition -> dropPosition.setActive(false));
+//      });
+    }
+
+    public void clear() {
+      getContent().removeAll();
+      items.clear();
+      ListItemDropPosition tListItemDropPosition = new ListItemDropPosition();
+      tListItemDropPosition.addDropListener(dropEvent -> {
+        if (dropEvent.getDragSourceComponent().isEmpty()) {
+          return;
+        }
+        var dragSourceComponent = dropEvent.getDragSourceComponent().orElseThrow();
+        if (clazz.isAssignableFrom(dragSourceComponent.getClass())) {
+          T dragSource = clazz.cast(dragSourceComponent);
+          int sourceIndex = items.indexOf(dragSource);
+          Div dropComponent = dropEvent.getComponent();
+
+          //szenario 1: drop before an element
+          //szenario 2: drop not before any element
+          int targetIndex = getContent().indexOf(dropComponent);
+          if (targetIndex >= getContent().getComponentCount() - 1) {
+            //the drop target is the last component there is no (T) afterwards
+            add(dragSource);
+          }
+          //getContent().getComponentAt(targetIndex + 1);
+        }
+
+      });
+
+      getContent().add(tListItemDropPosition);
+    }
+
+    public int size() {
+      return items.size();
+    }
+
+
+    public void remove(T levelField) {
+      int index = items.indexOf(levelField);
+      var componentIndex = index * 2 + 1;
+      getContent().remove(getContent().getComponentAt(componentIndex),
+          getContent().getComponentAt(componentIndex + 1));
+    }
+
+    public boolean isEmpty() {
+      return items.isEmpty();
+    }
+
+    public int indexOf(@NonNull T item) {
+      return items.indexOf(item);
+    }
+
+    public T getAtIndex(int nextFocus) {
+      return items.get(nextFocus);
+    }
+  }
+
   @Tag("variable-levels-input")
   static class VariableLevelsInput extends Div implements UserInput, CanSnapshot,
       HasValidationProperties {
 
-    private final List<LevelField> levelFields = new ArrayList<>();
-    private final Div levelsContainer = new Div();
+    private final DragDropList<LevelField> levelsContainer = new DragDropList<>(LevelField.class);
     private Snapshot initialState;
     LevelField focusedLevelField = null;
 
     public List<String> getLevels() {
       return filledLevels();
+    }
+
+    public void lockLevels(Set<String> levels) {
+      levelsContainer.stream()
+          .filter(field -> !field.isEmpty())
+          .filter(field -> levels.contains(field.getValue().orElseThrow()))
+          .forEach(LevelField::lock);
     }
 
 
@@ -578,7 +777,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
 
     private void addLevel(LevelField levelField) {
-      addLevel((int) levelsContainer.getChildren().count(), levelField);
+      levelsContainer.add(levelField);
     }
 
     /**
@@ -590,13 +789,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
      * @param levelField the field to add
      */
     private void addLevel(int index, LevelField levelField) {
-      int componentIndex = Math.max(0, index);
-
-      if (levelsContainer.getChildren().count() < index) {
-        componentIndex = Math.toIntExact(levelsContainer.getChildren().count());
-      }
-      levelsContainer.addComponentAtIndex(componentIndex, levelField);
-      levelFields.add(componentIndex, levelField);
+      levelsContainer.add(index, levelField);
       levelField.addDeleteListener(event -> removeLevelField(event.getSource()));
       // when the value changes, the validation is outdated and removed.
       levelField.addValueChangeListener(valueChangeEvent -> setInvalid(false));
@@ -604,14 +797,15 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       setInvalid(false);
       levelField.addFocusListener(event -> this.focusedLevelField = levelField);
       levelField.addBlurListener(event -> this.focusedLevelField = null);
+
     }
 
     public void removeLevelField(LevelField levelField) {
-      levelFields.remove(levelField);
-      levelField.removeFromParent();
-      if (levelFields.isEmpty()) {
+      levelsContainer.remove(levelField);
+      if (levelsContainer.isEmpty()) {
         addEmptyLevel();
       }
+
     }
 
     public VariableLevelsInput() {
@@ -647,8 +841,8 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
       Shortcuts.addShortcutListener(this, it -> {
         var focusIndex = focusedLevelIndex();
         int nextFocus = focusIndex + 1;
-        if (levelFields.size() > nextFocus) {
-          levelFields.get(nextFocus).focus();
+        if (levelsContainer.size() > nextFocus) {
+          levelsContainer.getAtIndex(nextFocus).focus();
         } else {
           addEmptyLevel();
         }
@@ -663,7 +857,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
           return;
         }
         var startIndex = focusedLevelIndex();
-        if (Objects.nonNull(focusedLevelField) && focusedLevelField.isEmpty()) {
+        if (nonNull(focusedLevelField) && focusedLevelField.isEmpty()) {
           //fill the first item in the focused field
           focusedLevelField.setValue(pastedLines.getFirst());
         } else {
@@ -681,7 +875,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     private int focusedLevelIndex() {
       return Optional.ofNullable(focusedLevelField)
-          .map(levelFields::indexOf)
+          .map(levelsContainer::indexOf)
           .orElse(-1); //null leads to same result as indexOf if not a child yet
     }
 
@@ -690,10 +884,17 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     public void setInvalid(boolean invalid) {
       HasValidationProperties.super.setInvalid(invalid);
       getElement().setAttribute("invalid", invalid);
-      levelFields.stream().findFirst().ifPresent(levelField -> {
-        levelField.setErrorMessage(getErrorMessage());
-        levelField.setInvalid(invalid);
-      });
+      if (!invalid) {
+        levelsContainer.stream().forEach(f -> f.setErrorMessage(null));
+        levelsContainer.stream().forEach(f -> f.setInvalid(false));
+      } else {
+        levelsContainer.stream()
+            .findFirst()
+            .ifPresent(levelField -> {
+              levelField.setErrorMessage(getErrorMessage());
+              levelField.setInvalid(true);
+            });
+      }
     }
 
     Function<List<LevelField>, List<String>> extractFilledLevels() {
@@ -706,7 +907,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
     }
 
     private List<String> filledLevels() {
-      return extractFilledLevels().apply(levelFields);
+      return extractFilledLevels().apply(levelsContainer.stream().toList());
     }
 
     private boolean isEmpty() {
@@ -742,7 +943,7 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
                 .map(this::mapToRestoredLevelField)
                 .toList()
         );
-        var currentLevels = extractFilledLevels().apply(levelFields);
+        var currentLevels = extractFilledLevels().apply(levelsContainer.stream().toList());
         //find all the deletions
         List<LevelDeleted> levelDeletions = previousLevels.stream()
             .filter(previousLevel -> !currentLevels.contains(previousLevel))
@@ -783,37 +984,35 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     @Override
     public boolean hasChanges() {
-      return levelFields.stream().anyMatch(LevelField::hasChanges);
+      return levelsContainer.stream().anyMatch(LevelField::hasChanges);
     }
 
 
     public void markInitialized() {
-      levelFields.forEach(LevelField::markInitialized);
+      levelsContainer.stream().forEach(LevelField::markInitialized);
       this.initialState = snapshot();
     }
 
     @Override
     public Snapshot snapshot() {
-      return new LevelsSnapshot(levelFields.stream().map(LevelField::snapshot).toList());
+      return new LevelsSnapshot(levelsContainer.stream().map(LevelField::snapshot).toList());
     }
 
     @Override
     public void restore(Snapshot snapshot) throws SnapshotRestorationException {
       if (snapshot instanceof LevelsSnapshot(List<Snapshot> levels)) {
-        var previousChildren = levelsContainer.getChildren().toList();
-        var previousLevels = levelFields.stream().toList();
-        levelsContainer.removeAll();
-        levelFields.clear();
+        List<LevelField> previousLevels = levelsContainer.stream().toList();
+        levelsContainer.clear();
         try {
           levels.stream()
               .map(this::mapToRestoredLevelField)
               .forEach(this::addLevel);
           return;
         } catch (Exception e) {
-          levelsContainer.removeAll();
-          levelFields.clear();
-          levelsContainer.add(previousChildren);
-          levelFields.addAll(previousLevels);
+          levelsContainer.clear();
+          for (LevelField previousLevel : previousLevels) {
+            levelsContainer.add(previousLevel);
+          }
           throw e;
         }
       }
@@ -944,6 +1143,13 @@ public class ExperimentalVariablesInput extends Composite<Div> implements UserIn
 
     Registration addDeleteListener(ComponentEventListener<DeleteLevelEvent> listener) {
       return addListener(DeleteLevelEvent.class, listener);
+    }
+
+    public void lock() {
+      deleteLevelButton.setEnabled(false);
+      deleteLevelButton.setVisible(false);
+      levelValue.setSuffixComponent(VaadinIcon.LOCK.create());
+      levelValue.setEnabled(false);
     }
 
     record LevelSnapshot(@NonNull String levelValue) implements
