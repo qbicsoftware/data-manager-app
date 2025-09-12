@@ -28,8 +28,25 @@ First some general property definitions
   --border-color-default: hsla(214, 50%, 22%, 0.26);
   --border-color-dialog: rgba(26, 56, 96, 0.1);
   --primary-color: hsl(214, 100%, 48%);
+  --primary-color-10pct: hsla(214, 100%, 48%, 0.2);
+  --primary-color-20pct: hsla(214, 100%, 48%, 0.2);
   --primary-contrast-color: #fff;
   --primary-text-color: hsl(214, 100%, 43%);
+  --shade-color-5pct: hsla(214, 61%, 25%, 0.05);
+  --shade-color-10pct: hsla(214, 57%, 24%, 0.1);
+  --shade-color-20pct: hsla(214, 53%, 23%, 0.16);
+  --shade-color-30pct: hsla(214, 50%, 22%, 0.26);
+  --shade-color-40pct: hsla(214, 47%, 21%, 0.38);
+  --shade-color-50pct: hsla(214, 45%, 20%, 0.52);
+  --shade-color-60pct: hsla(214, 43%, 19%, 0.6);
+  --shade-color-70pct: hsla(214, 42%, 18%, 0.69);
+  --shade-color-80pct: hsla(214, 41%, 17%, 0.83);
+  --shade-color-90pct: hsla(214, 40%, 16%, 0.94);
+  --shade-color: hsl(214, 35%, 15%);
+  --background-contrast-color-5pct: var(--shade-color-5pct);
+  --background-contrast-color-10pct: var(--shade-color-10pct);
+
+
   --secondary-text-color: hsla(214, 42%, 18%, 0.69);
   --tertiary-text-color: hsla(214, 45%, 20%, 0.52);
   --error-text-color: hsl(3, 89%, 42%);

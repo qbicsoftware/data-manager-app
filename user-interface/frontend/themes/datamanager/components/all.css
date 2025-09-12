@@ -640,8 +640,23 @@ Colors
   cursor: grab;
 }
 
-.dragging {
+.draggable.v-dragged {
+  border: dashed var(1px) var(--border-color-default);
+}
+
+.draggable.v-dragged,
+.draggable.v-dragged * {
   cursor: grabbing;
+}
+
+.list-item-drop-position {
+  border-color: transparent;
+  background-color: var(--background-contrast-color-5pct);
+  height: 2em;
+}
+
+.list-item-drop-position.v-drag-over-target {
+  background-color: var(--primary-color-10pct);
 }
 
 /*the class .v-drag-over-target is assigned by vaadin if a drop event is active and the dragged element hovers over the drag target*/
@@ -1266,16 +1281,16 @@ Older stuff -
 
 /*FIXME*/
 .background-contrast-5pct {
-  background-color: var(--lumo-shade-5pct);
+  background-color: var(--background-contrast-color-5pct);
 }
 
 .background-contrast-10pct {
-  background-color: var(--lumo-shade-10pct);
+  background-color: var(--background-contrast-color-10pct);
 }
 
 /*FIXME*/
 .choice-box {
-  border-color: var(--lumo-contrast-10pct);
+  border-color: var(--border-color-default);
   border-style: solid;
   border-width: 1px;
   border-radius: var(--spacing-02);
