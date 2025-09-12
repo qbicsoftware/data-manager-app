@@ -8,6 +8,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -21,6 +22,7 @@ import life.qbic.datamanager.views.StringBean;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
+import life.qbic.datamanager.views.general.MultiSelectLazyLoadingGrid;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -32,6 +34,8 @@ import life.qbic.datamanager.views.general.dialog.stepper.Step;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialog;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
+import life.qbic.datamanager.views.general.grid.Filter;
+import life.qbic.datamanager.views.general.grid.FilterGrid;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
@@ -76,6 +80,65 @@ public class ComponentDemo extends Div {
     add(dialogShowCase());
     add(cardShowCase());
     add(toastShowCase());
+    add(filterGridShowCase());
+  }
+
+  private Div filterGridShowCase() {
+
+    var grid = new MultiSelectLazyLoadingGrid<Person>();
+    grid.addColumn(Person::firstName).setHeader("First Name").setKey("firstName");
+    grid.addColumn(Person::lastName).setHeader("Last Name").setKey("lastName");
+    grid.addColumn(Person::age).setHeader("Age").setKey("age");
+
+    var filterDataProvider = DataProvider.<Person, Filter<Person>>fromFilteringCallbacks(query ->
+        {
+          var offsetIgnored = query.getOffset();
+          var limitIgnored = query.getLimit();
+          var filter = query.getFilter().orElse(new ExampleFilter(""));
+          return examples.stream().filter(filter::test);
+        }
+        , count -> {
+          var offsetIgnored = count.getOffset();
+          var limitIgnored = count.getLimit();
+          var filter = count.getFilter().orElse(new ExampleFilter(""));
+          return examples.stream().filter(filter::test).toList().size();
+        });
+
+    var filterGrid = new FilterGrid<Person>(grid, filterDataProvider, new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
+
+
+    return new Div(filterGrid);
+  }
+
+  class ExampleFilter implements Filter<Person> {
+
+    private String term;
+
+    ExampleFilter(String term) {
+      this.term = term;
+    }
+
+    @Override
+    public void setSearchTerm(String searchTerm) {
+      this.term = searchTerm;
+    }
+
+    @Override
+    public boolean test(Person data) {
+      return data.firstName.contains(term) || data.lastName.contains(term);
+    }
+  }
+
+  static List<Person> examples = new ArrayList<>();
+
+  static {
+    examples.add(new Person("John", "Doe", 18));
+    examples.add(new Person("John", "Wane", 22));
+    examples.add(new Person("Jae", "Doe", 44));
+  }
+
+  record Person(String firstName, String lastName, int age) {
+
   }
 
   private static Div clickableShowCase() {
