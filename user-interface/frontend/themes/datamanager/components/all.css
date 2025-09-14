@@ -372,30 +372,37 @@ Heading
 /*region margin top bottom*/
 .margin-vertical-01 {
   margin-top: var(--spacing-01);
+  margin-bottom: var(--spacing-01);
 }
 
 .margin-vertical-02 {
   margin-top: var(--spacing-02);
+  margin-bottom: var(--spacing-02);
 }
 
 .margin-vertical-03 {
   margin-top: var(--spacing-03);
+  margin-bottom: var(--spacing-03);
 }
 
 .margin-vertical-04 {
   margin-top: var(--spacing-04);
+  margin-bottom: var(--spacing-04);
 }
 
 .margin-vertical-05 {
   margin-top: var(--spacing-05);
+  margin-bottom: var(--spacing-05);
 }
 
 .margin-vertical-06 {
   margin-top: var(--spacing-06);
+  margin-bottom: var(--spacing-06);
 }
 
 .margin-vertical-07 {
   margin-top: var(--spacing-07);
+  margin-bottom: var(--spacing-07);
 }
 
 /*endregion*/
@@ -964,6 +971,10 @@ Icons
   height: min-content;
 }
 
+.display-contents {
+  display: contents;
+}
+
 /*endregion*/
 
 /*region Borders*/
@@ -1279,7 +1290,6 @@ Older stuff -
   background-color: #F9F9F9;
 }
 
-/*FIXME*/
 .background-contrast-5pct {
   background-color: var(--background-contrast-color-5pct);
 }
@@ -1288,7 +1298,6 @@ Older stuff -
   background-color: var(--background-contrast-color-10pct);
 }
 
-/*FIXME*/
 .choice-box {
   border-color: var(--border-color-default);
   border-style: solid;

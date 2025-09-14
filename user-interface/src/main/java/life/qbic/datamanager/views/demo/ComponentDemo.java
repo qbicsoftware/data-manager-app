@@ -6,7 +6,6 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
-import com.vaadin.flow.component.html.NativeLabel;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -23,7 +22,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import life.qbic.datamanager.views.StringBean;
-import life.qbic.datamanager.views.general.ButtonFactory;
 import life.qbic.datamanager.views.general.Card;
 import life.qbic.datamanager.views.general.DetailBox;
 import life.qbic.datamanager.views.general.DetailBox.Header;
@@ -40,6 +38,7 @@ import life.qbic.datamanager.views.general.dialog.stepper.StepperDialogFooter;
 import life.qbic.datamanager.views.general.dialog.stepper.StepperDisplay;
 import life.qbic.datamanager.views.general.icon.IconFactory;
 import life.qbic.datamanager.views.notifications.MessageSourceNotificationFactory;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.info.SimpleParagraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -166,77 +165,6 @@ public class ComponentDemo extends Div {
     return new ExperimentalVariablesInput();
   }
 
-  private Component variableRow() {
-    var root = new Div();
-    root.addClassNames(
-        "border rounded-02 padding-04 gap-04 column-gap-05 grid-experimental-variable-input");
-    var fields = new Div();
-    fields.getStyle().set("grid-area", "a");
-    fields.addClassNames("flex-horizontal gap-05");
-    TextField name = new TextField();
-    name.addClassNames("dynamic-growing-flex-item");
-    name.setLabel("Variable Name");
-    TextField unit = new TextField();
-    unit.addClassNames("dynamic-growing-flex-item");
-    unit.setLabel("Unit (optional)");
-    Component variableLevels = createVariableLevels();
-    variableLevels.getStyle().set("grid-area", "b");
-    var deleteVariable = new ButtonFactory().createTertirayButton("Delete Variable",
-        VaadinIcon.TRASH.create());
-    deleteVariable.getStyle().set("grid-area", "c");
-    deleteVariable.addClassNames("width-max-content");
-    fields.add(name, unit);
-    root.add(fields, variableLevels, deleteVariable);
-    return root;
-  }
-
-
-  private Component createVariableLevels() {
-    final String rootCssClasses = "border rounded-02 flex-vertical gap-none padding-04 padding-top-04";
-    final String bodyClassNames = "flex-vertical justify-start gap-04";
-    Div root = new Div();
-    root.getStyle().set("grid-area", "b");
-    root.addClassNames(rootCssClasses, "input-with-label-container");
-
-    var body = new Div();
-    body.addClassNames(bodyClassNames);
-
-    final String levelsContainerCss = "flex-horizontal gap-03 column-gap-03 width-full";
-    var levelsContainer = new Div();
-    levelsContainer.setId("levels-container"); //needed for labelling
-    levelsContainer.addClassNames(levelsContainerCss);
-    ButtonFactory buttonFactory = new ButtonFactory();
-
-    String labelCss = "form-label input-label";
-    var label = new NativeLabel("Levels");
-    label.setFor(levelsContainer);
-    label.addClassNames(labelCss);
-
-    final String levelFieldCss = "flex-horizontal gap-03 width-full no-flex-wrap no-wrap input-with-label";
-    final String levelValueCss = "dynamic-growing-flex-item";
-
-    var levelField = new Div();
-    levelField.addClassNames(levelFieldCss);
-    var levelValue = new TextField();
-    levelValue.addClassNames(levelValueCss);
-    var deleteLevelButton = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
-    levelField.add(levelValue, deleteLevelButton);
-
-    var levelField2 = new Div();
-    levelField2.addClassNames(levelFieldCss);
-    var levelValue2 = new TextField();
-    levelValue2.addClassNames(levelValueCss);
-    var deleteLevelButton2 = buttonFactory.createIconButton(VaadinIcon.TRASH.create());
-    levelField2.add(levelValue2, deleteLevelButton2);
-
-    levelsContainer.add(levelField, levelField2);
-
-    var addLevelButton = buttonFactory.createTertirayButton("Add Level", VaadinIcon.PLUS.create());
-    body.add(levelsContainer, addLevelButton);
-    addLevelButton.addClassNames("width-max-content justify-self-start");
-    root.add(label, body);
-    return root;
-  }
 
   private static Div clickableShowCase() {
     Div container = new Div();
