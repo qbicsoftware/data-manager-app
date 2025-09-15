@@ -276,13 +276,14 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
   }
 
   public Collection<MeasurementCode> getSelectedMeasurementUrls() {
-    List<MeasurementCode> selectedMeasurements = new ArrayList<>();
-//    selectedMeasurements.addAll(
-//        proteomicsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
-//            .toList());
-//    selectedMeasurements.addAll(
-//        ngsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
-//            .toList());
-//    return selectedMeasurements;
+    Stream<MeasurementCode> ngsCodeStream = ngsRawDataGrid.getSelectedItems().stream()
+        .map(it -> it.dataset().measurementId())
+        .map(MeasurementCode::createNGS);
+    Stream<MeasurementCode> proteomicsCodeStream = proteomicsRawDataGrid.getSelectedItems().stream()
+        .map(it -> it.dataset().measurementId())
+        .map(MeasurementCode::createMS);
+
+    return Stream.concat(ngsCodeStream, proteomicsCodeStream)
+        .collect(Collectors.toSet());
   }
 }
