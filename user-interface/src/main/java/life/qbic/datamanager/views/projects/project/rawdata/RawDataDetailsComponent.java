@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import life.qbic.application.commons.SortOrder;
 import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.views.Context;
@@ -119,10 +120,32 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     resetTabsInTabsheet();
     this.context = context;
     initializeTabCounts();
+    GridLazyDataView<RawDatasetInformationNgs> ngsGridDataView = ngsRawDataGrid.setItems(
+        query -> {
+          List<SortOrder> sortOrders = query.getSortOrders().stream().map(
+                  it -> new SortOrder(it.getSorted(),
+                      it.getDirection().equals(SortDirection.ASCENDING)))
+              .collect(Collectors.toList());
+          // if no order is provided by the grid order by last modified (least priority)
+          sortOrders.add(SortOrder.of("measurementId").ascending());
+          return asyncProjectService.getRawDatasetInformationNgs(
+              context.projectId().orElseThrow().value(),
+              context.experimentId().orElseThrow().value(), query.getOffset(), query.getLimit(),
+              new SortRawData(SortFieldRawData.REGISTRATION_DATE,
+                  AsyncProjectService.SortDirection.DESC), searchTerm).toStream();
+
+        });
+
+    ngsRawDataGrid.getLazyDataView().addItemCountChangeListener(
+        countChangeEvent -> genomicsTab.setMeasurementCount(
+            (int) ngsGridDataView.getItems().count()));
+
+    rawDataGridDataViews.add(ngsGridDataView);
     asyncProjectService.getRawDatasetInformationPxP(context.projectId().orElseThrow().value(),
             context.experimentId().orElseThrow().value(), 0, 1000, new SortRawData(
                 SortFieldRawData.REGISTRATION_DATE, AsyncProjectService.SortDirection.DESC), "")
         .doOnNext(info -> log.info(info.toString())).subscribe();
+
   }
 
   private void initializeTabCounts() {
@@ -156,27 +179,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
         .setKey("uploaddate")
         .setHeader("Upload Date");
     ngsRawDataGrid.setItemDetailsRenderer(renderRawDataNgs());
-    GridLazyDataView<RawDatasetInformationNgs> ngsGridDataView = ngsRawDataGrid.setItems(
-        query -> {
-          List<SortOrder> sortOrders = query.getSortOrders().stream().map(
-                  it -> new SortOrder(it.getSorted(),
-                      it.getDirection().equals(SortDirection.ASCENDING)))
-              .collect(Collectors.toList());
-          // if no order is provided by the grid order by last modified (least priority)
-          sortOrders.add(SortOrder.of("measurementId").ascending());
-          return asyncProjectService.getRawDatasetInformationNgs(
-              context.projectId().orElseThrow().value(),
-              context.experimentId().orElseThrow().value(), query.getOffset(), query.getLimit(),
-              new SortRawData(SortFieldRawData.REGISTRATION_DATE,
-                  AsyncProjectService.SortDirection.DESC), searchTerm).toStream();
-
-        });
-
-    ngsRawDataGrid.getLazyDataView().addItemCountChangeListener(
-        countChangeEvent -> genomicsTab.setMeasurementCount(
-            (int) ngsGridDataView.getItems().count()));
-
-    rawDataGridDataViews.add(ngsGridDataView);
   }
 
   private void createProteomicsRawDataGrid() {
@@ -281,6 +283,6 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
 //    selectedMeasurements.addAll(
 //        ngsRawDataGrid.getSelectedItems().stream().map(RawData::measurementCode)
 //            .toList());
-    return selectedMeasurements;
+//    return selectedMeasurements;
   }
 }
