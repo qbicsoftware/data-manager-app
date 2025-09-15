@@ -20,6 +20,7 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -28,7 +29,6 @@ import life.qbic.datamanager.security.OidcLinkController;
 import life.qbic.datamanager.views.account.UserProfileComponent.ChangeUserDetailsDialog.ConfirmEvent;
 import life.qbic.datamanager.views.general.DialogWindow;
 import life.qbic.datamanager.views.general.PageArea;
-import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.projects.project.access.UserAvatarWithNameComponent;
 import life.qbic.identity.api.UserInfo;
@@ -83,6 +83,7 @@ public class UserProfileComponent extends PageArea implements Serializable {
   static class UserDetail extends Div {
 
     public UserDetail(String title, Component... components) {
+      addClassName("gap-04");
       Span titleSpan = new Span(title);
       titleSpan.addClassName("bold");
       addClassName("detail");
@@ -198,7 +199,10 @@ public class UserProfileComponent extends PageArea implements Serializable {
     private final String orcidLinkingEndpoint;
 
     public UserDetailsCard(UserInfo userInfo, String orcidLinkingEndpoint) {
-      this.orcidLinkingEndpoint = orcidLinkingEndpoint;
+      this.orcidLinkingEndpoint = requireNonNull(orcidLinkingEndpoint);
+      this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
+      addClassNames("flex-horizontal", "gap-03", "fixed-width-1000px", "padding-top-bottom-10", "padding-left-right-10");
+
       UserAvatar userAvatar = new UserAvatar();
       userAvatar.setName(userInfo.platformUserName());
       userAvatar.setUserId(userInfo.id());
@@ -216,10 +220,12 @@ public class UserProfileComponent extends PageArea implements Serializable {
       UserDetail userEmailDetail = new UserDetail("Email: ", userEmail);
       Div userDetails = new Div();
       userDetails.add(userNameDetail, userEmailDetail);
-      userDetails.addClassName("details");
+      userDetails.addClassNames("details", "gap-07");
       add(avatarWithName, userDetails);
+      avatarWithName.addClassName("flex-01");
+      userDetails.addClassNames("flex-03");
       addClassName("user-details-card");
-      this.userInfo = requireNonNull(userInfo, "userInfo must not be null");
+
       platformUserName.setText(userInfo.platformUserName());
       userEmail.setText(this.userInfo.emailAddress());
       userAvatar.setName(this.userInfo.platformUserName());
@@ -296,15 +302,8 @@ public class UserProfileComponent extends PageArea implements Serializable {
     }
 
     private Div generateLinkedAccountCard(UserInfo userInfo) {
-      //Should be extended once more than orcid is possible with a check which oidc is relevant
-      OidcLogo oidcLogo = new OidcLogo(OidcType.ORCID);
-      Span orcIdAccount = new Span(oidcLogo, new Span(userInfo.oidcId()));
-      orcIdAccount.addClassName("logo-with-text");
-      Anchor orcIdPublicRecordLink = new Anchor(generateOidCRecordURL(userInfo.oidcId()),
-          "View public record", AnchorTarget.BLANK);
-      Div linkedAccountCard = new Div(orcIdAccount, orcIdPublicRecordLink);
-      linkedAccountCard.addClassName("linked-account");
-      return linkedAccountCard;
+      return new AccountContentBox(userInfo.oidcId(), URI.create(generateOidCRecordURL(
+          userInfo.oidcId())));
     }
 
     private String generateOidCRecordURL(String oidcId) {

@@ -266,6 +266,7 @@ public class ContactField extends CustomField<Contact> implements HasClientValid
       Anchor oidcLink = new Anchor(oidcUrl, oidc);
       oidcLink.setTarget(AnchorTarget.BLANK);
       OidcLogo oidcLogo = new OidcLogo(oidcType);
+      oidcLogo.addClassName("icon-size-m");
       Span oidcSpan = new Span(oidcLogo, oidcLink);
       oidcSpan.addClassNames(GAP_02_CSS, "flex-align-items-center", FLEX_HORIZONTAL);
       add(oidcSpan);
