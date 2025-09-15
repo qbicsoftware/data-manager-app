@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,7 +57,7 @@ import life.qbic.datamanager.views.projects.project.experiments.experiment.compo
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExistingSamplesPreventVariableEdit;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalGroupsDialog.ExperimentalGroupContent;
-import life.qbic.datamanager.views.projects.project.experiments.experiment.components.ExperimentalVariablesInput;
+import life.qbic.datamanager.views.projects.project.experiments.experiment.components.experimentalvariable.ExperimentalVariablesInput;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentDraft;
 import life.qbic.datamanager.views.projects.project.experiments.experiment.update.EditExperimentDialog.ExperimentUpdateEvent;
@@ -222,8 +223,7 @@ public class ExperimentDetailsComponent extends PageArea {
     var disclaimer = Disclaimer.createWithTitle("Design your experiment",
         "Get started by adding experimental variables", "Add variables");
     disclaimer.addDisclaimerConfirmedListener(
-        confirmedEvent -> openExperimentalVariablesEditDialog());
-    disclaimer.addDisclaimerConfirmedListener(it -> openExperimentalVariablesEditDialog());
+        confirmedEvent -> openExperimentalVariablesAddDialog());
     return disclaimer;
   }
 
@@ -349,7 +349,7 @@ public class ExperimentDetailsComponent extends PageArea {
 
   private void listenForExperimentalVariablesComponentEvents() {
     experimentalVariableCollection.addAddListener(
-        addEvent -> openExperimentalVariablesEditDialog());
+        addEvent -> openExperimentalVariablesAddDialog());
     experimentalVariableCollection.addEditListener(
         editEvent -> openExperimentalVariablesEditDialog());
   }
@@ -524,6 +524,34 @@ public class ExperimentDetailsComponent extends PageArea {
 
     ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
     variables.forEach(variablesInput::addVariable);
+    variablesInput.markInitialized();
+    AppDialog dialog = AppDialog.medium();
+    DialogHeader.with(dialog, "Define Experiment Variable");
+    DialogFooter.with(dialog, "Cancel", "Save");
+    DialogBody.with(dialog, variablesInput, variablesInput);
+    dialog.registerConfirmAction(() -> handleVariableEdit(variablesInput));
+    dialog.registerCancelAction(dialog::close);
+    dialog.open();
+  }
+
+  private void openExperimentalVariablesAddDialog() {
+    ExperimentId experimentId = context.experimentId().orElseThrow();
+    List<ExperimentalVariableInformation> variablesOfExperiment = experimentInformationService.getVariablesOfExperiment(
+        context.projectId().orElseThrow().value(), experimentId);
+    var variables = variablesOfExperiment.stream()
+        .map(it -> new ExperimentalVariablesInput.ExperimentalVariableInformation(
+            it.name(),
+            it.unit(),
+            it.levels()
+        ))
+        .toList();
+
+    ExperimentalVariablesInput variablesInput = new ExperimentalVariablesInput();
+    for (ExperimentalVariablesInput.ExperimentalVariableInformation variable : variables) {
+      variablesInput.addVariable(variable);
+      variablesInput.setUsedLevels(variable.name(), new HashSet<>(variable.levels()));
+    }
+    variablesInput.addVariable();
     variablesInput.markInitialized();
     AppDialog dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Define Experiment Variable");
