@@ -31,7 +31,6 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
 import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
-import life.qbic.projectmanagement.application.concurrent.VirtualThreadScheduler;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -751,7 +750,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
    * Ensures that the security context is applied in the correct order and written when it is
    * required.
    * <p>
-   * Also ensures that the {@link Callable} is executed on the {@link VirtualThreadScheduler} with
+   * Also ensures that the {@link Callable} is executed on a {@link Scheduler} with
    * {@link Mono#subscribeOn(Scheduler)}.
    *
    * @param securityApplicant
