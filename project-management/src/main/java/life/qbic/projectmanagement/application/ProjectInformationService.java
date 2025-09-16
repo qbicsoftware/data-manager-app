@@ -27,6 +27,7 @@ import life.qbic.projectmanagement.domain.model.project.ProjectTitle;
 import life.qbic.projectmanagement.domain.repository.ProjectRepository;
 import org.hibernate.dialect.lock.OptimisticEntityLockException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -217,8 +218,11 @@ public class ProjectInformationService {
       try {
         tryToUpdateModifiedDate(project, modifiedOn);
         return;
-      } catch (OptimisticEntityLockException e) {
+      } catch (ObjectOptimisticLockingFailureException e) {
         log.debug("Optimistic lock exception occurred while updating modified date for project " + projectID);
+      } catch (Exception e) {
+        log.error("Error while updating modified date for project " + projectID, e);
+        throw e;
       }
       try {
         Thread.sleep(calcBase2Duration(attempt));
@@ -235,7 +239,7 @@ public class ProjectInformationService {
   Will only update the last modified date in case the passed instant is newer then the
   the already stored one in the project.
    */
-  private void tryToUpdateModifiedDate(Project project, Instant modifiedOn) throws OptimisticEntityLockException {
+  private void tryToUpdateModifiedDate(Project project, Instant modifiedOn) throws ObjectOptimisticLockingFailureException {
     if (project.getLastModified() == null) {
       project.setLastModified(modifiedOn);
     }
