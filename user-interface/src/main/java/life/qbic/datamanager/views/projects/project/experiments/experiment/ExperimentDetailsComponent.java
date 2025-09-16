@@ -884,7 +884,7 @@ public class ExperimentDetailsComponent extends PageArea {
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var projectId = context.projectId().orElseThrow();
 
-    Disposable subscription = Flux.fromIterable(experimentalGroups)
+    Flux.fromIterable(experimentalGroups)
         .map(experimentalGroup -> new ExperimentalGroupCreationRequest(projectId.value(),
             experimentId.value(), experimentalGroup))
         .flatMap(asyncProjectService::create, concurrencyCap)
@@ -898,12 +898,6 @@ public class ExperimentDetailsComponent extends PageArea {
           log.error("Error while creating experimental group", err);
           displayFailedExperimentalGroupCreation();
         });
-
-    addDetachListener(event -> {
-      if (!subscription.isDisposed()) {
-        subscription.dispose();
-      }
-    });
   }
 
   private void displayFailedExperimentalGroupCreation() {
