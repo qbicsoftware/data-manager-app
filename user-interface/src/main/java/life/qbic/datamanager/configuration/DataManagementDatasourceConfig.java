@@ -41,10 +41,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-    basePackages = {"life.qbic.projectmanagement", "life.qbic.identity",
-        "life.qbic.datamanager.announcements"},
+    basePackages = {
+        "life.qbic.projectmanagement.infrastructure", // repos here
+        "life.qbic.identity",                                  // only if this package really has repos for this EMF
+        "life.qbic.datamanager.announcements"                  // same note
+    },
     entityManagerFactoryRef = "dataManagementEntityManagerFactory",
-    transactionManagerRef = "dataManagementTransactionManager")
+    transactionManagerRef   = "dataManagementTransactionManager")
 public class DataManagementDatasourceConfig {
 
   @Value("${qbic.data-management.datasource.ddl-auto}")
