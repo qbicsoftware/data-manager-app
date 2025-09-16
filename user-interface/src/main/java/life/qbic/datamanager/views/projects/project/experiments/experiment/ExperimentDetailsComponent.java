@@ -25,6 +25,7 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -68,7 +69,6 @@ import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.DeletionService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationRequest;
-import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupCreationResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionRequest;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupDeletionResponse;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.ExperimentalGroupUpdateRequest;
@@ -94,6 +94,8 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.Sample;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -877,29 +879,31 @@ public class ExperimentDetailsComponent extends PageArea {
     if (experimentalGroupContents.isEmpty()) {
       return;
     }
+    int concurrencyCap = 16; // Safety cap for not stressing the DB too much
     var experimentalGroups = experimentalGroupContents.stream().map(this::toApi).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var projectId = context.projectId().orElseThrow();
 
-    var serviceCalls = new ArrayList<Mono<ExperimentalGroupCreationResponse>>();
-
-    experimentalGroups.forEach(experimentalGroup -> {
-      serviceCalls.add(
-          asyncProjectService.create(new ExperimentalGroupCreationRequest(projectId.value(),
-              experimentId.value(), experimentalGroup)));
-    });
-
-    Mono.when(serviceCalls).doOnSuccess(s -> {
+    Disposable subscription = Flux.fromIterable(experimentalGroups)
+        .map(experimentalGroup -> new ExperimentalGroupCreationRequest(projectId.value(),
+            experimentId.value(), experimentalGroup))
+        .flatMap(asyncProjectService::create, concurrencyCap)
+        .timeout(Duration.ofMinutes(2))
+        .collectList()
+        .subscribe(ignored -> {
           displaySuccessfulExperimentalGroupCreation();
           reloadExperimentalGroups();
           showSampleRegistrationPossibleNotification();
-        }).doOnError(e -> {
-          log.error("Error while creating experimental group", e);
+        }, err -> {
+          log.error("Error while creating experimental group", err);
           displayFailedExperimentalGroupCreation();
-        })
-        .subscribe(it -> {
-          log.debug("Added experimental groups for project" + projectId);
         });
+
+    addDetachListener(event -> {
+      if (!subscription.isDisposed()) {
+        subscription.dispose();
+      }
+    });
   }
 
   private void displayFailedExperimentalGroupCreation() {
