@@ -3,7 +3,6 @@ package life.qbic.projectmanagement.infrastructure.project;
 import static java.util.Objects.requireNonNull;
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import java.time.Instant;
 import java.util.Optional;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
@@ -96,6 +95,11 @@ public class ProjectRepositoryImpl implements ProjectRepository {
   @Override
   public Optional<Project> find(ProjectId projectId) {
     return projectRepo.findById(projectId);
+  }
+
+  @Override
+  public Optional<Project> findByIdForUpdate(ProjectId projectId) {
+    return projectRepo.findByIdForUpdate(projectId);
   }
 
   /**

@@ -213,9 +213,11 @@ public class ProjectInformationService {
     // To address this, the update is tried until it will eventually not throw the locking exception anymore.
     // This approach naively assumes, that the locked resource will be released eventually again by the other process.
     var attempt = 1;
-    var project = projectRepository.find(projectID).orElseThrow(() -> new ProjectNotFoundException("Project with not found: %s".formatted(projectID)));
-    while(true) {
+    var maxAttempts = 5;
+    Project project;
+    while(attempt <= maxAttempts) {
       try {
+        project = projectRepository.findByIdForUpdate(projectID).orElseThrow(() -> new ProjectNotFoundException("Project with not found: %s".formatted(projectID)));
         tryToUpdateModifiedDate(project, modifiedOn);
         return;
       } catch (ObjectOptimisticLockingFailureException e) {
@@ -229,6 +231,7 @@ public class ProjectInformationService {
       } catch (InterruptedException e) {
         log.error("Interrupted while updating modified date for project " + projectID);
         // We try one last time
+        project = projectRepository.find(projectID).orElseThrow(() -> new ProjectNotFoundException("Project not found: %s".formatted(projectID)));
         tryToUpdateModifiedDate(project, modifiedOn);
         Thread.currentThread().interrupt();
       }
