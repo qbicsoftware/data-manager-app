@@ -831,15 +831,6 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
     return applySecurityContext(call)
         .map(result -> new ValidationResponse(requestId, result))
         .contextWrite(reactiveSecurity(securityContext))
-        .onErrorResume(ex -> {
-          var e = reactor.core.Exceptions.unwrap(ex);
-          var msg = String.valueOf(e.getMessage());
-          if (e instanceof java.sql.SQLException && msg.contains(
-              "Interrupted during connection acquisition")) {
-            return Mono.empty();
-          }
-          return Mono.error(ex);
-        })
         .onErrorMap(e -> mapToAPIException(e, "Validation failed (sample metadata update)"))
         .subscribeOn(scheduler);
   }
