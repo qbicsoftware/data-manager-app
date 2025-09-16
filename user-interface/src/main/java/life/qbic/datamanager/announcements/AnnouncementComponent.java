@@ -1,6 +1,7 @@
 package life.qbic.datamanager.announcements;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
@@ -34,8 +35,8 @@ public class AnnouncementComponent extends Div {
     this.announcementService = announcementService;
     this.setId("announcements");
     this.setVisible(false); //without subscribing to announcements nothing is displayed
-    this.initialDelay = initialDelay;
-    this.refreshInterval = refreshInterval;
+    this.initialDelay = requireNonNull(initialDelay);
+    this.refreshInterval = requireNonNull(refreshInterval);
   }
 
   private void subscribeToAnnouncements() {
