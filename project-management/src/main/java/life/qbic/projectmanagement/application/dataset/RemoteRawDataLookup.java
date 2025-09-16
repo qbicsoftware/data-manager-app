@@ -1,13 +1,14 @@
 package life.qbic.projectmanagement.application.dataset;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 
-public interface RawDataLookup {
+public interface RemoteRawDataLookup {
 
   /**
    * Queries {@link RawData} with a provided offset and limit that supports
@@ -27,4 +28,5 @@ public interface RawDataLookup {
 
   int countRawDataByMeasurementIds(Collection<MeasurementCode> measurementCodes);
 
+  List<RawDataDatasetInformation> queryRawDataSince(Instant instant, int offset, int limit);
 }

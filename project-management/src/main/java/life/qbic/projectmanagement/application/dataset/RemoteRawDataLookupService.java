@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import life.qbic.application.commons.SortOrder;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawData;
-import life.qbic.projectmanagement.application.dataset.RawDataService.RawDataDatasetInformation;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawData;
+import life.qbic.projectmanagement.application.dataset.RemoteRawDataService.RawDataDatasetInformation;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementCode;
 import life.qbic.projectmanagement.domain.model.measurement.MeasurementId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +18,12 @@ import org.springframework.stereotype.Service;
  * Service that provides an API to query and filter measurement information
  */
 @Service
-public class RawDataLookupService {
+public class RemoteRawDataLookupService {
 
-  private final RawDataLookup rawDataLookup;
+  private final RemoteRawDataLookup remoteRawDataLookup;
 
-  public RawDataLookupService(@Autowired RawDataLookup rawDataLookup) {
-    this.rawDataLookup = Objects.requireNonNull(rawDataLookup);
+  public RemoteRawDataLookupService(@Autowired RemoteRawDataLookup remoteRawDataLookup) {
+    this.remoteRawDataLookup = Objects.requireNonNull(remoteRawDataLookup);
   }
 
   /**
@@ -40,7 +40,7 @@ public class RawDataLookupService {
   protected List<RawDataDatasetInformation> queryRawDataByMeasurementCodes(String filter,
       List<MeasurementCode> measurementCodes, int offset, int limit, List<SortOrder> sortOrders) {
     // returned by JPA -> UnmodifiableRandomAccessList
-    var dataList = rawDataLookup.queryRawDataByMeasurementCodes(
+    var dataList = remoteRawDataLookup.queryRawDataByMeasurementCodes(
         filter, measurementCodes, offset,
         limit, sortOrders);
     // the list must be modifiable for spring security to filter it
@@ -55,7 +55,7 @@ public class RawDataLookupService {
    * @return number of raw data for all domains associated with the provided measurementIds
    */
   public int countRawDataByMeasurementCodes(Collection<MeasurementCode> measurementCodes) {
-    return rawDataLookup.countRawDataByMeasurementIds(measurementCodes);
+    return remoteRawDataLookup.countRawDataByMeasurementIds(measurementCodes);
   }
 
 }
