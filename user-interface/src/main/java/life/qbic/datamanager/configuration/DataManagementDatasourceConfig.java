@@ -57,11 +57,21 @@ public class DataManagementDatasourceConfig {
     return new DataSourceProperties();
   }
 
+  /**
+   * Loads the Hikari options defaults or from application.properties if set.
+   * <p>
+   * Do not change unless you know what you are doing.
+   *
+   * @param props the properties
+   * @return {@link HikariDataSource}
+   * @since 1.11.0
+   */
   @Primary
   @Bean(name = "dataManagementDataSource")
-  public DataSource dataSource() {
-    return dataSourceProperties()
-        .initializeDataSourceBuilder()
+  @ConfigurationProperties("qbic.data-management.datasource.hikari") // <-- bind Hikari options here
+  public HikariDataSource dataSource(
+      @Qualifier("dataManagementDataSourceProperties") DataSourceProperties props) {
+    return props.initializeDataSourceBuilder()
         .type(HikariDataSource.class)
         .build();
   }

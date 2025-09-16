@@ -73,6 +73,7 @@ import reactor.util.retry.Retry;
 @Service
 public class AsyncProjectServiceImpl implements AsyncProjectService {
 
+  private static final int HARD_CAPACITY = 20;
   private static final String ACCESS_DENIED = "Access denied";
   private static final Logger log = LoggerFactory.logger(AsyncProjectServiceImpl.class);
   private final ProjectInformationService projectService;
@@ -248,7 +249,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<MeasurementRegistrationResponse> create(
       Flux<MeasurementRegistrationRequest> requestStream) {
-    return requestStream.flatMap(this::registerMeasurement);
+    return requestStream.flatMap(this::registerMeasurement, HARD_CAPACITY);
   }
 
   private Mono<MeasurementRegistrationResponse> registerMeasurement(
@@ -294,7 +295,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Flux<MeasurementUpdateResponse> update(Flux<MeasurementUpdateRequest> requestStream) {
-    return requestStream.flatMap(this::updateMeasurement);
+    return requestStream.flatMap(this::updateMeasurement, HARD_CAPACITY);
   }
 
   private Mono<MeasurementUpdateResponse> updateMeasurement(
@@ -484,7 +485,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
               .map(Experiment::getName).orElse("not available");
           return Mono.just(new ExperimentDescription(experimentName, convertToApi(species),
               convertToApi(specimen), convertToApi(analytes)));
-        })).subscribeOn(VirtualThreadScheduler.getScheduler())
+        }, HARD_CAPACITY)).subscribeOn(VirtualThreadScheduler.getScheduler())
         .contextWrite(reactiveSecurity(securityContext));
   }
 
@@ -717,7 +718,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
-    return requests.flatMap(this::validateRequest);
+    return requests.flatMap(this::validateRequest, HARD_CAPACITY);
   }
 
   private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
