@@ -12,7 +12,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.server.VaadinSession;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.datamanager.announcements.AnnouncementService.Announcement;
@@ -35,8 +34,8 @@ public class AnnouncementComponent extends Div {
     this.announcementService = announcementService;
     this.setId("announcements");
     this.setVisible(false); //without subscribing to announcements nothing is displayed
-    this.initialDelay = Duration.ZERO;
-    this.refreshInterval = Duration.of(1, ChronoUnit.HOURS);
+    this.initialDelay = initialDelay;
+    this.refreshInterval = refreshInterval;
   }
 
   private void subscribeToAnnouncements() {
