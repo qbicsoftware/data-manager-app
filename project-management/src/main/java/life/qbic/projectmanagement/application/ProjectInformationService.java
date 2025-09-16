@@ -231,7 +231,7 @@ public class ProjectInformationService {
       } catch (InterruptedException e) {
         log.error("Interrupted while updating modified date for project " + projectID);
         // We try one last time
-        project = projectRepository.find(projectID).orElseThrow(() -> new ProjectNotFoundException("Project with not found: %s".formatted(projectID)));
+        project = projectRepository.find(projectID).orElseThrow(() -> new ProjectNotFoundException("Project not found: %s".formatted(projectID)));
         tryToUpdateModifiedDate(project, modifiedOn);
         Thread.currentThread().interrupt();
       }
