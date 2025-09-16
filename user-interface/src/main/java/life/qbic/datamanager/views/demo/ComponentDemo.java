@@ -106,7 +106,6 @@ public class ComponentDemo extends Div {
 
     var filterGrid = new FilterGrid<Person>(grid, filterDataProvider, new ExampleFilter(""), (filter, term) -> new ExampleFilter(term));
 
-
     return new Div(filterGrid);
   }
 
