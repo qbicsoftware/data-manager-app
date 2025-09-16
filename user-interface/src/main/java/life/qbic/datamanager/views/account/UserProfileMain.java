@@ -1,5 +1,6 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.router.AfterNavigationEvent;
@@ -8,7 +9,6 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -48,6 +48,7 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
   private final IdentityService identityService;
   private final transient List<ParameterProcessor> parameterProcessors = new ArrayList<>();
   private final transient MessageSourceNotificationFactory messageFactory;
+  private UserProfileComponent profileComponent;
 
 
   public UserProfileMain(
@@ -76,7 +77,10 @@ public class UserProfileMain extends Main implements BeforeEnterObserver, AfterN
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     var userId = userIdTranslator.translateToUserId(authentication).orElseThrow();
     var userInfo = userInformationService.findById(userId).orElseThrow();
-    var profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation());
+    if (nonNull(profileComponent)) {
+      remove(profileComponent);
+    }
+    profileComponent = new UserProfileComponent(identityService, userInfo, event.getLocation());
     add(profileComponent);
   }
 
