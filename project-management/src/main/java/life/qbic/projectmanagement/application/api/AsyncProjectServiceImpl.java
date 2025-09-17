@@ -249,7 +249,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<MeasurementRegistrationResponse> create(
       Flux<MeasurementRegistrationRequest> requestStream) {
-    return requestStream.flatMap(this::registerMeasurement, HARD_CAPACITY);
+    return requestStream.concatMap(this::registerMeasurement);
   }
 
   private Mono<MeasurementRegistrationResponse> registerMeasurement(
@@ -295,7 +295,7 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
 
   @Override
   public Flux<MeasurementUpdateResponse> update(Flux<MeasurementUpdateRequest> requestStream) {
-    return requestStream.flatMap(this::updateMeasurement, HARD_CAPACITY);
+    return requestStream.concatMap(this::updateMeasurement);
   }
 
   private Mono<MeasurementUpdateResponse> updateMeasurement(
@@ -718,7 +718,8 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   @Override
   public Flux<ValidationResponse> validate(Flux<ValidationRequest> requests)
       throws RequestFailedException {
-    return requests.flatMap(this::validateRequest, HARD_CAPACITY);
+    // We do not want
+    return requests.concatMap(this::validateRequest);
   }
 
   private Mono<ValidationResponse> validateRequest(ValidationRequest request) {
