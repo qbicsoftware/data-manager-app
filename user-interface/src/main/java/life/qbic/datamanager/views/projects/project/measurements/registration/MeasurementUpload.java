@@ -257,15 +257,13 @@ public class MeasurementUpload extends Div implements UserInput {
     AtomicInteger counter = new AtomicInteger();
     counter.set(1);
 
-    List<ValidationResponse> responses = new ArrayList<>();
     service.validate(Flux.fromIterable(requests))
         .doFirst(() -> validationStarted())
         .doOnNext(item -> setValidationProgressText(
             "Processed " + counter.getAndIncrement() + " requests from " + itemsToValidate))
-        .doOnNext(responses::add)
-        .doOnComplete(() -> displayValidationResults(responses, itemsToValidate, fileName))
+        .collectList()
         .doFinally(it -> validationFinished())
-        .subscribe();
+        .subscribe(responses -> displayValidationResults(responses, itemsToValidate, fileName));
   }
 
   private void validationStarted() {
