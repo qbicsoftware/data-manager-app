@@ -70,7 +70,7 @@ public class NGSMeasurement {
   @Embedded
   private Organisation organisation;
 
-  @Column(name = "measurementName")
+  @Column(name = "measurementName", nullable = false)
   private String measurementName;
 
   @ElementCollection(targetClass = NGSSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
@@ -288,7 +288,7 @@ public class NGSMeasurement {
   }
 
   public void setMeasurementName(String measurementName) {
-    this.measurementName = measurementName;
+    this.measurementName = Objects.requireNonNull(measurementName);
   }
 
   @Override
