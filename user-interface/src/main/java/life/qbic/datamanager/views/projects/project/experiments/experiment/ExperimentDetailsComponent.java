@@ -879,7 +879,6 @@ public class ExperimentDetailsComponent extends PageArea {
     if (experimentalGroupContents.isEmpty()) {
       return;
     }
-    int concurrencyCap = 16; // Safety cap for not stressing the DB too much
     var experimentalGroups = experimentalGroupContents.stream().map(this::toApi).toList();
     ExperimentId experimentId = context.experimentId().orElseThrow();
     var projectId = context.projectId().orElseThrow();
@@ -887,8 +886,8 @@ public class ExperimentDetailsComponent extends PageArea {
     Flux.fromIterable(experimentalGroups)
         .map(experimentalGroup -> new ExperimentalGroupCreationRequest(projectId.value(),
             experimentId.value(), experimentalGroup))
-        .flatMap(asyncProjectService::create, concurrencyCap)
-        .timeout(Duration.ofMinutes(2))
+        .concatMap(asyncProjectService::create)
+        .timeout(Duration.ofSeconds(15))
         .collectList()
         .subscribe(ignored -> {
           displaySuccessfulExperimentalGroupCreation();
