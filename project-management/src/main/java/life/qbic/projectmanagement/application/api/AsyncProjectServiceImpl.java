@@ -809,10 +809,13 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   private Mono<ValidationResponse> validateSampleMetadataUpdate(SampleUpdateInformation update,
       String requestId, String projectId, String experimentId) {
     var securityContext = SecurityContextHolder.getContext();
-    return validateMetadata(ReactiveSecurityContextUtils::applySecurityContext,
-        () -> sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId),
-            experimentId).validationResult(),
-        result -> new ValidationResponse(requestId, result))
+
+    var call = Mono.fromCallable(() ->
+        sampleValidationService.validateExistingSample(update, ProjectId.parse(projectId),
+            experimentId).validationResult());
+
+    return applySecurityContext(call)
+        .map(result -> new ValidationResponse(requestId, result))
         .contextWrite(reactiveSecurity(securityContext))
         .onErrorMap(e -> mapToAPIException(e, "Validation failed (sample metadata update)"))
         .subscribeOn(scheduler);
@@ -823,14 +826,14 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
       String experimentId) {
     var securityContext = SecurityContextHolder.getContext();
 
-    var call = Mono.defer(() -> Mono.fromCallable(() ->
+    var call = Mono.fromCallable(() ->
             sampleValidationService.validateNewSample(registration, ProjectId.parse(projectId),
-                experimentId).validationResult()));
+                experimentId).validationResult());
 
     return applySecurityContext(call)
         .map(result -> new ValidationResponse(requestId, result))
         .contextWrite(reactiveSecurity(securityContext))
-        .onErrorMap(e -> mapToAPIException(e, "Validation failed (sample metadata update)"))
+        .onErrorMap(e -> mapToAPIException(e, "Validation failed (sample metadata registration)"))
         .subscribeOn(scheduler);
   }
 
