@@ -284,7 +284,7 @@ public class NGSMeasurement {
   }
 
   public String measurementName() {
-    return this.measurementName;
+    return Optional.ofNullable(this.measurementName).orElse("");
   }
 
   public void setMeasurementName(String measurementName) {

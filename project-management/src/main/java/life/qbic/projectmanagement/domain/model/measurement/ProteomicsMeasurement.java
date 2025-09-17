@@ -90,7 +90,7 @@ public class ProteomicsMeasurement {
   @Column(name = "lcColumn")
   private String lcColumn = "";
 
-  @Column(name = "measurementName")
+  @Column(name = "measurementName", nullable = false)
   private String measurementName;
 
   @ElementCollection(targetClass = ProteomicsSpecificMeasurementMetadata.class, fetch = FetchType.EAGER)
@@ -308,11 +308,11 @@ public class ProteomicsMeasurement {
   }
 
   public String measurementName() {
-    return measurementName;
+    return Optional.ofNullable(measurementName).orElse("");
   }
 
   public void setMeasurementName(String measurementName) {
-    this.measurementName = measurementName;
+    this.measurementName = Objects.requireNonNull(measurementName);
   }
 
   @Override
