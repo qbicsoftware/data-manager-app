@@ -11,7 +11,9 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  *
  * @since 1.0.0
  */
-public record NGSMeasurementMetadata(String measurementId, Collection<SampleCode> sampleCodes,
+public record NGSMeasurementMetadata(String measurementId,
+                                     String measurmentName,
+                                     Collection<SampleCode> sampleCodes,
                                      String organisationId, String instrumentCURI, String facility,
                                      String sequencingReadType, String libraryKit, String flowCell,
                                      String sequencingRunProtocol, String samplePoolGroup,

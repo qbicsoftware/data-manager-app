@@ -12,6 +12,7 @@ import life.qbic.projectmanagement.domain.model.sample.SampleCode;
  */
 public record ProteomicsMeasurementMetadata(
     String measurementId,
+    String measurementName,
     SampleCode sampleCode,
     String technicalReplicateName,
     String organisationId,
