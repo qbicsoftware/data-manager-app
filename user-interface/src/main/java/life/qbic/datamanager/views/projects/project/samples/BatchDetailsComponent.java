@@ -40,17 +40,7 @@ import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.sample.SampleId;
 import org.springframework.beans.factory.annotation.Autowired;
 
-/**
- * Batch Details Component
- * <p>
- * Component embedded within the {@link SampleInformationMain} It allows the user to see the
- * information associated for each {@link Batch} of each
- * {@link Experiment within a {@link Project} Additionally it enables the user to trigger the edit
- * and deletion of the {@link Batch}
- */
-@SpringComponent
-@UIScope
-@PermitAll
+
 public class BatchDetailsComponent extends PageArea implements Serializable {
 
   @Serial
@@ -62,7 +52,8 @@ public class BatchDetailsComponent extends PageArea implements Serializable {
   private final transient BatchInformationService batchInformationService;
   private final transient ClientDetailsProvider clientDetailsProvider;
 
-  public BatchDetailsComponent(@Autowired BatchInformationService batchInformationService,
+  public BatchDetailsComponent(
+      BatchInformationService batchInformationService,
       ClientDetailsProvider clientDetailsProvider) {
     this.batchInformationService = Objects.requireNonNull(batchInformationService,
         "BatchInformationService cannot be null");
