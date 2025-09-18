@@ -84,6 +84,7 @@ public class NGSMeasurement {
   private NGSMeasurement(MeasurementId measurementId, ProjectId projectId,
       String samplePool,
       MeasurementCode measurementCode,
+      String measurementName,
       Organisation organisation, NGSMethodMetadata method, Instant registration,
       Collection<NGSSpecificMeasurementMetadata> measurementMetadata) {
     if (!measurementCode.isNGSDomain()) {
@@ -107,6 +108,7 @@ public class NGSMeasurement {
     this.registration = registration;
     this.samplePool = samplePool;
     this.specificMetadata = new HashSet<>(measurementMetadata);
+    this.measurementName = Optional.ofNullable(measurementName).orElse("");
     emitCreatedEvent();
   }
 
@@ -134,7 +136,8 @@ public class NGSMeasurement {
    * @since 1.0.0
    */
   public static NGSMeasurement createWithPool(ProjectId projectId, String samplePool,
-      MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
+      MeasurementCode measurementCode, String measurementName, Organisation organisation,
+      NGSMethodMetadata method,
       Collection<NGSSpecificMeasurementMetadata> specificMeasurementMetadata)
       throws IllegalArgumentException {
     requireNonNull(measurementCode, "measurement Code must not be null");
@@ -149,7 +152,8 @@ public class NGSMeasurement {
           "All specific metadata must have an index in a pooled measurement");
     }
     var measurementId = MeasurementId.create();
-    return new NGSMeasurement(measurementId, projectId, samplePool, measurementCode, organisation,
+    return new NGSMeasurement(measurementId, projectId, samplePool, measurementCode,
+        measurementName, organisation,
         method, Instant.now(), specificMeasurementMetadata);
   }
 
@@ -166,12 +170,14 @@ public class NGSMeasurement {
    * @since 1.0.0
    */
   public static NGSMeasurement createSingleMeasurement(ProjectId projectId,
-      MeasurementCode measurementCode, Organisation organisation, NGSMethodMetadata method,
+      MeasurementCode measurementCode, String measurementName, Organisation organisation,
+      NGSMethodMetadata method,
       NGSSpecificMeasurementMetadata specificMeasurementMetadata) {
     requireNonNull(measurementCode, "Measurement Code cannot be null");
     requireNonNull(method, "NGsMethodMetadata cannot be null");
     requireNonNull(method.instrument(), "Instrument cannot be null");
-    return new NGSMeasurement(MeasurementId.create(), projectId, "", measurementCode, organisation,
+    return new NGSMeasurement(MeasurementId.create(), projectId, "", measurementCode,
+        measurementName, organisation,
         method, Instant.now(), List.of(specificMeasurementMetadata));
   }
 

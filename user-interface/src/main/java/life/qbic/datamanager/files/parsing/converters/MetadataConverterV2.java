@@ -1,7 +1,6 @@
 package life.qbic.datamanager.files.parsing.converters;
 
 import java.util.List;
-import life.qbic.datamanager.files.parsing.MetadataConverter;
 import life.qbic.datamanager.files.parsing.ParsingResult;
 
 /**

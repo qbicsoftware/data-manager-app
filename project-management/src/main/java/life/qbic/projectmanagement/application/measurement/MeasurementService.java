@@ -304,6 +304,7 @@ public class MeasurementService {
 
     measurementDomain.setOrganisation(organisationQuery.get());
     measurementDomain.updateMethod(method);
+    measurementDomain.setMeasurementName(measurement.measurementName());
     return measurementDomain;
   }
 
@@ -363,6 +364,7 @@ public class MeasurementService {
 
     measurementDomain.setOrganisation(organisationQuery.get());
     measurementDomain.updateMethod(method);
+    measurementDomain.setMeasurementName(measurement.measurementName());
     return measurementDomain;
   }
 
@@ -443,9 +445,11 @@ public class MeasurementService {
 
     var assignedMeasurementCode = MeasurementCode.createMS(
         sampleIdCodeEntries.getFirst().sampleCode().code());
+    var assignedMeasurementName = measurement.measurementName();
 
     var domainMeasurement = ProteomicsMeasurement.create(ProjectId.parse(projectId),
-        assignedMeasurementCode, organisationQuery.get(), method, specificMetadata);
+        assignedMeasurementCode, assignedMeasurementName, organisationQuery.get(), method,
+        specificMetadata);
     domainMeasurement.setSamplePoolGroup(measurement.samplePoolGroup());
     return domainMeasurement;
   }
@@ -487,6 +491,7 @@ public class MeasurementService {
     if (measurement.samplePoolGroup().isBlank()) {
       return NGSMeasurement.createSingleMeasurement(ProjectId.parse(projectId),
           MeasurementCode.createNGS(measurement.measuredSamples().getFirst()),
+          measurement.measurementName(),
           organisationQuery.get(),
           method,
           specificMetadata.getFirst());
@@ -495,6 +500,7 @@ public class MeasurementService {
           ProjectId.parse(projectId),
           measurement.samplePoolGroup(),
           MeasurementCode.createNGS(measurement.measuredSamples().getFirst()),
+          measurement.measurementName(),
           organisationQuery.get(),
           method,
           specificMetadata
@@ -709,7 +715,7 @@ public class MeasurementService {
     var specificMetadata = createSpecificMetadataNGS(metadataList, sampleIdLookupTable);
     var assignedMeasurementCode = MeasurementCode.createNGS(sampleCodes.iterator().next().code());
     var firstMetadataEntry = metadataList.get(0);
-
+    var assignedMeasurementName = firstMetadataEntry.measurmentName();
     var organisationQuery = organisationLookupService.organisation(
         firstMetadataEntry.organisationId());
     if (organisationQuery.isEmpty()) {
@@ -729,9 +735,11 @@ public class MeasurementService {
     if (firstMetadataEntry.assignedSamplePoolGroup().isPresent()) {
       measurement = NGSMeasurement.createWithPool(projectId,
           firstMetadataEntry.assignedSamplePoolGroup().orElseThrow(), assignedMeasurementCode,
+          assignedMeasurementName,
           organisationQuery.get(), method, specificMetadata);
     } else {
       measurement = NGSMeasurement.createSingleMeasurement(projectId, assignedMeasurementCode,
+          assignedMeasurementName,
           organisationQuery.get(), method, specificMetadata.get(0));
     }
 
@@ -770,6 +778,7 @@ public class MeasurementService {
     var specificMetadata = createSpecificMetadataPxP(metadataList, sampleIdLookupTable);
     var assignedMeasurementCode = MeasurementCode.createMS(sampleCodes.iterator().next().code());
     var firstMetadataEntry = metadataList.get(0);
+    var measurementName = firstMetadataEntry.measurementName();
 
     var organisationQuery = organisationLookupService.organisation(
         firstMetadataEntry.organisationId());
@@ -795,7 +804,7 @@ public class MeasurementService {
             .labelType());
 
     var measurement = ProteomicsMeasurement.create(projectId, assignedMeasurementCode,
-        organisationQuery.get(), method, specificMetadata);
+        measurementName, organisationQuery.get(), method, specificMetadata);
 
     measurement.setSamplePoolGroup(firstMetadataEntry.samplePoolGroup());
 
