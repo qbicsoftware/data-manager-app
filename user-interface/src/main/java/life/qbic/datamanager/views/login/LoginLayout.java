@@ -15,6 +15,8 @@ import com.vaadin.flow.component.login.AbstractLogin.ForgotPasswordEvent;
 import com.vaadin.flow.component.login.AbstractLogin.LoginEvent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterListener;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
@@ -38,6 +40,7 @@ import life.qbic.identity.application.user.UserNotFoundException;
 import life.qbic.logging.api.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * <b>Defines the layout and look of the login view. </b>
@@ -49,7 +52,8 @@ import org.springframework.beans.factory.annotation.Value;
 @CssImport("./styles/views/login/login-view.css")
 @AnonymousAllowed
 @UIScope
-public class LoginLayout extends VerticalLayout implements HasUrlParameter<String> {
+public class LoginLayout extends VerticalLayout implements HasUrlParameter<String>,
+    BeforeEnterListener {
 
   private static final Logger log = logger(LoginLayout.class);
   private final String emailConfirmationParameter;
@@ -229,6 +233,14 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
 
   public void onEmailConfirmationFailure(String reason) {
     showError("Email confirmation failed", reason);
+  }
+
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    var auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null && auth.isAuthenticated()) {
+      event.forwardTo(AppRoutes.ProjectRoutes.PROJECTS);
+    }
   }
 
   private static class LoginCard extends Span {
