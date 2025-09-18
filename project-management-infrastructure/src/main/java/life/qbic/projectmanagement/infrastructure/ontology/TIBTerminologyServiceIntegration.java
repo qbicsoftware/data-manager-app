@@ -344,7 +344,7 @@ public class TIBTerminologyServiceIntegration implements TerminologySelect {
     if (response.statusCode() == 200) {
       var candidate = parseResponse(response).stream().findFirst();
       if (candidate.isEmpty()) {
-        log.debug("Term query returned empty response for " + oboId;
+        log.debug("Term query returned empty response for " + oboId);
       }
       return parseResponse(response).stream().findFirst();
     }
