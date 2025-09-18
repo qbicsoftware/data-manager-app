@@ -15,7 +15,7 @@ import java.util.stream.Collectors
 
 class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
-    final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", SampleCode.create("QTEST001AE"),
+    final static ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", "", SampleCode.create("QTEST001AE"),
             "",
             "https://ror.org/03a1kwz48", //Universität Tübingen,
             "EFO:0004205", //Illumina MiSeq
@@ -49,9 +49,9 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     final ProjectInformationService projectInformationService = Mock(ProjectInformationService.class)
 
     final static List<String> validPXPProperties = Collections.unmodifiableList(["qbic sample id", "sample name", "technical replicate", "organisation id", "facility", "ms device",
-                                                    "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
-                                                    "enrichment method", "injection volume (uL)", "lc column",
-                                                    "lcms method", "labeling type", "label", "comment"])
+                                                                                 "sample pool group", "cycle/fraction name", "digestion method", "digestion enzyme",
+                                                                                 "enrichment method", "injection volume (uL)", "lc column",
+                                                                                 "lcms method", "labeling type", "label", "comment"])
 
     def "A complete property set must be valid no matter the letter casing style"() {
 
@@ -131,7 +131,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
     def "An unknown sample code in a proteomics measurement metadata object must return a failed validation "() {
         given:
-        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", SampleCode.create("QNKWN001AE"),
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", "", SampleCode.create("QNKWN001AE"),
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -168,7 +168,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
 
     def "If no sample code is provided, the validation must fail"() {
         given:
-        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", null,
+        def invalidMeasurementEntry = new ProteomicsMeasurementMetadata("", "", null,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -210,9 +210,9 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If an invalid ROR ID for the organisation information is provided, the validation must fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
-                 invalidRorId, //Universität Tübingen,
+                invalidRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
                 "1",
                 "The geniuses of ITSS",
@@ -257,7 +257,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no RoRId was provided for the organisation information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "", // missing entry
                 "EFO:0004205", //Illumina MiSeq
@@ -296,7 +296,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If an valid ROR ID for the organisation information is provided, the validation must pass"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata validMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 validRorId, //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -341,7 +341,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no MS device Curie for the MS device information is provided, the validation must fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "", //Illumina MiSeq
@@ -380,7 +380,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If a valid ms device curie for the ms device information is provided, the validation must pass"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 validMsDeviceCurie, //Illumina MiSeq
@@ -424,7 +424,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the facility information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -463,7 +463,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the fraction name information the validation will not fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -501,7 +501,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the digestion enzyme information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -540,7 +540,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the digestion method information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -579,7 +579,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the enrichment method information the validation will not fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
@@ -618,7 +618,7 @@ class MeasurementMeasurementProteomicsValidatorSpec extends Specification {
     def "If no value was provided for the LC column information the validation will fail"() {
         given:
         SampleCode validSampleCode = SampleCode.create("QTEST001AE")
-        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", validSampleCode,
+        ProteomicsMeasurementMetadata invalidMetadata = new ProteomicsMeasurementMetadata("", "", validSampleCode,
                 "",
                 "https://ror.org/03a1kwz48", //Universität Tübingen,
                 "EFO:0004205", //Illumina MiSeq
