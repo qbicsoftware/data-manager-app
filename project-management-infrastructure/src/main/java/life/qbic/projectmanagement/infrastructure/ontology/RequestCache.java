@@ -19,16 +19,9 @@ import java.util.stream.Collectors;
  */
 public class RequestCache {
 
-  // Pretty random, we need to see what value actual makes sense
-  private static final int DEFAULT_CACHE_SIZE = 500;
-
   private final List<TibTerm> cache = new ArrayList<>();
   private final int limit;
   private List<CacheEntryStat> accessFrequency = new ArrayList<>();
-
-  RequestCache() {
-    limit = DEFAULT_CACHE_SIZE;
-  }
 
   RequestCache(int limit) {
     this.limit = limit;
