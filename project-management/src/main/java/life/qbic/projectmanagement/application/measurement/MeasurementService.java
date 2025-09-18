@@ -304,6 +304,7 @@ public class MeasurementService {
 
     measurementDomain.setOrganisation(organisationQuery.get());
     measurementDomain.updateMethod(method);
+    measurementDomain.setMeasurementName(measurement.measurementName());
     return measurementDomain;
   }
 
@@ -363,6 +364,7 @@ public class MeasurementService {
 
     measurementDomain.setOrganisation(organisationQuery.get());
     measurementDomain.updateMethod(method);
+    measurementDomain.setMeasurementName(measurement.measurementName());
     return measurementDomain;
   }
 
