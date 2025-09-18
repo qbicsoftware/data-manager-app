@@ -37,12 +37,7 @@ public class RequestCache {
    * @since 1.9.0
    */
   void add(TibTerm term) {
-    if (term == null) {
-      return;
-    }
-    if (cache.contains(term)) {
-      return;
-    }
+    if (term == null || cache.contains(term)) return;
     if (cache.size() >= limit) {
       addByReplace(term);
       return;
