@@ -366,10 +366,10 @@ public class MeasurementNGSValidator implements
         MeasurementUpdateInformationNGS metadata) {
       var validation = ValidationResult.successful();
       if (metadata.measurementId().isEmpty()) {
-        validation.combine(ValidationResult.withFailures(
+        validation = validation.combine(ValidationResult.withFailures(
             List.of("Measurement id: missing measurement id for update")));
       } else {
-        validation.combine(ValidationResult.successful());
+        validation = validation.combine(ValidationResult.successful());
       }
       if (metadata.organisationId().isBlank()) {
         validation = validation.combine(

@@ -409,7 +409,7 @@ public class MeasurementProteomicsValidator implements
         MeasurementUpdateInformationPxP metadata) {
       var validation = ValidationResult.successful();
       if (metadata.measurementId().isEmpty()) {
-        validation.combine(ValidationResult.withFailures(
+        validation = validation.combine(ValidationResult.withFailures(
             List.of("Measurement id: missing measurement id for update")));
       } else {
         validation.combine(ValidationResult.successful());

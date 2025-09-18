@@ -265,6 +265,7 @@ public class MeasurementService {
   }
 
   private void performUpdateNGS(MeasurementUpdateInformationNGS measurement, String projectId) {
+    Objects.requireNonNull(measurement);
     var sampleCodeEntries = buildSampleIdCodeEntries(measurement.measuredSamples());
     var measurementDomain = toDomainUpdate(measurement, sampleCodeEntries);
     measurementDomainService.updateNGSAll(List.of(measurementDomain));
@@ -273,6 +274,7 @@ public class MeasurementService {
   @NonNull
   private NGSMeasurement toDomainUpdate(MeasurementUpdateInformationNGS measurement,
       List<SampleIdCodeEntry> sampleCodeEntries) {
+    Objects.requireNonNull(measurement);
     if (measurementIdMissing(measurement)) {
       throw new MeasurementUpdateException(ErrorCode.MISSING_MEASUREMENT_ID);
     }
@@ -309,23 +311,22 @@ public class MeasurementService {
   }
 
   private boolean measurementUnknown(MeasurementUpdateInformationNGS measurement) {
+    Objects.requireNonNull(measurement);
     return measurementRepository.findNGSMeasurement(measurement.measurementId()).isEmpty();
   }
 
-  private boolean measurementUnknown(MeasurementUpdateInformationPxP measurement) {
-    return measurementRepository.findProteomicsMeasurement(measurement.measurementId()).isEmpty();
-  }
-
   private boolean measurementIdMissing(MeasurementUpdateInformationNGS measurement) {
+    Objects.requireNonNull(measurement);
     return measurementIdMissing(measurement.measurementId());
   }
 
   private boolean measurementIdMissing(MeasurementUpdateInformationPxP measurement) {
+    Objects.requireNonNull(measurement);
     return measurementIdMissing(measurement.measurementId());
   }
 
   private static boolean measurementIdMissing(String measurementId) {
-    return measurementId.isEmpty();
+    return measurementId == null || measurementId.isEmpty();
   }
 
   @NonNull
