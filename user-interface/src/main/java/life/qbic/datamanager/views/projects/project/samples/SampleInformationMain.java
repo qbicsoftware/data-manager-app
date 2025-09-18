@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.application.commons.FileNameFormatter;
+import life.qbic.datamanager.ClientDetailsProvider;
 import life.qbic.datamanager.files.export.download.ByteArrayDownloadStreamProvider;
 import life.qbic.datamanager.views.AppRoutes.ProjectRoutes;
 import life.qbic.datamanager.views.Context;
@@ -50,6 +51,7 @@ import life.qbic.projectmanagement.application.ProjectOverview;
 import life.qbic.projectmanagement.application.api.AsyncProjectService;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.AccessDeniedException;
 import life.qbic.projectmanagement.application.api.fair.DigitalObject;
+import life.qbic.projectmanagement.application.batch.BatchInformationService;
 import life.qbic.projectmanagement.application.confounding.ConfoundingVariableService.ExperimentReference;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
@@ -104,21 +106,23 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
   private final transient AsyncProjectService asyncProjectService;
   private final MessageSourceNotificationFactory messageFactory;
   private final HashMap<String, Toast> pendingTaskToasts = new HashMap<>();
+  private final BatchInformationService batchInformationService;
+  private final ClientDetailsProvider clientDetailsProvider;
   private Toast pendingTask;
   private transient Context context;
 
   public SampleInformationMain(@Autowired ExperimentInformationService experimentInformationService,
       @Autowired DeletionService deletionService,
       @Autowired SampleInformationService sampleInformationService,
-      @Autowired SampleDetailsComponent sampleDetailsComponent,
-      @Autowired BatchDetailsComponent batchDetailsComponent,
       @Autowired AsyncProjectService asyncProjectService,
       ProjectInformationService projectInformationService,
       CancelConfirmationDialogFactory cancelConfirmationDialogFactory,
       MessageSourceNotificationFactory notificationFactory,
       SampleValidationService sampleValidationService,
       SampleRegistrationServiceV2 sampleRegistrationServiceV2,
-      MessageSourceNotificationFactory messageSourceNotificationFactory) {
+      MessageSourceNotificationFactory messageSourceNotificationFactory,
+      BatchInformationService batchInformationService,
+      ClientDetailsProvider clientDetailsProvider) {
     this.downloadComponent = new DownloadComponent();
 
     this.experimentInformationService = requireNonNull(experimentInformationService,
@@ -127,10 +131,10 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         "SampleInformationService cannot be null");
     this.deletionService = requireNonNull(deletionService,
         "DeletionService cannot be null");
-    this.sampleDetailsComponent = requireNonNull(sampleDetailsComponent,
-        "SampleDetailsComponent cannot be null");
-    this.batchDetailsComponent = requireNonNull(batchDetailsComponent,
-        "BatchDetailsComponent cannot be null");
+    this.sampleDetailsComponent = new SampleDetailsComponent(requireNonNull(asyncProjectService),
+        requireNonNull(messageSourceNotificationFactory));
+    this.batchDetailsComponent = new BatchDetailsComponent(requireNonNull(batchInformationService),
+        requireNonNull(clientDetailsProvider));
     this.projectInformationService = projectInformationService;
     this.cancelConfirmationDialogFactory = requireNonNull(cancelConfirmationDialogFactory,
         "cancelConfirmationDialogFactory must not be null");
@@ -165,6 +169,8 @@ public class SampleInformationMain extends Main implements BeforeEnterObserver {
         System.identityHashCode(sampleDetailsComponent)));
     add(downloadComponent);
     this.messageFactory = messageSourceNotificationFactory;
+    this.batchInformationService = batchInformationService;
+    this.clientDetailsProvider = clientDetailsProvider;
   }
 
   private static boolean noExperimentGroupsInExperiment(Experiment experiment) {
