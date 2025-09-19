@@ -86,6 +86,7 @@ public class MeasurementNGSValidator implements
   @Override
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
+      String experimentId,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
@@ -103,11 +104,13 @@ public class MeasurementNGSValidator implements
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validateRegistration(MeasurementRegistrationInformationNGS metadata,
-      ProjectId projectId) {
+      String experimentId, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))
+          .combine(
+              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
 
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataRegistration(
@@ -128,7 +131,9 @@ public class MeasurementNGSValidator implements
 
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-        result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))
+          .combine(
+              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
     return result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
@@ -192,6 +197,16 @@ public class MeasurementNGSValidator implements
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationExperimentRelation(String sampleId, String experimentId,
+        ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(
+            List.of("Missing Sample ID: Cannot match sample to project"));
+      }
+      return validationExperimentRelation(SampleCode.create(sampleId), experimentId, projectId);
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
     ValidationResult validationProjectRelation(SampleCode sampleCode, ProjectId projectId) {
       var projectQuery = projectInformationService.find(projectId);
       if (projectQuery.isEmpty()) {
@@ -211,6 +226,20 @@ public class MeasurementNGSValidator implements
       }
       return ValidationResult.withFailures(
           List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationExperimentRelation(SampleCode sampleCode, String experimentId,
+        ProjectId projectId) {
+
+      boolean sampleContainedInExperiment = sampleInformationService.retrieveSamplesForExperiment(
+          projectId,
+          experimentId).stream().anyMatch(it -> it.sampleCode().equals(sampleCode));
+      if (sampleContainedInExperiment) {
+        return ValidationResult.successful();
+      }
+      return ValidationResult.withFailures(
+          List.of("Sample ID does not belong to this experiment: %s".formatted(sampleCode.code())));
     }
 
     ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {

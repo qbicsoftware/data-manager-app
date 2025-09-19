@@ -15,6 +15,6 @@ import life.qbic.projectmanagement.domain.model.project.ProjectId;
  */
 public interface MeasurementValidator<T extends MeasurementMetadata> {
 
-  ValidationResult validate(T measurementMetadata, ProjectId projectId);
+  ValidationResult validate(T measurementMetadata, String experimentId, ProjectId projectId);
 
 }

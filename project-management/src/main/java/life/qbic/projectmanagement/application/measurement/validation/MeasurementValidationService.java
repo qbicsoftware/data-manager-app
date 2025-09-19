@@ -36,19 +36,22 @@ public class MeasurementValidationService {
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validateNGS(MeasurementRegistrationInformationNGS registration,
+      String experimentId,
       ProjectId projectId) {
-    return measurementNgsValidator.validateRegistration(registration, projectId);
+    return measurementNgsValidator.validateRegistration(registration, experimentId, projectId);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validateNGS(MeasurementUpdateInformationNGS update, ProjectId projectId) {
-    return measurementNgsValidator.validateUpdate(update, projectId);
+  public ValidationResult validateNGS(MeasurementUpdateInformationNGS update, String experimentId,
+      ProjectId projectId) {
+    return measurementNgsValidator.validateUpdate(update, experimentId, projectId);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validatePxp(MeasurementRegistrationInformationPxP registration,
-      ProjectId projectId) {
-    return measurementProteomicsValidator.validateRegistration(registration, projectId);
+      String experimentId, ProjectId projectId) {
+    return measurementProteomicsValidator.validateRegistration(registration, experimentId,
+        projectId);
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")

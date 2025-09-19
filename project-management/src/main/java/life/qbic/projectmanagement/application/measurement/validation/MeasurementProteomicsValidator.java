@@ -93,6 +93,7 @@ public class MeasurementProteomicsValidator implements
   @Override
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata,
+      String experimentId,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     //We want to fail early so we check first if all the mandatory fields were filled
@@ -110,12 +111,15 @@ public class MeasurementProteomicsValidator implements
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validateRegistration(MeasurementRegistrationInformationPxP metadata,
+      String experimentId,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
 
     for (String sampleId : metadata.measuredSamples()) {
-      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))
+          .combine(
+              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
 
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
@@ -139,11 +143,14 @@ public class MeasurementProteomicsValidator implements
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','WRITE')")
   public ValidationResult validateUpdate(MeasurementUpdateInformationPxP metadata,
+      String experimentId,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId))
+          .combine(
+              validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
     return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
@@ -255,6 +262,27 @@ public class MeasurementProteomicsValidator implements
         return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
       }
       return validationProjectRelation(SampleCode.create(sampleId), projectId);
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationExperimentRelation(SampleCode sampleCode, String experimentId,
+        ProjectId projectId) {
+      if (sampleInformationService.retrieveSamplesForExperiment(projectId, experimentId).stream()
+          .anyMatch(sample -> sample.sampleCode().equals(sampleCode))) {
+        return ValidationResult.successful();
+      }
+      return ValidationResult.withFailures(
+          List.of("Sample ID does not belong to this experiment: %s".formatted(sampleCode.code())));
+    }
+
+    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
+    ValidationResult validationExperimentRelation(String sampleId, String experimentId,
+        ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(
+            List.of("Missing Sample ID: Cannot match sample to project"));
+      }
+      return validationExperimentRelation(SampleCode.create(sampleId), experimentId, projectId);
     }
 
     ValidationResult validateSampleId(SampleCode sampleCode) {
