@@ -112,23 +112,28 @@ public class MeasurementProteomicsValidator implements
   public ValidationResult validateRegistration(MeasurementRegistrationInformationPxP metadata,
       ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
+    var result = ValidationResult.successful();
+
+    for (String sampleId : metadata.measuredSamples()) {
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
+    }
+
     ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
         metadata);
     if (mandatoryValidationResult.containsFailures()) {
       return mandatoryValidationResult;
     }
 
-    var validation = validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(),
-            projectId)
-        .combine(validationPolicy.validateMandatoryDataProvided(metadata))
-        .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-            .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())));
-
     // For the sample-specific metadata
     var missingLabelsValidation = new MissingLabel(() -> metadata).execute();
     var distinctLabelsValidation = new HasDistinctLabels(() -> metadata).execute();
 
-    return validation.combine(missingLabelsValidation)
+    return result.combine(
+            validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
+        .combine(validationPolicy.validateMandatoryDataProvided(metadata))
+        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
+        .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
+        .combine(missingLabelsValidation)
         .combine(distinctLabelsValidation);
   }
 
@@ -146,13 +151,11 @@ public class MeasurementProteomicsValidator implements
     return validationPolicy.validateSampleId(metadata.associatedSample())
         .combine(validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId))
         .combine(
-            validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse(""))
-                .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
-                .combine(validationPolicy.validateOrganisation(metadata.organisationId())
-                    .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE())
-                        .combine(
-                            validationPolicy.validateDigestionMethod(
-                                metadata.digestionMethod())))));
+            validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse("")))
+        .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
+        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
+        .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
+        .combine(validationPolicy.validateDigestionMethod(metadata.digestionMethod()));
   }
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','WRITE')")
@@ -161,8 +164,7 @@ public class MeasurementProteomicsValidator implements
     var validationPolicy = new ValidationPolicy();
     var result = ValidationResult.successful();
     for (String sampleId : metadata.measuredSamples()) {
-        result = result.combine(
-            validationPolicy.validationProjectRelation(sampleId, projectId));
+      result = result.combine(validationPolicy.validationProjectRelation(sampleId, projectId));
     }
     return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
