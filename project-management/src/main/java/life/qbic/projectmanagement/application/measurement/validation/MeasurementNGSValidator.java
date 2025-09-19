@@ -93,11 +93,6 @@ public class MeasurementNGSValidator {
               validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
 
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataRegistration(
-        metadata);
-    if (mandatoryValidationResult.containsFailures()) {
-      return mandatoryValidationResult;
-    }
     return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples()))
         .combine(validationPolicy.validateMandatoryDataRegistration(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))

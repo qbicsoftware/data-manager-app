@@ -101,13 +101,6 @@ public class MeasurementProteomicsValidator {
           .combine(
               validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
-
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
-        metadata);
-    if (mandatoryValidationResult.containsFailures()) {
-      return mandatoryValidationResult;
-    }
-
     // For the sample-specific metadata
     var missingLabelsValidation = new MissingLabel(() -> metadata).execute();
     var distinctLabelsValidation = new HasDistinctLabels(() -> metadata).execute();
