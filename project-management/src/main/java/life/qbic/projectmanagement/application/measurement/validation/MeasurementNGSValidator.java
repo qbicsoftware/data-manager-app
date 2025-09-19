@@ -33,8 +33,7 @@ import org.springframework.stereotype.Component;
  * </p>
  */
 @Component
-public class MeasurementNGSValidator implements
-    MeasurementValidator<NGSMeasurementMetadata> {
+public class MeasurementNGSValidator {
 
   private static final Logger log = logger(MeasurementNGSValidator.class);
   public static final String MISSING_SAMPLE_ID_REFERENCE = "Sample id: missing sample id reference";
@@ -81,25 +80,6 @@ public class MeasurementNGSValidator implements
 
   public static Collection<String> properties() {
     return Arrays.stream(NGS_PROPERTY.values()).map(NGS_PROPERTY::label).toList();
-  }
-
-  @Override
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validate(NGSMeasurementMetadata measurementMetadata,
-      String experimentId,
-      ProjectId projectId) {
-    var validationPolicy = new ValidationPolicy();
-    //We want to fail early so we check first if all the mandatory fields were filled
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
-        measurementMetadata);
-    if (mandatoryValidationResult.containsFailures()) {
-      return mandatoryValidationResult;
-    }
-    //If all fields were filled then we can validate the entries individually
-    return validationPolicy.validateSampleIds(measurementMetadata.sampleCodes())
-        .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
-        .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
-            .combine(validationPolicy.validateInstrument(measurementMetadata.instrumentCURI())));
   }
 
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
@@ -191,7 +171,8 @@ public class MeasurementNGSValidator implements
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
     ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
       if (sampleId.isBlank()) {
-        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
+        return ValidationResult.withFailures(
+            List.of("Missing Sample ID: Cannot match sample to project"));
       }
       return validationProjectRelation(SampleCode.create(sampleId), projectId);
     }

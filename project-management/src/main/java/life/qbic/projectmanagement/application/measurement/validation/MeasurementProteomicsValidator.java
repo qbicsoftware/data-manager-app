@@ -32,8 +32,7 @@ import org.springframework.stereotype.Component;
  * </p>
  */
 @Component
-public class MeasurementProteomicsValidator implements
-    MeasurementValidator<ProteomicsMeasurementMetadata> {
+public class MeasurementProteomicsValidator {
 
   private static final Logger log = logger(MeasurementProteomicsValidator.class);
 
@@ -90,25 +89,6 @@ public class MeasurementProteomicsValidator implements
     return Arrays.stream(PROTEOMICS_PROPERTY.values()).map(PROTEOMICS_PROPERTY::label).toList();
   }
 
-  @Override
-  @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
-  public ValidationResult validate(ProteomicsMeasurementMetadata measurementMetadata,
-      String experimentId,
-      ProjectId projectId) {
-    var validationPolicy = new ValidationPolicy();
-    //We want to fail early so we check first if all the mandatory fields were filled
-    ValidationResult mandatoryValidationResult = validationPolicy.validateMandatoryDataProvided(
-        measurementMetadata);
-    if (mandatoryValidationResult.containsFailures()) {
-      return mandatoryValidationResult;
-    }
-    //If all fields were filled then we can validate the entries individually
-    return validationPolicy.validateSampleId(measurementMetadata.sampleCode())
-        .combine(validationPolicy.validateMandatoryDataProvided(measurementMetadata))
-        .combine(validationPolicy.validateOrganisation(measurementMetadata.organisationId())
-            .combine(validationPolicy.validateMsDevice(measurementMetadata.msDeviceCURIE())));
-  }
-
   @PreAuthorize("hasPermission(#projectId, 'life.qbic.projectmanagement.domain.model.project.Project', 'WRITE')")
   public ValidationResult validateRegistration(MeasurementRegistrationInformationPxP metadata,
       String experimentId,
@@ -152,7 +132,8 @@ public class MeasurementProteomicsValidator implements
           .combine(
               validationPolicy.validationExperimentRelation(sampleId, experimentId, projectId));
     }
-    return result.combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
+    return result.combine(validationPolicy.validateMeasurementCode(metadata.measurementId()))
+        .combine(validationPolicy.validateSampleIdsAsString(metadata.measuredSamples(), projectId))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(metadata))
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
