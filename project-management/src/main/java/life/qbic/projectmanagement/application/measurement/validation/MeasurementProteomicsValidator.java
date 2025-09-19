@@ -209,7 +209,11 @@ public class MeasurementProteomicsValidator {
     private static final String ROR_ID_REGEX = "^https://ror.org/0[a-z|0-9]{6}[0-9]{2}$";
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationProjectRelation(SampleCode sampleCode, ProjectId projectId) {
+    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
+      }
+      SampleCode sampleCode = SampleCode.create(sampleId);
       var projectQuery = projectInformationService.find(projectId);
       if (projectQuery.isEmpty()) {
         log.error("No project information found for projectId: " + projectId);
@@ -231,54 +235,19 @@ public class MeasurementProteomicsValidator {
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
-      if (sampleId.isBlank()) {
-        return ValidationResult.withFailures(List.of("Missing Sample ID: Cannot match sample to project"));
-      }
-      return validationProjectRelation(SampleCode.create(sampleId), projectId);
-    }
-
-    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationExperimentRelation(SampleCode sampleCode, String experimentId,
-        ProjectId projectId) {
-      if (sampleInformationService.retrieveSamplesForExperiment(projectId, experimentId).stream()
-          .anyMatch(sample -> sample.sampleCode().equals(sampleCode))) {
-        return ValidationResult.successful();
-      }
-      return ValidationResult.withFailures(
-          List.of("Sample ID does not belong to this experiment: %s".formatted(sampleCode.code())));
-    }
-
-    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
     ValidationResult validationExperimentRelation(String sampleId, String experimentId,
         ProjectId projectId) {
       if (sampleId.isBlank()) {
         return ValidationResult.withFailures(
             List.of("Missing Sample ID: Cannot match sample to project"));
       }
-      return validationExperimentRelation(SampleCode.create(sampleId), experimentId, projectId);
-    }
-
-    ValidationResult validateSampleId(SampleCode sampleCode) {
-      var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
-      if (queriedSampleEntry.isPresent()) {
+      SampleCode sampleCode = SampleCode.create(sampleId);
+      if (sampleInformationService.retrieveSamplesForExperiment(projectId, experimentId).stream()
+          .anyMatch(sample -> sample.sampleCode().equals(sampleCode))) {
         return ValidationResult.successful();
       }
       return ValidationResult.withFailures(
-          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCode.code())));
-    }
-
-    ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
-      if (sampleCodes.isEmpty()) {
-        return ValidationResult.withFailures(
-            List.of("A measurement must contain at least one sample reference. Provided: none"));
-      }
-      ValidationResult validationResult = ValidationResult.successful(
-      );
-      for (SampleCode sample : sampleCodes) {
-        validationResult = validationResult.combine(validateSampleId(sample));
-      }
-      return validationResult;
+          List.of("Sample ID does not belong to this experiment: %s".formatted(sampleCode.code())));
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
@@ -290,21 +259,22 @@ public class MeasurementProteomicsValidator {
       ValidationResult validationResult = ValidationResult.successful(
       );
       for (var sampleId : sampleIds) {
-        validationResult = validationResult.combine(validateSampleIdAsString(sampleId, projectId));
+        ValidationResult result;
+        if (sampleId.isBlank()) {
+          result = ValidationResult.withFailures(
+              List.of("Missing Sample id: No sample identifier was provided."));
+        } else {
+          var queriedSampleEntry = sampleInformationService.findSample(projectId, sampleId);
+          if (queriedSampleEntry.isPresent()) {
+            result = ValidationResult.successful();
+          } else {
+            result = ValidationResult.withFailures(
+                List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleId)));
+          }
+        }
+        validationResult = validationResult.combine(result);
       }
       return validationResult;
-    }
-
-    private ValidationResult validateSampleIdAsString(String sampleId, ProjectId projectId) {
-      if (sampleId.isBlank()) {
-        return  ValidationResult.withFailures(List.of("Missing Sample ID: Cannot lookup sample"));
-      }
-      var queriedSampleEntry = sampleInformationService.findSample(projectId, sampleId);
-      if (queriedSampleEntry.isPresent()) {
-        return ValidationResult.successful();
-      }
-      return ValidationResult.withFailures(
-          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleId)));
     }
 
     ValidationResult validateOrganisation(String organisationId) {

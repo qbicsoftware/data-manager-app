@@ -167,23 +167,9 @@ public class MeasurementNGSValidator {
     ValidationResult validationProjectRelation(String sampleId, ProjectId projectId) {
       if (sampleId.isBlank()) {
         return ValidationResult.withFailures(
-            List.of("Missing Sample ID: Cannot match sample to project"));
+            List.of("Missing Sample id: No sample identifier was provided."));
       }
-      return validationProjectRelation(SampleCode.create(sampleId), projectId);
-    }
-
-    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationExperimentRelation(String sampleId, String experimentId,
-        ProjectId projectId) {
-      if (sampleId.isBlank()) {
-        return ValidationResult.withFailures(
-            List.of("Missing Sample ID: Cannot match sample to project"));
-      }
-      return validationExperimentRelation(SampleCode.create(sampleId), experimentId, projectId);
-    }
-
-    @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationProjectRelation(SampleCode sampleCode, ProjectId projectId) {
+      SampleCode sampleCode = SampleCode.create(sampleId);
       var projectQuery = projectInformationService.find(projectId);
       if (projectQuery.isEmpty()) {
         log.error("No project information found for projectId: " + projectId);
@@ -201,12 +187,17 @@ public class MeasurementNGSValidator {
         return ValidationResult.successful();
       }
       return ValidationResult.withFailures(
-          List.of("Sample ID does not belong to this project: %s".formatted(sampleCode.code())));
+          List.of("Sample id does not belong to this project: %s".formatted(sampleCode.code())));
     }
 
     @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-    ValidationResult validationExperimentRelation(SampleCode sampleCode, String experimentId,
+    ValidationResult validationExperimentRelation(String sampleId, String experimentId,
         ProjectId projectId) {
+      if (sampleId.isBlank()) {
+        return ValidationResult.withFailures(
+            List.of("Missing Sample id: No sample identifier was provided."));
+      }
+      SampleCode sampleCode = SampleCode.create(sampleId);
 
       boolean sampleContainedInExperiment = sampleInformationService.retrieveSamplesForExperiment(
           projectId,
@@ -215,10 +206,11 @@ public class MeasurementNGSValidator {
         return ValidationResult.successful();
       }
       return ValidationResult.withFailures(
-          List.of("Sample ID does not belong to this experiment: %s".formatted(sampleCode.code())));
+          List.of("Sample id does not belong to this experiment: %s".formatted(sampleCode.code())));
     }
 
-    ValidationResult validateSampleIds(Collection<SampleCode> sampleCodes) {
+    ValidationResult validateSampleIdsAsString(Collection<String> sampleIds) {
+      var sampleCodes = sampleIds.stream().map(SampleCode::create).toList();
       if (sampleCodes.isEmpty()) {
         return ValidationResult.withFailures(
             List.of("A measurement must contain at least one sample reference. Provided: none"));
@@ -226,23 +218,17 @@ public class MeasurementNGSValidator {
       ValidationResult validationResult = ValidationResult.successful(
       );
       for (SampleCode sample : sampleCodes) {
-        validationResult = validationResult.combine(validateSampleId(sample));
+        ValidationResult result;
+        var queriedSampleEntry = sampleInformationService.findSampleId(sample);
+        if (queriedSampleEntry.isPresent()) {
+          result = ValidationResult.successful();
+        } else {
+          result = ValidationResult.withFailures(
+              List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sample.code())));
+        }
+        validationResult = validationResult.combine(result);
       }
       return validationResult;
-    }
-
-    ValidationResult validateSampleIdsAsString(Collection<String> sampleIds) {
-      var sampleCodes = sampleIds.stream().map(SampleCode::create).toList();
-      return validateSampleIds(sampleCodes);
-    }
-
-    ValidationResult validateSampleId(SampleCode sampleCode) {
-      var queriedSampleEntry = sampleInformationService.findSampleId(sampleCode);
-      if (queriedSampleEntry.isPresent()) {
-        return ValidationResult.successful();
-      }
-      return ValidationResult.withFailures(
-          List.of(UNKNOWN_SAMPLE_MESSAGE.formatted(sampleCode.code())));
     }
 
     ValidationResult validateOrganisation(String organisationId) {
