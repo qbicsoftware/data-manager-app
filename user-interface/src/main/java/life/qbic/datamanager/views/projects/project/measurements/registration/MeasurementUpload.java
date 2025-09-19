@@ -18,7 +18,6 @@ import java.io.Serial;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -260,7 +259,7 @@ public class MeasurementUpload extends Div implements UserInput {
     counter.set(1);
 
     service.validate(Flux.fromIterable(requests))
-        .doFirst(() -> validationStarted())
+        .doFirst(this::validationStarted)
         .doOnNext(ignored -> counter.incrementAndGet())
         .bufferTimeout(20, Duration.ofMillis(200))
         .doOnNext(item -> setValidationProgressText(

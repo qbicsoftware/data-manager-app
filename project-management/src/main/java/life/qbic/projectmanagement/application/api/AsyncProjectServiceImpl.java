@@ -30,7 +30,6 @@ import life.qbic.projectmanagement.application.api.fair.DigitalObject;
 import life.qbic.projectmanagement.application.api.fair.DigitalObjectFactory;
 import life.qbic.projectmanagement.application.api.fair.ResearchProject;
 import life.qbic.projectmanagement.application.api.template.TemplateService;
-import life.qbic.projectmanagement.application.authorization.ReactiveSecurityContextUtils;
 import life.qbic.projectmanagement.application.experiment.ExperimentInformationService;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.validation.MeasurementValidationService;
@@ -733,17 +732,17 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
           validateSampleMetadataUpdate(req, request.requestId(), request.projectId(),
               request.experimentId());
       // Measurement Registration - NGS
-      case MeasurementRegistrationInformationNGS req ->
-          validateMeasurementMetadataNGS(req, request.requestId(), request.projectId());
+      case MeasurementRegistrationInformationNGS req -> validateMeasurementMetadataNGS(req,
+          request.requestId(), request.experimentId(), request.projectId());
       // Measurement Update - NGS
-      case MeasurementUpdateInformationNGS req ->
-          validateMeasurementMetadataNGSUpdate(req, request.requestId(), request.projectId());
+      case MeasurementUpdateInformationNGS req -> validateMeasurementMetadataNGSUpdate(req,
+          request.requestId(), request.experimentId(), request.projectId());
       // Measurement Registration - Proteomics
-      case MeasurementRegistrationInformationPxP req ->
-          validateMeasurementMetadataPxP(req, request.requestId(), request.projectId());
+      case MeasurementRegistrationInformationPxP req -> validateMeasurementMetadataPxP(req,
+          request.requestId(), request.experimentId(), request.projectId());
       // Measurement Update - Proteomics
-      case MeasurementUpdateInformationPxP req ->
-          validateMeasurementMetadataPxPUpdate(req, request.requestId(), request.projectId());
+      case MeasurementUpdateInformationPxP req -> validateMeasurementMetadataPxPUpdate(req,
+          request.requestId(), request.experimentId(), request.projectId());
     };
   }
 
@@ -768,40 +767,48 @@ public class AsyncProjectServiceImpl implements AsyncProjectService {
   }
 
   private Mono<ValidationResponse> validateMeasurementMetadataPxP(
-      MeasurementRegistrationInformationPxP registration, String requestId, String projectId) {
+      MeasurementRegistrationInformationPxP registration, String requestId, String experimentId,
+      String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> measurementValidationService.validatePxp(registration, ProjectId.parse(projectId)))
+            () -> measurementValidationService.validatePxp(registration, experimentId,
+                ProjectId.parse(projectId)))
         .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
 
   private Mono<ValidationResponse> validateMeasurementMetadataPxPUpdate(
-      MeasurementUpdateInformationPxP update, String requestId, String projectId) {
+      MeasurementUpdateInformationPxP update, String requestId, String experimentId,
+      String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> measurementValidationService.validatePxp(update, ProjectId.parse(projectId)))
+            () -> measurementValidationService.validatePxp(update, experimentId,
+                ProjectId.parse(projectId)))
         .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
 
   private Mono<ValidationResponse> validateMeasurementMetadataNGS(
-      MeasurementRegistrationInformationNGS registration, String requestId, String projectId) {
+      MeasurementRegistrationInformationNGS registration, String requestId, String experimentId,
+      String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> measurementValidationService.validateNGS(registration, ProjectId.parse(projectId)))
+            () -> measurementValidationService.validateNGS(registration, experimentId,
+                ProjectId.parse(projectId)))
         .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
   }
 
   private Mono<ValidationResponse> validateMeasurementMetadataNGSUpdate(
-      MeasurementUpdateInformationNGS update, String requestId, String projectId) {
+      MeasurementUpdateInformationNGS update, String requestId, String experimentId,
+      String projectId) {
     var securityContext = SecurityContextHolder.getContext();
     return applySecurityContext(Mono.fromCallable(
-            () -> measurementValidationService.validateNGS(update, ProjectId.parse(projectId)))
+            () -> measurementValidationService.validateNGS(update, experimentId,
+                ProjectId.parse(projectId)))
         .map(validationResult -> new ValidationResponse(requestId, validationResult)))
         .contextWrite(reactiveSecurity(securityContext))
         .subscribeOn(scheduler);
