@@ -137,27 +137,6 @@ public class MeasurementProteomicsValidator implements
         .combine(distinctLabelsValidation);
   }
 
-  /**
-   * Ignores sample ids but validates measurement ids.
-   *
-   * @param metadata
-   * @return
-   * @since
-   */
-  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-  public ValidationResult validateUpdate(ProteomicsMeasurementMetadata metadata,
-      ProjectId projectId) {
-    var validationPolicy = new ValidationPolicy();
-    return validationPolicy.validateSampleId(metadata.associatedSample())
-        .combine(validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId))
-        .combine(
-            validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse("")))
-        .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
-        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
-        .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
-        .combine(validationPolicy.validateDigestionMethod(metadata.digestionMethod()));
-  }
-
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','WRITE')")
   public ValidationResult validateUpdate(MeasurementUpdateInformationPxP metadata,
       ProjectId projectId) {

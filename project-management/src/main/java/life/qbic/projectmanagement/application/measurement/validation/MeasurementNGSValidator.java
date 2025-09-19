@@ -121,27 +121,9 @@ public class MeasurementNGSValidator implements
         .combine(validationPolicy.validateInstrument(metadata.instrumentCURIE()));
   }
 
-  /**
-   * Ignores sample ids but validates measurement ids.
-   *
-   * @param metadata, {@link NGSMeasurementMetadata} of the measurement to be updated
-   * @param projectId Id of the project to which the measurement belongs to, necessary to check user
-   *                  permission
-   * @return ValidationResult
-   */
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-  public ValidationResult validateUpdate(NGSMeasurementMetadata metadata, ProjectId projectId) {
-    var validationPolicy = new ValidationPolicy();
-    return validationPolicy.validationProjectRelation(metadata.associatedSample(), projectId)
-        .combine(
-            validationPolicy.validateMeasurementCode(metadata.measurementIdentifier().orElse("")))
-        .combine(validationPolicy.validateMandatoryDataForUpdate(metadata))
-        .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
-        .combine(validationPolicy.validateInstrument(metadata.instrumentCURI()));
-  }
-
-  @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','READ')")
-  public ValidationResult validateUpdate(MeasurementUpdateInformationNGS metadata, ProjectId projectId) {
+  public ValidationResult validateUpdate(MeasurementUpdateInformationNGS metadata,
+      String experimentId, ProjectId projectId) {
     var validationPolicy = new ValidationPolicy();
 
     var result = ValidationResult.successful();
